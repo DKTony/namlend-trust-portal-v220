@@ -11,13 +11,12 @@ import {
   Calendar
 } from 'lucide-react';
 import { useLoanPortfolioMetrics } from '../../hooks/useLoanPortfolioMetrics';
+import { formatNAD } from '@/utils/currency';
 
 const LoanPortfolioOverview: React.FC = () => {
   const { metrics, loading, error } = useLoanPortfolioMetrics();
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (amount: number) => formatNAD(amount);
 
   const portfolioCards = [
     {

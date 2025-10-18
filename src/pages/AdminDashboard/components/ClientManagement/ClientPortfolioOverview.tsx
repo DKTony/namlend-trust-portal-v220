@@ -11,13 +11,12 @@ import {
   Star
 } from 'lucide-react';
 import { useClientPortfolioMetrics } from '../../hooks/useClientPortfolioMetrics';
+import { formatNAD } from '@/utils/currency';
 
 const ClientPortfolioOverview: React.FC = () => {
   const { metrics, loading, error } = useClientPortfolioMetrics();
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (amount: number) => formatNAD(amount);
 
   const portfolioCards = [
     {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,10 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { usePaymentsList } from '../../hooks/usePaymentsList';
+import { formatNAD } from '@/utils/currency';
+import { useToast } from '@/hooks/use-toast';
+import { recordPayment } from '@/services/paymentService';
+import PaymentDetailsModal from '@/components/PaymentDetailsModal';
 
 interface Payment {
   id: string;
@@ -22,7 +26,7 @@ interface Payment {
   loanId: string;
   amount: number;
   dueDate: string;
-  paidDate?: string;
+  paidAt?: string;
   status: 'pending' | 'completed' | 'failed' | 'overdue' | 'partial';
   paymentMethod: 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order';
   reference: string;
@@ -42,10 +46,11 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
   onPaymentSelect
 }) => {
   const { payments, loading, error, refetch } = usePaymentsList(status, searchTerm);
+  const { toast } = useToast();
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (amount: number) => formatNAD(amount);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
@@ -53,6 +58,25 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleRetryPayment = async (p: { loanId: string; amount: number; paymentMethod: string; reference: string }) => {
+    try {
+      const res = await recordPayment({
+        loanId: p.loanId,
+        amount: p.amount,
+        payment_method: p.paymentMethod,
+        reference_number: `RETRY-${p.reference}`
+      });
+      if (!res.success) {
+        toast({ title: 'Retry failed', description: res.error || 'Could not record payment', variant: 'destructive' });
+        return;
+      }
+      toast({ title: 'Retry queued', description: 'Payment recorded as pending.' });
+      refetch();
+    } catch (e) {
+      toast({ title: 'Retry error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -162,8 +186,18 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {payments.map((payment) => (
+    <>
+      <PaymentDetailsModal
+        open={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setSelectedPayment(null);
+        }}
+        payment={selectedPayment}
+      />
+      
+      <div className="space-y-4">
+        {payments.map((payment) => (
         <Card 
           key={payment.id} 
           className={`hover:shadow-md transition-shadow duration-200 cursor-pointer ${
@@ -204,7 +238,7 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
                     </div>
                     <div className="text-xs text-gray-500">
                       {payment.status === 'overdue' ? 'Overdue' : 
-                       payment.paidDate ? `Paid ${formatDate(payment.paidDate)}` :
+                       payment.paidAt ? `Paid ${formatDate(payment.paidAt)}` :
                        `Due ${formatDate(payment.dueDate)}`}
                     </div>
                   </div>
@@ -237,7 +271,17 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onPaymentSelect?.(payment.id);
+                          setSelectedPayment({
+                            id: payment.id,
+                            loan_id: payment.loanId,
+                            amount: payment.amount,
+                            payment_method: payment.paymentMethod,
+                            status: payment.status,
+                            reference_number: payment.reference,
+                            created_at: payment.createdAt,
+                            paid_at: payment.paidAt
+                          });
+                          setDetailsModalOpen(true);
                         }}
                       >
                         <Eye className="h-4 w-4 mr-2" />
@@ -249,7 +293,12 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Handle retry payment
+                            handleRetryPayment({
+                              loanId: payment.loanId,
+                              amount: payment.amount,
+                              paymentMethod: payment.paymentMethod,
+                              reference: payment.reference
+                            });
                           }}
                         >
                           <RefreshCw className="h-4 w-4 mr-2" />
@@ -264,7 +313,8 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
           </CardContent>
         </Card>
       ))}
-    </div>
+      </div>
+    </>
   );
 };
 

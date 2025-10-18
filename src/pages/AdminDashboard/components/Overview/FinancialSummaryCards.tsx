@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { formatNAD } from '@/utils/currency';
 
 interface FinancialMetrics {
   totalClients: number;
@@ -11,6 +12,7 @@ interface FinancialMetrics {
   pendingAmount: number;
   rejectedAmount: number;
 }
+
 interface FinancialSummaryCardsProps {
   metrics: FinancialMetrics | null;
   loading?: boolean;
@@ -20,9 +22,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
   metrics, 
   loading = false 
 }) => {
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = (amount: number) => formatNAD(amount);
 
 const cards = [
     {

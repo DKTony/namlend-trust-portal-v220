@@ -1,0 +1,248 @@
+{
+  "$schema": "https://tr.designtokens.org/format/",
+  "color": {
+    "dark": {
+      "background": {
+        "value": "#1C1C1E",
+        "type": "color",
+        "description": "Primary background color for dark mode"
+      },
+      "surface": {
+        "value": "#2C2C2E",
+        "type": "color",
+        "description": "Elevated surface color (cards, sheets)"
+      },
+      "surface-alt": {
+        "value": "#3A3A3C",
+        "type": "color",
+        "description": "Alternative elevated surface"
+      },
+      "text-primary": {
+        "value": "#FFFFFF",
+        "type": "color",
+        "description": "Primary text color"
+      },
+      "text-secondary": {
+        "value": "#AEAEB2",
+        "type": "color",
+        "description": "Secondary text color"
+      },
+      "text-tertiary": {
+        "value": "#8E8E93",
+        "type": "color",
+        "description": "Tertiary text color"
+      },
+      "success": {
+        "value": "#34C759",
+        "type": "color",
+        "description": "Success state, positive amounts"
+      },
+      "error": {
+        "value": "#FF3B30",
+        "type": "color",
+        "description": "Error state, negative amounts"
+      },
+      "warning": {
+        "value": "#FF9500",
+        "type": "color",
+        "description": "Warning state"
+      },
+      "primary": {
+        "value": "#007AFF",
+        "type": "color",
+        "description": "Primary brand color, CTAs"
+      },
+      "divider": {
+        "value": "#38383A",
+        "type": "color",
+        "description": "Divider lines"
+      }
+    },
+    "light": {
+      "background": {
+        "value": "#FFFFFF",
+        "type": "color"
+      },
+      "surface": {
+        "value": "#F2F2F7",
+        "type": "color"
+      },
+      "surface-alt": {
+        "value": "#E5E5EA",
+        "type": "color"
+      },
+      "text-primary": {
+        "value": "#000000",
+        "type": "color"
+      },
+      "text-secondary": {
+        "value": "#3A3A3C",
+        "type": "color"
+      },
+      "text-tertiary": {
+        "value": "#8E8E93",
+        "type": "color"
+      },
+      "divider": {
+        "value": "#C6C6C8",
+        "type": "color"
+      }
+    }
+  },
+  "typography": {
+    "display": {
+      "fontFamily": {
+        "value": "Inter",
+        "type": "fontFamily"
+      },
+      "fontWeight": {
+        "value": "700",
+        "type": "fontWeight"
+      },
+      "fontSize": {
+        "value": "36px",
+        "type": "fontSize"
+      },
+      "lineHeight": {
+        "value": "44px",
+        "type": "lineHeight"
+      }
+    },
+    "h1": {
+      "fontFamily": {
+        "value": "Inter",
+        "type": "fontFamily"
+      },
+      "fontWeight": {
+        "value": "600",
+        "type": "fontWeight"
+      },
+      "fontSize": {
+        "value": "24px",
+        "type": "fontSize"
+      },
+      "lineHeight": {
+        "value": "32px",
+        "type": "lineHeight"
+      }
+    },
+    "body": {
+      "fontFamily": {
+        "value": "Inter",
+        "type": "fontFamily"
+      },
+      "fontWeight": {
+        "value": "400",
+        "type": "fontWeight"
+      },
+      "fontSize": {
+        "value": "16px",
+        "type": "fontSize"
+      },
+      "lineHeight": {
+        "value": "24px",
+        "type": "lineHeight"
+      }
+    },
+    "caption": {
+      "fontFamily": {
+        "value": "Inter",
+        "type": "fontFamily"
+      },
+      "fontWeight": {
+        "value": "400",
+        "type": "fontWeight"
+      },
+      "fontSize": {
+        "value": "13px",
+        "type": "fontSize"
+      },
+      "lineHeight": {
+        "value": "18px",
+        "type": "lineHeight"
+      }
+    }
+  },
+  "spacing": {
+    "xs": {
+      "value": "4px",
+      "type": "spacing"
+    },
+    "sm": {
+      "value": "8px",
+      "type": "spacing"
+    },
+    "md": {
+      "value": "12px",
+      "type": "spacing"
+    },
+    "base": {
+      "value": "16px",
+      "type": "spacing"
+    },
+    "lg": {
+      "value": "20px",
+      "type": "spacing"
+    },
+    "xl": {
+      "value": "24px",
+      "type": "spacing"
+    },
+    "2xl": {
+      "value": "32px",
+      "type": "spacing"
+    }
+  },
+  "borderRadius": {
+    "sm": {
+      "value": "8px",
+      "type": "borderRadius"
+    },
+    "md": {
+      "value": "12px",
+      "type": "borderRadius"
+    },
+    "lg": {
+      "value": "16px",
+      "type": "borderRadius"
+    },
+    "xl": {
+      "value": "20px",
+      "type": "borderRadius"
+    },
+    "2xl": {
+      "value": "24px",
+      "type": "borderRadius"
+    },
+    "pill": {
+      "value": "28px",
+      "type": "borderRadius"
+    }
+  },
+  "shadow": {
+    "card": {
+      "value": {
+        "color": "#000000",
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "12px",
+        "spread": "0px",
+        "opacity": 0.3
+      },
+      "type": "shadow",
+      "description": "Elevated card shadow"
+    },
+    "sheet": {
+      "value": {
+        "color": "#000000",
+        "offsetX": "0px",
+        "offsetY": "-4px",
+        "blur": "20px",
+        "spread": "0px",
+        "opacity": 0.15
+      },
+      "type": "shadow",
+      "description": "Bottom sheet shadow"
+    }
+  }
+}

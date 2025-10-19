@@ -230,7 +230,7 @@ export default function LoanApplicationStartScreen() {
             {
               icon: Clock,
               title: 'Flexible Terms',
-              text: 'Repayment periods from 3 to 36 months',
+              text: 'Repayment terms available: 1, 3, or 5 months',
             },
             {
               icon: Shield,

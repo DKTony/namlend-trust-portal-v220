@@ -30,8 +30,7 @@ import type { ClientStackParamList } from '../../navigation/ClientStack';
 const MAX_APR = parseInt(process.env.EXPO_PUBLIC_MAX_APR || '32', 10);
 const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 50000;
-const MIN_TERM = 3;
-const MAX_TERM = 36;
+const ALLOWED_TERMS = [1, 3, 5];
 const MIN_INCOME = 2000;
 
 interface FormData {
@@ -123,10 +122,8 @@ export default function LoanApplicationFormScreen() {
 
     if (!formData.term || isNaN(term)) {
       newErrors.term = 'Loan term is required';
-    } else if (term < MIN_TERM) {
-      newErrors.term = `Minimum term is ${MIN_TERM} months`;
-    } else if (term > MAX_TERM) {
-      newErrors.term = `Maximum term is ${MAX_TERM} months`;
+    } else if (!ALLOWED_TERMS.includes(term)) {
+      newErrors.term = 'Allowed terms are 1, 3, or 5 months';
     }
 
     if (!formData.purpose || formData.purpose.trim().length < 10) {
@@ -318,23 +315,27 @@ export default function LoanApplicationFormScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Loan Term (months)</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { backgroundColor: colors.surface, borderColor: errors.term ? colors.error : colors.divider, color: colors.textPrimary },
-                ]}
-                placeholder="12"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numeric"
-                value={formData.term}
-                onChangeText={(text) => setFormData({ ...formData, term: text })}
-              />
+              <View style={styles.pickerContainer}>
+                <TouchableOpacity
+                  style={[styles.picker, { borderColor: errors.term ? colors.error : colors.divider, backgroundColor: colors.surface }]}
+                  onPress={() => {
+                    Alert.alert('Select Loan Term', '', [
+                      { text: '1 month', onPress: () => setFormData({ ...formData, term: '1' }) },
+                      { text: '3 months', onPress: () => setFormData({ ...formData, term: '3' }) },
+                      { text: '5 months', onPress: () => setFormData({ ...formData, term: '5' }) },
+                      { text: 'Cancel', style: 'cancel' },
+                    ]);
+                  }}
+                >
+                  <Text style={[styles.pickerText, { color: formData.term ? colors.textPrimary : colors.textTertiary }]}>
+                    {formData.term ? `${formData.term} months` : 'Select term (1, 3, or 5)'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               {errors.term && (
                 <Text style={[styles.errorText, { color: colors.error }]}>{errors.term}</Text>
               )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                Between {MIN_TERM} and {MAX_TERM} months
-              </Text>
+              <Text style={[styles.helperText, { color: colors.textSecondary }]}>Allowed: 1, 3, or 5 months</Text>
             </View>
 
             <View style={styles.inputGroup}>

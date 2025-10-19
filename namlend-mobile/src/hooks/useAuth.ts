@@ -10,22 +10,24 @@ import { AuthService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 
 export const useAuth = () => {
-  const { 
-    user, 
-    session, 
-    isAuthenticated, 
+  const {
+    user,
+    session,
+    isAuthenticated,
     isLoading,
     biometricEnabled,
-    setUser, 
-    setSession, 
+    hasInitializedAuth,
+    authListenerBound,
+    setUser,
+    setSession,
     setLoading,
     setBiometricEnabled,
-    signOut: storeSignOut 
+    setHasInitializedAuth,
+    setAuthListenerBound,
+    signOut: storeSignOut,
   } = useAuthStore();
 
   useEffect(() => {
-    const g: any = globalThis as any;
-    // Initialize only once per app runtime using a global guard
     const initializeAuth = async () => {
       try {
         console.log('🔄 Starting auth initialization...');
@@ -47,16 +49,20 @@ export const useAuth = () => {
       } finally {
         console.log('🏁 Setting loading to false');
         setLoading(false);
+        setHasInitializedAuth(true);
       }
     };
 
-    if (!g.__namlend_auth_init_done) {
-      g.__namlend_auth_init_done = true;
+    if (!hasInitializedAuth) {
+      // First load in this app runtime or after store reset
       initializeAuth();
+    } else {
+      // Ensure UI is not stuck in loading after fast refresh/hot reload
+      setLoading(false);
     }
 
-    // Bind a single global auth listener
-    if (!g.__namlend_auth_listener_bound) {
+    // Bind a single auth listener using store flag
+    if (!authListenerBound) {
       const { data: authListener } = supabase.auth.onAuthStateChange(
         async (event: AuthChangeEvent, session: Session | null) => {
           console.log('🔔 Auth state changed:', event);
@@ -72,10 +78,10 @@ export const useAuth = () => {
           }
         }
       );
-      g.__namlend_auth_listener_bound = true;
-      g.__namlend_auth_listener = authListener;
+      setAuthListenerBound(true);
+      // We intentionally do not store unsubscribe globally here; RN/Expo will recreate on cold start
     }
-  }, []);
+  }, [hasInitializedAuth, authListenerBound, setAuthListenerBound, setHasInitializedAuth, setLoading, setSession, setUser, setBiometricEnabled]);
 
   const signIn = async (email: string, password: string) => {
     try {

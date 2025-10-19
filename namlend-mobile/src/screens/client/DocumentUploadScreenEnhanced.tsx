@@ -34,6 +34,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabaseClient';
 import { enqueue } from '../../utils/offlineQueue';
 import { useTheme } from '../../theme';
+import { PrimaryButton } from '../../components/ui';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const COMPRESSION_QUALITY = 0.7;
@@ -430,7 +431,7 @@ export default function DocumentUploadScreenEnhanced() {
 
             {/* Error Message */}
             {progress && progress.status === 'error' && (
-              <View style={styles.errorContainer}>
+              <View style={[styles.errorContainer, { backgroundColor: `${colors.error}1A` }]}>
                 <AlertCircle color={colors.error} size={16} />
                 <Text style={[styles.errorText, { color: colors.error }]}>{progress.error}</Text>
                 <TouchableOpacity onPress={() => handleRetry(docType.id)} style={styles.retryButton}>
@@ -465,20 +466,16 @@ export default function DocumentUploadScreenEnhanced() {
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.uploadButton,
-                  { backgroundColor: colors.primary, borderRadius: tokens.radius.sm },
-                  progress?.status === 'uploading' && styles.uploadButtonDisabled,
-                ]}
+              <PrimaryButton
+                title={uploadedDoc ? 'Replace' : 'Upload'}
                 onPress={() => handleUpload(docType.id)}
+                variant="primary"
+                size="medium"
+                loading={progress?.status === 'uploading'}
                 disabled={progress?.status === 'uploading'}
-              >
-                <Upload color="#ffffff" size={18} />
-                <Text style={styles.uploadButtonText}>
-                  {uploadedDoc ? 'Replace' : 'Upload'}
-                </Text>
-              </TouchableOpacity>
+                style={{ flex: 1, borderRadius: tokens.radius.sm }}
+                textStyle={{ fontWeight: '600' }}
+              />
 
               {uploadedDoc && !progress && (
                 <TouchableOpacity
@@ -511,7 +508,6 @@ export default function DocumentUploadScreenEnhanced() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   contentContainer: {
     padding: 16,
@@ -521,12 +517,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6b7280',
   },
   header: {
     marginBottom: 24,
@@ -534,23 +528,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#111827',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6b7280',
   },
   documentCard: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   documentHeader: {
     flexDirection: 'row',
@@ -570,20 +556,16 @@ const styles = StyleSheet.create({
   documentTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
   },
   requiredBadge: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#ef4444',
-    backgroundColor: '#fee2e2',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   documentDescription: {
     fontSize: 12,
-    color: '#6b7280',
     marginTop: 4,
   },
   progressContainer: {
@@ -591,24 +573,20 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#e5e7eb',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 4,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#2563eb',
   },
   progressText: {
     fontSize: 12,
-    color: '#6b7280',
     textAlign: 'right',
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fee2e2',
     borderRadius: 8,
     padding: 8,
     marginBottom: 12,
@@ -617,13 +595,11 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     fontSize: 12,
-    color: '#991b1b',
   },
   retryButton: {
     padding: 4,
   },
   uploadedInfo: {
-    backgroundColor: '#f9fafb',
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
@@ -631,12 +607,10 @@ const styles = StyleSheet.create({
   uploadedFileName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
     marginBottom: 4,
   },
   uploadedMeta: {
     fontSize: 12,
-    color: '#6b7280',
     marginBottom: 8,
   },
   verifiedBadge: {
@@ -647,7 +621,6 @@ const styles = StyleSheet.create({
   verifiedText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#10b981',
   },
   pendingBadge: {
     flexDirection: 'row',
@@ -657,42 +630,21 @@ const styles = StyleSheet.create({
   pendingText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#f59e0b',
   },
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
-  },
-  uploadButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
-  },
-  uploadButtonDisabled: {
-    backgroundColor: '#9ca3af',
-  },
-  uploadButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
   },
   deleteButton: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fee2e2',
     borderRadius: 8,
   },
   helpCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#eff6ff',
     borderRadius: 12,
     padding: 16,
     gap: 12,
@@ -700,7 +652,6 @@ const styles = StyleSheet.create({
   helpText: {
     flex: 1,
     fontSize: 12,
-    color: '#1e40af',
     lineHeight: 18,
   },
   helpBold: {

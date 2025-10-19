@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "NamLend Mobile",
-    "slug": "namlend-mobile",
+    "slug": "namlend-trust",
     "version": "2.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

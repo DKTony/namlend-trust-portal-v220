@@ -22,7 +22,7 @@ const MAX_APR = 0.32; // 32% APR limit for Namibia
 const LoanCalculatorScreen: React.FC = () => {
   const { colors, tokens } = useTheme();
   const [amount, setAmount] = useState('10000');
-  const [months, setMonths] = useState('12');
+  const [months, setMonths] = useState('3');
   const [apr, setApr] = useState('28');
 
   const calculateLoan = () => {
@@ -164,23 +164,28 @@ const LoanCalculatorScreen: React.FC = () => {
           >
             Loan Term (Months)
           </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.divider,
-                color: colors.textPrimary,
-                borderRadius: tokens.radius.sm,
-                padding: tokens.spacing.md,
-              },
-            ]}
-            value={months}
-            onChangeText={setMonths}
-            keyboardType="numeric"
-            placeholder="12"
-            placeholderTextColor={colors.textTertiary}
-          />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[1, 3, 5].map((m) => {
+              const active = months === String(m);
+              return (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => setMonths(String(m))}
+                  style={{
+                    paddingVertical: tokens.spacing.sm,
+                    paddingHorizontal: tokens.spacing.md,
+                    borderRadius: tokens.radius.pill,
+                    borderWidth: 1,
+                    borderColor: active ? colors.primary : colors.divider,
+                    backgroundColor: active ? `${colors.primary}1A` : 'transparent',
+                  }}
+                >
+                  <Text style={{ color: active ? colors.primary : colors.textSecondary }}>{m} {m === 1 ? 'month' : 'months'}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={{ color: colors.textTertiary, marginTop: tokens.spacing.xs }}>Allowed terms: 1, 3, or 5 months</Text>
         </View>
 
         {/* APR */}

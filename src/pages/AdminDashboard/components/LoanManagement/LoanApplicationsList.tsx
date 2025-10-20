@@ -20,6 +20,7 @@ import {
 import { useLoanApplications } from '../../hooks/useLoanApplications';
 import { useLoanActions } from '../../hooks/useLoanActions';
 import LoanDetailsModal from '@/components/LoanDetailsModal';
+import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
 
 interface LoanApplication {
   id: string;
@@ -33,6 +34,7 @@ interface LoanApplication {
   monthlyIncome?: number;
   employmentStatus?: string;
   creditScore?: number;
+  disbursedAt?: string | null;
   // Indicates whether this row came from loans table or approvals view
   source?: 'loan' | 'approval';
 }
@@ -80,6 +82,13 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   const { approveLoan, rejectLoan, loading: actionLoading } = useLoanActions();
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [loanDetailsOpen, setLoanDetailsOpen] = useState(false);
+  const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
+  const [selectedDisbursement, setSelectedDisbursement] = useState<{
+    id: string;
+    amount: number;
+    clientName: string;
+    loanId: string;
+  } | null>(null);
 
   const handleReview = (loanId: string) => {
     if (onLoanClick) {
@@ -89,6 +98,22 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
       setSelectedLoanId(loanId);
       setLoanDetailsOpen(true);
     }
+  };
+
+  const handleDisburse = (application: LoanApplication) => {
+    setSelectedDisbursement({
+      id: application.id, // This will be used as disbursement_id in the modal
+      amount: application.amount,
+      clientName: application.applicantName,
+      loanId: application.id
+    });
+    setDisbursementModalOpen(true);
+  };
+
+  const handleDisbursementSuccess = () => {
+    setDisbursementModalOpen(false);
+    setSelectedDisbursement(null);
+    refetch(); // Refresh the list to show updated status
   };
 
   // Transform LoanApplication to format expected by LoanDetailsModal
@@ -367,6 +392,17 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     </Button>
                   </>
                 )}
+                {application.status === 'approved' && !application.disbursedAt && application.source !== 'approval' && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={() => handleDisburse(application)}
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Disburse
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -381,6 +417,17 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
           setSelectedLoanId(null);
         }}
         loan={getSelectedLoanForModal()}
+      />
+
+      {/* Disbursement Modal */}
+      <CompleteDisbursementModal
+        open={disbursementModalOpen}
+        onClose={() => {
+          setDisbursementModalOpen(false);
+          setSelectedDisbursement(null);
+        }}
+        onSuccess={handleDisbursementSuccess}
+        disbursement={selectedDisbursement}
       />
     </div>
   );

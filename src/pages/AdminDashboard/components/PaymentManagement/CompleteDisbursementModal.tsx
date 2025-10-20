@@ -12,8 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { completeDisbursement } from '@/services/disbursementService';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, CreditCard, Smartphone, Banknote, Building2 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
+
+type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order';
 
 interface Props {
   open: boolean;
@@ -33,6 +35,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
   onSuccess,
   disbursement
 }) => {
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [paymentReference, setPaymentReference] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
   const handleClose = () => {
     if (!loading) {
+      setPaymentMethod('bank_transfer');
       setPaymentReference('');
       setNotes('');
       onClose();
@@ -79,6 +83,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
     try {
       const result = await completeDisbursement(
         disbursement.id,
+        paymentMethod,
         paymentReference.trim(),
         notes.trim() || undefined
       );
@@ -158,6 +163,70 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
         {/* Form Fields */}
         <div className="space-y-4 py-4">
+          {/* Payment Method Selection */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Payment Method <span className="text-red-500">*</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('bank_transfer')}
+                disabled={loading}
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'bank_transfer'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <Building2 className="h-5 w-5" />
+                <span className="text-sm font-medium">Bank Transfer</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('mobile_money')}
+                disabled={loading}
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'mobile_money'
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <Smartphone className="h-5 w-5" />
+                <span className="text-sm font-medium">Mobile Money</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                disabled={loading}
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'cash'
+                    ? 'border-gray-500 bg-gray-50 text-gray-700'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <Banknote className="h-5 w-5" />
+                <span className="text-sm font-medium">Cash</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('debit_order')}
+                disabled={loading}
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  paymentMethod === 'debit_order'
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <CreditCard className="h-5 w-5" />
+                <span className="text-sm font-medium">Debit Order</span>
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="payment-ref" className="text-sm font-medium">
               Payment Reference <span className="text-red-500">*</span>

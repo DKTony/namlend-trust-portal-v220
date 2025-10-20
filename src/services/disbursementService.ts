@@ -135,6 +135,7 @@ export async function markDisbursementProcessing(
  */
 export async function completeDisbursement(
   disbursementId: string,
+  paymentMethod: 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order',
   paymentReference: string,
   notes?: string
 ): Promise<DisbursementResult> {
@@ -142,6 +143,7 @@ export async function completeDisbursement(
     try {
       debugLog('✅ Completing disbursement with payment reference', { 
         disbursementId, 
+        paymentMethod,
         paymentReference 
       });
 
@@ -155,6 +157,7 @@ export async function completeDisbursement(
 
       const { data, error } = await supabase.rpc('complete_disbursement', {
         p_disbursement_id: disbursementId,
+        p_payment_method: paymentMethod,
         p_payment_reference: paymentReference.trim(),
         p_notes: notes || null
       });

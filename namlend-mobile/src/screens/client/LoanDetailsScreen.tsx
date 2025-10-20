@@ -164,7 +164,7 @@ const LoanDetailsScreen: React.FC = () => {
                 <View>
                   <Text style={[styles.scheduleAmount, { color: colors.textPrimary }]}>{formatNAD(payment.amount)}</Text>
                   <Text style={[styles.scheduleDate, { color: colors.textSecondary }]}>
-                    {new Date(payment.payment_date).toLocaleDateString('en-NA')}
+                    {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString('en-NA') : 'Pending'}
                   </Text>
                 </View>
               </View>

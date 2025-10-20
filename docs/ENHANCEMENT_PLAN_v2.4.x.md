@@ -648,3 +648,114 @@ Final integration, performance optimization, and production hardening:
 - Document all milestones in CHANGELOG
 - Weekly status updates in project meetings
 - Monthly demo to stakeholders
+
+---
+
+## Appendix A — v2.7.1 Hardening & Backoffice Disbursement Plan
+
+### Executive Summary
+
+- Strengthen schema alignment, RLS guarantees, and CI across web/mobile.
+- Implement backoffice Disbursement/Make Payment capability for approved loans.
+- Unify Supabase types and improve observability and documentation (ADRs).
+
+### Milestones (Order of Execution)
+
+1. Schema Alignment Verification (paid_at, total_repayment, disbursed_at)
+2. RLS & Storage Tests for documents and disbursements
+3. Unified Supabase Types generation (web + mobile)
+4. CI Expansion (lint, typecheck, unit, Playwright API smoke, mobile checks)
+5. Observability Standardization (error context, correlation IDs)
+6. Documentation Enhancements (ADRs, ownership cadence)
+7. Backoffice Disbursement/Make Payment UI & RPCs
+
+### Detailed Plan
+
+#### 1) Schema Alignment Verification
+- Sweep code to remove legacy fields: `payment_date`, `outstanding_balance`, `next_payment_date`.
+- Enforce usage of `paid_at`, `total_repayment`, `disbursed_at`.
+- Update any admin-only legacy pages in `src/pages/AdminDashboard_*.tsx`.
+
+Acceptance Criteria
+- [ ] No references to legacy fields in main branch.
+- [ ] All queries compile and pass unit/API smoke tests.
+
+#### 2) RLS & Storage Tests (Documents + Disbursements)
+- Add integration tests verifying role-based access to documents and disbursements.
+- Ensure storage policies prevent cross-tenant access.
+
+Acceptance Criteria
+- [ ] Clients cannot read others’ documents or disbursements.
+- [ ] Admin and loan_officer have only necessary access.
+- [ ] Tests fail if policies regress.
+
+#### 3) Unified Supabase Types
+- Generate types from live schema and adopt in both apps.
+- Replace ad-hoc types in services with generated types.
+
+Acceptance Criteria
+- [ ] Types regenerated on schema change.
+- [ ] Services compile without any `any` around DB payloads.
+
+#### 4) CI Expansion
+- Add workflows to gate PRs on lint, typecheck, unit tests, and Playwright API smoke.
+- Add mobile lint/typecheck; optional EAS build on tags.
+
+Acceptance Criteria
+- [ ] All PRs run green checks < 8 minutes.
+- [ ] Schema/type generation check prevents drift.
+
+#### 5) Observability Standardization
+- Introduce shared error/log utilities with serialized error details and correlation IDs.
+- Document logging levels and categories.
+
+Acceptance Criteria
+- [ ] Consistent error context across web/mobile.
+- [ ] Runbook updated with triage steps.
+
+#### 6) Documentation Enhancements
+- Create `docs/ADRs/` index and add decisions for payments schema, documents module, and navigation typing.
+- Add ownership table and quarterly review cadence in `docs/README.md`.
+
+Acceptance Criteria
+- [ ] ADR index present and referenced from `docs/INDEX.md`.
+- [ ] Owners and review cycles documented.
+
+#### 7) Backoffice Disbursement / Make Payment (Loan Funding)
+
+Objective
+- Enable backoffice (admin/loan_officer) to disburse approved loans so funds are transferred to clients and loan moves to `disbursed` state.
+
+Scope
+- UI: Add "Disburse Loan" action for approved loans without `disbursed_at`.
+- Modal: Reuse/wire `PaymentManagement/CompleteDisbursementModal.tsx` and/or `DisbursementManager.tsx` for confirmation and metadata (method, reference, bank/mobile money).
+- Server: Create/confirm RPC to record disbursement in disbursements ledger, update `loans.disbursed_at`, and audit the action.
+- RLS: Ensure only authorized roles can create disbursements; client cannot.
+
+Implementation Notes (Code Pointers)
+- Web Admin UI
+  - `src/pages/AdminDashboard/components/LoanManagement/LoanManagementDashboard.tsx` → add row action "Disburse" when `loan.status === 'approved' && !loan.disbursed_at`.
+  - Integrate `PaymentManagement/CompleteDisbursementModal.tsx` for confirmation and capture of disbursement metadata.
+  - Alternatively centralize under `PaymentManagement/DisbursementManager.tsx` and deep-link from loans list.
+- API / DB
+  - Confirm disbursements ledger exists (see migrations around disbursements).
+  - If needed, add RPC: `perform_disbursement(loan_id uuid, amount numeric, method text, reference text)` with role checks.
+  - On success: set `loans.disbursed_at = now()`, status → `disbursed`; write audit trail.
+- Tests
+  - Add Playwright API tests: admin can disburse; client cannot; duplicate prevention.
+  - Add UI tests for the modal flow and final state (loan shows disbursed).
+
+Acceptance Criteria
+- [ ] Approved loans display a "Disburse" action in backoffice.
+- [ ] Disbursement records are created with method, reference, processed_by, and timestamp.
+- [ ] `loans.disbursed_at` set and status transitioned to `disbursed`.
+- [ ] Audit event recorded (who, when, amount, reference).
+- [ ] Clients cannot trigger disbursement; RLS enforced.
+- [ ] E2E passes for approve → disburse → repayments visible in schedule.
+
+Timeline & Ownership
+- Week 1: Schema sweep + CI expansion.
+- Week 2: RLS tests + Unified types.
+- Week 3: Backoffice Disbursement UI/RPC + E2E.
+- Owners: Engineering (Admin UI: Web FE), Platform (DB/RPC/RLS), QA (E2E).
+

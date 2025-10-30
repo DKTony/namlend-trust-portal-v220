@@ -7,6 +7,158 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1] - 2025-10-31
+
+### Added - Backoffice Disbursement & Testing Infrastructure
+
+#### Disbursement Feature (Week 3)
+
+- **Payment Method Selection UI** (`src/pages/AdminDashboard/components/PaymentManagement/CompleteDisbursementModal.tsx`)
+  - 4 payment method options with visual selection: Bank Transfer, Mobile Money, Cash, Debit Order
+  - Icon-based UI with color-coded states (blue, green, gray, purple)
+  - Form validation for payment reference (minimum 5 characters)
+  - Payment method passed to RPC for storage and audit trail
+  
+- **Disburse Button in Loan Management** (`src/pages/AdminDashboard/components/LoanManagement/LoanApplicationsList.tsx`)
+  - "Disburse" button visible for approved, non-disbursed loans (`status === 'approved' && !disbursedAt`)
+  - Opens `CompleteDisbursementModal` with loan details pre-filled
+  - Refreshes loan list after successful disbursement
+  - Proper modal state management (open/close/success)
+
+- **Database RPC Enhancement** (`supabase/migrations/20251020_update_complete_disbursement_with_payment_method.sql`)
+  - Updated `complete_disbursement` RPC to accept `p_payment_method` parameter
+  - Server-side validation of payment method against allowed values
+  - Stores method in `disbursements.method` column
+  - Includes payment_method in audit trail metadata
+  - Role enforcement (admin/loan_officer only)
+  - Updates `loans.disbursed_at` and status to `disbursed`
+  - Atomic transaction with proper error handling
+
+#### E2E Test Suites (Week 3)
+
+- **API Tests** (`e2e/api/disbursement.e2e.ts`)
+  - Admin can disburse approved loan
+  - Loan officer can disburse approved loan
+  - Client cannot disburse loan (RLS enforcement)
+  - Cannot disburse already disbursed loan
+  - Disbursement creates audit trail
+  - Validates payment method against allowed values
+
+- **UI Tests** (`e2e/backoffice-disbursement.e2e.ts`)
+  - Disburse button visible for approved loans
+  - Disbursement modal opens with loan details
+  - Payment method selection works (all 4 methods)
+  - Form validation requires payment reference
+  - Complete disbursement flow end-to-end
+  - Repayments visible after disbursement
+  - Cannot disburse same loan twice
+  - Error handling for invalid inputs
+  - Cancel button functionality
+
+#### RLS & Storage Tests (Week 2)
+
+- **Documents Storage RLS Tests** (`e2e/api/documents-rls.e2e.ts`)
+  - Client can upload/read/delete own documents
+  - Client cannot access other user documents
+  - Admin can read all user documents
+  - Client can list only own documents
+  - Unauthenticated users blocked from all operations
+  - Documents table RLS verified (12 test cases)
+
+- **Disbursements Table RLS Tests** (`e2e/api/disbursements-rls.e2e.ts`)
+  - Client can read own disbursements only
+  - Client cannot create/update/delete disbursements
+  - Admin can CRUD all disbursements
+  - Loan officer can CRUD all disbursements
+  - `complete_disbursement` RPC role enforcement
+  - Invalid payment method validation
+  - Join queries with loans and profiles (15 test cases)
+
+#### Schema Alignment (Week 1)
+
+- **Mobile App Fix** (`namlend-mobile/src/screens/client/LoanDetailsScreen.tsx`)
+  - Fixed schema mismatch: `payment.payment_date` → `payment.paid_at`
+  - Added fallback for unpaid schedule items
+  - Aligned with live database schema
+
+- **CI/CD Expansion** (`.github/workflows/`)
+  - **ci-web.yml**: Lint, TypeCheck, Unit tests, Playwright API smoke tests, Schema alignment check
+  - **ci-mobile.yml**: Lint, TypeCheck, Schema alignment check, Metro config validation, Optional EAS build trigger
+
+### Changed
+
+- **Payment Method Consistency**: Backoffice disbursement methods now exactly match client-side payment methods
+  - Unified: `bank_transfer`, `mobile_money`, `cash`, `debit_order`
+  - Consistent data across platform for reporting and analytics
+  - Simplified reconciliation workflows
+
+- **Disbursement Service** (`src/services/disbursementService.ts`)
+  - Updated `completeDisbursement` function to accept `paymentMethod` parameter
+  - Enhanced error handling and validation
+  - Performance monitoring with `measurePerformance` wrapper
+
+### Security & Compliance
+
+- **Role-Based Access Control**
+  - Only admin and loan_officer can disburse loans
+  - Clients blocked by RLS policies
+  - Unauthorized attempts logged in audit trail
+
+- **Audit Trail Enhancement**
+  - Every disbursement creates audit log entry
+  - Metadata includes: payment_method, payment_reference, amount, client_id
+  - Complete traceability for compliance
+
+- **Data Integrity**
+  - Prevents duplicate disbursements
+  - Validates loan status before disbursement
+  - Validates payment method against allowed values
+  - Atomic updates (disbursement + loan status + audit)
+
+### Testing
+
+- **Total Test Coverage**: 44 test cases across 4 test suites
+  - API tests: 6 disbursement + 15 disbursements RLS = 21
+  - UI tests: 11 disbursement flows = 11
+  - Storage tests: 12 documents RLS = 12
+  - **Coverage**: Role-based access, CRUD operations, RPC security, UI/UX flows, error scenarios
+
+### Documentation
+
+- **Implementation Progress** (`docs/v2.7.1-IMPLEMENTATION-PROGRESS.md`)
+  - Week 1 & 3 marked complete
+  - Week 2 tasks documented (RLS tests, types)
+  
+- **Completion Summary** (`docs/WEEK3_DISBURSEMENT_COMPLETION_SUMMARY.md`)
+  - Comprehensive summary of disbursement implementation
+  - Deployment steps and verification procedures
+  
+- **Supabase Types Guide** (`docs/SUPABASE_TYPES_GUIDE.md`)
+  - Type generation procedures
+  - Usage examples for web and mobile
+  - Best practices and troubleshooting
+
+### Deployment
+
+- **Migrations Required**:
+  - `supabase/migrations/20251020_update_complete_disbursement_with_payment_method.sql`
+  
+- **Verification Steps**:
+  1. Apply migration to production database
+  2. Run E2E tests against staging environment
+  3. Verify "Disburse" button appears for approved loans
+  4. Test complete disbursement flow with all payment methods
+  5. Monitor audit logs for disbursement events
+
+### Technical Details
+
+- **Files Modified**: 3 (Modal, Service, LoanApplicationsList)
+- **Files Created**: 6 (Migration, 2 E2E suites, 2 RLS test suites, Types guide, Completion summary)
+- **Lines Added**: ~2,000
+- **Commits**: 7 (schema fix, CI, payment methods, disburse button, E2E tests, RLS tests, docs)
+
+---
+
 ## [2.6.0] - 2025-10-14 (In Progress)
 
 ### Session Objective - Mobile App Feature Parity & Enhancement

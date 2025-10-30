@@ -1,8 +1,34 @@
 # NamLend Trust Platform - Executive Summary
 
-**Version:** 2.6.0 (Production Ready) | **Date:** October 14, 2025 | **Status:** ✅ MOBILE FEATURE PARITY COMPLETE
+**Version:** 2.7.1 (Production Ready) | **Date:** October 31, 2025 | **Status:** ✅ BACKOFFICE DISBURSEMENT COMPLETE
 
-### Release Summary (v2.6.0) — October 14, 2025
+### Release Summary (v2.7.1) — October 31, 2025
+
+**Objective:** Implement backoffice disbursement functionality with payment method selection, comprehensive testing infrastructure, and schema alignment.
+
+**Status:** ✅ All critical tasks completed. v2.7.1 is production ready.
+
+**Key Deliverables:**
+- ✅ **Disbursement UI:** Payment method selection (Bank Transfer, Mobile Money, Cash, Debit Order) with visual icons
+- ✅ **Disburse Button:** Integrated into Loan Management Dashboard for approved loans
+- ✅ **Database RPC:** Enhanced `complete_disbursement` with payment method validation and audit trail
+- ✅ **E2E Tests:** 44 test cases covering API, UI, RLS, and storage (disbursement + documents)
+- ✅ **Schema Alignment:** Mobile app fixed, CI/CD workflows expanded (web + mobile)
+- ✅ **Payment Consistency:** Unified payment methods across platform (backoffice ↔ client-side)
+- ✅ **Security:** Role-based access (admin/loan_officer only), RLS enforcement, audit logging
+- ✅ **Documentation:** Implementation progress, completion summary, types guide, ADRs
+
+**Test Coverage:**
+- API Tests: 21 test cases (disbursement + RLS)
+- UI Tests: 11 test cases (complete flows)
+- Storage Tests: 12 test cases (documents RLS)
+- **Total:** 44 comprehensive test cases
+
+**Next Steps:** Apply migration to production, run E2E tests on staging, deploy frontend, monitor audit logs.
+
+---
+
+### Previous Release (v2.6.0) — October 14, 2025
 
 **Objective:** Deliver full mobile feature parity with the web client while maintaining RLS security, NAD currency, and 32% APR compliance.
 

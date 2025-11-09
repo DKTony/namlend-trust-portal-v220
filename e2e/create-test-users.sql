@@ -18,10 +18,10 @@
 -- Create test users one by one
 DO $$
 DECLARE
-  v_client1_id UUID := 'c1000000-0000-0000-0000-000000000001'::uuid;
-  v_client2_id UUID := 'c2000000-0000-0000-0000-000000000002'::uuid;
-  v_admin_id UUID := 'ad000000-0000-0000-0000-000000000003'::uuid;
-  v_loan_officer_id UUID := 'lo000000-0000-0000-0000-000000000004'::uuid;
+  v_client1_id UUID := '11111111-0000-0000-0000-000000000001'::uuid;
+  v_client2_id UUID := '22222222-0000-0000-0000-000000000002'::uuid;
+  v_admin_id UUID := '33333333-0000-0000-0000-000000000003'::uuid;
+  v_loan_officer_id UUID := '44444444-0000-0000-0000-000000000004'::uuid;
 BEGIN
   -- Client 1
   BEGIN

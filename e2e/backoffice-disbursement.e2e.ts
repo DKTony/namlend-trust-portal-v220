@@ -5,8 +5,8 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
-const ADMIN_EMAIL = 'admin@namlend.test';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
+const ADMIN_EMAIL = 'admin@test.namlend.com';
 const ADMIN_PASSWORD = 'test123';
 
 test.describe('Backoffice Disbursement UI Flow', () => {

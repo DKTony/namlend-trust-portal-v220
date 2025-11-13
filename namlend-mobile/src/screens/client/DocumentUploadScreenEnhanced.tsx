@@ -18,18 +18,9 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-  Image,
   ActivityIndicator,
 } from 'react-native';
-import {
-  Camera,
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  X,
-  RefreshCw,
-} from 'lucide-react-native';
+import { FileText, CheckCircle, AlertCircle, X, RefreshCw } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabaseClient';
 import { enqueue } from '../../utils/offlineQueue';
@@ -473,7 +464,7 @@ export default function DocumentUploadScreenEnhanced() {
                 size="medium"
                 loading={progress?.status === 'uploading'}
                 disabled={progress?.status === 'uploading'}
-                style={{ flex: 1, borderRadius: tokens.radius.sm }}
+                style={{ flex: 1 }}
                 textStyle={{ fontWeight: '600' }}
               />
 

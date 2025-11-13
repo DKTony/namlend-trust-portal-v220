@@ -10,11 +10,11 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 // Test users (these should exist in your test database)
-const ADMIN_EMAIL = 'admin@namlend.test';
+const ADMIN_EMAIL = 'admin@test.namlend.com';
 const ADMIN_PASSWORD = 'test123';
-const LOAN_OFFICER_EMAIL = 'officer@namlend.test';
+const LOAN_OFFICER_EMAIL = 'loan_officer@test.namlend.com';
 const LOAN_OFFICER_PASSWORD = 'test123';
-const CLIENT_EMAIL = 'client@namlend.test';
+const CLIENT_EMAIL = 'client1@test.namlend.com';
 const CLIENT_PASSWORD = 'test123';
 
 test.describe('Disbursement API Tests', () => {

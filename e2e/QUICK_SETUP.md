@@ -2,6 +2,8 @@
 
 ## Step 2: Create Test Users in Supabase
 
+**IMPORTANT:** Complete this step first before Step 3!
+
 ### Option A: Using Supabase SQL Editor (Recommended)
 
 1. **Open Supabase Dashboard**
@@ -101,9 +103,47 @@ ORDER BY u.email;
 | client2@test.namlend.com | client | ✓ Has Profile |
 | loan_officer@test.namlend.com | loan_officer | ✓ Has Profile |
 
-## Step 3: Run E2E Tests
+## Step 3: Create Test Data (Loans & Applications)
 
-Once users are created, the E2E tests should pass:
+**Run this AFTER Step 2 is complete!**
+
+### Using Supabase SQL Editor
+
+1. **Open SQL Editor** (same as Step 2)
+2. **Open the file:** `e2e/create-test-data.sql`
+3. **Copy all contents**
+4. **Paste into SQL Editor**
+5. **Click "Run"**
+
+### What Gets Created:
+
+- **3 Loan Applications** (pending, approved, under review)
+- **5 Loans:**
+  - 3 approved (ready for disbursement testing)
+  - 1 disbursed (for testing already disbursed loans)
+  - 1 pending (not yet approved)
+- **1 Disbursement** (for the disbursed loan)
+- **36 Repayment Schedules** (across all loans)
+- **5 Audit Log Entries** (loan approvals and disbursement)
+
+### Verification:
+
+After running, you should see:
+```
+✓ Created 3 loan applications
+✓ Created 5 loans (3 approved, 1 disbursed, 1 pending)
+✓ Created 1 disbursement record
+✓ Created repayment schedules (36 total repayments)
+✓ Created 5 audit log entries
+```
+
+Plus verification tables showing all created data.
+
+---
+
+## Step 4: Run E2E Tests
+
+Once users AND test data are created, the E2E tests should pass:
 
 ### Locally
 ```bash

@@ -99,8 +99,9 @@ export const test = base.extend<TestFixtures>({
   /**
    * Pre-authenticated client1 (regular client user)
    */
-  client1Supabase: async ({}, use) => {
-    const client = createIsolatedClient('client1');
+  client1Supabase: async ({}, use, testInfo) => {
+    const storageKey = `client1-${testInfo.testId}-${Date.now()}`;
+    const client = createIsolatedClient(storageKey);
     await authenticateClient(client, TEST_USERS.client1.email, TEST_USERS.client1.password);
     await use(client);
     await client.auth.signOut();
@@ -109,8 +110,9 @@ export const test = base.extend<TestFixtures>({
   /**
    * Pre-authenticated client2 (regular client user)
    */
-  client2Supabase: async ({}, use) => {
-    const client = createIsolatedClient('client2');
+  client2Supabase: async ({}, use, testInfo) => {
+    const storageKey = `client2-${testInfo.testId}-${Date.now()}`;
+    const client = createIsolatedClient(storageKey);
     await authenticateClient(client, TEST_USERS.client2.email, TEST_USERS.client2.password);
     await use(client);
     await client.auth.signOut();
@@ -119,8 +121,9 @@ export const test = base.extend<TestFixtures>({
   /**
    * Pre-authenticated admin user
    */
-  adminSupabase: async ({}, use) => {
-    const client = createIsolatedClient('admin');
+  adminSupabase: async ({}, use, testInfo) => {
+    const storageKey = `admin-${testInfo.testId}-${Date.now()}`;
+    const client = createIsolatedClient(storageKey);
     await authenticateClient(client, TEST_USERS.admin.email, TEST_USERS.admin.password);
     await use(client);
     await client.auth.signOut();
@@ -129,8 +132,9 @@ export const test = base.extend<TestFixtures>({
   /**
    * Pre-authenticated loan officer user
    */
-  loanOfficerSupabase: async ({}, use) => {
-    const client = createIsolatedClient('loan-officer');
+  loanOfficerSupabase: async ({}, use, testInfo) => {
+    const storageKey = `loan-officer-${testInfo.testId}-${Date.now()}`;
+    const client = createIsolatedClient(storageKey);
     await authenticateClient(client, TEST_USERS.loanOfficer.email, TEST_USERS.loanOfficer.password);
     await use(client);
     await client.auth.signOut();

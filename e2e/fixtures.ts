@@ -26,7 +26,7 @@ export const TEST_USERS = {
   admin: {
     email: 'admin@test.namlend.com',
     password: 'test123',
-    id: '33333333-0000-0000-0000-000000000003',
+    id: 'fbf720fd-7de2-4142-974f-6d6809f4f8c6',
   },
   loanOfficer: {
     email: 'loan_officer@test.namlend.com',

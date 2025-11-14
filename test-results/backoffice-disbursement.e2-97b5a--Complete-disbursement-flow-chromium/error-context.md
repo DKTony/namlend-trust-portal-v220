@@ -84,14 +84,14 @@
                   - heading "Approved This Month" [level=3] [ref=e90]
                   - img [ref=e92]
                 - generic [ref=e95]:
-                  - generic [ref=e96]: "53"
+                  - generic [ref=e96]: "56"
                   - paragraph [ref=e97]: Ready for disbursement
               - generic [ref=e98]:
                 - generic [ref=e99]:
                   - heading "Total Portfolio Value" [level=3] [ref=e100]
                   - img [ref=e102]
                 - generic [ref=e104]:
-                  - generic [ref=e105]: N$623,565.00
+                  - generic [ref=e105]: N$908,565.00
                   - paragraph [ref=e106]: Active loans
               - generic [ref=e107]:
                 - generic [ref=e108]:
@@ -170,7 +170,7 @@
                           - generic [ref=e198]: Not specified
                         - generic [ref=e199]:
                           - generic [ref=e200]: "Credit Score:"
-                          - generic [ref=e201]: "523"
+                          - generic [ref=e201]: "686"
                     - generic [ref=e202]:
                       - button "Review" [ref=e203] [cursor=pointer]:
                         - img
@@ -208,7 +208,7 @@
                           - generic [ref=e240]: Not specified
                         - generic [ref=e241]:
                           - generic [ref=e242]: "Credit Score:"
-                          - generic [ref=e243]: "613"
+                          - generic [ref=e243]: "754"
                     - generic [ref=e244]:
                       - button "Review" [ref=e245] [cursor=pointer]:
                         - img
@@ -225,7 +225,7 @@
                           - generic [ref=e254]:
                             - img [ref=e255]
                             - generic [ref=e258]: approved
-                          - generic [ref=e259]: Medium Risk
+                          - generic [ref=e259]: Low Risk
                         - generic [ref=e260]:
                           - generic [ref=e261]: N$5,000.00
                           - generic [ref=e262]: Requested Amount
@@ -246,7 +246,7 @@
                           - generic [ref=e282]: Not specified
                         - generic [ref=e283]:
                           - generic [ref=e284]: "Credit Score:"
-                          - generic [ref=e285]: "581"
+                          - generic [ref=e285]: "744"
                     - generic [ref=e286]:
                       - button "Review" [ref=e287] [cursor=pointer]:
                         - img
@@ -263,547 +263,547 @@
                           - generic [ref=e296]:
                             - img [ref=e297]
                             - generic [ref=e300]: approved
-                          - generic [ref=e301]: Low Risk
-                        - generic [ref=e302]:
-                          - generic [ref=e303]: N$2,000.00
-                          - generic [ref=e304]: Requested Amount
-                      - generic [ref=e305]:
-                        - generic [ref=e306]:
-                          - img [ref=e307]
-                          - generic [ref=e310]: user-11111111@namlend.com
-                        - generic [ref=e311]:
-                          - img [ref=e312]
-                          - generic [ref=e314]: Applied 14 Nov 2025
-                        - generic [ref=e315]:
-                          - img [ref=e316]
-                          - generic [ref=e319]: Test unauthorized disbursement
-                      - generic [ref=e321]:
+                          - generic [ref=e301]:
+                            - img [ref=e302]
+                            - text: High Risk
+                        - generic [ref=e304]:
+                          - generic [ref=e305]: N$2,000.00
+                          - generic [ref=e306]: Requested Amount
+                      - generic [ref=e307]:
+                        - generic [ref=e308]:
+                          - img [ref=e309]
+                          - generic [ref=e312]: user-11111111@namlend.com
+                        - generic [ref=e313]:
+                          - img [ref=e314]
+                          - generic [ref=e316]: Applied 14 Nov 2025
+                        - generic [ref=e317]:
+                          - img [ref=e318]
+                          - generic [ref=e321]: Test unauthorized disbursement
+                      - generic [ref=e323]:
                         - text: "0"
-                        - generic [ref=e322]:
-                          - generic [ref=e323]: "Employment:"
-                          - generic [ref=e324]: Not specified
-                        - generic [ref=e325]:
-                          - generic [ref=e326]: "Credit Score:"
-                          - generic [ref=e327]: "529"
-                    - generic [ref=e328]:
-                      - button "Review" [ref=e329] [cursor=pointer]:
+                        - generic [ref=e324]:
+                          - generic [ref=e325]: "Employment:"
+                          - generic [ref=e326]: Not specified
+                        - generic [ref=e327]:
+                          - generic [ref=e328]: "Credit Score:"
+                          - generic [ref=e329]: "682"
+                    - generic [ref=e330]:
+                      - button "Review" [ref=e331] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e330] [cursor=pointer]:
+                      - button "Disburse" [ref=e332] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e333]:
-                    - checkbox [ref=e334] [cursor=pointer]
-                    - generic [ref=e335]:
-                      - generic [ref=e336]:
-                        - generic [ref=e337]:
+                  - generic [ref=e335]:
+                    - checkbox [ref=e336] [cursor=pointer]
+                    - generic [ref=e337]:
+                      - generic [ref=e338]:
+                        - generic [ref=e339]:
                           - heading [level=3]
-                          - generic [ref=e338]:
-                            - img [ref=e339]
-                            - generic [ref=e342]: approved
-                          - generic [ref=e343]: Medium Risk
-                        - generic [ref=e344]:
-                          - generic [ref=e345]: N$5,000.00
-                          - generic [ref=e346]: Requested Amount
-                      - generic [ref=e347]:
+                          - generic [ref=e340]:
+                            - img [ref=e341]
+                            - generic [ref=e344]: approved
+                          - generic [ref=e345]:
+                            - img [ref=e346]
+                            - text: High Risk
                         - generic [ref=e348]:
-                          - img [ref=e349]
-                          - generic [ref=e352]: user-11111111@namlend.com
-                        - generic [ref=e353]:
-                          - img [ref=e354]
-                          - generic [ref=e356]: Applied 14 Nov 2025
+                          - generic [ref=e349]: N$5,000.00
+                          - generic [ref=e350]: Requested Amount
+                      - generic [ref=e351]:
+                        - generic [ref=e352]:
+                          - img [ref=e353]
+                          - generic [ref=e356]: user-11111111@namlend.com
                         - generic [ref=e357]:
                           - img [ref=e358]
-                          - generic [ref=e361]: Test disbursement
-                      - generic [ref=e363]:
+                          - generic [ref=e360]: Applied 14 Nov 2025
+                        - generic [ref=e361]:
+                          - img [ref=e362]
+                          - generic [ref=e365]: Test disbursement
+                      - generic [ref=e367]:
                         - text: "0"
-                        - generic [ref=e364]:
-                          - generic [ref=e365]: "Employment:"
-                          - generic [ref=e366]: Not specified
-                        - generic [ref=e367]:
-                          - generic [ref=e368]: "Credit Score:"
-                          - generic [ref=e369]: "631"
-                    - generic [ref=e370]:
-                      - button "Review" [ref=e371] [cursor=pointer]:
+                        - generic [ref=e368]:
+                          - generic [ref=e369]: "Employment:"
+                          - generic [ref=e370]: Not specified
+                        - generic [ref=e371]:
+                          - generic [ref=e372]: "Credit Score:"
+                          - generic [ref=e373]: "714"
+                    - generic [ref=e374]:
+                      - button "Review" [ref=e375] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e372] [cursor=pointer]:
+                      - button "Disburse" [ref=e376] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e375]:
-                    - checkbox [ref=e376] [cursor=pointer]
-                    - generic [ref=e377]:
-                      - generic [ref=e378]:
-                        - generic [ref=e379]:
+                  - generic [ref=e379]:
+                    - checkbox [ref=e380] [cursor=pointer]
+                    - generic [ref=e381]:
+                      - generic [ref=e382]:
+                        - generic [ref=e383]:
                           - heading [level=3]
-                          - generic [ref=e380]:
-                            - img [ref=e381]
-                            - generic [ref=e384]: approved
-                          - generic [ref=e385]: Low Risk
-                        - generic [ref=e386]:
-                          - generic [ref=e387]: N$5,000.00
-                          - generic [ref=e388]: Requested Amount
-                      - generic [ref=e389]:
+                          - generic [ref=e384]:
+                            - img [ref=e385]
+                            - generic [ref=e388]: approved
+                          - generic [ref=e389]: Low Risk
                         - generic [ref=e390]:
-                          - img [ref=e391]
-                          - generic [ref=e394]: user-11111111@namlend.com
-                        - generic [ref=e395]:
-                          - img [ref=e396]
-                          - generic [ref=e398]: Applied 14 Nov 2025
+                          - generic [ref=e391]: N$5,000.00
+                          - generic [ref=e392]: Requested Amount
+                      - generic [ref=e393]:
+                        - generic [ref=e394]:
+                          - img [ref=e395]
+                          - generic [ref=e398]: user-11111111@namlend.com
                         - generic [ref=e399]:
                           - img [ref=e400]
-                          - generic [ref=e403]: Test disbursement
-                      - generic [ref=e405]:
+                          - generic [ref=e402]: Applied 14 Nov 2025
+                        - generic [ref=e403]:
+                          - img [ref=e404]
+                          - generic [ref=e407]: Test disbursement
+                      - generic [ref=e409]:
                         - text: "0"
-                        - generic [ref=e406]:
-                          - generic [ref=e407]: "Employment:"
-                          - generic [ref=e408]: Not specified
-                        - generic [ref=e409]:
-                          - generic [ref=e410]: "Credit Score:"
-                          - generic [ref=e411]: "788"
-                    - generic [ref=e412]:
-                      - button "Review" [ref=e413] [cursor=pointer]:
+                        - generic [ref=e410]:
+                          - generic [ref=e411]: "Employment:"
+                          - generic [ref=e412]: Not specified
+                        - generic [ref=e413]:
+                          - generic [ref=e414]: "Credit Score:"
+                          - generic [ref=e415]: "758"
+                    - generic [ref=e416]:
+                      - button "Review" [ref=e417] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e414] [cursor=pointer]:
+                      - button "Disburse" [ref=e418] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e417]:
-                    - checkbox [ref=e418] [cursor=pointer]
-                    - generic [ref=e419]:
-                      - generic [ref=e420]:
-                        - generic [ref=e421]:
+                  - generic [ref=e421]:
+                    - checkbox [ref=e422] [cursor=pointer]
+                    - generic [ref=e423]:
+                      - generic [ref=e424]:
+                        - generic [ref=e425]:
                           - heading [level=3]
-                          - generic [ref=e422]:
-                            - img [ref=e423]
-                            - generic [ref=e426]: approved
-                          - generic [ref=e427]: Low Risk
-                        - generic [ref=e428]:
-                          - generic [ref=e429]: N$1,000.00
-                          - generic [ref=e430]: Requested Amount
-                      - generic [ref=e431]:
-                        - generic [ref=e432]:
-                          - img [ref=e433]
-                          - generic [ref=e436]: user-11111111@namlend.com
-                        - generic [ref=e437]:
-                          - img [ref=e438]
-                          - generic [ref=e440]: Applied 14 Nov 2025
-                        - generic [ref=e441]:
-                          - img [ref=e442]
-                          - generic [ref=e445]: Test invalid payment method
-                      - generic [ref=e447]:
-                        - text: "0"
-                        - generic [ref=e448]:
-                          - generic [ref=e449]: "Employment:"
-                          - generic [ref=e450]: Not specified
-                        - generic [ref=e451]:
-                          - generic [ref=e452]: "Credit Score:"
-                          - generic [ref=e453]: "564"
-                    - generic [ref=e454]:
-                      - button "Review" [ref=e455] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e456] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e459]:
-                    - checkbox [ref=e460] [cursor=pointer]
-                    - generic [ref=e461]:
-                      - generic [ref=e462]:
-                        - generic [ref=e463]:
-                          - heading [level=3]
-                          - generic [ref=e464]:
-                            - img [ref=e465]
-                            - generic [ref=e468]: approved
-                          - generic [ref=e469]: Low Risk
-                        - generic [ref=e470]:
-                          - generic [ref=e471]: N$2,000.00
-                          - generic [ref=e472]: Requested Amount
-                      - generic [ref=e473]:
-                        - generic [ref=e474]:
-                          - img [ref=e475]
-                          - generic [ref=e478]: user-11111111@namlend.com
-                        - generic [ref=e479]:
-                          - img [ref=e480]
-                          - generic [ref=e482]: Applied 14 Nov 2025
-                        - generic [ref=e483]:
-                          - img [ref=e484]
-                          - generic [ref=e487]: Test unauthorized disbursement
-                      - generic [ref=e489]:
-                        - text: "0"
-                        - generic [ref=e490]:
-                          - generic [ref=e491]: "Employment:"
-                          - generic [ref=e492]: Not specified
-                        - generic [ref=e493]:
-                          - generic [ref=e494]: "Credit Score:"
-                          - generic [ref=e495]: "672"
-                    - generic [ref=e496]:
-                      - button "Review" [ref=e497] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e498] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e501]:
-                    - checkbox [ref=e502] [cursor=pointer]
-                    - generic [ref=e503]:
-                      - generic [ref=e504]:
-                        - generic [ref=e505]:
-                          - heading [level=3]
-                          - generic [ref=e506]:
-                            - img [ref=e507]
-                            - generic [ref=e510]: approved
-                          - generic [ref=e511]: Low Risk
-                        - generic [ref=e512]:
-                          - generic [ref=e513]: N$5,000.00
-                          - generic [ref=e514]: Requested Amount
-                      - generic [ref=e515]:
-                        - generic [ref=e516]:
-                          - img [ref=e517]
-                          - generic [ref=e520]: user-11111111@namlend.com
-                        - generic [ref=e521]:
-                          - img [ref=e522]
-                          - generic [ref=e524]: Applied 14 Nov 2025
-                        - generic [ref=e525]:
-                          - img [ref=e526]
-                          - generic [ref=e529]: Test disbursement
-                      - generic [ref=e531]:
-                        - text: "0"
-                        - generic [ref=e532]:
-                          - generic [ref=e533]: "Employment:"
-                          - generic [ref=e534]: Not specified
-                        - generic [ref=e535]:
-                          - generic [ref=e536]: "Credit Score:"
-                          - generic [ref=e537]: "509"
-                    - generic [ref=e538]:
-                      - button "Review" [ref=e539] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e540] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e543]:
-                    - checkbox [ref=e544] [cursor=pointer]
-                    - generic [ref=e545]:
-                      - generic [ref=e546]:
-                        - generic [ref=e547]:
-                          - heading [level=3]
-                          - generic [ref=e548]:
-                            - img [ref=e549]
-                            - generic [ref=e552]: approved
-                          - generic [ref=e553]: Medium Risk
-                        - generic [ref=e554]:
-                          - generic [ref=e555]: N$5,000.00
-                          - generic [ref=e556]: Requested Amount
-                      - generic [ref=e557]:
-                        - generic [ref=e558]:
-                          - img [ref=e559]
-                          - generic [ref=e562]: user-11111111@namlend.com
-                        - generic [ref=e563]:
-                          - img [ref=e564]
-                          - generic [ref=e566]: Applied 14 Nov 2025
-                        - generic [ref=e567]:
-                          - img [ref=e568]
-                          - generic [ref=e571]: Test disbursement
-                      - generic [ref=e573]:
-                        - text: "0"
-                        - generic [ref=e574]:
-                          - generic [ref=e575]: "Employment:"
-                          - generic [ref=e576]: Not specified
-                        - generic [ref=e577]:
-                          - generic [ref=e578]: "Credit Score:"
-                          - generic [ref=e579]: "586"
-                    - generic [ref=e580]:
-                      - button "Review" [ref=e581] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e582] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e585]:
-                    - checkbox [ref=e586] [cursor=pointer]
-                    - generic [ref=e587]:
-                      - generic [ref=e588]:
-                        - generic [ref=e589]:
-                          - heading [level=3]
-                          - generic [ref=e590]:
-                            - img [ref=e591]
-                            - generic [ref=e594]: approved
-                          - generic [ref=e595]:
-                            - img [ref=e596]
+                          - generic [ref=e426]:
+                            - img [ref=e427]
+                            - generic [ref=e430]: approved
+                          - generic [ref=e431]:
+                            - img [ref=e432]
                             - text: High Risk
-                        - generic [ref=e598]:
-                          - generic [ref=e599]: N$5,000.00
-                          - generic [ref=e600]: Requested Amount
-                      - generic [ref=e601]:
-                        - generic [ref=e602]:
-                          - img [ref=e603]
-                          - generic [ref=e606]: user-11111111@namlend.com
-                        - generic [ref=e607]:
-                          - img [ref=e608]
-                          - generic [ref=e610]: Applied 14 Nov 2025
-                        - generic [ref=e611]:
-                          - img [ref=e612]
-                          - generic [ref=e615]: Test disbursement
-                      - generic [ref=e617]:
+                        - generic [ref=e434]:
+                          - generic [ref=e435]: N$1,000.00
+                          - generic [ref=e436]: Requested Amount
+                      - generic [ref=e437]:
+                        - generic [ref=e438]:
+                          - img [ref=e439]
+                          - generic [ref=e442]: user-11111111@namlend.com
+                        - generic [ref=e443]:
+                          - img [ref=e444]
+                          - generic [ref=e446]: Applied 14 Nov 2025
+                        - generic [ref=e447]:
+                          - img [ref=e448]
+                          - generic [ref=e451]: Test invalid payment method
+                      - generic [ref=e453]:
                         - text: "0"
-                        - generic [ref=e618]:
-                          - generic [ref=e619]: "Employment:"
-                          - generic [ref=e620]: Not specified
-                        - generic [ref=e621]:
-                          - generic [ref=e622]: "Credit Score:"
-                          - generic [ref=e623]: "782"
-                    - generic [ref=e624]:
-                      - button "Review" [ref=e625] [cursor=pointer]:
+                        - generic [ref=e454]:
+                          - generic [ref=e455]: "Employment:"
+                          - generic [ref=e456]: Not specified
+                        - generic [ref=e457]:
+                          - generic [ref=e458]: "Credit Score:"
+                          - generic [ref=e459]: "614"
+                    - generic [ref=e460]:
+                      - button "Review" [ref=e461] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e626] [cursor=pointer]:
+                      - button "Disburse" [ref=e462] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e629]:
-                    - checkbox [ref=e630] [cursor=pointer]
-                    - generic [ref=e631]:
-                      - generic [ref=e632]:
-                        - generic [ref=e633]:
+                  - generic [ref=e465]:
+                    - checkbox [ref=e466] [cursor=pointer]
+                    - generic [ref=e467]:
+                      - generic [ref=e468]:
+                        - generic [ref=e469]:
                           - heading [level=3]
-                          - generic [ref=e634]:
-                            - img [ref=e635]
-                            - generic [ref=e638]: approved
-                          - generic [ref=e639]:
-                            - img [ref=e640]
+                          - generic [ref=e470]:
+                            - img [ref=e471]
+                            - generic [ref=e474]: approved
+                          - generic [ref=e475]: Medium Risk
+                        - generic [ref=e476]:
+                          - generic [ref=e477]: N$2,000.00
+                          - generic [ref=e478]: Requested Amount
+                      - generic [ref=e479]:
+                        - generic [ref=e480]:
+                          - img [ref=e481]
+                          - generic [ref=e484]: user-11111111@namlend.com
+                        - generic [ref=e485]:
+                          - img [ref=e486]
+                          - generic [ref=e488]: Applied 14 Nov 2025
+                        - generic [ref=e489]:
+                          - img [ref=e490]
+                          - generic [ref=e493]: Test unauthorized disbursement
+                      - generic [ref=e495]:
+                        - text: "0"
+                        - generic [ref=e496]:
+                          - generic [ref=e497]: "Employment:"
+                          - generic [ref=e498]: Not specified
+                        - generic [ref=e499]:
+                          - generic [ref=e500]: "Credit Score:"
+                          - generic [ref=e501]: "720"
+                    - generic [ref=e502]:
+                      - button "Review" [ref=e503] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e504] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e507]:
+                    - checkbox [ref=e508] [cursor=pointer]
+                    - generic [ref=e509]:
+                      - generic [ref=e510]:
+                        - generic [ref=e511]:
+                          - heading [level=3]
+                          - generic [ref=e512]:
+                            - img [ref=e513]
+                            - generic [ref=e516]: approved
+                          - generic [ref=e517]: Low Risk
+                        - generic [ref=e518]:
+                          - generic [ref=e519]: N$5,000.00
+                          - generic [ref=e520]: Requested Amount
+                      - generic [ref=e521]:
+                        - generic [ref=e522]:
+                          - img [ref=e523]
+                          - generic [ref=e526]: user-11111111@namlend.com
+                        - generic [ref=e527]:
+                          - img [ref=e528]
+                          - generic [ref=e530]: Applied 14 Nov 2025
+                        - generic [ref=e531]:
+                          - img [ref=e532]
+                          - generic [ref=e535]: Test disbursement
+                      - generic [ref=e537]:
+                        - text: "0"
+                        - generic [ref=e538]:
+                          - generic [ref=e539]: "Employment:"
+                          - generic [ref=e540]: Not specified
+                        - generic [ref=e541]:
+                          - generic [ref=e542]: "Credit Score:"
+                          - generic [ref=e543]: "792"
+                    - generic [ref=e544]:
+                      - button "Review" [ref=e545] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e546] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e549]:
+                    - checkbox [ref=e550] [cursor=pointer]
+                    - generic [ref=e551]:
+                      - generic [ref=e552]:
+                        - generic [ref=e553]:
+                          - heading [level=3]
+                          - generic [ref=e554]:
+                            - img [ref=e555]
+                            - generic [ref=e558]: approved
+                          - generic [ref=e559]:
+                            - img [ref=e560]
                             - text: High Risk
-                        - generic [ref=e642]:
-                          - generic [ref=e643]: N$5,000.00
-                          - generic [ref=e644]: Requested Amount
-                      - generic [ref=e645]:
+                        - generic [ref=e562]:
+                          - generic [ref=e563]: N$5,000.00
+                          - generic [ref=e564]: Requested Amount
+                      - generic [ref=e565]:
+                        - generic [ref=e566]:
+                          - img [ref=e567]
+                          - generic [ref=e570]: user-11111111@namlend.com
+                        - generic [ref=e571]:
+                          - img [ref=e572]
+                          - generic [ref=e574]: Applied 14 Nov 2025
+                        - generic [ref=e575]:
+                          - img [ref=e576]
+                          - generic [ref=e579]: Test disbursement
+                      - generic [ref=e581]:
+                        - text: "0"
+                        - generic [ref=e582]:
+                          - generic [ref=e583]: "Employment:"
+                          - generic [ref=e584]: Not specified
+                        - generic [ref=e585]:
+                          - generic [ref=e586]: "Credit Score:"
+                          - generic [ref=e587]: "698"
+                    - generic [ref=e588]:
+                      - button "Review" [ref=e589] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e590] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e593]:
+                    - checkbox [ref=e594] [cursor=pointer]
+                    - generic [ref=e595]:
+                      - generic [ref=e596]:
+                        - generic [ref=e597]:
+                          - heading [level=3]
+                          - generic [ref=e598]:
+                            - img [ref=e599]
+                            - generic [ref=e602]: approved
+                          - generic [ref=e603]: Low Risk
+                        - generic [ref=e604]:
+                          - generic [ref=e605]: N$5,000.00
+                          - generic [ref=e606]: Requested Amount
+                      - generic [ref=e607]:
+                        - generic [ref=e608]:
+                          - img [ref=e609]
+                          - generic [ref=e612]: user-11111111@namlend.com
+                        - generic [ref=e613]:
+                          - img [ref=e614]
+                          - generic [ref=e616]: Applied 14 Nov 2025
+                        - generic [ref=e617]:
+                          - img [ref=e618]
+                          - generic [ref=e621]: Test disbursement
+                      - generic [ref=e623]:
+                        - text: "0"
+                        - generic [ref=e624]:
+                          - generic [ref=e625]: "Employment:"
+                          - generic [ref=e626]: Not specified
+                        - generic [ref=e627]:
+                          - generic [ref=e628]: "Credit Score:"
+                          - generic [ref=e629]: "643"
+                    - generic [ref=e630]:
+                      - button "Review" [ref=e631] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e632] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e635]:
+                    - checkbox [ref=e636] [cursor=pointer]
+                    - generic [ref=e637]:
+                      - generic [ref=e638]:
+                        - generic [ref=e639]:
+                          - heading [level=3]
+                          - generic [ref=e640]:
+                            - img [ref=e641]
+                            - generic [ref=e644]: approved
+                          - generic [ref=e645]: Low Risk
                         - generic [ref=e646]:
-                          - img [ref=e647]
-                          - generic [ref=e650]: user-11111111@namlend.com
-                        - generic [ref=e651]:
-                          - img [ref=e652]
-                          - generic [ref=e654]: Applied 14 Nov 2025
+                          - generic [ref=e647]: N$5,000.00
+                          - generic [ref=e648]: Requested Amount
+                      - generic [ref=e649]:
+                        - generic [ref=e650]:
+                          - img [ref=e651]
+                          - generic [ref=e654]: user-11111111@namlend.com
                         - generic [ref=e655]:
                           - img [ref=e656]
-                          - generic [ref=e659]: Test disbursement
-                      - generic [ref=e661]:
+                          - generic [ref=e658]: Applied 14 Nov 2025
+                        - generic [ref=e659]:
+                          - img [ref=e660]
+                          - generic [ref=e663]: Test disbursement
+                      - generic [ref=e665]:
                         - text: "0"
-                        - generic [ref=e662]:
-                          - generic [ref=e663]: "Employment:"
-                          - generic [ref=e664]: Not specified
-                        - generic [ref=e665]:
-                          - generic [ref=e666]: "Credit Score:"
-                          - generic [ref=e667]: "718"
-                    - generic [ref=e668]:
-                      - button "Review" [ref=e669] [cursor=pointer]:
+                        - generic [ref=e666]:
+                          - generic [ref=e667]: "Employment:"
+                          - generic [ref=e668]: Not specified
+                        - generic [ref=e669]:
+                          - generic [ref=e670]: "Credit Score:"
+                          - generic [ref=e671]: "565"
+                    - generic [ref=e672]:
+                      - button "Review" [ref=e673] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e670] [cursor=pointer]:
+                      - button "Disburse" [ref=e674] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e673]:
-                    - checkbox [ref=e674] [cursor=pointer]
-                    - generic [ref=e675]:
-                      - generic [ref=e676]:
-                        - generic [ref=e677]:
+                  - generic [ref=e677]:
+                    - checkbox [ref=e678] [cursor=pointer]
+                    - generic [ref=e679]:
+                      - generic [ref=e680]:
+                        - generic [ref=e681]:
                           - heading [level=3]
-                          - generic [ref=e678]:
-                            - img [ref=e679]
-                            - generic [ref=e682]: approved
-                          - generic [ref=e683]: Medium Risk
-                        - generic [ref=e684]:
-                          - generic [ref=e685]: N$5,000.00
-                          - generic [ref=e686]: Requested Amount
-                      - generic [ref=e687]:
+                          - generic [ref=e682]:
+                            - img [ref=e683]
+                            - generic [ref=e686]: approved
+                          - generic [ref=e687]: Medium Risk
                         - generic [ref=e688]:
-                          - img [ref=e689]
-                          - generic [ref=e692]: user-11111111@namlend.com
-                        - generic [ref=e693]:
-                          - img [ref=e694]
-                          - generic [ref=e696]: Applied 14 Nov 2025
+                          - generic [ref=e689]: N$5,000.00
+                          - generic [ref=e690]: Requested Amount
+                      - generic [ref=e691]:
+                        - generic [ref=e692]:
+                          - img [ref=e693]
+                          - generic [ref=e696]: user-11111111@namlend.com
                         - generic [ref=e697]:
                           - img [ref=e698]
-                          - generic [ref=e701]: Test disbursement
-                      - generic [ref=e703]:
+                          - generic [ref=e700]: Applied 14 Nov 2025
+                        - generic [ref=e701]:
+                          - img [ref=e702]
+                          - generic [ref=e705]: Test disbursement
+                      - generic [ref=e707]:
                         - text: "0"
-                        - generic [ref=e704]:
-                          - generic [ref=e705]: "Employment:"
-                          - generic [ref=e706]: Not specified
-                        - generic [ref=e707]:
-                          - generic [ref=e708]: "Credit Score:"
-                          - generic [ref=e709]: "590"
-                    - generic [ref=e710]:
-                      - button "Review" [ref=e711] [cursor=pointer]:
+                        - generic [ref=e708]:
+                          - generic [ref=e709]: "Employment:"
+                          - generic [ref=e710]: Not specified
+                        - generic [ref=e711]:
+                          - generic [ref=e712]: "Credit Score:"
+                          - generic [ref=e713]: "769"
+                    - generic [ref=e714]:
+                      - button "Review" [ref=e715] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e712] [cursor=pointer]:
+                      - button "Disburse" [ref=e716] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e715]:
-                    - checkbox [ref=e716] [cursor=pointer]
-                    - generic [ref=e717]:
-                      - generic [ref=e718]:
-                        - generic [ref=e719]:
+                  - generic [ref=e719]:
+                    - checkbox [ref=e720] [cursor=pointer]
+                    - generic [ref=e721]:
+                      - generic [ref=e722]:
+                        - generic [ref=e723]:
                           - heading [level=3]
-                          - generic [ref=e720]:
-                            - img [ref=e721]
-                            - generic [ref=e724]: approved
-                          - generic [ref=e725]: Low Risk
-                        - generic [ref=e726]:
-                          - generic [ref=e727]: N$2,000.00
-                          - generic [ref=e728]: Requested Amount
-                      - generic [ref=e729]:
+                          - generic [ref=e724]:
+                            - img [ref=e725]
+                            - generic [ref=e728]: approved
+                          - generic [ref=e729]: Medium Risk
                         - generic [ref=e730]:
-                          - img [ref=e731]
-                          - generic [ref=e734]: user-11111111@namlend.com
-                        - generic [ref=e735]:
-                          - img [ref=e736]
-                          - generic [ref=e738]: Applied 14 Nov 2025
+                          - generic [ref=e731]: N$2,000.00
+                          - generic [ref=e732]: Requested Amount
+                      - generic [ref=e733]:
+                        - generic [ref=e734]:
+                          - img [ref=e735]
+                          - generic [ref=e738]: user-11111111@namlend.com
                         - generic [ref=e739]:
                           - img [ref=e740]
-                          - generic [ref=e743]: Test unauthorized disbursement
-                      - generic [ref=e745]:
+                          - generic [ref=e742]: Applied 14 Nov 2025
+                        - generic [ref=e743]:
+                          - img [ref=e744]
+                          - generic [ref=e747]: Test unauthorized disbursement
+                      - generic [ref=e749]:
                         - text: "0"
-                        - generic [ref=e746]:
-                          - generic [ref=e747]: "Employment:"
-                          - generic [ref=e748]: Not specified
-                        - generic [ref=e749]:
-                          - generic [ref=e750]: "Credit Score:"
-                          - generic [ref=e751]: "695"
-                    - generic [ref=e752]:
-                      - button "Review" [ref=e753] [cursor=pointer]:
+                        - generic [ref=e750]:
+                          - generic [ref=e751]: "Employment:"
+                          - generic [ref=e752]: Not specified
+                        - generic [ref=e753]:
+                          - generic [ref=e754]: "Credit Score:"
+                          - generic [ref=e755]: "739"
+                    - generic [ref=e756]:
+                      - button "Review" [ref=e757] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e754] [cursor=pointer]:
+                      - button "Disburse" [ref=e758] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e757]:
-                    - checkbox [ref=e758] [cursor=pointer]
-                    - generic [ref=e759]:
-                      - generic [ref=e760]:
-                        - generic [ref=e761]:
+                  - generic [ref=e761]:
+                    - checkbox [ref=e762] [cursor=pointer]
+                    - generic [ref=e763]:
+                      - generic [ref=e764]:
+                        - generic [ref=e765]:
                           - heading [level=3]
-                          - generic [ref=e762]:
-                            - img [ref=e763]
-                            - generic [ref=e766]: approved
-                          - generic [ref=e767]: Low Risk
-                        - generic [ref=e768]:
-                          - generic [ref=e769]: N$1,000.00
-                          - generic [ref=e770]: Requested Amount
-                      - generic [ref=e771]:
+                          - generic [ref=e766]:
+                            - img [ref=e767]
+                            - generic [ref=e770]: approved
+                          - generic [ref=e771]: Low Risk
                         - generic [ref=e772]:
-                          - img [ref=e773]
-                          - generic [ref=e776]: user-11111111@namlend.com
-                        - generic [ref=e777]:
-                          - img [ref=e778]
-                          - generic [ref=e780]: Applied 14 Nov 2025
+                          - generic [ref=e773]: N$1,000.00
+                          - generic [ref=e774]: Requested Amount
+                      - generic [ref=e775]:
+                        - generic [ref=e776]:
+                          - img [ref=e777]
+                          - generic [ref=e780]: user-11111111@namlend.com
                         - generic [ref=e781]:
                           - img [ref=e782]
-                          - generic [ref=e785]: Test invalid payment method
-                      - generic [ref=e787]:
+                          - generic [ref=e784]: Applied 14 Nov 2025
+                        - generic [ref=e785]:
+                          - img [ref=e786]
+                          - generic [ref=e789]: Test invalid payment method
+                      - generic [ref=e791]:
                         - text: "0"
-                        - generic [ref=e788]:
-                          - generic [ref=e789]: "Employment:"
-                          - generic [ref=e790]: Not specified
-                        - generic [ref=e791]:
-                          - generic [ref=e792]: "Credit Score:"
-                          - generic [ref=e793]: "614"
-                    - generic [ref=e794]:
-                      - button "Review" [ref=e795] [cursor=pointer]:
+                        - generic [ref=e792]:
+                          - generic [ref=e793]: "Employment:"
+                          - generic [ref=e794]: Not specified
+                        - generic [ref=e795]:
+                          - generic [ref=e796]: "Credit Score:"
+                          - generic [ref=e797]: "530"
+                    - generic [ref=e798]:
+                      - button "Review" [ref=e799] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e796] [cursor=pointer]:
+                      - button "Disburse" [ref=e800] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e799]:
-                    - checkbox [ref=e800] [cursor=pointer]
-                    - generic [ref=e801]:
-                      - generic [ref=e802]:
-                        - generic [ref=e803]:
+                  - generic [ref=e803]:
+                    - checkbox [ref=e804] [cursor=pointer]
+                    - generic [ref=e805]:
+                      - generic [ref=e806]:
+                        - generic [ref=e807]:
                           - heading [level=3]
-                          - generic [ref=e804]:
-                            - img [ref=e805]
-                            - generic [ref=e808]: approved
-                          - generic [ref=e809]:
-                            - img [ref=e810]
-                            - text: High Risk
-                        - generic [ref=e812]:
-                          - generic [ref=e813]: N$4,000.00
-                          - generic [ref=e814]: Requested Amount
-                      - generic [ref=e815]:
-                        - generic [ref=e816]:
-                          - img [ref=e817]
-                          - generic [ref=e820]: user-11111111@namlend.com
-                        - generic [ref=e821]:
-                          - img [ref=e822]
-                          - generic [ref=e824]: Applied 14 Nov 2025
-                        - generic [ref=e825]:
-                          - img [ref=e826]
-                          - generic [ref=e829]: Test audit trail
-                      - generic [ref=e831]:
+                          - generic [ref=e808]:
+                            - img [ref=e809]
+                            - generic [ref=e812]: approved
+                          - generic [ref=e813]: Low Risk
+                        - generic [ref=e814]:
+                          - generic [ref=e815]: N$4,000.00
+                          - generic [ref=e816]: Requested Amount
+                      - generic [ref=e817]:
+                        - generic [ref=e818]:
+                          - img [ref=e819]
+                          - generic [ref=e822]: user-11111111@namlend.com
+                        - generic [ref=e823]:
+                          - img [ref=e824]
+                          - generic [ref=e826]: Applied 14 Nov 2025
+                        - generic [ref=e827]:
+                          - img [ref=e828]
+                          - generic [ref=e831]: Test audit trail
+                      - generic [ref=e833]:
                         - text: "0"
-                        - generic [ref=e832]:
-                          - generic [ref=e833]: "Employment:"
-                          - generic [ref=e834]: Not specified
-                        - generic [ref=e835]:
-                          - generic [ref=e836]: "Credit Score:"
-                          - generic [ref=e837]: "714"
-                    - generic [ref=e838]:
-                      - button "Review" [ref=e839] [cursor=pointer]:
+                        - generic [ref=e834]:
+                          - generic [ref=e835]: "Employment:"
+                          - generic [ref=e836]: Not specified
+                        - generic [ref=e837]:
+                          - generic [ref=e838]: "Credit Score:"
+                          - generic [ref=e839]: "627"
+                    - generic [ref=e840]:
+                      - button "Review" [ref=e841] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e840] [cursor=pointer]:
+                      - button "Disburse" [ref=e842] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e843]:
-                    - checkbox [ref=e844] [cursor=pointer]
-                    - generic [ref=e845]:
-                      - generic [ref=e846]:
-                        - generic [ref=e847]:
+                  - generic [ref=e845]:
+                    - checkbox [ref=e846] [cursor=pointer]
+                    - generic [ref=e847]:
+                      - generic [ref=e848]:
+                        - generic [ref=e849]:
                           - heading [level=3]
-                          - generic [ref=e848]:
-                            - img [ref=e849]
-                            - generic [ref=e852]: approved
-                          - generic [ref=e853]: Low Risk
-                        - generic [ref=e854]:
-                          - generic [ref=e855]: N$5,000.00
-                          - generic [ref=e856]: Requested Amount
-                      - generic [ref=e857]:
-                        - generic [ref=e858]:
-                          - img [ref=e859]
-                          - generic [ref=e862]: user-11111111@namlend.com
-                        - generic [ref=e863]:
-                          - img [ref=e864]
-                          - generic [ref=e866]: Applied 14 Nov 2025
-                        - generic [ref=e867]:
-                          - img [ref=e868]
-                          - generic [ref=e871]: Test disbursement
-                      - generic [ref=e873]:
+                          - generic [ref=e850]:
+                            - img [ref=e851]
+                            - generic [ref=e854]: approved
+                          - generic [ref=e855]: Low Risk
+                        - generic [ref=e856]:
+                          - generic [ref=e857]: N$5,000.00
+                          - generic [ref=e858]: Requested Amount
+                      - generic [ref=e859]:
+                        - generic [ref=e860]:
+                          - img [ref=e861]
+                          - generic [ref=e864]: user-11111111@namlend.com
+                        - generic [ref=e865]:
+                          - img [ref=e866]
+                          - generic [ref=e868]: Applied 14 Nov 2025
+                        - generic [ref=e869]:
+                          - img [ref=e870]
+                          - generic [ref=e873]: Test disbursement
+                      - generic [ref=e875]:
                         - text: "0"
-                        - generic [ref=e874]:
-                          - generic [ref=e875]: "Employment:"
-                          - generic [ref=e876]: Not specified
-                        - generic [ref=e877]:
-                          - generic [ref=e878]: "Credit Score:"
-                          - generic [ref=e879]: "706"
-                    - generic [ref=e880]:
-                      - button "Review" [ref=e881] [cursor=pointer]:
+                        - generic [ref=e876]:
+                          - generic [ref=e877]: "Employment:"
+                          - generic [ref=e878]: Not specified
+                        - generic [ref=e879]:
+                          - generic [ref=e880]: "Credit Score:"
+                          - generic [ref=e881]: "796"
+                    - generic [ref=e882]:
+                      - button "Review" [ref=e883] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e882] [cursor=pointer]:
+                      - button "Disburse" [ref=e884] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e885]:
-                    - checkbox [ref=e886] [cursor=pointer]
-                    - generic [ref=e887]:
-                      - generic [ref=e888]:
-                        - generic [ref=e889]:
+                  - generic [ref=e887]:
+                    - checkbox [ref=e888] [cursor=pointer]
+                    - generic [ref=e889]:
+                      - generic [ref=e890]:
+                        - generic [ref=e891]:
                           - heading [level=3]
-                          - generic [ref=e890]:
-                            - img [ref=e891]
-                            - generic [ref=e894]: approved
-                          - generic [ref=e895]:
-                            - img [ref=e896]
-                            - text: High Risk
+                          - generic [ref=e892]:
+                            - img [ref=e893]
+                            - generic [ref=e896]: approved
+                          - generic [ref=e897]: Low Risk
                         - generic [ref=e898]:
                           - generic [ref=e899]: N$5,000.00
                           - generic [ref=e900]: Requested Amount
@@ -824,7 +824,7 @@
                           - generic [ref=e920]: Not specified
                         - generic [ref=e921]:
                           - generic [ref=e922]: "Credit Score:"
-                          - generic [ref=e923]: "646"
+                          - generic [ref=e923]: "663"
                     - generic [ref=e924]:
                       - button "Review" [ref=e925] [cursor=pointer]:
                         - img
@@ -864,7 +864,7 @@
                           - generic [ref=e964]: Not specified
                         - generic [ref=e965]:
                           - generic [ref=e966]: "Credit Score:"
-                          - generic [ref=e967]: "716"
+                          - generic [ref=e967]: "668"
                     - generic [ref=e968]:
                       - button "Review" [ref=e969] [cursor=pointer]:
                         - img
@@ -902,7 +902,7 @@
                           - generic [ref=e1006]: Not specified
                         - generic [ref=e1007]:
                           - generic [ref=e1008]: "Credit Score:"
-                          - generic [ref=e1009]: "764"
+                          - generic [ref=e1009]: "600"
                     - generic [ref=e1010]:
                       - button "Review" [ref=e1011] [cursor=pointer]:
                         - img
@@ -940,7 +940,7 @@
                           - generic [ref=e1048]: Not specified
                         - generic [ref=e1049]:
                           - generic [ref=e1050]: "Credit Score:"
-                          - generic [ref=e1051]: "620"
+                          - generic [ref=e1051]: "722"
                     - generic [ref=e1052]:
                       - button "Review" [ref=e1053] [cursor=pointer]:
                         - img
@@ -978,7 +978,7 @@
                           - generic [ref=e1090]: Not specified
                         - generic [ref=e1091]:
                           - generic [ref=e1092]: "Credit Score:"
-                          - generic [ref=e1093]: "568"
+                          - generic [ref=e1093]: "775"
                     - generic [ref=e1094]:
                       - button "Review" [ref=e1095] [cursor=pointer]:
                         - img
@@ -995,353 +995,353 @@
                           - generic [ref=e1104]:
                             - img [ref=e1105]
                             - generic [ref=e1108]: approved
-                          - generic [ref=e1109]:
-                            - img [ref=e1110]
-                            - text: High Risk
-                        - generic [ref=e1112]:
-                          - generic [ref=e1113]: N$2,000.00
-                          - generic [ref=e1114]: Requested Amount
-                      - generic [ref=e1115]:
-                        - generic [ref=e1116]:
-                          - img [ref=e1117]
-                          - generic [ref=e1120]: user-11111111@namlend.com
-                        - generic [ref=e1121]:
-                          - img [ref=e1122]
-                          - generic [ref=e1124]: Applied 14 Nov 2025
-                        - generic [ref=e1125]:
-                          - img [ref=e1126]
-                          - generic [ref=e1129]: Test unauthorized disbursement
-                      - generic [ref=e1131]:
+                          - generic [ref=e1109]: Low Risk
+                        - generic [ref=e1110]:
+                          - generic [ref=e1111]: N$2,000.00
+                          - generic [ref=e1112]: Requested Amount
+                      - generic [ref=e1113]:
+                        - generic [ref=e1114]:
+                          - img [ref=e1115]
+                          - generic [ref=e1118]: user-11111111@namlend.com
+                        - generic [ref=e1119]:
+                          - img [ref=e1120]
+                          - generic [ref=e1122]: Applied 14 Nov 2025
+                        - generic [ref=e1123]:
+                          - img [ref=e1124]
+                          - generic [ref=e1127]: Test unauthorized disbursement
+                      - generic [ref=e1129]:
                         - text: "0"
-                        - generic [ref=e1132]:
-                          - generic [ref=e1133]: "Employment:"
-                          - generic [ref=e1134]: Not specified
-                        - generic [ref=e1135]:
-                          - generic [ref=e1136]: "Credit Score:"
-                          - generic [ref=e1137]: "735"
-                    - generic [ref=e1138]:
-                      - button "Review" [ref=e1139] [cursor=pointer]:
+                        - generic [ref=e1130]:
+                          - generic [ref=e1131]: "Employment:"
+                          - generic [ref=e1132]: Not specified
+                        - generic [ref=e1133]:
+                          - generic [ref=e1134]: "Credit Score:"
+                          - generic [ref=e1135]: "794"
+                    - generic [ref=e1136]:
+                      - button "Review" [ref=e1137] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1140] [cursor=pointer]:
+                      - button "Disburse" [ref=e1138] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1143]:
-                    - checkbox [ref=e1144] [cursor=pointer]
-                    - generic [ref=e1145]:
-                      - generic [ref=e1146]:
-                        - generic [ref=e1147]:
+                  - generic [ref=e1141]:
+                    - checkbox [ref=e1142] [cursor=pointer]
+                    - generic [ref=e1143]:
+                      - generic [ref=e1144]:
+                        - generic [ref=e1145]:
                           - heading [level=3]
-                          - generic [ref=e1148]:
-                            - img [ref=e1149]
-                            - generic [ref=e1152]: approved
-                          - generic [ref=e1153]: Low Risk
-                        - generic [ref=e1154]:
-                          - generic [ref=e1155]: N$4,000.00
-                          - generic [ref=e1156]: Requested Amount
-                      - generic [ref=e1157]:
-                        - generic [ref=e1158]:
-                          - img [ref=e1159]
-                          - generic [ref=e1162]: user-11111111@namlend.com
-                        - generic [ref=e1163]:
-                          - img [ref=e1164]
-                          - generic [ref=e1166]: Applied 14 Nov 2025
-                        - generic [ref=e1167]:
-                          - img [ref=e1168]
-                          - generic [ref=e1171]: Test audit trail
-                      - generic [ref=e1173]:
+                          - generic [ref=e1146]:
+                            - img [ref=e1147]
+                            - generic [ref=e1150]: approved
+                          - generic [ref=e1151]: Low Risk
+                        - generic [ref=e1152]:
+                          - generic [ref=e1153]: N$4,000.00
+                          - generic [ref=e1154]: Requested Amount
+                      - generic [ref=e1155]:
+                        - generic [ref=e1156]:
+                          - img [ref=e1157]
+                          - generic [ref=e1160]: user-11111111@namlend.com
+                        - generic [ref=e1161]:
+                          - img [ref=e1162]
+                          - generic [ref=e1164]: Applied 14 Nov 2025
+                        - generic [ref=e1165]:
+                          - img [ref=e1166]
+                          - generic [ref=e1169]: Test audit trail
+                      - generic [ref=e1171]:
                         - text: "0"
-                        - generic [ref=e1174]:
-                          - generic [ref=e1175]: "Employment:"
-                          - generic [ref=e1176]: Not specified
-                        - generic [ref=e1177]:
-                          - generic [ref=e1178]: "Credit Score:"
-                          - generic [ref=e1179]: "716"
-                    - generic [ref=e1180]:
-                      - button "Review" [ref=e1181] [cursor=pointer]:
+                        - generic [ref=e1172]:
+                          - generic [ref=e1173]: "Employment:"
+                          - generic [ref=e1174]: Not specified
+                        - generic [ref=e1175]:
+                          - generic [ref=e1176]: "Credit Score:"
+                          - generic [ref=e1177]: "527"
+                    - generic [ref=e1178]:
+                      - button "Review" [ref=e1179] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1182] [cursor=pointer]:
+                      - button "Disburse" [ref=e1180] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1185]:
-                    - checkbox [ref=e1186] [cursor=pointer]
-                    - generic [ref=e1187]:
-                      - generic [ref=e1188]:
-                        - generic [ref=e1189]:
+                  - generic [ref=e1183]:
+                    - checkbox [ref=e1184] [cursor=pointer]
+                    - generic [ref=e1185]:
+                      - generic [ref=e1186]:
+                        - generic [ref=e1187]:
                           - heading [level=3]
-                          - generic [ref=e1190]:
-                            - img [ref=e1191]
-                            - generic [ref=e1194]: approved
-                          - generic [ref=e1195]:
-                            - img [ref=e1196]
-                            - text: High Risk
+                          - generic [ref=e1188]:
+                            - img [ref=e1189]
+                            - generic [ref=e1192]: approved
+                          - generic [ref=e1193]: Low Risk
+                        - generic [ref=e1194]:
+                          - generic [ref=e1195]: N$5,000.00
+                          - generic [ref=e1196]: Requested Amount
+                      - generic [ref=e1197]:
                         - generic [ref=e1198]:
-                          - generic [ref=e1199]: N$5,000.00
-                          - generic [ref=e1200]: Requested Amount
-                      - generic [ref=e1201]:
-                        - generic [ref=e1202]:
-                          - img [ref=e1203]
-                          - generic [ref=e1206]: user-11111111@namlend.com
+                          - img [ref=e1199]
+                          - generic [ref=e1202]: user-11111111@namlend.com
+                        - generic [ref=e1203]:
+                          - img [ref=e1204]
+                          - generic [ref=e1206]: Applied 14 Nov 2025
                         - generic [ref=e1207]:
                           - img [ref=e1208]
-                          - generic [ref=e1210]: Applied 14 Nov 2025
-                        - generic [ref=e1211]:
-                          - img [ref=e1212]
-                          - generic [ref=e1215]: Test disbursement
-                      - generic [ref=e1217]:
+                          - generic [ref=e1211]: Test disbursement
+                      - generic [ref=e1213]:
                         - text: "0"
-                        - generic [ref=e1218]:
-                          - generic [ref=e1219]: "Employment:"
-                          - generic [ref=e1220]: Not specified
-                        - generic [ref=e1221]:
-                          - generic [ref=e1222]: "Credit Score:"
-                          - generic [ref=e1223]: "660"
-                    - generic [ref=e1224]:
-                      - button "Review" [ref=e1225] [cursor=pointer]:
+                        - generic [ref=e1214]:
+                          - generic [ref=e1215]: "Employment:"
+                          - generic [ref=e1216]: Not specified
+                        - generic [ref=e1217]:
+                          - generic [ref=e1218]: "Credit Score:"
+                          - generic [ref=e1219]: "641"
+                    - generic [ref=e1220]:
+                      - button "Review" [ref=e1221] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1226] [cursor=pointer]:
+                      - button "Disburse" [ref=e1222] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1229]:
-                    - checkbox [ref=e1230] [cursor=pointer]
-                    - generic [ref=e1231]:
-                      - generic [ref=e1232]:
-                        - generic [ref=e1233]:
+                  - generic [ref=e1225]:
+                    - checkbox [ref=e1226] [cursor=pointer]
+                    - generic [ref=e1227]:
+                      - generic [ref=e1228]:
+                        - generic [ref=e1229]:
                           - heading [level=3]
-                          - generic [ref=e1234]:
-                            - img [ref=e1235]
-                            - generic [ref=e1238]: approved
-                          - generic [ref=e1239]: Low Risk
+                          - generic [ref=e1230]:
+                            - img [ref=e1231]
+                            - generic [ref=e1234]: approved
+                          - generic [ref=e1235]: Low Risk
+                        - generic [ref=e1236]:
+                          - generic [ref=e1237]: N$5,000.00
+                          - generic [ref=e1238]: Requested Amount
+                      - generic [ref=e1239]:
                         - generic [ref=e1240]:
-                          - generic [ref=e1241]: N$5,000.00
-                          - generic [ref=e1242]: Requested Amount
-                      - generic [ref=e1243]:
-                        - generic [ref=e1244]:
-                          - img [ref=e1245]
-                          - generic [ref=e1248]: user-11111111@namlend.com
+                          - img [ref=e1241]
+                          - generic [ref=e1244]: user-11111111@namlend.com
+                        - generic [ref=e1245]:
+                          - img [ref=e1246]
+                          - generic [ref=e1248]: Applied 14 Nov 2025
                         - generic [ref=e1249]:
                           - img [ref=e1250]
-                          - generic [ref=e1252]: Applied 14 Nov 2025
-                        - generic [ref=e1253]:
-                          - img [ref=e1254]
-                          - generic [ref=e1257]: Test disbursement
-                      - generic [ref=e1259]:
+                          - generic [ref=e1253]: Test disbursement
+                      - generic [ref=e1255]:
                         - text: "0"
-                        - generic [ref=e1260]:
-                          - generic [ref=e1261]: "Employment:"
-                          - generic [ref=e1262]: Not specified
-                        - generic [ref=e1263]:
-                          - generic [ref=e1264]: "Credit Score:"
-                          - generic [ref=e1265]: "698"
-                    - generic [ref=e1266]:
-                      - button "Review" [ref=e1267] [cursor=pointer]:
+                        - generic [ref=e1256]:
+                          - generic [ref=e1257]: "Employment:"
+                          - generic [ref=e1258]: Not specified
+                        - generic [ref=e1259]:
+                          - generic [ref=e1260]: "Credit Score:"
+                          - generic [ref=e1261]: "721"
+                    - generic [ref=e1262]:
+                      - button "Review" [ref=e1263] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1268] [cursor=pointer]:
+                      - button "Disburse" [ref=e1264] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1271]:
-                    - checkbox [ref=e1272] [cursor=pointer]
-                    - generic [ref=e1273]:
-                      - generic [ref=e1274]:
-                        - generic [ref=e1275]:
+                  - generic [ref=e1267]:
+                    - checkbox [ref=e1268] [cursor=pointer]
+                    - generic [ref=e1269]:
+                      - generic [ref=e1270]:
+                        - generic [ref=e1271]:
                           - heading [level=3]
-                          - generic [ref=e1276]:
-                            - img [ref=e1277]
-                            - generic [ref=e1280]: approved
-                          - generic [ref=e1281]: Low Risk
+                          - generic [ref=e1272]:
+                            - img [ref=e1273]
+                            - generic [ref=e1276]: approved
+                          - generic [ref=e1277]: Medium Risk
+                        - generic [ref=e1278]:
+                          - generic [ref=e1279]: N$5,000.00
+                          - generic [ref=e1280]: Requested Amount
+                      - generic [ref=e1281]:
                         - generic [ref=e1282]:
-                          - generic [ref=e1283]: N$5,000.00
-                          - generic [ref=e1284]: Requested Amount
-                      - generic [ref=e1285]:
-                        - generic [ref=e1286]:
-                          - img [ref=e1287]
-                          - generic [ref=e1290]: user-11111111@namlend.com
+                          - img [ref=e1283]
+                          - generic [ref=e1286]: user-11111111@namlend.com
+                        - generic [ref=e1287]:
+                          - img [ref=e1288]
+                          - generic [ref=e1290]: Applied 14 Nov 2025
                         - generic [ref=e1291]:
                           - img [ref=e1292]
-                          - generic [ref=e1294]: Applied 14 Nov 2025
-                        - generic [ref=e1295]:
-                          - img [ref=e1296]
-                          - generic [ref=e1299]: Test disbursement
-                      - generic [ref=e1301]:
+                          - generic [ref=e1295]: Test disbursement
+                      - generic [ref=e1297]:
                         - text: "0"
-                        - generic [ref=e1302]:
-                          - generic [ref=e1303]: "Employment:"
-                          - generic [ref=e1304]: Not specified
-                        - generic [ref=e1305]:
-                          - generic [ref=e1306]: "Credit Score:"
-                          - generic [ref=e1307]: "515"
-                    - generic [ref=e1308]:
-                      - button "Review" [ref=e1309] [cursor=pointer]:
+                        - generic [ref=e1298]:
+                          - generic [ref=e1299]: "Employment:"
+                          - generic [ref=e1300]: Not specified
+                        - generic [ref=e1301]:
+                          - generic [ref=e1302]: "Credit Score:"
+                          - generic [ref=e1303]: "646"
+                    - generic [ref=e1304]:
+                      - button "Review" [ref=e1305] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1310] [cursor=pointer]:
+                      - button "Disburse" [ref=e1306] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1313]:
-                    - checkbox [ref=e1314] [cursor=pointer]
-                    - generic [ref=e1315]:
-                      - generic [ref=e1316]:
-                        - generic [ref=e1317]:
+                  - generic [ref=e1309]:
+                    - checkbox [ref=e1310] [cursor=pointer]
+                    - generic [ref=e1311]:
+                      - generic [ref=e1312]:
+                        - generic [ref=e1313]:
                           - heading [level=3]
-                          - generic [ref=e1318]:
-                            - img [ref=e1319]
-                            - generic [ref=e1322]: approved
-                          - generic [ref=e1323]: Low Risk
-                        - generic [ref=e1324]:
-                          - generic [ref=e1325]: N$5,000.00
-                          - generic [ref=e1326]: Requested Amount
-                      - generic [ref=e1327]:
-                        - generic [ref=e1328]:
-                          - img [ref=e1329]
-                          - generic [ref=e1332]: user-11111111@namlend.com
-                        - generic [ref=e1333]:
-                          - img [ref=e1334]
-                          - generic [ref=e1336]: Applied 14 Nov 2025
-                        - generic [ref=e1337]:
-                          - img [ref=e1338]
-                          - generic [ref=e1341]: Test disbursement
-                      - generic [ref=e1343]:
+                          - generic [ref=e1314]:
+                            - img [ref=e1315]
+                            - generic [ref=e1318]: approved
+                          - generic [ref=e1319]:
+                            - img [ref=e1320]
+                            - text: High Risk
+                        - generic [ref=e1322]:
+                          - generic [ref=e1323]: N$5,000.00
+                          - generic [ref=e1324]: Requested Amount
+                      - generic [ref=e1325]:
+                        - generic [ref=e1326]:
+                          - img [ref=e1327]
+                          - generic [ref=e1330]: user-11111111@namlend.com
+                        - generic [ref=e1331]:
+                          - img [ref=e1332]
+                          - generic [ref=e1334]: Applied 14 Nov 2025
+                        - generic [ref=e1335]:
+                          - img [ref=e1336]
+                          - generic [ref=e1339]: Test disbursement
+                      - generic [ref=e1341]:
                         - text: "0"
-                        - generic [ref=e1344]:
-                          - generic [ref=e1345]: "Employment:"
-                          - generic [ref=e1346]: Not specified
-                        - generic [ref=e1347]:
-                          - generic [ref=e1348]: "Credit Score:"
-                          - generic [ref=e1349]: "579"
-                    - generic [ref=e1350]:
-                      - button "Review" [ref=e1351] [cursor=pointer]:
+                        - generic [ref=e1342]:
+                          - generic [ref=e1343]: "Employment:"
+                          - generic [ref=e1344]: Not specified
+                        - generic [ref=e1345]:
+                          - generic [ref=e1346]: "Credit Score:"
+                          - generic [ref=e1347]: "665"
+                    - generic [ref=e1348]:
+                      - button "Review" [ref=e1349] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1352] [cursor=pointer]:
+                      - button "Disburse" [ref=e1350] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1355]:
-                    - checkbox [ref=e1356] [cursor=pointer]
-                    - generic [ref=e1357]:
-                      - generic [ref=e1358]:
-                        - generic [ref=e1359]:
+                  - generic [ref=e1353]:
+                    - checkbox [ref=e1354] [cursor=pointer]
+                    - generic [ref=e1355]:
+                      - generic [ref=e1356]:
+                        - generic [ref=e1357]:
                           - heading [level=3]
-                          - generic [ref=e1360]:
-                            - img [ref=e1361]
-                            - generic [ref=e1364]: approved
-                          - generic [ref=e1365]: Low Risk
-                        - generic [ref=e1366]:
-                          - generic [ref=e1367]: N$5,000.00
-                          - generic [ref=e1368]: Requested Amount
-                      - generic [ref=e1369]:
-                        - generic [ref=e1370]:
-                          - img [ref=e1371]
-                          - generic [ref=e1374]: user-11111111@namlend.com
-                        - generic [ref=e1375]:
-                          - img [ref=e1376]
-                          - generic [ref=e1378]: Applied 14 Nov 2025
-                        - generic [ref=e1379]:
-                          - img [ref=e1380]
-                          - generic [ref=e1383]: Test disbursement
-                      - generic [ref=e1385]:
+                          - generic [ref=e1358]:
+                            - img [ref=e1359]
+                            - generic [ref=e1362]: approved
+                          - generic [ref=e1363]: Medium Risk
+                        - generic [ref=e1364]:
+                          - generic [ref=e1365]: N$5,000.00
+                          - generic [ref=e1366]: Requested Amount
+                      - generic [ref=e1367]:
+                        - generic [ref=e1368]:
+                          - img [ref=e1369]
+                          - generic [ref=e1372]: user-11111111@namlend.com
+                        - generic [ref=e1373]:
+                          - img [ref=e1374]
+                          - generic [ref=e1376]: Applied 14 Nov 2025
+                        - generic [ref=e1377]:
+                          - img [ref=e1378]
+                          - generic [ref=e1381]: Test disbursement
+                      - generic [ref=e1383]:
                         - text: "0"
-                        - generic [ref=e1386]:
-                          - generic [ref=e1387]: "Employment:"
-                          - generic [ref=e1388]: Not specified
-                        - generic [ref=e1389]:
-                          - generic [ref=e1390]: "Credit Score:"
-                          - generic [ref=e1391]: "519"
-                    - generic [ref=e1392]:
-                      - button "Review" [ref=e1393] [cursor=pointer]:
+                        - generic [ref=e1384]:
+                          - generic [ref=e1385]: "Employment:"
+                          - generic [ref=e1386]: Not specified
+                        - generic [ref=e1387]:
+                          - generic [ref=e1388]: "Credit Score:"
+                          - generic [ref=e1389]: "683"
+                    - generic [ref=e1390]:
+                      - button "Review" [ref=e1391] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1394] [cursor=pointer]:
+                      - button "Disburse" [ref=e1392] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1397]:
-                    - checkbox [ref=e1398] [cursor=pointer]
-                    - generic [ref=e1399]:
-                      - generic [ref=e1400]:
-                        - generic [ref=e1401]:
+                  - generic [ref=e1395]:
+                    - checkbox [ref=e1396] [cursor=pointer]
+                    - generic [ref=e1397]:
+                      - generic [ref=e1398]:
+                        - generic [ref=e1399]:
                           - heading [level=3]
-                          - generic [ref=e1402]:
-                            - img [ref=e1403]
-                            - generic [ref=e1406]: approved
-                          - generic [ref=e1407]: Low Risk
-                        - generic [ref=e1408]:
-                          - generic [ref=e1409]: N$5,000.00
-                          - generic [ref=e1410]: Requested Amount
-                      - generic [ref=e1411]:
-                        - generic [ref=e1412]:
-                          - img [ref=e1413]
-                          - generic [ref=e1416]: user-11111111@namlend.com
-                        - generic [ref=e1417]:
-                          - img [ref=e1418]
-                          - generic [ref=e1420]: Applied 14 Nov 2025
-                        - generic [ref=e1421]:
-                          - img [ref=e1422]
-                          - generic [ref=e1425]: Test disbursement
-                      - generic [ref=e1427]:
+                          - generic [ref=e1400]:
+                            - img [ref=e1401]
+                            - generic [ref=e1404]: approved
+                          - generic [ref=e1405]: Low Risk
+                        - generic [ref=e1406]:
+                          - generic [ref=e1407]: N$5,000.00
+                          - generic [ref=e1408]: Requested Amount
+                      - generic [ref=e1409]:
+                        - generic [ref=e1410]:
+                          - img [ref=e1411]
+                          - generic [ref=e1414]: user-11111111@namlend.com
+                        - generic [ref=e1415]:
+                          - img [ref=e1416]
+                          - generic [ref=e1418]: Applied 14 Nov 2025
+                        - generic [ref=e1419]:
+                          - img [ref=e1420]
+                          - generic [ref=e1423]: Test disbursement
+                      - generic [ref=e1425]:
                         - text: "0"
-                        - generic [ref=e1428]:
-                          - generic [ref=e1429]: "Employment:"
-                          - generic [ref=e1430]: Not specified
-                        - generic [ref=e1431]:
-                          - generic [ref=e1432]: "Credit Score:"
-                          - generic [ref=e1433]: "703"
-                    - generic [ref=e1434]:
-                      - button "Review" [ref=e1435] [cursor=pointer]:
+                        - generic [ref=e1426]:
+                          - generic [ref=e1427]: "Employment:"
+                          - generic [ref=e1428]: Not specified
+                        - generic [ref=e1429]:
+                          - generic [ref=e1430]: "Credit Score:"
+                          - generic [ref=e1431]: "568"
+                    - generic [ref=e1432]:
+                      - button "Review" [ref=e1433] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1436] [cursor=pointer]:
+                      - button "Disburse" [ref=e1434] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1439]:
-                    - checkbox [ref=e1440] [cursor=pointer]
-                    - generic [ref=e1441]:
-                      - generic [ref=e1442]:
-                        - generic [ref=e1443]:
+                  - generic [ref=e1437]:
+                    - checkbox [ref=e1438] [cursor=pointer]
+                    - generic [ref=e1439]:
+                      - generic [ref=e1440]:
+                        - generic [ref=e1441]:
                           - heading [level=3]
-                          - generic [ref=e1444]:
-                            - img [ref=e1445]
-                            - generic [ref=e1448]: approved
-                          - generic [ref=e1449]: Low Risk
-                        - generic [ref=e1450]:
-                          - generic [ref=e1451]: N$2,000.00
-                          - generic [ref=e1452]: Requested Amount
-                      - generic [ref=e1453]:
-                        - generic [ref=e1454]:
-                          - img [ref=e1455]
-                          - generic [ref=e1458]: user-11111111@namlend.com
-                        - generic [ref=e1459]:
-                          - img [ref=e1460]
-                          - generic [ref=e1462]: Applied 14 Nov 2025
-                        - generic [ref=e1463]:
-                          - img [ref=e1464]
-                          - generic [ref=e1467]: Test unauthorized disbursement
-                      - generic [ref=e1469]:
+                          - generic [ref=e1442]:
+                            - img [ref=e1443]
+                            - generic [ref=e1446]: approved
+                          - generic [ref=e1447]: Low Risk
+                        - generic [ref=e1448]:
+                          - generic [ref=e1449]: N$2,000.00
+                          - generic [ref=e1450]: Requested Amount
+                      - generic [ref=e1451]:
+                        - generic [ref=e1452]:
+                          - img [ref=e1453]
+                          - generic [ref=e1456]: user-11111111@namlend.com
+                        - generic [ref=e1457]:
+                          - img [ref=e1458]
+                          - generic [ref=e1460]: Applied 14 Nov 2025
+                        - generic [ref=e1461]:
+                          - img [ref=e1462]
+                          - generic [ref=e1465]: Test unauthorized disbursement
+                      - generic [ref=e1467]:
                         - text: "0"
-                        - generic [ref=e1470]:
-                          - generic [ref=e1471]: "Employment:"
-                          - generic [ref=e1472]: Not specified
-                        - generic [ref=e1473]:
-                          - generic [ref=e1474]: "Credit Score:"
-                          - generic [ref=e1475]: "676"
-                    - generic [ref=e1476]:
-                      - button "Review" [ref=e1477] [cursor=pointer]:
+                        - generic [ref=e1468]:
+                          - generic [ref=e1469]: "Employment:"
+                          - generic [ref=e1470]: Not specified
+                        - generic [ref=e1471]:
+                          - generic [ref=e1472]: "Credit Score:"
+                          - generic [ref=e1473]: "744"
+                    - generic [ref=e1474]:
+                      - button "Review" [ref=e1475] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1478] [cursor=pointer]:
+                      - button "Disburse" [ref=e1476] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1481]:
-                    - checkbox [ref=e1482] [cursor=pointer]
-                    - generic [ref=e1483]:
-                      - generic [ref=e1484]:
-                        - generic [ref=e1485]:
+                  - generic [ref=e1479]:
+                    - checkbox [ref=e1480] [cursor=pointer]
+                    - generic [ref=e1481]:
+                      - generic [ref=e1482]:
+                        - generic [ref=e1483]:
                           - heading [level=3]
-                          - generic [ref=e1486]:
-                            - img [ref=e1487]
-                            - generic [ref=e1490]: approved
-                          - generic [ref=e1491]: Medium Risk
+                          - generic [ref=e1484]:
+                            - img [ref=e1485]
+                            - generic [ref=e1488]: approved
+                          - generic [ref=e1489]:
+                            - img [ref=e1490]
+                            - text: High Risk
                         - generic [ref=e1492]:
                           - generic [ref=e1493]: N$3,000.00
                           - generic [ref=e1494]: Requested Amount
@@ -1362,7 +1362,7 @@
                           - generic [ref=e1514]: Not specified
                         - generic [ref=e1515]:
                           - generic [ref=e1516]: "Credit Score:"
-                          - generic [ref=e1517]: "738"
+                          - generic [ref=e1517]: "633"
                     - generic [ref=e1518]:
                       - button "Review" [ref=e1519] [cursor=pointer]:
                         - img
@@ -1400,7 +1400,7 @@
                           - generic [ref=e1556]: Not specified
                         - generic [ref=e1557]:
                           - generic [ref=e1558]: "Credit Score:"
-                          - generic [ref=e1559]: "539"
+                          - generic [ref=e1559]: "637"
                     - generic [ref=e1560]:
                       - button "Review" [ref=e1561] [cursor=pointer]:
                         - img
@@ -1440,7 +1440,7 @@
                           - generic [ref=e1600]: Not specified
                         - generic [ref=e1601]:
                           - generic [ref=e1602]: "Credit Score:"
-                          - generic [ref=e1603]: "735"
+                          - generic [ref=e1603]: "774"
                     - generic [ref=e1604]:
                       - button "Review" [ref=e1605] [cursor=pointer]:
                         - img
@@ -1457,7 +1457,7 @@
                           - generic [ref=e1614]:
                             - img [ref=e1615]
                             - generic [ref=e1618]: approved
-                          - generic [ref=e1619]: Low Risk
+                          - generic [ref=e1619]: Medium Risk
                         - generic [ref=e1620]:
                           - generic [ref=e1621]: N$5,000.00
                           - generic [ref=e1622]: Requested Amount
@@ -1478,7 +1478,7 @@
                           - generic [ref=e1642]: Not specified
                         - generic [ref=e1643]:
                           - generic [ref=e1644]: "Credit Score:"
-                          - generic [ref=e1645]: "570"
+                          - generic [ref=e1645]: "635"
                     - generic [ref=e1646]:
                       - button "Review" [ref=e1647] [cursor=pointer]:
                         - img
@@ -1495,7 +1495,7 @@
                           - generic [ref=e1656]:
                             - img [ref=e1657]
                             - generic [ref=e1660]: approved
-                          - generic [ref=e1661]: Medium Risk
+                          - generic [ref=e1661]: Low Risk
                         - generic [ref=e1662]:
                           - generic [ref=e1663]: N$5,000.00
                           - generic [ref=e1664]: Requested Amount
@@ -1516,7 +1516,7 @@
                           - generic [ref=e1684]: Not specified
                         - generic [ref=e1685]:
                           - generic [ref=e1686]: "Credit Score:"
-                          - generic [ref=e1687]: "798"
+                          - generic [ref=e1687]: "668"
                     - generic [ref=e1688]:
                       - button "Review" [ref=e1689] [cursor=pointer]:
                         - img
@@ -1533,47 +1533,47 @@
                           - generic [ref=e1698]:
                             - img [ref=e1699]
                             - generic [ref=e1702]: approved
-                          - generic [ref=e1703]: Low Risk
-                        - generic [ref=e1704]:
-                          - generic [ref=e1705]: N$5,000.00
-                          - generic [ref=e1706]: Requested Amount
-                      - generic [ref=e1707]:
-                        - generic [ref=e1708]:
-                          - img [ref=e1709]
-                          - generic [ref=e1712]: user-11111111@namlend.com
-                        - generic [ref=e1713]:
-                          - img [ref=e1714]
-                          - generic [ref=e1716]: Applied 14 Nov 2025
-                        - generic [ref=e1717]:
-                          - img [ref=e1718]
-                          - generic [ref=e1721]: Test disbursement
-                      - generic [ref=e1723]:
+                          - generic [ref=e1703]:
+                            - img [ref=e1704]
+                            - text: High Risk
+                        - generic [ref=e1706]:
+                          - generic [ref=e1707]: N$5,000.00
+                          - generic [ref=e1708]: Requested Amount
+                      - generic [ref=e1709]:
+                        - generic [ref=e1710]:
+                          - img [ref=e1711]
+                          - generic [ref=e1714]: user-11111111@namlend.com
+                        - generic [ref=e1715]:
+                          - img [ref=e1716]
+                          - generic [ref=e1718]: Applied 14 Nov 2025
+                        - generic [ref=e1719]:
+                          - img [ref=e1720]
+                          - generic [ref=e1723]: Test disbursement
+                      - generic [ref=e1725]:
                         - text: "0"
-                        - generic [ref=e1724]:
-                          - generic [ref=e1725]: "Employment:"
-                          - generic [ref=e1726]: Not specified
-                        - generic [ref=e1727]:
-                          - generic [ref=e1728]: "Credit Score:"
-                          - generic [ref=e1729]: "761"
-                    - generic [ref=e1730]:
-                      - button "Review" [ref=e1731] [cursor=pointer]:
+                        - generic [ref=e1726]:
+                          - generic [ref=e1727]: "Employment:"
+                          - generic [ref=e1728]: Not specified
+                        - generic [ref=e1729]:
+                          - generic [ref=e1730]: "Credit Score:"
+                          - generic [ref=e1731]: "651"
+                    - generic [ref=e1732]:
+                      - button "Review" [ref=e1733] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1732] [cursor=pointer]:
+                      - button "Disburse" [ref=e1734] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1735]:
-                    - checkbox [ref=e1736] [cursor=pointer]
-                    - generic [ref=e1737]:
-                      - generic [ref=e1738]:
-                        - generic [ref=e1739]:
+                  - generic [ref=e1737]:
+                    - checkbox [ref=e1738] [cursor=pointer]
+                    - generic [ref=e1739]:
+                      - generic [ref=e1740]:
+                        - generic [ref=e1741]:
                           - heading [level=3]
-                          - generic [ref=e1740]:
-                            - img [ref=e1741]
-                            - generic [ref=e1744]: approved
-                          - generic [ref=e1745]:
-                            - img [ref=e1746]
-                            - text: High Risk
+                          - generic [ref=e1742]:
+                            - img [ref=e1743]
+                            - generic [ref=e1746]: approved
+                          - generic [ref=e1747]: Low Risk
                         - generic [ref=e1748]:
                           - generic [ref=e1749]: N$5,000.00
                           - generic [ref=e1750]: Requested Amount
@@ -1611,85 +1611,85 @@
                           - generic [ref=e1784]:
                             - img [ref=e1785]
                             - generic [ref=e1788]: approved
-                          - generic [ref=e1789]:
-                            - img [ref=e1790]
+                          - generic [ref=e1789]: Low Risk
+                        - generic [ref=e1790]:
+                          - generic [ref=e1791]: N$5,000.00
+                          - generic [ref=e1792]: Requested Amount
+                      - generic [ref=e1793]:
+                        - generic [ref=e1794]:
+                          - img [ref=e1795]
+                          - generic [ref=e1798]: user-11111111@namlend.com
+                        - generic [ref=e1799]:
+                          - img [ref=e1800]
+                          - generic [ref=e1802]: Applied 14 Nov 2025
+                        - generic [ref=e1803]:
+                          - img [ref=e1804]
+                          - generic [ref=e1807]: Test disbursement
+                      - generic [ref=e1809]:
+                        - text: "0"
+                        - generic [ref=e1810]:
+                          - generic [ref=e1811]: "Employment:"
+                          - generic [ref=e1812]: Not specified
+                        - generic [ref=e1813]:
+                          - generic [ref=e1814]: "Credit Score:"
+                          - generic [ref=e1815]: "764"
+                    - generic [ref=e1816]:
+                      - button "Review" [ref=e1817] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e1818] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e1821]:
+                    - checkbox [ref=e1822] [cursor=pointer]
+                    - generic [ref=e1823]:
+                      - generic [ref=e1824]:
+                        - generic [ref=e1825]:
+                          - heading [level=3]
+                          - generic [ref=e1826]:
+                            - img [ref=e1827]
+                            - generic [ref=e1830]: approved
+                          - generic [ref=e1831]: Low Risk
+                        - generic [ref=e1832]:
+                          - generic [ref=e1833]: N$5,000.00
+                          - generic [ref=e1834]: Requested Amount
+                      - generic [ref=e1835]:
+                        - generic [ref=e1836]:
+                          - img [ref=e1837]
+                          - generic [ref=e1840]: user-11111111@namlend.com
+                        - generic [ref=e1841]:
+                          - img [ref=e1842]
+                          - generic [ref=e1844]: Applied 14 Nov 2025
+                        - generic [ref=e1845]:
+                          - img [ref=e1846]
+                          - generic [ref=e1849]: Test disbursement
+                      - generic [ref=e1851]:
+                        - text: "0"
+                        - generic [ref=e1852]:
+                          - generic [ref=e1853]: "Employment:"
+                          - generic [ref=e1854]: Not specified
+                        - generic [ref=e1855]:
+                          - generic [ref=e1856]: "Credit Score:"
+                          - generic [ref=e1857]: "775"
+                    - generic [ref=e1858]:
+                      - button "Review" [ref=e1859] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e1860] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e1863]:
+                    - checkbox [ref=e1864] [cursor=pointer]
+                    - generic [ref=e1865]:
+                      - generic [ref=e1866]:
+                        - generic [ref=e1867]:
+                          - heading [level=3]
+                          - generic [ref=e1868]:
+                            - img [ref=e1869]
+                            - generic [ref=e1872]: approved
+                          - generic [ref=e1873]:
+                            - img [ref=e1874]
                             - text: High Risk
-                        - generic [ref=e1792]:
-                          - generic [ref=e1793]: N$5,000.00
-                          - generic [ref=e1794]: Requested Amount
-                      - generic [ref=e1795]:
-                        - generic [ref=e1796]:
-                          - img [ref=e1797]
-                          - generic [ref=e1800]: user-11111111@namlend.com
-                        - generic [ref=e1801]:
-                          - img [ref=e1802]
-                          - generic [ref=e1804]: Applied 14 Nov 2025
-                        - generic [ref=e1805]:
-                          - img [ref=e1806]
-                          - generic [ref=e1809]: Test disbursement
-                      - generic [ref=e1811]:
-                        - text: "0"
-                        - generic [ref=e1812]:
-                          - generic [ref=e1813]: "Employment:"
-                          - generic [ref=e1814]: Not specified
-                        - generic [ref=e1815]:
-                          - generic [ref=e1816]: "Credit Score:"
-                          - generic [ref=e1817]: "532"
-                    - generic [ref=e1818]:
-                      - button "Review" [ref=e1819] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e1820] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e1823]:
-                    - checkbox [ref=e1824] [cursor=pointer]
-                    - generic [ref=e1825]:
-                      - generic [ref=e1826]:
-                        - generic [ref=e1827]:
-                          - heading [level=3]
-                          - generic [ref=e1828]:
-                            - img [ref=e1829]
-                            - generic [ref=e1832]: approved
-                          - generic [ref=e1833]: Low Risk
-                        - generic [ref=e1834]:
-                          - generic [ref=e1835]: N$5,000.00
-                          - generic [ref=e1836]: Requested Amount
-                      - generic [ref=e1837]:
-                        - generic [ref=e1838]:
-                          - img [ref=e1839]
-                          - generic [ref=e1842]: user-11111111@namlend.com
-                        - generic [ref=e1843]:
-                          - img [ref=e1844]
-                          - generic [ref=e1846]: Applied 14 Nov 2025
-                        - generic [ref=e1847]:
-                          - img [ref=e1848]
-                          - generic [ref=e1851]: Test disbursement
-                      - generic [ref=e1853]:
-                        - text: "0"
-                        - generic [ref=e1854]:
-                          - generic [ref=e1855]: "Employment:"
-                          - generic [ref=e1856]: Not specified
-                        - generic [ref=e1857]:
-                          - generic [ref=e1858]: "Credit Score:"
-                          - generic [ref=e1859]: "642"
-                    - generic [ref=e1860]:
-                      - button "Review" [ref=e1861] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e1862] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e1865]:
-                    - checkbox [ref=e1866] [cursor=pointer]
-                    - generic [ref=e1867]:
-                      - generic [ref=e1868]:
-                        - generic [ref=e1869]:
-                          - heading [level=3]
-                          - generic [ref=e1870]:
-                            - img [ref=e1871]
-                            - generic [ref=e1874]: approved
-                          - generic [ref=e1875]: Low Risk
                         - generic [ref=e1876]:
                           - generic [ref=e1877]: N$3,000.00
                           - generic [ref=e1878]: Requested Amount
@@ -1710,7 +1710,7 @@
                           - generic [ref=e1898]: Not specified
                         - generic [ref=e1899]:
                           - generic [ref=e1900]: "Credit Score:"
-                          - generic [ref=e1901]: "734"
+                          - generic [ref=e1901]: "755"
                     - generic [ref=e1902]:
                       - button "Review" [ref=e1903] [cursor=pointer]:
                         - img
@@ -1748,7 +1748,7 @@
                           - generic [ref=e1940]: Not specified
                         - generic [ref=e1941]:
                           - generic [ref=e1942]: "Credit Score:"
-                          - generic [ref=e1943]: "567"
+                          - generic [ref=e1943]: "640"
                     - generic [ref=e1944]:
                       - button "Review" [ref=e1945] [cursor=pointer]:
                         - img
@@ -1765,1103 +1765,1209 @@
                           - generic [ref=e1954]:
                             - img [ref=e1955]
                             - generic [ref=e1958]: approved
-                          - generic [ref=e1959]:
-                            - img [ref=e1960]
-                            - text: High Risk
-                        - generic [ref=e1962]:
-                          - generic [ref=e1963]: N$4,000.00
-                          - generic [ref=e1964]: Requested Amount
-                      - generic [ref=e1965]:
-                        - generic [ref=e1966]:
-                          - img [ref=e1967]
-                          - generic [ref=e1970]: user-11111111@namlend.com
-                        - generic [ref=e1971]:
-                          - img [ref=e1972]
-                          - generic [ref=e1974]: Applied 14 Nov 2025
-                        - generic [ref=e1975]:
-                          - img [ref=e1976]
-                          - generic [ref=e1979]: Test audit trail
-                      - generic [ref=e1981]:
+                          - generic [ref=e1959]: Medium Risk
+                        - generic [ref=e1960]:
+                          - generic [ref=e1961]: N$4,000.00
+                          - generic [ref=e1962]: Requested Amount
+                      - generic [ref=e1963]:
+                        - generic [ref=e1964]:
+                          - img [ref=e1965]
+                          - generic [ref=e1968]: user-11111111@namlend.com
+                        - generic [ref=e1969]:
+                          - img [ref=e1970]
+                          - generic [ref=e1972]: Applied 14 Nov 2025
+                        - generic [ref=e1973]:
+                          - img [ref=e1974]
+                          - generic [ref=e1977]: Test audit trail
+                      - generic [ref=e1979]:
                         - text: "0"
-                        - generic [ref=e1982]:
-                          - generic [ref=e1983]: "Employment:"
-                          - generic [ref=e1984]: Not specified
-                        - generic [ref=e1985]:
-                          - generic [ref=e1986]: "Credit Score:"
-                          - generic [ref=e1987]: "792"
-                    - generic [ref=e1988]:
-                      - button "Review" [ref=e1989] [cursor=pointer]:
+                        - generic [ref=e1980]:
+                          - generic [ref=e1981]: "Employment:"
+                          - generic [ref=e1982]: Not specified
+                        - generic [ref=e1983]:
+                          - generic [ref=e1984]: "Credit Score:"
+                          - generic [ref=e1985]: "690"
+                    - generic [ref=e1986]:
+                      - button "Review" [ref=e1987] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e1990] [cursor=pointer]:
+                      - button "Disburse" [ref=e1988] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e1993]:
-                    - checkbox [ref=e1994] [cursor=pointer]
-                    - generic [ref=e1995]:
-                      - generic [ref=e1996]:
-                        - generic [ref=e1997]:
+                  - generic [ref=e1991]:
+                    - checkbox [ref=e1992] [cursor=pointer]
+                    - generic [ref=e1993]:
+                      - generic [ref=e1994]:
+                        - generic [ref=e1995]:
                           - heading [level=3]
-                          - generic [ref=e1998]:
-                            - img [ref=e1999]
-                            - generic [ref=e2002]: approved
-                          - generic [ref=e2003]: Low Risk
-                        - generic [ref=e2004]:
-                          - generic [ref=e2005]: N$2,000.00
-                          - generic [ref=e2006]: Requested Amount
-                      - generic [ref=e2007]:
-                        - generic [ref=e2008]:
-                          - img [ref=e2009]
-                          - generic [ref=e2012]: user-11111111@namlend.com
-                        - generic [ref=e2013]:
-                          - img [ref=e2014]
-                          - generic [ref=e2016]: Applied 14 Nov 2025
-                        - generic [ref=e2017]:
-                          - img [ref=e2018]
-                          - generic [ref=e2021]: Test unauthorized disbursement
-                      - generic [ref=e2023]:
+                          - generic [ref=e1996]:
+                            - img [ref=e1997]
+                            - generic [ref=e2000]: approved
+                          - generic [ref=e2001]: Medium Risk
+                        - generic [ref=e2002]:
+                          - generic [ref=e2003]: N$2,000.00
+                          - generic [ref=e2004]: Requested Amount
+                      - generic [ref=e2005]:
+                        - generic [ref=e2006]:
+                          - img [ref=e2007]
+                          - generic [ref=e2010]: user-11111111@namlend.com
+                        - generic [ref=e2011]:
+                          - img [ref=e2012]
+                          - generic [ref=e2014]: Applied 14 Nov 2025
+                        - generic [ref=e2015]:
+                          - img [ref=e2016]
+                          - generic [ref=e2019]: Test unauthorized disbursement
+                      - generic [ref=e2021]:
                         - text: "0"
-                        - generic [ref=e2024]:
-                          - generic [ref=e2025]: "Employment:"
-                          - generic [ref=e2026]: Not specified
-                        - generic [ref=e2027]:
-                          - generic [ref=e2028]: "Credit Score:"
-                          - generic [ref=e2029]: "677"
-                    - generic [ref=e2030]:
-                      - button "Review" [ref=e2031] [cursor=pointer]:
+                        - generic [ref=e2022]:
+                          - generic [ref=e2023]: "Employment:"
+                          - generic [ref=e2024]: Not specified
+                        - generic [ref=e2025]:
+                          - generic [ref=e2026]: "Credit Score:"
+                          - generic [ref=e2027]: "506"
+                    - generic [ref=e2028]:
+                      - button "Review" [ref=e2029] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2032] [cursor=pointer]:
+                      - button "Disburse" [ref=e2030] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2035]:
-                    - checkbox [ref=e2036] [cursor=pointer]
-                    - generic [ref=e2037]:
-                      - generic [ref=e2038]:
-                        - generic [ref=e2039]:
+                  - generic [ref=e2033]:
+                    - checkbox [ref=e2034] [cursor=pointer]
+                    - generic [ref=e2035]:
+                      - generic [ref=e2036]:
+                        - generic [ref=e2037]:
                           - heading [level=3]
-                          - generic [ref=e2040]:
-                            - img [ref=e2041]
-                            - generic [ref=e2044]: approved
-                          - generic [ref=e2045]: Low Risk
-                        - generic [ref=e2046]:
-                          - generic [ref=e2047]: N$5,000.00
-                          - generic [ref=e2048]: Requested Amount
-                      - generic [ref=e2049]:
-                        - generic [ref=e2050]:
-                          - img [ref=e2051]
-                          - generic [ref=e2054]: user-11111111@namlend.com
-                        - generic [ref=e2055]:
-                          - img [ref=e2056]
-                          - generic [ref=e2058]: Applied 14 Nov 2025
-                        - generic [ref=e2059]:
-                          - img [ref=e2060]
-                          - generic [ref=e2063]: Test disbursement
-                      - generic [ref=e2065]:
+                          - generic [ref=e2038]:
+                            - img [ref=e2039]
+                            - generic [ref=e2042]: approved
+                          - generic [ref=e2043]: Low Risk
+                        - generic [ref=e2044]:
+                          - generic [ref=e2045]: N$5,000.00
+                          - generic [ref=e2046]: Requested Amount
+                      - generic [ref=e2047]:
+                        - generic [ref=e2048]:
+                          - img [ref=e2049]
+                          - generic [ref=e2052]: user-11111111@namlend.com
+                        - generic [ref=e2053]:
+                          - img [ref=e2054]
+                          - generic [ref=e2056]: Applied 14 Nov 2025
+                        - generic [ref=e2057]:
+                          - img [ref=e2058]
+                          - generic [ref=e2061]: Test disbursement
+                      - generic [ref=e2063]:
                         - text: "0"
-                        - generic [ref=e2066]:
-                          - generic [ref=e2067]: "Employment:"
-                          - generic [ref=e2068]: Not specified
-                        - generic [ref=e2069]:
-                          - generic [ref=e2070]: "Credit Score:"
-                          - generic [ref=e2071]: "649"
-                    - generic [ref=e2072]:
-                      - button "Review" [ref=e2073] [cursor=pointer]:
+                        - generic [ref=e2064]:
+                          - generic [ref=e2065]: "Employment:"
+                          - generic [ref=e2066]: Not specified
+                        - generic [ref=e2067]:
+                          - generic [ref=e2068]: "Credit Score:"
+                          - generic [ref=e2069]: "616"
+                    - generic [ref=e2070]:
+                      - button "Review" [ref=e2071] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2074] [cursor=pointer]:
+                      - button "Disburse" [ref=e2072] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2077]:
-                    - checkbox [ref=e2078] [cursor=pointer]
-                    - generic [ref=e2079]:
-                      - generic [ref=e2080]:
-                        - generic [ref=e2081]:
+                  - generic [ref=e2075]:
+                    - checkbox [ref=e2076] [cursor=pointer]
+                    - generic [ref=e2077]:
+                      - generic [ref=e2078]:
+                        - generic [ref=e2079]:
                           - heading [level=3]
-                          - generic [ref=e2082]:
-                            - img [ref=e2083]
-                            - generic [ref=e2086]: approved
-                          - generic [ref=e2087]:
-                            - img [ref=e2088]
-                            - text: High Risk
+                          - generic [ref=e2080]:
+                            - img [ref=e2081]
+                            - generic [ref=e2084]: approved
+                          - generic [ref=e2085]: Low Risk
+                        - generic [ref=e2086]:
+                          - generic [ref=e2087]: N$5,000.00
+                          - generic [ref=e2088]: Requested Amount
+                      - generic [ref=e2089]:
                         - generic [ref=e2090]:
-                          - generic [ref=e2091]: N$5,000.00
-                          - generic [ref=e2092]: Requested Amount
-                      - generic [ref=e2093]:
-                        - generic [ref=e2094]:
-                          - img [ref=e2095]
-                          - generic [ref=e2098]: user-11111111@namlend.com
+                          - img [ref=e2091]
+                          - generic [ref=e2094]: user-11111111@namlend.com
+                        - generic [ref=e2095]:
+                          - img [ref=e2096]
+                          - generic [ref=e2098]: Applied 14 Nov 2025
                         - generic [ref=e2099]:
                           - img [ref=e2100]
-                          - generic [ref=e2102]: Applied 14 Nov 2025
-                        - generic [ref=e2103]:
-                          - img [ref=e2104]
-                          - generic [ref=e2107]: Test disbursement
-                      - generic [ref=e2109]:
+                          - generic [ref=e2103]: Test disbursement
+                      - generic [ref=e2105]:
                         - text: "0"
-                        - generic [ref=e2110]:
-                          - generic [ref=e2111]: "Employment:"
-                          - generic [ref=e2112]: Not specified
-                        - generic [ref=e2113]:
-                          - generic [ref=e2114]: "Credit Score:"
-                          - generic [ref=e2115]: "719"
-                    - generic [ref=e2116]:
-                      - button "Review" [ref=e2117] [cursor=pointer]:
+                        - generic [ref=e2106]:
+                          - generic [ref=e2107]: "Employment:"
+                          - generic [ref=e2108]: Not specified
+                        - generic [ref=e2109]:
+                          - generic [ref=e2110]: "Credit Score:"
+                          - generic [ref=e2111]: "655"
+                    - generic [ref=e2112]:
+                      - button "Review" [ref=e2113] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2118] [cursor=pointer]:
+                      - button "Disburse" [ref=e2114] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2121]:
-                    - checkbox [ref=e2122] [cursor=pointer]
-                    - generic [ref=e2123]:
-                      - generic [ref=e2124]:
-                        - generic [ref=e2125]:
+                  - generic [ref=e2117]:
+                    - checkbox [ref=e2118] [cursor=pointer]
+                    - generic [ref=e2119]:
+                      - generic [ref=e2120]:
+                        - generic [ref=e2121]:
                           - heading [level=3]
-                          - generic [ref=e2126]:
-                            - img [ref=e2127]
-                            - generic [ref=e2130]: approved
-                          - generic [ref=e2131]: Low Risk
+                          - generic [ref=e2122]:
+                            - img [ref=e2123]
+                            - generic [ref=e2126]: approved
+                          - generic [ref=e2127]: Low Risk
+                        - generic [ref=e2128]:
+                          - generic [ref=e2129]: N$5,000.00
+                          - generic [ref=e2130]: Requested Amount
+                      - generic [ref=e2131]:
                         - generic [ref=e2132]:
-                          - generic [ref=e2133]: N$5,000.00
-                          - generic [ref=e2134]: Requested Amount
-                      - generic [ref=e2135]:
-                        - generic [ref=e2136]:
-                          - img [ref=e2137]
-                          - generic [ref=e2140]: user-11111111@namlend.com
+                          - img [ref=e2133]
+                          - generic [ref=e2136]: user-11111111@namlend.com
+                        - generic [ref=e2137]:
+                          - img [ref=e2138]
+                          - generic [ref=e2140]: Applied 14 Nov 2025
                         - generic [ref=e2141]:
                           - img [ref=e2142]
-                          - generic [ref=e2144]: Applied 14 Nov 2025
-                        - generic [ref=e2145]:
-                          - img [ref=e2146]
-                          - generic [ref=e2149]: Test disbursement
-                      - generic [ref=e2151]:
+                          - generic [ref=e2145]: Test disbursement
+                      - generic [ref=e2147]:
                         - text: "0"
-                        - generic [ref=e2152]:
-                          - generic [ref=e2153]: "Employment:"
-                          - generic [ref=e2154]: Not specified
-                        - generic [ref=e2155]:
-                          - generic [ref=e2156]: "Credit Score:"
-                          - generic [ref=e2157]: "693"
-                    - generic [ref=e2158]:
-                      - button "Review" [ref=e2159] [cursor=pointer]:
+                        - generic [ref=e2148]:
+                          - generic [ref=e2149]: "Employment:"
+                          - generic [ref=e2150]: Not specified
+                        - generic [ref=e2151]:
+                          - generic [ref=e2152]: "Credit Score:"
+                          - generic [ref=e2153]: "714"
+                    - generic [ref=e2154]:
+                      - button "Review" [ref=e2155] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2160] [cursor=pointer]:
+                      - button "Disburse" [ref=e2156] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2163]:
-                    - checkbox [ref=e2164] [cursor=pointer]
-                    - generic [ref=e2165]:
-                      - generic [ref=e2166]:
-                        - generic [ref=e2167]:
+                  - generic [ref=e2159]:
+                    - checkbox [ref=e2160] [cursor=pointer]
+                    - generic [ref=e2161]:
+                      - generic [ref=e2162]:
+                        - generic [ref=e2163]:
                           - heading [level=3]
-                          - generic [ref=e2168]:
-                            - img [ref=e2169]
-                            - generic [ref=e2172]: approved
-                          - generic [ref=e2173]: Low Risk
+                          - generic [ref=e2164]:
+                            - img [ref=e2165]
+                            - generic [ref=e2168]: approved
+                          - generic [ref=e2169]: Low Risk
+                        - generic [ref=e2170]:
+                          - generic [ref=e2171]: N$5,000.00
+                          - generic [ref=e2172]: Requested Amount
+                      - generic [ref=e2173]:
                         - generic [ref=e2174]:
-                          - generic [ref=e2175]: N$5,000.00
-                          - generic [ref=e2176]: Requested Amount
-                      - generic [ref=e2177]:
-                        - generic [ref=e2178]:
-                          - img [ref=e2179]
-                          - generic [ref=e2182]: user-11111111@namlend.com
+                          - img [ref=e2175]
+                          - generic [ref=e2178]: user-11111111@namlend.com
+                        - generic [ref=e2179]:
+                          - img [ref=e2180]
+                          - generic [ref=e2182]: Applied 14 Nov 2025
                         - generic [ref=e2183]:
                           - img [ref=e2184]
-                          - generic [ref=e2186]: Applied 14 Nov 2025
-                        - generic [ref=e2187]:
-                          - img [ref=e2188]
-                          - generic [ref=e2191]: Test disbursement
-                      - generic [ref=e2193]:
+                          - generic [ref=e2187]: Test disbursement
+                      - generic [ref=e2189]:
                         - text: "0"
-                        - generic [ref=e2194]:
-                          - generic [ref=e2195]: "Employment:"
-                          - generic [ref=e2196]: Not specified
-                        - generic [ref=e2197]:
-                          - generic [ref=e2198]: "Credit Score:"
-                          - generic [ref=e2199]: "734"
-                    - generic [ref=e2200]:
-                      - button "Review" [ref=e2201] [cursor=pointer]:
+                        - generic [ref=e2190]:
+                          - generic [ref=e2191]: "Employment:"
+                          - generic [ref=e2192]: Not specified
+                        - generic [ref=e2193]:
+                          - generic [ref=e2194]: "Credit Score:"
+                          - generic [ref=e2195]: "621"
+                    - generic [ref=e2196]:
+                      - button "Review" [ref=e2197] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2202] [cursor=pointer]:
+                      - button "Disburse" [ref=e2198] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2205]:
-                    - checkbox [ref=e2206] [cursor=pointer]
-                    - generic [ref=e2207]:
-                      - generic [ref=e2208]:
-                        - generic [ref=e2209]:
+                  - generic [ref=e2201]:
+                    - checkbox [ref=e2202] [cursor=pointer]
+                    - generic [ref=e2203]:
+                      - generic [ref=e2204]:
+                        - generic [ref=e2205]:
                           - heading [level=3]
-                          - generic [ref=e2210]:
-                            - img [ref=e2211]
-                            - generic [ref=e2214]: approved
-                          - generic [ref=e2215]: Medium Risk
+                          - generic [ref=e2206]:
+                            - img [ref=e2207]
+                            - generic [ref=e2210]: approved
+                          - generic [ref=e2211]: Low Risk
+                        - generic [ref=e2212]:
+                          - generic [ref=e2213]: N$5,000.00
+                          - generic [ref=e2214]: Requested Amount
+                      - generic [ref=e2215]:
                         - generic [ref=e2216]:
-                          - generic [ref=e2217]: N$5,000.00
-                          - generic [ref=e2218]: Requested Amount
-                      - generic [ref=e2219]:
-                        - generic [ref=e2220]:
-                          - img [ref=e2221]
-                          - generic [ref=e2224]: user-11111111@namlend.com
+                          - img [ref=e2217]
+                          - generic [ref=e2220]: user-11111111@namlend.com
+                        - generic [ref=e2221]:
+                          - img [ref=e2222]
+                          - generic [ref=e2224]: Applied 14 Nov 2025
                         - generic [ref=e2225]:
                           - img [ref=e2226]
-                          - generic [ref=e2228]: Applied 14 Nov 2025
-                        - generic [ref=e2229]:
-                          - img [ref=e2230]
-                          - generic [ref=e2233]: Test disbursement
-                      - generic [ref=e2235]:
+                          - generic [ref=e2229]: Test disbursement
+                      - generic [ref=e2231]:
                         - text: "0"
-                        - generic [ref=e2236]:
-                          - generic [ref=e2237]: "Employment:"
-                          - generic [ref=e2238]: Not specified
-                        - generic [ref=e2239]:
-                          - generic [ref=e2240]: "Credit Score:"
-                          - generic [ref=e2241]: "702"
-                    - generic [ref=e2242]:
-                      - button "Review" [ref=e2243] [cursor=pointer]:
+                        - generic [ref=e2232]:
+                          - generic [ref=e2233]: "Employment:"
+                          - generic [ref=e2234]: Not specified
+                        - generic [ref=e2235]:
+                          - generic [ref=e2236]: "Credit Score:"
+                          - generic [ref=e2237]: "680"
+                    - generic [ref=e2238]:
+                      - button "Review" [ref=e2239] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2244] [cursor=pointer]:
+                      - button "Disburse" [ref=e2240] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2247]:
-                    - checkbox [ref=e2248] [cursor=pointer]
-                    - generic [ref=e2249]:
-                      - generic [ref=e2250]:
-                        - generic [ref=e2251]:
+                  - generic [ref=e2243]:
+                    - checkbox [ref=e2244] [cursor=pointer]
+                    - generic [ref=e2245]:
+                      - generic [ref=e2246]:
+                        - generic [ref=e2247]:
                           - heading [level=3]
-                          - generic [ref=e2252]:
-                            - img [ref=e2253]
-                            - generic [ref=e2256]: approved
-                          - generic [ref=e2257]: Low Risk
+                          - generic [ref=e2248]:
+                            - img [ref=e2249]
+                            - generic [ref=e2252]: approved
+                          - generic [ref=e2253]: Low Risk
+                        - generic [ref=e2254]:
+                          - generic [ref=e2255]: N$5,000.00
+                          - generic [ref=e2256]: Requested Amount
+                      - generic [ref=e2257]:
                         - generic [ref=e2258]:
-                          - generic [ref=e2259]: N$5,000.00
-                          - generic [ref=e2260]: Requested Amount
-                      - generic [ref=e2261]:
-                        - generic [ref=e2262]:
-                          - img [ref=e2263]
-                          - generic [ref=e2266]: user-11111111@namlend.com
+                          - img [ref=e2259]
+                          - generic [ref=e2262]: user-11111111@namlend.com
+                        - generic [ref=e2263]:
+                          - img [ref=e2264]
+                          - generic [ref=e2266]: Applied 14 Nov 2025
                         - generic [ref=e2267]:
                           - img [ref=e2268]
-                          - generic [ref=e2270]: Applied 14 Nov 2025
-                        - generic [ref=e2271]:
-                          - img [ref=e2272]
-                          - generic [ref=e2275]: Test disbursement
-                      - generic [ref=e2277]:
+                          - generic [ref=e2271]: Test disbursement
+                      - generic [ref=e2273]:
                         - text: "0"
-                        - generic [ref=e2278]:
-                          - generic [ref=e2279]: "Employment:"
-                          - generic [ref=e2280]: Not specified
-                        - generic [ref=e2281]:
-                          - generic [ref=e2282]: "Credit Score:"
-                          - generic [ref=e2283]: "793"
-                    - generic [ref=e2284]:
-                      - button "Review" [ref=e2285] [cursor=pointer]:
+                        - generic [ref=e2274]:
+                          - generic [ref=e2275]: "Employment:"
+                          - generic [ref=e2276]: Not specified
+                        - generic [ref=e2277]:
+                          - generic [ref=e2278]: "Credit Score:"
+                          - generic [ref=e2279]: "619"
+                    - generic [ref=e2280]:
+                      - button "Review" [ref=e2281] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2286] [cursor=pointer]:
+                      - button "Disburse" [ref=e2282] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2289]:
-                    - checkbox [ref=e2290] [cursor=pointer]
-                    - generic [ref=e2291]:
-                      - generic [ref=e2292]:
-                        - generic [ref=e2293]:
+                  - generic [ref=e2285]:
+                    - checkbox [ref=e2286] [cursor=pointer]
+                    - generic [ref=e2287]:
+                      - generic [ref=e2288]:
+                        - generic [ref=e2289]:
                           - heading [level=3]
-                          - generic [ref=e2294]:
-                            - img [ref=e2295]
-                            - generic [ref=e2298]: approved
-                          - generic [ref=e2299]:
-                            - img [ref=e2300]
-                            - text: High Risk
-                        - generic [ref=e2302]:
-                          - generic [ref=e2303]: N$50,000.00
-                          - generic [ref=e2304]: Requested Amount
-                      - generic [ref=e2305]:
-                        - generic [ref=e2306]:
-                          - img [ref=e2307]
-                          - generic [ref=e2310]: user-11111111@namlend.com
-                        - generic [ref=e2311]:
-                          - img [ref=e2312]
-                          - generic [ref=e2314]: Applied 8 Nov 2025
-                        - generic [ref=e2315]:
-                          - img [ref=e2316]
-                          - generic [ref=e2319]: Home improvement
-                      - generic [ref=e2321]:
+                          - generic [ref=e2290]:
+                            - img [ref=e2291]
+                            - generic [ref=e2294]: approved
+                          - generic [ref=e2295]: Low Risk
+                        - generic [ref=e2296]:
+                          - generic [ref=e2297]: N$100,000.00
+                          - generic [ref=e2298]: Requested Amount
+                      - generic [ref=e2299]:
+                        - generic [ref=e2300]:
+                          - img [ref=e2301]
+                          - generic [ref=e2304]: user-11111111@namlend.com
+                        - generic [ref=e2305]:
+                          - img [ref=e2306]
+                          - generic [ref=e2308]: Applied 13 Nov 2025
+                        - generic [ref=e2309]:
+                          - img [ref=e2310]
+                          - generic [ref=e2313]: UI Test - Approved Loan 3
+                      - generic [ref=e2315]:
                         - text: "0"
-                        - generic [ref=e2322]:
-                          - generic [ref=e2323]: "Employment:"
-                          - generic [ref=e2324]: Not specified
-                        - generic [ref=e2325]:
-                          - generic [ref=e2326]: "Credit Score:"
-                          - generic [ref=e2327]: "559"
-                    - generic [ref=e2328]:
-                      - button "Review" [ref=e2329] [cursor=pointer]:
+                        - generic [ref=e2316]:
+                          - generic [ref=e2317]: "Employment:"
+                          - generic [ref=e2318]: Not specified
+                        - generic [ref=e2319]:
+                          - generic [ref=e2320]: "Credit Score:"
+                          - generic [ref=e2321]: "574"
+                    - generic [ref=e2322]:
+                      - button "Review" [ref=e2323] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2330] [cursor=pointer]:
+                      - button "Disburse" [ref=e2324] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2333]:
-                    - checkbox [ref=e2334] [cursor=pointer]
-                    - generic [ref=e2335]:
-                      - generic [ref=e2336]:
-                        - generic [ref=e2337]:
+                  - generic [ref=e2327]:
+                    - checkbox [ref=e2328] [cursor=pointer]
+                    - generic [ref=e2329]:
+                      - generic [ref=e2330]:
+                        - generic [ref=e2331]:
                           - heading [level=3]
-                          - generic [ref=e2338]:
-                            - img [ref=e2339]
-                            - generic [ref=e2342]: approved
-                          - generic [ref=e2343]: Low Risk
-                        - generic [ref=e2344]:
-                          - generic [ref=e2345]: N$100,000.00
-                          - generic [ref=e2346]: Requested Amount
-                      - generic [ref=e2347]:
-                        - generic [ref=e2348]:
-                          - img [ref=e2349]
-                          - generic [ref=e2352]: user-11111111@namlend.com
-                        - generic [ref=e2353]:
-                          - img [ref=e2354]
-                          - generic [ref=e2356]: Applied 6 Nov 2025
-                        - generic [ref=e2357]:
-                          - img [ref=e2358]
-                          - generic [ref=e2361]: Business expansion
-                      - generic [ref=e2363]:
+                          - generic [ref=e2332]:
+                            - img [ref=e2333]
+                            - generic [ref=e2336]: approved
+                          - generic [ref=e2337]: Low Risk
+                        - generic [ref=e2338]:
+                          - generic [ref=e2339]: N$75,000.00
+                          - generic [ref=e2340]: Requested Amount
+                      - generic [ref=e2341]:
+                        - generic [ref=e2342]:
+                          - img [ref=e2343]
+                          - generic [ref=e2346]: user-22222222@namlend.com
+                        - generic [ref=e2347]:
+                          - img [ref=e2348]
+                          - generic [ref=e2350]: Applied 13 Nov 2025
+                        - generic [ref=e2351]:
+                          - img [ref=e2352]
+                          - generic [ref=e2355]: UI Test - Approved Loan 2
+                      - generic [ref=e2357]:
                         - text: "0"
-                        - generic [ref=e2364]:
-                          - generic [ref=e2365]: "Employment:"
-                          - generic [ref=e2366]: Not specified
-                        - generic [ref=e2367]:
-                          - generic [ref=e2368]: "Credit Score:"
-                          - generic [ref=e2369]: "759"
-                    - generic [ref=e2370]:
-                      - button "Review" [ref=e2371] [cursor=pointer]:
+                        - generic [ref=e2358]:
+                          - generic [ref=e2359]: "Employment:"
+                          - generic [ref=e2360]: Not specified
+                        - generic [ref=e2361]:
+                          - generic [ref=e2362]: "Credit Score:"
+                          - generic [ref=e2363]: "761"
+                    - generic [ref=e2364]:
+                      - button "Review" [ref=e2365] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2372] [cursor=pointer]:
+                      - button "Disburse" [ref=e2366] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2375]:
-                    - checkbox [ref=e2376] [cursor=pointer]
-                    - generic [ref=e2377]:
-                      - generic [ref=e2378]:
-                        - generic [ref=e2379]:
+                  - generic [ref=e2369]:
+                    - checkbox [ref=e2370] [cursor=pointer]
+                    - generic [ref=e2371]:
+                      - generic [ref=e2372]:
+                        - generic [ref=e2373]:
                           - heading [level=3]
-                          - generic [ref=e2380]:
-                            - img [ref=e2381]
-                            - generic [ref=e2384]: approved
-                          - generic [ref=e2385]:
-                            - img [ref=e2386]
-                            - text: High Risk
-                        - generic [ref=e2388]:
-                          - generic [ref=e2389]: N$75,000.00
-                          - generic [ref=e2390]: Requested Amount
-                      - generic [ref=e2391]:
-                        - generic [ref=e2392]:
-                          - img [ref=e2393]
-                          - generic [ref=e2396]: user-22222222@namlend.com
-                        - generic [ref=e2397]:
-                          - img [ref=e2398]
-                          - generic [ref=e2400]: Applied 5 Nov 2025
-                        - generic [ref=e2401]:
-                          - img [ref=e2402]
-                          - generic [ref=e2405]: Education
-                      - generic [ref=e2407]:
+                          - generic [ref=e2374]:
+                            - img [ref=e2375]
+                            - generic [ref=e2378]: approved
+                          - generic [ref=e2379]: Low Risk
+                        - generic [ref=e2380]:
+                          - generic [ref=e2381]: N$50,000.00
+                          - generic [ref=e2382]: Requested Amount
+                      - generic [ref=e2383]:
+                        - generic [ref=e2384]:
+                          - img [ref=e2385]
+                          - generic [ref=e2388]: user-11111111@namlend.com
+                        - generic [ref=e2389]:
+                          - img [ref=e2390]
+                          - generic [ref=e2392]: Applied 12 Nov 2025
+                        - generic [ref=e2393]:
+                          - img [ref=e2394]
+                          - generic [ref=e2397]: UI Test - Approved Loan 1
+                      - generic [ref=e2399]:
                         - text: "0"
-                        - generic [ref=e2408]:
-                          - generic [ref=e2409]: "Employment:"
-                          - generic [ref=e2410]: Not specified
-                        - generic [ref=e2411]:
-                          - generic [ref=e2412]: "Credit Score:"
-                          - generic [ref=e2413]: "754"
-                    - generic [ref=e2414]:
-                      - button "Review" [ref=e2415] [cursor=pointer]:
+                        - generic [ref=e2400]:
+                          - generic [ref=e2401]: "Employment:"
+                          - generic [ref=e2402]: Not specified
+                        - generic [ref=e2403]:
+                          - generic [ref=e2404]: "Credit Score:"
+                          - generic [ref=e2405]: "728"
+                    - generic [ref=e2406]:
+                      - button "Review" [ref=e2407] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2416] [cursor=pointer]:
+                      - button "Disburse" [ref=e2408] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2419]:
-                    - checkbox [ref=e2420] [cursor=pointer]
-                    - generic [ref=e2421]:
-                      - generic [ref=e2422]:
-                        - generic [ref=e2423]:
-                          - heading "Nog Skuld" [level=3] [ref=e2424]
-                          - generic [ref=e2425]:
-                            - img [ref=e2426]
-                            - generic [ref=e2429]: approved
-                          - generic [ref=e2430]: Low Risk
+                  - generic [ref=e2411]:
+                    - checkbox [ref=e2412] [cursor=pointer]
+                    - generic [ref=e2413]:
+                      - generic [ref=e2414]:
+                        - generic [ref=e2415]:
+                          - heading [level=3]
+                          - generic [ref=e2416]:
+                            - img [ref=e2417]
+                            - generic [ref=e2420]: approved
+                          - generic [ref=e2421]: Low Risk
+                        - generic [ref=e2422]:
+                          - generic [ref=e2423]: N$50,000.00
+                          - generic [ref=e2424]: Requested Amount
+                      - generic [ref=e2425]:
+                        - generic [ref=e2426]:
+                          - img [ref=e2427]
+                          - generic [ref=e2430]: user-11111111@namlend.com
                         - generic [ref=e2431]:
-                          - generic [ref=e2432]: N$5,000.00
-                          - generic [ref=e2433]: Requested Amount
-                      - generic [ref=e2434]:
+                          - img [ref=e2432]
+                          - generic [ref=e2434]: Applied 8 Nov 2025
                         - generic [ref=e2435]:
                           - img [ref=e2436]
-                          - generic [ref=e2439]: user-d109c025@namlend.com
-                        - generic [ref=e2440]:
-                          - img [ref=e2441]
-                          - generic [ref=e2443]: Applied 31 Oct 2025
-                        - generic [ref=e2444]:
-                          - img [ref=e2445]
-                          - generic [ref=e2448]: Home stuff
-                      - generic [ref=e2450]:
-                        - generic [ref=e2451]:
-                          - generic [ref=e2452]: "Monthly Income:"
-                          - generic [ref=e2453]: N$89,451.00
-                        - generic [ref=e2454]:
-                          - generic [ref=e2455]: "Employment:"
-                          - generic [ref=e2456]: employed
+                          - generic [ref=e2439]: Home improvement
+                      - generic [ref=e2441]:
+                        - text: "0"
+                        - generic [ref=e2442]:
+                          - generic [ref=e2443]: "Employment:"
+                          - generic [ref=e2444]: Not specified
+                        - generic [ref=e2445]:
+                          - generic [ref=e2446]: "Credit Score:"
+                          - generic [ref=e2447]: "624"
+                    - generic [ref=e2448]:
+                      - button "Review" [ref=e2449] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2450] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2453]:
+                    - checkbox [ref=e2454] [cursor=pointer]
+                    - generic [ref=e2455]:
+                      - generic [ref=e2456]:
                         - generic [ref=e2457]:
-                          - generic [ref=e2458]: "Credit Score:"
-                          - generic [ref=e2459]: "745"
-                    - generic [ref=e2460]:
-                      - button "Review" [ref=e2461] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2462] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2465]:
-                    - checkbox [ref=e2466] [cursor=pointer]
-                    - generic [ref=e2467]:
-                      - generic [ref=e2468]:
-                        - generic [ref=e2469]:
-                          - heading "Nog Skuld" [level=3] [ref=e2470]
-                          - generic [ref=e2471]:
-                            - img [ref=e2472]
-                            - generic [ref=e2475]: approved
-                          - generic [ref=e2476]: Low Risk
+                          - heading [level=3]
+                          - generic [ref=e2458]:
+                            - img [ref=e2459]
+                            - generic [ref=e2462]: approved
+                          - generic [ref=e2463]: Medium Risk
+                        - generic [ref=e2464]:
+                          - generic [ref=e2465]: N$100,000.00
+                          - generic [ref=e2466]: Requested Amount
+                      - generic [ref=e2467]:
+                        - generic [ref=e2468]:
+                          - img [ref=e2469]
+                          - generic [ref=e2472]: user-11111111@namlend.com
+                        - generic [ref=e2473]:
+                          - img [ref=e2474]
+                          - generic [ref=e2476]: Applied 6 Nov 2025
                         - generic [ref=e2477]:
-                          - generic [ref=e2478]: N$1,419.00
-                          - generic [ref=e2479]: Requested Amount
-                      - generic [ref=e2480]:
-                        - generic [ref=e2481]:
-                          - img [ref=e2482]
-                          - generic [ref=e2485]: user-d109c025@namlend.com
-                        - generic [ref=e2486]:
-                          - img [ref=e2487]
-                          - generic [ref=e2489]: Applied 18 Oct 2025
-                        - generic [ref=e2490]:
-                          - img [ref=e2491]
-                          - generic [ref=e2494]: education
-                      - generic [ref=e2496]:
-                        - generic [ref=e2497]:
-                          - generic [ref=e2498]: "Monthly Income:"
-                          - generic [ref=e2499]: N$89,451.00
-                        - generic [ref=e2500]:
-                          - generic [ref=e2501]: "Employment:"
-                          - generic [ref=e2502]: employed
-                        - generic [ref=e2503]:
-                          - generic [ref=e2504]: "Credit Score:"
-                          - generic [ref=e2505]: "611"
-                    - generic [ref=e2506]:
-                      - button "Review" [ref=e2507] [cursor=pointer]:
+                          - img [ref=e2478]
+                          - generic [ref=e2481]: Business expansion
+                      - generic [ref=e2483]:
+                        - text: "0"
+                        - generic [ref=e2484]:
+                          - generic [ref=e2485]: "Employment:"
+                          - generic [ref=e2486]: Not specified
+                        - generic [ref=e2487]:
+                          - generic [ref=e2488]: "Credit Score:"
+                          - generic [ref=e2489]: "734"
+                    - generic [ref=e2490]:
+                      - button "Review" [ref=e2491] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2508] [cursor=pointer]:
+                      - button "Disburse" [ref=e2492] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2511]:
-                    - checkbox [ref=e2512] [cursor=pointer]
-                    - generic [ref=e2513]:
-                      - generic [ref=e2514]:
-                        - generic [ref=e2515]:
-                          - heading "Nog Skuld" [level=3] [ref=e2516]
-                          - generic [ref=e2517]:
-                            - img [ref=e2518]
-                            - generic [ref=e2521]: approved
-                          - generic [ref=e2522]: Medium Risk
-                        - generic [ref=e2523]:
-                          - generic [ref=e2524]: N$15,000.00
-                          - generic [ref=e2525]: Requested Amount
-                      - generic [ref=e2526]:
-                        - generic [ref=e2527]:
-                          - img [ref=e2528]
-                          - generic [ref=e2531]: user-d109c025@namlend.com
-                        - generic [ref=e2532]:
-                          - img [ref=e2533]
-                          - generic [ref=e2535]: Applied 18 Oct 2025
-                        - generic [ref=e2536]:
-                          - img [ref=e2537]
-                          - generic [ref=e2540]: Business expansion
+                  - generic [ref=e2495]:
+                    - checkbox [ref=e2496] [cursor=pointer]
+                    - generic [ref=e2497]:
+                      - generic [ref=e2498]:
+                        - generic [ref=e2499]:
+                          - heading [level=3]
+                          - generic [ref=e2500]:
+                            - img [ref=e2501]
+                            - generic [ref=e2504]: approved
+                          - generic [ref=e2505]:
+                            - img [ref=e2506]
+                            - text: High Risk
+                        - generic [ref=e2508]:
+                          - generic [ref=e2509]: N$75,000.00
+                          - generic [ref=e2510]: Requested Amount
+                      - generic [ref=e2511]:
+                        - generic [ref=e2512]:
+                          - img [ref=e2513]
+                          - generic [ref=e2516]: user-22222222@namlend.com
+                        - generic [ref=e2517]:
+                          - img [ref=e2518]
+                          - generic [ref=e2520]: Applied 5 Nov 2025
+                        - generic [ref=e2521]:
+                          - img [ref=e2522]
+                          - generic [ref=e2525]: Education
+                      - generic [ref=e2527]:
+                        - text: "0"
+                        - generic [ref=e2528]:
+                          - generic [ref=e2529]: "Employment:"
+                          - generic [ref=e2530]: Not specified
+                        - generic [ref=e2531]:
+                          - generic [ref=e2532]: "Credit Score:"
+                          - generic [ref=e2533]: "753"
+                    - generic [ref=e2534]:
+                      - button "Review" [ref=e2535] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2536] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2539]:
+                    - checkbox [ref=e2540] [cursor=pointer]
+                    - generic [ref=e2541]:
                       - generic [ref=e2542]:
                         - generic [ref=e2543]:
-                          - generic [ref=e2544]: "Monthly Income:"
-                          - generic [ref=e2545]: N$89,451.00
-                        - generic [ref=e2546]:
-                          - generic [ref=e2547]: "Employment:"
-                          - generic [ref=e2548]: employed
-                        - generic [ref=e2549]:
-                          - generic [ref=e2550]: "Credit Score:"
-                          - generic [ref=e2551]: "597"
-                    - generic [ref=e2552]:
-                      - button "Review" [ref=e2553] [cursor=pointer]:
+                          - heading "Nog Skuld" [level=3] [ref=e2544]
+                          - generic [ref=e2545]:
+                            - img [ref=e2546]
+                            - generic [ref=e2549]: approved
+                          - generic [ref=e2550]: Low Risk
+                        - generic [ref=e2551]:
+                          - generic [ref=e2552]: N$5,000.00
+                          - generic [ref=e2553]: Requested Amount
+                      - generic [ref=e2554]:
+                        - generic [ref=e2555]:
+                          - img [ref=e2556]
+                          - generic [ref=e2559]: user-d109c025@namlend.com
+                        - generic [ref=e2560]:
+                          - img [ref=e2561]
+                          - generic [ref=e2563]: Applied 31 Oct 2025
+                        - generic [ref=e2564]:
+                          - img [ref=e2565]
+                          - generic [ref=e2568]: Home stuff
+                      - generic [ref=e2570]:
+                        - generic [ref=e2571]:
+                          - generic [ref=e2572]: "Monthly Income:"
+                          - generic [ref=e2573]: N$89,451.00
+                        - generic [ref=e2574]:
+                          - generic [ref=e2575]: "Employment:"
+                          - generic [ref=e2576]: employed
+                        - generic [ref=e2577]:
+                          - generic [ref=e2578]: "Credit Score:"
+                          - generic [ref=e2579]: "711"
+                    - generic [ref=e2580]:
+                      - button "Review" [ref=e2581] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2554] [cursor=pointer]:
+                      - button "Disburse" [ref=e2582] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2557]:
-                    - checkbox [ref=e2558] [cursor=pointer]
-                    - generic [ref=e2559]:
-                      - generic [ref=e2560]:
-                        - generic [ref=e2561]:
-                          - heading "Nog Skuld" [level=3] [ref=e2562]
-                          - generic [ref=e2563]:
-                            - img [ref=e2564]
-                            - generic [ref=e2567]: approved
-                          - generic [ref=e2568]: Low Risk
-                        - generic [ref=e2569]:
-                          - generic [ref=e2570]: N$5,000.00
-                          - generic [ref=e2571]: Requested Amount
-                      - generic [ref=e2572]:
-                        - generic [ref=e2573]:
-                          - img [ref=e2574]
-                          - generic [ref=e2577]: user-d109c025@namlend.com
-                        - generic [ref=e2578]:
-                          - img [ref=e2579]
-                          - generic [ref=e2581]: Applied 18 Oct 2025
-                        - generic [ref=e2582]:
-                          - img [ref=e2583]
-                          - generic [ref=e2586]: Home stuff
+                  - generic [ref=e2585]:
+                    - checkbox [ref=e2586] [cursor=pointer]
+                    - generic [ref=e2587]:
                       - generic [ref=e2588]:
                         - generic [ref=e2589]:
-                          - generic [ref=e2590]: "Monthly Income:"
-                          - generic [ref=e2591]: N$89,451.00
-                        - generic [ref=e2592]:
-                          - generic [ref=e2593]: "Employment:"
-                          - generic [ref=e2594]: employed
-                        - generic [ref=e2595]:
-                          - generic [ref=e2596]: "Credit Score:"
-                          - generic [ref=e2597]: "531"
-                    - generic [ref=e2598]:
-                      - button "Review" [ref=e2599] [cursor=pointer]:
+                          - heading "Nog Skuld" [level=3] [ref=e2590]
+                          - generic [ref=e2591]:
+                            - img [ref=e2592]
+                            - generic [ref=e2595]: approved
+                          - generic [ref=e2596]: Medium Risk
+                        - generic [ref=e2597]:
+                          - generic [ref=e2598]: N$1,419.00
+                          - generic [ref=e2599]: Requested Amount
+                      - generic [ref=e2600]:
+                        - generic [ref=e2601]:
+                          - img [ref=e2602]
+                          - generic [ref=e2605]: user-d109c025@namlend.com
+                        - generic [ref=e2606]:
+                          - img [ref=e2607]
+                          - generic [ref=e2609]: Applied 18 Oct 2025
+                        - generic [ref=e2610]:
+                          - img [ref=e2611]
+                          - generic [ref=e2614]: education
+                      - generic [ref=e2616]:
+                        - generic [ref=e2617]:
+                          - generic [ref=e2618]: "Monthly Income:"
+                          - generic [ref=e2619]: N$89,451.00
+                        - generic [ref=e2620]:
+                          - generic [ref=e2621]: "Employment:"
+                          - generic [ref=e2622]: employed
+                        - generic [ref=e2623]:
+                          - generic [ref=e2624]: "Credit Score:"
+                          - generic [ref=e2625]: "503"
+                    - generic [ref=e2626]:
+                      - button "Review" [ref=e2627] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e2600] [cursor=pointer]:
+                      - button "Disburse" [ref=e2628] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e2603]:
-                    - checkbox [ref=e2604] [cursor=pointer]
-                    - generic [ref=e2605]:
-                      - generic [ref=e2606]:
-                        - generic [ref=e2607]:
-                          - heading "Nog Skuld" [level=3] [ref=e2608]
-                          - generic [ref=e2609]:
-                            - img [ref=e2610]
-                            - generic [ref=e2613]: approved
-                          - generic [ref=e2614]: Low Risk
-                        - generic [ref=e2615]:
-                          - generic [ref=e2616]: N$5,000.00
-                          - generic [ref=e2617]: Requested Amount
-                      - generic [ref=e2618]:
-                        - generic [ref=e2619]:
-                          - img [ref=e2620]
-                          - generic [ref=e2623]: user-d109c025@namlend.com
-                        - generic [ref=e2624]:
-                          - img [ref=e2625]
-                          - generic [ref=e2627]: Applied 17 Oct 2025
-                        - generic [ref=e2628]:
-                          - img [ref=e2629]
-                          - generic [ref=e2632]: Home stuff
+                  - generic [ref=e2631]:
+                    - checkbox [ref=e2632] [cursor=pointer]
+                    - generic [ref=e2633]:
                       - generic [ref=e2634]:
                         - generic [ref=e2635]:
-                          - generic [ref=e2636]: "Monthly Income:"
-                          - generic [ref=e2637]: N$89,451.00
-                        - generic [ref=e2638]:
-                          - generic [ref=e2639]: "Employment:"
-                          - generic [ref=e2640]: employed
-                        - generic [ref=e2641]:
-                          - generic [ref=e2642]: "Credit Score:"
-                          - generic [ref=e2643]: "606"
-                    - generic [ref=e2644]:
-                      - button "Review" [ref=e2645] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2646] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2649]:
-                    - checkbox [ref=e2650] [cursor=pointer]
-                    - generic [ref=e2651]:
-                      - generic [ref=e2652]:
-                        - generic [ref=e2653]:
-                          - heading "Nog Skuld" [level=3] [ref=e2654]
-                          - generic [ref=e2655]:
-                            - img [ref=e2656]
-                            - generic [ref=e2659]: approved
-                          - generic [ref=e2660]:
-                            - img [ref=e2661]
-                            - text: High Risk
+                          - heading "Nog Skuld" [level=3] [ref=e2636]
+                          - generic [ref=e2637]:
+                            - img [ref=e2638]
+                            - generic [ref=e2641]: approved
+                          - generic [ref=e2642]: Low Risk
+                        - generic [ref=e2643]:
+                          - generic [ref=e2644]: N$15,000.00
+                          - generic [ref=e2645]: Requested Amount
+                      - generic [ref=e2646]:
+                        - generic [ref=e2647]:
+                          - img [ref=e2648]
+                          - generic [ref=e2651]: user-d109c025@namlend.com
+                        - generic [ref=e2652]:
+                          - img [ref=e2653]
+                          - generic [ref=e2655]: Applied 18 Oct 2025
+                        - generic [ref=e2656]:
+                          - img [ref=e2657]
+                          - generic [ref=e2660]: Business expansion
+                      - generic [ref=e2662]:
                         - generic [ref=e2663]:
-                          - generic [ref=e2664]: N$41,900.00
-                          - generic [ref=e2665]: Requested Amount
-                      - generic [ref=e2666]:
-                        - generic [ref=e2667]:
-                          - img [ref=e2668]
-                          - generic [ref=e2671]: user-d109c025@namlend.com
-                        - generic [ref=e2672]:
-                          - img [ref=e2673]
-                          - generic [ref=e2675]: Applied 17 Oct 2025
-                        - generic [ref=e2676]:
-                          - img [ref=e2677]
-                          - generic [ref=e2680]: Home improvement
-                      - generic [ref=e2682]:
-                        - generic [ref=e2683]:
-                          - generic [ref=e2684]: "Monthly Income:"
-                          - generic [ref=e2685]: N$89,451.00
-                        - generic [ref=e2686]:
-                          - generic [ref=e2687]: "Employment:"
-                          - generic [ref=e2688]: employed
+                          - generic [ref=e2664]: "Monthly Income:"
+                          - generic [ref=e2665]: N$89,451.00
+                        - generic [ref=e2666]:
+                          - generic [ref=e2667]: "Employment:"
+                          - generic [ref=e2668]: employed
+                        - generic [ref=e2669]:
+                          - generic [ref=e2670]: "Credit Score:"
+                          - generic [ref=e2671]: "616"
+                    - generic [ref=e2672]:
+                      - button "Review" [ref=e2673] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2674] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2677]:
+                    - checkbox [ref=e2678] [cursor=pointer]
+                    - generic [ref=e2679]:
+                      - generic [ref=e2680]:
+                        - generic [ref=e2681]:
+                          - heading "Nog Skuld" [level=3] [ref=e2682]
+                          - generic [ref=e2683]:
+                            - img [ref=e2684]
+                            - generic [ref=e2687]: approved
+                          - generic [ref=e2688]: Low Risk
                         - generic [ref=e2689]:
-                          - generic [ref=e2690]: "Credit Score:"
-                          - generic [ref=e2691]: "679"
-                    - generic [ref=e2692]:
-                      - button "Review" [ref=e2693] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2694] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2697]:
-                    - checkbox [ref=e2698] [cursor=pointer]
-                    - generic [ref=e2699]:
-                      - generic [ref=e2700]:
-                        - generic [ref=e2701]:
-                          - heading "Nog Skuld" [level=3] [ref=e2702]
-                          - generic [ref=e2703]:
-                            - img [ref=e2704]
-                            - generic [ref=e2707]: approved
-                          - generic [ref=e2708]: Low Risk
+                          - generic [ref=e2690]: N$5,000.00
+                          - generic [ref=e2691]: Requested Amount
+                      - generic [ref=e2692]:
+                        - generic [ref=e2693]:
+                          - img [ref=e2694]
+                          - generic [ref=e2697]: user-d109c025@namlend.com
+                        - generic [ref=e2698]:
+                          - img [ref=e2699]
+                          - generic [ref=e2701]: Applied 18 Oct 2025
+                        - generic [ref=e2702]:
+                          - img [ref=e2703]
+                          - generic [ref=e2706]: Home stuff
+                      - generic [ref=e2708]:
                         - generic [ref=e2709]:
-                          - generic [ref=e2710]: N$1,711.00
-                          - generic [ref=e2711]: Requested Amount
-                      - generic [ref=e2712]:
-                        - generic [ref=e2713]:
-                          - img [ref=e2714]
-                          - generic [ref=e2717]: user-d109c025@namlend.com
-                        - generic [ref=e2718]:
-                          - img [ref=e2719]
-                          - generic [ref=e2721]: Applied 9 Oct 2025
-                        - generic [ref=e2722]:
-                          - img [ref=e2723]
-                          - generic [ref=e2726]: personal
-                      - generic [ref=e2728]:
-                        - generic [ref=e2729]:
-                          - generic [ref=e2730]: "Monthly Income:"
-                          - generic [ref=e2731]: N$89,451.00
-                        - generic [ref=e2732]:
-                          - generic [ref=e2733]: "Employment:"
-                          - generic [ref=e2734]: employed
+                          - generic [ref=e2710]: "Monthly Income:"
+                          - generic [ref=e2711]: N$89,451.00
+                        - generic [ref=e2712]:
+                          - generic [ref=e2713]: "Employment:"
+                          - generic [ref=e2714]: employed
+                        - generic [ref=e2715]:
+                          - generic [ref=e2716]: "Credit Score:"
+                          - generic [ref=e2717]: "505"
+                    - generic [ref=e2718]:
+                      - button "Review" [ref=e2719] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2720] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2723]:
+                    - checkbox [ref=e2724] [cursor=pointer]
+                    - generic [ref=e2725]:
+                      - generic [ref=e2726]:
+                        - generic [ref=e2727]:
+                          - heading "Nog Skuld" [level=3] [ref=e2728]
+                          - generic [ref=e2729]:
+                            - img [ref=e2730]
+                            - generic [ref=e2733]: approved
+                          - generic [ref=e2734]: Low Risk
                         - generic [ref=e2735]:
-                          - generic [ref=e2736]: "Credit Score:"
-                          - generic [ref=e2737]: "612"
-                    - generic [ref=e2738]:
-                      - button "Review" [ref=e2739] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2740] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2743]:
-                    - checkbox [ref=e2744] [cursor=pointer]
-                    - generic [ref=e2745]:
-                      - generic [ref=e2746]:
-                        - generic [ref=e2747]:
-                          - heading "Nog Skuld" [level=3] [ref=e2748]
-                          - generic [ref=e2749]:
-                            - img [ref=e2750]
-                            - generic [ref=e2753]: approved
-                          - generic [ref=e2754]: Low Risk
+                          - generic [ref=e2736]: N$5,000.00
+                          - generic [ref=e2737]: Requested Amount
+                      - generic [ref=e2738]:
+                        - generic [ref=e2739]:
+                          - img [ref=e2740]
+                          - generic [ref=e2743]: user-d109c025@namlend.com
+                        - generic [ref=e2744]:
+                          - img [ref=e2745]
+                          - generic [ref=e2747]: Applied 17 Oct 2025
+                        - generic [ref=e2748]:
+                          - img [ref=e2749]
+                          - generic [ref=e2752]: Home stuff
+                      - generic [ref=e2754]:
                         - generic [ref=e2755]:
-                          - generic [ref=e2756]: N$402.00
-                          - generic [ref=e2757]: Requested Amount
-                      - generic [ref=e2758]:
-                        - generic [ref=e2759]:
-                          - img [ref=e2760]
-                          - generic [ref=e2763]: user-d109c025@namlend.com
-                        - generic [ref=e2764]:
-                          - img [ref=e2765]
-                          - generic [ref=e2767]: Applied 7 Oct 2025
-                        - generic [ref=e2768]:
-                          - img [ref=e2769]
-                          - generic [ref=e2772]: business
-                      - generic [ref=e2774]:
-                        - generic [ref=e2775]:
-                          - generic [ref=e2776]: "Monthly Income:"
-                          - generic [ref=e2777]: N$89,451.00
-                        - generic [ref=e2778]:
-                          - generic [ref=e2779]: "Employment:"
-                          - generic [ref=e2780]: employed
+                          - generic [ref=e2756]: "Monthly Income:"
+                          - generic [ref=e2757]: N$89,451.00
+                        - generic [ref=e2758]:
+                          - generic [ref=e2759]: "Employment:"
+                          - generic [ref=e2760]: employed
+                        - generic [ref=e2761]:
+                          - generic [ref=e2762]: "Credit Score:"
+                          - generic [ref=e2763]: "778"
+                    - generic [ref=e2764]:
+                      - button "Review" [ref=e2765] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2766] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2769]:
+                    - checkbox [ref=e2770] [cursor=pointer]
+                    - generic [ref=e2771]:
+                      - generic [ref=e2772]:
+                        - generic [ref=e2773]:
+                          - heading "Nog Skuld" [level=3] [ref=e2774]
+                          - generic [ref=e2775]:
+                            - img [ref=e2776]
+                            - generic [ref=e2779]: approved
+                          - generic [ref=e2780]: Low Risk
                         - generic [ref=e2781]:
-                          - generic [ref=e2782]: "Credit Score:"
-                          - generic [ref=e2783]: "797"
-                    - generic [ref=e2784]:
-                      - button "Review" [ref=e2785] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2786] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2789]:
-                    - checkbox [ref=e2790] [cursor=pointer]
-                    - generic [ref=e2791]:
-                      - generic [ref=e2792]:
-                        - generic [ref=e2793]:
-                          - heading "Nog Skuld" [level=3] [ref=e2794]
-                          - generic [ref=e2795]:
-                            - img [ref=e2796]
-                            - generic [ref=e2799]: approved
-                          - generic [ref=e2800]: Low Risk
+                          - generic [ref=e2782]: N$41,900.00
+                          - generic [ref=e2783]: Requested Amount
+                      - generic [ref=e2784]:
+                        - generic [ref=e2785]:
+                          - img [ref=e2786]
+                          - generic [ref=e2789]: user-d109c025@namlend.com
+                        - generic [ref=e2790]:
+                          - img [ref=e2791]
+                          - generic [ref=e2793]: Applied 17 Oct 2025
+                        - generic [ref=e2794]:
+                          - img [ref=e2795]
+                          - generic [ref=e2798]: Home improvement
+                      - generic [ref=e2800]:
                         - generic [ref=e2801]:
-                          - generic [ref=e2802]: N$744.00
-                          - generic [ref=e2803]: Requested Amount
-                      - generic [ref=e2804]:
-                        - generic [ref=e2805]:
-                          - img [ref=e2806]
-                          - generic [ref=e2809]: user-d109c025@namlend.com
-                        - generic [ref=e2810]:
-                          - img [ref=e2811]
-                          - generic [ref=e2813]: Applied 7 Oct 2025
-                        - generic [ref=e2814]:
-                          - img [ref=e2815]
-                          - generic [ref=e2818]: home
-                      - generic [ref=e2820]:
-                        - generic [ref=e2821]:
-                          - generic [ref=e2822]: "Monthly Income:"
-                          - generic [ref=e2823]: N$89,451.00
-                        - generic [ref=e2824]:
-                          - generic [ref=e2825]: "Employment:"
-                          - generic [ref=e2826]: employed
+                          - generic [ref=e2802]: "Monthly Income:"
+                          - generic [ref=e2803]: N$89,451.00
+                        - generic [ref=e2804]:
+                          - generic [ref=e2805]: "Employment:"
+                          - generic [ref=e2806]: employed
+                        - generic [ref=e2807]:
+                          - generic [ref=e2808]: "Credit Score:"
+                          - generic [ref=e2809]: "782"
+                    - generic [ref=e2810]:
+                      - button "Review" [ref=e2811] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2812] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2815]:
+                    - checkbox [ref=e2816] [cursor=pointer]
+                    - generic [ref=e2817]:
+                      - generic [ref=e2818]:
+                        - generic [ref=e2819]:
+                          - heading "Nog Skuld" [level=3] [ref=e2820]
+                          - generic [ref=e2821]:
+                            - img [ref=e2822]
+                            - generic [ref=e2825]: approved
+                          - generic [ref=e2826]: Low Risk
                         - generic [ref=e2827]:
-                          - generic [ref=e2828]: "Credit Score:"
-                          - generic [ref=e2829]: "658"
-                    - generic [ref=e2830]:
-                      - button "Review" [ref=e2831] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2832] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2835]:
-                    - checkbox [ref=e2836] [cursor=pointer]
-                    - generic [ref=e2837]:
-                      - generic [ref=e2838]:
-                        - generic [ref=e2839]:
-                          - heading "Nog Skuld" [level=3] [ref=e2840]
-                          - generic [ref=e2841]:
-                            - img [ref=e2842]
-                            - generic [ref=e2845]: approved
-                          - generic [ref=e2846]: Low Risk
+                          - generic [ref=e2828]: N$1,711.00
+                          - generic [ref=e2829]: Requested Amount
+                      - generic [ref=e2830]:
+                        - generic [ref=e2831]:
+                          - img [ref=e2832]
+                          - generic [ref=e2835]: user-d109c025@namlend.com
+                        - generic [ref=e2836]:
+                          - img [ref=e2837]
+                          - generic [ref=e2839]: Applied 9 Oct 2025
+                        - generic [ref=e2840]:
+                          - img [ref=e2841]
+                          - generic [ref=e2844]: personal
+                      - generic [ref=e2846]:
                         - generic [ref=e2847]:
-                          - generic [ref=e2848]: N$1,649.00
-                          - generic [ref=e2849]: Requested Amount
-                      - generic [ref=e2850]:
-                        - generic [ref=e2851]:
-                          - img [ref=e2852]
-                          - generic [ref=e2855]: user-d109c025@namlend.com
-                        - generic [ref=e2856]:
-                          - img [ref=e2857]
-                          - generic [ref=e2859]: Applied 7 Oct 2025
-                        - generic [ref=e2860]:
-                          - img [ref=e2861]
-                          - generic [ref=e2864]: business
-                      - generic [ref=e2866]:
-                        - generic [ref=e2867]:
-                          - generic [ref=e2868]: "Monthly Income:"
-                          - generic [ref=e2869]: N$89,451.00
-                        - generic [ref=e2870]:
-                          - generic [ref=e2871]: "Employment:"
-                          - generic [ref=e2872]: employed
+                          - generic [ref=e2848]: "Monthly Income:"
+                          - generic [ref=e2849]: N$89,451.00
+                        - generic [ref=e2850]:
+                          - generic [ref=e2851]: "Employment:"
+                          - generic [ref=e2852]: employed
+                        - generic [ref=e2853]:
+                          - generic [ref=e2854]: "Credit Score:"
+                          - generic [ref=e2855]: "756"
+                    - generic [ref=e2856]:
+                      - button "Review" [ref=e2857] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2858] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2861]:
+                    - checkbox [ref=e2862] [cursor=pointer]
+                    - generic [ref=e2863]:
+                      - generic [ref=e2864]:
+                        - generic [ref=e2865]:
+                          - heading "Nog Skuld" [level=3] [ref=e2866]
+                          - generic [ref=e2867]:
+                            - img [ref=e2868]
+                            - generic [ref=e2871]: approved
+                          - generic [ref=e2872]: Low Risk
                         - generic [ref=e2873]:
-                          - generic [ref=e2874]: "Credit Score:"
-                          - generic [ref=e2875]: "586"
-                    - generic [ref=e2876]:
-                      - button "Review" [ref=e2877] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2878] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2881]:
-                    - checkbox [ref=e2882] [cursor=pointer]
-                    - generic [ref=e2883]:
-                      - generic [ref=e2884]:
-                        - generic [ref=e2885]:
-                          - heading "Nog Skuld" [level=3] [ref=e2886]
-                          - generic [ref=e2887]:
-                            - img [ref=e2888]
-                            - generic [ref=e2891]: approved
-                          - generic [ref=e2892]: Medium Risk
+                          - generic [ref=e2874]: N$402.00
+                          - generic [ref=e2875]: Requested Amount
+                      - generic [ref=e2876]:
+                        - generic [ref=e2877]:
+                          - img [ref=e2878]
+                          - generic [ref=e2881]: user-d109c025@namlend.com
+                        - generic [ref=e2882]:
+                          - img [ref=e2883]
+                          - generic [ref=e2885]: Applied 7 Oct 2025
+                        - generic [ref=e2886]:
+                          - img [ref=e2887]
+                          - generic [ref=e2890]: business
+                      - generic [ref=e2892]:
                         - generic [ref=e2893]:
-                          - generic [ref=e2894]: N$744.00
-                          - generic [ref=e2895]: Requested Amount
-                      - generic [ref=e2896]:
-                        - generic [ref=e2897]:
-                          - img [ref=e2898]
-                          - generic [ref=e2901]: user-d109c025@namlend.com
-                        - generic [ref=e2902]:
-                          - img [ref=e2903]
-                          - generic [ref=e2905]: Applied 6 Oct 2025
-                        - generic [ref=e2906]:
-                          - img [ref=e2907]
-                          - generic [ref=e2910]: home
-                      - generic [ref=e2912]:
-                        - generic [ref=e2913]:
-                          - generic [ref=e2914]: "Monthly Income:"
-                          - generic [ref=e2915]: N$89,451.00
-                        - generic [ref=e2916]:
-                          - generic [ref=e2917]: "Employment:"
-                          - generic [ref=e2918]: employed
+                          - generic [ref=e2894]: "Monthly Income:"
+                          - generic [ref=e2895]: N$89,451.00
+                        - generic [ref=e2896]:
+                          - generic [ref=e2897]: "Employment:"
+                          - generic [ref=e2898]: employed
+                        - generic [ref=e2899]:
+                          - generic [ref=e2900]: "Credit Score:"
+                          - generic [ref=e2901]: "513"
+                    - generic [ref=e2902]:
+                      - button "Review" [ref=e2903] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2904] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2907]:
+                    - checkbox [ref=e2908] [cursor=pointer]
+                    - generic [ref=e2909]:
+                      - generic [ref=e2910]:
+                        - generic [ref=e2911]:
+                          - heading "Nog Skuld" [level=3] [ref=e2912]
+                          - generic [ref=e2913]:
+                            - img [ref=e2914]
+                            - generic [ref=e2917]: approved
+                          - generic [ref=e2918]: Low Risk
                         - generic [ref=e2919]:
-                          - generic [ref=e2920]: "Credit Score:"
-                          - generic [ref=e2921]: "655"
-                    - generic [ref=e2922]:
-                      - button "Review" [ref=e2923] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2924] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2927]:
-                    - checkbox [ref=e2928] [cursor=pointer]
-                    - generic [ref=e2929]:
-                      - generic [ref=e2930]:
-                        - generic [ref=e2931]:
-                          - heading "Nog Skuld" [level=3] [ref=e2932]
-                          - generic [ref=e2933]:
-                            - img [ref=e2934]
-                            - generic [ref=e2937]: approved
-                          - generic [ref=e2938]: Medium Risk
+                          - generic [ref=e2920]: N$744.00
+                          - generic [ref=e2921]: Requested Amount
+                      - generic [ref=e2922]:
+                        - generic [ref=e2923]:
+                          - img [ref=e2924]
+                          - generic [ref=e2927]: user-d109c025@namlend.com
+                        - generic [ref=e2928]:
+                          - img [ref=e2929]
+                          - generic [ref=e2931]: Applied 7 Oct 2025
+                        - generic [ref=e2932]:
+                          - img [ref=e2933]
+                          - generic [ref=e2936]: home
+                      - generic [ref=e2938]:
                         - generic [ref=e2939]:
-                          - generic [ref=e2940]: N$1,000.00
-                          - generic [ref=e2941]: Requested Amount
-                      - generic [ref=e2942]:
-                        - generic [ref=e2943]:
-                          - img [ref=e2944]
-                          - generic [ref=e2947]: user-d109c025@namlend.com
-                        - generic [ref=e2948]:
-                          - img [ref=e2949]
-                          - generic [ref=e2951]: Applied 24 Sept 2025
-                        - generic [ref=e2952]:
-                          - img [ref=e2953]
-                          - generic [ref=e2956]: business
-                      - generic [ref=e2958]:
-                        - generic [ref=e2959]:
-                          - generic [ref=e2960]: "Monthly Income:"
-                          - generic [ref=e2961]: N$89,451.00
-                        - generic [ref=e2962]:
-                          - generic [ref=e2963]: "Employment:"
-                          - generic [ref=e2964]: employed
+                          - generic [ref=e2940]: "Monthly Income:"
+                          - generic [ref=e2941]: N$89,451.00
+                        - generic [ref=e2942]:
+                          - generic [ref=e2943]: "Employment:"
+                          - generic [ref=e2944]: employed
+                        - generic [ref=e2945]:
+                          - generic [ref=e2946]: "Credit Score:"
+                          - generic [ref=e2947]: "547"
+                    - generic [ref=e2948]:
+                      - button "Review" [ref=e2949] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2950] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2953]:
+                    - checkbox [ref=e2954] [cursor=pointer]
+                    - generic [ref=e2955]:
+                      - generic [ref=e2956]:
+                        - generic [ref=e2957]:
+                          - heading "Nog Skuld" [level=3] [ref=e2958]
+                          - generic [ref=e2959]:
+                            - img [ref=e2960]
+                            - generic [ref=e2963]: approved
+                          - generic [ref=e2964]: Low Risk
                         - generic [ref=e2965]:
-                          - generic [ref=e2966]: "Credit Score:"
-                          - generic [ref=e2967]: "675"
-                    - generic [ref=e2968]:
-                      - button "Review" [ref=e2969] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e2970] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e2973]:
-                    - checkbox [ref=e2974] [cursor=pointer]
-                    - generic [ref=e2975]:
-                      - generic [ref=e2976]:
-                        - generic [ref=e2977]:
-                          - heading "Nog Skuld" [level=3] [ref=e2978]
-                          - generic [ref=e2979]:
-                            - img [ref=e2980]
-                            - generic [ref=e2983]: approved
-                          - generic [ref=e2984]: Low Risk
+                          - generic [ref=e2966]: N$1,649.00
+                          - generic [ref=e2967]: Requested Amount
+                      - generic [ref=e2968]:
+                        - generic [ref=e2969]:
+                          - img [ref=e2970]
+                          - generic [ref=e2973]: user-d109c025@namlend.com
+                        - generic [ref=e2974]:
+                          - img [ref=e2975]
+                          - generic [ref=e2977]: Applied 7 Oct 2025
+                        - generic [ref=e2978]:
+                          - img [ref=e2979]
+                          - generic [ref=e2982]: business
+                      - generic [ref=e2984]:
                         - generic [ref=e2985]:
-                          - generic [ref=e2986]: N$5,600.00
-                          - generic [ref=e2987]: Requested Amount
-                      - generic [ref=e2988]:
-                        - generic [ref=e2989]:
-                          - img [ref=e2990]
-                          - generic [ref=e2993]: user-d109c025@namlend.com
-                        - generic [ref=e2994]:
-                          - img [ref=e2995]
-                          - generic [ref=e2997]: Applied 22 Sept 2025
-                        - generic [ref=e2998]:
-                          - img [ref=e2999]
-                          - generic [ref=e3002]: education
-                      - generic [ref=e3004]:
-                        - generic [ref=e3005]:
-                          - generic [ref=e3006]: "Monthly Income:"
-                          - generic [ref=e3007]: N$89,451.00
-                        - generic [ref=e3008]:
-                          - generic [ref=e3009]: "Employment:"
-                          - generic [ref=e3010]: employed
+                          - generic [ref=e2986]: "Monthly Income:"
+                          - generic [ref=e2987]: N$89,451.00
+                        - generic [ref=e2988]:
+                          - generic [ref=e2989]: "Employment:"
+                          - generic [ref=e2990]: employed
+                        - generic [ref=e2991]:
+                          - generic [ref=e2992]: "Credit Score:"
+                          - generic [ref=e2993]: "706"
+                    - generic [ref=e2994]:
+                      - button "Review" [ref=e2995] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e2996] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e2999]:
+                    - checkbox [ref=e3000] [cursor=pointer]
+                    - generic [ref=e3001]:
+                      - generic [ref=e3002]:
+                        - generic [ref=e3003]:
+                          - heading "Nog Skuld" [level=3] [ref=e3004]
+                          - generic [ref=e3005]:
+                            - img [ref=e3006]
+                            - generic [ref=e3009]: approved
+                          - generic [ref=e3010]: Low Risk
                         - generic [ref=e3011]:
-                          - generic [ref=e3012]: "Credit Score:"
-                          - generic [ref=e3013]: "515"
-                    - generic [ref=e3014]:
-                      - button "Review" [ref=e3015] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e3016] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e3019]:
-                    - checkbox [ref=e3020] [cursor=pointer]
-                    - generic [ref=e3021]:
-                      - generic [ref=e3022]:
-                        - generic [ref=e3023]:
-                          - heading "Nog Skuld" [level=3] [ref=e3024]
-                          - generic [ref=e3025]:
-                            - img [ref=e3026]
-                            - generic [ref=e3029]: approved
-                          - generic [ref=e3030]: Low Risk
+                          - generic [ref=e3012]: N$744.00
+                          - generic [ref=e3013]: Requested Amount
+                      - generic [ref=e3014]:
+                        - generic [ref=e3015]:
+                          - img [ref=e3016]
+                          - generic [ref=e3019]: user-d109c025@namlend.com
+                        - generic [ref=e3020]:
+                          - img [ref=e3021]
+                          - generic [ref=e3023]: Applied 6 Oct 2025
+                        - generic [ref=e3024]:
+                          - img [ref=e3025]
+                          - generic [ref=e3028]: home
+                      - generic [ref=e3030]:
                         - generic [ref=e3031]:
-                          - generic [ref=e3032]: N$934.00
-                          - generic [ref=e3033]: Requested Amount
-                      - generic [ref=e3034]:
-                        - generic [ref=e3035]:
-                          - img [ref=e3036]
-                          - generic [ref=e3039]: user-d109c025@namlend.com
-                        - generic [ref=e3040]:
-                          - img [ref=e3041]
-                          - generic [ref=e3043]: Applied 22 Sept 2025
-                        - generic [ref=e3044]:
-                          - img [ref=e3045]
-                          - generic [ref=e3048]: medical
-                      - generic [ref=e3050]:
-                        - generic [ref=e3051]:
-                          - generic [ref=e3052]: "Monthly Income:"
-                          - generic [ref=e3053]: N$89,451.00
-                        - generic [ref=e3054]:
-                          - generic [ref=e3055]: "Employment:"
-                          - generic [ref=e3056]: employed
+                          - generic [ref=e3032]: "Monthly Income:"
+                          - generic [ref=e3033]: N$89,451.00
+                        - generic [ref=e3034]:
+                          - generic [ref=e3035]: "Employment:"
+                          - generic [ref=e3036]: employed
+                        - generic [ref=e3037]:
+                          - generic [ref=e3038]: "Credit Score:"
+                          - generic [ref=e3039]: "709"
+                    - generic [ref=e3040]:
+                      - button "Review" [ref=e3041] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e3042] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e3045]:
+                    - checkbox [ref=e3046] [cursor=pointer]
+                    - generic [ref=e3047]:
+                      - generic [ref=e3048]:
+                        - generic [ref=e3049]:
+                          - heading "Nog Skuld" [level=3] [ref=e3050]
+                          - generic [ref=e3051]:
+                            - img [ref=e3052]
+                            - generic [ref=e3055]: approved
+                          - generic [ref=e3056]: Low Risk
                         - generic [ref=e3057]:
-                          - generic [ref=e3058]: "Credit Score:"
-                          - generic [ref=e3059]: "702"
-                    - generic [ref=e3060]:
-                      - button "Review" [ref=e3061] [cursor=pointer]:
-                        - img
-                        - text: Review
-                      - button "Disburse" [ref=e3062] [cursor=pointer]:
-                        - img
-                        - text: Disburse
-                  - generic [ref=e3065]:
-                    - checkbox [ref=e3066] [cursor=pointer]
-                    - generic [ref=e3067]:
-                      - generic [ref=e3068]:
-                        - generic [ref=e3069]:
-                          - heading "Nog Skuld" [level=3] [ref=e3070]
-                          - generic [ref=e3071]:
-                            - img [ref=e3072]
-                            - generic [ref=e3075]: approved
-                          - generic [ref=e3076]:
-                            - img [ref=e3077]
-                            - text: High Risk
-                        - generic [ref=e3079]:
-                          - generic [ref=e3080]: N$748.00
-                          - generic [ref=e3081]: Requested Amount
-                      - generic [ref=e3082]:
+                          - generic [ref=e3058]: N$1,000.00
+                          - generic [ref=e3059]: Requested Amount
+                      - generic [ref=e3060]:
+                        - generic [ref=e3061]:
+                          - img [ref=e3062]
+                          - generic [ref=e3065]: user-d109c025@namlend.com
+                        - generic [ref=e3066]:
+                          - img [ref=e3067]
+                          - generic [ref=e3069]: Applied 24 Sept 2025
+                        - generic [ref=e3070]:
+                          - img [ref=e3071]
+                          - generic [ref=e3074]: business
+                      - generic [ref=e3076]:
+                        - generic [ref=e3077]:
+                          - generic [ref=e3078]: "Monthly Income:"
+                          - generic [ref=e3079]: N$89,451.00
+                        - generic [ref=e3080]:
+                          - generic [ref=e3081]: "Employment:"
+                          - generic [ref=e3082]: employed
                         - generic [ref=e3083]:
-                          - img [ref=e3084]
-                          - generic [ref=e3087]: user-d109c025@namlend.com
-                        - generic [ref=e3088]:
-                          - img [ref=e3089]
-                          - generic [ref=e3091]: Applied 22 Sept 2025
-                        - generic [ref=e3092]:
-                          - img [ref=e3093]
-                          - generic [ref=e3096]: other
-                      - generic [ref=e3098]:
-                        - generic [ref=e3099]:
-                          - generic [ref=e3100]: "Monthly Income:"
-                          - generic [ref=e3101]: N$89,451.00
-                        - generic [ref=e3102]:
-                          - generic [ref=e3103]: "Employment:"
-                          - generic [ref=e3104]: employed
-                        - generic [ref=e3105]:
-                          - generic [ref=e3106]: "Credit Score:"
-                          - generic [ref=e3107]: "568"
-                    - generic [ref=e3108]:
-                      - button "Review" [ref=e3109] [cursor=pointer]:
+                          - generic [ref=e3084]: "Credit Score:"
+                          - generic [ref=e3085]: "781"
+                    - generic [ref=e3086]:
+                      - button "Review" [ref=e3087] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e3110] [cursor=pointer]:
+                      - button "Disburse" [ref=e3088] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e3113]:
-                    - checkbox [ref=e3114] [cursor=pointer]
-                    - generic [ref=e3115]:
-                      - generic [ref=e3116]:
-                        - generic [ref=e3117]:
-                          - heading "Nog Skuld" [level=3] [ref=e3118]
-                          - generic [ref=e3119]:
-                            - img [ref=e3120]
-                            - generic [ref=e3123]: approved
-                          - generic [ref=e3124]: Medium Risk
-                        - generic [ref=e3125]:
-                          - generic [ref=e3126]: N$518.00
-                          - generic [ref=e3127]: Requested Amount
-                      - generic [ref=e3128]:
+                  - generic [ref=e3091]:
+                    - checkbox [ref=e3092] [cursor=pointer]
+                    - generic [ref=e3093]:
+                      - generic [ref=e3094]:
+                        - generic [ref=e3095]:
+                          - heading "Nog Skuld" [level=3] [ref=e3096]
+                          - generic [ref=e3097]:
+                            - img [ref=e3098]
+                            - generic [ref=e3101]: approved
+                          - generic [ref=e3102]: Low Risk
+                        - generic [ref=e3103]:
+                          - generic [ref=e3104]: N$5,600.00
+                          - generic [ref=e3105]: Requested Amount
+                      - generic [ref=e3106]:
+                        - generic [ref=e3107]:
+                          - img [ref=e3108]
+                          - generic [ref=e3111]: user-d109c025@namlend.com
+                        - generic [ref=e3112]:
+                          - img [ref=e3113]
+                          - generic [ref=e3115]: Applied 22 Sept 2025
+                        - generic [ref=e3116]:
+                          - img [ref=e3117]
+                          - generic [ref=e3120]: education
+                      - generic [ref=e3122]:
+                        - generic [ref=e3123]:
+                          - generic [ref=e3124]: "Monthly Income:"
+                          - generic [ref=e3125]: N$89,451.00
+                        - generic [ref=e3126]:
+                          - generic [ref=e3127]: "Employment:"
+                          - generic [ref=e3128]: employed
                         - generic [ref=e3129]:
-                          - img [ref=e3130]
-                          - generic [ref=e3133]: user-d109c025@namlend.com
-                        - generic [ref=e3134]:
-                          - img [ref=e3135]
-                          - generic [ref=e3137]: Applied 22 Sept 2025
-                        - generic [ref=e3138]:
-                          - img [ref=e3139]
-                          - generic [ref=e3142]: other
-                      - generic [ref=e3144]:
-                        - generic [ref=e3145]:
-                          - generic [ref=e3146]: "Monthly Income:"
-                          - generic [ref=e3147]: N$89,451.00
-                        - generic [ref=e3148]:
-                          - generic [ref=e3149]: "Employment:"
-                          - generic [ref=e3150]: employed
-                        - generic [ref=e3151]:
-                          - generic [ref=e3152]: "Credit Score:"
-                          - generic [ref=e3153]: "638"
-                    - generic [ref=e3154]:
-                      - button "Review" [ref=e3155] [cursor=pointer]:
+                          - generic [ref=e3130]: "Credit Score:"
+                          - generic [ref=e3131]: "687"
+                    - generic [ref=e3132]:
+                      - button "Review" [ref=e3133] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e3156] [cursor=pointer]:
+                      - button "Disburse" [ref=e3134] [cursor=pointer]:
                         - img
                         - text: Disburse
-                  - generic [ref=e3159]:
-                    - checkbox [ref=e3160] [cursor=pointer]
-                    - generic [ref=e3161]:
-                      - generic [ref=e3162]:
-                        - generic [ref=e3163]:
-                          - heading "Anthony de Klerk" [level=3] [ref=e3164]
-                          - generic [ref=e3165]:
-                            - img [ref=e3166]
-                            - generic [ref=e3169]: approved
-                          - generic [ref=e3170]: Low Risk
-                        - generic [ref=e3171]:
-                          - generic [ref=e3172]: N$1,900.00
-                          - generic [ref=e3173]: Requested Amount
-                      - generic [ref=e3174]:
+                  - generic [ref=e3137]:
+                    - checkbox [ref=e3138] [cursor=pointer]
+                    - generic [ref=e3139]:
+                      - generic [ref=e3140]:
+                        - generic [ref=e3141]:
+                          - heading "Nog Skuld" [level=3] [ref=e3142]
+                          - generic [ref=e3143]:
+                            - img [ref=e3144]
+                            - generic [ref=e3147]: approved
+                          - generic [ref=e3148]: Low Risk
+                        - generic [ref=e3149]:
+                          - generic [ref=e3150]: N$934.00
+                          - generic [ref=e3151]: Requested Amount
+                      - generic [ref=e3152]:
+                        - generic [ref=e3153]:
+                          - img [ref=e3154]
+                          - generic [ref=e3157]: user-d109c025@namlend.com
+                        - generic [ref=e3158]:
+                          - img [ref=e3159]
+                          - generic [ref=e3161]: Applied 22 Sept 2025
+                        - generic [ref=e3162]:
+                          - img [ref=e3163]
+                          - generic [ref=e3166]: medical
+                      - generic [ref=e3168]:
+                        - generic [ref=e3169]:
+                          - generic [ref=e3170]: "Monthly Income:"
+                          - generic [ref=e3171]: N$89,451.00
+                        - generic [ref=e3172]:
+                          - generic [ref=e3173]: "Employment:"
+                          - generic [ref=e3174]: employed
                         - generic [ref=e3175]:
-                          - img [ref=e3176]
-                          - generic [ref=e3179]: user-98812e7a@namlend.com
-                        - generic [ref=e3180]:
-                          - img [ref=e3181]
-                          - generic [ref=e3183]: Applied 30 Jul 2025
-                        - generic [ref=e3184]:
-                          - img [ref=e3185]
-                          - generic [ref=e3188]: business
-                      - generic [ref=e3190]:
-                        - text: "0"
-                        - generic [ref=e3191]:
-                          - generic [ref=e3192]: "Employment:"
-                          - generic [ref=e3193]: Not specified
-                        - generic [ref=e3194]:
-                          - generic [ref=e3195]: "Credit Score:"
-                          - generic [ref=e3196]: "633"
-                    - generic [ref=e3197]:
-                      - button "Review" [ref=e3198] [cursor=pointer]:
+                          - generic [ref=e3176]: "Credit Score:"
+                          - generic [ref=e3177]: "647"
+                    - generic [ref=e3178]:
+                      - button "Review" [ref=e3179] [cursor=pointer]:
                         - img
                         - text: Review
-                      - button "Disburse" [ref=e3199] [cursor=pointer]:
+                      - button "Disburse" [ref=e3180] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e3183]:
+                    - checkbox [ref=e3184] [cursor=pointer]
+                    - generic [ref=e3185]:
+                      - generic [ref=e3186]:
+                        - generic [ref=e3187]:
+                          - heading "Nog Skuld" [level=3] [ref=e3188]
+                          - generic [ref=e3189]:
+                            - img [ref=e3190]
+                            - generic [ref=e3193]: approved
+                          - generic [ref=e3194]: Low Risk
+                        - generic [ref=e3195]:
+                          - generic [ref=e3196]: N$748.00
+                          - generic [ref=e3197]: Requested Amount
+                      - generic [ref=e3198]:
+                        - generic [ref=e3199]:
+                          - img [ref=e3200]
+                          - generic [ref=e3203]: user-d109c025@namlend.com
+                        - generic [ref=e3204]:
+                          - img [ref=e3205]
+                          - generic [ref=e3207]: Applied 22 Sept 2025
+                        - generic [ref=e3208]:
+                          - img [ref=e3209]
+                          - generic [ref=e3212]: other
+                      - generic [ref=e3214]:
+                        - generic [ref=e3215]:
+                          - generic [ref=e3216]: "Monthly Income:"
+                          - generic [ref=e3217]: N$89,451.00
+                        - generic [ref=e3218]:
+                          - generic [ref=e3219]: "Employment:"
+                          - generic [ref=e3220]: employed
+                        - generic [ref=e3221]:
+                          - generic [ref=e3222]: "Credit Score:"
+                          - generic [ref=e3223]: "679"
+                    - generic [ref=e3224]:
+                      - button "Review" [ref=e3225] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e3226] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e3229]:
+                    - checkbox [ref=e3230] [cursor=pointer]
+                    - generic [ref=e3231]:
+                      - generic [ref=e3232]:
+                        - generic [ref=e3233]:
+                          - heading "Nog Skuld" [level=3] [ref=e3234]
+                          - generic [ref=e3235]:
+                            - img [ref=e3236]
+                            - generic [ref=e3239]: approved
+                          - generic [ref=e3240]: Low Risk
+                        - generic [ref=e3241]:
+                          - generic [ref=e3242]: N$518.00
+                          - generic [ref=e3243]: Requested Amount
+                      - generic [ref=e3244]:
+                        - generic [ref=e3245]:
+                          - img [ref=e3246]
+                          - generic [ref=e3249]: user-d109c025@namlend.com
+                        - generic [ref=e3250]:
+                          - img [ref=e3251]
+                          - generic [ref=e3253]: Applied 22 Sept 2025
+                        - generic [ref=e3254]:
+                          - img [ref=e3255]
+                          - generic [ref=e3258]: other
+                      - generic [ref=e3260]:
+                        - generic [ref=e3261]:
+                          - generic [ref=e3262]: "Monthly Income:"
+                          - generic [ref=e3263]: N$89,451.00
+                        - generic [ref=e3264]:
+                          - generic [ref=e3265]: "Employment:"
+                          - generic [ref=e3266]: employed
+                        - generic [ref=e3267]:
+                          - generic [ref=e3268]: "Credit Score:"
+                          - generic [ref=e3269]: "527"
+                    - generic [ref=e3270]:
+                      - button "Review" [ref=e3271] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e3272] [cursor=pointer]:
+                        - img
+                        - text: Disburse
+                  - generic [ref=e3275]:
+                    - checkbox [ref=e3276] [cursor=pointer]
+                    - generic [ref=e3277]:
+                      - generic [ref=e3278]:
+                        - generic [ref=e3279]:
+                          - heading "Anthony de Klerk" [level=3] [ref=e3280]
+                          - generic [ref=e3281]:
+                            - img [ref=e3282]
+                            - generic [ref=e3285]: approved
+                          - generic [ref=e3286]:
+                            - img [ref=e3287]
+                            - text: High Risk
+                        - generic [ref=e3289]:
+                          - generic [ref=e3290]: N$1,900.00
+                          - generic [ref=e3291]: Requested Amount
+                      - generic [ref=e3292]:
+                        - generic [ref=e3293]:
+                          - img [ref=e3294]
+                          - generic [ref=e3297]: user-98812e7a@namlend.com
+                        - generic [ref=e3298]:
+                          - img [ref=e3299]
+                          - generic [ref=e3301]: Applied 30 Jul 2025
+                        - generic [ref=e3302]:
+                          - img [ref=e3303]
+                          - generic [ref=e3306]: business
+                      - generic [ref=e3308]:
+                        - text: "0"
+                        - generic [ref=e3309]:
+                          - generic [ref=e3310]: "Employment:"
+                          - generic [ref=e3311]: Not specified
+                        - generic [ref=e3312]:
+                          - generic [ref=e3313]: "Credit Score:"
+                          - generic [ref=e3314]: "526"
+                    - generic [ref=e3315]:
+                      - button "Review" [ref=e3316] [cursor=pointer]:
+                        - img
+                        - text: Review
+                      - button "Disburse" [ref=e3317] [cursor=pointer]:
                         - img
                         - text: Disburse
 ```

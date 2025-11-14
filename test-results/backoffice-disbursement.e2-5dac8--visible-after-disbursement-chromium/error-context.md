@@ -4,9 +4,316 @@
 - generic [ref=e2]:
   - region "Notifications (F8)":
     - list
-  - generic [ref=e4]:
-    - heading "404" [level=1] [ref=e5]
-    - paragraph [ref=e6]: Oops! Page not found
-    - link "Return to Home" [ref=e7] [cursor=pointer]:
-      - /url: /
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - heading "Admin Panel" [level=2] [ref=e7]
+      - navigation [ref=e8]:
+        - button "Financial" [ref=e9] [cursor=pointer]:
+          - img [ref=e10] [cursor=pointer]
+          - text: Financial
+        - button "Loans" [active] [ref=e13] [cursor=pointer]:
+          - img [ref=e14] [cursor=pointer]
+          - text: Loans
+        - button "Clients" [ref=e17] [cursor=pointer]:
+          - img [ref=e18] [cursor=pointer]
+          - text: Clients
+        - button "Payments" [ref=e22] [cursor=pointer]:
+          - img [ref=e23] [cursor=pointer]
+          - text: Payments
+        - button "Approvals" [ref=e25] [cursor=pointer]:
+          - img [ref=e26] [cursor=pointer]
+          - text: Approvals
+        - button "User Management" [ref=e29] [cursor=pointer]:
+          - img [ref=e30] [cursor=pointer]
+          - text: User Management
+        - button "Analytics" [ref=e35] [cursor=pointer]:
+          - img [ref=e36] [cursor=pointer]
+          - text: Analytics
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e41]: A
+          - generic [ref=e42]:
+            - paragraph [ref=e43]: admin@test.namlend.com
+            - paragraph [ref=e44]: admin
+        - button "Sign Out" [ref=e45] [cursor=pointer]:
+          - img
+          - text: Sign Out
+    - generic [ref=e46]:
+      - banner [ref=e47]:
+        - generic [ref=e48]:
+          - heading "Dashboard" [level=1] [ref=e50]
+          - generic [ref=e51]:
+            - button [ref=e53] [cursor=pointer]:
+              - img
+            - button "Refresh" [ref=e54] [cursor=pointer]:
+              - img
+              - text: Refresh
+            - button "Reports" [ref=e55] [cursor=pointer]:
+              - img
+              - text: Reports
+      - main [ref=e56]:
+        - generic [ref=e57]:
+          - heading "System Status HEALTHY Details" [level=3] [ref=e60]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - generic [ref=e65]: System Status
+              - generic [ref=e66]: HEALTHY
+            - button "Details" [ref=e67] [cursor=pointer]
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - heading "Loan Management" [level=2] [ref=e72]
+                - paragraph [ref=e73]: Review applications, manage portfolio, and process loan decisions
+              - generic [ref=e74]:
+                - button "Filters" [ref=e75] [cursor=pointer]:
+                  - img
+                  - text: Filters
+                - button "Export" [ref=e76] [cursor=pointer]:
+                  - img
+                  - text: Export
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - generic [ref=e79]:
+                  - heading "Pending Applications" [level=3] [ref=e80]
+                  - img [ref=e82]
+                - generic [ref=e85]:
+                  - generic [ref=e86]: "4"
+                  - paragraph [ref=e87]: Awaiting review
+              - generic [ref=e88]:
+                - generic [ref=e89]:
+                  - heading "Approved This Month" [level=3] [ref=e90]
+                  - img [ref=e92]
+                - generic [ref=e95]:
+                  - generic [ref=e96]: "53"
+                  - paragraph [ref=e97]: Ready for disbursement
+              - generic [ref=e98]:
+                - generic [ref=e99]:
+                  - heading "Total Portfolio Value" [level=3] [ref=e100]
+                  - img [ref=e102]
+                - generic [ref=e104]:
+                  - generic [ref=e105]: N$623,565.00
+                  - paragraph [ref=e106]: Active loans
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - heading "Average Processing Time" [level=3] [ref=e109]
+                  - img [ref=e111]
+                - generic [ref=e113]:
+                  - generic [ref=e114]: 3 days
+                  - paragraph [ref=e115]: Application to decision
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - heading "Approval Rate" [level=3] [ref=e118]
+                  - img [ref=e120]
+                - generic [ref=e123]:
+                  - generic [ref=e124]: 75%
+                  - paragraph [ref=e125]: Last 30 days
+              - generic [ref=e126]:
+                - generic [ref=e127]:
+                  - heading "High Risk Applications" [level=3] [ref=e128]
+                  - img [ref=e130]
+                - generic [ref=e132]:
+                  - generic [ref=e133]: "0"
+                  - paragraph [ref=e134]: Requires special review
+            - generic [ref=e135]:
+              - tablist [ref=e136]:
+                - tab "Pending Review" [selected] [ref=e137] [cursor=pointer]:
+                  - img [ref=e138] [cursor=pointer]
+                  - text: Pending Review
+                - tab "Approved" [ref=e141] [cursor=pointer]:
+                  - img [ref=e142] [cursor=pointer]
+                  - text: Approved
+                - tab "Rejected" [ref=e145] [cursor=pointer]:
+                  - img [ref=e146] [cursor=pointer]
+                  - text: Rejected
+                - tab "All Loans" [ref=e150] [cursor=pointer]:
+                  - img [ref=e151] [cursor=pointer]
+                  - text: All Loans
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - img [ref=e156]
+                  - textbox "Search by applicant name, ID, or amount..." [ref=e159]
+                - combobox [ref=e160]:
+                  - option "All Statuses" [selected]
+                  - option "Pending"
+                  - option "Approved"
+                  - option "Rejected"
+                  - option "Disbursed"
+              - tabpanel "Pending Review" [ref=e161]:
+                - generic [ref=e162]:
+                  - generic [ref=e165]:
+                    - checkbox [ref=e166] [cursor=pointer]
+                    - generic [ref=e167]:
+                      - generic [ref=e168]:
+                        - generic [ref=e169]:
+                          - heading "Nog Skuld" [level=3] [ref=e170]
+                          - generic [ref=e171]:
+                            - img [ref=e172]
+                            - generic [ref=e175]: under_review
+                          - generic [ref=e176]: Low Risk
+                        - generic [ref=e177]:
+                          - generic [ref=e178]: N$20,000.00
+                          - generic [ref=e179]: Requested Amount
+                      - generic [ref=e180]:
+                        - generic [ref=e181]:
+                          - img [ref=e182]
+                          - generic [ref=e185]: user-d109c025@namlend.com
+                        - generic [ref=e186]:
+                          - img [ref=e187]
+                          - generic [ref=e189]: Applied 20 Sept 2025
+                        - generic [ref=e190]:
+                          - img [ref=e191]
+                          - generic [ref=e194]: Vehicle purchase
+                      - generic [ref=e196]:
+                        - generic [ref=e197]:
+                          - generic [ref=e198]: "Monthly Income:"
+                          - generic [ref=e199]: N$89,451.00
+                        - generic [ref=e200]:
+                          - generic [ref=e201]: "Employment:"
+                          - generic [ref=e202]: employed
+                        - generic [ref=e203]:
+                          - generic [ref=e204]: "Credit Score:"
+                          - generic [ref=e205]: "772"
+                    - button "Review" [ref=e207] [cursor=pointer]:
+                      - img
+                      - text: Review
+                  - generic [ref=e210]:
+                    - checkbox [ref=e211] [cursor=pointer]
+                    - generic [ref=e212]:
+                      - generic [ref=e213]:
+                        - generic [ref=e214]:
+                          - heading "Nog Skuld" [level=3] [ref=e215]
+                          - generic [ref=e216]:
+                            - img [ref=e217]
+                            - generic [ref=e220]: pending
+                          - generic [ref=e221]: Medium Risk
+                        - generic [ref=e222]:
+                          - generic [ref=e223]: N$4,000.00
+                          - generic [ref=e224]: Requested Amount
+                      - generic [ref=e225]:
+                        - generic [ref=e226]:
+                          - img [ref=e227]
+                          - generic [ref=e230]: user-d109c025@namlend.com
+                        - generic [ref=e231]:
+                          - img [ref=e232]
+                          - generic [ref=e234]: Applied 15 Sept 2025
+                        - generic [ref=e235]:
+                          - img [ref=e236]
+                          - generic [ref=e239]: education
+                      - generic [ref=e241]:
+                        - generic [ref=e242]:
+                          - generic [ref=e243]: "Monthly Income:"
+                          - generic [ref=e244]: N$89,451.00
+                        - generic [ref=e245]:
+                          - generic [ref=e246]: "Employment:"
+                          - generic [ref=e247]: employed
+                        - generic [ref=e248]:
+                          - generic [ref=e249]: "Credit Score:"
+                          - generic [ref=e250]: "655"
+                    - button "Review" [ref=e252] [cursor=pointer]:
+                      - img
+                      - text: Review
+                  - generic [ref=e255]:
+                    - checkbox [ref=e256] [cursor=pointer]
+                    - generic [ref=e257]:
+                      - generic [ref=e258]:
+                        - generic [ref=e259]:
+                          - heading "Nancy de Klerk" [level=3] [ref=e260]
+                          - generic [ref=e261]:
+                            - img [ref=e262]
+                            - generic [ref=e265]: pending
+                          - generic [ref=e266]: Low Risk
+                        - generic [ref=e267]:
+                          - generic [ref=e268]: N$2,300.00
+                          - generic [ref=e269]: Requested Amount
+                      - generic [ref=e270]:
+                        - generic [ref=e271]:
+                          - img [ref=e272]
+                          - generic [ref=e275]: user-d0825c06@namlend.com
+                        - generic [ref=e276]:
+                          - img [ref=e277]
+                          - generic [ref=e279]: Applied 7 Sept 2025
+                        - generic [ref=e280]:
+                          - img [ref=e281]
+                          - generic [ref=e284]: business
+                      - generic [ref=e286]:
+                        - text: "0"
+                        - generic [ref=e287]:
+                          - generic [ref=e288]: "Employment:"
+                          - generic [ref=e289]: Not specified
+                        - generic [ref=e290]:
+                          - generic [ref=e291]: "Credit Score:"
+                          - generic [ref=e292]: "641"
+                    - button "Review" [ref=e294] [cursor=pointer]:
+                      - img
+                      - text: Review
+                  - generic [ref=e297]:
+                    - checkbox [ref=e298] [cursor=pointer]
+                    - generic [ref=e299]:
+                      - generic [ref=e300]:
+                        - generic [ref=e301]:
+                          - heading "Nancy de Klerk" [level=3] [ref=e302]
+                          - generic [ref=e303]:
+                            - img [ref=e304]
+                            - generic [ref=e307]: pending
+                          - generic [ref=e308]: Low Risk
+                        - generic [ref=e309]:
+                          - generic [ref=e310]: N$500.00
+                          - generic [ref=e311]: Requested Amount
+                      - generic [ref=e312]:
+                        - generic [ref=e313]:
+                          - img [ref=e314]
+                          - generic [ref=e317]: user-d0825c06@namlend.com
+                        - generic [ref=e318]:
+                          - img [ref=e319]
+                          - generic [ref=e321]: Applied 7 Sept 2025
+                        - generic [ref=e322]:
+                          - img [ref=e323]
+                          - generic [ref=e326]: business
+                      - generic [ref=e328]:
+                        - text: "0"
+                        - generic [ref=e329]:
+                          - generic [ref=e330]: "Employment:"
+                          - generic [ref=e331]: Not specified
+                        - generic [ref=e332]:
+                          - generic [ref=e333]: "Credit Score:"
+                          - generic [ref=e334]: "688"
+                    - button "Review" [ref=e336] [cursor=pointer]:
+                      - img
+                      - text: Review
+                  - generic [ref=e339]:
+                    - checkbox [ref=e340] [cursor=pointer]
+                    - generic [ref=e341]:
+                      - generic [ref=e342]:
+                        - generic [ref=e343]:
+                          - heading "Anthony de Klerk" [level=3] [ref=e344]
+                          - generic [ref=e345]:
+                            - img [ref=e346]
+                            - generic [ref=e349]: pending
+                          - generic [ref=e350]:
+                            - img [ref=e351]
+                            - text: High Risk
+                        - generic [ref=e353]:
+                          - generic [ref=e354]: N$10,000.00
+                          - generic [ref=e355]: Requested Amount
+                      - generic [ref=e356]:
+                        - generic [ref=e357]:
+                          - img [ref=e358]
+                          - generic [ref=e361]: user-98812e7a@namlend.com
+                        - generic [ref=e362]:
+                          - img [ref=e363]
+                          - generic [ref=e365]: Applied 7 Sept 2025
+                        - generic [ref=e366]:
+                          - img [ref=e367]
+                          - generic [ref=e370]: Business expansion
+                      - generic [ref=e372]:
+                        - text: "0"
+                        - generic [ref=e373]:
+                          - generic [ref=e374]: "Employment:"
+                          - generic [ref=e375]: Not specified
+                        - generic [ref=e376]:
+                          - generic [ref=e377]: "Credit Score:"
+                          - generic [ref=e378]: "644"
+                    - button "Review" [ref=e380] [cursor=pointer]:
+                      - img
+                      - text: Review
 ```

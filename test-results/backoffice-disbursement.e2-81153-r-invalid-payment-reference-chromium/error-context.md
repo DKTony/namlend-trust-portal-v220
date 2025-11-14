@@ -1,12 +1,3071 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e2]:
-  - region "Notifications (F8)":
+- generic:
+  - generic:
     - list
-  - generic [ref=e4]:
-    - heading "404" [level=1] [ref=e5]
-    - paragraph [ref=e6]: Oops! Page not found
-    - link "Return to Home" [ref=e7] [cursor=pointer]:
-      - /url: /
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=2]: Admin Panel
+          - navigation:
+            - button:
+              - img
+              - text: Financial
+            - button:
+              - img
+              - text: Loans
+            - button:
+              - img
+              - text: Clients
+            - button:
+              - img
+              - text: Payments
+            - button:
+              - img
+              - text: Approvals
+            - button:
+              - img
+              - text: User Management
+            - button:
+              - img
+              - text: Analytics
+          - generic:
+            - generic:
+              - generic:
+                - generic: A
+              - generic:
+                - paragraph: admin@test.namlend.com
+                - paragraph: admin
+            - button:
+              - img
+              - text: Sign Out
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - heading [level=1]: Dashboard
+            - generic:
+              - generic:
+                - button:
+                  - img
+              - button:
+                - img
+                - text: Refresh
+              - button:
+                - img
+                - text: Reports
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=3]:
+                  - generic:
+                    - img
+                    - generic: System Status
+                    - generic: HEALTHY
+                  - button: Details
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=2]: Loan Management
+                    - paragraph: Review applications, manage portfolio, and process loan decisions
+                  - generic:
+                    - button:
+                      - img
+                      - text: Filters
+                    - button:
+                      - img
+                      - text: Export
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading [level=3]: Pending Applications
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: "4"
+                      - paragraph: Awaiting review
+                  - generic:
+                    - generic:
+                      - heading [level=3]: Approved This Month
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: "53"
+                      - paragraph: Ready for disbursement
+                  - generic:
+                    - generic:
+                      - heading [level=3]: Total Portfolio Value
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: N$623,565.00
+                      - paragraph: Active loans
+                  - generic:
+                    - generic:
+                      - heading [level=3]: Average Processing Time
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: 3 days
+                      - paragraph: Application to decision
+                  - generic:
+                    - generic:
+                      - heading [level=3]: Approval Rate
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: 75%
+                      - paragraph: Last 30 days
+                  - generic:
+                    - generic:
+                      - heading [level=3]: High Risk Applications
+                      - generic:
+                        - img
+                    - generic:
+                      - generic: "0"
+                      - paragraph: Requires special review
+                - generic:
+                  - tablist:
+                    - tab:
+                      - img
+                      - text: Pending Review
+                    - tab [selected]:
+                      - img
+                      - text: Approved
+                    - tab:
+                      - img
+                      - text: Rejected
+                    - tab:
+                      - img
+                      - text: All Loans
+                  - generic:
+                    - generic:
+                      - img
+                      - textbox
+                    - combobox
+                  - tabpanel:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "727"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "789"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "730"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "693"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "656"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "599"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$1,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test invalid payment method
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "708"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "618"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "587"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "716"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "753"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "662"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "650"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "592"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$1,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test invalid payment method
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "573"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$4,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test audit trail
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "751"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "784"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "710"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "593"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "606"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "709"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$3,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test loan officer disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "540"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "565"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$4,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test audit trail
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "611"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "542"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "787"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "623"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "574"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "739"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "560"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "627"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$3,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test loan officer disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "533"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$4,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test audit trail
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "548"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$1,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test invalid payment method
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "583"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "529"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "698"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "599"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "709"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "661"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "778"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$3,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test loan officer disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "571"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$1,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test invalid payment method
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "762"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$4,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test audit trail
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "653"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$2,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test unauthorized disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "510"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "654"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "521"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "700"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "792"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "652"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 14 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Test disbursement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "698"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$50,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 8 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Home improvement
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "593"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$100,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-11111111@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 6 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Business expansion
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "511"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$75,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-22222222@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 5 Nov 2025
+                                - generic:
+                                  - img
+                                  - generic: Education
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "697"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 31 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: Home stuff
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "725"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$1,419.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 18 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: education
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "587"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$15,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 18 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: Business expansion
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "585"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 18 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: Home stuff
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "789"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                - generic:
+                                  - generic: N$5,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 17 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: Home stuff
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "506"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$41,900.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 17 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: Home improvement
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "644"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$1,711.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 9 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: personal
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "610"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$402.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 7 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: business
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "788"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$744.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 7 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: home
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "691"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$1,649.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 7 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: business
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "541"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$744.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 6 Oct 2025
+                                - generic:
+                                  - img
+                                  - generic: home
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "740"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$1,000.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 24 Sept 2025
+                                - generic:
+                                  - img
+                                  - generic: business
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "669"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$5,600.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 22 Sept 2025
+                                - generic:
+                                  - img
+                                  - generic: education
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "780"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Medium Risk
+                                - generic:
+                                  - generic: N$934.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 22 Sept 2025
+                                - generic:
+                                  - img
+                                  - generic: medical
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "598"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic: Low Risk
+                                - generic:
+                                  - generic: N$748.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 22 Sept 2025
+                                - generic:
+                                  - img
+                                  - generic: other
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "704"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Nog Skuld
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                - generic:
+                                  - generic: N$518.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-d109c025@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 22 Sept 2025
+                                - generic:
+                                  - img
+                                  - generic: other
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic: "Monthly Income:"
+                                    - generic: N$89,451.00
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: employed
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "586"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+                      - generic:
+                        - generic:
+                          - generic:
+                            - checkbox
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Anthony de Klerk
+                                  - generic:
+                                    - img
+                                    - generic: approved
+                                  - generic:
+                                    - img
+                                    - text: High Risk
+                                - generic:
+                                  - generic: N$1,900.00
+                                  - generic: Requested Amount
+                              - generic:
+                                - generic:
+                                  - img
+                                  - generic: user-98812e7a@namlend.com
+                                - generic:
+                                  - img
+                                  - generic: Applied 30 Jul 2025
+                                - generic:
+                                  - img
+                                  - generic: business
+                              - generic:
+                                - generic:
+                                  - text: "0"
+                                  - generic:
+                                    - generic: "Employment:"
+                                    - generic: Not specified
+                                  - generic:
+                                    - generic: "Credit Score:"
+                                    - generic: "587"
+                            - generic:
+                              - button:
+                                - img
+                                - text: Review
+                              - button:
+                                - img
+                                - text: Disburse
+  - dialog "Complete Disbursement" [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Complete Disbursement" [level=2] [ref=e4]:
+        - img [ref=e5]
+        - generic [ref=e8]: Complete Disbursement
+      - paragraph [ref=e9]: Enter the payment reference from your banking system to complete this disbursement.
+    - generic [ref=e10]:
+      - generic [ref=e12]: "Client:"
+      - generic [ref=e13]:
+        - generic [ref=e14]: "Amount:"
+        - generic [ref=e15]: N$5,000.00
+      - generic [ref=e16]:
+        - generic [ref=e17]: "Loan ID:"
+        - generic [ref=e18]: 5b22d504
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - text: Payment Method
+          - generic [ref=e22]: "*"
+        - generic [ref=e23]:
+          - button "Bank Transfer" [ref=e24] [cursor=pointer]:
+            - img [ref=e25] [cursor=pointer]
+            - generic [ref=e29] [cursor=pointer]: Bank Transfer
+          - button "Mobile Money" [ref=e30] [cursor=pointer]:
+            - img [ref=e31] [cursor=pointer]
+            - generic [ref=e33] [cursor=pointer]: Mobile Money
+          - button "Cash" [ref=e34] [cursor=pointer]:
+            - img [ref=e35] [cursor=pointer]
+            - generic [ref=e38] [cursor=pointer]: Cash
+          - button "Debit Order" [ref=e39] [cursor=pointer]:
+            - img [ref=e40] [cursor=pointer]
+            - generic [ref=e42] [cursor=pointer]: Debit Order
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - text: Payment Reference
+          - generic [ref=e45]: "*"
+        - textbox "Payment Reference *" [active] [ref=e46]: ABC
+        - paragraph [ref=e47]: Enter the transaction reference from your bank or payment system
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - text: Processing Notes
+          - generic [ref=e50]: (Optional)
+        - textbox "Processing Notes (Optional)" [ref=e51]
+        - paragraph [ref=e52]: 0/500 characters
+    - generic [ref=e53]:
+      - img [ref=e54]
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: "Important:"
+        - paragraph [ref=e58]: This action will mark the disbursement as completed and automatically generate the payment schedule for the client. Ensure the payment has been successfully processed in your banking system.
+    - generic [ref=e59]:
+      - button "Cancel" [ref=e60] [cursor=pointer]
+      - button "Complete Disbursement" [ref=e61] [cursor=pointer]:
+        - img
+        - text: Complete Disbursement
+    - button "Close" [ref=e62] [cursor=pointer]:
+      - img [ref=e63] [cursor=pointer]
+      - generic [ref=e66] [cursor=pointer]: Close
 ```

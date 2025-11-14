@@ -86,8 +86,15 @@ test.describe('Disbursement API Tests', () => {
   });
 
   test('admin can disburse approved loan', async () => {
+    // First create a disbursement for the approved loan
+    const { data: disbursementData } = await adminClient.rpc('create_disbursement_on_approval', {
+      p_loan_id: testLoanId
+    });
+    expect(disbursementData.success).toBe(true);
+    const disbursementId = disbursementData.disbursement_id;
+
     const { data, error } = await adminClient.rpc('complete_disbursement', {
-      p_disbursement_id: testLoanId,
+      p_disbursement_id: disbursementId,
       p_payment_method: 'bank_transfer',
       p_payment_reference: 'TEST-BANK-REF-001',
       p_notes: 'Test disbursement by admin'
@@ -130,8 +137,14 @@ test.describe('Disbursement API Tests', () => {
       .select()
       .single();
 
+    // Create disbursement for the loan
+    const { data: disbursementData } = await loanOfficerClient.rpc('create_disbursement_on_approval', {
+      p_loan_id: newLoan!.id
+    });
+    expect(disbursementData.success).toBe(true);
+
     const { data, error } = await loanOfficerClient.rpc('complete_disbursement', {
-      p_disbursement_id: newLoan!.id,
+      p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'mobile_money',
       p_payment_reference: 'TEST-MOBILE-REF-002',
       p_notes: 'Test disbursement by loan officer'
@@ -222,21 +235,27 @@ test.describe('Disbursement API Tests', () => {
       .select()
       .single();
 
+    // Create disbursement for the loan
+    const { data: disbursementData } = await adminClient.rpc('create_disbursement_on_approval', {
+      p_loan_id: newLoan!.id
+    });
+    expect(disbursementData.success).toBe(true);
+
     // Disburse
     await adminClient.rpc('complete_disbursement', {
-      p_disbursement_id: newLoan!.id,
+      p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'debit_order',
       p_payment_reference: 'TEST-AUDIT-REF-003',
       p_notes: 'Test audit trail creation'
     });
 
-    // Check audit log
+    // Check audit log (audit_logs schema: table_name, record_id, new_values)
     const { data: auditLogs, error: auditError } = await adminClient
       .from('audit_logs')
       .select('*')
       .eq('action', 'complete_disbursement')
-      .eq('entity_id', newLoan!.id)
-      .order('timestamp', { ascending: false })
+      .eq('table_name', 'disbursements')
+      .order('created_at', { ascending: false })
       .limit(1);
 
     expect(auditError).toBeNull();
@@ -244,10 +263,10 @@ test.describe('Disbursement API Tests', () => {
     expect(auditLogs!.length).toBeGreaterThan(0);
     
     const auditLog = auditLogs![0];
-    expect(auditLog.entity_type).toBe('disbursement');
-    expect(auditLog.metadata).toBeTruthy();
-    expect(auditLog.metadata.payment_method).toBe('debit_order');
-    expect(auditLog.metadata.payment_reference).toBe('TEST-AUDIT-REF-003');
+    expect(auditLog.table_name).toBe('disbursements');
+    expect(auditLog.new_values).toBeTruthy();
+    expect(auditLog.new_values.payment_method).toBe('debit_order');
+    expect(auditLog.new_values.payment_reference).toBe('TEST-AUDIT-REF-003');
 
     // Cleanup
     await adminClient.from('loans').delete().eq('id', newLoan!.id);

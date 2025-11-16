@@ -274,6 +274,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
       {applications.map((application) => (
         <Card 
           key={application.id} 
+          data-testid={`loan-card-${application.id}`}
           className={`hover:shadow-md transition-shadow duration-200 ${
             selectedLoans.includes(application.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
           }`}
@@ -398,6 +399,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => handleDisburse(application)}
+                    data-testid={`disburse-loan-${application.id}`}
                   >
                     <DollarSign className="h-4 w-4 mr-2" />
                     Disburse

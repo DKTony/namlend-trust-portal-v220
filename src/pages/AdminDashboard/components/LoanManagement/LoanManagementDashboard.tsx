@@ -287,12 +287,13 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            data-testid="filter-status-select"
           >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="disbursed">Disbursed</option>
+            <option value="all" data-testid="filter-all">All Statuses</option>
+            <option value="pending" data-testid="filter-pending">Pending</option>
+            <option value="approved" data-testid="filter-approved">Approved</option>
+            <option value="rejected" data-testid="filter-rejected">Rejected</option>
+            <option value="disbursed" data-testid="filter-disbursed">Disbursed</option>
           </select>
         </div>
 

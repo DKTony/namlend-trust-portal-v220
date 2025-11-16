@@ -5,6 +5,7 @@
  * for parallel test execution without session conflicts.
  */
 
+import 'dotenv/config';
 import { test as base } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 

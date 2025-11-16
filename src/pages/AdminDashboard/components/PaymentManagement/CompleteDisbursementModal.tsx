@@ -130,9 +130,9 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" data-testid="disbursement-modal">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
+          <DialogTitle className="flex items-center space-x-2" data-testid="modal-title">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span>Complete Disbursement</span>
           </DialogTitle>
@@ -173,6 +173,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPaymentMethod('bank_transfer')}
                 disabled={loading}
+                data-testid="payment-method-bank"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'bank_transfer'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -187,6 +188,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPaymentMethod('mobile_money')}
                 disabled={loading}
+                data-testid="payment-method-mobile"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'mobile_money'
                     ? 'border-green-500 bg-green-50 text-green-700'
@@ -201,6 +203,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPaymentMethod('cash')}
                 disabled={loading}
+                data-testid="payment-method-cash"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'cash'
                     ? 'border-gray-500 bg-gray-50 text-gray-700'
@@ -215,6 +218,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 type="button"
                 onClick={() => setPaymentMethod('debit_order')}
                 disabled={loading}
+                data-testid="payment-method-debit"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'debit_order'
                     ? 'border-purple-500 bg-purple-50 text-purple-700'
@@ -233,6 +237,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             </Label>
             <Input
               id="payment-ref"
+              data-testid="payment-reference-input"
               value={paymentReference}
               onChange={(e) => setPaymentReference(e.target.value)}
               placeholder="e.g., BANK-REF-12345, TXN-2025-001"
@@ -252,6 +257,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             </Label>
             <textarea
               id="notes"
+              data-testid="disbursement-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -283,6 +289,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             variant="outline" 
             onClick={handleClose} 
             disabled={loading}
+            data-testid="cancel-disbursement-button"
           >
             Cancel
           </Button>
@@ -290,6 +297,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             onClick={handleSubmit} 
             disabled={loading || !paymentReference.trim()}
             className="bg-green-600 hover:bg-green-700"
+            data-testid="complete-disbursement-button"
           >
             {loading ? (
               <>

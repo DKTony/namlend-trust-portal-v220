@@ -27,30 +27,31 @@ test.describe('Backoffice Disbursement UI Flow', () => {
     // Navigate to Loan Management
     await page.click('text=Loans');
     
-    // Switch to Approved tab
-    await page.click('button:has-text("Approved")');
+    // Switch to Approved filter
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
     
     // Wait for loans to load
-    await page.waitForSelector('[data-testid="loan-card"], .loan-application-card', {
+    await page.waitForSelector('[data-testid^="loan-card-"]', {
       timeout: 5000
     });
     
     // Check if Disburse button exists for approved loans
-    const disburseButton = page.locator('button:has-text("Disburse")').first();
+    const disburseButton = page.locator('[data-testid^="disburse-loan-"]').first();
     await expect(disburseButton).toBeVisible({ timeout: 10000 });
   });
 
   test('Disbursement modal opens and displays loan details', async ({ page }) => {
     // Navigate to Loan Management
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
     
     // Wait for loans and click Disburse
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    await page.click('button:has-text("Disburse")');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Verify modal opened
-    await expect(page.locator('text=Complete Disbursement')).toBeVisible();
+    await expect(page.locator('[data-testid="disbursement-modal"]')).toBeVisible();
+    await expect(page.locator('[data-testid="modal-title"]')).toBeVisible();
     
     // Verify loan details are displayed
     await expect(page.locator('text=Client:')).toBeVisible();
@@ -61,49 +62,49 @@ test.describe('Backoffice Disbursement UI Flow', () => {
   test('Payment method selection works', async ({ page }) => {
     // Navigate and open disbursement modal
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    await page.click('button:has-text("Disburse")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Wait for modal
-    await page.waitForSelector('text=Payment Method');
+    await page.waitForSelector('[data-testid="disbursement-modal"]');
     
     // Test Bank Transfer selection (default)
-    const bankTransferButton = page.locator('button:has-text("Bank Transfer")');
+    const bankTransferButton = page.locator('[data-testid="payment-method-bank"]');
     await expect(bankTransferButton).toHaveClass(/border-blue-500/);
     
     // Select Mobile Money
-    await page.click('button:has-text("Mobile Money")');
-    const mobileMoneyButton = page.locator('button:has-text("Mobile Money")');
+    await page.click('[data-testid="payment-method-mobile"]');
+    const mobileMoneyButton = page.locator('[data-testid="payment-method-mobile"]');
     await expect(mobileMoneyButton).toHaveClass(/border-green-500/);
     
     // Select Cash
-    await page.click('button:has-text("Cash")');
-    const cashButton = page.locator('button:has-text("Cash")');
+    await page.click('[data-testid="payment-method-cash"]');
+    const cashButton = page.locator('[data-testid="payment-method-cash"]');
     await expect(cashButton).toHaveClass(/border-gray-500/);
     
     // Select Debit Order
-    await page.click('button:has-text("Debit Order")');
-    const debitOrderButton = page.locator('button:has-text("Debit Order")');
+    await page.click('[data-testid="payment-method-debit"]');
+    const debitOrderButton = page.locator('[data-testid="payment-method-debit"]');
     await expect(debitOrderButton).toHaveClass(/border-purple-500/);
   });
 
   test('Form validation requires payment reference', async ({ page }) => {
     // Navigate and open disbursement modal
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    await page.click('button:has-text("Disburse")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Wait for modal
-    await page.waitForSelector('text=Payment Reference');
+    await page.waitForSelector('[data-testid="disbursement-modal"]');
     
     // Try to submit without payment reference
-    const submitButton = page.locator('button:has-text("Complete Disbursement")');
+    const submitButton = page.locator('[data-testid="complete-disbursement-button"]');
     await expect(submitButton).toBeDisabled();
     
     // Enter payment reference
-    await page.fill('input[placeholder*="BANK-REF"]', 'TEST-REF-12345');
+    await page.fill('[data-testid="payment-reference-input"]', 'TEST-REF-12345');
     
     // Submit button should be enabled
     await expect(submitButton).toBeEnabled();
@@ -112,53 +113,49 @@ test.describe('Backoffice Disbursement UI Flow', () => {
   test('Complete disbursement flow', async ({ page }) => {
     // Navigate and open disbursement modal
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    
-    // Get the first approved loan's client name for verification
-    const firstLoanCard = page.locator('[data-testid="loan-card"], .loan-application-card').first();
-    const clientName = await firstLoanCard.locator('text=/.*@.*/').textContent();
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
     
     // Click Disburse
-    await page.click('button:has-text("Disburse")');
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Wait for modal and fill form
-    await page.waitForSelector('text=Payment Method');
+    await page.waitForSelector('[data-testid="disbursement-modal"]');
     
     // Select payment method (Mobile Money)
-    await page.click('button:has-text("Mobile Money")');
+    await page.click('[data-testid="payment-method-mobile"]');
     
     // Fill payment reference
-    await page.fill('input[placeholder*="BANK-REF"]', 'E2E-TEST-REF-' + Date.now());
+    await page.fill('[data-testid="payment-reference-input"]', 'E2E-TEST-REF-' + Date.now());
     
     // Fill notes (optional)
-    await page.fill('textarea[placeholder*="notes"]', 'E2E test disbursement');
+    await page.fill('[data-testid="disbursement-notes"]', 'E2E test disbursement');
     
     // Submit
-    await page.click('button:has-text("Complete Disbursement")');
+    await page.click('[data-testid="complete-disbursement-button"]');
     
     // Wait for success message
     await expect(page.locator('text=Success')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=/disbursement.*completed/i')).toBeVisible();
     
     // Verify modal closed
-    await expect(page.locator('text=Complete Disbursement')).not.toBeVisible();
+    await expect(page.locator('[data-testid="disbursement-modal"]')).not.toBeVisible();
     
     // Verify loan list refreshed and loan moved to Disbursed status
-    await page.click('button:has-text("Disbursed")');
-    await page.waitForTimeout(1000); // Wait for tab switch
+    await page.selectOption('[data-testid="filter-status-select"]', 'disbursed');
+    await page.waitForTimeout(1000); // Wait for filter to apply
     
     // The disbursed loan should appear in this tab
-    await expect(page.locator('text=Disbursed').first()).toBeVisible();
+    await expect(page.locator('[data-testid^="loan-card-"]').first()).toBeVisible();
   });
 
   test('Repayments visible after disbursement', async ({ page }) => {
     // Navigate to Disbursed loans
     await page.click('text=Loans');
-    await page.click('button:has-text("Disbursed")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'disbursed');
     
     // Wait for loans to load
-    await page.waitForSelector('[data-testid="loan-card"], .loan-application-card', {
+    await page.waitForSelector('[data-testid^="loan-card-"]', {
       timeout: 5000
     });
     
@@ -179,15 +176,15 @@ test.describe('Backoffice Disbursement UI Flow', () => {
   test('Cannot disburse same loan twice', async ({ page }) => {
     // Navigate to Disbursed loans
     await page.click('text=Loans');
-    await page.click('button:has-text("Disbursed")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'disbursed');
     
     // Wait for loans to load
-    await page.waitForSelector('[data-testid="loan-card"], .loan-application-card', {
+    await page.waitForSelector('[data-testid^="loan-card-"]', {
       timeout: 5000
     });
     
     // Disburse button should NOT be visible for disbursed loans
-    const disburseButton = page.locator('button:has-text("Disburse")');
+    const disburseButton = page.locator('[data-testid^="disburse-loan-"]');
     await expect(disburseButton).not.toBeVisible();
   });
 
@@ -217,15 +214,15 @@ test.describe('Disbursement Error Handling', () => {
 
   test('Shows error for invalid payment reference', async ({ page }) => {
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    await page.click('button:has-text("Disburse")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Enter very short reference (less than 5 characters)
-    await page.fill('input[placeholder*="BANK-REF"]', 'ABC');
+    await page.fill('[data-testid="payment-reference-input"]', 'ABC');
     
     // Try to submit
-    await page.click('button:has-text("Complete Disbursement")');
+    await page.click('[data-testid="complete-disbursement-button"]');
     
     // Should show validation error
     await expect(page.locator('text=/reference.*at least.*5/i')).toBeVisible({ timeout: 3000 });
@@ -233,20 +230,22 @@ test.describe('Disbursement Error Handling', () => {
 
   test('Cancel button closes modal without changes', async ({ page }) => {
     await page.click('text=Loans');
-    await page.click('button:has-text("Approved")');
-    await page.waitForSelector('button:has-text("Disburse")', { timeout: 5000 });
-    await page.click('button:has-text("Disburse")');
+    await page.selectOption('[data-testid="filter-status-select"]', 'approved');
+    await page.waitForSelector('[data-testid^="disburse-loan-"]', { timeout: 5000 });
+    await page.click('[data-testid^="disburse-loan-"]');
     
     // Fill some data
-    await page.fill('input[placeholder*="BANK-REF"]', 'TEST-CANCEL-123');
+    await page.fill('[data-testid="payment-reference-input"]', 'TEST-CANCEL-123');
     
     // Click Cancel
-    await page.click('button:has-text("Cancel")');
+    const cancelButton = page.locator('[data-testid="cancel-disbursement-button"]');
+    await cancelButton.scrollIntoViewIfNeeded();
+    await cancelButton.click();
     
     // Modal should close
-    await expect(page.locator('text=Complete Disbursement')).not.toBeVisible();
+    await expect(page.locator('[data-testid="disbursement-modal"]')).not.toBeVisible();
     
     // Loan should still be in Approved tab (not disbursed)
-    await expect(page.locator('button:has-text("Disburse")').first()).toBeVisible();
+    await expect(page.locator('[data-testid^="disburse-loan-"]').first()).toBeVisible();
   });
 });

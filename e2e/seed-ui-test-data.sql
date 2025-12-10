@@ -39,7 +39,7 @@ INSERT INTO loans (
   'UI Test - Approved Loan 1',
   'approved',
   NOW() - INTERVAL '1 day',
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '2 days',
   NOW() - INTERVAL '1 day'
 )
@@ -109,7 +109,7 @@ INSERT INTO loans (
   'UI Test - Approved Loan 3',
   'approved',
   NOW() - INTERVAL '3 hours',
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '1 day',
   NOW() - INTERVAL '3 hours'
 )
@@ -142,7 +142,7 @@ INSERT INTO disbursements (
   NULL,
   'UI-TEST-DISB-001',
   NOW(),
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '1 day',
   NOW() - INTERVAL '1 day'
 )
@@ -198,7 +198,7 @@ INSERT INTO disbursements (
   NULL,
   'UI-TEST-DISB-003',
   NOW(),
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '3 hours',
   NOW() - INTERVAL '3 hours'
 )
@@ -237,7 +237,7 @@ INSERT INTO loans (
   'UI Test - Already Disbursed Loan',
   'disbursed',
   NOW() - INTERVAL '2 days',
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '1 day',
   NOW() - INTERVAL '3 days',
   NOW() - INTERVAL '1 day'
@@ -271,7 +271,7 @@ INSERT INTO disbursements (
   'BANK-REF-UI-TEST-001',
   NOW() - INTERVAL '2 days',
   NOW() - INTERVAL '1 day',
-  '33333333-0000-0000-0000-000000000003', -- admin
+  'fbf720fd-7de2-4142-974f-6d6809f4f8c6', -- admin
   NOW() - INTERVAL '2 days',
   NOW() - INTERVAL '1 day'
 )

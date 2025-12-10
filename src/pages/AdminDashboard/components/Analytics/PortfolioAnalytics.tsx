@@ -1,126 +1,433 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// Temporarily disabled recharts due to d3-array build issue
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Users,
+  FileText,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  RefreshCw,
+  Loader2,
+  PieChart,
+  BarChart3,
+  Target,
+  Percent
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { formatNAD } from '@/utils/currency';
+import { cn } from '@/lib/utils';
 
 interface PortfolioAnalyticsProps {
-  dateRange: string;
+  dateRange?: string;
 }
 
-const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange }) => {
+interface PortfolioMetrics {
+  totalLoans: number;
+  totalDisbursed: number;
+  totalOutstanding: number;
+  totalRepaid: number;
+  averageLoanAmount: number;
+  averageInterestRate: number;
+  averageTerm: number;
+  byStatus: Record<string, number>;
+  byPurpose: Record<string, number>;
+  clientCount: number;
+  repaymentRate: number;
+  defaultRate: number;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  active: 'bg-green-500',
+  disbursed: 'bg-blue-500',
+  pending: 'bg-yellow-500',
+  approved: 'bg-emerald-500',
+  completed: 'bg-gray-500',
+  rejected: 'bg-red-500',
+  defaulted: 'bg-red-700'
+};
+
+const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30d' }) => {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [metrics, setMetrics] = useState<PortfolioMetrics | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState(dateRange);
+
+  const fetchMetrics = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      // Fetch all loans
+      const { data: loans } = await supabase
+        .from('loans')
+        .select('*');
+
+      // Fetch all payments
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('status', 'completed');
+
+      // Fetch client count
+      const { count: clientCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (loans) {
+        // Calculate metrics
+        const totalLoans = loans.length;
+        const totalDisbursed = loans
+          .filter(l => ['active', 'disbursed', 'completed'].includes(l.status))
+          .reduce((sum, l) => sum + (l.amount || 0), 0);
+        
+        const totalRepaid = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+        
+        const activeLoans = loans.filter(l => ['active', 'disbursed'].includes(l.status));
+        const totalOutstanding = activeLoans.reduce((sum, l) => sum + (l.total_repayment || 0), 0) - totalRepaid;
+
+        const averageLoanAmount = totalLoans > 0 
+          ? loans.reduce((sum, l) => sum + (l.amount || 0), 0) / totalLoans 
+          : 0;
+
+        const averageInterestRate = totalLoans > 0
+          ? loans.reduce((sum, l) => sum + (l.interest_rate || 0), 0) / totalLoans
+          : 0;
+
+        const averageTerm = totalLoans > 0
+          ? loans.reduce((sum, l) => sum + (l.term_months || 0), 0) / totalLoans
+          : 0;
+
+        // Group by status
+        const byStatus: Record<string, number> = {};
+        loans.forEach(l => {
+          byStatus[l.status] = (byStatus[l.status] || 0) + 1;
+        });
+
+        // Group by purpose
+        const byPurpose: Record<string, number> = {};
+        loans.forEach(l => {
+          const purpose = l.purpose || 'Other';
+          byPurpose[purpose] = (byPurpose[purpose] || 0) + 1;
+        });
+
+        // Calculate rates
+        const completedLoans = loans.filter(l => l.status === 'completed').length;
+        const defaultedLoans = loans.filter(l => l.status === 'defaulted').length;
+        const repaymentRate = totalLoans > 0 ? (completedLoans / totalLoans) * 100 : 0;
+        const defaultRate = totalLoans > 0 ? (defaultedLoans / totalLoans) * 100 : 0;
+
+        setMetrics({
+          totalLoans,
+          totalDisbursed,
+          totalOutstanding,
+          totalRepaid,
+          averageLoanAmount,
+          averageInterestRate,
+          averageTerm,
+          byStatus,
+          byPurpose,
+          clientCount: clientCount || 0,
+          repaymentRate,
+          defaultRate
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio metrics:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [fetchMetrics, selectedPeriod]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const totalStatusLoans = Object.values(metrics?.byStatus || {}).reduce((a, b) => a + b, 0);
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Portfolio Analytics</h2>
-        <div className="text-sm text-muted-foreground">
-          Date Range: {dateRange}
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold">Portfolio Analytics</h2>
+          <p className="text-muted-foreground">Comprehensive view of your loan portfolio performance</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+              <SelectItem value="90d">Last 90 Days</SelectItem>
+              <SelectItem value="12m">Last 12 Months</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => fetchMetrics(true)}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Loan Status Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="text-center">
-                <div className="text-lg font-medium text-muted-foreground mb-2">Chart Temporarily Disabled</div>
-                <div className="text-sm text-muted-foreground">Recharts disabled due to d3-array build issue</div>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Active:</span>
-                    <span className="font-medium">156</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Pending:</span>
-                    <span className="font-medium">23</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Completed:</span>
-                    <span className="font-medium">89</span>
-                  </div>
-                </div>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Disbursed</p>
+                <p className="text-2xl font-bold">{formatNAD(metrics?.totalDisbursed || 0)}</p>
               </div>
+              <DollarSign className="h-8 w-8 text-green-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Risk Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="text-center">
-                <div className="text-lg font-medium text-muted-foreground mb-2">Chart Temporarily Disabled</div>
-                <div className="text-sm text-muted-foreground">Recharts disabled due to d3-array build issue</div>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Low Risk:</span>
-                    <span className="font-medium">45%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Medium Risk:</span>
-                    <span className="font-medium">35%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">High Risk:</span>
-                    <span className="font-medium">20%</span>
-                  </div>
-                </div>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Outstanding Balance</p>
+                <p className="text-2xl font-bold">{formatNAD(metrics?.totalOutstanding || 0)}</p>
               </div>
+              <Target className="h-8 w-8 text-orange-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Performance Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="text-center">
-                <div className="text-lg font-medium text-muted-foreground mb-2">Chart Temporarily Disabled</div>
-                <div className="text-sm text-muted-foreground">Recharts disabled due to d3-array build issue</div>
-                <div className="mt-4 text-xs text-muted-foreground">
-                  6 months of performance data available
-                </div>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Repaid</p>
+                <p className="text-2xl font-bold">{formatNAD(metrics?.totalRepaid || 0)}</p>
               </div>
+              <CheckCircle className="h-8 w-8 text-blue-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active Clients</p>
+                <p className="text-2xl font-bold">{metrics?.clientCount || 0}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Key Metrics Grid */}
+      {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Average Loan Amount</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Average Loan Amount
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">N$15,385</div>
-            <p className="text-xs text-green-600">+5.2% vs last period</p>
+            <div className="text-2xl font-bold">{formatNAD(metrics?.averageLoanAmount || 0)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Across {metrics?.totalLoans || 0} total loans
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Portfolio Yield</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Percent className="h-4 w-4" />
+              Average Interest Rate
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">18.5%</div>
-            <p className="text-xs text-blue-600">Within target range</p>
+            <div className="text-2xl font-bold">{(metrics?.averageInterestRate || 0).toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Annual Percentage Rate
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Default Rate</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Average Term
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.1%</div>
-            <p className="text-xs text-green-600">Below industry average</p>
+            <div className="text-2xl font-bold">{(metrics?.averageTerm || 0).toFixed(0)} months</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Loan duration
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Status & Risk Analysis */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Loan Status Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChart className="h-5 w-5" />
+              Loan Status Distribution
+            </CardTitle>
+            <CardDescription>
+              Breakdown of loans by current status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Object.entries(metrics?.byStatus || {}).map(([status, count]) => {
+                const percentage = totalStatusLoans > 0 ? (count / totalStatusLoans) * 100 : 0;
+                return (
+                  <div key={status} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className={cn('w-3 h-3 rounded-full', STATUS_COLORS[status] || 'bg-gray-400')} />
+                        <span className="capitalize">{status.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{count}</span>
+                        <span className="text-muted-foreground">({percentage.toFixed(1)}%)</span>
+                      </div>
+                    </div>
+                    <Progress value={percentage} className="h-2" />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Risk Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Risk Metrics
+            </CardTitle>
+            <CardDescription>
+              Portfolio health indicators
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm">Repayment Rate</span>
+                <Badge variant={metrics?.repaymentRate || 0 >= 80 ? 'default' : 'destructive'}>
+                  {(metrics?.repaymentRate || 0).toFixed(1)}%
+                </Badge>
+              </div>
+              <Progress 
+                value={metrics?.repaymentRate || 0} 
+                className="h-3"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Target: 85%+
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm">Default Rate</span>
+                <Badge variant={(metrics?.defaultRate || 0) <= 5 ? 'default' : 'destructive'}>
+                  {(metrics?.defaultRate || 0).toFixed(1)}%
+                </Badge>
+              </div>
+              <Progress 
+                value={metrics?.defaultRate || 0} 
+                className="h-3"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Target: Below 5%
+              </p>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-medium mb-3">Portfolio Health</h4>
+              <div className="flex items-center gap-2">
+                {(metrics?.defaultRate || 0) <= 3 ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span className="text-green-700 font-medium">Healthy</span>
+                  </>
+                ) : (metrics?.defaultRate || 0) <= 7 ? (
+                  <>
+                    <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                    <span className="text-yellow-700 font-medium">Moderate Risk</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <span className="text-red-700 font-medium">High Risk</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Loan Purpose Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Loan Purpose Distribution</CardTitle>
+          <CardDescription>
+            What clients are borrowing for
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Object.entries(metrics?.byPurpose || {}).map(([purpose, count]) => (
+              <div key={purpose} className="p-4 border rounded-lg text-center">
+                <div className="text-2xl font-bold">{count}</div>
+                <div className="text-sm text-muted-foreground truncate" title={purpose}>
+                  {purpose}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -139,60 +139,68 @@ const LoanCalculator = () => {
               </div>
             </Card>
 
-            {/* Calculation Results */}
-            <Card className="p-8 shadow-medium bg-gradient-to-br from-primary/5 to-accent/5">
-              <h3 className="text-xl font-semibold text-primary mb-6">
-                Your Loan Summary
-              </h3>
-
-              <div className="space-y-6">
-                {/* Monthly Payment */}
-                <div className="p-4 bg-background rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Monthly Payment
-                  </div>
-                  <div className="text-3xl font-bold text-primary">
-                    N$ {monthlyPayment.toFixed(2)}
+            {/* Calculation Results - The "Receipt" */}
+            <Card className="p-8 shadow-strong bg-zinc-900 text-white relative overflow-hidden border-zinc-800">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-8 border-b border-dashed border-zinc-700 pb-4">
+                  <h3 className="text-xl font-semibold">
+                    Loan Estimate
+                  </h3>
+                  <div className="px-2 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-400">
+                    RECEIPT #{Math.floor(Math.random() * 10000)}
                   </div>
                 </div>
 
-                {/* Total Payment */}
-                <div className="p-4 bg-background rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Total Amount to Pay
+                <div className="space-y-6">
+                  {/* Monthly Payment */}
+                  <div className="flex justify-between items-end">
+                    <div className="text-sm text-zinc-400">
+                      Monthly Payment
+                    </div>
+                    <div className="text-3xl font-bold font-mono text-white">
+                      N$ {monthlyPayment.toFixed(2)}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-primary">
-                    N$ {totalPayment.toFixed(2)}
-                  </div>
-                </div>
 
-                {/* Interest Cost */}
-                <div className="p-4 bg-background rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Total Interest Cost
+                  {/* Total Payment */}
+                  <div className="flex justify-between items-end">
+                    <div className="text-sm text-zinc-400">
+                      Total Amount
+                    </div>
+                    <div className="text-2xl font-bold font-mono text-zinc-200">
+                      N$ {totalPayment.toFixed(2)}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-accent">
-                    N$ {(totalPayment - loanAmount[0]).toFixed(2)}
+
+                  {/* Interest Cost */}
+                  <div className="flex justify-between items-end pb-6 border-b border-dashed border-zinc-700">
+                    <div className="text-sm text-zinc-400">
+                      Total Interest
+                    </div>
+                    <div className="text-2xl font-bold font-mono text-blue-400">
+                      N$ {(totalPayment - loanAmount[0]).toFixed(2)}
+                    </div>
                   </div>
-                </div>
 
-                {/* CTA */}
-                <div className="pt-4">
-                  <Button variant="hero" size="lg" className="w-full mb-3" onClick={handleApplyClick}>
-                    Apply for This Loan
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    No obligation. Get pre-approved in 5 minutes.
-                  </p>
-                </div>
+                  {/* CTA */}
+                  <div className="pt-2">
+                    <Button variant="hero" size="lg" className="w-full mb-4 rounded-xl bg-blue-600 hover:bg-blue-500 border-none" onClick={handleApplyClick}>
+                      Apply Now
+                    </Button>
+                    <p className="text-xs text-zinc-500 text-center">
+                      Get pre-approved in 5 minutes. No hidden fees.
+                    </p>
+                  </div>
 
-                {/* Disclaimer */}
-                <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-                  <p className="text-xs text-muted-foreground">
-                    <strong>Important:</strong> This is an estimate only. 
-                    Actual rates may vary based on credit assessment. 
-                    All fees will be disclosed before loan acceptance.
-                  </p>
+                  {/* Disclaimer */}
+                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-800">
+                    <p className="text-[10px] text-zinc-500 leading-relaxed">
+                      <strong>Note:</strong> Estimate only. Actual rates vary by credit profile. 
+                      Regulated by NAMFISA. APR capped at {interestRate}%.
+                    </p>
+                  </div>
                 </div>
               </div>
             </Card>

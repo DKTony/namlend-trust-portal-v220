@@ -31,6 +31,19 @@ export default {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        zinc: {
+          50: '#fafafa',
+          100: '#f4f4f5', // Smoke
+          200: '#e4e4e7',
+          300: '#d4d4d8',
+          400: '#a1a1aa',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a', // Graphite
+          900: '#18181b', // Charcoal
+          950: '#09090b', // Obsidian
+        },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -84,14 +97,17 @@ export default {
         'gradient-hero': 'var(--gradient-hero)'
       },
       boxShadow: {
-        'soft': 'var(--shadow-soft)',
+        'soft': '0 8px 30px rgba(0,0,0,0.04)',
         'medium': 'var(--shadow-medium)',
-        'strong': 'var(--shadow-strong)'
+        'strong': 'var(--shadow-strong)',
+        'glow': '0 0 20px rgba(37, 99, 235, 0.15)',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
+        sm: 'calc(var(--radius) - 4px)',
+        '3xl': '1.5rem',
+        '4xl': '2rem',
       },
       transitionTimingFunction: {
         'smooth': 'var(--transition-smooth)',

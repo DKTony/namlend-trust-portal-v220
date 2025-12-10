@@ -16,7 +16,8 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  RefreshCw
+  RefreshCw,
+  BadgeCheck
 } from 'lucide-react';
 
 // Sub-components
@@ -25,6 +26,7 @@ import PaymentsList from './PaymentsList';
 import DisbursementManager from './DisbursementManager';
 import OverdueManager from './OverdueManager';
 import CollectionsCenter from './CollectionsCenter';
+import SettledLoansList from './SettledLoansList';
 
 interface PaymentManagementDashboardProps {
   onPaymentSelect?: (paymentId: string) => void;
@@ -122,7 +124,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             All Payments
@@ -130,6 +132,10 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
           <TabsTrigger value="disbursements" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Disbursements
+          </TabsTrigger>
+          <TabsTrigger value="settled" className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4" />
+            Settled Loans
           </TabsTrigger>
           <TabsTrigger value="overdue" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
@@ -181,6 +187,10 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
 
         <TabsContent value="disbursements" className="space-y-4">
           <DisbursementManager status={filterStatus as any} searchTerm={searchTerm} />
+        </TabsContent>
+
+        <TabsContent value="settled" className="space-y-4">
+          <SettledLoansList />
         </TabsContent>
 
         <TabsContent value="overdue" className="space-y-4">

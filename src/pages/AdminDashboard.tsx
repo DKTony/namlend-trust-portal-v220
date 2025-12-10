@@ -20,12 +20,15 @@ import {
   BarChart3,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Clock,
   RefreshCw,
   Download,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Settings,
+  CheckSquare
 } from 'lucide-react';
 import { NotificationBell } from '@/components/ApprovalNotifications';
 
@@ -36,6 +39,10 @@ import ClientManagementDashboard from '@/pages/AdminDashboard/components/ClientM
 import PaymentManagementDashboard from '@/pages/AdminDashboard/components/PaymentManagement/PaymentManagementDashboard';
 import ApprovalManagementDashboard from '@/pages/AdminDashboard/components/ApprovalManagement/ApprovalManagementDashboard';
 import UserManagementDashboard from '@/pages/AdminDashboard/components/UserManagement/UserManagementDashboard';
+import { CollectionsDashboard } from '@/pages/AdminDashboard/components/CollectionsManagement';
+import { CreditPolicyConfig } from '@/pages/AdminDashboard/components/Settings';
+import { BatchOperations } from '@/pages/AdminDashboard/components/BatchOperations';
+import PortfolioAnalytics from '@/pages/AdminDashboard/components/Analytics/PortfolioAnalytics';
 
 
 const AdminDashboard: React.FC = () => {
@@ -181,8 +188,13 @@ const AdminDashboard: React.FC = () => {
     { id: 'clients', label: 'Clients', icon: UserCheck },
     { id: 'payments', label: 'Payments', icon: DollarSign },
     { id: 'approvals', label: 'Approvals', icon: CheckCircle2 },
+    { id: 'collections', label: 'Collections', icon: AlertTriangle },
+    { id: 'batch', label: 'Batch Operations', icon: CheckSquare },
     { id: 'users', label: 'User Management', icon: Users },
-    ...(isAdmin ? [{ id: 'analytics', label: 'Analytics', icon: BarChart3 }] : []),
+    ...(isAdmin ? [
+      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+      { id: 'settings', label: 'Credit Policy', icon: Settings },
+    ] : []),
   ];
 
   return (
@@ -197,18 +209,23 @@ const AdminDashboard: React.FC = () => {
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border
+        fixed lg:static inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-lg font-semibold">Admin Panel</h2>
+          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="font-bold text-primary-foreground">N</span>
+              </div>
+              <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground">NamLend</h2>
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-4 w-4" />
@@ -216,9 +233,10 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Navigation Items */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
+              const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
@@ -228,14 +246,17 @@ const AdminDashboard: React.FC = () => {
                   }}
                   data-testid={`nav-${item.id}`}
                   className={`
-                    w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors
-                    ${activeTab === item.id 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-accent hover:text-accent-foreground'
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
+                    ${isActive 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                     }
                   `}
                 >
-                  <Icon className="h-4 w-4" />
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-primary" />
+                  )}
+                  <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-sidebar-foreground/40 group-hover:text-sidebar-foreground'}`} />
                   {item.label}
                 </button>
               );
@@ -243,19 +264,21 @@ const AdminDashboard: React.FC = () => {
           </nav>
 
           {/* User Info & Sign Out */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/20 m-4 rounded-2xl">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground text-sm font-medium">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-glow">
+                <span className="text-white text-sm font-bold">
                   {user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.email}</p>
-                <p className="text-xs text-muted-foreground">{userRole}</p>
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.email}</p>
+                <Badge variant="outline" className="mt-1 border-sidebar-border text-sidebar-foreground/60 text-[10px] uppercase tracking-wider">
+                  {userRole}
+                </Badge>
               </div>
             </div>
-            <SignOutButton variant="outline" size="sm" className="w-full" data-testid="signout-button-admin" />
+            <SignOutButton variant="ghost" size="sm" className="w-full text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent justify-start pl-0" data-testid="signout-button-admin" />
           </div>
         </div>
       </div>
@@ -337,26 +360,22 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
+            {activeTab === 'collections' && (
+              <div className="space-y-6">
+                <CollectionsDashboard key={`collections-${refreshKey}`} />
+              </div>
+            )}
+
+            {activeTab === 'batch' && (
+              <div className="space-y-6">
+                <BatchOperations key={`batch-${refreshKey}`} />
+              </div>
+            )}
+
             {/* Analytics Content - Admin Only */}
             {activeTab === 'analytics' && isAdmin && (
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Analytics Dashboard</CardTitle>
-                    <CardDescription>Portfolio analytics and insights (Admin Access)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-lg font-medium text-muted-foreground mb-2">Analytics Temporarily Disabled</div>
-                        <div className="text-sm text-muted-foreground">Recharts disabled due to d3-array build issue</div>
-                        <div className="mt-4 text-xs text-muted-foreground">
-                          Portfolio analytics, risk analysis, and performance metrics will be available once charts are restored
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PortfolioAnalytics key={`analytics-${refreshKey}`} />
               </div>
             )}
             
@@ -377,6 +396,13 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* Credit Policy Settings - Admin Only */}
+            {activeTab === 'settings' && isAdmin && (
+              <div className="space-y-6">
+                <CreditPolicyConfig key={`settings-${refreshKey}`} />
               </div>
             )}
           </div>

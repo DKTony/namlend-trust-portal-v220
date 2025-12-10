@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Shield, Phone, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { NotificationBell } from "./ApprovalNotifications";
+import { NotificationCenter } from "./NotificationCenter";
 import SignOutButton from "./SignOutButton";
 
 const Header = () => {
@@ -62,7 +62,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
-                <NotificationBell />
+                <NotificationCenter />
                 <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-header">
                   Dashboard
                 </Button>

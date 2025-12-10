@@ -4,6 +4,7 @@ import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed';
 export type ScheduleStatus = 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'waived';
+export type LoanStatus = 'pending' | 'approved' | 'disbursed' | 'active' | 'funded' | 'settled' | 'defaulted' | 'rejected';
 
 export interface ListPaymentsFilter { loanId?: string; status?: PaymentStatus }
 export interface RecordPaymentInput {
@@ -11,6 +12,7 @@ export interface RecordPaymentInput {
   amount: number;
   payment_method: string;
   reference_number?: string;
+  notes?: string;
 }
 
 export interface PaymentSchedule {
@@ -56,36 +58,83 @@ export async function listPayments(
   }
 }
 
-export async function recordPayment(
+export interface ProcessPaymentResult {
+  success: boolean;
+  payment_id?: string;
+  reference_number?: string;
+  amount_paid?: number;
+  amount_applied?: number;
+  overpayment?: number;
+  schedules_updated?: number;
+  previous_outstanding?: number;
+  new_outstanding?: number;
+  loan_settled?: boolean;
+  settlement_details?: {
+    settled: boolean;
+    settled_at?: string;
+    total_paid?: number;
+    outstanding_balance?: number;
+  };
+  error?: string;
+}
+
+/**
+ * Process a loan payment with automatic schedule application and settlement detection
+ */
+export async function processLoanPayment(
   input: RecordPaymentInput
-): Promise<{ success: boolean; paymentId?: string; error?: string }> {
-  return measurePerformance('record_payment', async () => {
+): Promise<ProcessPaymentResult> {
+  return measurePerformance('process_loan_payment', async () => {
     try {
-      const { data, error } = await supabase
-        .from('payments')
-        .insert([
-          {
-            loan_id: input.loanId,
-            amount: input.amount,
-            payment_method: input.payment_method,
-            reference_number: input.reference_number,
-            status: 'pending'
-          }
-        ])
-        .select('id')
-        .single();
+      debugLog('💰 Processing loan payment', { loanId: input.loanId, amount: input.amount });
+
+      const { data, error } = await supabase.rpc('process_loan_payment', {
+        p_loan_id: input.loanId,
+        p_amount: input.amount,
+        p_payment_method: input.payment_method,
+        p_reference_number: input.reference_number || null,
+        p_notes: input.notes || null
+      });
 
       if (error) {
-        debugLog('❌ recordPayment error', error);
+        debugLog('❌ Process loan payment failed', error);
         return { success: false, error: error.message };
       }
 
-      return { success: true, paymentId: data.id };
+      const result = data as ProcessPaymentResult;
+      
+      if (!result.success) {
+        debugLog('❌ Payment processing returned error', result.error);
+        return result;
+      }
+
+      debugLog('✅ Payment processed successfully', {
+        paymentId: result.payment_id,
+        amountApplied: result.amount_applied,
+        newOutstanding: result.new_outstanding,
+        loanSettled: result.loan_settled
+      });
+
+      return result;
     } catch (error) {
-      handleDatabaseError(error, 'recordPayment', { input });
+      handleDatabaseError(error, 'processLoanPayment', { input });
       return { success: false, error: 'Unexpected error occurred' };
     }
   });
+}
+
+/**
+ * Legacy recordPayment function - now uses processLoanPayment internally
+ */
+export async function recordPayment(
+  input: RecordPaymentInput
+): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+  const result = await processLoanPayment(input);
+  return {
+    success: result.success,
+    paymentId: result.payment_id,
+    error: result.error
+  };
 }
 
 /**
@@ -300,14 +349,184 @@ export async function waiveLateFee(
   });
 }
 
+/**
+ * Get comprehensive loan payment details including schedules and history
+ */
+export interface LoanPaymentDetails {
+  success: boolean;
+  loan?: {
+    id: string;
+    amount: number;
+    interest_rate: number;
+    term_months: number;
+    monthly_payment: number;
+    total_repayment: number;
+    status: LoanStatus;
+    disbursed_at?: string;
+    settled_at?: string;
+    purpose?: string;
+  };
+  summary?: {
+    total_scheduled: number;
+    total_paid: number;
+    outstanding_balance: number;
+    installments_paid: number;
+    installments_remaining: number;
+    total_installments: number;
+    next_due_date?: string;
+    overdue_amount: number;
+    is_settled: boolean;
+  };
+  schedules?: PaymentSchedule[];
+  payments?: Array<{
+    id: string;
+    amount: number;
+    payment_method: string;
+    reference_number?: string;
+    status: PaymentStatus;
+    paid_at?: string;
+    notes?: string;
+  }>;
+  error?: string;
+}
+
+export async function getLoanPaymentDetails(
+  loanId: string
+): Promise<LoanPaymentDetails> {
+  return measurePerformance('get_loan_payment_details', async () => {
+    try {
+      debugLog('📋 Fetching loan payment details', { loanId });
+
+      const { data, error } = await supabase.rpc('get_loan_payment_details', {
+        p_loan_id: loanId
+      });
+
+      if (error) {
+        debugLog('❌ Get loan payment details failed', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as LoanPaymentDetails;
+      debugLog('✅ Loan payment details retrieved', { 
+        loanId,
+        outstanding: result.summary?.outstanding_balance,
+        isSettled: result.summary?.is_settled
+      });
+
+      return result;
+    } catch (error) {
+      handleDatabaseError(error, 'getLoanPaymentDetails', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Get user's loan portfolio summary
+ */
+export interface LoanPortfolioSummary {
+  success: boolean;
+  user_id?: string;
+  portfolio?: {
+    total_loans: number;
+    active_loans: number;
+    settled_loans: number;
+    total_borrowed: number;
+    total_paid: number;
+    total_outstanding: number;
+    next_payment_due?: string;
+  };
+  loans?: Array<{
+    loan_id: string;
+    principal_amount: number;
+    total_repayment: number;
+    monthly_payment: number;
+    status: LoanStatus;
+    total_paid: number;
+    outstanding_balance: number;
+    installments_paid: number;
+    installments_remaining: number;
+    total_installments: number;
+    next_due_date?: string;
+    next_payment_amount: number;
+    disbursed_at?: string;
+    settled_at?: string;
+    progress_percent: number;
+  }>;
+  error?: string;
+}
+
+export async function getLoanPortfolioSummary(
+  userId?: string
+): Promise<LoanPortfolioSummary> {
+  return measurePerformance('get_loan_portfolio_summary', async () => {
+    try {
+      debugLog('📊 Fetching loan portfolio summary', { userId });
+
+      const { data, error } = await supabase.rpc('get_loan_portfolio_summary', {
+        p_user_id: userId || null
+      });
+
+      if (error) {
+        debugLog('❌ Get loan portfolio summary failed', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as LoanPortfolioSummary;
+      debugLog('✅ Loan portfolio summary retrieved', {
+        totalLoans: result.portfolio?.total_loans,
+        activeLoans: result.portfolio?.active_loans,
+        totalOutstanding: result.portfolio?.total_outstanding
+      });
+
+      return result;
+    } catch (error) {
+      handleDatabaseError(error, 'getLoanPortfolioSummary', { userId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Check if a loan can be settled with a given payment amount
+ */
+export async function checkSettlementAmount(
+  loanId: string
+): Promise<{
+  success: boolean;
+  outstanding_balance?: number;
+  can_settle?: boolean;
+  error?: string;
+}> {
+  try {
+    const details = await getLoanPaymentDetails(loanId);
+    
+    if (!details.success) {
+      return { success: false, error: details.error };
+    }
+
+    return {
+      success: true,
+      outstanding_balance: details.summary?.outstanding_balance || 0,
+      can_settle: (details.summary?.outstanding_balance || 0) > 0
+    };
+  } catch (error) {
+    return { success: false, error: 'Failed to check settlement amount' };
+  }
+}
+
 // Export all functions
 export default {
   listPayments,
   recordPayment,
+  processLoanPayment,
   generatePaymentSchedule,
   getPaymentSchedule,
   applyPaymentToSchedule,
   markOverduePayments,
   calculateLateFee,
-  waiveLateFee
+  waiveLateFee,
+  getLoanPaymentDetails,
+  getLoanPortfolioSummary,
+  checkSettlementAmount
 };

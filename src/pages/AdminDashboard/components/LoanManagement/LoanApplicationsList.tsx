@@ -21,6 +21,8 @@ import { useLoanApplications } from '../../hooks/useLoanApplications';
 import { useLoanActions } from '../../hooks/useLoanActions';
 import LoanDetailsModal from '@/components/LoanDetailsModal';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface LoanApplication {
   id: string;
@@ -100,14 +102,57 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     }
   };
 
-  const handleDisburse = (application: LoanApplication) => {
-    setSelectedDisbursement({
-      id: application.id, // This will be used as disbursement_id in the modal
-      amount: application.amount,
-      clientName: application.applicantName,
-      loanId: application.id
-    });
-    setDisbursementModalOpen(true);
+  const { toast } = useToast();
+
+  const handleDisburse = async (application: LoanApplication) => {
+    try {
+      // First check if a disbursement already exists for this loan
+      const { data: existingDisbursement } = await supabase
+        .from('disbursements')
+        .select('id, amount, status')
+        .eq('loan_id', application.id)
+        .eq('status', 'pending')
+        .single();
+
+      let disbursementId: string;
+
+      if (existingDisbursement) {
+        // Use existing pending disbursement
+        disbursementId = existingDisbursement.id;
+      } else {
+        // Create a new disbursement for this loan
+        const { data: newDisbursement, error: createError } = await supabase.rpc(
+          'create_disbursement_on_approval',
+          { p_loan_id: application.id }
+        );
+
+        if (createError || !newDisbursement?.success) {
+          toast({
+            title: 'Error',
+            description: newDisbursement?.error || 'Failed to create disbursement',
+            variant: 'destructive'
+          });
+          return;
+        }
+        disbursementId = newDisbursement.disbursement_id;
+      }
+
+      // Now open the modal with the correct disbursement ID
+      setSelectedDisbursement({
+        id: disbursementId, // Actual disbursement ID
+        amount: application.amount,
+        clientName: application.applicantName,
+        loanId: application.id
+      });
+      setDisbursementModalOpen(true);
+    } catch (error) {
+      console.error('Error preparing disbursement:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to prepare disbursement. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleDisbursementSuccess = () => {
@@ -393,7 +438,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     </Button>
                   </>
                 )}
-                {application.status === 'approved' && !application.disbursedAt && application.source !== 'approval' && (
+                {application.status === 'approved' && application.source !== 'approval' && (
                   <Button
                     variant="default"
                     size="sm"

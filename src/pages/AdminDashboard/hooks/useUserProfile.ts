@@ -138,7 +138,7 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
 
       const userData: UserData = {
         id: profile.id,
-        fullName: profile.full_name,
+        fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown',
         email: profile.email,
         phone: profile.phone,
         role: userRoles[0]?.role || 'client',

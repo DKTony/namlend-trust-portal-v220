@@ -1,0 +1,641 @@
+/**
+ * Collections Dashboard Component
+ * Provides a comprehensive view of overdue loans with risk buckets
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Phone,
+  MessageSquare,
+  Mail,
+  Calendar,
+  Clock,
+  AlertTriangle,
+  Search,
+  RefreshCw,
+  Loader2,
+  User,
+  DollarSign,
+  TrendingUp,
+  FileText,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ChevronRight,
+  HandshakeIcon
+} from 'lucide-react';
+import { formatNAD } from '@/utils/currency';
+import {
+  getCollectionsQueue,
+  getCollectionsStats,
+  createPromiseToPay,
+  logInteraction,
+  type CollectionsQueueItem,
+  type CollectionsStats
+} from '@/services/collectionsService';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+// Risk bucket configuration
+const RISK_BUCKETS = [
+  { id: 'all', label: 'All', color: 'bg-gray-100 text-gray-700' },
+  { id: 'current', label: 'Current', color: 'bg-green-100 text-green-700' },
+  { id: 'bucket_1_30', label: '1-30 Days', color: 'bg-yellow-100 text-yellow-700' },
+  { id: 'bucket_31_60', label: '31-60 Days', color: 'bg-orange-100 text-orange-700' },
+  { id: 'bucket_61_90', label: '61-90 Days', color: 'bg-red-100 text-red-700' },
+  { id: 'bucket_90_plus', label: '90+ Days', color: 'bg-red-200 text-red-800' },
+];
+
+const INTERACTION_TYPES = [
+  { value: 'call', label: 'Phone Call', icon: Phone },
+  { value: 'sms', label: 'SMS', icon: MessageSquare },
+  { value: 'email', label: 'Email', icon: Mail },
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
+  { value: 'note', label: 'Note', icon: FileText },
+];
+
+const OUTCOMES = [
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'no_answer', label: 'No Answer' },
+  { value: 'promised', label: 'Promised to Pay' },
+  { value: 'refused', label: 'Refused' },
+  { value: 'wrong_number', label: 'Wrong Number' },
+  { value: 'callback_requested', label: 'Callback Requested' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'escalated', label: 'Escalated' },
+  { value: 'other', label: 'Other' },
+];
+
+export function CollectionsDashboard() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [queue, setQueue] = useState<CollectionsQueueItem[]>([]);
+  const [stats, setStats] = useState<CollectionsStats | null>(null);
+  const [selectedBucket, setSelectedBucket] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItem, setSelectedItem] = useState<CollectionsQueueItem | null>(null);
+  
+  // Dialog states
+  const [showInteractionDialog, setShowInteractionDialog] = useState(false);
+  const [showPTPDialog, setShowPTPDialog] = useState(false);
+  const [interactionType, setInteractionType] = useState('call');
+  const [outcome, setOutcome] = useState('');
+  const [notes, setNotes] = useState('');
+  const [nextActionDate, setNextActionDate] = useState('');
+  const [ptpAmount, setPtpAmount] = useState('');
+  const [ptpDate, setPtpDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch data
+  const fetchData = useCallback(async (showRefreshIndicator = false) => {
+    if (showRefreshIndicator) setRefreshing(true);
+    else setLoading(true);
+
+    try {
+      const [queueResult, statsResult] = await Promise.all([
+        getCollectionsQueue({
+          riskBucket: selectedBucket === 'all' ? undefined : selectedBucket,
+          search: searchTerm || undefined
+        }),
+        getCollectionsStats()
+      ]);
+
+      if (queueResult.success && queueResult.data) {
+        setQueue(queueResult.data);
+      }
+
+      if (statsResult.success && statsResult.stats) {
+        setStats(statsResult.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching collections data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load collections data',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [selectedBucket, searchTerm, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Handle interaction submission
+  const handleInteractionSubmit = async () => {
+    if (!selectedItem) return;
+    
+    setSubmitting(true);
+    try {
+      const result = await logInteraction(
+        selectedItem.loan_id,
+        interactionType as any,
+        outcome || undefined,
+        notes || undefined,
+        undefined,
+        nextActionDate || undefined
+      );
+
+      if (result.success) {
+        toast({
+          title: 'Interaction Logged',
+          description: 'The interaction has been recorded successfully.'
+        });
+        setShowInteractionDialog(false);
+        resetInteractionForm();
+        fetchData(true);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to log interaction',
+        variant: 'destructive'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle PTP submission
+  const handlePTPSubmit = async () => {
+    if (!selectedItem || !ptpAmount || !ptpDate) return;
+    
+    setSubmitting(true);
+    try {
+      const result = await createPromiseToPay(
+        selectedItem.loan_id,
+        parseFloat(ptpAmount),
+        ptpDate,
+        notes || undefined
+      );
+
+      if (result.success) {
+        toast({
+          title: 'Promise Recorded',
+          description: 'The promise to pay has been recorded successfully.'
+        });
+        setShowPTPDialog(false);
+        resetPTPForm();
+        fetchData(true);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to record promise to pay',
+        variant: 'destructive'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetInteractionForm = () => {
+    setInteractionType('call');
+    setOutcome('');
+    setNotes('');
+    setNextActionDate('');
+  };
+
+  const resetPTPForm = () => {
+    setPtpAmount('');
+    setPtpDate('');
+    setNotes('');
+  };
+
+  const getRiskBucketBadge = (bucket: string) => {
+    const config = RISK_BUCKETS.find(b => b.id === bucket);
+    return config ? (
+      <Badge className={cn('font-normal', config.color)}>
+        {config.label}
+      </Badge>
+    ) : null;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Overdue</p>
+                <p className="text-2xl font-bold">{stats?.total_overdue || 0}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">1-30 Days</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats?.bucket_1_30 || 0}</p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">31-60 Days</p>
+                <p className="text-2xl font-bold text-orange-600">{stats?.bucket_31_60 || 0}</p>
+              </div>
+              <AlertCircle className="h-8 w-8 text-orange-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">61-90 Days</p>
+                <p className="text-2xl font-bold text-red-600">{stats?.bucket_61_90 || 0}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">90+ Days</p>
+                <p className="text-2xl font-bold text-red-800">{stats?.bucket_90_plus || 0}</p>
+              </div>
+              <XCircle className="h-8 w-8 text-red-800 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Activity Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Promises</p>
+                <p className="text-2xl font-bold">{stats?.pending_promises || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats?.promises_due_today || 0} due today
+                </p>
+              </div>
+              <HandshakeIcon className="h-8 w-8 text-blue-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Contacts Today</p>
+                <p className="text-2xl font-bold">{stats?.contacts_today || 0}</p>
+              </div>
+              <Phone className="h-8 w-8 text-green-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Reschedules</p>
+                <p className="text-2xl font-bold">{stats?.pending_reschedules || 0}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-purple-500 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Collections Queue</CardTitle>
+              <CardDescription>
+                Manage overdue accounts and collection activities
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchData(true)}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Tabs value={selectedBucket} onValueChange={setSelectedBucket} className="w-full md:w-auto">
+              <TabsList className="grid grid-cols-3 md:grid-cols-6">
+                {RISK_BUCKETS.map((bucket) => (
+                  <TabsTrigger key={bucket.id} value={bucket.id} className="text-xs">
+                    {bucket.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Queue List */}
+          <ScrollArea className="h-[500px]">
+            {queue.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-lg font-medium">No accounts in this bucket</h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {selectedBucket === 'all' 
+                    ? 'All accounts are current!'
+                    : 'No overdue accounts in this risk category.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {queue.map((item) => (
+                  <div
+                    key={item.loan_id}
+                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">
+                              {item.first_name} {item.last_name}
+                            </h4>
+                            {getRiskBucketBadge(item.risk_bucket)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{item.phone_number}</p>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span>Loan: {formatNAD(item.loan_amount)}</span>
+                            <span>Monthly: {formatNAD(item.monthly_payment)}</span>
+                            <span className="text-red-600 font-medium">
+                              {item.days_overdue} days overdue
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {item.pending_promises > 0 && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            {item.pending_promises} PTP pending
+                          </Badge>
+                        )}
+                        {item.last_contact_date && (
+                          <p className="text-xs text-muted-foreground">
+                            Last contact: {new Date(item.last_contact_date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setShowInteractionDialog(true);
+                        }}
+                      >
+                        <Phone className="h-4 w-4 mr-1" />
+                        Log Contact
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setPtpAmount(item.monthly_payment.toString());
+                          setShowPTPDialog(true);
+                        }}
+                      >
+                        <HandshakeIcon className="h-4 w-4 mr-1" />
+                        Record PTP
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-auto"
+                      >
+                        View Details
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* Log Interaction Dialog */}
+      <Dialog open={showInteractionDialog} onOpenChange={setShowInteractionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log Interaction</DialogTitle>
+            <DialogDescription>
+              Record a contact attempt with {selectedItem?.first_name} {selectedItem?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Contact Type</Label>
+              <Select value={interactionType} onValueChange={setInteractionType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INTERACTION_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex items-center gap-2">
+                        <type.icon className="h-4 w-4" />
+                        {type.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Outcome</Label>
+              <Select value={outcome} onValueChange={setOutcome}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select outcome..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {OUTCOMES.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add notes about the interaction..."
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Next Action Date (optional)</Label>
+              <Input
+                type="date"
+                value={nextActionDate}
+                onChange={(e) => setNextActionDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInteractionDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInteractionSubmit} disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Log Interaction
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Promise to Pay Dialog */}
+      <Dialog open={showPTPDialog} onOpenChange={setShowPTPDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Promise to Pay</DialogTitle>
+            <DialogDescription>
+              Record a payment promise from {selectedItem?.first_name} {selectedItem?.last_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Promised Amount (NAD)</Label>
+              <Input
+                type="number"
+                value={ptpAmount}
+                onChange={(e) => setPtpAmount(e.target.value)}
+                placeholder="Enter amount..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Promise Date</Label>
+              <Input
+                type="date"
+                value={ptpDate}
+                onChange={(e) => setPtpDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (optional)</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any notes about the promise..."
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPTPDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePTPSubmit} 
+              disabled={submitting || !ptpAmount || !ptpDate}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Record Promise
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+export default CollectionsDashboard;

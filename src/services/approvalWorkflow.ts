@@ -193,7 +193,8 @@ export async function getAllApprovalRequests(
         ...request,
         user: {
           email: `User ${request.user_id.substring(0, 8)}...`,
-          full_name: 'Unknown User',
+          first_name: 'Unknown',
+          last_name: 'User',
           phone_number: null,
           id_number: null
         }

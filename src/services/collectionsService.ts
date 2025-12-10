@@ -363,6 +363,439 @@ export async function sendCollectionReminder(
   }
 }
 
+// ========== NEW COLLECTIONS QUEUE FUNCTIONS ==========
+
+export interface CollectionsQueueItem {
+  loan_id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+  loan_amount: number;
+  monthly_payment: number;
+  loan_status: string;
+  loan_created_at: string;
+  days_overdue: number;
+  risk_bucket: 'current' | 'bucket_1_30' | 'bucket_31_60' | 'bucket_61_90' | 'bucket_90_plus' | 'not_applicable';
+  last_contact_date?: string;
+  last_contact_type?: string;
+  pending_promises: number;
+  next_promise_date?: string;
+  contact_attempts_7_days: number;
+}
+
+export interface PromiseToPay {
+  id: string;
+  loan_id: string;
+  user_id: string;
+  promised_amount: number;
+  promised_date: string;
+  status: 'pending' | 'kept' | 'broken' | 'cancelled';
+  notes?: string;
+  follow_up_date?: string;
+  created_by?: string;
+  created_at: string;
+  resolved_at?: string;
+  resolved_by?: string;
+}
+
+export interface RescheduleRequest {
+  id: string;
+  loan_id: string;
+  user_id: string;
+  original_due_date: string;
+  requested_date: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  admin_notes?: string;
+  processed_by?: string;
+  processed_at?: string;
+  created_at: string;
+}
+
+export interface CollectionsStats {
+  total_overdue: number;
+  bucket_1_30: number;
+  bucket_31_60: number;
+  bucket_61_90: number;
+  bucket_90_plus: number;
+  pending_promises: number;
+  promises_due_today: number;
+  contacts_today: number;
+  pending_reschedules: number;
+}
+
+/**
+ * Get collections queue with risk buckets
+ */
+export async function getCollectionsQueue(filters?: {
+  riskBucket?: string;
+  search?: string;
+}): Promise<{
+  success: boolean;
+  data?: CollectionsQueueItem[];
+  error?: string;
+}> {
+  return measurePerformance('get_collections_queue', async () => {
+    try {
+      debugLog('📊 Fetching collections queue', filters);
+
+      let query = supabase
+        .from('collections_queue')
+        .select('*')
+        .order('days_overdue', { ascending: false });
+
+      if (filters?.riskBucket && filters.riskBucket !== 'all') {
+        query = query.eq('risk_bucket', filters.riskBucket);
+      }
+
+      if (filters?.search) {
+        query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,phone_number.ilike.%${filters.search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        debugLog('❌ Get collections queue failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Collections queue retrieved', { count: data?.length || 0 });
+      return { success: true, data: data as CollectionsQueueItem[] };
+    } catch (error) {
+      handleDatabaseError(error, 'getCollectionsQueue', filters || {});
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Get collections statistics
+ */
+export async function getCollectionsStats(): Promise<{
+  success: boolean;
+  stats?: CollectionsStats;
+  error?: string;
+}> {
+  return measurePerformance('get_collections_stats', async () => {
+    try {
+      debugLog('📊 Fetching collections stats');
+
+      const { data, error } = await supabase.rpc('get_collections_stats');
+
+      if (error) {
+        debugLog('❌ Get collections stats failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Collections stats retrieved', data);
+      return { success: true, stats: data as CollectionsStats };
+    } catch (error) {
+      handleDatabaseError(error, 'getCollectionsStats', {});
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Create a promise to pay
+ */
+export async function createPromiseToPay(
+  loanId: string,
+  promisedAmount: number,
+  promisedDate: string,
+  notes?: string,
+  followUpDate?: string
+): Promise<{
+  success: boolean;
+  id?: string;
+  error?: string;
+}> {
+  return measurePerformance('create_promise_to_pay', async () => {
+    try {
+      debugLog('🤝 Creating promise to pay', { loanId, promisedAmount, promisedDate });
+
+      const { data, error } = await supabase.rpc('create_promise_to_pay', {
+        p_loan_id: loanId,
+        p_promised_amount: promisedAmount,
+        p_promised_date: promisedDate,
+        p_notes: notes || null,
+        p_follow_up_date: followUpDate || null
+      });
+
+      if (error) {
+        debugLog('❌ Create promise to pay failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Promise to pay created', { id: data });
+      return { success: true, id: data };
+    } catch (error) {
+      handleDatabaseError(error, 'createPromiseToPay', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Resolve a promise to pay
+ */
+export async function resolvePromiseToPay(
+  ptpId: string,
+  status: 'kept' | 'broken' | 'cancelled',
+  notes?: string
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  return measurePerformance('resolve_promise_to_pay', async () => {
+    try {
+      debugLog('✅ Resolving promise to pay', { ptpId, status });
+
+      const { data, error } = await supabase.rpc('resolve_promise_to_pay', {
+        p_ptp_id: ptpId,
+        p_status: status,
+        p_notes: notes || null
+      });
+
+      if (error) {
+        debugLog('❌ Resolve promise to pay failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Promise to pay resolved', { success: data });
+      return { success: true };
+    } catch (error) {
+      handleDatabaseError(error, 'resolvePromiseToPay', { ptpId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Get promises to pay for a loan
+ */
+export async function getPromisesToPay(loanId?: string): Promise<{
+  success: boolean;
+  data?: PromiseToPay[];
+  error?: string;
+}> {
+  return measurePerformance('get_promises_to_pay', async () => {
+    try {
+      debugLog('📋 Fetching promises to pay', { loanId });
+
+      let query = supabase
+        .from('promise_to_pay')
+        .select('*')
+        .order('promised_date', { ascending: true });
+
+      if (loanId) {
+        query = query.eq('loan_id', loanId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        debugLog('❌ Get promises to pay failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Promises to pay retrieved', { count: data?.length || 0 });
+      return { success: true, data: data as PromiseToPay[] };
+    } catch (error) {
+      handleDatabaseError(error, 'getPromisesToPay', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Log a collections interaction
+ */
+export async function logInteraction(
+  loanId: string,
+  interactionType: 'call' | 'sms' | 'email' | 'whatsapp' | 'visit' | 'note' | 'system',
+  outcome?: string,
+  notes?: string,
+  nextAction?: string,
+  nextActionDate?: string,
+  callDuration?: number
+): Promise<{
+  success: boolean;
+  id?: string;
+  error?: string;
+}> {
+  return measurePerformance('log_interaction', async () => {
+    try {
+      debugLog('📝 Logging interaction', { loanId, interactionType, outcome });
+
+      const { data, error } = await supabase.rpc('log_collections_interaction', {
+        p_loan_id: loanId,
+        p_interaction_type: interactionType,
+        p_outcome: outcome || null,
+        p_notes: notes || null,
+        p_next_action: nextAction || null,
+        p_next_action_date: nextActionDate || null,
+        p_call_duration: callDuration || null
+      });
+
+      if (error) {
+        debugLog('❌ Log interaction failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Interaction logged', { id: data });
+      return { success: true, id: data };
+    } catch (error) {
+      handleDatabaseError(error, 'logInteraction', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Get interactions for a loan
+ */
+export async function getInteractions(loanId: string): Promise<{
+  success: boolean;
+  data?: any[];
+  error?: string;
+}> {
+  return measurePerformance('get_interactions', async () => {
+    try {
+      debugLog('📋 Fetching interactions', { loanId });
+
+      const { data, error } = await supabase
+        .from('collections_interactions')
+        .select('*')
+        .eq('loan_id', loanId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        debugLog('❌ Get interactions failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Interactions retrieved', { count: data?.length || 0 });
+      return { success: true, data };
+    } catch (error) {
+      handleDatabaseError(error, 'getInteractions', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Request payment reschedule (for clients)
+ */
+export async function requestReschedule(
+  loanId: string,
+  originalDueDate: string,
+  requestedDate: string,
+  reason: string
+): Promise<{
+  success: boolean;
+  id?: string;
+  error?: string;
+}> {
+  return measurePerformance('request_reschedule', async () => {
+    try {
+      debugLog('📅 Requesting reschedule', { loanId, originalDueDate, requestedDate });
+
+      const { data, error } = await supabase.rpc('request_payment_reschedule', {
+        p_loan_id: loanId,
+        p_original_due_date: originalDueDate,
+        p_requested_date: requestedDate,
+        p_reason: reason
+      });
+
+      if (error) {
+        debugLog('❌ Request reschedule failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Reschedule requested', { id: data });
+      return { success: true, id: data };
+    } catch (error) {
+      handleDatabaseError(error, 'requestReschedule', { loanId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Get reschedule requests
+ */
+export async function getRescheduleRequests(status?: string): Promise<{
+  success: boolean;
+  data?: RescheduleRequest[];
+  error?: string;
+}> {
+  return measurePerformance('get_reschedule_requests', async () => {
+    try {
+      debugLog('📋 Fetching reschedule requests', { status });
+
+      let query = supabase
+        .from('reschedule_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        debugLog('❌ Get reschedule requests failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Reschedule requests retrieved', { count: data?.length || 0 });
+      return { success: true, data: data as RescheduleRequest[] };
+    } catch (error) {
+      handleDatabaseError(error, 'getRescheduleRequests', { status });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
+/**
+ * Process a reschedule request (for admins)
+ */
+export async function processRescheduleRequest(
+  requestId: string,
+  status: 'approved' | 'rejected',
+  adminNotes?: string
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  return measurePerformance('process_reschedule_request', async () => {
+    try {
+      debugLog('✅ Processing reschedule request', { requestId, status });
+
+      const { data, error } = await supabase.rpc('process_reschedule_request', {
+        p_request_id: requestId,
+        p_status: status,
+        p_admin_notes: adminNotes || null
+      });
+
+      if (error) {
+        debugLog('❌ Process reschedule request failed', error);
+        return { success: false, error: error.message };
+      }
+
+      debugLog('✅ Reschedule request processed', { success: data });
+      return { success: true };
+    } catch (error) {
+      handleDatabaseError(error, 'processRescheduleRequest', { requestId });
+      return { success: false, error: 'Unexpected error occurred' };
+    }
+  });
+}
+
 // Export all functions
 export default {
   generateCollectionQueue,
@@ -372,5 +805,16 @@ export default {
   markPromiseFulfilled,
   getCollectionActivities,
   getOverdueLoans,
-  sendCollectionReminder
+  sendCollectionReminder,
+  // New functions
+  getCollectionsQueue,
+  getCollectionsStats,
+  createPromiseToPay,
+  resolvePromiseToPay,
+  getPromisesToPay,
+  logInteraction,
+  getInteractions,
+  requestReschedule,
+  getRescheduleRequests,
+  processRescheduleRequest
 };

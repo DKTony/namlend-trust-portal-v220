@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
@@ -12,29 +11,29 @@ import { getUserApprovalRequests } from '@/services/approvalWorkflow';
 import { 
   DollarSign, 
   TrendingUp, 
-  Clock, 
+  Calendar, 
+  Wallet,
   CheckCircle, 
   AlertCircle,
   FileText,
   CreditCard,
-  Calendar,
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  Star,
-  Download,
-  Eye,
   Plus,
   Loader2,
   Shield,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  ArrowUpRight,
+  X
 } from 'lucide-react';
-import Header from '@/components/Header';
+import DashboardSidebar from '@/components/DashboardSidebar';
+import StatCard from '@/components/StatCard';
 import { formatNAD } from '@/utils/currency';
 import PaymentModal from '@/components/PaymentModal';
-
+import { LoanStatusTimeline, generateLoanTimeline } from '@/components/LoanStatusTimeline';
+import { SelfServicePortal } from '@/components/SelfServicePortal';
 import ClientProfileDashboard from '@/components/ClientProfileDashboard';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Profile {
   id: string;
@@ -45,19 +44,6 @@ interface Profile {
   employment_status: string;
   monthly_income: number;
   verified: boolean;
-}
-
-interface Loan {
-  id: string;
-  amount: number;
-  term_months: number;
-  interest_rate: number;
-  monthly_payment: number;
-  total_repayment: number;
-  purpose: string;
-  status: string;
-  created_at: string;
-  disbursed_at: string;
 }
 
 interface LoanApplication {
@@ -71,42 +57,36 @@ interface LoanApplication {
   monthlyPayment: number;
   priority: string;
   created_at: string;
-  request_data?: {
-    amount?: number;
-    purpose?: string;
-    term_months?: number;
-    term?: number;
-    interest_rate?: number;
-    monthly_payment?: number;
-    [key: string]: any;
-  };
-}
-
-interface Payment {
-  id: string;
-  loan_id: string;
-  amount: number;
-  payment_method: string;
-  status: string;
-  paid_at: string;
-  reference_number: string;
-  created_at: string;
-  loans?: {
-    user_id: string;
-  };
+  request_data?: any;
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, userRole } = useAuth();
   const navigate = useNavigate();
   const { handleAsyncOperation, trackAction } = useErrorHandler();
+  
+  // Data State
   const [profile, setProfile] = useState<any>(null);
   const [loans, setLoans] = useState<any[]>([]);
   const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  
+  // UI State
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Mock Chart Data (replace with real aggregation if available)
+  const chartData = [
+    { name: 'Jan', amount: 2400 },
+    { name: 'Feb', amount: 1398 },
+    { name: 'Mar', amount: 9800 },
+    { name: 'Apr', amount: 3908 },
+    { name: 'May', amount: 4800 },
+    { name: 'Jun', amount: 3800 },
+    { name: 'Jul', amount: 4300 },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -120,36 +100,43 @@ export default function Dashboard() {
       async () => {
         setLoading(true);
         
-        // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user?.id)
-          .single();
+        // Run all queries in parallel for better performance
+        const [profileResult, loansResult, applicationsResult, paymentsResult] = await Promise.all([
+          // Fetch user profile
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user?.id)
+            .single(),
+          
+          // Fetch user's loans with balance info
+          supabase
+            .from('loans')
+            .select('*')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false }),
+          
+          // Fetch user's loan applications
+          getUserApprovalRequests('pending'),
+          
+          // Fetch user's payments (limit to recent 50 for performance)
+          supabase
+            .from('payments')
+            .select(`*, loans!inner(user_id)`)
+            .eq('loans.user_id', user?.id)
+            .order('created_at', { ascending: false })
+            .limit(50)
+        ]);
 
-        if (profileError) {
-          throw new Error(`Profile fetch failed: ${profileError.message}`);
-        }
-        setProfile(profileData);
+        // Process profile
+        if (profileResult.error) throw new Error(`Profile fetch failed: ${profileResult.error.message}`);
+        setProfile(profileResult.data);
 
-        // Fetch user's loans
-        const { data: loansData, error: loansError } = await supabase
-          .from('loans')
-          .select('*')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
+        // Process loans
+        if (loansResult.error) throw new Error(`Loans fetch failed: ${loansResult.error.message}`);
+        setLoans(loansResult.data || []);
 
-        if (loansError) {
-          throw new Error(`Loans fetch failed: ${loansError.message}`);
-        }
-        setLoans(loansData || []);
-
-        // Fetch user's loan applications from approval workflow
-        const applicationsResult = await getUserApprovalRequests('pending');
-        if (!applicationsResult.success) {
-          throw new Error(`Loan applications fetch failed: ${applicationsResult.error}`);
-        }
-        
+        // Process applications
         if (applicationsResult.requests) {
           const loanApps = applicationsResult.requests
             .filter(req => req.request_type === 'loan_application')
@@ -164,422 +151,402 @@ export default function Dashboard() {
               monthlyPayment: req.request_data?.monthly_payment || 0,
               priority: req.priority || 'normal',
               created_at: req.created_at,
-              request_data: req.request_data // Preserve original data for debugging
+              request_data: req.request_data
             }));
           setLoanApplications(loanApps);
         }
 
-        // Fetch user's payments (through loan relationship)
-        const { data: paymentsData, error: paymentsError } = await supabase
-          .from('payments')
-          .select(`
-            *,
-            loans!inner(user_id)
-          `)
-          .eq('loans.user_id', user?.id)
-          .order('created_at', { ascending: false });
-
-        if (paymentsError) {
-          throw new Error(`Payments fetch failed: ${paymentsError.message}`);
-        }
-        setPayments(paymentsData || []);
+        // Process payments
+        if (paymentsResult.error) throw new Error(`Payments fetch failed: ${paymentsResult.error.message}`);
+        setPayments(paymentsResult.data || []);
       },
       'fetch_dashboard_data',
-      {
-        showErrorToast: true,
-        retries: 2
-      }
-    ).finally(() => {
-      setLoading(false);
-    });
+      { showErrorToast: true, retries: 2 }
+    ).finally(() => setLoading(false));
   };
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <Loader2 className="h-8 w-8 animate-spin text-zinc-900" />
       </div>
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (!user) return <Navigate to="/auth" replace />;
 
   const activeLoan = loans.find(loan => loan.status === 'active' || loan.status === 'disbursed');
-  const pendingLoan = loans.find(loan => loan.status === 'pending');
+  const pendingLoan = loanApplications.find(app => app.status === 'pending');
 
-  const handleTabChange = (value: string) => {
-    trackAction('dashboard_tab_change', { tab: value });
-    setActiveTab(value);
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-      case 'disbursed':
-        return 'default';
-      case 'pending':
-        return 'secondary';
-      case 'rejected':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
+  // Render Content based on Active Tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-zinc-900 tracking-tight">
+                  Hello, {profile?.first_name || 'Client'}
+                </h2>
+                <p className="text-zinc-500 mt-2 text-base md:text-lg">
+                  Your financial health is looking good today.
+                </p>
+              </div>
+              <button 
+                 onClick={() => navigate('/loan-application')}
+                 className="w-full md:w-auto bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-zinc-200"
+              >
+                 <Plus size={20} /> <span className="md:inline">New Application</span>
+              </button>
+            </div>
 
-  
+            {/* Stat Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard 
+                label="Total Balance" 
+                value={activeLoan ? formatNAD(activeLoan.amount) : 'N$0.00'} 
+                icon={Wallet} 
+                color="black"
+              />
+              <StatCard 
+                label="Credit Score" 
+                value={720} // Mocked for now as per snippet
+                subValue="Excellent"
+                icon={TrendingUp} 
+                color="green"
+              />
+              <StatCard 
+                label="Next Payment" 
+                value={activeLoan ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "--"} 
+                subValue={activeLoan ? formatNAD(activeLoan.monthly_payment) : ""}
+                icon={Calendar} 
+                color="blue"
+              />
+            </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/5 to-background">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome back, {profile?.first_name}!
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your loans and financial profile
-          </p>
-        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main Chart Section */}
+              <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-soft border border-zinc-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+                  <h3 className="text-xl font-bold text-zinc-900">Spending Overview</h3>
+                  <select className="bg-zinc-50 border-none text-sm font-medium text-zinc-500 rounded-lg px-3 py-1 cursor-pointer hover:text-zinc-900">
+                    <option>Last 6 months</option>
+                    <option>This Year</option>
+                  </select>
+                </div>
+                <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-blue-50/30 rounded-xl border-b border-l border-zinc-100/50">
+                  {/* CSS-only Mock Chart */}
+                  {chartData.map((item, index) => (
+                    <div key={index} className="flex flex-col items-center gap-2 w-full group cursor-pointer">
+                      <div className="relative w-full flex items-end justify-center h-48">
+                        <div 
+                          className="w-full max-w-[40px] bg-blue-100/50 rounded-t-lg transition-all duration-300 group-hover:bg-blue-200 relative overflow-hidden"
+                          style={{ height: `${(item.amount / 10000) * 100}%` }}
+                        >
+                          <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-blue-500/20 to-transparent" />
+                        </div>
+                        <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-zinc-900 text-white px-2 py-1 rounded">
+                          {formatNAD(item.amount)}
+                        </div>
+                      </div>
+                      <span className="text-xs text-zinc-400 font-medium">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="loans">Loans</TabsTrigger>
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Loan</CardTitle>
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {activeLoan ? formatNAD(activeLoan.amount) : 'None'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {activeLoan ? `${activeLoan.term_months} months` : 'No active loans'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Payment</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {activeLoan ? formatNAD(activeLoan.monthly_payment) : 'N/A'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Next payment due
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Loans</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{loans.length + loanApplications.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total applications ({loans.length} approved, {loanApplications.length} pending)
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Verification</CardTitle>
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    {profile?.verified ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+              {/* Side Action Panel */}
+              <div className="space-y-6">
+                <div className="bg-zinc-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 blur-[80px] rounded-full opacity-40"></div>
+                  <div className="relative z-10">
+                    <h3 className="text-lg font-bold mb-2">Need Funds?</h3>
+                    <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Get approved in minutes with our AI-powered risk assessment.</p>
+                    
+                    {pendingLoan ? (
+                      <div className="bg-zinc-800 p-4 rounded-2xl border border-zinc-700">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-bold uppercase text-blue-400 tracking-wider">Processing</span>
+                          <span className="text-white font-bold">{formatNAD(pendingLoan.amount)}</span>
+                        </div>
+                        <div className="w-full bg-zinc-700 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-blue-500 h-full w-2/3 animate-pulse"></div>
+                        </div>
+                      </div>
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {profile?.verified ? 'Verified' : 'Pending'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Account status
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {activeLoan && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Loan Progress</CardTitle>
-                  <CardDescription>
-                    Track your loan repayment progress
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span>Loan Amount: {formatNAD(activeLoan.amount)}</span>
-                      <span>Remaining: {formatNAD(activeLoan.amount * 0.7)}</span>
-                    </div>
-                    <Progress value={30} className="h-2" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>30% paid</span>
-                      <span>70% remaining</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full justify-between" 
-                    variant="outline"
-                    onClick={() => navigate('/loan-application')}
-                  >
-                    Apply for New Loan
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    className="w-full justify-between" 
-                    variant="outline"
-                    onClick={() => setShowPaymentModal(true)}
-                    disabled={!activeLoan}
-                  >
-                    Make Payment
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    className="w-full justify-between" 
-                    variant="outline"
-                    onClick={() => navigate('/kyc')}
-                  >
-                    Upload Documents
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                        {payments.slice(0, 3).map((payment) => (
-                          <div key={payment.id} className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm font-medium">Payment</p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(payment.paid_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-medium">{formatNAD(payment.amount)}</p>
-                              <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                                {payment.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                    {payments.length === 0 && (
-                      <p className="text-sm text-muted-foreground">No recent activity</p>
+                      <button 
+                        onClick={() => navigate('/loan-application')}
+                        className="w-full bg-white text-black py-3 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-colors flex justify-center items-center gap-2"
+                      >
+                        Apply Now <ArrowUpRight size={16} />
+                      </button>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-              {/* content end */}
-            </div>
-          </TabsContent>
+                </div>
 
-          <TabsContent value="loans" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Approved Loans</CardTitle>
-                <CardDescription>
-                  Your active and completed loan accounts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loans.length > 0 ? (
-                  <div className="space-y-4">
-                    {loans.map((loan) => (
-                      <div key={loan.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
+                <div className="bg-white p-6 rounded-3xl shadow-soft border border-zinc-100">
+                  <h3 className="text-lg font-bold text-zinc-900 mb-4">Quick Actions</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => setShowPaymentModal(true)}
+                      disabled={!activeLoan}
+                      className="p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors text-center disabled:opacity-50"
+                    >
+                      <Wallet className="mx-auto mb-2 text-zinc-400" size={24} />
+                      <span className="text-xs font-medium text-zinc-600">Make Payment</span>
+                    </button>
+                    <button 
+                      onClick={() => navigate('/kyc')}
+                      className="p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors text-center"
+                    >
+                      <FileText className="mx-auto mb-2 text-zinc-400" size={24} />
+                      <span className="text-xs font-medium text-zinc-600">Documents</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'loans':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-zinc-900">Your Loans</h2>
+            {loans.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {loans.map((loan) => {
+                  const isSettled = loan.status === 'settled';
+                  const isActive = ['active', 'disbursed', 'funded'].includes(loan.status);
+                  const progressPercent = loan.total_paid && loan.total_repayment 
+                    ? Math.round((loan.total_paid / loan.total_repayment) * 100) 
+                    : 0;
+                  
+                  return (
+                    <Card key={loan.id} className={`rounded-3xl shadow-soft border-zinc-100 ${isSettled ? 'bg-green-50/50 border-green-200' : ''}`}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-semibold">{formatNAD(loan.amount)}</h3>
-                            <p className="text-sm text-muted-foreground">{loan.purpose}</p>
+                            <CardTitle className="text-xl font-bold">{formatNAD(loan.amount)}</CardTitle>
+                            <CardDescription>{loan.purpose}</CardDescription>
                           </div>
-                          <Badge variant={loan.status === 'approved' ? 'default' : 'secondary'}>
-                            {loan.status}
+                          <Badge 
+                            variant={isSettled ? 'default' : isActive ? 'secondary' : 'outline'}
+                            className={isSettled ? 'bg-green-600' : ''}
+                          >
+                            {isSettled ? '✓ Settled' : loan.status}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Progress Bar for Active Loans */}
+                        {(isActive || isSettled) && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-zinc-500">Payment Progress</span>
+                              <span className="font-medium">{progressPercent}%</span>
+                            </div>
+                            <Progress value={progressPercent} className={`h-2 ${isSettled ? '[&>div]:bg-green-600' : ''}`} />
+                            {!isSettled && loan.outstanding_balance > 0 && (
+                              <p className="text-xs text-zinc-500">
+                                Outstanding: <span className="font-semibold text-zinc-700">{formatNAD(loan.outstanding_balance)}</span>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm text-zinc-600">
                           <div>
-                            <span className="text-muted-foreground">Term:</span> {loan.term_months} months
+                            <p className="text-zinc-400 text-xs">Term</p>
+                            <p className="font-medium">{loan.term_months} months</p>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Rate:</span> {loan.interest_rate}%
+                            <p className="text-zinc-400 text-xs">Rate</p>
+                            <p className="font-medium">{loan.interest_rate}%</p>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Monthly:</span> {formatNAD(loan.monthly_payment)}
+                            <p className="text-zinc-400 text-xs">Monthly</p>
+                            <p className="font-medium">{formatNAD(loan.monthly_payment)}</p>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Total:</span> {formatNAD(loan.total_repayment)}
+                            <p className="text-zinc-400 text-xs">{isSettled ? 'Total Paid' : 'Total Due'}</p>
+                            <p className="font-medium">{formatNAD(isSettled ? loan.total_paid : loan.total_repayment)}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No approved loans</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Your approved loans will appear here
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="applications" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Loan Applications</CardTitle>
-                <CardDescription>
-                  Track the status of your loan applications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loanApplications.length > 0 ? (
-                  <div className="space-y-4">
-                    {loanApplications.filter(app => app && app.id).map((application) => (
-                      <div key={application.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold">{formatNAD(application.amount)}</h3>
-                            <p className="text-sm text-muted-foreground">{application.purpose}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge variant={
-                              application.status === 'pending' ? 'secondary' :
-                              application.status === 'under_review' ? 'default' :
-                              application.status === 'approved' ? 'default' :
-                              'destructive'
-                            }>
-                              {application.status.replace('_', ' ')}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {application.priority}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Term:</span> {application.termMonths} months
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Rate:</span> {application.interestRate}%
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Monthly:</span> {formatNAD(application.monthlyPayment)}
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Submitted:</span> {new Date(application.submittedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="mt-3 p-2 bg-muted rounded text-xs">
-                          <strong>Status:</strong> {application.status === 'pending' ? 'Your application is being reviewed by our team' :
-                          application.status === 'under_review' ? 'Application is currently under detailed review' :
-                          application.status === 'approved' ? 'Application approved! Loan will be processed shortly' :
-                          application.status === 'rejected' ? 'Application was not approved' :
-                          'Additional information required'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No pending applications</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Apply for a loan to get started
-                    </p>
-                    <Button onClick={() => navigate('/loan-application')}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Apply for Loan
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        {/* Action Button for Active Loans */}
+                        {isActive && (
+                          <Button 
+                            className="w-full mt-2" 
+                            variant="outline"
+                            onClick={() => setShowPaymentModal(true)}
+                          >
+                            <DollarSign className="h-4 w-4 mr-2" />
+                            Make Payment
+                          </Button>
+                        )}
+                        
+                        {isSettled && loan.settled_at && (
+                          <p className="text-xs text-green-600 text-center">
+                            Settled on {new Date(loan.settled_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-3xl shadow-soft border border-zinc-100">
+                <CreditCard className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
+                <h3 className="text-lg font-semibold text-zinc-900">No loans yet</h3>
+                <p className="text-zinc-500 mb-4">You don't have any loans at the moment.</p>
+                <Button onClick={() => navigate('/loan-application')}>
+                  Apply for a Loan
+                </Button>
+              </div>
+            )}
+          </div>
+        );
 
-          <TabsContent value="payments" className="space-y-6">
-            <h2 className="text-2xl font-bold">Payment History</h2>
+      case 'applications':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-zinc-900">Applications</h2>
+              <Button onClick={() => navigate('/loan-application')} variant="outline" className="rounded-full">
+                <Plus size={16} className="mr-2" /> New Application
+              </Button>
+            </div>
             
-            <div className="grid gap-4">
-              {payments.map((payment) => (
-                <Card key={payment.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{formatNAD(payment.amount)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {payment.payment_method} • {payment.reference_number}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(payment.paid_at).toLocaleDateString()}
-                        </p>
+            <div className="space-y-4">
+              {loanApplications.map((application) => (
+                <div key={application.id} className="bg-white p-6 rounded-3xl shadow-soft border border-zinc-100">
+                  <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-zinc-900">{formatNAD(application.amount)}</h3>
+                      <p className="text-sm text-zinc-500">{application.purpose}</p>
+                    </div>
+                    <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="w-fit">
+                      {application.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-zinc-100">
+                    <LoanStatusTimeline 
+                      steps={generateLoanTimeline(
+                        application.status,
+                        application.submittedAt,
+                        application.status === 'under_review' ? new Date().toISOString() : undefined,
+                        application.status === 'approved' ? new Date().toISOString() : undefined
+                      )}
+                      orientation="horizontal"
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              {loanApplications.length === 0 && (
+                <div className="text-center py-12 bg-white rounded-3xl shadow-soft border border-zinc-100">
+                  <FileText className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
+                  <h3 className="text-lg font-semibold text-zinc-900">No pending applications</h3>
+                  <Button onClick={() => navigate('/loan-application')} className="mt-4 rounded-full">
+                    Start Application
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 'payments':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-zinc-900">Payment History</h2>
+            <div className="bg-white rounded-3xl shadow-soft border border-zinc-100 overflow-hidden">
+              {payments.length > 0 ? (
+                <div className="divide-y divide-zinc-100">
+                  {payments.map((payment) => (
+                    <div key={payment.id} className="p-4 flex justify-between items-center hover:bg-zinc-50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                          <DollarSign size={20} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-zinc-900">{formatNAD(payment.amount)}</p>
+                          <p className="text-xs text-zinc-500">{new Date(payment.paid_at).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
+                      <Badge variant="outline" className="border-zinc-200 text-zinc-600">
                         {payment.status}
                       </Badge>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {payments.length === 0 && (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No payments yet</h3>
-                    <p className="text-muted-foreground text-center">
-                      Your payment history will appear here once you make payments
-                    </p>
-                  </CardContent>
-                </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-12 text-center text-zinc-500">
+                  No payments found.
+                </div>
               )}
             </div>
-          </TabsContent>
+          </div>
+        );
+      
+      case 'self-service':
+        return <SelfServicePortal />;
+      
+      case 'profile':
+        return <ClientProfileDashboard />;
+        
+      default:
+        return null;
+    }
+  };
 
-          <TabsContent value="profile" className="space-y-6">
-            <ClientProfileDashboard />
-          </TabsContent>
-        </Tabs>
-      </main>
+  return (
+    <div className="flex h-screen bg-zinc-50">
+      <DashboardSidebar 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        userEmail={user?.email}
+        userRole={userRole}
+      />
+      
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Mobile Header */}
+        <header className="lg:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">N</div>
+             <span className="font-bold text-zinc-900">NamLend</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+              <Menu size={20} />
+            </Button>
+          </div>
+        </header>
+
+        {/* Desktop Header with Notifications */}
+        <header className="hidden lg:flex bg-white border-b border-zinc-200 p-4 items-center justify-end">
+          <NotificationCenter />
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
 
       <PaymentModal
         isOpen={showPaymentModal}

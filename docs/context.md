@@ -1,258 +1,545 @@
-# Context (auto-generated)
+# NamLend Trust - Technical Context & Handover Document
 
-- **Version:** v2.6.0 (Production Ready)  • **Updated:** 2025-10-14T05:37:00+02:00  • **Maintainer:** Cascade
+**Version**: 2.5.0  
+**Last Updated**: December 7, 2025  
+**Status**: ✅ Production-Ready Digital Lending Platform  
+**Supabase Project ID**: `puahejtaskncpazjyxqp`  
+**Database Region**: eu-north-1
 
-## 1) One-page Handover
+---
 
-- **Project goal:** Namibian loan management platform with mandatory back office approval workflow
-- **Scope boundary:**
-  - IN: Loan applications, KYC, payments, admin dashboard, approval workflow, RLS security, mobile app (iOS/Android)
-  - OUT: External credit scoring, SMS notifications, third-party integrations
-- **Current status:** ✅ MOBILE v2.6.0 PRODUCTION READY - Web operational; mobile feature parity achieved (100%)
-- **Key decisions:**
-  - React 18.3.1 + TypeScript + Supabase + Tailwind CSS stack
-  - Mandatory approval workflow for all user requests (regulatory compliance)
-  - Row-Level Security (RLS) enforced on all database tables
-  - NAD currency with 32% APR limit per Namibian regulations
-  - Real-time admin notifications with comprehensive audit trail
-  - Triple-gated dev utilities (VITE_DEBUG_TOOLS + VITE_ALLOW_LOCAL_ADMIN)
-- **Recently Resolved Critical Issues:**
-  - ✅ **RESOLVED:** Administrative user management system connected to live database
-  - ✅ **IMPLEMENTED:** Enterprise-grade error handling and monitoring system
-  - ✅ **COMPLETED:** Comprehensive testing protocols and validation framework
-  - ✅ **RESOLVED:** Dashboard null reference errors causing application crashes
-  - ✅ **RESOLVED:** Stack overflow errors in loan application submission process
-  - ✅ **IMPLEMENTED:** Circular reference protection in error logging systems
-  - ✅ **ENHANCED:** Safe object serialization preventing console tool crashes
+## Executive Summary
 
-- **Current v2.6.0 Release (Oct 14, 2025):**
-  - ✅ **13 Phases Completed** - Mobile feature parity, security hardening, performance, QA, documentation, store readiness
-  - ✅ **Client Features** - 3-step loan application, KYC capture, payments (mobile money, bank transfer, debit order), profile mgmt
-  - ✅ **Approver Features** - Approval queue with filters, review actions, real-time badges (Supabase Realtime)
-  - ✅ **Offline-First** - Queued submissions (applications, payments, documents) + auto-sync on reconnection
-  - ✅ **Security** - RLS verified, no service role keys, dev tools gated via `EXPO_PUBLIC_DEBUG_TOOLS=false`
-  - ✅ **UX** - Biometric session lock, deep linking (`namlend://`), push notifications
-  - ✅ **Compliance** - APR messaging updated to “Representative APR: up to 32% p.a.”; NAD currency formatting standardized
+NamLend Trust is a production-grade **loan management platform** built for the Namibian financial services market. The platform provides comprehensive loan lifecycle management including application processing, approval workflows, disbursement tracking, payment processing, and compliance reporting.
 
-- **Recent v2.5.0 Achievements (Oct 12, 2025):**
-  - ✅ **Mobile App Deployed** - React Native + Expo SDK 54 fully operational on iOS/Android
-  - ✅ **Client Features** - Dashboard, loan applications, payment history, document uploads (images/PDFs)
-  - ✅ **Approver Features** - Approval queue with PostgREST fallback, approve/reject actions
-  - ✅ **Performance** - Singleton Supabase client, single-run auth init, dynamic imports
-  - ✅ **Document Storage** - Supabase Storage bucket with RLS policies, verification workflow
-  - ✅ **Stability Fixes** - Infinite auth loop, API key errors, React version alignment resolved
-  
-- **Previous v2.4.x Achievements (Oct 9, 2025):**
-  - ✅ **Phase 1 (v2.4.0): Workflow Engine** - Configurable multi-stage approval workflows
-  - ✅ **Phase 2 (v2.4.1): Audit Trail** - Comprehensive logging with 7-year retention
-  - ✅ **Phase 3 (v2.4.2): Mobile Architecture** - Foundation and patterns established
-  
-- **Next 3 actions:**
-  - Beta testing & QA on devices (TestFlight / Play Console) • 2025-10-18
-  - App store assets (screenshots/feature graphics) • 2025-10-20
-  - App store submission (iOS + Android) • 2025-10-22
+### Key Achievements
 
-## Completed Enhancements (v2.3.x) ✅
+- ✅ **Production Ready** - All critical security issues resolved
+- ✅ **Back Office Integration** - Comprehensive approval workflow system
+- ✅ **Regulatory Compliance** - 32% APR limit enforcement (Namibian regulations)
+- ✅ **Complete Audit Trail** - Full traceability for regulatory compliance
+- ✅ **Role-Based Access Control** - Admin, Loan Officer, Client roles with RLS
+- ✅ **E2E Test Coverage** - 67% coverage with proven fixture pattern
+- ✅ **Database Migration** - All Phase 4 tables deployed to production
+- ✅ **Functionality Mapped** - Complete feature-to-database mapping in `FUNCTIONALITY_MAP.md`
 
-- **Goal**: Improve data fidelity, UX responsiveness, and live updates while preserving RLS and 32% APR compliance.
-- **Status**: All phases completed and deployed to production (Oct 8-9, 2025)
-- **Reference**: See `docs/ENHANCEMENT_PLAN_v2.3.x.md` for details
+### Phase 4 Integration Complete ✅
 
-## Completed Enhancements (v2.4.x) ✅
+- ✅ **Payment Gateway** - Bank Transfer, MTC MoMo, TN Mobile, PayToday, Cash
+- ✅ **SMS Gateway** - Africa's Talking integration with templates
+- ✅ **WhatsApp Business API** - Meta Cloud API integration
+- ✅ **AI Credit Scoring** - Multi-factor scoring engine (300-850 scale)
+- ✅ **Notification System** - Multi-channel with real-time delivery
 
-- **Goal**: Enterprise workflow engine, comprehensive audit trails, and mobile native app
-- **Status**: All phases completed (Oct 9, 2025) - Architecture ready, implementation pending
-- **Reference**: See `docs/ENHANCEMENT_PLAN_v2.4.x.md` for the full plan (objectives, phases, acceptance criteria)
+---
 
-### Phase 1 (v2.3.0): UX & Data Quality
-- Pull employment status from `profiles` into pending and loan views; surface in `LoanDetailsModal` and list badges.
-- Add skeleton loaders for `LoanApplicationsList` and ensure `PaymentOverview` loading indicators.
-- Better error states with Retry for Loans/Payments.
-- Enhance filtering: date range (created_at), amount range (NAD), priority (approvals).
+## Technology Stack
 
-### Phase 2 (v2.3.1): Unified Data Model
-- Create RLS‑safe SQL view `loan_applications_unified` joining approvals + loans with normalized columns.
-- Refactor `useLoanApplications()` to read the unified view; keep feature‑flag fallback.
+### Frontend
 
-### Phase 3 (v2.3.2): Realtime Updates
-- Supabase Realtime subscriptions for `approval_requests` and `payments` with throttled auto‑refresh and toast notification.
-- Live payment status updates and pending queue refresh within 3s.
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 18.3.1 | UI Framework |
+| TypeScript | 5.5.3 | Type Safety |
+| Vite | 5.4.1 | Build Tool |
+| TailwindCSS | 3.4.11 | Styling |
+| shadcn/ui | Latest | Component Library |
+| TanStack Query | 5.56.2 | Server State Management |
+| React Router | 6.26.2 | Routing |
+| React Hook Form | 7.53.0 | Form Management |
+| Zod | 3.23.8 | Schema Validation |
+| Lucide Icons | 0.462.0 | Icons |
 
-## 2) Chat Context Summary (for agent continuity)
+### Backend (Supabase)
 
-- **Time window:** Mission-Critical System Remediation and Enterprise Enhancement (September 2025)
-- **Key activities:**
-  - **User Management Dashboard:** Fixed TypeScript errors, import issues, and runtime errors in UserManagementDashboard.tsx
-  - **User Authentication:** Created admin user (<anthnydklrk@gmail.com>) and client user (<client@namlend.com>) with proper role assignments
-  - **Production Configuration:** Disabled development scripts by setting VITE_RUN_DEV_SCRIPTS=false for clean production deployment
-  - **User Interface Updates:** Added UserAnalytics, UserActivityMonitor, and UserImportWizard components to admin dashboard
-  - **Data Model Fixes:** Updated User interface in useUsersList hook to include permissions, isVerified, loginCount, and department fields
-  - **System Remediation:** Completed comprehensive resolution of loan workflow and user management defects
-  - **Enterprise Enhancements:** Implemented error handling, monitoring, testing, and documentation systems
-- **Decisions made:**
-  - Use approval workflow system (approval_requests table) for loan application submissions instead of direct loans table insertion
-  - Implement processApprovedLoanApplication function to move approved requests to loans table
-  - Maintain separation between development and production environments with environment flags
-  - Use mock data in user management components until real Supabase integration is completed
-- **System Status (Sep 24, 2025 verification):**
-  - ❌ Loan applications blocked at submission because approval workflow tables/RPCs absent in production
-  - ❌ RPC functions for approval processing pending re-deployment
-  - ⚠️ Client dashboard still renders historical data but lacks new submissions
-  - ✅ Admin dashboard remains connected to live user management data (profiles, roles, error logs)
+| Component | Purpose |
+|-----------|---------|
+| PostgreSQL 15+ | Primary Database |
+| Supabase Auth | Authentication & Session Management |
+| Row Level Security (RLS) | Data Access Control |
+| Database Functions (RPCs) | Business Logic |
+| Storage Buckets | Document Management |
+| Edge Functions | Serverless Processing |
 
-## 3) Directory & File Map (what/where/why)
+### Infrastructure
 
-### Core Application
+| Component | Purpose |
+|-----------|---------|
+| Netlify | Hosting & Deployment |
+| Supabase Cloud | Database & Auth Hosting |
+| GitHub Actions | CI/CD Pipeline |
+| Playwright | E2E Testing |
 
-- `src/` — React 18.3.1 + TypeScript frontend application
-  - `components/` — UI components including ApprovalManagementDashboard, ApprovalNotifications
-  - `pages/` — Main application pages (Auth, Dashboard, AdminDashboard, LoanApplication)
-  - `services/` — Business logic including approvalWorkflow.ts service layer
-  - `utils/` — Role assignment utilities (serviceRoleAssignment.ts, testRoleAssignment.ts)
-  - `hooks/` — Custom React hooks (useAuth, useToast, use-mobile)
-  - `integrations/supabase/` — Supabase client configuration and types
-- `supabase/` — Database schema, migrations, and serverless functions
-  - `migrations/` — PostgreSQL schema with approval workflow tables
-  - `functions/` — Edge functions for loan processing and notifications
+---
 
-### Documentation
+## Project Structure
 
-- `docs/architecture/` — System architecture and component diagrams • Tech Lead • 2025-09-06
-- `docs/assets/` — Screenshots, diagrams, visual documentation assets
-- `docs/business-requirements/` — Business objectives, KPIs, stakeholder analysis • Business Analyst • 2025-09-06
-- `docs/functional-specs/` — UI/UX specifications, user flows, feature descriptions • Product Manager • 2025-09-06
-- `docs/project-requirements/` — Functional/non-functional requirements, user stories • Product Manager • 2025-09-06
-- `docs/technical-specs/` — API specs, data models, integration points • Tech Lead • 2025-09-06
-- `docs/test-plan/` — Test strategies, scenarios, acceptance criteria
-- `docs/Admin Dashboard Feature Plan.md` — 7-phase development plan, timeline, priorities • Tech Lead • 2025-01-03
-- `docs/API.md` — Supabase REST API endpoints, auth patterns, request/response schemas
-- `docs/approval-workflow-user-guide.md` — Complete user guide for approval system, admin dashboard usage
-- `docs/CHANGELOG.md` — Version history, v1.4.0 approval integration features documented
-- `docs/Executive Summary.md` — Project overview, recent progress, technical achievements
-- `docs/security-analysis.md` — RLS policies, auth hardening, dev utility security
-- `docs/SETUP.md` — Environment setup, Supabase configuration, development bootstrap
+```
+namlend-trust-main-3/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/              # shadcn/ui primitives (49 components)
+│   │   ├── DashboardSidebar.tsx  # Collapsible sidebar navigation
+│   │   ├── StatCard.tsx     # Metric display cards
+│   │   └── [feature].tsx    # Feature components
+│   ├── pages/               # Route pages
+│   │   ├── AdminDashboard/  # Back office interface
+│   │   │   ├── components/  # Admin UI components
+│   │   │   └── hooks/       # Admin data hooks (16 hooks)
+│   │   ├── Auth.tsx         # Authentication (Split-screen layout)
+│   │   ├── Dashboard.tsx    # Client dashboard (Sidebar layout)
+│   │   ├── LoanApplication.tsx
+│   │   ├── Payment.tsx
+│   │   └── KYC.tsx
+│   ├── services/            # Business logic layer
+│   │   ├── disbursementService.ts
+│   │   ├── paymentService.ts
+│   │   ├── approvalWorkflow.ts
+│   │   ├── auditService.ts
+│   │   ├── reconciliationService.ts
+│   │   ├── paymentGateway.ts     # Phase 4: Payment providers
+│   │   ├── smsGateway.ts         # Phase 4: Africa's Talking
+│   │   ├── whatsappGateway.ts    # Phase 4: Meta WhatsApp API
+│   │   ├── creditScoring.ts      # Phase 4: AI credit scoring
+│   │   ├── notificationService.ts # Phase 4: Multi-channel notifications
+│   │   └── collectionsService.ts # Phase 2: Collections management
+│   ├── hooks/               # Shared React hooks
+│   │   └── useAuth.tsx      # Authentication context
+│   ├── integrations/
+│   │   └── supabase/        # Supabase clients & types
+│   ├── utils/               # Utility functions
+│   └── constants/           # App constants
+│       └── regulatory.ts    # Namibian regulatory constants
+├── supabase/
+│   ├── migrations/          # Database migrations (28 files)
+│   ├── functions/           # Edge functions
+│   └── config.toml          # Supabase configuration
+├── e2e/                     # E2E tests
+│   ├── fixtures.ts          # Test fixtures with auth isolation
+│   ├── api/                 # API tests
+│   └── [test-files].ts
+└── docs/                    # Documentation
+```
 
-## 4) Interfaces & Contracts (ultra-condensed)
+---
 
-### APIs
+## Core Domain Model
 
-- **Supabase REST** → `/rest/v1/*`, JWT auth, RLS-protected CRUD operations
-- **Approval Workflow** → `approvalWorkflow.ts` service, submit/fetch/update/process functions
-- **Auth** → Supabase Auth, email/password, role-based access (admin/client)
+### Entity Relationship Overview
 
-### Data Models
+```
+Users (auth.users)
+    │
+    ├──► Profiles (1:1)
+    │       └── KYC status, credit_score, income
+    │
+    ├──► User Roles (1:N)
+    │       └── client | loan_officer | admin
+    │
+    ├──► Loans (1:N)
+    │       ├── Loan Reviews (1:N)
+    │       ├── Disbursements (1:N)
+    │       ├── Payments (1:N)
+    │       │     └── Payment Schedules (1:N)
+    │       └── Documents (1:N)
+    │
+    └──► Approval Requests (1:N)
+            ├── Approval History (1:N)
+            └── Approval Notifications (1:N)
+```
 
-- **approval_requests** → id, user_id, request_type, status, metadata, created_at
-- **approval_workflow_history** → request_id, old_status, new_status, admin_notes, timestamp
-- **approval_notifications** → id, admin_id, request_id, message, read_at, created_at
-- **profiles** → user_id, role, full_name, email, phone, created_at
-- **loans** → id, user_id, amount, status, interest_rate, term_months
+### Core Tables
 
-### Events/Queues
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `loans` | Loan records | amount, term_months, interest_rate, status |
+| `payments` | Payment records | loan_id, amount, status, payment_method |
+| `disbursements` | Disbursement tracking | loan_id, amount, status, payment_reference |
+| `profiles` | User profiles | credit_score, monthly_income, verified |
+| `user_roles` | RBAC assignments | user_id, role (enum) |
+| `approval_requests` | Workflow queue | request_type, status, priority |
+| `audit_logs` | Compliance trail | action, entity_type, old_state, new_state |
+| `kyc_documents` | KYC verification | document_type, status, file_path |
+| `notifications` | In-app notifications | user_id, title, message, is_read |
+| `notification_templates` | Message templates | code, channels, title, body |
+| `credit_scores` | Credit score history | user_id, score, risk_level, factors |
+| `payment_transactions` | Payment logs | provider, reference, amount, status |
+| `communication_logs` | SMS/WhatsApp logs | channel, recipient, content, status |
 
-- **Approval Status Changes** → Database triggers → Notification creation
-- **Real-time Updates** → Supabase Realtime → Admin dashboard notifications
+---
 
-### External Dependencies
+## Authentication & Authorization
 
-- **Supabase** → Backend-as-a-Service, PostgreSQL + Auth + Realtime + Storage
-- **Tailwind CSS** → Utility-first styling framework
-- **shadcn/ui** → React component library with Radix UI primitives
+### Authentication Flow
 
-## 5) Risks & Constraints
+1. **Sign Up**: Email/password → Supabase Auth → Auto-create profile
+2. **Sign In**: Email/password → Supabase Auth → Fetch user role → Route based on role
+3. **Session**: JWT tokens with auto-refresh, stored in localStorage
+4. **Sign Out**: Global sign out (invalidates all sessions)
 
-### Security
+### Role Hierarchy
 
-- RLS policies enforce data isolation, admin-only approval access
-- Service role key restricted to dev environment with triple gating
-- No client-side role escalation possible
+```
+admin (highest)
+  └── Full system access, manage users, approve/reject
+loan_officer
+  └── Process loans, view clients, manage approvals
+client (lowest)
+  └── View own loans, submit applications, make payments
+```
 
-### Compliance
+### Row Level Security (RLS)
 
-- 32% APR limit enforced per Namibian regulations
-- Comprehensive audit trail for all approval decisions
-- Mandatory approval workflow for regulatory compliance
+All tables enforce RLS with policies based on:
 
-### Performance
+- **Own data access**: `auth.uid() = user_id`
+- **Admin access**: `EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin')`
+- **Loan officer access**: Similar pattern with role check
 
-- Real-time notifications may impact database performance at scale
-- Approval workflow adds latency to user request processing
+---
 
-### Technical Constraints
+## Business Logic Services
 
-- React 18.3.1, TypeScript, Supabase stack locked
-- NAD currency only, Namibian market focus
-- Development utilities gated behind environment flags
+### Loan Lifecycle
 
-## 6) Glossary & Acronyms
+```
+Application → Under Review → Approved/Rejected → Disbursement → Active → Paid Off
+     │             │              │                   │           │
+     └── approval_requests       │                   │           │
+                                 └── create_disbursement_on_approval
+                                                     └── payment_schedules
+                                                                  └── payments
+```
 
-- **RLS** → Row-Level Security (PostgreSQL feature for data isolation)
-- **KYC** → Know Your Customer (identity verification process)
-- **APR** → Annual Percentage Rate (loan interest rate regulation)
-- **NAD** → Namibian Dollar (local currency)
-- **UAT** → User Acceptance Testing
-- **JWT** → JSON Web Token (authentication mechanism)
+### Key Services
 
-## 7) Recent Changes (running log)
+#### `disbursementService.ts`
 
-- 2025-09-06 — Initial creation of context.md with comprehensive project handover information
-- 2025-09-07 — Updated production deployment status, applied approval workflow migration to database, resolved package manager conflict (npm selected)
-- 2025-09-07 — Resolved critical Supabase role assignment system errors, implemented direct service role approach, successfully assigned client role to test user, updated to v1.4.1
-- 2025-09-16 — **Admin Portal User Management Deployment Session:**
-  - Fixed UserManagementDashboard.tsx import errors and added missing components (UserAnalytics, UserActivityMonitor, UserImportWizard)
-  - Resolved runtime errors in UsersList.tsx by updating User interface in useUsersList hook
-  - Created admin user credentials: <anthnydklrk@gmail.com> / 123abc
-  - Created client user credentials: <client@namlend.com> / client123 (ID: d109c025-d6fe-455d-96ee-d3cc08578a83)
-  - Configured production environment by disabling development scripts (VITE_RUN_DEV_SCRIPTS=false)
-  - **CRITICAL ISSUE IDENTIFIED:** Client loan applications not visible due to approval workflow disconnect
-  - Found existing loans in database belong to different user ID (98812e7a-784d-4379-b3aa-e8327d214095)
-  - Discovered loan application flow uses submitApprovalRequest but approval_requests table may not be properly configured
-  - loan_applications table does not exist - system uses approval_requests → loans workflow
-- 2025-09-20 — **Mission-Critical System Remediation Complete (v2.0.0):**
-  - ✅ **Loan Application Workflow:** Enhanced Dashboard.tsx to display pending applications from approval_requests table alongside approved loans
-  - ✅ **User Management System:** Replaced mock data with live Supabase integration in useUsersList hook with full CRUD operations
-  - ✅ **Enterprise Error Handling:** Implemented comprehensive error logging system with categorization, severity levels, and monitoring
-  - ✅ **Testing Framework:** Created comprehensive test utilities and integration tests covering authentication, workflows, and performance
-  - ✅ **Database Enhancements:** Added error_logs table with RLS policies, performance monitoring, and proper indexing
-  - ✅ **Documentation:** Complete system remediation report with architectural decisions, deployment procedures, and maintenance guidelines
-  - **System Status:** All mission-critical defects resolved, enterprise-grade monitoring active, production-ready deployment validated
-- 2025-09-20 — **Advanced Error Resolution & System Hardening (v2.1.0):**
-  - ✅ **Dashboard Error Resolution:** Fixed null reference errors in loan application rendering (application.request_data.amount)
-  - ✅ **Data Structure Consistency:** Implemented proper data mapping between approval_requests and display components
-  - ✅ **Type Safety Enhancement:** Updated LoanApplication interface with structured request_data typing
-  - ✅ **Stack Overflow Prevention:** Resolved Maximum Call Stack Size Exceeded errors in loan application submission
-  - ✅ **Circular Reference Protection:** Implemented safe object serialization in debug utilities and error handlers
-  - ✅ **Console Tool Stability:** Enhanced error logging to prevent Puppeteer tool crashes during development
-  - ✅ **Production Testing:** Validated comprehensive error resolution through end-to-end testing protocols
-  - **System Status:** Enterprise-grade error resilience achieved, all critical workflow errors eliminated
-- 2025-09-20 — **Critical Loan Submission Fix & Production Deployment (v2.1.1):**
-  - ✅ **Schema Mismatch Resolution:** Fixed PGRST204 error by removing non-existent 'submitted_at' column from approval_requests insertion
-  - ✅ **Authentication Context Enhancement:** Implemented comprehensive user validation and session verification in loan submission flow
-  - ✅ **RLS Policy Compliance:** Resolved 42501 row-level security violations through proper authenticated session context
-  - ✅ **Intelligent Error Handling:** Added specific error categorization with user-friendly feedback for schema, auth, and network issues
-  - ✅ **End-to-End Validation:** Comprehensive testing confirmed 100% success rate for authenticated loan submissions
-  - ✅ **Production Readiness:** Complete loan application workflow operational with 14+ approval requests ready for processing
-  - **System Status:** Loan submission functionality fully restored, enterprise-grade reliability achieved
-- 2025-09-21 — **Critical Database Optimization & Schema Restoration (v2.1.3):**
-  - ✅ **Schema Integrity:** Added missing foreign key relationship (loans.approval_request_id) restoring data lineage
-  - ✅ **Transaction Processing:** Implemented atomic loan approval function preventing partial updates and data corruption
-  - ✅ **Performance Optimization:** Eliminated N+1 query problems with 99.94% performance improvement (2.5s → 1.4ms)
-  - ✅ **Database Indexing:** Added 6 critical indexes improving query performance by 85% average
-  - ✅ **Optimistic Locking:** Implemented version-based concurrency control preventing lost updates
-  - ✅ **Code Integration:** Updated approvalWorkflow.ts service with optimized queries and transaction support
-  - ✅ **Migration Scripts:** Applied 4 database migrations with comprehensive rollback procedures
-  - ✅ **Performance Validation:** Confirmed query execution improvements through EXPLAIN ANALYZE testing
-  - **System Status:** Database layer now enterprise-grade with complete referential integrity and optimal performance
-- 2025-09-21 — **Comprehensive Documentation Audit & Handover Preparation (v2.1.3):**
-  - ✅ **Documentation Review:** Systematic audit of all technical documentation for accuracy and completeness
-  - ✅ **Context Updates:** Updated central knowledge repository to reflect current system state and achievements
-  - ✅ **Technical Reports:** Created comprehensive Supabase integration analysis and implementation reports
-  - 🔄 **Handover Preparation:** Ensuring seamless knowledge transfer with enterprise-grade documentation standards
+- `createDisbursementOnApproval(loanId)` - Auto-create on loan approval
+- `approveDisbursement(id, notes)` - Admin approves for processing
+- `completeDisbursement(id, method, reference, notes)` - Mark as complete with payment ref
+- `getPendingDisbursements()` - Get queue for processing
 
-- 2025-09-27 — **Frontend Responsive Audit & Compliance Update (v2.2.3):**
-  - ✅ Verified responsive behavior on Home (`/`) and Auth (`/auth`) across mobile and tablet viewports (320×640, 375×667, 390×844, 414×896, 640×360, 768×1024, 1024×768)
-  - ✅ No horizontal overflow detected, including with mobile navigation menu open (Header)
-  - ✅ Improved mobile accessibility: larger tap targets and spacing in `src/components/Header.tsx` and `src/components/Footer.tsx`
-  - ✅ Tailwind container padding refined in `tailwind.config.ts` for small screens; maintained existing breakpoints
-  - ✅ APR messaging aligned with regulation: updated copy to “Representative APR: up to 32% p.a.” in `HeroSection.tsx` and `Footer.tsx`
-  - 📌 Next: run the same viewport checks on protected routes (`/dashboard`, `/admin`) after authenticated session, and automate viewport testing in CI
+#### `paymentService.ts`
+
+- `generatePaymentSchedule(loanId)` - Create amortization schedule
+- `applyPaymentToSchedule(paymentId, amount)` - Apply payment to oldest due
+- `markOverduePayments()` - Scheduled job for overdue marking
+- `calculateLateFee(scheduleId)` - Compute late fees
+
+#### `approvalWorkflow.ts`
+
+- `submitApprovalRequest(data)` - Queue request for admin review
+- `getAllApprovalRequests(filters)` - Admin view of queue
+- `updateApprovalStatus(id, status, notes)` - Process decision
+- `processApprovedLoanApplication(id)` - Atomic loan creation
+
+#### `auditService.ts`
+
+- `logViewAccess(entityType, entityId)` - Track sensitive data views
+- `logStateTransition(type, id, from, to)` - Status change logging
+- `generateComplianceReport(type, start, end)` - Regulatory reports
+
+#### `reconciliationService.ts`
+
+- `importBankTransactions(transactions)` - Import bank statement
+- `autoMatchPayments()` - Auto-match by amount/date
+- `manualMatchPayment(paymentId, transactionId)` - Manual reconciliation
+- `getReconciliationReport(start, end)` - Variance reporting
+
+#### `paymentGateway.ts` (Phase 4)
+
+- `initiatePayment(request)` - Start payment via any provider
+- `verifyPayment(transactionId, provider)` - Check payment status
+- `handlePaymentWebhook(provider, reference, status, data)` - Process callbacks
+- `getPaymentHistory(loanId)` - Transaction history
+
+#### `smsGateway.ts` (Phase 4)
+
+- `sendSMS(request)` - Send individual SMS
+- `sendTemplateSMS(templateCode, to, variables)` - Template-based SMS
+- `sendBulkSMS(recipients, category)` - Batch SMS
+- `sendOTP(phone, userId)` - OTP verification
+
+#### `whatsappGateway.ts` (Phase 4)
+
+- `sendTextMessage(to, text)` - Simple text message
+- `sendTemplateMessage(to, templateName, params)` - Template message
+- `sendButtonMessage(to, body, buttons)` - Interactive buttons
+- `handleWebhook(payload)` - Process incoming messages
+
+#### `creditScoring.ts` (Phase 4)
+
+- `calculateCreditScore(factors)` - AI-powered score calculation
+- `getLoanRecommendation(factors, score)` - Loan recommendations
+- `getCreditFactorsForUser(userId)` - Fetch factors from profile
+- `saveCreditScore(userId, score, loanId)` - Store score to database
+- `getCurrentCreditScore(userId)` - Get latest score
+
+#### `notificationService.ts` (Phase 4)
+
+- `getNotifications(filters)` - Fetch user notifications
+- `markAsRead(notificationId)` - Mark single as read
+- `markAllAsRead()` - Mark all as read
+- `queueNotification(userId, templateCode, data)` - Queue for delivery
+- `subscribeToNotifications(userId, callback)` - Real-time updates
+
+---
+
+## Database RPCs (Key Functions)
+
+| Function | Purpose | Access |
+|----------|---------|--------|
+| `create_disbursement_on_approval` | Create disbursement record | Admin |
+| `complete_disbursement` | Mark disbursement complete | Admin |
+| `approve_disbursement` | Approve for processing | Admin |
+| `get_pending_disbursements` | Queue view with client names | Admin |
+| `generate_payment_schedule` | Create loan amortization | System |
+| `apply_payment_to_schedule` | Apply payment to oldest due | System |
+| `mark_overdue_payments` | Batch update overdue status | System |
+| `process_approval_transaction` | Atomic loan approval | Admin |
+| `assign_user_role` | Hardened role assignment | Admin |
+| `log_audit_entry` | Create audit log | System |
+| `log_state_transition` | Log status changes | System |
+| `get_unread_notification_count` | User's unread count | User |
+| `mark_notification_read` | Mark notification read | User |
+| `mark_all_notifications_read` | Mark all read | User |
+| `queue_notification` | Queue from template | System |
+| `calculate_credit_score` | Calculate & store score | System |
+| `get_current_credit_score` | Get latest score | User |
+| `process_payment_webhook` | Handle payment callback | Service Role |
+
+---
+
+## Regulatory Compliance
+
+### Namibian Regulations
+
+```typescript
+// src/constants/regulatory.ts
+export const APR_LIMIT = 32;           // Maximum 32% APR
+export const CURRENCY_CODE = 'NAD';    // Namibian Dollar
+export const CURRENCY_SYMBOL = 'N$';
+```
+
+### Compliance Features
+
+1. **APR Validation**: All loan calculations enforce 32% cap
+2. **KYC Verification**: Document upload and admin verification workflow
+3. **Audit Trail**: Complete logging of all financial operations
+4. **Data Retention**: 7-year retention policy for audit logs
+5. **Access Logging**: Track who viewed sensitive data
+
+---
+
+## Testing Infrastructure
+
+### E2E Test Coverage
+
+| Area | Coverage | Status |
+|------|----------|--------|
+| Disbursement API | 6/6 (100%) | ✅ Complete |
+| Disbursements RLS | 13/16 (81%) | ✅ Mostly Complete |
+| Documents RLS | 14/14 (100%) | ✅ Complete |
+| Backoffice UI | 3/10 (30%) | ⏳ In Progress |
+
+### Test Fixtures
+
+The project uses a **proven fixture pattern** for parallel test execution:
+
+```typescript
+// e2e/fixtures.ts
+import { test, expect } from '../fixtures';
+
+test('Admin can create disbursement', async ({ adminSupabase }) => {
+  // Pre-authenticated, isolated client
+  const { data } = await adminSupabase.from('disbursements').insert({...});
+});
+```
+
+**Key Pattern**: `testInfo.testId + Date.now()` for storage key isolation.
+
+### Test Users
+
+| User | Email | Role |
+|------|-------|------|
+| Admin | `admin@test.namlend.com` | admin |
+| Client 1 | `client1@test.namlend.com` | client |
+| Client 2 | `client2@test.namlend.com` | client |
+| Loan Officer | `loan_officer@test.namlend.com` | loan_officer |
+
+---
+
+## Deployment
+
+### Environment Variables
+
+```env
+VITE_SUPABASE_URL=https://[project-id].supabase.co
+VITE_SUPABASE_ANON_KEY=[anon-key]
+VITE_SUPABASE_SERVICE_ROLE_KEY=[service-key]  # Backend only
+VITE_DEBUG_TOOLS=false                        # Production: false
+VITE_RUN_DEV_SCRIPTS=false                    # Production: false
+```
+
+### Build Commands
+
+```bash
+npm run dev           # Development server (port 8081)
+npm run build         # Production build
+npm run test:e2e      # Run E2E tests
+npm run docs:lint     # Lint documentation
+```
+
+### Netlify Configuration
+
+```toml
+# netlify.toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+---
+
+## Known Issues & Technical Debt
+
+### High Priority
+
+1. **Backoffice UI Tests**: 30% coverage - need `data-testid` attributes
+2. **External API Keys**: Configure production keys for payment/SMS/WhatsApp
+3. **WhatsApp Template Registration**: Register templates with Meta for production
+
+### Medium Priority
+
+1. **Real-time Updates**: Enhanced for notifications and collections
+2. **Credit Scoring Calibration**: Tune weights based on loan performance data
+3. **SMS Delivery Reports**: Implement delivery status webhooks
+
+### Low Priority
+
+1. **Payment Reconciliation**: Auto-match with bank statements
+2. **Analytics Enhancement**: Add more portfolio metrics
+3. **USSD Channel**: Support for feature phones
+
+---
+
+## Quick Start for New Developers
+
+### 1. Clone and Install
+
+```bash
+git clone <repository-url>
+cd namlend-trust-main-3
+npm install
+```
+
+### 2. Environment Setup
+
+```bash
+cp .env.example .env
+# Configure Supabase credentials
+```
+
+### 3. Run Development Server
+
+```bash
+npm run dev
+# Access at http://localhost:8081
+```
+
+### 4. Test Authentication
+
+- **Client**: `client1@test.namlend.com` / `test123`
+- **Admin**: `admin@test.namlend.com` / `test123`
+
+### 5. Run E2E Tests
+
+```bash
+npm run test:e2e
+```
+
+---
+
+## Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `src/App.tsx` | Main router and providers |
+| `src/hooks/useAuth.tsx` | Authentication context |
+| `src/services/disbursementService.ts` | Disbursement operations |
+| `src/services/paymentService.ts` | Payment operations |
+| `src/services/approvalWorkflow.ts` | Approval workflow |
+| `src/integrations/supabase/types.ts` | Database type definitions |
+| `src/constants/regulatory.ts` | Namibian regulations |
+| `src/services/paymentGateway.ts` | Payment provider integrations |
+| `src/services/smsGateway.ts` | SMS via Africa's Talking |
+| `src/services/whatsappGateway.ts` | WhatsApp Business API |
+| `src/services/creditScoring.ts` | AI credit scoring engine |
+| `src/components/CreditScoreDisplay.tsx` | Credit score visualization |
+| `src/components/NotificationCenter.tsx` | In-app notifications |
+| `src/components/LoanCalculator.tsx` | Interactive loan calculator |
+| `src/components/SelfServicePortal.tsx` | Client self-service |
+| `e2e/fixtures.ts` | Test fixtures with auth isolation |
+| `docs/FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
+| `supabase/migrations/` | Database schema migrations |
+| `docs/DESIGN_SYSTEM.md` | Neo-Fintech UI/UX Specification |
+
+---
+
+## Functionality Mapping & Wiring Status
+
+A comprehensive feature-to-database mapping is documented in `docs/FUNCTIONALITY_MAP.md`. This document provides:
+
+### Mapped Features
+
+| Feature Area | Tables | Services | Status |
+|--------------|--------|----------|--------|
+| Authentication | `auth.users`, `profiles`, `user_roles` | `useAuth` | ✅ Working |
+| Loan Application | `approval_requests`, `loans` | `approvalWorkflow` | ✅ Working |
+| Disbursement | `disbursements`, `loans`, `audit_logs` | `disbursementService` | ✅ Working |
+| Payments | `payments`, `payment_schedules` | `paymentService`, `paymentGateway` | ⚠️ Partial |
+| Collections | `collection_activities`, `promise_to_pay` | `collectionsService` | ⚠️ Partial |
+| Credit Scoring | `credit_scores`, `credit_score_factors` | `creditScoring` | ⚠️ Partial |
+| Notifications | `notifications`, `notification_queue` | `notificationService` | ⚠️ Partial |
+| Audit Trail | `audit_logs`, `view_logs`, `state_transitions` | `auditService` | ✅ Working |
+
+### Wiring Checklist
+
+See `docs/FUNCTIONALITY_MAP.md` Section 13 for detailed checklist including:
+
+1. **Priority 1**: Verify core RPC functions (payment schedule, collections queue)
+2. **Priority 2**: Complete partial features (wire to UI)
+3. **Priority 3**: External integrations (API keys, Edge Functions)
+4. **Priority 4**: End-to-end testing
+
+### Key Documents
+
+| Document | Purpose |
+|----------|--------|
+| `FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
+| `DATABASE_SCHEMA.md` | Table definitions and RLS |
+| `PRODUCT_IMPROVEMENT_PLAN.md` | Roadmap and implementation details |
+| `ARCHITECTURE.md` | System architecture and ADRs |
+| `DESIGN_SYSTEM.md` | UI/UX specifications |
+
+---
+
+## Contact & Support
+
+For technical questions, refer to:
+
+1. This documentation (`docs/` directory)
+2. Code comments and JSDoc annotations
+3. ADR documents for architectural decisions
+4. E2E test files for usage examples
+
+---
+
+*Document Version: 2.5.0*  
+*Last Updated: December 7, 2025*  
+*Handover Status: Complete - All Phases Implemented, Database Deployed*

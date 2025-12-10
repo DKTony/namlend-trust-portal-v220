@@ -9,7 +9,8 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
-  Users
+  Users,
+  BadgeCheck
 } from 'lucide-react';
 import { usePaymentMetrics } from '../../hooks/usePaymentMetrics';
 import { formatNAD } from '@/utils/currency';
@@ -80,13 +81,23 @@ const PaymentOverview: React.FC = () => {
       borderColor: 'border-purple-200',
       description: 'Clients on payment plans',
       trend: '+5 this month'
+    },
+    {
+      title: 'Settled Loans',
+      value: metrics?.settledLoansCount || 0,
+      icon: BadgeCheck,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
+      borderColor: 'border-teal-200',
+      description: formatCurrency(metrics?.settledLoansAmount || 0) + ' total',
+      highlight: true
     }
   ];
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {[...Array(6)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        {[...Array(7)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-24"></div>
@@ -120,7 +131,7 @@ const PaymentOverview: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       {paymentCards.map((card, index) => {
         const Icon = card.icon;
         return (
@@ -128,7 +139,7 @@ const PaymentOverview: React.FC = () => {
             key={index} 
             className={`hover:shadow-lg transition-all duration-200 ${card.borderColor} ${
               card.urgent ? 'ring-2 ring-red-200 shadow-md' : ''
-            }`}
+            } ${card.highlight ? 'ring-2 ring-teal-200 shadow-md' : ''}`}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">

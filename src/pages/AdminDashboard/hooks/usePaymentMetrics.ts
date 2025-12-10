@@ -18,6 +18,10 @@ interface PaymentMetrics {
   paymentSuccessRate: number;
   // Approximation: active loans count
   activePaymentPlans: number;
+  // Settled loans count
+  settledLoansCount: number;
+  // Total amount from settled loans
+  settledLoansAmount: number;
 }
 
 export const usePaymentMetrics = () => {
@@ -29,7 +33,9 @@ export const usePaymentMetrics = () => {
     overdueCount: 0,
     collectionsThisMonth: 0,
     paymentSuccessRate: 0,
-    activePaymentPlans: 0
+    activePaymentPlans: 0,
+    settledLoansCount: 0,
+    settledLoansAmount: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,25 +45,24 @@ export const usePaymentMetrics = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch payments data
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*');
+      // Fetch payments and loans in parallel for better performance
+      const [paymentsResult, loansResult] = await Promise.all([
+        supabase.from('payments').select('*'),
+        supabase.from('loans').select('*')
+      ]);
 
-      if (paymentsError) {
-        console.error('Error fetching payments:', paymentsError);
+      if (paymentsResult.error) {
+        console.error('Error fetching payments:', paymentsResult.error);
         throw new Error('Failed to fetch payment data');
       }
 
-      // Fetch loans data for disbursement calculations
-      const { data: loans, error: loansError } = await supabase
-        .from('loans')
-        .select('*');
-
-      if (loansError) {
-        console.error('Error fetching loans:', loansError);
+      if (loansResult.error) {
+        console.error('Error fetching loans:', loansResult.error);
         throw new Error('Failed to fetch loan data');
       }
+
+      const payments = paymentsResult.data;
+      const loans = loansResult.data;
 
       // Time windows
       const now = new Date();
@@ -97,9 +102,11 @@ export const usePaymentMetrics = () => {
 
       // Loans partitions
       const approvedLoans = (loans || []).filter(l => l.status === 'approved');
-      const activeLoans = (loans || []).filter(l => l.status === 'active');
+      const activeLoans = (loans || []).filter(l => l.status === 'active' || l.status === 'disbursed');
+      const settledLoans = (loans || []).filter(l => l.status === 'settled');
       const pendingDisbursementsAmount = approvedLoans.reduce((sum, l) => sum + (l.amount || 0), 0);
       const pendingDisbursementCount = approvedLoans.length;
+      const settledLoansAmount = settledLoans.reduce((sum, l) => sum + (l.total_repayment || l.amount || 0), 0);
 
       const paymentSuccessRate = totalPaymentsCount > 0
         ? Math.round((completedPayments.length / totalPaymentsCount) * 100)
@@ -113,7 +120,9 @@ export const usePaymentMetrics = () => {
         overdueCount,
         collectionsThisMonth,
         paymentSuccessRate,
-        activePaymentPlans: activeLoans.length
+        activePaymentPlans: activeLoans.length,
+        settledLoansCount: settledLoans.length,
+        settledLoansAmount
       });
 
     } catch (err) {

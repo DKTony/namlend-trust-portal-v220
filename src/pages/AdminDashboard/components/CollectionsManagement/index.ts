@@ -1,0 +1,1 @@
+export { CollectionsDashboard } from './CollectionsDashboard';

@@ -1,10 +1,11 @@
 # NamLend Trust - Loan Management Platform
 
-**Version**: 2.4.0  
-**Last Updated**: December 6, 2025  
+**Version**: 2.6.0  
+**Last Updated**: December 10, 2025  
 **Status**: ✅ Production-Ready Digital Lending Platform  
 **Database**: PostgreSQL 17+ (Supabase eu-north-1)  
-**Design System**: Neo-Fintech / "Black Card" Aesthetic
+**Design System**: Neo-Fintech / "Black Card" Aesthetic  
+**Live URL**: https://namlend-trust-portal-v220.netlify.app
 
 ## 🚀 Current Status (December 2025)
 
@@ -14,6 +15,8 @@
 - **Mandatory Approval Flow** - All user requests route through admin approval
 - **Authentication Working** - Reactive SPA-friendly auth flow
 - **Security Hardened** - Comprehensive security audit passed
+- **Payment System** - Complete payment processing with settlement detection
+- **Schema Alignment** - Database-code consistency verified
 
 ### Phase 1-4 Implementation Complete ✅
 - **✅ Phase 1**: Mobile-first design, Loan Calculator, Status Timeline, Notifications
@@ -21,6 +24,7 @@
 - **✅ Phase 3**: Loan 360° View, Portfolio Analytics, Credit Policy Config, Batch Operations
 - **✅ Phase 4**: Payment Gateway, SMS/WhatsApp Integration, AI Credit Scoring
 - **✅ Database**: All Phase 4 tables deployed to production (9 new tables)
+- **✅ v2.6.0**: Payment system fixes, schema alignment, settled loans visibility
 
 ### UI/UX Refresh ✅ (December 2025)
 - **✅ Neo-Fintech Design**: Zinc/Black palette with Electric Blue accents

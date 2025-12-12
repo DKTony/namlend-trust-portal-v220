@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-12-12
+
+### Added
+
+#### IPS (Instant Payment System) Integration
+- **IPSPaymentModal** - Multi-step payment modal (amount → VPA → confirm → process → result)
+- **VPAInput** - VPA input component with format validation and server-side verification
+- **IPSHistoryList** - Transaction history display for loans
+- **IPSTransactionStatus** - Real-time status polling component
+- **IPSDisbursementForm** - Admin disbursement via IPS
+- **LoanDetails** page (`/loans/:id`) - Detailed loan view with IPS payment option
+
+#### IPS Database Schema
+- `ips_transactions` table - Stores all IPS payment transactions
+- `ips_vpa_registry` table - User VPA (Virtual Payment Address) records
+- `ips_api_logs` table - IPS API call logging for debugging/audit
+
+#### IPS RPC Functions
+- `initiate_ips_repayment` - Initiate loan repayment via IPS
+- `initiate_ips_disbursement` - Initiate loan disbursement via IPS
+- `get_ips_transaction_status` - Check transaction status
+
+#### IPS Edge Function
+- `ips-adapter` - Mock IPS API adapter for development/testing
+  - POST `/pay` - Process payments
+  - POST `/validate-vpa` - Validate VPA addresses
+  - POST `/check-status` - Check transaction status
+
+#### IPS React Query Hooks
+- `useIPSPayment` - Initiates IPS payments/disbursements
+- `useUserVPAs` - Manages user VPA records
+- `useIPSTransactionStatus` - Polls transaction status
+
+#### Settlement System (Admin)
+- 13 settlement tables for BON reconciliation
+- `ReconciliationDashboard` - Settlement run monitoring
+- `Pacs009Viewer` - MNSB pacs.009 file viewer
+- `NTSLReportViewer` - Net Settlement Report viewer
+- `AdjustmentsViewer` - Dispute/chargeback management
+
+#### E2E Test Coverage
+- `ips-payment-flow.e2e.ts` - Full IPS payment flow tests
+- `ips-adapter.e2e.ts` - Edge function API tests
+- `ips-rpc.e2e.ts` - RPC function tests
+- Added `data-testid` attributes to all IPS components
+
+#### Documentation
+- `IPS_IMPLEMENTATION.md` - Complete implementation guide
+- `IPS_TESTING.md` - Testing guide
+- `IPS_PRODUCTION_CHECKLIST.md` - Production readiness checklist
+- Updated `IPP_INTEGRATION.md` with technical specifications
+
+### Changed
+- Payment page now includes IPS as primary payment option
+- Updated FUNCTIONALITY_MAP with IPS status
+- Updated SERVICES.md with IPS service documentation
+- Updated ARCHITECTURE.md with IPS components
+
+### Technical Notes
+- IPS operates in **Mock Mode** by default for development
+- Set `MOCK_MODE=false` for production IPS integration
+- Requires BON PSP registration and certificates for production
+
+---
+
 ## [2.6.0] - 2025-12-10
 
 ### Added

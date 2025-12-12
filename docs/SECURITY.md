@@ -1,8 +1,8 @@
 # NamLend Trust - Security Documentation
 
-**Version**: 2.0.0  
-**Last Updated**: December 2025  
-**Security Audit Status**: Passed (Critical Issues Resolved)
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025  
+**Security Audit Status**: Passed (Critical Issues Resolved, IPS Mock Mode Active)
 
 ---
 

@@ -1,7 +1,7 @@
 # NamLend Trust - API Reference
 
-**Version**: 2.0.0  
-**Last Updated**: December 2025
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025
 
 ---
 
@@ -562,6 +562,109 @@ try {
 
 ---
 
+## IPS (Instant Payment System) API
+
+### Edge Function: ips-adapter
+
+Base URL: `https://puahejtaskncpazjyxqp.supabase.co/functions/v1/ips-adapter`
+
+#### POST /pay
+
+Process an IPS payment.
+
+```typescript
+// Request
+{
+  transactionId: string;   // UUID
+  amount: number;          // Payment amount (NAD)
+  currency: string;        // "NAD"
+  payerVpa: string;        // Payer VPA (e.g., "user@bank")
+  payeeVpa: string;        // Payee VPA
+  note?: string;           // Optional note
+}
+
+// Response
+{
+  success: boolean;
+  rrn?: string;            // IPS Reference Number
+  txnId?: string;          // IPS Transaction ID
+  status: string;          // "completed", "pending", "failed"
+  timestamp: string;       // ISO timestamp
+  error?: string;          // Error message if failed
+}
+```
+
+#### POST /validate-vpa
+
+Validate a VPA address.
+
+```typescript
+// Request
+{ vpa: string }
+
+// Response
+{
+  valid: boolean;
+  vpa: string;
+  accountHolderName?: string;
+  providerCode?: string;
+  providerName?: string;
+  error?: string;
+}
+```
+
+#### POST /check-status
+
+Check transaction status.
+
+```typescript
+// Request
+{ transactionId: string }
+
+// Response
+{
+  success: boolean;
+  status: string;          // "pending", "completed", "failed", "timeout"
+  rrn?: string;
+  completedAt?: string;
+  error?: string;
+}
+```
+
+### IPS RPC Functions
+
+#### initiate_ips_repayment
+
+```typescript
+const { data, error } = await supabase.rpc('initiate_ips_repayment', {
+  p_loan_id: 'uuid',
+  p_amount: 1000.00,
+  p_payer_vpa: 'user@bank'
+});
+// Returns: { success: boolean, transaction_id: string, ... }
+```
+
+#### initiate_ips_disbursement
+
+```typescript
+const { data, error } = await supabase.rpc('initiate_ips_disbursement', {
+  p_loan_id: 'uuid',
+  p_payee_vpa: 'recipient@bank'
+});
+// Returns: { success: boolean, transaction_id: string, ... }
+```
+
+#### get_ips_transaction_status
+
+```typescript
+const { data, error } = await supabase.rpc('get_ips_transaction_status', {
+  p_transaction_id: 'uuid'
+});
+// Returns: { status: string, ips_rrn: string, ... }
+```
+
+---
+
 ## Rate Limits
 
 | Tier | Requests/Second | Concurrent Connections |
@@ -581,8 +684,9 @@ try {
 5. **Implement retry logic** - For network failures
 6. **Log audit events** - Track all sensitive operations
 7. **Use RLS** - Never bypass row-level security
+8. **Validate VPAs first** - Always validate VPA before initiating payment
 
 ---
 
-*Document Version: 2.0.0*  
-*Last Updated: December 2025*
+*Document Version: 2.7.0*  
+*Last Updated: December 12, 2025*

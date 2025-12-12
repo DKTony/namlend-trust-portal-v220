@@ -1,7 +1,7 @@
 # NamLend Trust - Testing Documentation
 
-**Version**: 2.0.0  
-**Last Updated**: December 2025
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025
 
 ---
 
@@ -37,14 +37,19 @@ e2e/
 │   ├── disbursements-rls.e2e.ts
 │   ├── documents-rls.e2e.ts
 │   ├── loan-rpc.e2e.ts
-│   └── admin-rpc.e2e.ts
+│   ├── admin-rpc.e2e.ts
+│   ├── ips-adapter.e2e.ts   # IPS Edge Function tests
+│   └── ips-rpc.e2e.ts       # IPS RPC tests
+├── ips-payment-flow.e2e.ts  # IPS UI payment flow tests
 ├── unit/                    # Unit tests
-│   └── currency-util.e2e.ts
+│   ├── currency-util.e2e.ts
+│   └── ips-utils.e2e.ts     # IPS utility tests
 ├── helpers/                 # Test helpers
 │   └── auth.ts
 ├── create-test-data.sql     # Test data setup
 ├── create-test-users.sql    # Test user creation
 ├── seed-ui-test-data.sql    # UI test data
+├── ips-rpc-tests.sql        # IPS RPC test data
 └── cleanup-ui-test-data.sql # Test data cleanup
 ```
 

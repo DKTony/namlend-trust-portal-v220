@@ -1,8 +1,8 @@
 # NamLend Trust - Services Documentation
 
-**Version**: 2.6.0  
-**Last Updated**: December 10, 2025  
-**Status**: ✅ All Services Implemented & Database Deployed (IPP Ready)
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025  
+**Status**: ✅ All Services Implemented (IPS Active in Mock Mode)
 
 ---
 
@@ -20,14 +20,15 @@ NamLend Trust includes a comprehensive suite of backend services for payment pro
 
 | Provider | Type | Processing Time | Integration Status |
 |----------|------|-----------------|-------------------|
-| **IPP/IPN** | Real-time | Instant (<5 sec) | 🔶 Ready for Integration |
+| **IPS/IPP** | Real-time | Instant (<5 sec) | ✅ **Active (Mock Mode)** |
 | Bank Transfer (EFT) | Manual | 1-2 business days | ✅ Implemented |
 | MTC MoMo | Mobile Money | Instant | ✅ Implemented |
 | TN Mobile Money | Mobile Money | Instant | ✅ Implemented |
 | PayToday | Online Gateway | Instant | ✅ Implemented |
 | Cash | In-person | Same day | ✅ Implemented |
 
-> **IPP Integration**: See [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) for detailed integration guide.
+> **IPS Integration**: See [IPS_IMPLEMENTATION.md](./IPS_IMPLEMENTATION.md) for implementation details.
+> **IPP Technical Specs**: See [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) for BON technical specifications.
 
 ### Key Functions
 
@@ -360,7 +361,75 @@ VITE_SUPABASE_SERVICE_ROLE_KEY=
 
 ---
 
-## Database Tables (Phase 4)
+## IPS (Instant Payment System) Service
+
+**File**: `src/services/ipsService.ts`
+
+### Overview
+
+The IPS service handles real-time payments via Namibia's Instant Payment Platform (IPP/IPN).
+
+### Key Functions
+
+```typescript
+// Initiate loan repayment via IPS
+initiateIPSRepayment(params: {
+  loanId: string;
+  amount: number;
+  payerVpa: string;
+}): Promise<InitiateIPSRepaymentResult>
+
+// Initiate loan disbursement via IPS
+initiateIPSDisbursement(params: {
+  loanId: string;
+  payeeVpa: string;
+}): Promise<InitiateIPSDisbursementResult>
+
+// Validate a VPA address
+validateVPA(vpa: string): Promise<ValidateVPAResult>
+
+// Get transaction status
+getTransactionStatus(transactionId: string): Promise<TransactionStatusResult>
+
+// Fetch user's saved VPAs
+getUserVPAs(userId: string): Promise<VPA[]>
+
+// Save/update a VPA
+upsertVPA(params: UpsertVPAParams): Promise<VPA>
+```
+
+### Edge Function: ips-adapter
+
+**Location**: `supabase/functions/ips-adapter/index.ts`
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/pay` | POST | Process IPS payment |
+| `/validate-vpa` | POST | Validate VPA address |
+| `/check-status` | POST | Check transaction status |
+
+### Mock Mode
+
+The service operates in **Mock Mode** by default for development:
+- VPA validation always succeeds for valid format
+- Payments complete after simulated delay
+- Random transaction IDs generated
+
+Set `MOCK_MODE=false` for production IPS integration.
+
+### Environment Variables (Production)
+
+```env
+IPS_API_URL=https://ips.bon.na/api/v2
+IPS_API_KEY=<your-api-key>
+IPS_ORG_ID=NAMLEND
+IPS_MERCHANT_VPA=collections@namlend
+MOCK_MODE=false
+```
+
+---
+
+## Database Tables (Phase 4 & IPS)
 
 The following tables support these services:
 
@@ -375,8 +444,11 @@ The following tables support these services:
 | `payment_webhooks` | Payment Gateway | Webhook logs |
 | `communication_logs` | SMS/WhatsApp | Message delivery logs |
 | `whatsapp_conversations` | WhatsApp | Conversation state |
+| `ips_transactions` | **IPS** | IPS payment transactions |
+| `ips_vpa_registry` | **IPS** | User VPA records |
+| `ips_api_logs` | **IPS** | API call logging |
 
 ---
 
-*Document Version: 2.0.0*  
-*Last Updated: December 6, 2025*
+*Document Version: 2.7.0*  
+*Last Updated: December 12, 2025*

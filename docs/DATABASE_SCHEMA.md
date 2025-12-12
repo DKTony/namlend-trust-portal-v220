@@ -1,8 +1,8 @@
 # NamLend Trust - Database Schema Documentation
 
-**Version**: 2.3.0  
-**Last Updated**: December 6, 2025  
-**Database**: PostgreSQL 17+ (Supabase)  
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025  
+**Database**: PostgreSQL 15+ (Supabase)  
 **Project**: puahejtaskncpazjyxqp  
 **Region**: eu-north-1
 
@@ -556,6 +556,74 @@ All outbound SMS/WhatsApp/Email logs.
 
 ---
 
+## IPS (Instant Payment System) Tables
+
+### `ips_transactions`
+
+Stores all IPS payment transactions for loan repayments and disbursements.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `loan_id` | UUID | FK → loans | Associated loan |
+| `user_id` | UUID | FK → auth.users | User who initiated |
+| `transaction_type` | TEXT | NOT NULL | REPAYMENT, DISBURSEMENT |
+| `amount` | DECIMAL(15,2) | NOT NULL | Transaction amount (NAD) |
+| `currency` | TEXT | DEFAULT 'NAD' | Currency code |
+| `payer_vpa` | TEXT | | Payer VPA address |
+| `payee_vpa` | TEXT | | Payee VPA address |
+| `status` | TEXT | DEFAULT 'pending' | pending, sent, completed, failed, timeout, reversed |
+| `ips_rrn` | TEXT | | IPS Reference Number |
+| `ips_txn_id` | TEXT | | IPS Transaction ID |
+| `error_code` | TEXT | | Error code if failed |
+| `error_message` | TEXT | | Error description |
+| `is_retryable` | BOOLEAN | DEFAULT false | Can retry on failure |
+| `initiated_at` | TIMESTAMPTZ | DEFAULT NOW() | When initiated |
+| `completed_at` | TIMESTAMPTZ | | When completed |
+| `note` | TEXT | | Transaction note |
+| `metadata` | JSONB | | Additional metadata |
+
+---
+
+### `ips_vpa_registry`
+
+User VPA (Virtual Payment Address) records for IPS payments.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `user_id` | UUID | FK → auth.users | User owner |
+| `vpa_address` | TEXT | NOT NULL | VPA (e.g., user@bank) |
+| `vpa_type` | TEXT | DEFAULT 'MOBILE' | MOBILE, ACCOUNT, AADHAAR |
+| `provider_code` | TEXT | | Bank/provider code |
+| `account_holder_name` | TEXT | | Verified name |
+| `is_validated` | BOOLEAN | DEFAULT false | Server validated |
+| `is_default` | BOOLEAN | DEFAULT false | Default VPA |
+| `validated_at` | TIMESTAMPTZ | | When validated |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
+
+**Constraints**: UNIQUE(user_id, vpa_address)
+
+---
+
+### `ips_api_logs`
+
+Logs all IPS API calls for debugging and audit.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PK | Primary key |
+| `endpoint` | TEXT | NOT NULL | API endpoint called |
+| `method` | TEXT | NOT NULL | HTTP method |
+| `request_body` | JSONB | | Request payload |
+| `response_body` | JSONB | | Response payload |
+| `status_code` | INTEGER | | HTTP status code |
+| `duration_ms` | INTEGER | | Response time |
+| `error` | TEXT | | Error message if any |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Log timestamp |
+
+---
+
 ## Database Functions (Phase 4)
 
 | Function | Returns | Description |
@@ -587,6 +655,9 @@ All outbound SMS/WhatsApp/Email logs.
 | 20251205_create_notification_system | Dec 2025 | Notification system |
 | 20251206_create_collections_system | Dec 2025 | Collections management |
 | **20251206_front_office_integrations** | **Dec 2025** | **Notifications, Credit Scoring, Payments, Communications** |
+| **20251212044600_ips_integration** | **Dec 2025** | **IPS tables, VPA registry, API logs** |
+| **20251212050000_ips_monitoring** | **Dec 2025** | **IPS monitoring and alerts** |
+| **20251212053000_settlement_system** | **Dec 2025** | **BON settlement reconciliation (13 tables)** |
 
 ---
 
@@ -594,13 +665,13 @@ All outbound SMS/WhatsApp/Email logs.
 
 | Metric | Value |
 |--------|-------|
-| Total Tables | 30+ |
-| Total Migrations | 28 |
-| RLS Policies | 50+ |
-| Database Functions | 25+ |
-| Indexes | 40+ |
+| Total Tables | 48+ |
+| Total Migrations | 31 |
+| RLS Policies | 60+ |
+| Database Functions | 35+ |
+| Indexes | 50+ |
 
 ---
 
-*Document Version: 2.3.0*  
-*Last Updated: December 6, 2025*
+*Document Version: 2.7.0*  
+*Last Updated: December 12, 2025*

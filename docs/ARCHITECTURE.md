@@ -1,8 +1,8 @@
 # NamLend Trust - System Architecture
 
-**Version**: 2.6.0  
-**Last Updated**: December 10, 2025  
-**Status**: ✅ Production Architecture Complete (IPP Integration Ready)
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025  
+**Status**: ✅ Production Architecture Complete (IPS Integration Active)
 
 ---
 
@@ -93,6 +93,7 @@ App.tsx
 │   ├── /admin/* (Admin Dashboard - Sidebar Layout)
 │   │   └── ProtectedRoute (requires admin role)
 │   ├── /loan-application
+│   ├── /loans/:id (Loan Details with IPS)
 │   ├── /payment
 │   └── /kyc
 └── Toasters (Notifications)

@@ -12,10 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { completeDisbursement } from '@/services/disbursementService';
-import { Loader2, CheckCircle, AlertCircle, CreditCard, Smartphone, Banknote, Building2 } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, CreditCard, Smartphone, Banknote, Building2, Zap } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
+import { IPSDisbursementForm } from '@/components/ips';
 
-type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order';
+type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order' | 'ips';
 
 interface Props {
   open: boolean;
@@ -228,90 +229,136 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 <CreditCard className="h-5 w-5" />
                 <span className="text-sm font-medium">Debit Order</span>
               </button>
+              
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('ips')}
+                disabled={loading}
+                data-testid="payment-method-ips"
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all col-span-2 ${
+                  paymentMethod === 'ips'
+                    ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                }`}
+              >
+                <Zap className="h-5 w-5" />
+                <span className="text-sm font-medium">IPS Instant Payment</span>
+              </button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="payment-ref" className="text-sm font-medium">
-              Payment Reference <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="payment-ref"
-              data-testid="payment-reference-input"
-              value={paymentReference}
-              onChange={(e) => setPaymentReference(e.target.value)}
-              placeholder="e.g., BANK-REF-12345, TXN-2025-001"
-              required
-              disabled={loading}
-              className="font-mono"
-              maxLength={100}
-            />
-            <p className="text-xs text-gray-500">
-              Enter the transaction reference from your bank or payment system
-            </p>
-          </div>
+          {/* Show IPS form OR regular payment reference based on method */}
+          {paymentMethod === 'ips' ? (
+            <div className="border-t pt-4 mt-4">
+              <IPSDisbursementForm
+                disbursementId={disbursement.id}
+                loanId={disbursement.loanId}
+                amount={disbursement.amount}
+                customerName={disbursement.clientName}
+                onSuccess={() => {
+                  onSuccess();
+                  handleClose();
+                }}
+                onError={(error) => {
+                  toast({
+                    title: 'IPS Disbursement Failed',
+                    description: error,
+                    variant: 'destructive'
+                  });
+                }}
+                className="border-0 shadow-none p-0"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="payment-ref" className="text-sm font-medium">
+                  Payment Reference <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="payment-ref"
+                  data-testid="payment-reference-input"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="e.g., BANK-REF-12345, TXN-2025-001"
+                  required
+                  disabled={loading}
+                  className="font-mono"
+                  maxLength={100}
+                />
+                <p className="text-xs text-gray-500">
+                  Enter the transaction reference from your bank or payment system
+                </p>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-medium">
-              Processing Notes <span className="text-gray-400">(Optional)</span>
-            </Label>
-            <textarea
-              id="notes"
-              data-testid="disbursement-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              placeholder="Add any notes about the payment processing (optional)"
-              disabled={loading}
-              maxLength={500}
-            />
-            <p className="text-xs text-gray-500 text-right">
-              {notes.length}/500 characters
-            </p>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm font-medium">
+                  Processing Notes <span className="text-gray-400">(Optional)</span>
+                </Label>
+                <textarea
+                  id="notes"
+                  data-testid="disbursement-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Add any notes about the payment processing (optional)"
+                  disabled={loading}
+                  maxLength={500}
+                />
+                <p className="text-xs text-gray-500 text-right">
+                  {notes.length}/500 characters
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Warning Notice */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
-          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-yellow-800">
-            <p className="font-medium">Important:</p>
-            <p className="mt-1">
-              This action will mark the disbursement as completed and automatically generate 
-              the payment schedule for the client. Ensure the payment has been successfully 
-              processed in your banking system.
-            </p>
+        {/* Warning Notice - only show for non-IPS methods */}
+        {paymentMethod !== 'ips' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium">Important:</p>
+              <p className="mt-1">
+                This action will mark the disbursement as completed and automatically generate 
+                the payment schedule for the client. Ensure the payment has been successfully 
+                processed in your banking system.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
-        <DialogFooter className="gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleClose} 
-            disabled={loading}
-            data-testid="cancel-disbursement-button"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !paymentReference.trim()}
-            className="bg-green-600 hover:bg-green-700"
-            data-testid="complete-disbursement-button"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Complete Disbursement
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+        {/* Footer - only show for non-IPS methods (IPS has its own buttons) */}
+        {paymentMethod !== 'ips' && (
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleClose} 
+              disabled={loading}
+              data-testid="cancel-disbursement-button"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={loading || !paymentReference.trim()}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="complete-disbursement-button"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Complete Disbursement
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,8 @@
 # NamLend Trust - Complete Functionality Map
 
-**Version**: 1.0.0  
+**Version**: 2.6.0  
 **Created**: December 7, 2025  
+**Updated**: December 10, 2025  
 **Purpose**: Comprehensive mapping of all features, services, and database dependencies for wiring verification
 
 ---
@@ -15,6 +16,7 @@
 | Loan Approval | approvalWorkflow, loanService | loans, disbursements, approval_requests, approval_workflow_history | ✅ Working |
 | Disbursement | disbursementService | disbursements, loans, audit_logs | ✅ Working |
 | Payments | paymentService, paymentGateway | payments, payment_schedules, payment_transactions | ✅ Working |
+| **IPS Payments** | ipsService | ips_transactions, ips_vpa_registry, ips_api_logs | ✅ Working (Mock Mode) |
 | Collections | collectionsService | collections_activities, promise_to_pay, reschedule_requests, collections_interactions | ✅ Working |
 | Credit Scoring | creditScoring | credit_scores, credit_score_factors, profiles | ✅ Working |
 | Notifications | notificationService | notifications, notification_queue, notification_templates | ✅ Working |
@@ -23,6 +25,8 @@
 | Payment Webhooks | Edge Function | payment_webhooks, payment_transactions, payments | ✅ Wired |
 | Audit Trail | auditService | audit_logs, view_logs, state_transitions | ✅ Working |
 | KYC Documents | approvalWorkflow | kyc_documents, approval_requests, profiles | ✅ Working |
+
+> **IPP Documentation**: See [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) for Instant Payment Platform integration details.
 
 ---
 

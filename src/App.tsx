@@ -12,6 +12,7 @@ import Dashboard from "@/pages/Dashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import LoanApplication from "@/pages/LoanApplication";
 import Payment from "@/pages/Payment";
+import LoanDetails from "@/pages/LoanDetails";
 import KYC from "@/pages/KYC";
 import NotFound from "@/pages/NotFound";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -66,6 +67,11 @@ const App = () => (
               <Route path="/payment" element={
                 <ProtectedRoute>
                   <Payment />
+                </ProtectedRoute>
+              } />
+              <Route path="/loans/:id" element={
+                <ProtectedRoute>
+                  <LoanDetails />
                 </ProtectedRoute>
               } />
               <Route path="/kyc" element={

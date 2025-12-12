@@ -1,0 +1,278 @@
+/**
+ * NTSL (Net Settlement Report) Viewer Component
+ */
+
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Eye, Download, FileSpreadsheet } from 'lucide-react';
+import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
+import { formatCurrency } from '@/lib/utils';
+import { parseNTSLReport } from '@/services/settlementService';
+
+export function NTSLReportViewer() {
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+
+  const { data: reports, isLoading } = useSettlementReports({
+    reportType: 'ntsl',
+  });
+
+  const { data: reportContent, isLoading: contentLoading } = useReportContent(
+    selectedReportId || undefined
+  );
+
+  const ntslData = reportContent?.report_data
+    ? parseNTSLReport(reportContent.report_data)
+    : null;
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="h-5 w-5" />
+            Net Settlement Reports (NTSL)
+          </CardTitle>
+          <CardDescription>
+            Net positions, interchange, and switching fees per participant
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Report Date</TableHead>
+                  <TableHead>Window</TableHead>
+                  <TableHead>Participant</TableHead>
+                  <TableHead>File Name</TableHead>
+                  <TableHead className="text-right">Size</TableHead>
+                  <TableHead>Distributed</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Loading NTSL reports...
+                    </TableCell>
+                  </TableRow>
+                ) : reports?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      No NTSL reports found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  reports?.map((report) => (
+                    <TableRow key={report.id}>
+                      <TableCell>
+                        {new Date(report.run_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{report.window_id}</TableCell>
+                      <TableCell>{report.participant_name || 'All'}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {report.file_name}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {report.file_size
+                          ? `${(report.file_size / 1024).toFixed(1)} KB`
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {report.distributed_at ? (
+                          <Badge variant="default">Distributed</Badge>
+                        ) : (
+                          <Badge variant="secondary">Pending</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedReportId(report.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* NTSL Details Dialog */}
+      <Dialog open={!!selectedReportId} onOpenChange={() => setSelectedReportId(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Net Settlement Report (NTSL)</DialogTitle>
+          </DialogHeader>
+
+          {contentLoading ? (
+            <div className="py-8 text-center">Loading report...</div>
+          ) : ntslData ? (
+            <div className="space-y-6">
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Participant</p>
+                  <p className="font-medium">{ntslData.participant}</p>
+                  <p className="text-xs text-muted-foreground">{ntslData.participantBic}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Settlement Date</p>
+                  <p className="font-medium">{ntslData.settlementDate}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Window</p>
+                  <p className="font-medium">{ntslData.windowId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Net Position</p>
+                  <p className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(ntslData.netPosition)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Position Summary */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Position Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="py-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Credits</p>
+                      <p className="text-lg font-medium text-green-600">
+                        {formatCurrency(ntslData.credits)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Debits</p>
+                      <p className="text-lg font-medium text-red-600">
+                        {formatCurrency(ntslData.debits)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Switching Fee</p>
+                      <p className="text-lg font-medium">
+                        {formatCurrency(ntslData.switchingFee)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Interchange Owed</p>
+                      <p className="font-medium text-green-600">
+                        {formatCurrency(ntslData.interchangeOwed)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Interchange Paid</p>
+                      <p className="font-medium text-red-600">
+                        {formatCurrency(ntslData.interchangePaid)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Transactions */}
+              {ntslData.transactions?.length > 0 && (
+                <Card>
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm">
+                      Transaction Breakdown ({ntslData.transactions.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-0">
+                    <div className="max-h-64 overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Transaction ID</TableHead>
+                            <TableHead>Counterparty</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {ntslData.transactions.map((txn, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-mono text-xs">
+                                {txn.txId}
+                              </TableCell>
+                              <TableCell>{txn.counterparty}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={txn.type === 'credit' ? 'default' : 'secondary'}
+                                >
+                                  {txn.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{txn.category}</TableCell>
+                              <TableCell
+                                className={`text-right ${
+                                  txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                }`}
+                              >
+                                {formatCurrency(txn.amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              No report data available
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export default NTSLReportViewer;

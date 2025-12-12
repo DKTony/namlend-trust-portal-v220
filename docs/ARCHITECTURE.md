@@ -1,14 +1,37 @@
 # NamLend Trust - System Architecture
 
-**Version**: 2.4.0  
-**Last Updated**: December 6, 2025  
-**Status**: ✅ Production Architecture Complete
+**Version**: 2.6.0  
+**Last Updated**: December 10, 2025  
+**Status**: ✅ Production Architecture Complete (IPP Integration Ready)
 
 ---
 
 ## System Overview
 
-NamLend Trust follows a modern **client-server architecture** with a React SPA frontend and Supabase as the backend-as-a-service (BaaS) platform.
+NamLend Trust follows a modern **client-server architecture** with a React SPA frontend and Supabase as the backend-as-a-service (BaaS) platform. The system integrates with Namibia's **Instant Payment Platform (IPP/IPN)** for real-time payment processing.
+
+### External Integrations
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    EXTERNAL PAYMENT SYSTEMS                          │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │
+│  │  IPP/IPN    │  │  MTC MoMo   │  │  TN Mobile  │  │  PayToday │  │
+│  │  (BON)      │  │  Money      │  │  Money      │  │  Gateway  │  │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │
+│         └────────────────┼────────────────┼───────────────┘        │
+│                          ▼                                          │
+│              ┌─────────────────────┐                                │
+│              │   Payment Webhooks  │                                │
+│              │  (Edge Functions)   │                                │
+│              └──────────┬──────────┘                                │
+└─────────────────────────┼───────────────────────────────────────────┘
+                          ▼
+                    NamLend Backend
+```
+
+> **Note**: For detailed IPP integration, see [IPP_INTEGRATION.md](./IPP_INTEGRATION.md)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ xmlns:upi="http://npci.org/upi/schema/" 
+ targetNamespace="http://npci.org/upi/schema/" 
+ elementFormDefault="unqualified"
+ attributeFormDefault="unqualified">
+ 
+<xs:include schemaLocation="UPI-Common.xsd"></xs:include>
+
+	<xs:element name="ReqChkTxn">
+		<xs:annotation>
+			<xs:documentation>This API allows the IPS partcipants to request for the status of
+				the transaction. The IPS participants must
+				request for status only after the
+				specified timeout period.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Head" type="upi:headType" />
+				<xs:element name="Txn" type="upi:payTrans" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:element name="RespChkTxn">
+		<xs:annotation>
+			<xs:documentation>This API allows the IPS partcipants to request for the status of
+				the transaction. The IPS partcipants must
+				request for status only after the
+				specified timeout period.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Head" type="upi:headType" />
+				<xs:element name="Txn" type="upi:payTrans" />	
+				<xs:element name="Resp">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Ref" maxOccurs="50" minOccurs="0" type="upi:ref" />
+							<xs:element name="Consent" type="upi:consentType"
+								minOccurs="0" />							
+						</xs:sequence>
+						<xs:attribute type="xs:string" name="reqMsgId" />
+						<xs:attribute type="xs:string" name="result" />
+						<xs:attribute type="xs:string" name="errCode" />
+						<xs:attribute type="upi:payConstant" name="opType" />
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>		
+	</xs:element>
+	
+</xs:schema>

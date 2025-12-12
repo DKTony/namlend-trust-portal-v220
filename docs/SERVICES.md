@@ -1,14 +1,14 @@
 # NamLend Trust - Services Documentation
 
-**Version**: 2.0.0  
-**Last Updated**: December 6, 2025  
-**Status**: ✅ All Services Implemented & Database Deployed
+**Version**: 2.6.0  
+**Last Updated**: December 10, 2025  
+**Status**: ✅ All Services Implemented & Database Deployed (IPP Ready)
 
 ---
 
 ## Overview
 
-NamLend Trust includes a comprehensive suite of backend services for payment processing, communications, and intelligent credit decisions.
+NamLend Trust includes a comprehensive suite of backend services for payment processing, communications, and intelligent credit decisions. The system is designed to integrate with Namibia's **Instant Payment Platform (IPP/IPN)** for real-time payment settlement.
 
 ---
 
@@ -18,13 +18,16 @@ NamLend Trust includes a comprehensive suite of backend services for payment pro
 
 ### Supported Providers
 
-| Provider | Type | Processing Time |
-|----------|------|-----------------|
-| Bank Transfer (EFT) | Manual | 1-2 business days |
-| MTC MoMo | Mobile Money | Instant |
-| TN Mobile Money | Mobile Money | Instant |
-| PayToday | Online Gateway | Instant |
-| Cash | In-person | Same day |
+| Provider | Type | Processing Time | Integration Status |
+|----------|------|-----------------|-------------------|
+| **IPP/IPN** | Real-time | Instant (<5 sec) | 🔶 Ready for Integration |
+| Bank Transfer (EFT) | Manual | 1-2 business days | ✅ Implemented |
+| MTC MoMo | Mobile Money | Instant | ✅ Implemented |
+| TN Mobile Money | Mobile Money | Instant | ✅ Implemented |
+| PayToday | Online Gateway | Instant | ✅ Implemented |
+| Cash | In-person | Same day | ✅ Implemented |
+
+> **IPP Integration**: See [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) for detailed integration guide.
 
 ### Key Functions
 

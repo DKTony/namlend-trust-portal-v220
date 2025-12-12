@@ -27,6 +27,7 @@ import DisbursementManager from './DisbursementManager';
 import OverdueManager from './OverdueManager';
 import CollectionsCenter from './CollectionsCenter';
 import SettledLoansList from './SettledLoansList';
+import { ReconciliationDashboard } from '../Reconciliation';
 
 interface PaymentManagementDashboardProps {
   onPaymentSelect?: (paymentId: string) => void;
@@ -202,20 +203,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
         </TabsContent>
 
         <TabsContent value="reconciliation" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Reconciliation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Reconciliation Tools</h3>
-                <p className="text-gray-500">
-                  Payment reconciliation and matching tools will be displayed here
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <ReconciliationDashboard />
         </TabsContent>
       </Tabs>
     </div>

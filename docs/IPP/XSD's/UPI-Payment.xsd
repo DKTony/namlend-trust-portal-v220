@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:upi="http://npci.org/upi/schema/" targetNamespace="http://npci.org/upi/schema/"
+	elementFormDefault="unqualified" attributeFormDefault="unqualified">
+
+	<xs:include schemaLocation="UPI-Common.xsd"></xs:include>
+
+	<xs:element name="ReqPay">
+		<xs:annotation>
+			<xs:documentation>IPS ReqPay for paying from one person/entity to
+				another person/entity
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Head" type="upi:headType" />
+				<xs:element name="Meta">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Tag" maxOccurs="3" minOccurs="0">
+								<xs:complexType>
+									<xs:attribute name="name" use="required"
+										type="upi:metaTagNameType" />
+									<xs:attribute type="xs:string" name="value" use="required" />
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Txn" type="upi:payTrans" />
+				<xs:element name="Payer" maxOccurs="1" minOccurs="1"
+					type="upi:payerType" />
+				<xs:element name="Payers" type="upi:payersType" />
+
+				<xs:element name="Payees" type="upi:payeesType" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Updated as per TSD 2.0v22 requirement -->
+	<xs:element name="RespPay">
+		<xs:annotation>
+			<xs:documentation>IPS ResPay for response to Pay from one
+				person/entity
+				to another person/entity
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Head" type="upi:headType" />
+				<xs:element name="Txn" type="upi:payTrans" />
+				<xs:element name="Resp">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Ref" maxOccurs="50"
+								minOccurs="0" type="upi:ref" />
+							<xs:element name="Consent" type="upi:consentType"
+								minOccurs="0" />
+						</xs:sequence>
+						<xs:attribute type="xs:string" name="approvalNum" />
+						<xs:attribute type="xs:string" name="reqMsgId" />
+						<xs:attribute type="upi:resultType" name="result" />
+						<xs:attribute type="xs:string" name="errCode" />
+						<xs:attribute type="xs:string" name="actn" />
+						<xs:attribute type="xs:string" name="authCode" />
+						<xs:attribute type="xs:string" name="uidaiError" />
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+</xs:schema>

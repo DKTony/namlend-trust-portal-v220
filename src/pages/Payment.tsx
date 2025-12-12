@@ -18,10 +18,13 @@ import {
   MapPin,
   Shield,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  Wallet
 } from 'lucide-react';
 import Header from '@/components/Header';
 import { formatNAD } from '@/utils/currency';
+import { IPSPaymentModal } from '@/components/ips';
 
 interface Loan {
   id: string;
@@ -37,6 +40,7 @@ export default function Payment() {
   const [activeLoans, setActiveLoans] = useState<Loan[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [processingFee] = useState(25); // NAD 25 processing fee
@@ -234,12 +238,50 @@ export default function Payment() {
                 <div className="space-y-4">
                   <Label>Payment Method</Label>
                   <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="bank">Bank EFT</TabsTrigger>
-                      <TabsTrigger value="mobile">Mobile Money</TabsTrigger>
-                      <TabsTrigger value="card">Debit Card</TabsTrigger>
-                      <TabsTrigger value="agent">Agent Location</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-5">
+                      <TabsTrigger value="ips" data-testid="payment-tab-ips">IPS Instant</TabsTrigger>
+                      <TabsTrigger value="bank" data-testid="payment-tab-bank">Bank EFT</TabsTrigger>
+                      <TabsTrigger value="mobile" data-testid="payment-tab-mobile">Mobile Money</TabsTrigger>
+                      <TabsTrigger value="card" data-testid="payment-tab-card">Debit Card</TabsTrigger>
+                      <TabsTrigger value="agent" data-testid="payment-tab-agent">Agent</TabsTrigger>
                     </TabsList>
+                    
+                    <TabsContent value="ips" className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 border rounded-lg border-primary bg-primary/5">
+                        <Zap className="h-8 w-8 text-primary" />
+                        <div className="flex-1">
+                          <h3 className="font-medium">IPS Instant Payment</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Pay instantly using your bank's VPA (Virtual Payment Address)
+                          </p>
+                        </div>
+                        <Badge variant="default" className="bg-green-600">Instant</Badge>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span>Real-time payment confirmation</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span>No additional fees</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <span>Secure bank-to-bank transfer</span>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => setShowIPSModal(true)}
+                        className="w-full gap-2"
+                        size="lg"
+                        disabled={!selectedLoan}
+                        data-testid="payment-ips-button"
+                      >
+                        <Wallet className="h-5 w-5" />
+                        Pay with IPS
+                      </Button>
+                    </TabsContent>
                     
                     <TabsContent value="bank" className="space-y-4">
                       <div className="flex items-center gap-3 p-4 border rounded-lg">
@@ -377,6 +419,32 @@ export default function Payment() {
               </CardContent>
             </Card>
           </div>
+
+          {/* IPS Payment Modal */}
+          {selectedLoanDetails && (
+            <IPSPaymentModal
+              isOpen={showIPSModal}
+              onClose={() => setShowIPSModal(false)}
+              loanId={selectedLoan}
+              outstandingBalance={selectedLoanDetails.amount}
+              monthlyPayment={selectedLoanDetails.monthly_payment}
+              onSuccess={() => {
+                setShowIPSModal(false);
+                toast({
+                  title: "Payment Successful",
+                  description: "Your IPS payment has been processed successfully."
+                });
+                setTimeout(() => navigate('/dashboard'), 2000);
+              }}
+              onError={(error) => {
+                toast({
+                  title: "Payment Failed",
+                  description: error,
+                  variant: "destructive"
+                });
+              }}
+            />
+          )}
 
           <div className="space-y-6">
             <Card>

@@ -49,7 +49,20 @@
 - **Real-time Dashboard**: Live updates with role-based views (admin/client)
 - **Document Management**: Secure upload and management of loan documents
 - **Automated Workflows**: Streamlined approval processes and notifications
-- **Mock Development**: Full-featured development environment without backend
+- **Payment Processing**: Settlement detection, payment schedules, quick-pay buttons
+- **IPP/IPN Ready**: Prepared for Namibia's Instant Payment Platform integration
+
+## 💳 Payment Integrations
+
+| Provider | Status | Description |
+|----------|--------|-------------|
+| **IPP/IPN** | 🔶 Ready | Bank of Namibia's Instant Payment Platform |
+| MTC MoMo | ✅ Implemented | Mobile money payments |
+| TN Mobile | ✅ Implemented | Telecom Namibia mobile money |
+| PayToday | ✅ Implemented | Online payment gateway |
+| Bank EFT | ✅ Implemented | Traditional bank transfers |
+
+> See [docs/IPP_INTEGRATION.md](./docs/IPP_INTEGRATION.md) for IPP integration details.
 
 ## 🛠 Technology Stack
 
@@ -61,6 +74,7 @@
 - **Build Tool**: Vite with optimized production builds
 - **Deployment**: Netlify with automated deployments
 - **Currency**: NAD (Namibian Dollar) with proper formatting
+- **Payments**: IPP/IPN (UPI-based), Mobile Money, Online Gateway
 
 ## 🚀 Quick Start
 

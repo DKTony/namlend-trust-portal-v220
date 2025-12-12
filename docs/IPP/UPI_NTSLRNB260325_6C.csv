@@ -1,0 +1,82 @@
+National Payments Corporation of India,,,,,
+Unified Payments Interface,,,,,
+Daily Settlement Statement for RBL Bank Limited - UPI as on 26-03-2025 ( 6C 09:15:00 TO 09:30:00 ),,,,,
+RBL Bank Limited,,Description,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,Settlement Charges,,,0
+RBL Bank Limited,,,,,
+RBL Bank Limited,,Beneficiary / Remitter Sub Totals,,0,0
+RBL Bank Limited,,,,,
+RBL Bank Limited,,Settlement Amount,,0,0
+RBL Bank Limited,,,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,,,,
+RBL Bank Limited,,Net Adjusted Amount,,0,0
+RBL Bank Limited,,Net Adjusted Fee with Tax,,0,0
+RBL Bank Limited,,Net Debit Adjustment Switching Fee with Tax,,0,0
+RBL Bank Limited,,Pre-Arbitration Deemed Acceptance,,0,0
+RBL Bank Limited,,Pre-Arbitration Deemed Acceptance Penalty,,0,0
+RBL Bank Limited,,Net Penalty debited on Pre-Arbitration Acceptance Including GST,,0,0
+RBL Bank Limited,,Net Penalty credited on Pre-Arbitration Acceptance Including GST,,0,0
+RBL Bank Limited,,Net Deemed Good Faith Debit Adjustment Acceptance,,0,0
+RBL Bank Limited,,Net Deemed Good Faith Chargeback Acceptance,,0,0
+RBL Bank Limited,,Net Deemed Good Faith Representment Acceptance,,0,0
+RBL Bank Limited,,Net Deemed Good Faith Debit Chargeback Acceptance,,0,0
+RBL Bank Limited,,Net Deemed Deferred Chargeback Acceptance,,0,0
+RBL Bank Limited,,,,0,0
+RBL Bank Limited,,,,,
+RBL Bank Limited,,Customer Compensation For Non Compliance Debit,0,0,0
+RBL Bank Limited,,Customer Compensation For Non Compliance Credit,0,0,0
+RBL Bank Limited,,Final Settlement Amount,,0,0
+RBL Bank Limited,,,,,
+National Payments Corporation of India,,,,,
+Unified Payments Interface,,,,,
+Daily Settlement Statement for CSB Bank Limited - UPI as on 26-03-2025 ( 6C 09:15:00 TO 09:30:00 ),,,,,
+CSB Bank Limited,,Description,,,
+CSB Bank Limited,,UPI,,,
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Interchange Fee -Paid,1,0.16,0
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Interchange Fee Gst -Paid,0,0.03,0
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Payer PSP Fee -Paid,1,0.15,0
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Payer PSP Fee Gst -Paid,0,0.03,0
+CSB Bank Limited,Income,Beneficiary QR Code- Default U2 Approved  Transaction Amount -Received,1,0,20
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Switching1 Fee -Paid,1,0.2,0
+CSB Bank Limited,Liability,Beneficiary QR Code- Default U2 Approved Switching1 Fee Gst -Paid,0,0.04,0
+CSB Bank Limited,,UPI,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,Settlement Charges,,,0
+CSB Bank Limited,,,,,
+CSB Bank Limited,,Beneficiary / Remitter Sub Totals,,0.61,20
+CSB Bank Limited,,,,,
+CSB Bank Limited,,Settlement Amount,,0,19.39
+CSB Bank Limited,,,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,,,,
+CSB Bank Limited,,Net Adjusted Amount,,0,0
+CSB Bank Limited,,Net Adjusted Fee with Tax,,0,0
+CSB Bank Limited,,Net Debit Adjustment Switching Fee with Tax,,0,0
+CSB Bank Limited,,Pre-Arbitration Deemed Acceptance,,0,0
+CSB Bank Limited,,Pre-Arbitration Deemed Acceptance Penalty,,0,0
+CSB Bank Limited,,Net Penalty debited on Pre-Arbitration Acceptance Including GST,,0,0
+CSB Bank Limited,,Net Penalty credited on Pre-Arbitration Acceptance Including GST,,0,0
+CSB Bank Limited,,Net Deemed Good Faith Debit Adjustment Acceptance,,0,0
+CSB Bank Limited,,Net Deemed Good Faith Chargeback Acceptance,,0,0
+CSB Bank Limited,,Net Deemed Good Faith Representment Acceptance,,0,0
+CSB Bank Limited,,Net Deemed Good Faith Debit Chargeback Acceptance,,0,0
+CSB Bank Limited,,Net Deemed Deferred Chargeback Acceptance,,0,0
+CSB Bank Limited,,,,0,0
+CSB Bank Limited,,,,,
+CSB Bank Limited,,Customer Compensation For Non Compliance Debit,0,0,0
+CSB Bank Limited,,Customer Compensation For Non Compliance Credit,0,0,0
+CSB Bank Limited,,Final Settlement Amount,,0,19.39
+CSB Bank Limited,,,,,
+,Final Settlement Amount Including Sub Members,,0,19.39,
+,,,,,
+,HDFC0999999,-19.57,,,
+,ANDB0TRESUY,0.18,,,
+Total Lines,81,,,,

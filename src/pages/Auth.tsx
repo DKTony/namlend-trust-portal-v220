@@ -337,6 +337,7 @@ export default function Auth() {
                       className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
                       placeholder="name@example.com"
                       required
+                      data-testid="email-input"
                     />
                   </div>
                 </div>
@@ -360,6 +361,7 @@ export default function Auth() {
                       className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
                       placeholder="••••••••"
                       required
+                      data-testid="password-input"
                     />
                   </div>
                 </div>
@@ -368,6 +370,7 @@ export default function Auth() {
                   type="submit"
                   disabled={isLoading}
                   className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg shadow-zinc-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-testid="login-button"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
                 </button>

@@ -8,32 +8,21 @@ import { test, expect } from '../fixtures';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Service role client for setup/teardown
-const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+// Optional service role client for setup/teardown (only if key is provided)
+let serviceClient: ReturnType<typeof createClient> | null = null;
+if (supabaseUrl && supabaseServiceKey) {
+  serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+}
 
 // Test data
 const TEST_PREFIX = 'IPS-TEST-';
-let testLoanId: string;
-let testDisbursementId: string;
-let testUserId: string;
 
 test.describe('IPS RPC Functions', () => {
-  test.beforeAll(async () => {
-    // Create test data using service role
-    // Get a test user (client1)
-    const { data: users } = await serviceClient
-      .from('profiles')
-      .select('user_id')
-      .limit(1);
-    
-    if (users && users.length > 0) {
-      testUserId = users[0].user_id;
-    }
-  });
-
   test.afterAll(async () => {
+    if (!serviceClient) return;
+
     // Cleanup test data
     await serviceClient
       .from('ips_transactions')
@@ -230,27 +219,33 @@ test.describe('IPS RPC Functions', () => {
       const { data: session } = await client2Supabase.auth.getSession();
       const client2UserId = session?.session?.user?.id;
 
-      if (client2UserId) {
-        const { data: loans } = await serviceClient
-          .from('loans')
-          .select('id')
-          .eq('user_id', client2UserId)
-          .in('status', ['disbursed', 'active'])
-          .limit(1);
-
-        if (loans && loans.length > 0) {
-          const { data, error } = await client1Supabase.rpc('initiate_ips_repayment', {
-            p_loan_id: loans[0].id,
-            p_amount: 100.00,
-            p_payer_vpa: 'test@bank',
-          });
-
-          expect(error).toBeNull();
-          expect(data).toBeDefined();
-          expect(data.success).toBe(false);
-          expect(data.error).toBe('UNAUTHORIZED');
-        }
+      if (!client2UserId) {
+        test.skip();
+        return;
       }
+
+      const { data: loans } = await client2Supabase
+        .from('loans')
+        .select('id')
+        .eq('user_id', client2UserId)
+        .in('status', ['disbursed', 'active'])
+        .limit(1);
+
+      if (!loans || loans.length === 0) {
+        test.skip();
+        return;
+      }
+
+      const { data, error } = await client1Supabase.rpc('initiate_ips_repayment', {
+        p_loan_id: loans[0].id,
+        p_amount: 100.00,
+        p_payer_vpa: 'test@bank',
+      });
+
+      expect(error).toBeNull();
+      expect(data).toBeDefined();
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('UNAUTHORIZED');
     });
   });
 

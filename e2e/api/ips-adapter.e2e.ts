@@ -9,13 +9,16 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Edge function URL
 const IPS_ADAPTER_URL = `${supabaseUrl}/functions/v1/ips-adapter`;
 
-// Service role client for setup
-const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+// Optional service role client for cleanup (only if key is provided)
+let serviceClient: ReturnType<typeof createClient> | null = null;
+if (supabaseUrl && supabaseServiceKey) {
+  serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+}
 
 // Test data prefix
 const TEST_PREFIX = 'IPS-ADAPTER-TEST-';
@@ -30,6 +33,8 @@ test.describe('IPS Adapter Edge Function', () => {
   });
 
   test.afterAll(async () => {
+    if (!serviceClient) return;
+
     // Cleanup test transactions
     await serviceClient
       .from('ips_transactions')
@@ -106,7 +111,7 @@ test.describe('IPS Adapter Edge Function', () => {
       const msgId = `${TEST_PREFIX}MSG-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-${Date.now()}`;
       
-      const { data: txn, error: txnError } = await serviceClient
+      const { data: txn, error: txnError } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -154,11 +159,11 @@ test.describe('IPS Adapter Edge Function', () => {
       expect(data.ipsRrn).toBeDefined();
     });
 
-    test('should handle payment failure (simulated)', async () => {
+    test('should handle payment failure (simulated)', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-FAIL-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-FAIL-${Date.now()}`;
       
-      const { data: txn } = await serviceClient
+      const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -200,11 +205,11 @@ test.describe('IPS Adapter Edge Function', () => {
       expect(data.ipsErrorCode).toBe('51');
     });
 
-    test('should handle timeout scenario (simulated)', async () => {
+    test('should handle timeout scenario (simulated)', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-TIMEOUT-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-TIMEOUT-${Date.now()}`;
       
-      const { data: txn } = await serviceClient
+      const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -246,11 +251,11 @@ test.describe('IPS Adapter Edge Function', () => {
       expect(data.ipsErrorCode).toBe('XP');
     });
 
-    test('should reject amount exceeding limit', async () => {
+    test('should reject amount exceeding limit', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-LIMIT-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-LIMIT-${Date.now()}`;
       
-      const { data: txn } = await serviceClient
+      const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -294,11 +299,11 @@ test.describe('IPS Adapter Edge Function', () => {
   });
 
   test.describe('POST /check-status', () => {
-    test('should return status for a transaction', async () => {
+    test('should return status for a transaction', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-STATUS-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-STATUS-${Date.now()}`;
       
-      const { data: txn } = await serviceClient
+      const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -381,11 +386,11 @@ test.describe('IPS Adapter Edge Function', () => {
   });
 
   test.describe('API Logging', () => {
-    test('should log API calls to ips_api_logs', async () => {
+    test('should log API calls to ips_api_logs', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-LOG-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-LOG-${Date.now()}`;
       
-      const { data: txn } = await serviceClient
+      const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
           msg_id: msgId,
@@ -424,7 +429,7 @@ test.describe('IPS Adapter Edge Function', () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Check that log was created
-      const { data: logs } = await serviceClient
+      const { data: logs } = await adminSupabase
         .from('ips_api_logs')
         .select('*')
         .eq('ips_transaction_id', txn!.id)
@@ -444,7 +449,7 @@ test.describe('IPS Transaction State Machine', () => {
     const msgId = `${TEST_PREFIX}MSG-COMPLETE-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-COMPLETE-${Date.now()}`;
     
-    const { data: txn } = await serviceClient
+    const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
         msg_id: msgId,
@@ -475,7 +480,7 @@ test.describe('IPS Transaction State Machine', () => {
     expect(data.status).toBe('success');
 
     // Verify transaction was updated
-    const { data: updatedTxn } = await serviceClient
+    const { data: updatedTxn } = await adminSupabase
       .from('ips_transactions')
       .select('*')
       .eq('id', txn!.id)
@@ -492,7 +497,7 @@ test.describe('IPS Transaction State Machine', () => {
     const msgId = `${TEST_PREFIX}MSG-ALREADY-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-ALREADY-${Date.now()}`;
     
-    const { data: txn } = await serviceClient
+    const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
         msg_id: msgId,
@@ -526,7 +531,7 @@ test.describe('IPS Transaction State Machine', () => {
     const msgId = `${TEST_PREFIX}MSG-DEEMED-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-DEEMED-${Date.now()}`;
     
-    const { data: txn } = await serviceClient
+    const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
         msg_id: msgId,

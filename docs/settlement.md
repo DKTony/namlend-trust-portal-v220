@@ -6,6 +6,54 @@
 
 ---
 
+## Implementation Status (v2.9.0 - December 2025)
+
+### ✅ Implemented
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Settlement Tables** | ✅ Complete | 13 tables: participants, windows, runs, obligations, net_instructions, pacs009_batches, acknowledgements, reports, adjustments, timeout_transactions, exposures, fee_rules, holiday_calendar |
+| **Settlement RPCs** | ✅ Complete | `create_settlement_run`, `ingest_ips_transactions_for_settlement`, `compute_settlement_netting`, `generate_pacs009_batches`, `generate_settlement_reports`, `mark_settlement_settled` |
+| **pacs.009 XML Generation** | ✅ Complete | ISO 20022 compliant XML with Group Header and CdtTrfTxInf blocks |
+| **Bilateral Netting** | ✅ Complete | Principal + Interchange netting, separate switching fee settlement |
+| **Report Generation** | ✅ Complete | NTSL and Raw Data reports per participant |
+| **Service Layer** | ✅ Complete | `settlementService.ts` with TypeScript functions |
+| **React Query Hooks** | ✅ Complete | `useSettlement.ts` with mutations and queries |
+| **Admin UI** | ✅ Complete | ReconciliationDashboard with settlement run management |
+| **Namibian Banks** | ✅ Seeded | FNB, Standard Bank, Nedbank, Bank Windhoek, NamLend |
+
+### 🔶 Mock Mode (Development)
+
+| Component | Status | Production Requirement |
+|-----------|--------|------------------------|
+| **NISS Integration** | 🔶 Simulated | Real NISS connectivity via SWIFT/AXWAY |
+| **File Transport** | 🔶 Simulated | SFTP outbound/inbound folders |
+| **Acknowledgements** | 🔶 Auto-generated | Real xsys.001/002/003 parsing |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/20251212053000_settlement_system.sql` | Base schema |
+| `supabase/migrations/20251214060000_settlement_processing.sql` | Processing RPCs |
+| `src/services/settlementService.ts` | Service layer |
+| `src/hooks/useSettlement.ts` | React Query hooks |
+| `src/pages/AdminDashboard/components/Reconciliation/` | UI components |
+
+### How to Create a Settlement Run
+
+1. Navigate to **Admin Dashboard → Payment Management → Reconciliation**
+2. Click **"New Settlement Run"** button
+3. Select settlement date and window (SW1/SW2/SW3)
+4. Click **"Create & Process"** to:
+   - Ingest IPS disbursements from the past 7 days
+   - Compute bilateral netting obligations
+   - Generate pacs.009 XML batches
+   - Generate NTSL and Raw Data reports
+   - Simulate NISS acceptance (mark as settled)
+
+---
+
 ## 1) Settlement model in one page
 
 ### 1.1 DNS upstream, RTGS downstream

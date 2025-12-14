@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-12-14
+
+### Added
+
+#### IPS/IPP Settlement Processing Pipeline
+- **Settlement Processing RPCs** - Complete pipeline for settlement runs:
+  - `create_settlement_run()` - Creates settlement runs with auto-generated IDs
+  - `ingest_ips_transactions_for_settlement()` - Ingests IPS disbursements into obligations
+  - `compute_settlement_netting()` - Bilateral netting calculations
+  - `generate_pacs009_batches()` - ISO 20022 pacs.009 XML file generation
+  - `generate_settlement_reports()` - NTSL and Raw Data report generation
+  - `process_settlement_run()` - Orchestrates complete pipeline
+  - `mark_settlement_settled()` - Simulates NISS acceptance
+
+- **Settlement Service Extensions** (`settlementService.ts`):
+  - `createSettlementRun()`, `processSettlementRun()`, `ingestIPSTransactions()`
+  - `computeNetting()`, `generatePacs009Batches()`, `generateSettlementReports()`
+  - `markSettlementSettled()`, `getSettlementObligations()`, `getNetInstructions()`
+
+- **React Query Hooks** (`useSettlement.ts`):
+  - `useCreateSettlementRun` - Mutation for creating runs
+  - `useProcessSettlementRun` - Mutation for processing
+  - `useMarkSettlementSettled` - Mutation for settling
+  - `useSettlementObligations`, `useNetInstructions`, `useSettlementWindows`
+
+- **Enhanced Settlement UI** (`SettlementRunsList.tsx`):
+  - "New Settlement Run" button with dialog
+  - Date and window selection (SW1/SW2/SW3)
+  - Auto-processing: ingest → netting → pacs.009 → reports → settle
+  - Processing status indicators
+
+- **Namibian Bank Participants Seeded**:
+  - First National Bank Namibia (FIABORNANX)
+  - Standard Bank Namibia (SBICNANX)
+  - Nedbank Namibia (NEDSNANX)
+  - Bank Windhoek (BWNANAMX)
+  - NamLend Trust (NAMLNANX)
+
+- **Demo Settlement Data**:
+  - 3 IPS disbursement transactions (N$1,000 + N$4,000 + N$5,000)
+  - Complete settlement run with obligations, net instructions, pacs.009 batches
+  - NTSL and Raw Data reports with acknowledgements
+
+### Database Migrations
+- `20251214060000_settlement_processing.sql` - Settlement processing RPCs
+- `20251214061000_seed_settlement_demo_data.sql` - Demo data seeding
+
+---
+
 ## [2.8.0] - 2025-12-14
 
 ### Added

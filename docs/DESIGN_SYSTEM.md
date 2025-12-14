@@ -1,9 +1,9 @@
 # NamLend Trust - Design System Specification
 
-**Version**: 2.1.0  
-**Last Updated**: December 6, 2025  
+**Version**: 2.2.0  
+**Last Updated**: December 14, 2025  
 **Theme**: Neo-Fintech / "The Black Card Aesthetic"  
-**Status**: ✅ Implemented
+**Status**: ✅ Implemented with Full Dark Mode Support
 
 ---
 
@@ -231,4 +231,60 @@ text-3xl md:text-4xl        /* Larger on desktop */
 
 ---
 
-*Design System Version: 2.1.0*
+## 9. Dark Mode Implementation ✅ Implemented
+
+### Theme Provider Architecture
+The application uses a robust theme system with automatic system preference detection:
+
+- **ThemeProvider** (`src/components/ThemeProvider.tsx`) - Context-based theme management
+- **ModeToggle** (`src/components/ModeToggle.tsx`) - User-facing theme switcher
+- **Storage**: Theme preference persisted in localStorage
+
+### Semantic Color Tokens
+All components use semantic color tokens that automatically adapt to the current theme:
+
+| Token | Light Mode | Dark Mode | Usage |
+|-------|------------|-----------|-------|
+| `bg-background` | `#ffffff` | `#09090b` (zinc-950) | Page backgrounds |
+| `bg-card` | `#ffffff` | `#18181b` (zinc-900) | Card backgrounds |
+| `bg-muted` | `#f4f4f5` | `#27272a` (zinc-800) | Subtle backgrounds |
+| `text-foreground` | `#09090b` | `#fafafa` | Primary text |
+| `text-muted-foreground` | `#71717a` | `#a1a1aa` | Secondary text |
+| `border-border` | `#e4e4e7` | `#27272a` | Borders |
+
+### Status Badge Patterns
+Colored badges use explicit dark mode variants for proper contrast:
+
+```tsx
+// Success badge
+"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
+
+// Warning badge  
+"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400"
+
+// Error badge
+"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
+
+// Info badge
+"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
+```
+
+### Components Refactored for Dark Mode
+
+| Category | Components |
+|----------|------------|
+| **Core** | Dashboard, Auth, NotFound, ErrorBoundary |
+| **Client** | SelfServicePortal, ClientProfileDashboard, LoanStatusTimeline |
+| **Admin** | All Payment Management, User Management, Analytics, Reconciliation components |
+| **Modals** | All dialog components use `bg-background` and `border-border` |
+
+### Best Practices
+
+1. **Never use hardcoded grays** - Use `text-muted-foreground`, `bg-muted`, `bg-muted/50`
+2. **Colored elements need dark variants** - Always pair `bg-red-100` with `dark:bg-red-900/30`
+3. **Use semantic tokens** - `bg-background`, `bg-card`, `text-foreground` adapt automatically
+4. **Test both modes** - Use the ModeToggle in the header to verify contrast
+
+---
+
+*Design System Version: 2.2.0*

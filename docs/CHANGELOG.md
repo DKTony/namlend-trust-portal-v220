@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-12-14
+
+### Added
+
+#### Dark Mode System
+- **ThemeProvider** (`src/components/ThemeProvider.tsx`) - Context-based theme management with system preference detection
+- **ModeToggle** (`src/components/ModeToggle.tsx`) - User-facing theme switcher component
+- Theme preference persistence in localStorage
+
+### Changed
+
+#### Comprehensive Dark Mode Refactoring
+- **124 files updated** for full dark mode compatibility
+- Replaced all hardcoded gray colors with semantic tokens (`bg-muted`, `text-muted-foreground`, `bg-background`)
+- Added `dark:` variants for all colored badges (success, warning, error, info)
+- Updated all Admin Dashboard components:
+  - Payment Management (CollectionsWorkqueue, DisbursementManager, PaymentScheduleViewer, etc.)
+  - User Management (BulkUserOperations, PermissionMatrix, UserAuditLog, etc.)
+  - Analytics (PortfolioAnalytics, RiskAnalysis, ComplianceReports, etc.)
+  - Reconciliation (all settlement viewers and reports)
+- Updated client-facing components (SelfServicePortal, ClientProfileDashboard, LoanStatusTimeline)
+- Updated core pages (Dashboard, Auth, NotFound, ErrorBoundary)
+
+### Fixed
+- `SelfServicePortal.tsx` - Fixed corrupted JSX structure (missing Tabs/TabsList)
+- `DisbursementDetailsModal.tsx` - Removed duplicate closing parenthesis syntax error
+
+### Documentation
+- Updated `DESIGN_SYSTEM.md` to v2.2.0 with Dark Mode Implementation section
+- Updated `UI_UX_AUDIT_REPORT.md` with completion status
+
+---
+
 ## [2.7.0] - 2025-12-12
 
 ### Added

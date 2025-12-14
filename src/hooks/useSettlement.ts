@@ -226,3 +226,132 @@ export function useAcknowledgements(runId: string | undefined) {
     enabled: !!runId,
   });
 }
+
+// ============================================================================
+// SETTLEMENT PROCESSING MUTATIONS
+// ============================================================================
+
+export function useCreateSettlementRun() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (params?: { settlementDate?: string; windowId?: string }) =>
+      settlementService.createSettlementRun(params),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: settlementKeys.runs() });
+        toast({
+          title: 'Settlement Run Created',
+          description: `Run ${data.run_code} created successfully.`,
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to create settlement run',
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to create settlement run: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useProcessSettlementRun() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      runId,
+      dateFrom,
+      dateTo,
+    }: {
+      runId: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }) => settlementService.processSettlementRun(runId, dateFrom, dateTo),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: settlementKeys.all });
+        toast({
+          title: 'Settlement Processed',
+          description: `Processed ${data.ingest?.transactions_processed || 0} transactions, created ${data.batches?.batches_created || 0} batches.`,
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to process settlement',
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to process settlement: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useMarkSettlementSettled() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (runId: string) => settlementService.markSettlementSettled(runId),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: settlementKeys.all });
+        toast({
+          title: 'Settlement Settled',
+          description: 'Settlement run has been marked as settled.',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to mark settlement as settled',
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to settle: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useSettlementObligations(runId: string | undefined) {
+  return useQuery({
+    queryKey: [...settlementKeys.all, 'obligations', runId],
+    queryFn: () => settlementService.getSettlementObligations(runId!),
+    enabled: !!runId,
+  });
+}
+
+export function useNetInstructions(runId: string | undefined) {
+  return useQuery({
+    queryKey: [...settlementKeys.all, 'net-instructions', runId],
+    queryFn: () => settlementService.getNetInstructions(runId!),
+    enabled: !!runId,
+  });
+}
+
+export function useSettlementWindows() {
+  return useQuery({
+    queryKey: [...settlementKeys.all, 'windows'],
+    queryFn: () => settlementService.getSettlementWindows(),
+  });
+}

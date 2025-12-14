@@ -474,6 +474,243 @@ export function formatXmlForDisplay(xmlContent: string): string {
 }
 
 // ============================================================================
+// SETTLEMENT PROCESSING OPERATIONS
+// ============================================================================
+
+/**
+ * Create a new settlement run
+ */
+export async function createSettlementRun(params?: {
+  settlementDate?: string;
+  windowId?: string;
+}): Promise<{
+  success: boolean;
+  error?: string;
+  message?: string;
+  run_id?: string;
+  run_code?: string;
+  settlement_date?: string;
+  window_id?: string;
+  state?: string;
+}> {
+  const { data, error } = await supabase.rpc('create_settlement_run', {
+    p_settlement_date: params?.settlementDate || new Date().toISOString().split('T')[0],
+    p_window_id: params?.windowId || 'SW1',
+  });
+
+  if (error) {
+    console.error('Error creating settlement run:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Process a complete settlement run (ingest, netting, generate batches & reports)
+ */
+export async function processSettlementRun(
+  runId: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<{
+  success: boolean;
+  error?: string;
+  run_id?: string;
+  ingest?: { transactions_processed: number; total_principal: number };
+  netting?: { net_instructions_created: number };
+  batches?: { batches_created: number };
+  reports?: { reports_generated: number };
+}> {
+  const { data, error } = await supabase.rpc('process_settlement_run', {
+    p_run_id: runId,
+    p_date_from: dateFrom || null,
+    p_date_to: dateTo || null,
+  });
+
+  if (error) {
+    console.error('Error processing settlement run:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Ingest IPS transactions into a settlement run
+ */
+export async function ingestIPSTransactions(
+  runId: string,
+  dateFrom?: string,
+  dateTo?: string
+): Promise<{
+  success: boolean;
+  error?: string;
+  transactions_processed?: number;
+  total_principal?: number;
+  total_interchange?: number;
+  total_switching_fee?: number;
+}> {
+  const { data, error } = await supabase.rpc('ingest_ips_transactions_for_settlement', {
+    p_run_id: runId,
+    p_date_from: dateFrom || null,
+    p_date_to: dateTo || null,
+  });
+
+  if (error) {
+    console.error('Error ingesting IPS transactions:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Compute bilateral netting for a settlement run
+ */
+export async function computeNetting(runId: string): Promise<{
+  success: boolean;
+  error?: string;
+  net_instructions_created?: number;
+}> {
+  const { data, error } = await supabase.rpc('compute_settlement_netting', {
+    p_run_id: runId,
+  });
+
+  if (error) {
+    console.error('Error computing netting:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Generate pacs.009 batches for a settlement run
+ */
+export async function generatePacs009Batches(runId: string): Promise<{
+  success: boolean;
+  error?: string;
+  batches_created?: number;
+}> {
+  const { data, error } = await supabase.rpc('generate_pacs009_batches', {
+    p_run_id: runId,
+  });
+
+  if (error) {
+    console.error('Error generating pacs.009 batches:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Generate settlement reports
+ */
+export async function generateSettlementReports(runId: string): Promise<{
+  success: boolean;
+  error?: string;
+  reports_generated?: number;
+}> {
+  const { data, error } = await supabase.rpc('generate_settlement_reports', {
+    p_run_id: runId,
+  });
+
+  if (error) {
+    console.error('Error generating reports:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Mark settlement as settled (simulate NISS acceptance)
+ */
+export async function markSettlementSettled(runId: string): Promise<{
+  success: boolean;
+  error?: string;
+  run_id?: string;
+  state?: string;
+  settled_at?: string;
+}> {
+  const { data, error } = await supabase.rpc('mark_settlement_settled', {
+    p_run_id: runId,
+  });
+
+  if (error) {
+    console.error('Error marking settlement as settled:', error);
+    return { success: false, error: error.message };
+  }
+
+  return data;
+}
+
+/**
+ * Get obligations for a settlement run
+ */
+export async function getSettlementObligations(runId: string) {
+  const { data, error } = await supabase
+    .from('settlement_obligations')
+    .select(`
+      *,
+      source_participant:settlement_participants!source_participant_id(name, swift_bic),
+      target_participant:settlement_participants!target_participant_id(name, swift_bic)
+    `)
+    .eq('run_id', runId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching obligations:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Get net instructions for a settlement run
+ */
+export async function getNetInstructions(runId: string) {
+  const { data, error } = await supabase
+    .from('settlement_net_instructions')
+    .select(`
+      *,
+      source_participant:settlement_participants!source_participant_id(name, swift_bic),
+      target_participant:settlement_participants!target_participant_id(name, swift_bic)
+    `)
+    .eq('run_id', runId)
+    .order('instruction_id', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching net instructions:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+/**
+ * Get settlement windows configuration
+ */
+export async function getSettlementWindows() {
+  const { data, error } = await supabase
+    .from('settlement_windows')
+    .select('*')
+    .eq('enabled', true)
+    .order('day_of_week', { ascending: true })
+    .order('cutoff_time', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching settlement windows:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// ============================================================================
 // REPORT DATA HELPERS
 // ============================================================================
 

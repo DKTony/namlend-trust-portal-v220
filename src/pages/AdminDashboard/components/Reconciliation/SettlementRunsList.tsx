@@ -36,8 +36,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Eye, Calendar, RefreshCw } from 'lucide-react';
-import { useSettlementRuns, useSettlementRunDetails } from '@/hooks/useSettlement';
+import { Eye, Calendar, RefreshCw, Plus, Play, CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  useSettlementRuns,
+  useSettlementRunDetails,
+  useCreateSettlementRun,
+  useProcessSettlementRun,
+  useMarkSettlementSettled,
+} from '@/hooks/useSettlement';
 import { formatCurrency } from '@/lib/utils';
 import {
   SETTLEMENT_STATE_LABELS,
@@ -52,6 +58,14 @@ export function SettlementRunsList() {
   const [dateTo, setDateTo] = useState('');
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newRunDate, setNewRunDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newRunWindow, setNewRunWindow] = useState('SW1');
+  const [processingRunId, setProcessingRunId] = useState<string | null>(null);
+
+  const createRunMutation = useCreateSettlementRun();
+  const processRunMutation = useProcessSettlementRun();
+  const settleRunMutation = useMarkSettlementSettled();
 
   const { data: runs, isLoading, refetch } = useSettlementRuns({
     dateFrom: dateFrom || undefined,
@@ -62,6 +76,43 @@ export function SettlementRunsList() {
   const { data: runDetails, isLoading: detailsLoading } = useSettlementRunDetails(
     selectedRunId || undefined
   );
+
+  const handleCreateAndProcess = async () => {
+    try {
+      // Step 1: Create run
+      const createResult = await createRunMutation.mutateAsync({
+        settlementDate: newRunDate,
+        windowId: newRunWindow,
+      });
+
+      if (!createResult.success || !createResult.run_id) {
+        return;
+      }
+
+      setShowCreateDialog(false);
+      setProcessingRunId(createResult.run_id);
+
+      // Step 2: Process run (ingest, netting, generate batches & reports)
+      const processResult = await processRunMutation.mutateAsync({
+        runId: createResult.run_id,
+        dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        dateTo: new Date().toISOString(),
+      });
+
+      if (!processResult.success) {
+        setProcessingRunId(null);
+        return;
+      }
+
+      // Step 3: Mark as settled (simulate NISS acceptance)
+      await settleRunMutation.mutateAsync(createResult.run_id);
+      setProcessingRunId(null);
+      refetch();
+    } catch (error) {
+      console.error('Error creating/processing settlement:', error);
+      setProcessingRunId(null);
+    }
+  };
 
   return (
     <>
@@ -74,10 +125,21 @@ export function SettlementRunsList() {
                 View and manage settlement runs across all windows
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setShowCreateDialog(true)}
+                disabled={processingRunId !== null}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Settlement Run
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -182,13 +244,18 @@ export function SettlementRunsList() {
                         {run.net_instruction_count}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedRunId(run.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedRunId(run.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {processingRunId === run.id && (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -384,6 +451,79 @@ export function SettlementRunsList() {
               )}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Settlement Run Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Settlement Run</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Settlement Date</label>
+              <Input
+                type="date"
+                value={newRunDate}
+                onChange={(e) => setNewRunDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Settlement Window</label>
+              <Select value={newRunWindow} onValueChange={setNewRunWindow}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="SW1">SW1 - Morning (08:00)</SelectItem>
+                  <SelectItem value="SW2">SW2 - Noon (12:00)</SelectItem>
+                  <SelectItem value="SW3">SW3 - Afternoon (15:00)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="bg-muted p-3 rounded-md text-sm">
+              <p className="font-medium mb-1">This will:</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Create a new settlement run</li>
+                <li>Ingest all successful IPS disbursements from the past 7 days</li>
+                <li>Compute bilateral netting obligations</li>
+                <li>Generate pacs.009 batch files</li>
+                <li>Generate NTSL and Raw Data reports</li>
+                <li>Simulate NISS acceptance (mark as settled)</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateAndProcess}
+                disabled={
+                  createRunMutation.isPending ||
+                  processRunMutation.isPending ||
+                  settleRunMutation.isPending
+                }
+              >
+                {createRunMutation.isPending ||
+                processRunMutation.isPending ||
+                settleRunMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Create & Process
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

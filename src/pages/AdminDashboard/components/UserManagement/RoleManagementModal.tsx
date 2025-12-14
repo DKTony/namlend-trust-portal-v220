@@ -44,19 +44,19 @@ const roleConfig = {
   admin: {
     label: 'Admin',
     icon: Shield,
-    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
     description: 'Full system access and user management'
   },
   loan_officer: {
     label: 'Loan Officer',
     icon: User,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     description: 'Loan approval and client management'
   },
   client: {
     label: 'Client',
     icon: User,
-    color: 'bg-green-100 text-green-800 border-green-200',
+    color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
     description: 'Basic client access and loan applications'
   }
 };
@@ -327,15 +327,15 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
           <Separator />
 
           {/* Role Hierarchy Info */}
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
             <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Info className="h-4 w-4 text-blue-600" />
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               Role Hierarchy Rules
             </h4>
-            <div className="text-sm text-blue-800 mb-2">
+            <div className="text-sm text-blue-800 dark:text-blue-300 mb-2">
               {allowedOperations.description}
             </div>
-            <div className="text-xs text-blue-600 space-y-1">
+            <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
               <div>• <strong>Super Admin:</strong> Can have any role combination</div>
               <div>• <strong>Client:</strong> Can only be a client (no multiple roles)</div>
               <div>• <strong>Loan Officer:</strong> Can only be a loan officer (single role)</div>

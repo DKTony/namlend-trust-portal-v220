@@ -95,24 +95,24 @@ export function NTSLReportViewer() {
                 ) : (
                   reports?.map((report) => (
                     <TableRow key={report.id}>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {new Date(report.run_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{report.window_id}</TableCell>
-                      <TableCell>{report.participant_name || 'All'}</TableCell>
-                      <TableCell className="font-mono text-sm">
+                      <TableCell className="max-w-[150px] truncate" title={report.participant_name || 'All'}>{report.participant_name || 'All'}</TableCell>
+                      <TableCell className="font-mono text-sm max-w-[200px] truncate" title={report.file_name}>
                         {report.file_name}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         {report.file_size
                           ? `${(report.file_size / 1024).toFixed(1)} KB`
                           : '-'}
                       </TableCell>
                       <TableCell>
                         {report.distributed_at ? (
-                          <Badge variant="default">Distributed</Badge>
+                          <Badge variant="default" className="shrink-0">Distributed</Badge>
                         ) : (
-                          <Badge variant="secondary">Pending</Badge>
+                          <Badge variant="secondary" className="shrink-0">Pending</Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -166,7 +166,7 @@ export function NTSLReportViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Net Position</p>
-                  <p className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                     {formatCurrency(ntslData.netPosition)}
                   </p>
                 </div>
@@ -181,13 +181,13 @@ export function NTSLReportViewer() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Credits</p>
-                      <p className="text-lg font-medium text-green-600">
+                      <p className="text-lg font-medium text-green-600 dark:text-green-400">
                         {formatCurrency(ntslData.credits)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total Debits</p>
-                      <p className="text-lg font-medium text-red-600">
+                      <p className="text-lg font-medium text-red-600 dark:text-red-400">
                         {formatCurrency(ntslData.debits)}
                       </p>
                     </div>
@@ -199,13 +199,13 @@ export function NTSLReportViewer() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Owed</p>
-                      <p className="font-medium text-green-600">
+                      <p className="font-medium text-green-600 dark:text-green-400">
                         {formatCurrency(ntslData.interchangeOwed)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Paid</p>
-                      <p className="font-medium text-red-600">
+                      <p className="font-medium text-red-600 dark:text-red-400">
                         {formatCurrency(ntslData.interchangePaid)}
                       </p>
                     </div>
@@ -250,7 +250,7 @@ export function NTSLReportViewer() {
                               <TableCell>{txn.category}</TableCell>
                               <TableCell
                                 className={`text-right ${
-                                  txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                  txn.type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                                 }`}
                               >
                                 {formatCurrency(txn.amount)}

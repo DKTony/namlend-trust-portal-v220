@@ -130,28 +130,28 @@ const CollectionsCenter: React.FC = () => {
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case 'early': return 'bg-yellow-100 text-yellow-800';
-      case 'formal': return 'bg-orange-100 text-orange-800';
-      case 'legal': return 'bg-red-100 text-red-800';
-      case 'writeoff': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'early': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      case 'formal': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
+      case 'legal': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      case 'writeoff': return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
   const getStrategyColor = (strategy: string) => {
     switch (strategy) {
-      case 'standard': return 'bg-blue-100 text-blue-800';
-      case 'payment_plan': return 'bg-green-100 text-green-800';
-      case 'settlement': return 'bg-purple-100 text-purple-800';
-      case 'legal': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'standard': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+      case 'payment_plan': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'settlement': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
+      case 'legal': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
   const getProbabilityColor = (probability: number) => {
-    if (probability >= 70) return 'text-green-600';
-    if (probability >= 40) return 'text-yellow-600';
-    return 'text-red-600';
+    if (probability >= 70) return 'text-green-600 dark:text-green-400';
+    if (probability >= 40) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const filteredCases = collectionCases.filter(case_ => {
@@ -198,14 +198,17 @@ const CollectionsCenter: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Outstanding</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div 
+              className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+              title={`NAD ${collectionCases.reduce((sum, c) => sum + c.totalOwed, 0).toLocaleString()}`}
+            >
               NAD {collectionCases.reduce((sum, c) => sum + c.totalOwed, 0).toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Across {collectionCases.length} cases
             </p>
           </CardContent>
@@ -213,12 +216,12 @@ const CollectionsCenter: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recovery Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Recovery Rate</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">68%</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">68%</div>
+            <p className="text-xs text-muted-foreground truncate">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +5% from last month
             </p>
@@ -227,14 +230,14 @@ const CollectionsCenter: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Legal Cases</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Legal Cases</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
               {collectionCases.filter(c => c.stage === 'legal').length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Requiring legal action
             </p>
           </CardContent>
@@ -242,14 +245,14 @@ const CollectionsCenter: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Agents</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
               {new Set(collectionCases.map(c => c.assignedAgent)).size}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Collection agents
             </p>
           </CardContent>
@@ -265,12 +268,12 @@ const CollectionsCenter: React.FC = () => {
               placeholder="Search by client name, loan ID, or agent..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 bg-background border-input text-foreground"
             />
           </div>
         </div>
         <Select value={stageFilter} onValueChange={(value: any) => setStageFilter(value)}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by stage" />
           </SelectTrigger>
@@ -287,7 +290,7 @@ const CollectionsCenter: React.FC = () => {
       {/* Bulk Actions */}
       {selectedCases.length > 0 && (
         <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-foreground">
             {selectedCases.length} case(s) selected
           </span>
           <Button 
@@ -332,49 +335,49 @@ const CollectionsCenter: React.FC = () => {
                 key={case_.id} 
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 min-w-0 flex-1">
                   <input
                     type="checkbox"
                     checked={selectedCases.includes(case_.id)}
                     onChange={() => handleSelectCase(case_.id)}
-                    className="rounded"
+                    className="rounded shrink-0"
                   />
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{case_.clientName}</span>
-                      <Badge variant="outline" className="text-xs">
+                  <div className="space-y-2 min-w-0 flex-1">
+                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-medium truncate max-w-[150px] text-foreground" title={case_.clientName}>{case_.clientName}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">
                         {case_.loanId}
                       </Badge>
                       <Badge 
                         variant="secondary" 
-                        className={getStageColor(case_.stage)}
+                        className={`${getStageColor(case_.stage)} shrink-0`}
                       >
                         {case_.stage}
                       </Badge>
                       <Badge 
                         variant="secondary" 
-                        className={getStrategyColor(case_.collectionStrategy)}
+                        className={`${getStrategyColor(case_.collectionStrategy)} shrink-0`}
                       >
                         {case_.collectionStrategy.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>Owed: NAD {case_.totalOwed.toLocaleString()}</span>
-                      <span>{case_.daysOverdue} days overdue</span>
-                      <span>Agent: {case_.assignedAgent}</span>
-                      <span className={getProbabilityColor(case_.recoveryProbability)}>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground flex-wrap gap-y-1">
+                      <span className="tabular-nums">Owed: NAD {case_.totalOwed.toLocaleString()}</span>
+                      <span className="tabular-nums shrink-0">{case_.daysOverdue} days overdue</span>
+                      <span className="truncate max-w-[150px]" title={case_.assignedAgent}>Agent: {case_.assignedAgent}</span>
+                      <span className={`${getProbabilityColor(case_.recoveryProbability)} tabular-nums shrink-0`}>
                         {case_.recoveryProbability}% recovery probability
                       </span>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span>Last: {case_.lastAction} ({new Date(case_.lastActionDate).toLocaleDateString()})</span>
-                      <span>Next: {case_.nextAction} ({new Date(case_.nextActionDate).toLocaleDateString()})</span>
+                    <div className="flex items-center space-x-4 text-sm flex-wrap gap-y-1 text-foreground">
+                      <span className="truncate">Last: {case_.lastAction} <span className="text-muted-foreground shrink-0">({new Date(case_.lastActionDate).toLocaleDateString()})</span></span>
+                      <span className="truncate">Next: {case_.nextAction} <span className="text-muted-foreground shrink-0">({new Date(case_.nextActionDate).toLocaleDateString()})</span></span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 ml-4 shrink-0">
                   <Button 
                     variant="outline" 
                     size="sm"

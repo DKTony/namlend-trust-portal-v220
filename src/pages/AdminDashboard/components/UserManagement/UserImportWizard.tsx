@@ -158,9 +158,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      valid: 'bg-green-100 text-green-800 border-green-200',
-      warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      error: 'bg-red-100 text-red-800 border-red-200'
+      valid: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      error: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     const icons = {
@@ -170,7 +170,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -194,13 +194,13 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-background rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-border">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-2xl font-bold">User Import Wizard</h2>
-            <p className="text-gray-600">Import users from CSV file</p>
+            <h2 className="text-2xl font-bold text-foreground">User Import Wizard</h2>
+            <p className="text-muted-foreground">Import users from CSV file</p>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-5 w-5" />
@@ -208,7 +208,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
@@ -218,7 +218,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     ? 'bg-green-500 border-green-500 text-white' 
                     : currentStep === step.id 
                       ? 'bg-blue-500 border-blue-500 text-white'
-                      : 'bg-gray-100 border-gray-300 text-gray-500'
+                      : 'bg-muted border-muted-foreground/30 text-muted-foreground'
                   }
                 `}>
                   {step.completed ? (
@@ -229,14 +229,14 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                 </div>
                 <div className="ml-3">
                   <p className={`text-sm font-medium ${
-                    currentStep === step.id ? 'text-blue-600' : 'text-gray-900'
+                    currentStep === step.id ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'
                   }`}>
                     {step.title}
                   </p>
-                  <p className="text-xs text-gray-500">{step.description}</p>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
-                  <ArrowRight className="h-4 w-4 text-gray-400 mx-4" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground mx-4" />
                 )}
               </div>
             ))}
@@ -249,7 +249,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           {/* Step 1: Upload File */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle>Upload CSV File</CardTitle>
                 </CardHeader>
@@ -261,17 +261,18 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                       type="file"
                       accept=".csv"
                       onChange={handleFileUpload}
+                      className="bg-background border-input text-foreground"
                     />
                     {importFile && (
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Selected: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
                       </p>
                     )}
                   </div>
 
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">CSV Format Requirements:</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">CSV Format Requirements:</h4>
+                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
                       <li>• Required columns: full_name, email, role</li>
                       <li>• Optional columns: phone, department</li>
                       <li>• Valid roles: admin, loan_officer, client, support</li>
@@ -287,14 +288,10 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
               </Card>
 
               {processing && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Processing file...</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Processing file...</span>
+                </div>
               )}
             </div>
           )}
@@ -302,7 +299,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           {/* Step 2: Map Fields */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle>Field Mapping</CardTitle>
                 </CardHeader>
@@ -311,18 +308,18 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div>
                       <Label>CSV Column</Label>
                       <div className="space-y-2 mt-2">
-                        <div className="p-2 bg-gray-100 rounded">full_name</div>
-                        <div className="p-2 bg-gray-100 rounded">email</div>
-                        <div className="p-2 bg-gray-100 rounded">phone</div>
-                        <div className="p-2 bg-gray-100 rounded">role</div>
-                        <div className="p-2 bg-gray-100 rounded">department</div>
+                        <div className="p-2 bg-muted rounded text-foreground">full_name</div>
+                        <div className="p-2 bg-muted rounded text-foreground">email</div>
+                        <div className="p-2 bg-muted rounded text-foreground">phone</div>
+                        <div className="p-2 bg-muted rounded text-foreground">role</div>
+                        <div className="p-2 bg-muted rounded text-foreground">department</div>
                       </div>
                     </div>
                     <div>
                       <Label>Maps to Field</Label>
                       <div className="space-y-2 mt-2">
                         <Select defaultValue="fullName">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -332,7 +329,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                           </SelectContent>
                         </Select>
                         <Select defaultValue="email">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -340,7 +337,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                           </SelectContent>
                         </Select>
                         <Select defaultValue="phone">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -349,7 +346,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                           </SelectContent>
                         </Select>
                         <Select defaultValue="role">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -357,7 +354,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                           </SelectContent>
                         </Select>
                         <Select defaultValue="department">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -377,62 +374,62 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           {currentStep === 3 && (
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
-                <Card>
+                <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">Valid</p>
-                        <p className="text-2xl font-bold text-green-600">{validationResults.valid}</p>
+                        <p className="text-sm text-muted-foreground">Valid</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{validationResults.valid}</p>
                       </div>
-                      <CheckCircle className="h-8 w-8 text-green-600" />
+                      <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">Warnings</p>
-                        <p className="text-2xl font-bold text-yellow-600">{validationResults.warnings}</p>
+                        <p className="text-sm text-muted-foreground">Warnings</p>
+                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{validationResults.warnings}</p>
                       </div>
-                      <AlertTriangle className="h-8 w-8 text-yellow-600" />
+                      <AlertTriangle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">Errors</p>
-                        <p className="text-2xl font-bold text-red-600">{validationResults.errors}</p>
+                        <p className="text-sm text-muted-foreground">Errors</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{validationResults.errors}</p>
                       </div>
-                      <X className="h-8 w-8 text-red-600" />
+                      <X className="h-8 w-8 text-red-600 dark:text-red-400" />
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              <Card>
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle>User Validation Results</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {importUsers.map((user, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                      <div key={index} className="border border-border rounded-lg p-3 bg-muted/30">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-3">
-                            <span className="font-medium">{user.fullName}</span>
-                            <span className="text-gray-600">{user.email}</span>
+                            <span className="font-medium text-foreground">{user.fullName}</span>
+                            <span className="text-muted-foreground">{user.email}</span>
                             {getStatusBadge(user.status)}
                           </div>
                           <Badge variant="outline">{user.role}</Badge>
                         </div>
                         
                         {user.errors.length > 0 && (
-                          <div className="mt-2 p-2 bg-red-50 rounded border border-red-200">
-                            <p className="text-sm font-medium text-red-800 mb-1">Errors:</p>
-                            <ul className="text-sm text-red-700">
+                          <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">Errors:</p>
+                            <ul className="text-sm text-red-700 dark:text-red-400">
                               {user.errors.map((error, i) => (
                                 <li key={i}>• {error}</li>
                               ))}
@@ -441,9 +438,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                         )}
                         
                         {user.warnings.length > 0 && (
-                          <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                            <p className="text-sm font-medium text-yellow-800 mb-1">Warnings:</p>
-                            <ul className="text-sm text-yellow-700">
+                          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Warnings:</p>
+                            <ul className="text-sm text-yellow-700 dark:text-yellow-400">
                               {user.warnings.map((warning, i) => (
                                 <li key={i}>• {warning}</li>
                               ))}
@@ -461,7 +458,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           {/* Step 4: Import Users */}
           {currentStep === 4 && (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle>Import Summary</CardTitle>
                 </CardHeader>
@@ -469,12 +466,12 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Total Users to Import</p>
-                        <p className="text-2xl font-bold">{importUsers.filter(u => u.status !== 'error').length}</p>
+                        <p className="text-sm text-muted-foreground">Total Users to Import</p>
+                        <p className="text-2xl font-bold text-foreground">{importUsers.filter(u => u.status !== 'error').length}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Users with Errors (Skipped)</p>
-                        <p className="text-2xl font-bold text-red-600">{validationResults.errors}</p>
+                        <p className="text-sm text-muted-foreground">Users with Errors (Skipped)</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{validationResults.errors}</p>
                       </div>
                     </div>
 
@@ -488,8 +485,8 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                       <Label htmlFor="force-password-reset">Force password reset on first login</Label>
                     </div>
 
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-300">
                         Users will be created with default passwords and will receive email invitations to set up their accounts.
                       </p>
                     </div>
@@ -501,7 +498,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border px-6 py-4 flex items-center justify-between">
           <Button 
             variant="outline" 
             onClick={handlePreviousStep}

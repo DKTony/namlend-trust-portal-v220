@@ -126,14 +126,14 @@ export function Pacs009Viewer() {
                     batches?.map((batch) => (
                       <TableRow key={batch.id}>
                         <TableCell>
-                          <Badge variant="outline">
+                          <Badge variant="outline" className="shrink-0">
                             {BATCH_TYPE_LABELS[batch.batch_type]}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-mono text-sm max-w-[150px] truncate" title={batch.msg_id}>
                           {batch.msg_id}
                         </TableCell>
-                        <TableCell>{batch.file_name}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={batch.file_name}>{batch.file_name}</TableCell>
                         <TableCell>
                           <Badge
                             variant={
@@ -143,17 +143,18 @@ export function Pacs009Viewer() {
                                 ? 'destructive'
                                 : 'secondary'
                             }
+                            className="shrink-0"
                           >
                             {batch.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right tabular-nums">
                           {batch.instruction_count}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right tabular-nums">
                           {formatCurrency(batch.total_amount)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right tabular-nums">
                           {batch.file_size
                             ? `${(batch.file_size / 1024).toFixed(1)} KB`
                             : '-'}

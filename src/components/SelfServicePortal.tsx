@@ -276,13 +276,13 @@ For queries, contact support@namlend.com
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+    switch (status.toLowerCase()) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-700"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
+        return <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100/80 dark:hover:bg-green-900/40"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -305,8 +305,8 @@ For queries, contact support@namlend.com
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="statements">
             <FileText className="h-4 w-4 mr-2" />
             Statements
@@ -344,11 +344,11 @@ For queries, contact support@namlend.com
                   {loans.map((loan) => (
                     <div 
                       key={loan.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
+                      className="flex items-center justify-between p-4 border border-border rounded-lg bg-card"
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{formatNAD(loan.amount)}</h4>
+                          <h4 className="font-medium text-foreground">{formatNAD(loan.amount)}</h4>
                           <Badge variant={loan.status === 'active' ? 'default' : 'secondary'}>
                             {loan.status}
                           </Badge>

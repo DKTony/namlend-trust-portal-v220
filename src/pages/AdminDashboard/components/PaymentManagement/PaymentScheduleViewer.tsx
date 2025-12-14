@@ -62,11 +62,11 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
 
   const getStatusBadge = (status: string, daysOverdue: number) => {
     const variants = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      paid: 'bg-green-100 text-green-800 border-green-200',
-      overdue: 'bg-red-100 text-red-800 border-red-200',
-      partially_paid: 'bg-blue-100 text-blue-800 border-blue-200',
-      waived: 'bg-gray-100 text-gray-800 border-gray-200'
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      paid: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      overdue: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      partially_paid: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      waived: 'bg-muted text-muted-foreground border-border'
     };
 
     const icons = {
@@ -120,7 +120,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
         <CardContent>
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-muted rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -130,7 +130,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
@@ -148,8 +148,8 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
           <CardTitle>Payment Schedule</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/60" />
             <p>No payment schedule available yet.</p>
             <p className="text-sm mt-1">Schedule will be generated after disbursement.</p>
           </div>
@@ -169,7 +169,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-600">Total Amount</p>
+                  <p className="text-xs text-muted-foreground">Total Amount</p>
                   <p className="text-lg font-bold">{formatNAD(summary.totalAmount)}</p>
                 </div>
                 <DollarSign className="h-6 w-6 text-blue-600" />
@@ -180,7 +180,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-600">Total Paid</p>
+                  <p className="text-xs text-muted-foreground">Total Paid</p>
                   <p className="text-lg font-bold text-green-600">{formatNAD(summary.totalPaid)}</p>
                 </div>
                 <CheckCircle className="h-6 w-6 text-green-600" />
@@ -191,7 +191,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-600">Balance</p>
+                  <p className="text-xs text-muted-foreground">Balance</p>
                   <p className="text-lg font-bold text-orange-600">{formatNAD(summary.totalBalance)}</p>
                 </div>
                 <TrendingUp className="h-6 w-6 text-orange-600" />
@@ -202,7 +202,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-600">Progress</p>
+                  <p className="text-xs text-muted-foreground">Progress</p>
                   <p className="text-lg font-bold">
                     {summary.paidCount}/{summary.totalInstallments}
                   </p>
@@ -233,9 +233,9 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
         <CardContent>
           {/* Overdue Warning */}
           {summary.overdueCount > 0 && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
+            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start space-x-2">
               <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-800">
+              <div className="text-sm text-red-800 dark:text-red-300">
                 <p className="font-medium">
                   {summary.overdueCount} installment{summary.overdueCount > 1 ? 's' : ''} overdue
                 </p>
@@ -246,73 +246,73 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left p-3 text-sm font-medium text-gray-700">#</th>
-                  <th className="text-left p-3 text-sm font-medium text-gray-700">Due Date</th>
-                  <th className="text-right p-3 text-sm font-medium text-gray-700">Principal</th>
-                  <th className="text-right p-3 text-sm font-medium text-gray-700">Interest</th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground">#</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Due Date</th>
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Principal</th>
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Interest</th>
+                {viewMode === 'admin' && (
+                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">Fees</th>
+                )}
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Total</th>
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Paid</th>
+                <th className="text-right p-3 text-sm font-medium text-muted-foreground">Balance</th>
+                <th className="text-center p-3 text-sm font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((item) => (
+                <tr 
+                  key={item.id} 
+                  className={`border-b hover:bg-muted/50 transition-colors ${
+                    item.status === 'overdue' ? 'bg-red-50 dark:bg-red-900/10' : ''
+                  }`}
+                >
+                  <td className="p-3 font-medium">{item.installment_number}</td>
+                  <td className="p-3 text-sm">
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      <span>{formatDate(item.due_date)}</span>
+                    </div>
+                  </td>
+                  <td className="text-right p-3 text-sm">{formatNAD(item.principal_amount)}</td>
+                  <td className="text-right p-3 text-sm">{formatNAD(item.interest_amount)}</td>
                   {viewMode === 'admin' && (
-                    <th className="text-right p-3 text-sm font-medium text-gray-700">Fees</th>
-                  )}
-                  <th className="text-right p-3 text-sm font-medium text-gray-700">Total</th>
-                  <th className="text-right p-3 text-sm font-medium text-gray-700">Paid</th>
-                  <th className="text-right p-3 text-sm font-medium text-gray-700">Balance</th>
-                  <th className="text-center p-3 text-sm font-medium text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedule.map((item) => (
-                  <tr 
-                    key={item.id} 
-                    className={`border-b hover:bg-gray-50 transition-colors ${
-                      item.status === 'overdue' ? 'bg-red-50' : ''
-                    }`}
-                  >
-                    <td className="p-3 font-medium">{item.installment_number}</td>
-                    <td className="p-3 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-3 w-3 text-gray-400" />
-                        <span>{formatDate(item.due_date)}</span>
-                      </div>
-                    </td>
-                    <td className="text-right p-3 text-sm">{formatNAD(item.principal_amount)}</td>
-                    <td className="text-right p-3 text-sm">{formatNAD(item.interest_amount)}</td>
-                    {viewMode === 'admin' && (
-                      <td className="text-right p-3 text-sm">
-                        {item.late_fee_applied > 0 ? (
-                          <span className="text-red-600 font-medium">
-                            {formatNAD(item.late_fee_applied)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                    )}
-                    <td className="text-right p-3 font-medium">{formatNAD(item.total_amount)}</td>
-                    <td className="text-right p-3 text-sm text-green-600">
-                      {item.amount_paid > 0 ? formatNAD(item.amount_paid) : '-'}
-                    </td>
-                    <td className="text-right p-3 text-sm font-medium">
-                      {item.balance > 0 ? (
-                        <span className={item.status === 'overdue' ? 'text-red-600' : ''}>
-                          {formatNAD(item.balance)}
+                    <td className="text-right p-3 text-sm">
+                      {item.late_fee_applied > 0 ? (
+                        <span className="text-red-600 font-medium">
+                          {formatNAD(item.late_fee_applied)}
                         </span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="text-center p-3">
-                      {getStatusBadge(item.status, item.days_overdue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                  )}
+                  <td className="text-right p-3 font-medium">{formatNAD(item.total_amount)}</td>
+                  <td className="text-right p-3 text-sm text-green-600">
+                    {item.amount_paid > 0 ? formatNAD(item.amount_paid) : '-'}
+                  </td>
+                  <td className="text-right p-3 text-sm font-medium">
+                    {item.balance > 0 ? (
+                      <span className={item.status === 'overdue' ? 'text-red-600' : ''}>
+                        {formatNAD(item.balance)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </td>
+                  <td className="text-center p-3">
+                    {getStatusBadge(item.status, item.days_overdue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
               <tfoot>
-                <tr className="border-t-2 bg-gray-50 font-medium">
+                <tr className="border-t-2 bg-muted/50 font-medium">
                   <td colSpan={2} className="p-3 text-sm">Total</td>
                   <td className="text-right p-3 text-sm">
                     {formatNAD(schedule.reduce((sum, item) => sum + item.principal_amount, 0))}

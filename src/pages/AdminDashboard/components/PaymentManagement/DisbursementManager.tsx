@@ -64,11 +64,11 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      approved: 'bg-blue-100 text-blue-800 border-blue-200',
-      processing: 'bg-orange-100 text-orange-800 border-orange-200',
-      completed: 'bg-green-100 text-green-800 border-green-200',
-      failed: 'bg-red-100 text-red-800 border-red-200'
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      approved: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      processing: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      completed: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      failed: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     const icons = {
@@ -168,7 +168,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
         {[...Array(3)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-20 bg-gray-200 rounded"></div>
+              <div className="h-20 bg-muted rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -178,7 +178,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
@@ -196,46 +196,46 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Disbursements</p>
-                <p className="text-2xl font-bold">{disbursements?.filter(d => d.status === 'pending').length || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Pending Disbursements</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">{disbursements?.filter(d => d.status === 'pending').length || 0}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-8 w-8 text-yellow-600 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-2xl font-bold">
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Total Amount</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatCurrency(disbursements?.reduce((sum, d) => sum + d.amount, 0) || 0)}>
                   {formatCurrency(disbursements?.reduce((sum, d) => sum + d.amount, 0) || 0)}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-green-600 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Processing Today</p>
-                <p className="text-2xl font-bold">{disbursements?.filter(d => d.status === 'processing').length || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Processing Today</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">{disbursements?.filter(d => d.status === 'processing').length || 0}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-blue-600" />
+              <TrendingUp className="h-8 w-8 text-blue-600 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Success Rate</p>
-                <p className="text-2xl font-bold">98.5%</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Success Rate</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">98.5%</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-green-600 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -289,22 +289,22 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         {formatCurrency(disbursement.amount)}
                       </h3>
                       {getStatusBadge(disbursement.status)}
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-foreground">
                         Loan: {disbursement.loan_id.slice(-6)}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {formatDate(disbursement.scheduled_at)}
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
                       <span className="truncate">{disbursement.client_name}</span>
@@ -320,9 +320,9 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Created: {formatDate(disbursement.created_at)}
                       </div>
                       <div className="flex flex-wrap gap-2">

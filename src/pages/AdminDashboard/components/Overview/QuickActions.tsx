@@ -99,10 +99,10 @@ const QuickActions: React.FC = () => {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm leading-tight mb-1 truncate">
+                    <div className="font-medium text-sm leading-tight mb-1 truncate" title={action.title}>
                       {action.title}
                     </div>
-                    <div className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                    <div className="text-xs text-muted-foreground leading-relaxed line-clamp-2" title={action.description}>
                       {action.description}
                     </div>
                   </div>
@@ -113,17 +113,17 @@ const QuickActions: React.FC = () => {
         </div>
         
         {/* Additional Action Buttons */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-4 border-t border-border">
           <div className="flex flex-wrap gap-2 justify-start">
-            <Button size="sm" variant="ghost" className="text-xs hover:bg-gray-100 px-3 py-2">
+            <Button size="sm" variant="ghost" className="text-xs hover:bg-muted px-3 py-2">
               <Eye className="h-3 w-3 mr-1.5" />
               View Analytics
             </Button>
-            <Button size="sm" variant="ghost" className="text-xs hover:bg-gray-100 px-3 py-2">
+            <Button size="sm" variant="ghost" className="text-xs hover:bg-muted px-3 py-2">
               <Download className="h-3 w-3 mr-1.5" />
               Export Data
             </Button>
-            <Button size="sm" variant="ghost" className="text-xs hover:bg-gray-100 px-3 py-2">
+            <Button size="sm" variant="ghost" className="text-xs hover:bg-muted px-3 py-2">
               <Settings className="h-3 w-3 mr-1.5" />
               Preferences
             </Button>

@@ -178,14 +178,14 @@ const UserAuditLog: React.FC = () => {
 
   const getSeverityBadge = (severity: string) => {
     const variants = {
-      low: 'bg-green-100 text-green-800 border-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      high: 'bg-orange-100 text-orange-800 border-orange-200',
-      critical: 'bg-red-100 text-red-800 border-red-200'
+      low: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      critical: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     return (
-      <Badge variant="outline" className={variants[severity as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      <Badge variant="outline" className={variants[severity as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
         <span className="capitalize">{severity}</span>
       </Badge>
     );
@@ -193,18 +193,18 @@ const UserAuditLog: React.FC = () => {
 
   const getActionTypeBadge = (actionType: string) => {
     const variants = {
-      create: 'bg-blue-100 text-blue-800 border-blue-200',
-      update: 'bg-purple-100 text-purple-800 border-purple-200',
-      delete: 'bg-red-100 text-red-800 border-red-200',
-      login: 'bg-green-100 text-green-800 border-green-200',
-      logout: 'bg-gray-100 text-gray-800 border-gray-200',
-      permission: 'bg-orange-100 text-orange-800 border-orange-200',
-      role: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      status: 'bg-teal-100 text-teal-800 border-teal-200'
+      create: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      update: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      delete: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      login: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      logout: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      permission: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      role: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
+      status: 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400 border-teal-200 dark:border-teal-800'
     };
 
     return (
-      <Badge variant="outline" className={variants[actionType as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      <Badge variant="outline" className={variants[actionType as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
         {getActionIcon(actionType)}
         <span className="ml-1 capitalize">{actionType}</span>
       </Badge>
@@ -271,13 +271,13 @@ const UserAuditLog: React.FC = () => {
             <div>
               <Label htmlFor="search">Search</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   id="search"
                   placeholder="Search users, actions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-background border-input text-foreground"
                 />
               </div>
             </div>
@@ -285,7 +285,7 @@ const UserAuditLog: React.FC = () => {
             <div>
               <Label htmlFor="action-filter">Action Type</Label>
               <Select value={filterAction} onValueChange={setFilterAction}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border-input text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -305,7 +305,7 @@ const UserAuditLog: React.FC = () => {
             <div>
               <Label htmlFor="severity-filter">Severity</Label>
               <Select value={filterSeverity} onValueChange={setFilterSeverity}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border-input text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -321,7 +321,7 @@ const UserAuditLog: React.FC = () => {
             <div>
               <Label htmlFor="date-range">Date Range</Label>
               <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border-input text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -345,16 +345,16 @@ const UserAuditLog: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredLogs.map(log => (
-              <div key={log.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+              <div key={log.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="flex items-center space-x-2 shrink-0">
                       {getActionTypeBadge(log.actionType)}
                       {getSeverityBadge(log.severity)}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">{formatDate(log.timestamp)}</span>
+                  <div className="flex items-center space-x-2 shrink-0 ml-2">
+                    <span className="text-sm text-muted-foreground tabular-nums">{formatDate(log.timestamp)}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -365,49 +365,49 @@ const UserAuditLog: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                  <div>
-                    <p className="text-sm text-gray-600">User</p>
-                    <p className="font-medium">{log.userName}</p>
-                    <p className="text-xs text-gray-500">ID: {log.userId}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground">User</p>
+                    <p className="font-medium truncate text-foreground" title={log.userName}>{log.userName}</p>
+                    <p className="text-xs text-muted-foreground truncate tabular-nums" title={log.userId}>ID: {log.userId}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Admin</p>
-                    <p className="font-medium">{log.adminName}</p>
-                    <p className="text-xs text-gray-500">ID: {log.adminId}</p>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground">Admin</p>
+                    <p className="font-medium truncate text-foreground" title={log.adminName}>{log.adminName}</p>
+                    <p className="text-xs text-muted-foreground truncate tabular-nums" title={log.adminId}>ID: {log.adminId}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Action</p>
-                    <p className="font-medium">{log.action}</p>
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground">Action</p>
+                    <p className="font-medium truncate text-foreground" title={log.action}>{log.action}</p>
                   </div>
                 </div>
 
                 <div className="mb-2">
-                  <p className="text-sm text-gray-600">Details</p>
-                  <p className="text-gray-800">{log.details}</p>
+                  <p className="text-sm text-muted-foreground">Details</p>
+                  <p className="text-foreground truncate" title={log.details}>{log.details}</p>
                 </div>
 
                 {log.changes && log.changes.length > 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                    <p className="text-sm font-medium text-blue-800 mb-1">Changes:</p>
+                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Changes:</p>
                     <div className="space-y-1">
                       {log.changes.map((change, index) => (
-                        <div key={index} className="text-sm text-blue-700">
+                        <div key={index} className="text-sm text-blue-700 dark:text-blue-400">
                           <span className="font-medium">{change.field}:</span>
-                          <span className="text-red-600 line-through mx-1">{change.oldValue}</span>
+                          <span className="text-red-600 dark:text-red-400 line-through mx-1">{change.oldValue}</span>
                           →
-                          <span className="text-green-600 mx-1">{change.newValue}</span>
+                          <span className="text-green-600 dark:text-green-400 mx-1">{change.newValue}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                  <div className="text-xs text-gray-500">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                  <div className="text-xs text-muted-foreground">
                     IP: {log.ipAddress}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {log.userAgent.substring(0, 50)}...
                   </div>
                 </div>
@@ -416,8 +416,8 @@ const UserAuditLog: React.FC = () => {
 
             {filteredLogs.length === 0 && (
               <div className="text-center py-8">
-                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No audit entries found matching your filters</p>
+                <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No audit entries found matching your filters</p>
               </div>
             )}
           </div>
@@ -426,10 +426,10 @@ const UserAuditLog: React.FC = () => {
 
       {/* Detailed Entry Modal */}
       {selectedEntry && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Audit Entry Details</h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-border shadow-lg">
+            <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-lg font-semibold text-foreground">Audit Entry Details</h3>
               <Button variant="ghost" size="sm" onClick={() => setSelectedEntry(null)}>
                 ×
               </Button>
@@ -438,7 +438,7 @@ const UserAuditLog: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Timestamp</Label>
-                  <p className="font-medium">{formatDate(selectedEntry.timestamp)}</p>
+                  <p className="font-medium text-foreground">{formatDate(selectedEntry.timestamp)}</p>
                 </div>
                 <div>
                   <Label>Severity</Label>
@@ -446,33 +446,33 @@ const UserAuditLog: React.FC = () => {
                 </div>
                 <div>
                   <Label>User</Label>
-                  <p className="font-medium">{selectedEntry.userName}</p>
-                  <p className="text-sm text-gray-500">ID: {selectedEntry.userId}</p>
+                  <p className="font-medium text-foreground">{selectedEntry.userName}</p>
+                  <p className="text-sm text-muted-foreground">ID: {selectedEntry.userId}</p>
                 </div>
                 <div>
                   <Label>Admin</Label>
-                  <p className="font-medium">{selectedEntry.adminName}</p>
-                  <p className="text-sm text-gray-500">ID: {selectedEntry.adminId}</p>
+                  <p className="font-medium text-foreground">{selectedEntry.adminName}</p>
+                  <p className="text-sm text-muted-foreground">ID: {selectedEntry.adminId}</p>
                 </div>
                 <div>
                   <Label>Action</Label>
                   <div className="mt-1">{getActionTypeBadge(selectedEntry.actionType)}</div>
-                  <p className="font-medium mt-1">{selectedEntry.action}</p>
+                  <p className="font-medium mt-1 text-foreground">{selectedEntry.action}</p>
                 </div>
                 <div>
                   <Label>IP Address</Label>
-                  <p className="font-medium">{selectedEntry.ipAddress}</p>
+                  <p className="font-medium text-foreground">{selectedEntry.ipAddress}</p>
                 </div>
               </div>
               
               <div>
                 <Label>Details</Label>
-                <p className="mt-1 p-3 bg-gray-50 rounded">{selectedEntry.details}</p>
+                <p className="mt-1 p-3 bg-muted rounded text-foreground">{selectedEntry.details}</p>
               </div>
 
               <div>
                 <Label>User Agent</Label>
-                <p className="mt-1 p-3 bg-gray-50 rounded text-sm break-all">{selectedEntry.userAgent}</p>
+                <p className="mt-1 p-3 bg-muted rounded text-sm break-all text-foreground">{selectedEntry.userAgent}</p>
               </div>
 
               {selectedEntry.changes && selectedEntry.changes.length > 0 && (
@@ -480,12 +480,12 @@ const UserAuditLog: React.FC = () => {
                   <Label>Changes Made</Label>
                   <div className="mt-1 space-y-2">
                     {selectedEntry.changes.map((change, index) => (
-                      <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
-                        <p className="font-medium text-blue-800">{change.field}</p>
+                      <div key={index} className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                        <p className="font-medium text-blue-800 dark:text-blue-300">{change.field}</p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-red-600 line-through">{change.oldValue}</span>
-                          <span className="text-gray-500">→</span>
-                          <span className="text-sm text-green-600">{change.newValue}</span>
+                          <span className="text-sm text-red-600 dark:text-red-400 line-through">{change.oldValue}</span>
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-sm text-green-600 dark:text-green-400">{change.newValue}</span>
                         </div>
                       </div>
                     ))}

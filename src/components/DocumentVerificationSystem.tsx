@@ -8,17 +8,20 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import { 
   Upload, 
   FileText, 
   CheckCircle, 
   AlertCircle, 
   X, 
-  Eye,
-  Download,
-  Clock,
-  Shield,
-  Lock
+  Eye, 
+  Download, 
+  Clock, 
+  Shield, 
+  Lock,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 
 interface DocumentRequirement {
@@ -196,33 +199,33 @@ export default function DocumentVerificationSystem({ onDocumentUploaded }: Docum
   const getDocumentStatus = (doc: DocumentRequirement) => {
     if (doc.is_verified) {
       return {
-        icon: <CheckCircle className="h-5 w-5 text-green-600" />,
+        icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         text: 'Verified',
-        variant: 'default' as const,
-        color: 'text-green-600'
+        className: 'bg-green-500/10 text-green-400 border-0',
+        color: 'text-green-500'
       };
     }
     if (doc.is_submitted) {
       return {
-        icon: <Clock className="h-5 w-5 text-yellow-600" />,
-        text: 'Under Review',
-        variant: 'secondary' as const,
-        color: 'text-yellow-600'
+        icon: <Clock className="h-5 w-5 text-yellow-500" />,
+        text: 'Reviewing',
+        className: 'bg-yellow-500/10 text-yellow-400 border-0',
+        color: 'text-yellow-500'
       };
     }
     if (doc.rejection_reason) {
       return {
-        icon: <X className="h-5 w-5 text-red-600" />,
+        icon: <X className="h-5 w-5 text-red-500" />,
         text: 'Rejected',
-        variant: 'destructive' as const,
-        color: 'text-red-600'
+        className: 'bg-red-500/10 text-red-400 border-0',
+        color: 'text-red-500'
       };
     }
     return {
-      icon: <AlertCircle className="h-5 w-5 text-gray-400" />,
+      icon: <AlertCircle className="h-5 w-5 text-zinc-600" />,
       text: doc.is_required ? 'Required' : 'Optional',
-      variant: 'outline' as const,
-      color: 'text-gray-400'
+      className: 'bg-zinc-800 text-zinc-400 border-0',
+      color: 'text-zinc-600'
     };
   };
 
@@ -243,179 +246,189 @@ export default function DocumentVerificationSystem({ onDocumentUploaded }: Docum
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center p-8">Loading documents...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-muted-foreground border border-dashed border-border rounded-2xl bg-muted/20">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
+        <p className="text-sm">Loading verification status...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Progress Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Shield className="h-5 w-5 mr-2" />
-              Document Verification Progress
-            </span>
-            <Badge variant={isEligibleForLoanApplication() ? 'default' : 'secondary'}>
-              {isEligibleForLoanApplication() ? 'Loan Eligible' : 'Verification Required'}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span>Verification Progress</span>
-              <span>{Math.round(calculateProgress())}% Complete</span>
-            </div>
-            <Progress value={calculateProgress()} className="h-2" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>
-                {documents.filter(d => d.is_required && d.is_verified).length} of{' '}
-                {documents.filter(d => d.is_required).length} required documents verified
-              </span>
-              {isEligibleForLoanApplication() && (
-                <span className="text-green-600 font-medium">✓ Ready to apply for loans</span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+           <Shield className="h-32 w-32 text-foreground" />
+        </div>
+        
+        <div className="relative z-10">
+           <div className="flex items-center justify-between mb-6">
+              <div>
+                 <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+                    Verification Center
+                    <Badge variant="outline" className={cn(
+                       "ml-2 border-0 text-[10px] px-2 h-5",
+                       isEligibleForLoanApplication() ? "bg-green-500/20 text-green-400" : "bg-muted text-muted-foreground"
+                    )}>
+                       {isEligibleForLoanApplication() ? 'Verified' : 'Pending'}
+                    </Badge>
+                 </h2>
+                 <p className="text-sm text-muted-foreground mt-1">Complete verification to unlock loans</p>
+              </div>
+              <div className="text-right">
+                 <span className="text-3xl font-bold text-foreground">{Math.round(calculateProgress())}%</span>
+                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Complete</p>
+              </div>
+           </div>
+           
+           <div className="space-y-2">
+              <Progress value={calculateProgress()} className="h-2 bg-muted" indicatorClassName={cn(
+                 "transition-all duration-500",
+                 isEligibleForLoanApplication() ? "bg-green-500" : "bg-blue-500"
+              )} />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                 <span>
+                    {documents.filter(d => d.is_required && d.is_verified).length} of{' '}
+                    {documents.filter(d => d.is_required).length} required docs verified
+                 </span>
+                 {isEligibleForLoanApplication() && (
+                    <span className="text-green-400 font-medium flex items-center gap-1">
+                       <CheckCircle className="h-3 w-3" /> Ready to Apply
+                    </span>
+                 )}
+              </div>
+           </div>
+        </div>
+      </div>
 
       {/* Access Control Notice */}
       {!isEligibleForLoanApplication() && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start space-x-3">
-              <Lock className="h-5 w-5 text-yellow-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-yellow-800">Loan Application Access Restricted</h4>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Complete document verification to unlock loan application functionality. 
-                  All required documents must be verified before you can proceed.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-3">
+           <div className="h-8 w-8 rounded-full bg-yellow-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Lock className="h-4 w-4 text-yellow-500" />
+           </div>
+           <div>
+              <h4 className="text-sm font-medium text-yellow-500">Access Restricted</h4>
+              <p className="text-xs text-yellow-500/70 mt-1 leading-relaxed">
+                 To ensure compliance and security, loan applications are locked until your profile and documents are fully verified.
+              </p>
+           </div>
+        </div>
       )}
 
       {/* Document List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {documents.map((doc) => {
           const docInfo = DOCUMENT_TYPES[doc.document_type as keyof typeof DOCUMENT_TYPES];
           const status = getDocumentStatus(doc);
           
           return (
-            <Card key={doc.id} className="relative">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className="mt-1">
-                      {status.icon}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium">{docInfo?.label || doc.document_type}</h4>
-                        {doc.is_required && (
-                          <Badge variant="outline" className="text-xs">Required</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {docInfo?.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {docInfo?.instructions}
-                      </p>
-                      
-                      {doc.rejection_reason && (
-                        <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                          <strong>Rejection Reason:</strong> {doc.rejection_reason}
-                        </div>
-                      )}
-                      
-                      {doc.verification_date && (
-                        <p className="text-xs text-green-600 mt-2">
-                          Verified on {new Date(doc.verification_date).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
+            <div key={doc.id} className="group bg-card border border-border rounded-xl p-4 transition-all hover:bg-accent/50 hover:border-accent">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className={cn("mt-1 p-2 rounded-lg bg-background border border-border", status.color)}>
+                    {status.icon}
                   </div>
                   
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Badge variant={status.variant} className={status.color}>
-                      {status.text}
-                    </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-sm text-foreground truncate">{docInfo?.label || doc.document_type}</h4>
+                      {doc.is_required && (
+                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded border border-border">Required</span>
+                      )}
+                      <Badge variant="outline" className={cn("text-[10px] px-1.5 h-5", status.className)}>
+                        {status.text}
+                      </Badge>
+                    </div>
                     
-                    {doc.is_submitted && doc.file_path && (
-                      <Button variant="ghost" size="sm" aria-label={`View ${docInfo?.label || doc.document_type} document`} title={`View ${docInfo?.label || doc.document_type}`}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                      {docInfo?.description}
+                    </p>
+                    
+                    {doc.rejection_reason && (
+                      <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+                        <strong>Action Required:</strong> {doc.rejection_reason}
+                      </div>
                     )}
                     
-                    {(!doc.is_submitted || doc.rejection_reason) && (
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setSelectedFile(file);
-                              setUploadingDocType(doc.document_type);
-                            }
-                          }}
-                          className="hidden"
-                          id={`file-${doc.document_type}`}
-                        />
-                        <Label htmlFor={`file-${doc.document_type}`}>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            disabled={uploading === doc.document_type}
-                            asChild
-                          >
-                            <span>
-                              <Upload className="h-4 w-4 mr-2" />
-                              {uploading === doc.document_type ? 'Uploading...' : 'Upload'}
-                            </span>
-                          </Button>
-                        </Label>
-                        
-                        {selectedFile && uploadingDocType === doc.document_type && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleFileUpload(doc.document_type, selectedFile)}
-                            disabled={uploading === doc.document_type}
-                          >
-                            Confirm Upload
-                          </Button>
-                        )}
-                      </div>
+                    {doc.verification_date && (
+                      <p className="text-[10px] text-green-500/70 mt-1 font-mono">
+                        Verified: {new Date(doc.verification_date).toLocaleDateString()}
+                      </p>
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                
+                <div className="flex flex-col items-end justify-center gap-2 self-center">
+                  {doc.is_submitted && doc.file_path && (
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-muted h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {(!doc.is_submitted || doc.rejection_reason) && (
+                    <div className="flex items-center">
+                      <Input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedFile(file);
+                            setUploadingDocType(doc.document_type);
+                          }
+                        }}
+                        className="hidden"
+                        id={`file-${doc.document_type}`}
+                      />
+                      
+                      {selectedFile && uploadingDocType === doc.document_type ? (
+                        <Button
+                          size="sm"
+                          onClick={() => handleFileUpload(doc.document_type, selectedFile)}
+                          disabled={uploading === doc.document_type}
+                          className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs"
+                        >
+                          {uploading === doc.document_type ? 'Uploading...' : 'Confirm'}
+                        </Button>
+                      ) : (
+                        <Label htmlFor={`file-${doc.document_type}`}>
+                          <div className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors",
+                            uploading === doc.document_type 
+                              ? "bg-muted text-muted-foreground border-border cursor-not-allowed" 
+                              : "bg-background border-border text-foreground hover:bg-accent"
+                          )}>
+                            <Upload className="h-3.5 w-3.5" />
+                            <span>Upload</span>
+                          </div>
+                        </Label>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
       {/* Help Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Document Upload Guidelines</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <ul className="list-disc list-inside space-y-1">
-            <li>Accepted formats: PDF, JPG, JPEG, PNG</li>
-            <li>Maximum file size: 10MB per document</li>
-            <li>Ensure documents are clear and all text is readable</li>
-            <li>Bank statements must show your name and account details</li>
-            <li>ID documents must show both front and back sides</li>
-            <li>Documents will be reviewed within 24-48 hours</li>
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="bg-muted/30 border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+           <Info className="h-4 w-4 text-muted-foreground" />
+           <h3 className="text-sm font-medium text-foreground">Upload Guidelines</h3>
+        </div>
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-muted-foreground pl-4 list-disc marker:text-muted-foreground">
+          <li>Accepted formats: PDF, JPG, PNG (Max 10MB)</li>
+          <li>Ensure images are clear and text is readable</li>
+          <li>Bank statements must show name & account details</li>
+          <li>ID documents must show both front and back</li>
+          <li>Documents are reviewed within 24-48 hours</li>
+          <li>Your data is encrypted and secure</li>
+        </ul>
+      </div>
     </div>
   );
 }

@@ -110,17 +110,17 @@ const OverdueManager: React.FC = () => {
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'low': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      case 'high': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
   const getDaysOverdueColor = (days: number) => {
-    if (days <= 7) return 'text-yellow-600';
-    if (days <= 30) return 'text-orange-600';
-    return 'text-red-600';
+    if (days <= 7) return 'text-yellow-600 dark:text-yellow-400';
+    if (days <= 30) return 'text-orange-600 dark:text-orange-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const filteredPayments = overduePayments.filter(payment => {
@@ -157,7 +157,7 @@ const OverdueManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Overdue Payments</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Overdue Payments</h2>
           <p className="text-muted-foreground">
             Manage and track overdue loan payments
           </p>
@@ -169,61 +169,64 @@ const OverdueManager: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Overdue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Overdue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div 
+              className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+              title={`NAD ${overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}`}
+            >
               NAD {overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Across {overduePayments.length} payments
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Risk</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">High Risk</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
               {overduePayments.filter(p => p.riskLevel === 'high').length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Require immediate attention
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Payment Plans</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Payment Plans</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
               {overduePayments.filter(p => p.paymentPlan).length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Active payment plans
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Days Overdue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Days Overdue</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums">
               {Math.round(overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Days past due
             </p>
           </CardContent>
@@ -239,12 +242,12 @@ const OverdueManager: React.FC = () => {
               placeholder="Search by client name or loan ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 bg-background border-input text-foreground"
             />
           </div>
         </div>
         <Select value={riskFilter} onValueChange={(value: any) => setRiskFilter(value)}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by risk" />
           </SelectTrigger>
@@ -260,7 +263,7 @@ const OverdueManager: React.FC = () => {
       {/* Bulk Actions */}
       {selectedPayments.length > 0 && (
         <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-foreground">
             {selectedPayments.length} payment(s) selected
           </span>
           <Button 
@@ -291,10 +294,10 @@ const OverdueManager: React.FC = () => {
       )}
 
       {/* Overdue Payments List */}
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>Overdue Payments</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-foreground">Overdue Payments</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Payments that are past their due date
           </CardDescription>
         </CardHeader>
@@ -303,20 +306,20 @@ const OverdueManager: React.FC = () => {
             {filteredPayments.map((payment) => (
               <div 
                 key={payment.id} 
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors bg-card"
               >
                 <div className="flex items-center space-x-4">
                   <input
                     type="checkbox"
                     checked={selectedPayments.includes(payment.id)}
                     onChange={() => handleSelectPayment(payment.id)}
-                    className="rounded"
+                    className="rounded border-input bg-background"
                   />
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{payment.clientName}</span>
-                      <Badge variant="outline" className="text-xs">
+                      <span className="font-medium text-foreground">{payment.clientName}</span>
+                      <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                         {payment.loanId}
                       </Badge>
                       <Badge 
@@ -326,7 +329,7 @@ const OverdueManager: React.FC = () => {
                         {payment.riskLevel} risk
                       </Badge>
                       {payment.paymentPlan && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                           Payment Plan
                         </Badge>
                       )}

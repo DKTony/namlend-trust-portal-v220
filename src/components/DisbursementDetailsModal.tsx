@@ -6,8 +6,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { formatNAD } from '@/utils/currency';
+import { cn } from '@/lib/utils';
 import {
   DollarSign,
   Calendar,
@@ -18,7 +18,8 @@ import {
   AlertCircle,
   CreditCard,
   TrendingUp,
-  Hash
+  Hash,
+  ArrowUpRight
 } from 'lucide-react';
 
 interface DisbursementDetailsModalProps {
@@ -51,7 +52,7 @@ export const DisbursementDetailsModal: React.FC<DisbursementDetailsModalProps> =
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -59,18 +60,18 @@ export const DisbursementDetailsModal: React.FC<DisbursementDetailsModalProps> =
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { bg: string; icon: React.ReactNode }> = {
-      pending: { bg: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: <Clock className="h-3 w-3" /> },
-      approved: { bg: 'bg-blue-100 text-blue-800 border-blue-200', icon: <CheckCircle className="h-3 w-3" /> },
-      processing: { bg: 'bg-orange-100 text-orange-800 border-orange-200', icon: <TrendingUp className="h-3 w-3" /> },
-      completed: { bg: 'bg-green-100 text-green-800 border-green-200', icon: <CheckCircle className="h-3 w-3" /> },
-      failed: { bg: 'bg-red-100 text-red-800 border-red-200', icon: <AlertCircle className="h-3 w-3" /> }
+    const variants: Record<string, { className: string; icon: React.ReactNode }> = {
+      pending: { className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20', icon: <Clock className="h-3 w-3" /> },
+      approved: { className: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: <CheckCircle className="h-3 w-3" /> },
+      processing: { className: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: <TrendingUp className="h-3 w-3" /> },
+      completed: { className: 'bg-green-500/10 text-green-500 border-green-500/20', icon: <CheckCircle className="h-3 w-3" /> },
+      failed: { className: 'bg-red-500/10 text-red-500 border-red-500/20', icon: <AlertCircle className="h-3 w-3" /> }
     };
 
     const variant = variants[status] || variants.pending;
 
     return (
-      <Badge variant="outline" className={`${variant.bg} flex items-center space-x-1`}>
+      <Badge variant="outline" className={cn("flex items-center space-x-1.5 px-2.5 py-0.5 border-0 font-medium", variant.className)}>
         {variant.icon}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -79,166 +80,125 @@ export const DisbursementDetailsModal: React.FC<DisbursementDetailsModalProps> =
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-background border-border">
+        <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl sticky top-0 z-10">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold">Disbursement Details</DialogTitle>
+            <div className="flex items-center gap-3">
+               <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                  <ArrowUpRight className="h-5 w-5 text-blue-500" />
+               </div>
+               <div>
+                  <DialogTitle className="text-xl font-bold tracking-tight text-foreground">Disbursement Details</DialogTitle>
+                  <p className="text-muted-foreground text-xs mt-0.5 font-mono">Ref: {disbursement.reference}</p>
+               </div>
+            </div>
             {getStatusBadge(disbursement.status)}
           </div>
-          <p className="text-sm text-gray-500">Reference: {disbursement.reference}</p>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="p-6 space-y-6">
           {/* Amount Section */}
-          <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <div className="bg-card rounded-2xl border border-border p-6 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+                <DollarSign className="h-24 w-24 text-foreground" />
+             </div>
+             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <div className="flex items-center space-x-2 text-gray-600 mb-2">
-                    <DollarSign className="h-5 w-5" />
-                    <span className="text-sm font-medium">Disbursement Amount</span>
-                  </div>
-                  <p className="text-4xl font-bold text-green-600">{formatNAD(disbursement.amount)}</p>
+                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="text-xs font-medium uppercase tracking-wider">Amount</span>
+                   </div>
+                   <p className="text-4xl font-bold text-foreground tracking-tight">{formatNAD(disbursement.amount)}</p>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-2 text-gray-600 mb-2">
-                    <CreditCard className="h-5 w-5" />
-                    <span className="text-sm font-medium">Method</span>
-                  </div>
-                  <p className="text-xl font-semibold uppercase">{disbursement.method}</p>
+                <div className="text-left md:text-right">
+                   <div className="flex items-center gap-2 text-muted-foreground mb-1 md:justify-end">
+                      <CreditCard className="h-4 w-4" />
+                      <span className="text-xs font-medium uppercase tracking-wider">Method</span>
+                   </div>
+                   <p className="text-xl font-semibold text-muted-foreground uppercase tracking-wide">{disbursement.method}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Client & Loan Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <User className="h-5 w-5 text-blue-600" />
-              <span>Client & Loan Information</span>
-            </h3>
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Client Name:</span>
-                    <span className="font-medium">{disbursement.client_name || 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-sm text-gray-600">Loan ID:</span>
-                    <span className="font-mono text-sm">{disbursement.loan_id.slice(-12)}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-gray-600">Disbursement ID:</span>
-                    <span className="font-mono text-sm">{disbursement.id.slice(-12)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+             </div>
           </div>
 
-          {/* Payment Reference (if completed) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {/* Client & Loan Info */}
+             <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                   <User className="h-3.5 w-3.5" /> Client Information
+                </h3>
+                <div className="bg-muted/30 rounded-xl border border-border p-1">
+                   {[
+                     { label: 'Client Name', value: disbursement.client_name, icon: User },
+                     { label: 'Loan ID', value: disbursement.loan_id.slice(-8), icon: FileText, mono: true },
+                     { label: 'Disbursement ID', value: disbursement.id.slice(-8), icon: Hash, mono: true },
+                   ].map((item, i) => (
+                      <div key={i} className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg transition-colors">
+                         <span className="text-xs text-muted-foreground flex items-center gap-2">
+                            <item.icon className="h-3 w-3" /> {item.label}
+                         </span>
+                         <span className={cn("text-sm font-medium text-foreground", item.mono && "font-mono")}>
+                            {item.value || 'N/A'}
+                         </span>
+                      </div>
+                   ))}
+                </div>
+             </div>
+
+             {/* Timeline */}
+             <div className="space-y-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                   <Clock className="h-3.5 w-3.5" /> Timeline
+                </h3>
+                <div className="space-y-4 pl-2">
+                   {[
+                     { label: 'Created', date: disbursement.created_at, icon: FileText, active: true },
+                     { label: 'Scheduled', date: disbursement.scheduled_at, icon: Calendar, active: true },
+                     { label: 'Processed', date: disbursement.processed_at, icon: CheckCircle, active: !!disbursement.processed_at, highlight: true }
+                   ].map((step, i) => (
+                      <div key={i} className={cn("flex items-center gap-3", !step.active && "opacity-40 grayscale")}>
+                         <div className={cn(
+                            "h-8 w-8 rounded-lg flex items-center justify-center border",
+                            step.highlight 
+                              ? "bg-green-500/10 border-green-500/20 text-green-500" 
+                              : "bg-muted border-border text-muted-foreground"
+                         )}>
+                            <step.icon className="h-3.5 w-3.5" />
+                         </div>
+                         <div>
+                            <p className={cn("text-xs font-medium", step.highlight ? "text-green-500" : "text-foreground")}>{step.label}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">{step.date ? formatDate(step.date) : 'Pending'}</p>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </div>
+          </div>
+
+          {/* Payment Reference */}
           {disbursement.payment_reference && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-                <Hash className="h-5 w-5 text-purple-600" />
-                <span>Payment Reference</span>
-              </h3>
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Bank Payment Reference</p>
-                      <p className="text-xl font-mono font-bold text-purple-900">
-                        {disbursement.payment_reference}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="bg-purple-500/5 border border-purple-500/10 rounded-xl p-4 flex items-center gap-4">
+               <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <Hash className="h-5 w-5 text-purple-500" />
+               </div>
+               <div>
+                  <p className="text-xs text-purple-400/70 font-medium uppercase tracking-wider">Bank Reference</p>
+                  <p className="text-lg font-mono font-bold text-purple-400">{disbursement.payment_reference}</p>
+               </div>
             </div>
           )}
 
           {/* Processing Notes */}
           {disbursement.processing_notes && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-orange-600" />
-                <span>Processing Notes</span>
-              </h3>
-              <Card className="bg-orange-50 border-orange-200">
-                <CardContent className="p-6">
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                    {disbursement.processing_notes}
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="bg-orange-500/5 border border-orange-500/10 rounded-xl p-4">
+               <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-orange-500" />
+                  <span className="text-xs font-medium text-orange-500 uppercase tracking-wider">Processing Notes</span>
+               </div>
+               <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                  {disbursement.processing_notes}
+               </p>
             </div>
           )}
-
-          {/* Timeline */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-gray-600" />
-              <span>Timeline</span>
-            </h3>
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Disbursement Created</p>
-                      <p className="text-sm text-gray-500">{formatDate(disbursement.created_at)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Scheduled For</p>
-                      <p className="text-sm text-gray-500">{formatDate(disbursement.scheduled_at)}</p>
-                    </div>
-                  </div>
-
-                  {disbursement.processed_at && (
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Processed</p>
-                        <p className="text-sm text-gray-500">{formatDate(disbursement.processed_at)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Status Information */}
-          <Card className="bg-gray-50">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600 mb-1">Current Status</p>
-                  <p className="font-semibold capitalize">{disbursement.status}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 mb-1">Payment Method</p>
-                  <p className="font-semibold uppercase">{disbursement.method}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </DialogContent>
     </Dialog>

@@ -87,10 +87,10 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold">1,247</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">1,247</p>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -98,10 +98,10 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold">1,156</p>
+                <p className="text-sm text-muted-foreground">Active Users</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">1,156</p>
               </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
+              <UserCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -109,10 +109,10 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Admin Users</p>
-                <p className="text-2xl font-bold">12</p>
+                <p className="text-sm text-muted-foreground">Admin Users</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">12</p>
               </div>
-              <Shield className="h-8 w-8 text-purple-600" />
+              <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             </div>
           </CardContent>
         </Card>
@@ -120,10 +120,10 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Pending Actions</p>
-                <p className="text-2xl font-bold">23</p>
+                <p className="text-sm text-muted-foreground">Pending Actions</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">23</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
+              <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
             </div>
           </CardContent>
         </Card>
@@ -169,19 +169,19 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
         {/* Search and Filter Bar */}
         <div className="flex space-x-4 items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
               type="text"
               placeholder="Search by name, email, role, or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
@@ -192,7 +192,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>

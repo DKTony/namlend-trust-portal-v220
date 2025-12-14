@@ -81,11 +81,11 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      completed: 'bg-green-100 text-green-800 border-green-200',
-      failed: 'bg-red-100 text-red-800 border-red-200',
-      overdue: 'bg-red-100 text-red-800 border-red-200',
-      partial: 'bg-orange-100 text-orange-800 border-orange-200'
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      completed: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      failed: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      overdue: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      partial: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800'
     };
 
     const icons = {
@@ -106,10 +106,10 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
 
   const getPaymentMethodBadge = (method: string) => {
     const variants = {
-      bank_transfer: 'bg-blue-100 text-blue-800 border-blue-200',
-      mobile_money: 'bg-green-100 text-green-800 border-green-200',
-      cash: 'bg-gray-100 text-gray-800 border-gray-200',
-      debit_order: 'bg-purple-100 text-purple-800 border-purple-200'
+      bank_transfer: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      mobile_money: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      cash: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      debit_order: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800'
     };
 
     const labels = {
@@ -130,15 +130,15 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i} className="animate-pulse bg-card">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                <div className="h-12 w-12 bg-muted rounded-full"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-1/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
+                <div className="h-8 bg-muted rounded w-20"></div>
               </div>
             </CardContent>
           </Card>
@@ -149,10 +149,10 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-destructive/50 bg-destructive/10">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-red-600">
+            <div className="flex items-center space-x-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               <span>Failed to load payments: {error}</span>
             </div>
@@ -168,12 +168,12 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
 
   if (!payments || payments.length === 0) {
     return (
-      <Card>
+      <Card className="bg-card">
         <CardContent className="pt-6">
           <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
-            <p className="text-gray-500">
+            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No payments found</h3>
+            <p className="text-muted-foreground">
               {searchTerm 
                 ? `No payments match "${searchTerm}"`
                 : `No ${status === 'all' ? '' : status} payments at this time`
@@ -200,8 +200,8 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
         {payments.map((payment) => (
         <Card 
           key={payment.id} 
-          className={`hover:shadow-md transition-shadow duration-200 cursor-pointer ${
-            payment.status === 'overdue' ? 'ring-2 ring-red-200 shadow-md' : ''
+          className={`hover:shadow-md transition-shadow duration-200 cursor-pointer bg-card border-border ${
+            payment.status === 'overdue' ? 'ring-2 ring-red-200 dark:ring-red-800 shadow-md' : ''
           }`}
           onClick={() => onPaymentSelect?.(payment.id)}
         >
@@ -210,14 +210,14 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
               {/* Payment Icon */}
               <div className="flex-shrink-0">
                 <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                  payment.status === 'completed' ? 'bg-green-100' :
-                  payment.status === 'overdue' || payment.status === 'failed' ? 'bg-red-100' :
-                  'bg-yellow-100'
+                  payment.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30' :
+                  payment.status === 'overdue' || payment.status === 'failed' ? 'bg-red-100 dark:bg-red-900/30' :
+                  'bg-yellow-100 dark:bg-yellow-900/30'
                 }`}>
                   <CreditCard className={`h-6 w-6 ${
-                    payment.status === 'completed' ? 'text-green-600' :
-                    payment.status === 'overdue' || payment.status === 'failed' ? 'text-red-600' :
-                    'text-yellow-600'
+                    payment.status === 'completed' ? 'text-green-600 dark:text-green-400' :
+                    payment.status === 'overdue' || payment.status === 'failed' ? 'text-red-600 dark:text-red-400' :
+                    'text-yellow-600 dark:text-yellow-400'
                   }`} />
                 </div>
               </div>
@@ -225,18 +225,23 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
               {/* Payment Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <h3 
+                      className="text-lg font-semibold text-foreground truncate tabular-nums"
+                      title={formatCurrency(payment.amount)}
+                    >
                       {formatCurrency(payment.amount)}
                     </h3>
-                    {getStatusBadge(payment.status)}
-                    {getPaymentMethodBadge(payment.paymentMethod)}
+                    <div className="shrink-0 flex space-x-2">
+                      {getStatusBadge(payment.status)}
+                      {getPaymentMethodBadge(payment.paymentMethod)}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">
+                  <div className="text-right shrink-0 ml-2">
+                    <div className="text-sm font-medium text-foreground">
                       Ref: {payment.reference}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {payment.status === 'overdue' ? 'Overdue' : 
                        payment.paidAt ? `Paid ${formatDate(payment.paidAt)}` :
                        `Due ${formatDate(payment.dueDate)}`}
@@ -244,25 +249,25 @@ const PaymentsList: React.FC<PaymentsListProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4" />
-                    <span className="truncate">{payment.clientName}</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="truncate" title={payment.clientName}>{payment.clientName}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <Calendar className="h-4 w-4 shrink-0" />
                     <span>Due: {formatDate(payment.dueDate)}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <CreditCard className="h-4 w-4 shrink-0" />
                     <span>Loan: {payment.loanId.slice(-6)}</span>
                   </div>
                 </div>
 
                 {/* Additional Details */}
-                <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-center justify-between text-sm">
-                    <div className="text-gray-500">
+                    <div className="text-muted-foreground">
                       Created: {formatDate(payment.createdAt)}
                     </div>
                     <div className="flex space-x-2">

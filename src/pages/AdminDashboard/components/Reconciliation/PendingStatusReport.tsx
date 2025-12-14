@@ -62,31 +62,31 @@ export function PendingStatusReport() {
                 </TableRow>
               ) : reports?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-green-600">
+                  <TableCell colSpan={7} className="text-center py-8 text-green-600 dark:text-green-400">
                     ✓ No items pending status
                   </TableCell>
                 </TableRow>
               ) : (
                 reports?.map((report) => (
                   <TableRow key={report.id}>
-                    <TableCell>
+                    <TableCell className="tabular-nums">
                       {new Date(report.run_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{report.window_id}</TableCell>
-                    <TableCell>{report.participant_name || 'All'}</TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="max-w-[150px] truncate" title={report.participant_name || 'All'}>{report.participant_name || 'All'}</TableCell>
+                    <TableCell className="font-mono text-sm max-w-[200px] truncate" title={report.file_name}>
                       {report.file_name}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">
                       {report.file_size
                         ? `${(report.file_size / 1024).toFixed(1)} KB`
                         : '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="tabular-nums">
                       {new Date(report.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">Pending</Badge>
+                      <Badge variant="secondary" className="shrink-0">Pending</Badge>
                     </TableCell>
                   </TableRow>
                 ))

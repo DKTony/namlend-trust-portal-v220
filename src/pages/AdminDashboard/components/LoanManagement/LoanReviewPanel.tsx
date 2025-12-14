@@ -113,21 +113,21 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
   };
 
   const getRiskLevel = (score: number) => {
-    if (score >= 70) return { label: 'High', color: 'bg-red-100 text-red-800 border-red-200' };
-    if (score >= 40) return { label: 'Medium', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
-    return { label: 'Low', color: 'bg-green-100 text-green-800 border-green-200' };
+    if (score >= 70) return { label: 'High', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800' };
+    if (score >= 40) return { label: 'Medium', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' };
+    return { label: 'Low', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' };
   };
 
   const getDocumentStatusIcon = (status: string) => {
     switch (status) {
       case 'verified':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'pending':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
       case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-600" />;
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -158,13 +158,13 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
     (1 - Math.pow(1 + (loanDetails.interestRate / 100 / 12), -loanDetails.term));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-background rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-border">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2 className="text-2xl font-bold">Loan Application Review</h2>
-            <p className="text-gray-600">Application ID: {loanId}</p>
+            <h2 className="text-2xl font-bold text-foreground">Loan Application Review</h2>
+            <p className="text-muted-foreground">Application ID: {loanId}</p>
           </div>
           <Button variant="ghost" onClick={onClose}>
             <XCircle className="h-5 w-5" />
@@ -195,26 +195,26 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Full Name</label>
-                        <p className="text-lg font-semibold">{loanDetails.applicantName}</p>
+                        <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                        <p className="text-lg font-semibold text-foreground">{loanDetails.applicantName}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="flex items-center space-x-2">
+                        <label className="text-sm font-medium text-muted-foreground">Email</label>
+                        <p className="flex items-center space-x-2 text-foreground">
                           <Mail className="h-4 w-4" />
                           <span>{loanDetails.applicantEmail}</span>
                         </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Phone</label>
-                        <p className="flex items-center space-x-2">
+                        <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                        <p className="flex items-center space-x-2 text-foreground">
                           <Phone className="h-4 w-4" />
                           <span>{loanDetails.phone}</span>
                         </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Address</label>
-                        <p className="flex items-center space-x-2">
+                        <label className="text-sm font-medium text-muted-foreground">Address</label>
+                        <p className="flex items-center space-x-2 text-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{loanDetails.address}</span>
                         </p>
@@ -233,34 +233,36 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Requested Amount</label>
-                          <p className="text-2xl font-bold text-green-600">{formatCurrency(loanDetails.amount)}</p>
+                      <div className="space-y-4 min-w-0">
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Requested Amount</label>
+                          <p className="text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums" title={formatCurrency(loanDetails.amount)}>{formatCurrency(loanDetails.amount)}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Purpose</label>
-                          <p className="text-lg">{loanDetails.purpose}</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Purpose</label>
+                          <p className="text-lg truncate text-foreground" title={loanDetails.purpose}>{loanDetails.purpose}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Risk Assessment</label>
-                          <Badge variant="outline" className={riskLevel.color}>
-                            {riskLevel.label} Risk ({loanDetails.riskScore}%)
-                          </Badge>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Risk Assessment</label>
+                          <div className="flex">
+                            <Badge variant="outline" className={`${riskLevel.color} shrink-0`}>
+                              {riskLevel.label} Risk ({loanDetails.riskScore}%)
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Term</label>
-                          <p className="text-lg">{loanDetails.term} months</p>
+                      <div className="space-y-4 min-w-0">
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Term</label>
+                          <p className="text-lg tabular-nums text-foreground">{loanDetails.term} months</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Interest Rate</label>
-                          <p className="text-lg">{loanDetails.interestRate}% per annum</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Interest Rate</label>
+                          <p className="text-lg tabular-nums text-foreground">{loanDetails.interestRate}% per annum</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Monthly Payment</label>
-                          <p className="text-lg font-semibold">{formatCurrency(monthlyPayment)}</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Monthly Payment</label>
+                          <p className="text-lg font-semibold truncate tabular-nums text-foreground" title={formatCurrency(monthlyPayment)}>{formatCurrency(monthlyPayment)}</p>
                         </div>
                       </div>
                     </div>
@@ -278,32 +280,32 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Monthly Income</label>
-                          <p className="text-xl font-semibold">{formatCurrency(loanDetails.monthlyIncome)}</p>
+                      <div className="space-y-4 min-w-0">
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Monthly Income</label>
+                          <p className="text-xl font-semibold tabular-nums text-foreground">{formatCurrency(loanDetails.monthlyIncome)}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Employment Status</label>
-                          <p className="text-lg">{loanDetails.employmentStatus}</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Employment Status</label>
+                          <p className="text-lg truncate text-foreground" title={loanDetails.employmentStatus}>{loanDetails.employmentStatus}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Employer</label>
-                          <p className="text-lg">{loanDetails.employer}</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Employer</label>
+                          <p className="text-lg truncate text-foreground" title={loanDetails.employer}>{loanDetails.employer}</p>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Credit Score</label>
-                          <p className="text-xl font-semibold">{loanDetails.creditScore}</p>
+                      <div className="space-y-4 min-w-0">
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Credit Score</label>
+                          <p className="text-xl font-semibold tabular-nums text-foreground">{loanDetails.creditScore}</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Debt-to-Income Ratio</label>
-                          <p className="text-lg">{((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Debt-to-Income Ratio</label>
+                          <p className="text-lg tabular-nums text-foreground">{((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%</p>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-500">Application Date</label>
-                          <p className="text-lg">{formatDate(loanDetails.submittedAt)}</p>
+                        <div className="min-w-0">
+                          <label className="text-sm font-medium text-muted-foreground">Application Date</label>
+                          <p className="text-lg tabular-nums text-foreground">{formatDate(loanDetails.submittedAt)}</p>
                         </div>
                       </div>
                     </div>
@@ -322,12 +324,12 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   <CardContent>
                     <div className="space-y-4">
                       {loanDetails.documents.map((doc) => (
-                        <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div key={doc.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                           <div className="flex items-center space-x-3">
                             {getDocumentStatusIcon(doc.status)}
                             <div>
-                              <p className="font-medium">{doc.name}</p>
-                              <p className="text-sm text-gray-500">
+                              <p className="font-medium text-foreground">{doc.name}</p>
+                              <p className="text-sm text-muted-foreground">
                                 Uploaded {formatDate(doc.uploadedAt)}
                               </p>
                             </div>
@@ -336,9 +338,9 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                             <Badge 
                               variant="outline" 
                               className={
-                                doc.status === 'verified' ? 'bg-green-100 text-green-800 border-green-200' :
-                                doc.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                                'bg-red-100 text-red-800 border-red-200'
+                                doc.status === 'verified' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' :
+                                doc.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' :
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
                               }
                             >
                               {doc.status}
@@ -369,19 +371,19 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   <CardContent>
                     <div className="space-y-4">
                       {loanDetails.creditHistory.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
                           <div>
-                            <p className="font-medium">{item.type}</p>
-                            <p className="text-sm text-gray-500">{formatDate(item.date)}</p>
+                            <p className="font-medium text-foreground">{item.type}</p>
+                            <p className="text-sm text-muted-foreground">{formatDate(item.date)}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(item.amount)}</p>
+                            <p className="font-semibold text-foreground">{formatCurrency(item.amount)}</p>
                             <Badge 
                               variant="outline"
                               className={
-                                item.status === 'Paid' ? 'bg-green-100 text-green-800 border-green-200' :
-                                item.status === 'Active' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                                'bg-red-100 text-red-800 border-red-200'
+                                item.status === 'Paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' :
+                                item.status === 'Active' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                                'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
                               }
                             >
                               {item.status}
@@ -397,47 +399,49 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
           </div>
 
           {/* Decision Panel */}
-          <div className="w-80 border-l bg-gray-50 p-6 space-y-6">
+          <div className="w-80 border-l border-border bg-muted/30 p-6 space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Decision Panel</h3>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Decision Panel</h3>
               
               {/* Quick Stats */}
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Risk Score:</span>
+                  <span className="text-sm text-muted-foreground">Risk Score:</span>
                   <Badge variant="outline" className={riskLevel.color}>
                     {loanDetails.riskScore}%
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Credit Score:</span>
-                  <span className="font-medium">{loanDetails.creditScore}</span>
+                  <span className="text-sm text-muted-foreground">Credit Score:</span>
+                  <span className="font-medium text-foreground">{loanDetails.creditScore}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">DTI Ratio:</span>
-                  <span className="font-medium">{((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%</span>
+                  <span className="text-sm text-muted-foreground">DTI Ratio:</span>
+                  <span className="font-medium text-foreground">{((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%</span>
                 </div>
               </div>
 
               {/* Comments */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Comments (Optional)</label>
+                <label className="text-sm font-medium text-foreground">Comments (Optional)</label>
                 <Textarea
                   placeholder="Add any comments or notes about this application..."
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
                   rows={3}
+                  className="bg-background border-input text-foreground"
                 />
               </div>
 
               {/* Rejection Reason */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Rejection Reason</label>
+                <label className="text-sm font-medium text-foreground">Rejection Reason</label>
                 <Textarea
                   placeholder="Required if rejecting the application..."
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   rows={3}
+                  className="bg-background border-input text-foreground"
                 />
               </div>
 
@@ -446,7 +450,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                 <Button
                   onClick={handleApprove}
                   disabled={loading}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   {loading ? 'Processing...' : 'Approve Application'}
@@ -456,7 +460,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   onClick={handleReject}
                   disabled={loading || !rejectionReason.trim()}
                   variant="outline"
-                  className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                  className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   {loading ? 'Processing...' : 'Reject Application'}
@@ -465,7 +469,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                 <Button
                   onClick={onClose}
                   variant="ghost"
-                  className="w-full"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
                   Close Review
                 </Button>

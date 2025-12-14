@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { formatNAD } from '@/utils/currency';
+import { cn } from '@/lib/utils';
 import {
   DollarSign,
   Calendar,
@@ -18,7 +19,10 @@ import {
   Clock,
   AlertCircle,
   Percent,
-  CreditCard
+  CreditCard,
+  Briefcase,
+  ShieldCheck,
+  Wallet
 } from 'lucide-react';
 
 interface LoanDetailsModalProps {
@@ -59,21 +63,21 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { bg: string; icon: React.ReactNode }> = {
-      pending: { bg: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: <Clock className="h-3 w-3" /> },
-      approved: { bg: 'bg-blue-100 text-blue-800 border-blue-200', icon: <CheckCircle className="h-3 w-3" /> },
-      disbursed: { bg: 'bg-green-100 text-green-800 border-green-200', icon: <CheckCircle className="h-3 w-3" /> },
-      active: { bg: 'bg-green-100 text-green-800 border-green-200', icon: <TrendingUp className="h-3 w-3" /> },
-      rejected: { bg: 'bg-red-100 text-red-800 border-red-200', icon: <AlertCircle className="h-3 w-3" /> },
-      completed: { bg: 'bg-gray-100 text-gray-800 border-gray-200', icon: <CheckCircle className="h-3 w-3" /> }
+    const variants: Record<string, { className: string; icon: React.ReactNode }> = {
+      pending: { className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800', icon: <Clock className="h-3 w-3" /> },
+      approved: { className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800', icon: <CheckCircle className="h-3 w-3" /> },
+      disbursed: { className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800', icon: <CheckCircle className="h-3 w-3" /> },
+      active: { className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800', icon: <TrendingUp className="h-3 w-3" /> },
+      rejected: { className: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800', icon: <AlertCircle className="h-3 w-3" /> },
+      completed: { className: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700', icon: <CheckCircle className="h-3 w-3" /> }
     };
 
     const variant = variants[status] || variants.pending;
 
     return (
-      <Badge variant="outline" className={`${variant.bg} flex items-center space-x-1`}>
+      <Badge variant="outline" className={cn("flex items-center space-x-1.5 px-3 py-1", variant.className)}>
         {variant.icon}
-        <span className="capitalize">{status}</span>
+        <span className="capitalize font-medium">{status}</span>
       </Badge>
     );
   };
@@ -88,203 +92,157 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold">Loan Details</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-background border-border">
+        {/* Header */}
+        <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+               <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                <FileText className="h-5 w-5 text-blue-500" />
+               </div>
+               <div>
+                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">Loan Details</DialogTitle>
+                 <p className="text-sm text-muted-foreground font-mono mt-0.5">#{loan.id.slice(0, 8)}</p>
+               </div>
+            </div>
             {getStatusBadge(loan.status)}
           </div>
-          <p className="text-sm text-gray-500">Loan ID: {loan.id.slice(-8)}</p>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Loan Amount Section */}
-          <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="flex items-center space-x-2 text-gray-600 mb-2">
-                    <DollarSign className="h-5 w-5" />
-                    <span className="text-sm font-medium">Loan Amount</span>
-                  </div>
-                  <p className="text-3xl font-bold text-green-600">{formatNAD(loan.amount)}</p>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2 text-gray-600 mb-2">
-                    <CreditCard className="h-5 w-5" />
-                    <span className="text-sm font-medium">Monthly Payment</span>
-                  </div>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {loan.monthly_payment ? formatNAD(loan.monthly_payment) : 'Calculating...'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Loan Terms */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <span>Loan Terms</span>
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 text-gray-600 mb-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-xs">Term</span>
-                  </div>
-                  <p className="text-xl font-bold">{loan.term_months || 'N/A'} months</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 text-gray-600 mb-1">
-                    <Percent className="h-4 w-4" />
-                    <span className="text-xs">Interest Rate</span>
-                  </div>
-                  <p className="text-xl font-bold">{loan.interest_rate}% p.a.</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 text-gray-600 mb-1">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="text-xs">Total Repayment</span>
-                  </div>
-                  <p className="text-lg font-bold">
-                    {loan.total_repayment ? formatNAD(loan.total_repayment) : 'N/A'}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 text-gray-600 mb-1">
-                    <FileText className="h-4 w-4" />
-                    <span className="text-xs">Purpose</span>
-                  </div>
-                  <p className="text-sm font-medium capitalize">{loan.purpose}</p>
-                </CardContent>
-              </Card>
+        <div className="p-6 space-y-8">
+          {/* Primary Stats - Hero Section */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-card rounded-2xl p-5 border border-border relative overflow-hidden group shadow-sm">
+               <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+               <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                 <DollarSign className="h-4 w-4" />
+                 <span className="text-xs font-medium uppercase tracking-wider">Principal</span>
+               </div>
+               <p className="text-3xl font-bold text-foreground tracking-tight">{formatNAD(loan.amount)}</p>
+            </div>
+            
+            <div className="bg-card rounded-2xl p-5 border border-border relative overflow-hidden group shadow-sm">
+               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+               <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                 <CreditCard className="h-4 w-4" />
+                 <span className="text-xs font-medium uppercase tracking-wider">Monthly</span>
+               </div>
+               <p className="text-3xl font-bold text-blue-500 dark:text-blue-400 tracking-tight">
+                  {loan.monthly_payment ? formatNAD(loan.monthly_payment) : '...'}
+               </p>
             </div>
           </div>
 
-          {/* Applicant Information */}
+          {/* Terms Grid - The "Receipt" */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <User className="h-5 w-5 text-purple-600" />
-              <span>Applicant Information</span>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Contract Terms
             </h3>
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Employment Status:</span>
-                      <span className="font-medium capitalize">{employmentStatus}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Monthly Income:</span>
-                      <span className="font-medium">{formatNAD(monthlyIncome)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Existing Debt:</span>
-                      <span className="font-medium">{formatNAD(existingDebt)}</span>
-                    </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden border border-border">
+              {[
+                { label: 'Term', value: `${loan.term_months || 'N/A'} mo`, icon: Calendar },
+                { label: 'Rate', value: `${loan.interest_rate}%`, icon: Percent },
+                { label: 'Total', value: loan.total_repayment ? formatNAD(loan.total_repayment) : 'N/A', icon: TrendingUp },
+                { label: 'Purpose', value: loan.purpose, icon: FileText, capitalize: true },
+              ].map((item, i) => (
+                <div key={i} className="bg-card p-4 hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
+                    <item.icon className="h-3.5 w-3.5" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Credit Score:</span>
-                      <span className="font-medium">{creditScore}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Verified:</span>
-                      <Badge variant={userVerified ? "default" : "outline"}>
-                        {userVerified ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Debt-to-Income:</span>
-                      <span className="font-medium">
-                        {monthlyIncome > 0 
-                          ? `${((existingDebt / monthlyIncome) * 100).toFixed(1)}%`
-                          : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
+                  <p className={cn("text-sm font-semibold text-foreground", item.capitalize && "capitalize")}>
+                    {item.value}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           </div>
 
-          {/* Timeline */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-orange-600" />
-              <span>Timeline</span>
-            </h3>
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Application Submitted</p>
-                      <p className="text-sm text-gray-500">{formatDate(loan.created_at)}</p>
-                    </div>
-                  </div>
-                  {loan.approved_at && (
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Loan Approved</p>
-                        <p className="text-sm text-gray-500">{formatDate(loan.approved_at)}</p>
-                      </div>
-                    </div>
-                  )}
-                  {loan.disbursed_at && (
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                        <DollarSign className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">Funds Disbursed</p>
-                        <p className="text-sm text-gray-500">{formatDate(loan.disbursed_at)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Additional Request Data */}
-          {Object.keys(requestData).length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Applicant Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
-              <Card className="bg-gray-50">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    {Object.entries(requestData)
-                      .filter(([key]) => !['employment_status', 'monthly_income', 'existing_debt', 'credit_score', 'user_verified'].includes(key))
-                      .map(([key, value]) => (
-                        <div key={key} className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="text-gray-600 capitalize">{key.replace(/_/g, ' ')}:</span>
-                          <span className="font-medium text-right">
-                            {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
-                             typeof value === 'number' ? value.toLocaleString() : 
-                             String(value)}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
+               <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Applicant Profile
+              </h3>
+              <div className="bg-muted/30 rounded-2xl border border-border p-1 space-y-1">
+                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                       <Briefcase className="h-3.5 w-3.5" /> Employment
+                    </span>
+                    <span className="text-sm font-medium text-foreground capitalize">{employmentStatus}</span>
+                 </div>
+                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                       <Wallet className="h-3.5 w-3.5" /> Income
+                    </span>
+                    <span className="text-sm font-medium text-foreground font-mono">{formatNAD(monthlyIncome)}</span>
+                 </div>
+                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+                    <span className="text-sm text-muted-foreground flex items-center gap-2">
+                       <ShieldCheck className="h-3.5 w-3.5" /> Credit Score
+                    </span>
+                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-border">
+                      {creditScore}
+                    </Badge>
+                 </div>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Status History
+              </h3>
+              <div className="relative pl-2 space-y-6">
+                 {/* Vertical Line */}
+                 <div className="absolute left-[19px] top-2 bottom-2 w-px bg-border" />
+                 
+                 {[
+                   { label: 'Applied', date: loan.created_at, active: true, icon: FileText, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+                   { label: 'Approved', date: loan.approved_at, active: !!loan.approved_at, icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+                   { label: 'Disbursed', date: loan.disbursed_at, active: !!loan.disbursed_at, icon: DollarSign, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/20' }
+                 ].map((step, i) => (
+                   <div key={i} className={cn("relative flex items-center gap-4 group", !step.active && "opacity-40 grayscale")}>
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl border flex items-center justify-center relative z-10 transition-all duration-300",
+                        step.active ? `${step.bg} ${step.border} shadow-lg shadow-black/5 dark:shadow-black/20` : "bg-muted border-border"
+                      )}>
+                        <step.icon className={cn("h-4 w-4 transition-colors", step.active ? step.color : "text-muted-foreground")} />
+                      </div>
+                      <div>
+                        <p className={cn("text-sm font-medium transition-colors", step.active ? "text-foreground" : "text-muted-foreground")}>
+                          {step.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {step.date ? formatDate(step.date) : 'Pending'}
+                        </p>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Metadata Footer */}
+          {Object.keys(requestData).length > 0 && (
+            <div className="bg-muted/30 rounded-xl p-4 border border-border">
+               <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4">
+                 {Object.entries(requestData)
+                   .filter(([key]) => !['employment_status', 'monthly_income', 'existing_debt', 'credit_score', 'user_verified'].includes(key))
+                   .map(([key, value]) => (
+                     <div key={key} className="flex flex-col">
+                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{key.replace(/_/g, ' ')}</span>
+                       <span className="text-sm text-foreground font-medium truncate">
+                         {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
+                          typeof value === 'number' ? value.toLocaleString() : 
+                          String(value)}
+                       </span>
+                     </div>
+                   ))}
+               </div>
             </div>
           )}
         </div>

@@ -53,10 +53,10 @@ const SupportTickets: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      open: 'bg-red-100 text-red-800 border-red-200',
-      'in-progress': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      resolved: 'bg-green-100 text-green-800 border-green-200',
-      closed: 'bg-gray-100 text-gray-800 border-gray-200'
+      open: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      'in-progress': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      resolved: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      closed: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700'
     };
 
     const icons = {
@@ -76,10 +76,10 @@ const SupportTickets: React.FC = () => {
 
   const getPriorityBadge = (priority: string) => {
     const variants = {
-      low: 'bg-gray-100 text-gray-800 border-gray-200',
-      medium: 'bg-blue-100 text-blue-800 border-blue-200',
-      high: 'bg-orange-100 text-orange-800 border-orange-200',
-      urgent: 'bg-red-100 text-red-800 border-red-200'
+      low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      medium: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      urgent: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     return (
@@ -91,11 +91,11 @@ const SupportTickets: React.FC = () => {
 
   const getCategoryBadge = (category: string) => {
     const variants = {
-      technical: 'bg-purple-100 text-purple-800 border-purple-200',
-      billing: 'bg-green-100 text-green-800 border-green-200',
-      loan: 'bg-blue-100 text-blue-800 border-blue-200',
-      account: 'bg-orange-100 text-orange-800 border-orange-200',
-      general: 'bg-gray-100 text-gray-800 border-gray-200'
+      technical: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      billing: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      loan: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      account: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      general: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700'
     };
 
     return (
@@ -117,15 +117,15 @@ const SupportTickets: React.FC = () => {
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i} className="animate-pulse bg-card border-border">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
+                <div className="h-10 w-10 bg-muted rounded-full"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-1/3"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
-                <div className="h-6 bg-gray-200 rounded w-16"></div>
+                <div className="h-6 bg-muted rounded w-16"></div>
               </div>
             </CardContent>
           </Card>
@@ -139,8 +139,8 @@ const SupportTickets: React.FC = () => {
       {/* Header with Actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-lg font-semibold">Support Tickets</h3>
-          <p className="text-sm text-gray-600">Manage client support requests and issues</p>
+          <h3 className="text-lg font-semibold text-foreground">Support Tickets</h3>
+          <p className="text-sm text-muted-foreground">Manage client support requests and issues</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm">
@@ -156,47 +156,47 @@ const SupportTickets: React.FC = () => {
 
       {/* Support Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Open Tickets</p>
-                <p className="text-2xl font-bold text-red-600">{tickets?.filter(t => t.status === 'open').length || 0}</p>
+                <p className="text-sm text-muted-foreground">Open Tickets</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{tickets?.filter(t => t.status === 'open').length || 0}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-red-600" />
+              <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">In Progress</p>
-                <p className="text-2xl font-bold text-yellow-600">{tickets?.filter(t => t.status === 'in-progress').length || 0}</p>
+                <p className="text-sm text-muted-foreground">In Progress</p>
+                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{tickets?.filter(t => t.status === 'in-progress').length || 0}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Resolved Today</p>
-                <p className="text-2xl font-bold text-green-600">12</p>
+                <p className="text-sm text-muted-foreground">Resolved Today</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">12</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Response Time</p>
-                <p className="text-2xl font-bold">1.2h</p>
+                <p className="text-sm text-muted-foreground">Avg Response Time</p>
+                <p className="text-2xl font-bold text-foreground">1.2h</p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -205,13 +205,13 @@ const SupportTickets: React.FC = () => {
       {/* Filters and Search */}
       <div className="flex space-x-4 items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input
             type="text"
             placeholder="Search tickets by subject, client, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
           />
         </div>
         <div className="flex space-x-2">
@@ -236,10 +236,10 @@ const SupportTickets: React.FC = () => {
 
       {/* Tickets List */}
       {error ? (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive/50 bg-destructive/10">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-red-600">
+              <div className="flex items-center space-x-2 text-destructive">
                 <AlertCircle className="h-5 w-5" />
                 <span>Failed to load support tickets: {error}</span>
               </div>
@@ -250,12 +250,12 @@ const SupportTickets: React.FC = () => {
           </CardContent>
         </Card>
       ) : !tickets || tickets.length === 0 ? (
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No support tickets found</h3>
-              <p className="text-gray-500">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No support tickets found</h3>
+              <p className="text-muted-foreground">
                 {searchTerm 
                   ? `No tickets match "${searchTerm}"`
                   : 'No support tickets at this time'
@@ -269,8 +269,8 @@ const SupportTickets: React.FC = () => {
           {tickets.map((ticket) => (
             <Card 
               key={ticket.id} 
-              className={`hover:shadow-md transition-shadow duration-200 ${
-                ticket.priority === 'urgent' ? 'ring-2 ring-red-200 shadow-md' : ''
+              className={`hover:shadow-md transition-shadow duration-200 bg-card border-border ${
+                ticket.priority === 'urgent' ? 'ring-2 ring-red-200 dark:ring-red-800 shadow-md' : ''
               }`}
             >
               <CardContent className="p-6">
@@ -278,14 +278,14 @@ const SupportTickets: React.FC = () => {
                   {/* Ticket Priority Indicator */}
                   <div className="flex-shrink-0">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                      ticket.priority === 'urgent' ? 'bg-red-100' :
-                      ticket.priority === 'high' ? 'bg-orange-100' :
-                      ticket.priority === 'medium' ? 'bg-blue-100' : 'bg-gray-100'
+                      ticket.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30' :
+                      ticket.priority === 'high' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                      ticket.priority === 'medium' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800'
                     }`}>
                       <AlertCircle className={`h-5 w-5 ${
-                        ticket.priority === 'urgent' ? 'text-red-600' :
-                        ticket.priority === 'high' ? 'text-orange-600' :
-                        ticket.priority === 'medium' ? 'text-blue-600' : 'text-gray-600'
+                        ticket.priority === 'urgent' ? 'text-red-600 dark:text-red-400' :
+                        ticket.priority === 'high' ? 'text-orange-600 dark:text-orange-400' :
+                        ticket.priority === 'medium' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
                       }`} />
                     </div>
                   </div>
@@ -293,70 +293,72 @@ const SupportTickets: React.FC = () => {
                   {/* Ticket Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-3">
-                        <h4 className="text-lg font-semibold text-gray-900 truncate">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
+                        <h4 className="text-lg font-semibold text-foreground truncate" title={ticket.subject}>
                           {ticket.subject}
                         </h4>
-                        {getStatusBadge(ticket.status)}
-                        {getPriorityBadge(ticket.priority)}
-                        {getCategoryBadge(ticket.category)}
+                        <div className="flex space-x-2 shrink-0">
+                          {getStatusBadge(ticket.status)}
+                          {getPriorityBadge(ticket.priority)}
+                          {getCategoryBadge(ticket.category)}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground shrink-0 tabular-nums">
                         #{ticket.id.slice(-6)}
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                      <div className="flex items-center space-x-1">
-                        <User className="h-4 w-4" />
-                        <span>{ticket.clientName}</span>
+                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3 flex-wrap">
+                      <div className="flex items-center space-x-1 min-w-0">
+                        <User className="h-4 w-4 shrink-0" />
+                        <span className="truncate" title={ticket.clientName}>{ticket.clientName}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 shrink-0">
                         <Calendar className="h-4 w-4" />
-                        <span>Created {formatDate(ticket.createdAt)}</span>
+                        <span className="tabular-nums">Created {formatDate(ticket.createdAt)}</span>
                       </div>
                       {ticket.assignedTo && (
-                        <div className="flex items-center space-x-1">
-                          <User className="h-4 w-4" />
-                          <span>Assigned to {ticket.assignedTo}</span>
+                        <div className="flex items-center space-x-1 min-w-0">
+                          <User className="h-4 w-4 shrink-0" />
+                          <span className="truncate" title={ticket.assignedTo}>Assigned to {ticket.assignedTo}</span>
                         </div>
                       )}
                     </div>
 
-                    <p className="text-gray-700 line-clamp-2 mb-3">
+                    <p className="text-foreground line-clamp-2 mb-3" title={ticket.description}>
                       {ticket.description}
                     </p>
 
                     {/* Response/Resolution Times */}
                     {(ticket.responseTime || ticket.resolutionTime) && (
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground mb-3">
                         {ticket.responseTime && (
-                          <span>Response: {ticket.responseTime}h</span>
+                          <span className="tabular-nums">Response: {ticket.responseTime}h</span>
                         )}
                         {ticket.resolutionTime && (
-                          <span>Resolution: {ticket.resolutionTime}h</span>
+                          <span className="tabular-nums">Resolution: {ticket.resolutionTime}h</span>
                         )}
                       </div>
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedTicket(ticket.id)}>
+                    <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar">
+                      <Button variant="outline" size="sm" onClick={() => setSelectedTicket(ticket.id)} className="shrink-0">
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="shrink-0">
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Add Response
                       </Button>
                       {ticket.status === 'open' && (
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="shrink-0">
                           <Edit className="h-4 w-4 mr-2" />
                           Assign
                         </Button>
                       )}
                       {ticket.status === 'in-progress' && (
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 shrink-0">
                           <CheckCircle className="h-4 w-4 mr-2" />
                           Mark Resolved
                         </Button>
@@ -365,11 +367,11 @@ const SupportTickets: React.FC = () => {
                   </div>
 
                   {/* Last Updated */}
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-xs text-gray-500">
+                  <div className="flex-shrink-0 text-right ml-2">
+                    <div className="text-xs text-muted-foreground">
                       Updated
                     </div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-medium tabular-nums text-foreground">
                       {formatDate(ticket.updatedAt)}
                     </div>
                   </div>
@@ -382,18 +384,18 @@ const SupportTickets: React.FC = () => {
 
       {/* Ticket Detail Modal */}
       {selectedTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Ticket Details</h3>
+                <h3 className="text-lg font-semibold text-foreground">Ticket Details</h3>
                 <Button variant="ghost" size="sm" onClick={() => setSelectedTicket(null)}>
                   ×
                 </Button>
               </div>
               <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Ticket details will be displayed here</p>
+                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Ticket details will be displayed here</p>
               </div>
             </div>
           </div>

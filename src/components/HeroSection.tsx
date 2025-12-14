@@ -84,7 +84,7 @@ const HeroSection = () => {
 
           {/* Quick Application Card */}
           <div className="lg:max-w-md mx-auto w-full">
-            <Card className="p-6 bg-background/95 backdrop-blur-sm shadow-strong">
+            <Card className="p-6 bg-background/95 backdrop-blur-sm shadow-strong border-border">
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-primary mb-2">
                   Get Started Today
@@ -99,7 +99,7 @@ const HeroSection = () => {
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Loan Amount (NAD)
                   </label>
-                  <select className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-accent focus:border-transparent">
+                  <select className="w-full p-3 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option>N$ 500 - N$ 2,000</option>
                     <option>N$ 2,000 - N$ 5,000</option>
                     <option>N$ 5,000 - N$ 10,000</option>
@@ -111,7 +111,7 @@ const HeroSection = () => {
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Monthly Income (NAD)
                   </label>
-                  <select className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-accent focus:border-transparent">
+                  <select className="w-full p-3 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option>N$ 0 - N$ 3,000</option>
                     <option>N$ 3,000 - N$ 6,000</option>
                     <option>N$ 6,000 - N$ 10,000</option>
@@ -126,7 +126,7 @@ const HeroSection = () => {
                   <input 
                     type="tel" 
                     placeholder="+264 XX XXX XXXX"
-                    className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-accent focus:border-transparent"
+                    className="w-full p-3 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
 

@@ -1,8 +1,8 @@
 # NamLend Trust - Technical Context & Handover Document
 
-**Version**: 2.5.0  
-**Last Updated**: December 7, 2025  
-**Status**: ✅ Production-Ready Digital Lending Platform  
+**Version**: 2.7.0  
+**Last Updated**: December 12, 2025  
+**Status**: ✅ Production-ready core; IPS in Mock Mode; settlement offline pipeline scaffolded  
 **Supabase Project ID**: `puahejtaskncpazjyxqp`  
 **Database Region**: eu-north-1
 
@@ -22,6 +22,7 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 - ✅ **E2E Test Coverage** - 67% coverage with proven fixture pattern
 - ✅ **Database Migration** - All Phase 4 tables deployed to production
 - ✅ **Functionality Mapped** - Complete feature-to-database mapping in `FUNCTIONALITY_MAP.md`
+- ✅ **Settlement System Scaffold** - BON/IPP DNS schema + admin reconciliation UI (pacs.009/NTSL viewers, adjustments, acknowledgements)
 
 ### Phase 4 Integration Complete ✅
 
@@ -311,6 +312,36 @@ Application → Under Review → Approved/Rejected → Disbursement → Active �
 
 ---
 
+## Transaction Settlement (IPP/IRCS Back Office)
+
+### Current Status
+- Schema for DNS settlement is deployed via `supabase/migrations/20251212053000_settlement_system.sql` (13 tables, pacs.009 batch + ack stores, reports, exposures); seeded windows/fees/operator.
+- Admin reconciliation UI is live under `ReconciliationDashboard` with viewers for pacs.009, acknowledgements, NTSL/raw data, adjustments, timeouts, and exposures; powered by `src/hooks/useSettlement.ts` + `src/services/settlementService.ts` + `src/types/settlement.ts`.
+- RPC surface for read paths is in place (`get_settlement_runs`, `get_settlement_run_details`, `get_pacs009_batch`, `get_settlement_reports`, `get_settlement_adjustments`, `get_timeout_transactions`, `get_settlement_statistics`).
+- Netting/obligation creation, pacs.009 XML generation, and outbound SFTP/AXWAY dispatch are **not yet wired**; tables expect future jobs to populate `settlement_obligations`, `settlement_net_instructions`, `settlement_pacs009_batches`, and `settlement_acknowledgements`.
+- IPS remains in Mock Mode for online payments; settlement is still an offline/back-office pipeline awaiting switch connectivity and transport keys.
+
+### Components & Interfaces
+- Data: `settlement_runs`, `settlement_obligations`, `settlement_net_instructions`, `settlement_pacs009_batches`, `settlement_acknowledgements`, `settlement_reports`, `settlement_adjustments`, `settlement_timeout_transactions`, `settlement_exposures`, `settlement_windows`, `settlement_holiday_calendar`, `settlement_participants`, `settlement_fee_rules`.
+- UI: `src/pages/AdminDashboard/components/Reconciliation/*` (runs list, pacs.009 viewer, NTSL/raw data viewer, adjustments/timeouts), backed by `useSettlement` hooks.
+- Docs: `docs/settlement.md` (end-to-end DNS/pacs.009 blueprint) and source PDFs in `docs/IPP/` for FSD/RTGS requirements.
+- Access: RLS policies currently allow **admins only** to view/manage settlement objects; participant/operator-scoped access has not been modelled.
+
+### Operational Flow Snapshot
+- Run states mirror the settlement guide: collecting → cutoff_reached → prepare_inputs → netting → generated → dispatched → sent_to_swift → swift_validated → sent_to_niss → niss_accepted → settled/closed (failed_validation + adjustment_pending paths).
+- Two batch types per window (`main`, `switching_fee`); each batch produces a pacs.009 XML with msg id, totals, and bilateral net instructions.
+- Acknowledgements expected: xsys.001 (negative), xsys.002 (positive), xsys.003 (abort). Listener to ingest and update `settlement_acknowledgements` is pending.
+- Reports per run: raw data + NTSL + adjustment + pending + timeout; exposure snapshots stored in `settlement_exposures`.
+
+### Outstanding Items & Risks
+- Build the run driver to ingest IPS transaction store, resolve settlement participants (sponsor mapping), compute obligations/netting, and emit pacs.009 batches + checksums into `settlement_pacs009_batches`.
+- Implement outbound transport (SFTP → AXWAY → SWIFT → NISS) and inbound listener for xsys.* acknowledgements with state transitions and quarantine/reissue workflow.
+- Generate report payloads (populate `settlement_reports.report_data`/`file_content`) and exposure calculations; align with Scheme Rules timing and participant visibility.
+- Expand RLS beyond admin-only to operator/participant views, and add audit trails for amendments/reissues.
+- Update visual assets: sequence diagram for happy path + failure/reissue flow, data model diagram for settlement tables, and file naming/versioning matrix consistent with NISS guidance.
+
+---
+
 ## Regulatory Compliance
 
 ### Namibian Regulations
@@ -410,9 +441,10 @@ npm run docs:lint     # Lint documentation
 
 ### High Priority
 
-1. **Backoffice UI Tests**: 30% coverage - need `data-testid` attributes
-2. **External API Keys**: Configure production keys for payment/SMS/WhatsApp
-3. **WhatsApp Template Registration**: Register templates with Meta for production
+1. **Settlement pipeline wiring**: Netting/pacs.009 generation + SFTP/AXWAY dispatch + xsys ack ingestion not yet implemented (schema/admin UI only)
+2. **Backoffice UI Tests**: 30% coverage - need `data-testid` attributes
+3. **External API Keys**: Configure production keys for payment/SMS/WhatsApp
+4. **WhatsApp Template Registration**: Register templates with Meta for production
 
 ### Medium Priority
 
@@ -487,6 +519,11 @@ npm run test:e2e
 | `e2e/fixtures.ts` | Test fixtures with auth isolation |
 | `docs/FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
 | `supabase/migrations/` | Database schema migrations |
+| `supabase/migrations/20251212053000_settlement_system.sql` | Settlement schema (13 tables), RLS, RPCs, seed windows/fees |
+| `docs/settlement.md` | IPP DNS/pacs.009 implementation guide for IRCS Back Office |
+| `src/services/settlementService.ts` | Settlement data access, pacs.009/report parsers |
+| `src/hooks/useSettlement.ts` | React Query hooks for reconciliation dashboards |
+| `src/pages/AdminDashboard/components/Reconciliation/ReconciliationDashboard.tsx` | Admin settlement UI entrypoint (runs, batches, reports, adjustments) |
 | `docs/DESIGN_SYSTEM.md` | Neo-Fintech UI/UX Specification |
 
 ---
@@ -507,6 +544,7 @@ A comprehensive feature-to-database mapping is documented in `docs/FUNCTIONALITY
 | Credit Scoring | `credit_scores`, `credit_score_factors` | `creditScoring` | ⚠️ Partial |
 | Notifications | `notifications`, `notification_queue` | `notificationService` | ⚠️ Partial |
 | Audit Trail | `audit_logs`, `view_logs`, `state_transitions` | `auditService` | ✅ Working |
+| Settlement (IPP/NISS) | `settlement_*`, `ips_transactions` (inputs) | `settlementService`, `useSettlement` | ⚠️ Partial (schema + admin UI; netting/pacs.009/transport pending) |
 
 ### Wiring Checklist
 
@@ -523,9 +561,12 @@ See `docs/FUNCTIONALITY_MAP.md` Section 13 for detailed checklist including:
 |----------|--------|
 | `FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
 | `DATABASE_SCHEMA.md` | Table definitions and RLS |
+| `settlement.md` | IPP DNS/pacs.009 settlement guide with run states and exception handling |
 | `PRODUCT_IMPROVEMENT_PLAN.md` | Roadmap and implementation details |
 | `ARCHITECTURE.md` | System architecture and ADRs |
 | `DESIGN_SYSTEM.md` | UI/UX specifications |
+| `IPP/20251022_IPP Functional Specification Document (FSD)_v10.0.pdf` | Source IPP Back Office & Settlement requirements |
+| `IPP/20251117_BON_Instant Payment Solution (IPS) TSD_v0.7_unlocked.pdf` | TSD reference for switch/RTGS integration |
 
 ---
 
@@ -540,6 +581,6 @@ For technical questions, refer to:
 
 ---
 
-*Document Version: 2.5.0*  
-*Last Updated: December 7, 2025*  
-*Handover Status: Complete - All Phases Implemented, Database Deployed*
+*Document Version: 2.7.0*  
+*Last Updated: December 12, 2025*  
+*Handover Status: Core platform production-ready; IPS in Mock Mode; settlement pipeline awaiting orchestration/transport*

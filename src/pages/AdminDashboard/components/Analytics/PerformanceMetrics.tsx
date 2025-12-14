@@ -13,7 +13,11 @@ interface MetricCard {
   status: 'excellent' | 'good' | 'warning' | 'poor';
 }
 
-const PerformanceMetrics: React.FC = () => {
+interface PerformanceMetricsProps {
+  dateRange?: string;
+}
+
+const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) => {
   // Mock performance metrics data
   const performanceMetrics: MetricCard[] = [
     {
@@ -69,41 +73,41 @@ const PerformanceMetrics: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'excellent':
-        return <Award className="h-4 w-4 text-green-600" />;
+        return <Award className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'good':
-        return <CheckCircle className="h-4 w-4 text-blue-600" />;
+        return <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
       case 'poor':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
       default:
-        return <Target className="h-4 w-4 text-gray-600" />;
+        return <Target className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
       case 'good':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
       case 'poor':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600" />;
+        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
       default:
-        return <Target className="h-4 w-4 text-gray-600" />;
+        return <Target className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -140,10 +144,14 @@ const PerformanceMetrics: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">{metric.value}</div>
-                  <div className="flex items-center space-x-1">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={metric.value}>
+                      {metric.value}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 shrink-0">
                     {getTrendIcon(metric.trend)}
-                    <span className={`text-sm ${
+                    <span className={`text-sm tabular-nums ${
                       metric.trend === 'up' ? 'text-green-600' : 
                       metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
                     }`}>
@@ -155,10 +163,10 @@ const PerformanceMetrics: React.FC = () => {
                 {metric.target && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Target: {metric.target}</span>
+                      <span className="text-muted-foreground truncate mr-2">Target: {metric.target}</span>
                       <Badge 
                         variant="secondary" 
-                        className={getStatusColor(metric.status)}
+                        className={`${getStatusColor(metric.status)} shrink-0`}
                       >
                         {metric.status}
                       </Badge>
@@ -186,7 +194,7 @@ const PerformanceMetrics: React.FC = () => {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <h4 className="font-medium text-green-600 flex items-center gap-2">
+              <h4 className="font-medium text-green-600 dark:text-green-400 flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Strengths
               </h4>
@@ -197,7 +205,7 @@ const PerformanceMetrics: React.FC = () => {
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium text-yellow-600 flex items-center gap-2">
+              <h4 className="font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Areas for Improvement
               </h4>

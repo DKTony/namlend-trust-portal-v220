@@ -215,15 +215,15 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
       case 'active':
       case 'disbursed':
       case 'completed':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800';
       case 'pending':
       case 'under_review':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
       case 'rejected':
       case 'defaulted':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -250,29 +250,29 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
               <Card className="col-span-2">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                       <User className="h-6 w-6 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate" title={`${client.first_name} ${client.last_name}`}>
                         {client.first_name} {client.last_name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {client.phone_number}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1 min-w-0">
+                          <Phone className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{client.phone_number}</span>
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {client.email}
+                        <span className="flex items-center gap-1 min-w-0">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          <span className="truncate" title={client.email}>{client.email}</span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant={client.verified ? 'default' : 'secondary'}>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <Badge variant={client.verified ? 'default' : 'secondary'} className="shrink-0">
                           {client.verified ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
                           {client.verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                        <Badge variant="outline">{client.employment_status}</Badge>
+                        <Badge variant="outline" className="shrink-0 truncate max-w-[150px]" title={client.employment_status}>{client.employment_status}</Badge>
                       </div>
                     </div>
                   </div>
@@ -281,9 +281,9 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
 
               <Card>
                 <CardContent className="pt-4">
-                  <div className="text-sm text-muted-foreground mb-1">Loan Amount</div>
-                  <div className="text-2xl font-bold">{formatNAD(loan.amount)}</div>
-                  <Badge className={cn('mt-2', getStatusColor(loan.status))}>
+                  <div className="text-sm text-muted-foreground mb-1 truncate">Loan Amount</div>
+                  <div className="text-2xl font-bold truncate tabular-nums" title={formatNAD(loan.amount)}>{formatNAD(loan.amount)}</div>
+                  <Badge className={cn('mt-2 shrink-0', getStatusColor(loan.status))}>
                     {loan.status.replace('_', ' ')}
                   </Badge>
                 </CardContent>
@@ -291,10 +291,10 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
 
               <Card>
                 <CardContent className="pt-4">
-                  <div className="text-sm text-muted-foreground mb-1">Remaining Balance</div>
-                  <div className="text-2xl font-bold">{formatNAD(remainingBalance)}</div>
+                  <div className="text-sm text-muted-foreground mb-1 truncate">Remaining Balance</div>
+                  <div className="text-2xl font-bold truncate tabular-nums" title={formatNAD(remainingBalance)}>{formatNAD(remainingBalance)}</div>
                   <Progress value={progressPercent} className="mt-2 h-2" />
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-1 truncate tabular-nums">
                     {progressPercent.toFixed(1)}% paid
                   </div>
                 </CardContent>
@@ -426,12 +426,12 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
                         <Separator />
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Total Paid</span>
-                          <span className="font-medium text-green-600">{formatNAD(totalPaid)}</span>
+                          <span className="font-medium text-green-600 dark:text-green-400">{formatNAD(totalPaid)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Remaining</span>
-                          <span className="font-medium text-orange-600">{formatNAD(remainingBalance)}</span>
+                          <span className="font-medium text-orange-600 dark:text-orange-400">{formatNAD(remainingBalance)}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between">

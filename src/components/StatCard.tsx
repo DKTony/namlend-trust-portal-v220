@@ -21,27 +21,32 @@ const StatCard: React.FC<StatCardProps> = ({
   className 
 }) => {
   const colorStyles = {
-    black: "bg-zinc-100 text-zinc-900",
-    green: "bg-green-50 text-green-700",
-    blue: "bg-blue-50 text-blue-700",
-    amber: "bg-amber-50 text-amber-700",
-    red: "bg-red-50 text-red-700",
+    black: "bg-muted text-foreground",
+    green: "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400",
+    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
+    amber: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400",
+    red: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400",
   };
 
   const iconColorStyles = {
-    black: "text-zinc-900",
-    green: "text-green-600",
-    blue: "text-blue-600",
-    amber: "text-amber-600",
-    red: "text-red-600",
+    black: "text-foreground",
+    green: "text-green-600 dark:text-green-400",
+    blue: "text-blue-600 dark:text-blue-400",
+    amber: "text-amber-600 dark:text-amber-400",
+    red: "text-red-600 dark:text-red-400",
   };
 
   return (
-    <Card className={cn("border-zinc-100 shadow-sm hover:shadow-md transition-shadow duration-200", className)}>
+    <Card className={cn("border-border shadow-sm hover:shadow-md transition-shadow duration-200 bg-card", className)}>
       <CardContent className="p-6 flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-zinc-500 mb-1">{label}</p>
-          <h3 className="text-2xl font-bold text-zinc-900 tracking-tight">{value}</h3>
+          <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
+          <h3 
+            className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate tabular-nums" 
+            title={String(value)}
+          >
+            {value}
+          </h3>
           {subValue && (
             <p className={cn("text-xs font-medium mt-1", iconColorStyles[color])}>
               {subValue}

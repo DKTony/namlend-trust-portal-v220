@@ -78,7 +78,7 @@ export function PendingAdjustmentResponse() {
                 </TableRow>
               ) : reports?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-green-600">
+                  <TableCell colSpan={7} className="text-center py-8 text-green-600 dark:text-green-400">
                     ✓ No pending adjustment responses
                   </TableCell>
                 </TableRow>
@@ -93,25 +93,25 @@ export function PendingAdjustmentResponse() {
                   const isOverdue = ageInDays > 7;
 
                   return (
-                    <TableRow key={report.id} className={isOverdue ? 'bg-red-50' : ''}>
-                      <TableCell>
+                    <TableRow key={report.id} className={isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''}>
+                      <TableCell className="tabular-nums">
                         {new Date(report.run_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{report.window_id}</TableCell>
-                      <TableCell>{report.participant_name || 'All'}</TableCell>
-                      <TableCell className="font-mono text-sm">
+                      <TableCell className="max-w-[150px] truncate" title={report.participant_name || 'All'}>{report.participant_name || 'All'}</TableCell>
+                      <TableCell className="font-mono text-sm max-w-[200px] truncate" title={report.file_name}>
                         {report.file_name}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {distributedDate?.toLocaleDateString() || '-'}
                       </TableCell>
                       <TableCell>
-                        <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                        <span className={`${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''} tabular-nums`}>
                           {ageInDays} days
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={isOverdue ? 'destructive' : 'secondary'}>
+                        <Badge variant={isOverdue ? 'destructive' : 'secondary'} className="shrink-0">
                           {isOverdue ? 'Overdue' : 'Pending'}
                         </Badge>
                       </TableCell>

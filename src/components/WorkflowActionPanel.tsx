@@ -62,7 +62,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
   }
 
   return (
-    <Card className="border-blue-200 bg-blue-50">
+    <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
       <CardHeader>
         <CardTitle className="text-lg">Action Required</CardTitle>
         <CardDescription>
@@ -82,7 +82,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="resize-none"
+              className="resize-none bg-background border-input text-foreground"
             />
           </div>
         )}

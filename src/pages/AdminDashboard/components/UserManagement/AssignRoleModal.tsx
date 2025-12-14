@@ -106,7 +106,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
                 const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || '(no name)';
                 const email = u.email ?? '';
                 return (
-                  <div key={`${uid}-${idx}`} className="flex items-center justify-between rounded-md border p-2">
+                  <div key={`${uid}-${idx}`} className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50 transition-colors">
                     <div className="min-w-0">
                       <div className="font-medium truncate">{name}</div>
                       <div className="text-xs text-muted-foreground truncate">{email} · {uid}</div>

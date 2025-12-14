@@ -80,11 +80,15 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
       return;
     }
 
+    if (paymentMethod === 'ips') {
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await completeDisbursement(
         disbursement.id,
-        paymentMethod,
+        paymentMethod as Exclude<PaymentMethod, 'ips'>,
         paymentReference.trim(),
         notes.trim() || undefined
       );
@@ -131,7 +135,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]" data-testid="disbursement-modal">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" data-testid="disbursement-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2" data-testid="modal-title">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -143,20 +147,20 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
         </DialogHeader>
 
         {/* Disbursement Details */}
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2 border border-gray-200">
+        <div className="bg-muted/30 rounded-lg p-4 space-y-2 border border-border">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Client:</span>
-            <span className="font-medium text-gray-900">{disbursement.clientName}</span>
+            <span className="text-sm text-muted-foreground">Client:</span>
+            <span className="font-medium text-foreground">{disbursement.clientName}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Amount:</span>
-            <span className="font-semibold text-green-600 text-lg">
+            <span className="text-sm text-muted-foreground">Amount:</span>
+            <span className="font-semibold text-green-600 dark:text-green-400 text-lg">
               {formatNAD(disbursement.amount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Loan ID:</span>
-            <span className="font-mono text-sm text-gray-700">
+            <span className="text-sm text-muted-foreground">Loan ID:</span>
+            <span className="font-mono text-sm text-muted-foreground">
               {disbursement.loanId.slice(-8)}
             </span>
           </div>
@@ -169,7 +173,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             <Label className="text-sm font-medium">
               Payment Method <span className="text-red-500">*</span>
             </Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('bank_transfer')}
@@ -177,11 +181,11 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-bank"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'bank_transfer'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                    : 'border-border hover:border-blue-500/50 bg-card hover:bg-accent'
                 }`}
               >
-                <Building2 className="h-5 w-5" />
+                <Building2 className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Bank Transfer</span>
               </button>
               
@@ -192,11 +196,11 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-mobile"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'mobile_money'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'border-border hover:border-green-500/50 bg-card hover:bg-accent'
                 }`}
               >
-                <Smartphone className="h-5 w-5" />
+                <Smartphone className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Mobile Money</span>
               </button>
               
@@ -207,11 +211,11 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-cash"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'cash'
-                    ? 'border-gray-500 bg-gray-50 text-gray-700'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-gray-500 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    : 'border-border hover:border-gray-500/50 bg-card hover:bg-accent'
                 }`}
               >
-                <Banknote className="h-5 w-5" />
+                <Banknote className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Cash</span>
               </button>
               
@@ -222,11 +226,11 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-debit"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'debit_order'
-                    ? 'border-purple-500 bg-purple-50 text-purple-700'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
+                    : 'border-border hover:border-purple-500/50 bg-card hover:bg-accent'
                 }`}
               >
-                <CreditCard className="h-5 w-5" />
+                <CreditCard className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Debit Order</span>
               </button>
               
@@ -235,13 +239,13 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 onClick={() => setPaymentMethod('ips')}
                 disabled={loading}
                 data-testid="payment-method-ips"
-                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all col-span-2 ${
+                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all sm:col-span-2 ${
                   paymentMethod === 'ips'
-                    ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
+                    : 'border-border hover:border-yellow-500/50 bg-card hover:bg-accent'
                 }`}
               >
-                <Zap className="h-5 w-5" />
+                <Zap className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">IPS Instant Payment</span>
               </button>
             </div>

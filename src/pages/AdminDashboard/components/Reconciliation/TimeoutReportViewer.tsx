@@ -116,24 +116,24 @@ export function TimeoutReportViewer() {
                   </TableRow>
                 ) : timeouts?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-green-600">
+                    <TableCell colSpan={7} className="text-center py-8 text-green-600 dark:text-green-400">
                       ✓ No timeout transactions
                     </TableCell>
                   </TableRow>
                 ) : (
                   timeouts?.map((timeout) => (
                     <TableRow key={timeout.id}>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {new Date(timeout.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{timeout.participant}</TableCell>
-                      <TableCell>{timeout.counterparty}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">
+                      <TableCell className="max-w-[120px] truncate" title={timeout.participant}>{timeout.participant}</TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={timeout.counterparty}>{timeout.counterparty}</TableCell>
+                      <TableCell className="max-w-[150px]">
+                        <span className="text-sm truncate block" title={timeout.timeout_reason || 'Unknown'}>
                           {timeout.timeout_reason || 'Unknown'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium tabular-nums">
                         {formatCurrency(timeout.amount)}
                       </TableCell>
                       <TableCell>
@@ -145,6 +145,7 @@ export function TimeoutReportViewer() {
                               ? 'secondary'
                               : 'destructive'
                           }
+                          className="shrink-0"
                         >
                           <Clock className="h-3 w-3 mr-1" />
                           {timeout.status}

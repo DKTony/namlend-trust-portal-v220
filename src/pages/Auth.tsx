@@ -214,31 +214,31 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-100">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-900" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 flex items-center justify-center p-4 font-sans">
-      <div className="max-w-5xl w-full bg-white rounded-[32px] shadow-2xl overflow-hidden flex min-h-[650px]">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 font-sans">
+      <div className="max-w-5xl w-full bg-card rounded-[32px] shadow-2xl overflow-hidden flex min-h-[650px] border border-border">
         
         {/* Left Side: Brand & Visual */}
-        <div className="w-1/2 bg-black text-white p-12 hidden md:flex flex-col justify-between relative overflow-hidden">
+        <div className="w-1/2 bg-zinc-950 text-white p-12 hidden md:flex flex-col justify-between relative overflow-hidden">
           {/* Abstract Background Elements */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-20 -mr-20 -mt-20 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600 rounded-full blur-[100px] opacity-20 -ml-10 -mb-10 pointer-events-none"></div>
             
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white text-xl shadow-glow">N</div>
-              <span className="text-xl font-bold tracking-tight">NamLend Trust</span>
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-primary-foreground text-xl shadow-glow">N</div>
+              <span className="text-xl font-bold tracking-tight text-white">NamLend Trust</span>
             </div>
           </div>
 
           <div className="relative z-10 max-w-md">
-            <h2 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight">
+            <h2 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight text-white">
               Financial freedom <br/> <span className="text-zinc-500">starts here.</span>
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed">
@@ -253,30 +253,30 @@ export default function Auth() {
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center relative bg-white">
+        <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center relative bg-card">
           <div className="max-w-md mx-auto w-full">
             
             {/* Header Section */}
             <div className="mb-8">
               {isPasswordReset ? (
                 <>
-                  <h3 className="text-2xl font-bold text-zinc-900 mb-2">Reset Password</h3>
-                  <p className="text-zinc-500">Create a new secure password.</p>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Reset Password</h3>
+                  <p className="text-muted-foreground">Create a new secure password.</p>
                 </>
               ) : authMode === 'login' ? (
                 <>
-                  <h3 className="text-2xl font-bold text-zinc-900 mb-2">Welcome back</h3>
-                  <p className="text-zinc-500">Please enter your details to sign in.</p>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Welcome back</h3>
+                  <p className="text-muted-foreground">Please enter your details to sign in.</p>
                 </>
               ) : authMode === 'signup' ? (
                 <>
-                  <h3 className="text-2xl font-bold text-zinc-900 mb-2">Create Account</h3>
-                  <p className="text-zinc-500">Join NamLend for instant loan access.</p>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Create Account</h3>
+                  <p className="text-muted-foreground">Join NamLend for instant loan access.</p>
                 </>
               ) : (
                 <>
-                  <h3 className="text-2xl font-bold text-zinc-900 mb-2">Forgot Password?</h3>
-                  <p className="text-zinc-500">We'll send you a reset link.</p>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">Forgot Password?</h3>
+                  <p className="text-muted-foreground">We'll send you a reset link.</p>
                 </>
               )}
             </div>
@@ -286,14 +286,14 @@ export default function Auth() {
               // PASSWORD RESET FORM
               <form onSubmit={handlePasswordReset} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">New Password</label>
+                  <label className="text-sm font-semibold text-foreground">New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-zinc-400" size={20} />
+                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
                       placeholder="••••••••"
                       required
                       minLength={6}
@@ -301,14 +301,14 @@ export default function Auth() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Confirm Password</label>
+                  <label className="text-sm font-semibold text-foreground">Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-zinc-400" size={20} />
+                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
                       placeholder="••••••••"
                       required
                       minLength={6}
@@ -318,7 +318,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-zinc-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Update Password <ArrowRight size={20} /></>}
                 </button>
@@ -327,14 +327,14 @@ export default function Auth() {
               // LOGIN FORM
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Email</label>
+                  <label className="text-sm font-semibold text-foreground">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-zinc-400" size={20} />
+                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
                       placeholder="name@example.com"
                       required
                       data-testid="email-input"
@@ -343,22 +343,22 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-zinc-900">Password</label>
+                    <label className="text-sm font-semibold text-foreground">Password</label>
                     <button 
                       type="button"
                       onClick={() => setAuthMode('forgot_password')}
-                      className="text-xs font-medium text-zinc-500 hover:text-black transition-colors"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Forgot Password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-zinc-400" size={20} />
+                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
                       placeholder="••••••••"
                       required
                       data-testid="password-input"
@@ -369,7 +369,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg shadow-zinc-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="login-button"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
@@ -380,26 +380,26 @@ export default function Auth() {
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-zinc-900">First Name</label>
+                    <label className="text-sm font-semibold text-foreground">First Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                      <User className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                       <input
                         value={signupData.firstName}
                         onChange={(e) => setSignupData({...signupData, firstName: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                         placeholder="John"
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-zinc-900">Last Name</label>
+                    <label className="text-sm font-semibold text-foreground">Last Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                      <User className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                       <input
                         value={signupData.lastName}
                         onChange={(e) => setSignupData({...signupData, lastName: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                         placeholder="Doe"
                         required
                       />
@@ -408,14 +408,14 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Email</label>
+                  <label className="text-sm font-semibold text-foreground">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <input
                       type="email"
                       value={signupData.email}
                       onChange={(e) => setSignupData({...signupData, email: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                       placeholder="name@example.com"
                       required
                     />
@@ -424,26 +424,26 @@ export default function Auth() {
 
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
-                    <label className="text-sm font-semibold text-zinc-900">Phone</label>
+                    <label className="text-sm font-semibold text-foreground">Phone</label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                      <Phone className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                       <input
                         value={signupData.phone}
                         onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                         placeholder="+264 81..."
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-zinc-900">ID Number</label>
+                    <label className="text-sm font-semibold text-foreground">ID Number</label>
                     <div className="relative">
-                      <FileText className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                      <FileText className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                       <input
                         value={signupData.idNumber}
                         onChange={(e) => setSignupData({...signupData, idNumber: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                         placeholder="ID Number"
                         required
                       />
@@ -452,14 +452,14 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Password</label>
+                  <label className="text-sm font-semibold text-foreground">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <input
                       type="password"
                       value={signupData.password}
                       onChange={(e) => setSignupData({...signupData, password: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                       placeholder="Create password"
                       required
                     />
@@ -467,14 +467,14 @@ export default function Auth() {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Confirm Password</label>
+                  <label className="text-sm font-semibold text-foreground">Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-zinc-400" size={18} />
+                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <input
                       type="password"
                       value={signupData.confirmPassword}
                       onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium text-sm"
+                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
                       placeholder="Confirm password"
                       required
                     />
@@ -484,7 +484,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-zinc-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Create Account <ArrowRight size={20} /></>}
                 </button>
@@ -493,14 +493,14 @@ export default function Auth() {
               // FORGOT PASSWORD FORM
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-zinc-900">Email</label>
+                  <label className="text-sm font-semibold text-foreground">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-zinc-400" size={20} />
+                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
                     <input
                       type="email"
                       value={forgotPasswordEmail}
                       onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all font-medium"
+                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
                       placeholder="name@example.com"
                       required
                     />
@@ -510,7 +510,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-zinc-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : 'Send Reset Link'}
                 </button>
@@ -519,7 +519,7 @@ export default function Auth() {
                   <button 
                     type="button"
                     onClick={() => setAuthMode('login')}
-                    className="text-sm text-zinc-500 hover:text-black font-medium"
+                    className="text-sm text-muted-foreground hover:text-foreground font-medium"
                   >
                     Back to Sign In
                   </button>
@@ -531,16 +531,16 @@ export default function Auth() {
             {!isPasswordReset && authMode !== 'forgot_password' && (
               <div className="mt-8 text-center">
                 {authMode === 'login' ? (
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
-                    <button onClick={() => setAuthMode('signup')} className="text-black font-semibold hover:underline">
+                    <button onClick={() => setAuthMode('signup')} className="text-foreground font-semibold hover:underline">
                       Create one
                     </button>
                   </p>
                 ) : (
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <button onClick={() => setAuthMode('login')} className="text-black font-semibold hover:underline">
+                    <button onClick={() => setAuthMode('login')} className="text-foreground font-semibold hover:underline">
                       Sign in
                     </button>
                   </p>

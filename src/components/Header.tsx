@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { NotificationCenter } from "./NotificationCenter";
 import SignOutButton from "./SignOutButton";
+import { ModeToggle } from "@/components/ModeToggle";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -62,6 +63,7 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
+                <ModeToggle />
                 <NotificationCenter />
                 <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-header">
                   Dashboard
@@ -70,6 +72,7 @@ const Header = () => {
               </>
             ) : (
               <>
+                <ModeToggle />
                 <Button variant="ghost" size="sm" onClick={handleSignIn}>
                   Sign In
                 </Button>
@@ -81,19 +84,22 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Toggle */}
-          <button
-            className="md:hidden h-11 w-11 -m-2 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            {isMenuOpen ? (
-              <X className="w-6 h-6 text-primary" />
-            ) : (
-              <Menu className="w-6 h-6 text-primary" />
-            )}
-          </button>
+          <div className="md:hidden flex items-center space-x-2">
+            <ModeToggle />
+            <button
+              className="h-11 w-11 -m-2 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6 text-primary" />
+              ) : (
+                <Menu className="w-6 h-6 text-primary" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}

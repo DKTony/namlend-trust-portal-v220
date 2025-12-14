@@ -50,13 +50,13 @@ interface PortfolioMetrics {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-500',
-  disbursed: 'bg-blue-500',
-  pending: 'bg-yellow-500',
-  approved: 'bg-emerald-500',
-  completed: 'bg-gray-500',
-  rejected: 'bg-red-500',
-  defaulted: 'bg-red-700'
+  active: 'bg-green-500 dark:bg-green-600',
+  disbursed: 'bg-blue-500 dark:bg-blue-600',
+  pending: 'bg-yellow-500 dark:bg-yellow-600',
+  approved: 'bg-emerald-500 dark:bg-emerald-600',
+  completed: 'bg-gray-500 dark:bg-gray-600',
+  rejected: 'bg-red-500 dark:bg-red-600',
+  defaulted: 'bg-red-700 dark:bg-red-800'
 };
 
 const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30d' }) => {
@@ -207,11 +207,13 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Disbursed</p>
-                <p className="text-2xl font-bold">{formatNAD(metrics?.totalDisbursed || 0)}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Total Disbursed</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalDisbursed || 0)}>
+                  {formatNAD(metrics?.totalDisbursed || 0)}
+                </p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500 opacity-50" />
+              <DollarSign className="h-8 w-8 text-green-500 dark:text-green-400 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -219,11 +221,13 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Outstanding Balance</p>
-                <p className="text-2xl font-bold">{formatNAD(metrics?.totalOutstanding || 0)}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Outstanding Balance</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalOutstanding || 0)}>
+                  {formatNAD(metrics?.totalOutstanding || 0)}
+                </p>
               </div>
-              <Target className="h-8 w-8 text-orange-500 opacity-50" />
+              <Target className="h-8 w-8 text-orange-500 dark:text-orange-400 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -231,11 +235,13 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Repaid</p>
-                <p className="text-2xl font-bold">{formatNAD(metrics?.totalRepaid || 0)}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Total Repaid</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalRepaid || 0)}>
+                  {formatNAD(metrics?.totalRepaid || 0)}
+                </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-blue-500 opacity-50" />
+              <CheckCircle className="h-8 w-8 text-blue-500 dark:text-blue-400 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -243,11 +249,13 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Clients</p>
-                <p className="text-2xl font-bold">{metrics?.clientCount || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Active Clients</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={String(metrics?.clientCount || 0)}>
+                  {metrics?.clientCount || 0}
+                </p>
               </div>
-              <Users className="h-8 w-8 text-purple-500 opacity-50" />
+              <Users className="h-8 w-8 text-purple-500 dark:text-purple-400 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -263,8 +271,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatNAD(metrics?.averageLoanAmount || 0)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.averageLoanAmount || 0)}>
+              {formatNAD(metrics?.averageLoanAmount || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 truncate">
               Across {metrics?.totalLoans || 0} total loans
             </p>
           </CardContent>
@@ -278,8 +288,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(metrics?.averageInterestRate || 0).toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-bold truncate tabular-nums">
+              {(metrics?.averageInterestRate || 0).toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 truncate">
               Annual Percentage Rate
             </p>
           </CardContent>
@@ -293,8 +305,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(metrics?.averageTerm || 0).toFixed(0)} months</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-2xl font-bold truncate tabular-nums">
+              {(metrics?.averageTerm || 0).toFixed(0)} months
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 truncate">
               Loan duration
             </p>
           </CardContent>
@@ -418,8 +432,8 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {Object.entries(metrics?.byPurpose || {}).map(([purpose, count]) => (
-              <div key={purpose} className="p-4 border rounded-lg text-center">
-                <div className="text-2xl font-bold">{count}</div>
+              <div key={purpose} className="p-4 border border-border rounded-lg text-center bg-card">
+                <div className="text-2xl font-bold text-foreground">{count}</div>
                 <div className="text-sm text-muted-foreground truncate" title={purpose}>
                   {purpose}
                 </div>

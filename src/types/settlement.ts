@@ -404,20 +404,20 @@ export const SETTLEMENT_STATE_LABELS: Record<SettlementRunState, string> = {
 };
 
 export const SETTLEMENT_STATE_COLORS: Record<SettlementRunState, string> = {
-  collecting: 'bg-blue-100 text-blue-800',
-  cutoff_reached: 'bg-yellow-100 text-yellow-800',
-  prepare_inputs: 'bg-yellow-100 text-yellow-800',
-  netting: 'bg-yellow-100 text-yellow-800',
-  generated: 'bg-purple-100 text-purple-800',
-  dispatched: 'bg-purple-100 text-purple-800',
-  sent_to_swift: 'bg-indigo-100 text-indigo-800',
-  swift_validated: 'bg-indigo-100 text-indigo-800',
-  sent_to_niss: 'bg-indigo-100 text-indigo-800',
-  niss_accepted: 'bg-green-100 text-green-800',
-  failed_validation: 'bg-red-100 text-red-800',
-  settled: 'bg-green-100 text-green-800',
-  closed: 'bg-gray-100 text-gray-800',
-  adjustment_pending: 'bg-orange-100 text-orange-800',
+  collecting: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
+  cutoff_reached: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+  prepare_inputs: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+  netting: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+  generated: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
+  dispatched: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
+  sent_to_swift: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400',
+  swift_validated: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400',
+  sent_to_niss: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400',
+  niss_accepted: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+  failed_validation: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
+  settled: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+  closed: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400',
+  adjustment_pending: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400',
 };
 
 export const REPORT_TYPE_LABELS: Record<SettlementReportType, string> = {
@@ -445,9 +445,9 @@ export const ACK_TYPE_LABELS: Record<AckType, string> = {
 };
 
 export const ACK_TYPE_COLORS: Record<AckType, string> = {
-  xsys_001: 'bg-red-100 text-red-800',
-  xsys_002: 'bg-green-100 text-green-800',
-  xsys_003: 'bg-orange-100 text-orange-800',
+  xsys_001: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
+  xsys_002: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+  xsys_003: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400',
 };
 
 export const BATCH_TYPE_LABELS: Record<SettlementBatchType, string> = {

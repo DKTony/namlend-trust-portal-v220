@@ -45,7 +45,7 @@ const UserAnalytics: React.FC = () => {
       change: 12.5,
       trend: 'up',
       icon: <Users className="h-5 w-5" />,
-      color: 'text-blue-600'
+      color: 'text-blue-600 dark:text-blue-400'
     },
     {
       label: 'Active Users',
@@ -53,7 +53,7 @@ const UserAnalytics: React.FC = () => {
       change: 8.3,
       trend: 'up',
       icon: <UserCheck className="h-5 w-5" />,
-      color: 'text-green-600'
+      color: 'text-green-600 dark:text-green-400'
     },
     {
       label: 'New Registrations',
@@ -61,7 +61,7 @@ const UserAnalytics: React.FC = () => {
       change: -5.2,
       trend: 'down',
       icon: <TrendingUp className="h-5 w-5" />,
-      color: 'text-purple-600'
+      color: 'text-purple-600 dark:text-purple-400'
     },
     {
       label: 'Suspended Users',
@@ -69,7 +69,7 @@ const UserAnalytics: React.FC = () => {
       change: 15.8,
       trend: 'up',
       icon: <UserX className="h-5 w-5" />,
-      color: 'text-red-600'
+      color: 'text-red-600 dark:text-red-400'
     },
     {
       label: 'Avg Session Duration',
@@ -77,7 +77,7 @@ const UserAnalytics: React.FC = () => {
       change: 3.7,
       trend: 'up',
       icon: <Clock className="h-5 w-5" />,
-      color: 'text-orange-600'
+      color: 'text-orange-600 dark:text-orange-400'
     },
     {
       label: 'Admin Actions',
@@ -85,7 +85,7 @@ const UserAnalytics: React.FC = () => {
       change: -2.1,
       trend: 'down',
       icon: <Shield className="h-5 w-5" />,
-      color: 'text-indigo-600'
+      color: 'text-indigo-600 dark:text-indigo-400'
     }
   ];
 
@@ -163,7 +163,7 @@ const UserAnalytics: React.FC = () => {
         {data.map((item, index) => (
           <div key={index} className="flex flex-col items-center">
             <div
-              className="bg-blue-500 rounded-t min-w-[20px] flex items-end justify-center text-xs text-white font-medium"
+              className="bg-primary rounded-t min-w-[20px] flex items-end justify-center text-xs text-primary-foreground font-medium"
               style={{
                 height: `${(item[dataKey] / maxValue) * (height - 40)}px`,
                 minHeight: '20px'
@@ -171,7 +171,7 @@ const UserAnalytics: React.FC = () => {
             >
               {item[dataKey]}
             </div>
-            <span className="text-xs text-gray-600 mt-2 text-center">
+            <span className="text-xs text-muted-foreground mt-2 text-center">
               {item.month}
             </span>
           </div>
@@ -214,8 +214,8 @@ const UserAnalytics: React.FC = () => {
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-2xl font-bold">{total}</div>
-                <div className="text-sm text-gray-600">Total</div>
+                <div className="text-2xl font-bold text-foreground">{total}</div>
+                <div className="text-sm text-muted-foreground">Total</div>
               </div>
             </div>
           </div>
@@ -227,8 +227,8 @@ const UserAnalytics: React.FC = () => {
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-sm">{item.name}</span>
-              <span className="text-sm font-medium ml-auto">{item.value}</span>
+              <span className="text-sm text-foreground">{item.name}</span>
+              <span className="text-sm font-medium ml-auto text-foreground">{item.value}</span>
             </div>
           ))}
         </div>
@@ -240,12 +240,12 @@ const UserAnalytics: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">User Analytics</h2>
-          <p className="text-gray-600">Comprehensive user metrics and insights</p>
+          <h2 className="text-2xl font-bold text-foreground">User Analytics</h2>
+          <p className="text-muted-foreground">Comprehensive user metrics and insights</p>
         </div>
         <div className="flex items-center space-x-2">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 bg-background border-input text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,19 +265,19 @@ const UserAnalytics: React.FC = () => {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {userMetrics.map((metric, index) => (
-          <Card key={index}>
+          <Card key={index} className="bg-card border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">{metric.label}</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-sm text-muted-foreground">{metric.label}</p>
+                  <p className="text-2xl font-bold text-foreground">
                     {metric.label.includes('Duration') ? `${metric.value}m` : metric.value.toLocaleString()}
                   </p>
                   <div className="flex items-center space-x-1 mt-1">
                     {getTrendIcon(metric.trend, metric.change)}
                     <span className={`text-sm ${
-                      metric.trend === 'up' ? 'text-green-600' : 
-                      metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
+                      metric.trend === 'up' ? 'text-green-600 dark:text-green-400' : 
+                      metric.trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
                     }`}>
                       {formatChange(metric.change)}
                     </span>
@@ -294,9 +294,9 @@ const UserAnalytics: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Registration Trend */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-foreground">
               <BarChart3 className="h-5 w-5 mr-2" />
               User Registration Trend
             </CardTitle>
@@ -307,9 +307,9 @@ const UserAnalytics: React.FC = () => {
         </Card>
 
         {/* Role Distribution */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-foreground">
               <PieChartIcon className="h-5 w-5 mr-2" />
               User Role Distribution
             </CardTitle>
@@ -322,9 +322,9 @@ const UserAnalytics: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Status Distribution */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>User Status Distribution</CardTitle>
+            <CardTitle className="text-foreground">User Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <PieChart data={statusDistribution} />
@@ -332,9 +332,9 @@ const UserAnalytics: React.FC = () => {
         </Card>
 
         {/* Top User Activities */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Top User Activities</CardTitle>
+            <CardTitle className="text-foreground">Top User Activities</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -346,18 +346,18 @@ const UserAnalytics: React.FC = () => {
                 { action: 'Upload Document', count: 127, percentage: 2 }
               ].map((activity, index) => (
                 <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Activity className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{activity.action}</span>
+                  <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
+                    <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-medium truncate text-foreground" title={activity.action}>{activity.action}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <div className="w-20 bg-muted rounded-full h-2">
                       <div 
-                        className="bg-blue-500 h-2 rounded-full"
+                        className="bg-primary h-2 rounded-full"
                         style={{ width: `${activity.percentage}%` }}
                       />
                     </div>
-                    <span className="text-sm text-gray-600 w-12 text-right">
+                    <span className="text-sm text-muted-foreground w-12 text-right tabular-nums">
                       {activity.count}
                     </span>
                   </div>
@@ -369,15 +369,15 @@ const UserAnalytics: React.FC = () => {
       </div>
 
       {/* Detailed Analytics Table */}
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle>User Engagement Metrics</CardTitle>
+          <CardTitle className="text-foreground">User Engagement Metrics</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-foreground">
               <thead>
-                <tr className="border-b">
+                <tr className="border-b border-border">
                   <th className="text-left p-2">Metric</th>
                   <th className="text-left p-2">Current Period</th>
                   <th className="text-left p-2">Previous Period</th>
@@ -394,13 +394,13 @@ const UserAnalytics: React.FC = () => {
                   { metric: 'Bounce Rate', current: '23%', previous: '28%', change: -17.9 },
                   { metric: 'User Retention (7d)', current: '68%', previous: '64%', change: 6.3 }
                 ].map((row, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-medium">{row.metric}</td>
-                    <td className="p-2">{row.current}</td>
-                    <td className="p-2">{row.previous}</td>
-                    <td className="p-2">
+                  <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                    <td className="p-2 font-medium truncate max-w-[200px]" title={row.metric}>{row.metric}</td>
+                    <td className="p-2 tabular-nums">{row.current}</td>
+                    <td className="p-2 tabular-nums">{row.previous}</td>
+                    <td className="p-2 tabular-nums">
                       <span className={`${
-                        row.change > 0 ? 'text-green-600' : 'text-red-600'
+                        row.change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                       }`}>
                         {formatChange(row.change)}
                       </span>

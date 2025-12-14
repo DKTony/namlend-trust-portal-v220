@@ -31,6 +31,9 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { NotificationBell } from '@/components/ApprovalNotifications';
+import { ModeToggle } from '@/components/ModeToggle';
+
+import DashboardSidebar from '@/components/DashboardSidebar';
 
 // Restore real Admin Dashboard components
 import FinancialSummaryCards from '@/pages/AdminDashboard/components/Overview/FinancialSummaryCards';
@@ -199,89 +202,17 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border
-        transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="font-bold text-primary-foreground">N</span>
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-sidebar-foreground">NamLend</h2>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="flex-1 p-4 space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setSidebarOpen(false);
-                  }}
-                  data-testid={`nav-${item.id}`}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
-                    ${isActive 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-                    }
-                  `}
-                >
-                  {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 rounded-r-full bg-primary" />
-                  )}
-                  <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-sidebar-foreground/40 group-hover:text-sidebar-foreground'}`} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* User Info & Sign Out */}
-          <div className="p-4 border-t border-sidebar-border bg-sidebar-accent/20 m-4 rounded-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-glow">
-                <span className="text-white text-sm font-bold">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-sidebar-foreground truncate">{user?.email}</p>
-                <Badge variant="outline" className="mt-1 border-sidebar-border text-sidebar-foreground/60 text-[10px] uppercase tracking-wider">
-                  {userRole}
-                </Badge>
-              </div>
-            </div>
-            <SignOutButton variant="ghost" size="sm" className="w-full text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent justify-start pl-0" data-testid="signout-button-admin" />
-          </div>
-        </div>
-      </div>
+      <DashboardSidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        userEmail={user?.email}
+        userRole={userRole}
+        menuItems={navigationItems}
+        title="NamLend"
+        subtitle="Admin Portal"
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -300,6 +231,7 @@ const AdminDashboard: React.FC = () => {
               <h1 className="text-xl font-semibold">Dashboard</h1>
             </div>
             <div className="flex items-center gap-2">
+              <ModeToggle />
               <NotificationBell />
               <Button variant="outline" size="sm" onClick={handleRefresh}>
                 <RefreshCw className="mr-2 h-4 w-4" />

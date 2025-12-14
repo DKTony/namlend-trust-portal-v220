@@ -60,16 +60,16 @@ export function ReconciliationDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Settlement Runs (30d)
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
               {statsLoading ? '...' : stats?.runs?.settled || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {stats?.runs?.total || 0} total,{' '}
               {stats?.runs?.failed || 0} failed
             </p>
@@ -78,18 +78,18 @@ export function ReconciliationDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Total Settled
             </CardTitle>
-            <FileSpreadsheet className="h-4 w-4 text-blue-500" />
+            <FileSpreadsheet className="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={statsLoading ? '...' : formatCurrency(stats?.totals?.principal || 0)}>
               {statsLoading
                 ? '...'
                 : formatCurrency(stats?.totals?.principal || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {stats?.totals?.transactions || 0} transactions
             </p>
           </CardContent>
@@ -97,16 +97,16 @@ export function ReconciliationDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Pending Adjustments
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400 shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
               {statsLoading ? '...' : stats?.adjustments?.pending || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate" title={formatCurrency(stats?.adjustments?.total_amount || 0) + ' total'}>
               {formatCurrency(stats?.adjustments?.total_amount || 0)} total
             </p>
           </CardContent>
@@ -114,16 +114,16 @@ export function ReconciliationDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Timeout Transactions
             </CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
+            <Clock className="h-4 w-4 text-yellow-500 dark:text-yellow-400 shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
               {statsLoading ? '...' : stats?.timeouts?.pending || 0}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {stats?.timeouts?.resolved || 0} resolved
             </p>
           </CardContent>

@@ -52,11 +52,11 @@ export function AcknowledgementsViewer() {
   const getAckIcon = (ackType: AckType) => {
     switch (ackType) {
       case 'xsys_002':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />;
       case 'xsys_001':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />;
       case 'xsys_003':
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+        return <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400" />;
       default:
         return null;
     }
@@ -125,35 +125,34 @@ export function AcknowledgementsViewer() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {getAckIcon(ack.ack_type)}
-                            <Badge className={ACK_TYPE_COLORS[ack.ack_type]}>
+                            <Badge className={`${ACK_TYPE_COLORS[ack.ack_type]} shrink-0`}>
                               {ack.ack_type.replace('_', '.')}
                             </Badge>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
+                        <TableCell className="font-mono text-sm max-w-[150px] truncate" title={ack.msg_id}>
                           {ack.msg_id}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="tabular-nums">
                           {new Date(ack.received_at).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           {ack.error_code ? (
-                            <Badge variant="destructive">{ack.error_code}</Badge>
+                            <Badge variant="destructive" className="shrink-0">{ack.error_code}</Badge>
                           ) : (
                             '-'
                           )}
                         </TableCell>
-                        <TableCell>
-                          <span className="text-sm">
-                            {ack.error_description?.substring(0, 50)}
-                            {(ack.error_description?.length || 0) > 50 && '...'}
+                        <TableCell className="max-w-[200px]">
+                          <span className="text-sm truncate block" title={ack.error_description || ''}>
+                            {ack.error_description || ''}
                           </span>
                         </TableCell>
                         <TableCell>
                           {ack.processed_at ? (
-                            <Badge variant="default">Processed</Badge>
+                            <Badge variant="default" className="shrink-0">Processed</Badge>
                           ) : (
-                            <Badge variant="secondary">Pending</Badge>
+                            <Badge variant="secondary" className="shrink-0">Pending</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -189,15 +188,15 @@ export function AcknowledgementsViewer() {
           {/* Legend */}
           <div className="mt-4 flex gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
               <span>xsys.002 - Positive Acknowledgement (Success)</span>
             </div>
             <div className="flex items-center gap-1">
-              <XCircle className="h-4 w-4 text-red-500" />
+              <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
               <span>xsys.001 - Negative Acknowledgement (Failed)</span>
             </div>
             <div className="flex items-center gap-1">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400" />
               <span>xsys.003 - Abort Notification</span>
             </div>
           </div>

@@ -187,7 +187,7 @@ export default function LoanApplication() {
   const progress = (step / 3) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/5 to-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background">
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-4xl">
@@ -253,6 +253,7 @@ export default function LoanApplication() {
                           value={formData.amount}
                           onChange={(e) => handleFormChange('amount', e.target.value)}
                           data-testid="loan-amount-input"
+                          className="bg-background border-input text-foreground"
                         />
                         <p className="text-xs text-muted-foreground">
                           Minimum: NAD 1,000 • Maximum: NAD 50,000
@@ -262,7 +263,7 @@ export default function LoanApplication() {
                       <div className="space-y-2">
                         <Label htmlFor="term">Repayment Term</Label>
                         <Select value={formData.term} onValueChange={(value) => handleFormChange('term', value)}>
-                          <SelectTrigger data-testid="loan-term-select">
+                          <SelectTrigger data-testid="loan-term-select" className="bg-background border-input text-foreground">
                             <SelectValue placeholder="Select term" />
                           </SelectTrigger>
                           <SelectContent>
@@ -277,7 +278,7 @@ export default function LoanApplication() {
                     <div className="space-y-2">
                       <Label htmlFor="purpose">Purpose of Loan</Label>
                         <Select value={formData.purpose} onValueChange={(value) => handleFormChange('purpose', value)} data-testid="loan-purpose-select">
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue placeholder="Select purpose" />
                           </SelectTrigger>
                         <SelectContent>
@@ -298,7 +299,7 @@ export default function LoanApplication() {
                     <div className="space-y-2">
                       <Label htmlFor="employment">Employment Status</Label>
                       <Select value={formData.employment_status} onValueChange={(value) => handleFormChange('employment_status', value)}>
-                        <SelectTrigger data-testid="employment-select">
+                        <SelectTrigger data-testid="employment-select" className="bg-background border-input text-foreground">
                           <SelectValue placeholder="Select employment status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -322,6 +323,7 @@ export default function LoanApplication() {
                           value={formData.monthly_income}
                           onChange={(e) => handleFormChange('monthly_income', e.target.value)}
                           data-testid="income-input"
+                          className="bg-background border-input text-foreground"
                         />
                       </div>
                       
@@ -334,6 +336,7 @@ export default function LoanApplication() {
                           value={formData.monthly_expenses}
                           onChange={(e) => handleFormChange('monthly_expenses', e.target.value)}
                           data-testid="expenses-input"
+                          className="bg-background border-input text-foreground"
                         />
                       </div>
                     </div>
@@ -347,6 +350,7 @@ export default function LoanApplication() {
                         value={formData.existing_debt}
                         onChange={(e) => handleFormChange('existing_debt', e.target.value)}
                         data-testid="debt-input"
+                        className="bg-background border-input text-foreground"
                       />
                       <p className="text-xs text-muted-foreground">
                         Include all existing loans, credit cards, and monthly debt payments

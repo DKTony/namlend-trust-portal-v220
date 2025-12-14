@@ -31,19 +31,19 @@ interface NotificationCenterProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  loan: 'bg-blue-100 text-blue-700',
-  payment: 'bg-green-100 text-green-700',
-  kyc: 'bg-purple-100 text-purple-700',
-  account: 'bg-orange-100 text-orange-700',
-  general: 'bg-gray-100 text-gray-700',
-  marketing: 'bg-pink-100 text-pink-700'
+  loan: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  payment: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  kyc: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+  account: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+  general: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400',
+  marketing: 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400'
 };
 
 const PRIORITY_STYLES: Record<string, string> = {
   low: '',
   normal: '',
-  high: 'border-l-4 border-l-orange-500',
-  urgent: 'border-l-4 border-l-red-500 bg-red-50'
+  high: 'border-l-4 border-l-orange-500 dark:border-l-orange-400',
+  urgent: 'border-l-4 border-l-red-500 dark:border-l-red-400 bg-red-50 dark:bg-red-900/10'
 };
 
 export function NotificationCenter({ className }: NotificationCenterProps) {

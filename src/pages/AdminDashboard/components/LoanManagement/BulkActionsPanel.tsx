@@ -80,7 +80,7 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
       label: 'Bulk Reject',
       icon: XCircle,
       variant: 'outline' as const,
-      className: 'border-red-200 text-red-600 hover:bg-red-50',
+      className: 'border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20',
       description: `Reject ${selectedCount} selected application${selectedCount > 1 ? 's' : ''}`,
       confirmTitle: 'Confirm Bulk Rejection',
       confirmDescription: `Are you sure you want to reject ${selectedCount} loan application${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`
@@ -90,7 +90,7 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
       label: 'Mark for Review',
       icon: FileText,
       variant: 'outline' as const,
-      className: 'border-blue-200 text-blue-600 hover:bg-blue-50',
+      className: 'border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20',
       description: `Mark ${selectedCount} application${selectedCount > 1 ? 's' : ''} for detailed review`,
       confirmTitle: 'Mark for Review',
       confirmDescription: `Mark ${selectedCount} loan application${selectedCount > 1 ? 's' : ''} for detailed review? They will be flagged for senior review.`
@@ -98,15 +98,15 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
   ];
 
   return (
-    <Card className="border-blue-200 bg-blue-50">
+    <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                 {selectedCount} Selected
               </Badge>
-              <span className="text-sm text-blue-700 font-medium">
+              <span className="text-sm text-blue-700 dark:text-blue-400 font-medium">
                 Bulk Actions Available
               </span>
             </div>
@@ -155,12 +155,12 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
             })}
 
             {/* Secondary Actions */}
-            <div className="flex items-center space-x-1 ml-4 pl-4 border-l border-blue-300">
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-100">
+            <div className="flex items-center space-x-1 ml-4 pl-4 border-l border-blue-300 dark:border-blue-700">
+              <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-100">
+              <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30">
                 <Mail className="h-4 w-4 mr-2" />
                 Notify
               </Button>
@@ -171,7 +171,7 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
               variant="ghost"
               size="sm"
               onClick={onClearSelection}
-              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -180,9 +180,9 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
 
         {/* Processing Indicator */}
         {isProcessing && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <div className="flex items-center space-x-2 text-blue-700">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+            <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
               <span className="text-sm">Processing bulk action...</span>
             </div>
           </div>
@@ -190,8 +190,8 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
 
         {/* Warning for Large Selections */}
         {selectedCount > 10 && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <div className="flex items-center space-x-2 text-yellow-700 bg-yellow-50 p-2 rounded-md">
+          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+            <div className="flex items-center space-x-2 text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-md">
               <AlertTriangle className="h-4 w-4" />
               <span className="text-sm">
                 Large selection detected. Please ensure you've reviewed all applications before proceeding.

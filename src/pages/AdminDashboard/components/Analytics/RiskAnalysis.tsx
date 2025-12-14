@@ -16,7 +16,11 @@ import {
   Calendar
 } from 'lucide-react';
 
-const RiskAnalysis: React.FC = () => {
+interface RiskAnalysisProps {
+  dateRange?: string;
+}
+
+const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
   // Mock risk analysis data
   const riskDistribution = [
     { name: 'Low Risk', value: 45, color: '#22c55e' },
@@ -64,27 +68,27 @@ const RiskAnalysis: React.FC = () => {
 
   const getRiskColor = (level: string) => {
     switch (level) {
-      case 'low': return 'text-green-600 bg-green-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'high': return 'text-orange-600 bg-orange-100';
-      case 'critical': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'low': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30';
+      case 'high': return 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30';
+      case 'critical': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800';
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'improving': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'worsening': return <TrendingDown className="h-4 w-4 text-red-600" />;
-      default: return <Target className="h-4 w-4 text-gray-600" />;
+      case 'improving': return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      case 'worsening': return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      default: return <Target className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
   const getAlertIcon = (level: string) => {
     switch (level) {
-      case 'high': return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      case 'medium': return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-      default: return <Shield className="h-4 w-4 text-blue-600" />;
+      case 'high': return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      case 'medium': return <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+      default: return <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
     }
   };
 
@@ -208,9 +212,9 @@ const RiskAnalysis: React.FC = () => {
                     <Badge 
                       variant="secondary" 
                       className={`text-xs ${
-                        factor.trend === 'improving' ? 'bg-green-100 text-green-800' :
-                        factor.trend === 'worsening' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                        factor.trend === 'improving' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
+                        factor.trend === 'worsening' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' :
+                        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
                       }`}
                     >
                       {factor.trend}

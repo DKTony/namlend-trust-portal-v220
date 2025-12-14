@@ -350,13 +350,13 @@ export function BatchOperations() {
 
       {/* Active Job Progress */}
       {activeJob && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
           <CardContent className="pt-4">
             <div className="flex items-center gap-4">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">Processing {activeJob.type}...</span>
+                  <span className="font-medium text-foreground">Processing {activeJob.type}...</span>
                   <span className="text-sm text-muted-foreground">
                     {activeJob.processed} / {activeJob.total}
                   </span>
@@ -380,11 +380,11 @@ export function BatchOperations() {
                     placeholder="Search by name, email, or loan ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-3"
+                    className="pl-3 bg-background border-input text-foreground"
                   />
                 </div>
                 <Select value={filter} onValueChange={setFilter}>
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 bg-background border-input text-foreground">
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue />
                   </SelectTrigger>
@@ -494,7 +494,7 @@ export function BatchOperations() {
                     {filteredLoans.map((loan) => (
                       <div
                         key={loan.id}
-                        className={`flex items-center gap-4 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        className={`flex items-center gap-4 p-3 border border-border rounded-lg cursor-pointer transition-colors ${
                           selectedIds.has(loan.id) ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
                         }`}
                         onClick={() => toggleSelect(loan.id)}
@@ -502,23 +502,24 @@ export function BatchOperations() {
                         <Checkbox
                           checked={selectedIds.has(loan.id)}
                           onCheckedChange={() => toggleSelect(loan.id)}
+                          className="shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-medium text-foreground truncate max-w-[200px]" title={`${loan.profile?.first_name} ${loan.profile?.last_name}`}>
                               {loan.profile?.first_name} {loan.profile?.last_name}
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs shrink-0">
                               {loan.status}
                             </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground truncate">
+                          <div className="text-sm text-muted-foreground truncate" title={`${loan.profile?.email} • ${loan.profile?.phone_number}`}>
                             {loan.profile?.email} • {loan.profile?.phone_number}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-medium">{formatNAD(loan.amount)}</div>
-                          <div className="text-xs text-muted-foreground">
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="font-medium text-foreground truncate tabular-nums max-w-[100px]" title={formatNAD(loan.amount)}>{formatNAD(loan.amount)}</div>
+                          <div className="text-xs text-muted-foreground tabular-nums">
                             {new Date(loan.created_at).toLocaleDateString()}
                           </div>
                         </div>
@@ -543,9 +544,9 @@ export function BatchOperations() {
               ) : (
                 <div className="space-y-3">
                   {jobHistory.slice(0, 5).map((job) => (
-                    <div key={job.id} className="p-2 border rounded text-sm">
+                    <div key={job.id} className="p-2 border border-border rounded text-sm bg-card">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium capitalize">{job.type.replace('_', ' ')}</span>
+                        <span className="font-medium text-foreground capitalize">{job.type.replace('_', ' ')}</span>
                         <Badge variant={job.status === 'completed' ? 'default' : 'destructive'} className="text-xs">
                           {job.status}
                         </Badge>
@@ -571,15 +572,15 @@ export function BatchOperations() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total Loans</span>
-                <span className="font-medium">{loans.length}</span>
+                <span className="font-medium text-foreground">{loans.length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Selected</span>
-                <span className="font-medium">{selectedIds.size}</span>
+                <span className="font-medium text-foreground">{selectedIds.size}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Jobs Today</span>
-                <span className="font-medium">{jobHistory.length}</span>
+                <span className="font-medium text-foreground">{jobHistory.length}</span>
               </div>
             </CardContent>
           </Card>
@@ -600,7 +601,7 @@ export function BatchOperations() {
             <div className="space-y-2">
               <Label>Channel</Label>
               <Select value={notificationChannel} onValueChange={setNotificationChannel}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border-input text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -618,6 +619,7 @@ export function BatchOperations() {
                 onChange={(e) => setNotificationMessage(e.target.value)}
                 placeholder="Enter your message..."
                 rows={4}
+                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
@@ -655,7 +657,7 @@ export function BatchOperations() {
             <div className="space-y-2">
               <Label>New Status</Label>
               <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-background border-input text-foreground">
                   <SelectValue placeholder="Select status..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -669,10 +671,10 @@ export function BatchOperations() {
               </Select>
             </div>
 
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5" />
-                <div className="text-sm text-yellow-700">
+                <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400 mt-0.5" />
+                <div className="text-sm text-yellow-700 dark:text-yellow-400">
                   <strong>Warning:</strong> This action will update {selectedIds.size} loans. 
                   This action should be audited and may affect client communications.
                 </div>

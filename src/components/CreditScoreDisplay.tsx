@@ -219,7 +219,7 @@ export function CreditScoreDisplay({
             </div>
             {/* Score marker */}
             <div 
-              className="absolute top-0 w-1 h-5 bg-black rounded"
+              className="absolute top-0 w-1 h-5 bg-foreground rounded"
               style={{ left: `${scorePercentage}%`, transform: 'translateX(-50%)' }}
             />
           </div>
@@ -227,23 +227,23 @@ export function CreditScoreDisplay({
           {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-3 bg-muted rounded-lg">
-              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600" />
-              <div className="text-lg font-bold">{formatNAD(score.maxApprovedAmount)}</div>
+              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600 dark:text-green-400" />
+              <div className="text-lg font-bold text-foreground">{formatNAD(score.maxApprovedAmount)}</div>
               <div className="text-xs text-muted-foreground">Max Approved</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <Percent className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-              <div className="text-lg font-bold">{score.suggestedInterestRate}%</div>
+              <Percent className="h-5 w-5 mx-auto mb-1 text-blue-600 dark:text-blue-400" />
+              <div className="text-lg font-bold text-foreground">{score.suggestedInterestRate}%</div>
               <div className="text-xs text-muted-foreground">Interest Rate</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <TrendingUp className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-              <div className="text-lg font-bold">{score.debtToIncomeRatio.toFixed(1)}%</div>
+              <TrendingUp className="h-5 w-5 mx-auto mb-1 text-purple-600 dark:text-purple-400" />
+              <div className="text-lg font-bold text-foreground">{score.debtToIncomeRatio.toFixed(1)}%</div>
               <div className="text-xs text-muted-foreground">DTI Ratio</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <Shield className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-              <div className="text-lg font-bold capitalize">{score.riskLevel.replace('_', ' ')}</div>
+              <Shield className="h-5 w-5 mx-auto mb-1 text-orange-600 dark:text-orange-400" />
+              <div className="text-lg font-bold capitalize text-foreground">{score.riskLevel.replace('_', ' ')}</div>
               <div className="text-xs text-muted-foreground">Risk Level</div>
             </div>
           </div>
@@ -252,7 +252,7 @@ export function CreditScoreDisplay({
 
           {/* Score Factors */}
           <div className="mb-6">
-            <h4 className="font-medium mb-3 flex items-center gap-2">
+            <h4 className="font-medium mb-3 flex items-center gap-2 text-foreground">
               <Info className="h-4 w-4" />
               Score Factors
             </h4>
@@ -263,20 +263,21 @@ export function CreditScoreDisplay({
                     <TooltipTrigger asChild>
                       <div className={cn(
                         'flex items-center justify-between p-2 rounded-lg border',
-                        factor.impact === 'positive' && 'bg-green-50 border-green-200',
-                        factor.impact === 'negative' && 'bg-red-50 border-red-200',
-                        factor.impact === 'neutral' && 'bg-gray-50 border-gray-200'
+                        factor.impact === 'positive' && 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+                        factor.impact === 'negative' && 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+                        factor.impact === 'neutral' && 'bg-muted/50 border-border'
                       )}>
                         <div className="flex items-center gap-2">
-                          {factor.impact === 'positive' && <TrendingUp className="h-4 w-4 text-green-600" />}
-                          {factor.impact === 'negative' && <TrendingDown className="h-4 w-4 text-red-600" />}
-                          {factor.impact === 'neutral' && <Minus className="h-4 w-4 text-gray-600" />}
-                          <span className="text-sm font-medium">{factor.factor}</span>
+                          {factor.impact === 'positive' && <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />}
+                          {factor.impact === 'negative' && <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />}
+                          {factor.impact === 'neutral' && <Minus className="h-4 w-4 text-muted-foreground" />}
+                          <span className="text-sm font-medium text-foreground">{factor.factor}</span>
                         </div>
                         <Badge variant="outline" className={cn(
                           'text-xs',
-                          factor.impact === 'positive' && 'text-green-700',
-                          factor.impact === 'negative' && 'text-red-700'
+                          factor.impact === 'positive' && 'text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+                          factor.impact === 'negative' && 'text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
+                          factor.impact === 'neutral' && 'text-muted-foreground border-border'
                         )}>
                           {factor.category}
                         </Badge>
@@ -336,48 +337,48 @@ export function CreditScoreDisplay({
             {recommendation.approved ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-xl font-bold text-green-700">
+                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div className="text-xl font-bold text-green-700 dark:text-green-400">
                       {formatNAD(recommendation.approvedAmount)}
                     </div>
-                    <div className="text-xs text-green-600">Approved Amount</div>
+                    <div className="text-xs text-green-600 dark:text-green-500">Approved Amount</div>
                   </div>
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-xl font-bold text-blue-700">
+                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
                       {recommendation.suggestedTerm} months
                     </div>
-                    <div className="text-xs text-blue-600">Term</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-500">Term</div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <div className="text-xl font-bold text-purple-700">
+                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <div className="text-xl font-bold text-purple-700 dark:text-purple-400">
                       {formatNAD(recommendation.monthlyPayment)}
                     </div>
-                    <div className="text-xs text-purple-600">Monthly Payment</div>
+                    <div className="text-xs text-purple-600 dark:text-purple-500">Monthly Payment</div>
                   </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-lg">
-                    <div className="text-xl font-bold text-orange-700">
+                  <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <div className="text-xl font-bold text-orange-700 dark:text-orange-400">
                       {recommendation.interestRate}%
                     </div>
-                    <div className="text-xs text-orange-600">APR</div>
+                    <div className="text-xs text-orange-600 dark:text-orange-500">APR</div>
                   </div>
                 </div>
 
                 <div className="p-3 bg-muted rounded-lg">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Total Repayment</span>
-                    <span className="font-bold">{formatNAD(recommendation.totalRepayment)}</span>
+                    <span className="font-bold text-foreground">{formatNAD(recommendation.totalRepayment)}</span>
                   </div>
                 </div>
 
                 {recommendation.conditions && recommendation.conditions.length > 0 && (
-                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <h5 className="font-medium text-yellow-700 mb-2 flex items-center gap-2">
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <h5 className="font-medium text-yellow-700 dark:text-yellow-400 mb-2 flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
                       Conditions
                     </h5>
                     <ul className="space-y-1">
                       {recommendation.conditions.map((condition, index) => (
-                        <li key={index} className="text-sm text-yellow-700 flex items-center gap-2">
+                        <li key={index} className="text-sm text-yellow-700 dark:text-yellow-300 flex items-center gap-2">
                           <Clock className="h-3 w-3" />
                           {condition}
                         </li>
@@ -389,7 +390,7 @@ export function CreditScoreDisplay({
             ) : (
               <div className="space-y-3">
                 {recommendation.reasons.map((reason, index) => (
-                  <div key={index} className="flex items-start gap-2 text-sm text-red-700">
+                  <div key={index} className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
                     <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <span>{reason}</span>
                   </div>

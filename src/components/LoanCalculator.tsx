@@ -140,7 +140,7 @@ const LoanCalculator = () => {
             </Card>
 
             {/* Calculation Results - The "Receipt" */}
-            <Card className="p-8 shadow-strong bg-zinc-900 text-white relative overflow-hidden border-zinc-800">
+            <Card className="p-8 shadow-strong bg-zinc-900 text-white relative overflow-hidden border-zinc-800 border">
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               
               <div className="relative z-10">

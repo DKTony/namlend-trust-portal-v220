@@ -141,15 +141,15 @@ const ComplianceReports: React.FC = () => {
     switch (status) {
       case 'compliant':
       case 'current':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800';
       case 'warning':
       case 'due':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
       case 'violation':
       case 'overdue':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -157,15 +157,15 @@ const ComplianceReports: React.FC = () => {
     switch (status) {
       case 'compliant':
       case 'current':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'warning':
       case 'due':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
+        return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
       case 'violation':
       case 'overdue':
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
       default:
-        return <Shield className="h-4 w-4 text-gray-600" />;
+        return <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -205,18 +205,20 @@ const ComplianceReports: React.FC = () => {
         {complianceMetrics.map((metric, index) => (
           <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium truncate mr-2" title={metric.title}>
                 {metric.title}
               </CardTitle>
-              {getStatusIcon(metric.status)}
+              <div className="shrink-0">{getStatusIcon(metric.status)}</div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">{metric.value}</div>
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={metric.value}>{metric.value}</div>
+                  </div>
                   <Badge 
                     variant="secondary" 
-                    className={getStatusColor(metric.status)}
+                    className={`${getStatusColor(metric.status)} shrink-0`}
                   >
                     {metric.status}
                   </Badge>
@@ -224,7 +226,7 @@ const ComplianceReports: React.FC = () => {
                 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Target: {metric.target}</span>
+                    <span className="text-muted-foreground truncate mr-2">Target: {metric.target}</span>
                   </div>
                   <Progress 
                     value={getProgressValue(metric.value, metric.target)} 
@@ -232,10 +234,10 @@ const ComplianceReports: React.FC = () => {
                   />
                 </div>
                 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate" title={metric.description}>
                   {metric.description}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate" title={`Last checked: ${metric.lastChecked}`}>
                   Last checked: {metric.lastChecked}
                 </p>
               </div>
@@ -247,7 +249,7 @@ const ComplianceReports: React.FC = () => {
       {/* Compliance Alerts */}
       <div className="space-y-3">
         <Alert className="border-l-4 border-l-yellow-500">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           <AlertDescription>
             <div className="flex items-center justify-between">
               <span>Loan Documentation compliance is below target (87.8% vs 95% target)</span>
@@ -259,7 +261,7 @@ const ComplianceReports: React.FC = () => {
         </Alert>
 
         <Alert className="border-l-4 border-l-red-500">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
           <AlertDescription>
             <div className="flex items-center justify-between">
               <span>Consumer Protection Report is overdue (Due: Jan 5, 2025)</span>
@@ -274,47 +276,50 @@ const ComplianceReports: React.FC = () => {
       {/* Compliance Reports */}
       <Card>
         <CardHeader>
-          <CardTitle>Compliance Reports</CardTitle>
-          <CardDescription>
-            Scheduled regulatory and internal compliance reports
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle>Regulatory Reports</CardTitle>
+            <Button variant="outline" size="sm">
+              View All
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {complianceReports.map((report) => (
               <div 
                 key={report.id} 
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => setSelectedReport(report.id)}
               >
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <h4 className="font-medium">{report.title}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {report.type}
-                    </Badge>
+                <div className="flex items-center space-x-4 min-w-0">
+                  <div className={`p-2 rounded-full shrink-0 ${
+                    report.status === 'current' ? 'bg-green-100 dark:bg-green-900/30' :
+                    report.status === 'due' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                    'bg-red-100 dark:bg-red-900/30'
+                  }`}>
+                    <FileText className={`h-5 w-5 ${
+                      report.status === 'current' ? 'text-green-600 dark:text-green-400' :
+                      report.status === 'due' ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-red-600 dark:text-red-400'
+                    }`} />
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <span>Due: {new Date(report.dueDate).toLocaleDateString()}</span>
-                    <span>Frequency: {report.frequency}</span>
-                    {report.lastGenerated && (
-                      <span>Last: {new Date(report.lastGenerated).toLocaleDateString()}</span>
-                    )}
+                  <div className="min-w-0">
+                    <h4 className="font-medium truncate text-foreground" title={report.title}>{report.title}</h4>
+                    <div className="flex items-center text-sm text-muted-foreground mt-1 space-x-3">
+                      <span className="truncate">{report.frequency}</span>
+                      <span>•</span>
+                      <span className="truncate">Due: {report.dueDate}</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={getStatusColor(report.status)}
-                  >
+                <div className="flex items-center space-x-2 shrink-0">
+                  <Badge variant={
+                    report.status === 'current' ? 'default' : 
+                    report.status === 'due' ? 'secondary' : 'destructive'
+                  }>
                     {report.status}
                   </Badge>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => generateReport(report.id)}
-                  >
+                  <Button variant="ghost" size="sm">
                     <Download className="h-4 w-4 mr-1" />
                     Generate
                   </Button>
@@ -329,14 +334,14 @@ const ComplianceReports: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Overall Compliance
             </CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">92.8%</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">92.8%</div>
+            <p className="text-xs text-muted-foreground truncate">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +2.1% from last month
             </p>
@@ -345,14 +350,14 @@ const ComplianceReports: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Overdue Reports
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">1</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">1</div>
+            <p className="text-xs text-muted-foreground truncate" title="Consumer Protection Report">
               Consumer Protection Report
             </p>
           </CardContent>
@@ -360,14 +365,14 @@ const ComplianceReports: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Due This Month
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">2</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">2</div>
+            <p className="text-xs text-muted-foreground truncate">
               Reports requiring attention
             </p>
           </CardContent>
@@ -375,14 +380,14 @@ const ComplianceReports: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium truncate mr-2">
               Auto-Generated
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">8</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">8</div>
+            <p className="text-xs text-muted-foreground truncate">
               Reports this quarter
             </p>
           </CardContent>

@@ -61,12 +61,12 @@ import { cn } from '@/lib/utils';
 
 // Risk bucket configuration
 const RISK_BUCKETS = [
-  { id: 'all', label: 'All', color: 'bg-gray-100 text-gray-700' },
-  { id: 'current', label: 'Current', color: 'bg-green-100 text-green-700' },
-  { id: 'bucket_1_30', label: '1-30 Days', color: 'bg-yellow-100 text-yellow-700' },
-  { id: 'bucket_31_60', label: '31-60 Days', color: 'bg-orange-100 text-orange-700' },
-  { id: 'bucket_61_90', label: '61-90 Days', color: 'bg-red-100 text-red-700' },
-  { id: 'bucket_90_plus', label: '90+ Days', color: 'bg-red-200 text-red-800' },
+  { id: 'all', label: 'All', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
+  { id: 'current', label: 'Current', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
+  { id: 'bucket_1_30', label: '1-30 Days', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
+  { id: 'bucket_31_60', label: '31-60 Days', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' },
+  { id: 'bucket_61_90', label: '61-90 Days', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
+  { id: 'bucket_90_plus', label: '90+ Days', color: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-300' },
 ];
 
 const INTERACTION_TYPES = [
@@ -254,62 +254,62 @@ export function CollectionsDashboard() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Overdue</p>
-                <p className="text-2xl font-bold">{stats?.total_overdue || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Total Overdue</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground" title={stats?.total_overdue?.toLocaleString()}>{stats?.total_overdue || 0}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
+              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">1-30 Days</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats?.bucket_1_30 || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">1-30 Days</p>
+                <p className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums" title={stats?.bucket_1_30?.toLocaleString()}>{stats?.bucket_1_30 || 0}</p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-500 opacity-50" />
+              <Clock className="h-8 w-8 text-yellow-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">31-60 Days</p>
-                <p className="text-2xl font-bold text-orange-600">{stats?.bucket_31_60 || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">31-60 Days</p>
+                <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums" title={stats?.bucket_31_60?.toLocaleString()}>{stats?.bucket_31_60 || 0}</p>
               </div>
-              <AlertCircle className="h-8 w-8 text-orange-500 opacity-50" />
+              <AlertCircle className="h-8 w-8 text-orange-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">61-90 Days</p>
-                <p className="text-2xl font-bold text-red-600">{stats?.bucket_61_90 || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">61-90 Days</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums" title={stats?.bucket_61_90?.toLocaleString()}>{stats?.bucket_61_90 || 0}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
+              <AlertTriangle className="h-8 w-8 text-red-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">90+ Days</p>
-                <p className="text-2xl font-bold text-red-800">{stats?.bucket_90_plus || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">90+ Days</p>
+                <p className="text-xl sm:text-2xl font-bold text-red-800 dark:text-red-300 truncate tabular-nums" title={stats?.bucket_90_plus?.toLocaleString()}>{stats?.bucket_90_plus || 0}</p>
               </div>
-              <XCircle className="h-8 w-8 text-red-800 opacity-50" />
+              <XCircle className="h-8 w-8 text-red-700 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -320,14 +320,14 @@ export function CollectionsDashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Promises</p>
-                <p className="text-2xl font-bold">{stats?.pending_promises || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Pending Promises</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.pending_promises?.toLocaleString()}>{stats?.pending_promises || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1 truncate" title={`${stats?.promises_due_today || 0} due today`}>
                   {stats?.promises_due_today || 0} due today
                 </p>
               </div>
-              <HandshakeIcon className="h-8 w-8 text-blue-500 opacity-50" />
+              <HandshakeIcon className="h-8 w-8 text-blue-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -335,11 +335,11 @@ export function CollectionsDashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Contacts Today</p>
-                <p className="text-2xl font-bold">{stats?.contacts_today || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Contacts Today</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.contacts_today?.toLocaleString()}>{stats?.contacts_today || 0}</p>
               </div>
-              <Phone className="h-8 w-8 text-green-500 opacity-50" />
+              <Phone className="h-8 w-8 text-green-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -347,11 +347,11 @@ export function CollectionsDashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Reschedules</p>
-                <p className="text-2xl font-bold">{stats?.pending_reschedules || 0}</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Pending Reschedules</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.pending_reschedules?.toLocaleString()}>{stats?.pending_reschedules || 0}</p>
               </div>
-              <Calendar className="h-8 w-8 text-purple-500 opacity-50" />
+              <Calendar className="h-8 w-8 text-purple-500 opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -387,14 +387,14 @@ export function CollectionsDashboard() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or phone..."
+                placeholder="Search overdue accounts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-background border-input text-foreground"
               />
             </div>
             <Tabs value={selectedBucket} onValueChange={setSelectedBucket} className="w-full md:w-auto">
-              <TabsList className="grid grid-cols-3 md:grid-cols-6">
+              <TabsList>
                 {RISK_BUCKETS.map((bucket) => (
                   <TabsTrigger key={bucket.id} value={bucket.id} className="text-xs">
                     {bucket.label}
@@ -421,38 +421,38 @@ export function CollectionsDashboard() {
                 {queue.map((item) => (
                   <div
                     key={item.loan_id}
-                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors bg-card"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <div className="flex items-start gap-3 min-w-0 flex-1 mr-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <User className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h4 className="font-medium truncate text-foreground" title={`${item.first_name} ${item.last_name}`}>
                               {item.first_name} {item.last_name}
                             </h4>
-                            {getRiskBucketBadge(item.risk_bucket)}
+                            <div className="shrink-0">{getRiskBucketBadge(item.risk_bucket)}</div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{item.phone_number}</p>
-                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                            <span>Loan: {formatNAD(item.loan_amount)}</span>
-                            <span>Monthly: {formatNAD(item.monthly_payment)}</span>
-                            <span className="text-red-600 font-medium">
+                          <p className="text-sm text-muted-foreground truncate" title={item.phone_number}>{item.phone_number}</p>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
+                            <span className="tabular-nums whitespace-nowrap">Loan: {formatNAD(item.loan_amount)}</span>
+                            <span className="tabular-nums whitespace-nowrap">Monthly: {formatNAD(item.monthly_payment)}</span>
+                            <span className="text-red-600 dark:text-red-400 font-medium tabular-nums whitespace-nowrap">
                               {item.days_overdue} days overdue
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-2 shrink-0">
                         {item.pending_promises > 0 && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 whitespace-nowrap border-blue-200 dark:border-blue-800">
                             {item.pending_promises} PTP pending
                           </Badge>
                         )}
                         {item.last_contact_date && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                             Last contact: {new Date(item.last_contact_date).toLocaleDateString()}
                           </p>
                         )}
@@ -553,6 +553,7 @@ export function CollectionsDashboard() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about the interaction..."
                 rows={3}
+                className="bg-background border-input text-foreground"
               />
             </div>
 
@@ -562,6 +563,7 @@ export function CollectionsDashboard() {
                 type="date"
                 value={nextActionDate}
                 onChange={(e) => setNextActionDate(e.target.value)}
+                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
@@ -596,6 +598,7 @@ export function CollectionsDashboard() {
                 value={ptpAmount}
                 onChange={(e) => setPtpAmount(e.target.value)}
                 placeholder="Enter amount..."
+                className="bg-background border-input text-foreground"
               />
             </div>
 
@@ -606,6 +609,7 @@ export function CollectionsDashboard() {
                 value={ptpDate}
                 onChange={(e) => setPtpDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
+                className="bg-background border-input text-foreground"
               />
             </div>
 
@@ -616,6 +620,7 @@ export function CollectionsDashboard() {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add any notes about the promise..."
                 rows={3}
+                className="bg-background border-input text-foreground"
               />
             </div>
           </div>

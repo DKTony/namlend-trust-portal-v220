@@ -33,7 +33,7 @@ import { LoanStatusTimeline, generateLoanTimeline } from '@/components/LoanStatu
 import { SelfServicePortal } from '@/components/SelfServicePortal';
 import ClientProfileDashboard from '@/components/ClientProfileDashboard';
 import { NotificationCenter } from '@/components/NotificationCenter';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ModeToggle } from '@/components/ModeToggle';
 
 interface Profile {
   id: string;
@@ -167,8 +167,8 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-        <Loader2 className="h-8 w-8 animate-spin text-zinc-900" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
       </div>
     );
   }
@@ -192,16 +192,16 @@ export default function Dashboard() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
               <div>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-zinc-900 tracking-tight">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
                   Hello, {profile?.first_name || 'Client'}
                 </h2>
-                <p className="text-zinc-500 mt-2 text-base md:text-lg">
+                <p className="text-muted-foreground mt-2 text-base md:text-lg">
                   Your financial health is looking good today.
                 </p>
               </div>
               <button 
                  onClick={() => navigate('/loan-application')}
-                 className="w-full md:w-auto bg-black text-white px-6 py-3 rounded-full font-semibold hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-zinc-200"
+                 className="w-full md:w-auto bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
               >
                  <Plus size={20} /> <span className="md:inline">New Application</span>
               </button>
@@ -233,30 +233,30 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main Chart Section */}
-              <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-3xl shadow-soft border border-zinc-100">
+              <div className="lg:col-span-2 bg-card p-6 md:p-8 rounded-3xl shadow-soft border border-border">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-                  <h3 className="text-xl font-bold text-zinc-900">Spending Overview</h3>
-                  <select className="bg-zinc-50 border-none text-sm font-medium text-zinc-500 rounded-lg px-3 py-1 cursor-pointer hover:text-zinc-900">
+                  <h3 className="text-xl font-bold text-foreground">Spending Overview</h3>
+                  <select className="bg-muted border-none text-sm font-medium text-muted-foreground rounded-lg px-3 py-1 cursor-pointer hover:text-foreground">
                     <option>Last 6 months</option>
                     <option>This Year</option>
                   </select>
                 </div>
-                <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-blue-50/30 rounded-xl border-b border-l border-zinc-100/50">
+                <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
                   {/* CSS-only Mock Chart */}
                   {chartData.map((item, index) => (
                     <div key={index} className="flex flex-col items-center gap-2 w-full group cursor-pointer">
                       <div className="relative w-full flex items-end justify-center h-48">
                         <div 
-                          className="w-full max-w-[40px] bg-blue-100/50 rounded-t-lg transition-all duration-300 group-hover:bg-blue-200 relative overflow-hidden"
+                          className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-300 group-hover:bg-primary/40 relative overflow-hidden"
                           style={{ height: `${(item.amount / 10000) * 100}%` }}
                         >
-                          <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-blue-500/20 to-transparent" />
+                          <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary/30 to-transparent" />
                         </div>
-                        <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-zinc-900 text-white px-2 py-1 rounded">
+                        <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-foreground text-background px-2 py-1 rounded">
                           {formatNAD(item.amount)}
                         </div>
                       </div>
-                      <span className="text-xs text-zinc-400 font-medium">{item.name}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{item.name}</span>
                     </div>
                   ))}
                 </div>
@@ -264,26 +264,28 @@ export default function Dashboard() {
 
               {/* Side Action Panel */}
               <div className="space-y-6">
-                <div className="bg-zinc-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                <div className="bg-primary text-primary-foreground p-8 rounded-3xl shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 blur-[80px] rounded-full opacity-40"></div>
                   <div className="relative z-10">
                     <h3 className="text-lg font-bold mb-2">Need Funds?</h3>
-                    <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Get approved in minutes with our AI-powered risk assessment.</p>
+                    <p className="text-primary-foreground/80 text-sm mb-6 leading-relaxed">Get approved in minutes with our AI-powered risk assessment.</p>
                     
                     {pendingLoan ? (
-                      <div className="bg-zinc-800 p-4 rounded-2xl border border-zinc-700">
+                      <div className="bg-primary-foreground/10 p-4 rounded-2xl border border-primary-foreground/10">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-bold uppercase text-blue-400 tracking-wider">Processing</span>
-                          <span className="text-white font-bold">{formatNAD(pendingLoan.amount)}</span>
+                          <span className="text-xs font-bold uppercase text-primary-foreground/70 tracking-wider">Processing</span>
+                          <span className="text-primary-foreground font-bold truncate tabular-nums max-w-[120px] text-right" title={formatNAD(pendingLoan.amount)}>
+                            {formatNAD(pendingLoan.amount)}
+                          </span>
                         </div>
-                        <div className="w-full bg-zinc-700 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-blue-500 h-full w-2/3 animate-pulse"></div>
+                        <div className="w-full bg-primary-foreground/20 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-primary-foreground h-full w-2/3 animate-pulse"></div>
                         </div>
                       </div>
                     ) : (
                       <button 
                         onClick={() => navigate('/loan-application')}
-                        className="w-full bg-white text-black py-3 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-colors flex justify-center items-center gap-2"
+                        className="w-full bg-background text-primary py-3 rounded-xl font-bold text-sm hover:bg-muted transition-colors flex justify-center items-center gap-2"
                       >
                         Apply Now <ArrowUpRight size={16} />
                       </button>
@@ -291,23 +293,23 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-3xl shadow-soft border border-zinc-100">
-                  <h3 className="text-lg font-bold text-zinc-900 mb-4">Quick Actions</h3>
+                <div className="bg-card p-6 rounded-3xl shadow-soft border border-border">
+                  <h3 className="text-lg font-bold text-foreground">Quick Actions</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={() => setShowPaymentModal(true)}
                       disabled={!activeLoan}
-                      className="p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors text-center disabled:opacity-50"
+                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center disabled:opacity-50"
                     >
-                      <Wallet className="mx-auto mb-2 text-zinc-400" size={24} />
-                      <span className="text-xs font-medium text-zinc-600">Make Payment</span>
+                      <Wallet className="mx-auto mb-2 text-muted-foreground" size={24} />
+                      <span className="text-xs font-medium text-foreground">Make Payment</span>
                     </button>
                     <button 
                       onClick={() => navigate('/kyc')}
-                      className="p-4 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors text-center"
+                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center"
                     >
-                      <FileText className="mx-auto mb-2 text-zinc-400" size={24} />
-                      <span className="text-xs font-medium text-zinc-600">Documents</span>
+                      <FileText className="mx-auto mb-2 text-muted-foreground" size={24} />
+                      <span className="text-xs font-medium text-foreground">Documents</span>
                     </button>
                   </div>
                 </div>
@@ -319,7 +321,7 @@ export default function Dashboard() {
       case 'loans':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-zinc-900">Your Loans</h2>
+            <h2 className="text-2xl font-bold text-foreground">Your Loans</h2>
             {loans.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {loans.map((loan) => {
@@ -330,7 +332,7 @@ export default function Dashboard() {
                     : 0;
                   
                   return (
-                    <Card key={loan.id} className={`rounded-3xl shadow-soft border-zinc-100 ${isSettled ? 'bg-green-50/50 border-green-200' : ''}`}>
+                    <Card key={loan.id} className={`rounded-3xl shadow-soft border-border ${isSettled ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-card'}`}>
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
@@ -339,7 +341,7 @@ export default function Dashboard() {
                           </div>
                           <Badge 
                             variant={isSettled ? 'default' : isActive ? 'secondary' : 'outline'}
-                            className={isSettled ? 'bg-green-600' : ''}
+                            className={isSettled ? 'bg-green-600 dark:bg-green-500 text-white' : ''}
                           >
                             {isSettled ? '✓ Settled' : loan.status}
                           </Badge>
@@ -350,34 +352,34 @@ export default function Dashboard() {
                         {(isActive || isSettled) && (
                           <div className="space-y-2">
                             <div className="flex justify-between text-xs">
-                              <span className="text-zinc-500">Payment Progress</span>
-                              <span className="font-medium">{progressPercent}%</span>
+                              <span className="text-muted-foreground">Payment Progress</span>
+                              <span className="font-medium text-foreground">{progressPercent}%</span>
                             </div>
-                            <Progress value={progressPercent} className={`h-2 ${isSettled ? '[&>div]:bg-green-600' : ''}`} />
+                            <Progress value={progressPercent} className={`h-2 ${isSettled ? '[&>div]:bg-green-600 dark:[&>div]:bg-green-500' : ''}`} />
                             {!isSettled && loan.outstanding_balance > 0 && (
-                              <p className="text-xs text-zinc-500">
-                                Outstanding: <span className="font-semibold text-zinc-700">{formatNAD(loan.outstanding_balance)}</span>
+                              <p className="text-xs text-muted-foreground">
+                                Outstanding: <span className="font-semibold text-foreground">{formatNAD(loan.outstanding_balance)}</span>
                               </p>
                             )}
                           </div>
                         )}
                         
-                        <div className="grid grid-cols-2 gap-4 text-sm text-zinc-600">
+                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                           <div>
-                            <p className="text-zinc-400 text-xs">Term</p>
-                            <p className="font-medium">{loan.term_months} months</p>
+                            <p className="text-muted-foreground text-xs">Term</p>
+                            <p className="font-medium text-foreground">{loan.term_months} months</p>
                           </div>
                           <div>
-                            <p className="text-zinc-400 text-xs">Rate</p>
-                            <p className="font-medium">{loan.interest_rate}%</p>
+                            <p className="text-muted-foreground text-xs">Rate</p>
+                            <p className="font-medium text-foreground">{loan.interest_rate}%</p>
                           </div>
                           <div>
-                            <p className="text-zinc-400 text-xs">Monthly</p>
-                            <p className="font-medium">{formatNAD(loan.monthly_payment)}</p>
+                            <p className="text-muted-foreground text-xs">Monthly</p>
+                            <p className="font-medium text-foreground">{formatNAD(loan.monthly_payment)}</p>
                           </div>
                           <div>
-                            <p className="text-zinc-400 text-xs">{isSettled ? 'Total Paid' : 'Total Due'}</p>
-                            <p className="font-medium">{formatNAD(isSettled ? loan.total_paid : loan.total_repayment)}</p>
+                            <p className="text-muted-foreground text-xs">{isSettled ? 'Total Paid' : 'Total Due'}</p>
+                            <p className="font-medium text-foreground">{formatNAD(isSettled ? loan.total_paid : loan.total_repayment)}</p>
                           </div>
                         </div>
 
@@ -394,7 +396,7 @@ export default function Dashboard() {
                         )}
                         
                         {isSettled && loan.settled_at && (
-                          <p className="text-xs text-green-600 text-center">
+                          <p className="text-xs text-green-600 dark:text-green-400 text-center">
                             Settled on {new Date(loan.settled_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
                         )}
@@ -404,10 +406,10 @@ export default function Dashboard() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-3xl shadow-soft border border-zinc-100">
-                <CreditCard className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
-                <h3 className="text-lg font-semibold text-zinc-900">No loans yet</h3>
-                <p className="text-zinc-500 mb-4">You don't have any loans at the moment.</p>
+              <div className="text-center py-12 bg-card rounded-3xl shadow-soft border border-border">
+                <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground">No loans yet</h3>
+                <p className="text-muted-foreground mb-4">You don't have any loans at the moment.</p>
                 <Button onClick={() => navigate('/loan-application')}>
                   Apply for a Loan
                 </Button>
@@ -416,82 +418,82 @@ export default function Dashboard() {
           </div>
         );
 
-      case 'applications':
-        return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-zinc-900">Applications</h2>
-              <Button onClick={() => navigate('/loan-application')} variant="outline" className="rounded-full">
-                <Plus size={16} className="mr-2" /> New Application
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              {loanApplications.map((application) => (
-                <div key={application.id} className="bg-white p-6 rounded-3xl shadow-soft border border-zinc-100">
-                  <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
-                    <div>
-                      <h3 className="text-lg font-bold text-zinc-900">{formatNAD(application.amount)}</h3>
-                      <p className="text-sm text-zinc-500">{application.purpose}</p>
-                    </div>
-                    <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="w-fit">
-                      {application.status}
-                    </Badge>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-zinc-100">
-                    <LoanStatusTimeline 
-                      steps={generateLoanTimeline(
-                        application.status,
-                        application.submittedAt,
-                        application.status === 'under_review' ? new Date().toISOString() : undefined,
-                        application.status === 'approved' ? new Date().toISOString() : undefined
-                      )}
-                      orientation="horizontal"
-                    />
-                  </div>
-                </div>
-              ))}
-              
-              {loanApplications.length === 0 && (
-                <div className="text-center py-12 bg-white rounded-3xl shadow-soft border border-zinc-100">
-                  <FileText className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
-                  <h3 className="text-lg font-semibold text-zinc-900">No pending applications</h3>
-                  <Button onClick={() => navigate('/loan-application')} className="mt-4 rounded-full">
-                    Start Application
-                  </Button>
-                </div>
-              )}
-            </div>
+    case 'applications':
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-foreground">Applications</h2>
+            <Button onClick={() => navigate('/loan-application')} variant="outline" className="rounded-full">
+              <Plus size={16} className="mr-2" /> New Application
+            </Button>
           </div>
-        );
+          
+          <div className="space-y-4">
+            {loanApplications.map((application) => (
+              <div key={application.id} className="bg-card p-6 rounded-3xl shadow-soft border border-border">
+                <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">{formatNAD(application.amount)}</h3>
+                    <p className="text-sm text-muted-foreground">{application.purpose}</p>
+                  </div>
+                  <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="w-fit">
+                    {application.status}
+                  </Badge>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-border">
+                  <LoanStatusTimeline 
+                    steps={generateLoanTimeline(
+                      application.status,
+                      application.submittedAt,
+                      application.status === 'under_review' ? new Date().toISOString() : undefined,
+                      application.status === 'approved' ? new Date().toISOString() : undefined
+                    )}
+                    orientation="horizontal"
+                  />
+                </div>
+              </div>
+            ))}
+            
+            {loanApplications.length === 0 && (
+              <div className="text-center py-12 bg-card rounded-3xl shadow-soft border border-border">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground">No pending applications</h3>
+                <Button onClick={() => navigate('/loan-application')} className="mt-4 rounded-full">
+                  Start Application
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
 
       case 'payments':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-zinc-900">Payment History</h2>
-            <div className="bg-white rounded-3xl shadow-soft border border-zinc-100 overflow-hidden">
+            <h2 className="text-2xl font-bold text-foreground">Payment History</h2>
+            <div className="bg-card rounded-3xl shadow-soft border border-border overflow-hidden">
               {payments.length > 0 ? (
-                <div className="divide-y divide-zinc-100">
+                <div className="divide-y divide-border">
                   {payments.map((payment) => (
-                    <div key={payment.id} className="p-4 flex justify-between items-center hover:bg-zinc-50 transition-colors">
+                    <div key={payment.id} className="p-4 flex justify-between items-center hover:bg-muted/50 transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
                           <DollarSign size={20} />
                         </div>
                         <div>
-                          <p className="font-semibold text-zinc-900">{formatNAD(payment.amount)}</p>
-                          <p className="text-xs text-zinc-500">{new Date(payment.paid_at).toLocaleDateString()}</p>
+                          <p className="font-semibold text-foreground">{formatNAD(payment.amount)}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(payment.paid_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="border-zinc-200 text-zinc-600">
+                      <Badge variant="outline" className="border-border text-muted-foreground">
                         {payment.status}
                       </Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-12 text-center text-zinc-500">
+                <div className="p-12 text-center text-muted-foreground">
                   No payments found.
                 </div>
               )}
@@ -511,7 +513,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-zinc-50">
+    <div className="flex h-screen bg-background">
       <DashboardSidebar 
         activeTab={activeTab} 
         onTabChange={handleTabChange}
@@ -523,12 +525,13 @@ export default function Dashboard() {
       
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Mobile Header */}
-        <header className="lg:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between">
+        <header className="lg:hidden bg-card border-b border-border p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">N</div>
-             <span className="font-bold text-zinc-900">NamLend</span>
+             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-primary-foreground text-sm">N</div>
+             <span className="font-bold text-foreground">NamLend</span>
           </div>
           <div className="flex items-center gap-2">
+            <ModeToggle />
             <NotificationCenter />
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <Menu size={20} />
@@ -537,7 +540,8 @@ export default function Dashboard() {
         </header>
 
         {/* Desktop Header with Notifications */}
-        <header className="hidden lg:flex bg-white border-b border-zinc-200 p-4 items-center justify-end">
+        <header className="hidden lg:flex bg-card border-b border-border p-4 items-center justify-end gap-2">
+          <ModeToggle />
           <NotificationCenter />
         </header>
 

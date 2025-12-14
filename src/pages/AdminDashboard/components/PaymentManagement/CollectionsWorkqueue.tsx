@@ -106,13 +106,13 @@ export const CollectionsWorkqueue: React.FC = () => {
 
   const getPriorityBadge = (score: number) => {
     if (score >= 100) {
-      return <Badge className="bg-red-100 text-red-800 border-red-200">Critical</Badge>;
+      return <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">Critical</Badge>;
     } else if (score >= 50) {
-      return <Badge className="bg-orange-100 text-orange-800 border-orange-200">High</Badge>;
+      return <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800">High</Badge>;
     } else if (score >= 20) {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Medium</Badge>;
+      return <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">Medium</Badge>;
     } else {
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Low</Badge>;
+      return <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800">Low</Badge>;
     }
   };
 
@@ -125,7 +125,7 @@ export const CollectionsWorkqueue: React.FC = () => {
         <CardContent>
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-muted rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -135,7 +135,7 @@ export const CollectionsWorkqueue: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
@@ -153,8 +153,8 @@ export const CollectionsWorkqueue: React.FC = () => {
           <CardTitle>Collections Workqueue</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <TrendingUp className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+          <div className="text-center py-8 text-muted-foreground">
+            <TrendingUp className="h-12 w-12 mx-auto mb-3 text-muted-foreground/60" />
             <p className="font-medium">No overdue accounts</p>
             <p className="text-sm mt-1">All payments are up to date!</p>
           </div>
@@ -171,7 +171,7 @@ export const CollectionsWorkqueue: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Total Accounts</p>
+                <p className="text-xs text-muted-foreground">Total Accounts</p>
                 <p className="text-2xl font-bold">{queue.length}</p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -182,7 +182,7 @@ export const CollectionsWorkqueue: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Total Overdue</p>
+                <p className="text-xs text-muted-foreground">Total Overdue</p>
                 <p className="text-2xl font-bold text-red-600">
                   {formatNAD(queue.reduce((sum, item) => sum + item.total_overdue, 0))}
                 </p>
@@ -195,7 +195,7 @@ export const CollectionsWorkqueue: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Critical Cases</p>
+                <p className="text-xs text-muted-foreground">Critical Cases</p>
                 <p className="text-2xl font-bold">
                   {queue.filter(item => item.priority_score >= 100).length}
                 </p>
@@ -208,7 +208,7 @@ export const CollectionsWorkqueue: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Avg Days Overdue</p>
+                <p className="text-xs text-muted-foreground">Avg Days Overdue</p>
                 <p className="text-2xl font-bold">
                   {Math.round(queue.reduce((sum, item) => sum + item.days_overdue, 0) / queue.length)}
                 </p>
@@ -255,10 +255,10 @@ export const CollectionsWorkqueue: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-semibold text-gray-900">{item.client_name}</h3>
+                            <h3 className="font-semibold text-foreground">{item.client_name}</h3>
                             {getPriorityBadge(item.priority_score)}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
                             <div className="flex items-center space-x-1">
                               <Phone className="h-3 w-3" />
                               <span>{item.phone_number}</span>
@@ -275,21 +275,21 @@ export const CollectionsWorkqueue: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-4">
-                        <p className="text-sm text-gray-600">Overdue Amount</p>
+                        <p className="text-sm text-muted-foreground">Overdue Amount</p>
                         <p className="text-xl font-bold text-red-600">
                           {formatNAD(item.total_overdue)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {item.overdue_installments} installment{item.overdue_installments > 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
 
                     {/* Last Contact & Promise Info */}
-                    <div className="flex items-center justify-between text-sm bg-gray-50 rounded p-2">
+                    <div className="flex items-center justify-between text-sm bg-muted/50 rounded p-2">
                       <div className="flex items-center space-x-4">
                         {item.last_contact_date && (
-                          <div className="flex items-center space-x-1 text-gray-600">
+                          <div className="flex items-center space-x-1 text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             <span>Last contact: {formatDate(item.last_contact_date)}</span>
                             {item.last_contact_type && (
@@ -341,27 +341,27 @@ export const CollectionsWorkqueue: React.FC = () => {
                         {activities[item.loan_id] && activities[item.loan_id].length > 0 ? (
                           <div className="space-y-2 max-h-60 overflow-y-auto">
                             {activities[item.loan_id].map((activity) => (
-                              <div key={activity.id} className="bg-gray-50 rounded p-3 text-sm">
+                              <div key={activity.id} className="bg-muted/50 rounded p-3 text-sm">
                                 <div className="flex items-start justify-between mb-1">
                                   <div className="flex items-center space-x-2">
                                     <Badge variant="outline" className="text-xs">
                                       {activity.activity_type.replace('_', ' ')}
                                     </Badge>
                                     {activity.contact_method && (
-                                      <span className="text-xs text-gray-500">
+                                      <span className="text-xs text-muted-foreground">
                                         via {activity.contact_method}
                                       </span>
                                     )}
                                   </div>
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-muted-foreground">
                                     {formatDate(activity.created_at)}
                                   </span>
                                 </div>
                                 {activity.outcome && (
-                                  <p className="text-gray-700 mb-1">{activity.outcome}</p>
+                                  <p className="text-foreground mb-1">{activity.outcome}</p>
                                 )}
                                 {activity.notes && (
-                                  <p className="text-gray-600 text-xs">{activity.notes}</p>
+                                  <p className="text-muted-foreground text-xs">{activity.notes}</p>
                                 )}
                                 {activity.promise_date && (
                                   <div className="mt-2 text-xs text-blue-600 flex items-center space-x-1">
@@ -376,7 +376,7 @@ export const CollectionsWorkqueue: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500 italic">No activity history yet</p>
+                          <p className="text-sm text-muted-foreground italic">No activity history yet</p>
                         )}
                       </div>
                     )}

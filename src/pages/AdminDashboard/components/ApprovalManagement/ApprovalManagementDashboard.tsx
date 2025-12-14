@@ -160,18 +160,18 @@ export default function ApprovalManagementDashboard() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      pending: { variant: 'secondary', icon: Clock, color: 'text-yellow-600' },
-      under_review: { variant: 'default', icon: Eye, color: 'text-blue-600' },
-      approved: { variant: 'default', icon: CheckCircle, color: 'text-green-600' },
-      rejected: { variant: 'destructive', icon: XCircle, color: 'text-red-600' },
-      requires_info: { variant: 'outline', icon: AlertTriangle, color: 'text-orange-600' }
+      pending: { variant: 'secondary', icon: Clock, color: 'text-yellow-600 dark:text-yellow-400', badgeClass: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
+      under_review: { variant: 'default', icon: Eye, color: 'text-blue-600 dark:text-blue-400', badgeClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+      approved: { variant: 'default', icon: CheckCircle, color: 'text-green-600 dark:text-green-400', badgeClass: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' },
+      rejected: { variant: 'destructive', icon: XCircle, color: 'text-red-600 dark:text-red-400', badgeClass: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800' },
+      requires_info: { variant: 'outline', icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400', badgeClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800' }
     };
 
     const config = variants[status] || variants.pending;
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge variant="outline" className={`flex items-center gap-1 ${config.badgeClass}`}>
         <Icon className={`h-3 w-3 ${config.color}`} />
         {status.replace('_', ' ')}
       </Badge>
@@ -180,14 +180,14 @@ export default function ApprovalManagementDashboard() {
 
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
-      low: 'bg-gray-100 text-gray-800',
-      normal: 'bg-blue-100 text-blue-800',
-      high: 'bg-orange-100 text-orange-800',
-      urgent: 'bg-red-100 text-red-800'
+      low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      normal: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      urgent: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     return (
-      <Badge className={colors[priority] || colors.normal}>
+      <Badge variant="outline" className={colors[priority] || colors.normal}>
         {priority}
       </Badge>
     );
@@ -230,37 +230,37 @@ export default function ApprovalManagementDashboard() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">{stats.total}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">{stats.pending}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-              <Eye className="h-4 w-4 text-blue-600" />
+              <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.underReview}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">{stats.underReview}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Approved</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">{stats.approved}</div>
             </CardContent>
           </Card>
 
@@ -270,7 +270,7 @@ export default function ApprovalManagementDashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{Math.round(stats.avgProcessingTime)}h</div>
+              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">{Math.round(stats.avgProcessingTime)}h</div>
             </CardContent>
           </Card>
         </div>
@@ -374,13 +374,18 @@ export default function ApprovalManagementDashboard() {
                   data-testid={`approvals-request-${request.id}`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {getRequestTypeIcon(request.request_type)}
-                      <div>
-                        <p className="font-medium">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                      <div className="shrink-0">{getRequestTypeIcon(request.request_type)}</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate" title={request.request_type.replace('_', ' ').toUpperCase()}>
                           {request.request_type.replace('_', ' ').toUpperCase()}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground truncate" title={(() => {
+                            const reqAny = request as any;
+                            const fullName = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
+                            const fallbackEmail = reqAny.user_email || (reqAny.request_data?.user_email) || (reqAny.user as any)?.email;
+                            return fullName || fallbackEmail || 'Unknown user';
+                          })()}>
                           {(() => {
                             const reqAny = request as any;
                             const fullName = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
@@ -390,18 +395,18 @@ export default function ApprovalManagementDashboard() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-1 shrink-0">
                       {getStatusBadge(request.status)}
                       {getPriorityBadge(request.priority)}
                     </div>
                   </div>
                   
                   <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
+                    <span className="truncate tabular-nums">
                       {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                     </span>
                     {request.request_type === 'loan_application' && (
-                      <span>
+                      <span className="truncate tabular-nums ml-2">
                         {formatNAD(request.request_data.amount)}
                       </span>
                     )}

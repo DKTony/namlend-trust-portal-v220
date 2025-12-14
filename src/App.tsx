@@ -17,6 +17,7 @@ import KYC from "@/pages/KYC";
 import NotFound from "@/pages/NotFound";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const queryClient = new QueryClient();
 
@@ -40,50 +41,52 @@ const AuthEventBridge = () => {
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
-            <AuthEventBridge />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/*" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/loan-application" element={
-                <ProtectedRoute>
-                  <LoanApplication />
-                </ProtectedRoute>
-              } />
-              <Route path="/payment" element={
-                <ProtectedRoute>
-                  <Payment />
-                </ProtectedRoute>
-              } />
-              <Route path="/loans/:id" element={
-                <ProtectedRoute>
-                  <LoanDetails />
-                </ProtectedRoute>
-              } />
-              <Route path="/kyc" element={
-                <ProtectedRoute>
-                  <KYC />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Router>
+              <AuthEventBridge />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/*" element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/loan-application" element={
+                  <ProtectedRoute>
+                    <LoanApplication />
+                  </ProtectedRoute>
+                } />
+                <Route path="/payment" element={
+                  <ProtectedRoute>
+                    <Payment />
+                  </ProtectedRoute>
+                } />
+                <Route path="/loans/:id" element={
+                  <ProtectedRoute>
+                    <LoanDetails />
+                  </ProtectedRoute>
+                } />
+                <Route path="/kyc" element={
+                  <ProtectedRoute>
+                    <KYC />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

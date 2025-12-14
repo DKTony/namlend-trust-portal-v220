@@ -37,9 +37,36 @@ interface BulkOperation {
   errors?: string[];
 }
 
-const BulkUserOperations: React.FC = () => {
+interface BulkUserOperationsProps {
+  selectedUsers?: string[];
+  onSelectionChange?: (userIds: string[]) => void;
+}
+
+const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({ 
+  selectedUsers: externalSelectedUsers, 
+  onSelectionChange 
+}) => {
   const [activeTab, setActiveTab] = useState('operations');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [internalSelectedUsers, setInternalSelectedUsers] = useState<string[]>([]);
+  
+  // Use external selected users if provided, otherwise use internal state
+  const selectedUsers = externalSelectedUsers || internalSelectedUsers;
+  const setSelectedUsers = (users: string[] | ((prev: string[]) => string[])) => {
+    if (onSelectionChange) {
+      // If controlled externally
+      if (typeof users === 'function') {
+        // We can't easily support functional updates with the current prop signature without more complex logic
+        // For now, we'll assume direct array updates or handle simple cases
+        // ideally onSelectionChange should handle this, but for this refactor we'll keep it simple
+        const newUsers = users(selectedUsers);
+        onSelectionChange(newUsers);
+      } else {
+        onSelectionChange(users);
+      }
+    } else {
+      setInternalSelectedUsers(users);
+    }
+  };
   const [bulkAction, setBulkAction] = useState('');
   const [bulkValue, setBulkValue] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -114,10 +141,10 @@ const BulkUserOperations: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      in_progress: 'bg-blue-100 text-blue-800 border-blue-200',
-      completed: 'bg-green-100 text-green-800 border-green-200',
-      failed: 'bg-red-100 text-red-800 border-red-200'
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      in_progress: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      completed: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      failed: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     const icons = {
@@ -128,7 +155,7 @@ const BulkUserOperations: React.FC = () => {
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status.replace('_', ' ')}</span>
       </Badge>
@@ -258,10 +285,10 @@ const BulkUserOperations: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Bulk User Operations</h2>
-          <p className="text-gray-600">Manage multiple users efficiently</p>
+          <p className="text-muted-foreground">Manage multiple users efficiently</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+          <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
             <Users className="h-3 w-3 mr-1" />
             {selectedUsers.length} Selected
           </Badge>
@@ -284,9 +311,9 @@ const BulkUserOperations: React.FC = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="selected-users">Selected Users</Label>
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                <div className="mt-2 p-3 bg-muted rounded-lg">
                   {selectedUsers.length === 0 ? (
-                    <p className="text-gray-500">No users selected. Go to Users tab to select users.</p>
+                    <p className="text-muted-foreground">No users selected. Go to Users tab to select users.</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {selectedUsers.map(userId => (
@@ -380,7 +407,7 @@ const BulkUserOperations: React.FC = () => {
                 <Label htmlFor="notification-message">Message</Label>
                 <textarea
                   id="notification-message"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-3 border border-input bg-background rounded-md focus:ring-2 focus:ring-primary"
                   rows={4}
                   value={notificationMessage}
                   onChange={(e) => setNotificationMessage(e.target.value)}
@@ -426,14 +453,14 @@ const BulkUserOperations: React.FC = () => {
                     onChange={handleFileImport}
                   />
                   {importFile && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Selected: {importFile.name}
                     </p>
                   )}
                 </div>
 
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     <strong>Required columns:</strong> full_name, email, role, status
                   </p>
                 </div>
@@ -461,8 +488,8 @@ const BulkUserOperations: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-800">
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-800 dark:text-green-300">
                     Export will include: Profile data, roles, permissions, and activity summary
                   </p>
                 </div>
@@ -484,23 +511,23 @@ const BulkUserOperations: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 {operations.map(operation => (
-                  <div key={operation.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={operation.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         {getOperationIcon(operation.type)}
-                        <span className="font-medium">{getOperationLabel(operation.type)}</span>
+                        <span className="font-medium text-foreground">{getOperationLabel(operation.type)}</span>
                         {getStatusBadge(operation.status)}
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {formatDate(operation.createdAt)}
                       </span>
                     </div>
 
-                    <p className="text-gray-600 mb-2">{operation.details}</p>
+                    <p className="text-muted-foreground mb-2">{operation.details}</p>
 
                     {operation.status === 'in_progress' && (
                       <div className="mb-2">
-                        <div className="flex justify-between text-sm mb-1">
+                        <div className="flex justify-between text-sm mb-1 text-foreground">
                           <span>Progress</span>
                           <span>{operation.processedUsers}/{operation.totalUsers}</span>
                         </div>
@@ -512,9 +539,9 @@ const BulkUserOperations: React.FC = () => {
                     )}
 
                     {operation.errors && operation.errors.length > 0 && (
-                      <div className="mt-2 p-2 bg-red-50 rounded border border-red-200">
-                        <p className="text-sm font-medium text-red-800 mb-1">Errors:</p>
-                        <ul className="text-sm text-red-700">
+                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                        <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">Errors:</p>
+                        <ul className="text-sm text-red-700 dark:text-red-400">
                           {operation.errors.map((error, index) => (
                             <li key={index}>• {error}</li>
                           ))}
@@ -523,7 +550,7 @@ const BulkUserOperations: React.FC = () => {
                     )}
 
                     {operation.completedAt && (
-                      <p className="text-sm text-green-600 mt-2">
+                      <p className="text-sm text-green-600 dark:text-green-400 mt-2">
                         Completed: {formatDate(operation.completedAt)}
                       </p>
                     )}

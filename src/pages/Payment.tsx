@@ -198,7 +198,7 @@ export default function Payment() {
                 <div className="space-y-2">
                   <Label htmlFor="loan">Select Loan</Label>
                   <Select value={selectedLoan} onValueChange={setSelectedLoan}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background border-input text-foreground">
                       <SelectValue placeholder="Choose a loan" />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,6 +221,7 @@ export default function Payment() {
                     placeholder="Enter amount"
                     min="1"
                     step="0.01"
+                    className="bg-background border-input text-foreground"
                   />
                   {selectedLoanDetails && (
                     <div className="flex gap-2">
@@ -247,27 +248,27 @@ export default function Payment() {
                     </TabsList>
                     
                     <TabsContent value="ips" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg border-primary bg-primary/5">
+                      <div className="flex items-center gap-3 p-4 border rounded-lg border-primary bg-primary/5 dark:bg-primary/10">
                         <Zap className="h-8 w-8 text-primary" />
                         <div className="flex-1">
-                          <h3 className="font-medium">IPS Instant Payment</h3>
+                          <h3 className="font-medium text-foreground">IPS Instant Payment</h3>
                           <p className="text-sm text-muted-foreground">
                             Pay instantly using your bank's VPA (Virtual Payment Address)
                           </p>
                         </div>
-                        <Badge variant="default" className="bg-green-600">Instant</Badge>
+                        <Badge variant="default" className="bg-green-600 dark:bg-green-500">Instant</Badge>
                       </div>
                       <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span>Real-time payment confirmation</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span>No additional fees</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span>Secure bank-to-bank transfer</span>
                         </div>
                       </div>
@@ -284,10 +285,10 @@ export default function Payment() {
                     </TabsContent>
                     
                     <TabsContent value="bank" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
                         <Building2 className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="font-medium">Bank EFT Transfer</h3>
+                          <h3 className="font-medium text-foreground">Bank EFT Transfer</h3>
                           <p className="text-sm text-muted-foreground">
                             Direct transfer from your bank account via NamClear
                           </p>
@@ -297,7 +298,7 @@ export default function Payment() {
                       <div className="space-y-2">
                         <Label>Bank</Label>
                         <Select>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue placeholder="Select your bank" />
                           </SelectTrigger>
                           <SelectContent>
@@ -312,10 +313,10 @@ export default function Payment() {
                     
                     <TabsContent value="mobile" className="space-y-4">
                       <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-4 border rounded-lg">
+                        <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
                           <Smartphone className="h-8 w-8 text-primary" />
                           <div>
-                            <h3 className="font-medium">Mobile Money</h3>
+                            <h3 className="font-medium text-foreground">Mobile Money</h3>
                             <p className="text-sm text-muted-foreground">
                               Pay using MTC Maris or bank mobile wallets
                             </p>
@@ -325,7 +326,7 @@ export default function Payment() {
                         <div className="space-y-2">
                           <Label>Mobile Wallet</Label>
                           <Select>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-background border-input text-foreground">
                               <SelectValue placeholder="Select mobile wallet" />
                             </SelectTrigger>
                             <SelectContent>
@@ -337,16 +338,16 @@ export default function Payment() {
                         </div>
                         <div className="space-y-2">
                           <Label>Mobile Number</Label>
-                          <Input placeholder="+264 81 123 4567" />
+                          <Input placeholder="+264 81 123 4567" className="bg-background border-input text-foreground" />
                         </div>
                       </div>
                     </TabsContent>
                     
                     <TabsContent value="card" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
                         <CreditCard className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="font-medium">Debit Card</h3>
+                          <h3 className="font-medium text-foreground">Debit Card</h3>
                           <p className="text-sm text-muted-foreground">
                             Pay using your Visa or Mastercard debit card
                           </p>
@@ -356,24 +357,24 @@ export default function Payment() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Card Number</Label>
-                          <Input placeholder="1234 5678 9012 3456" />
+                          <Input placeholder="1234 5678 9012 3456" className="bg-background border-input text-foreground" />
                         </div>
                         <div className="space-y-2">
                           <Label>Expiry Date</Label>
-                          <Input placeholder="MM/YY" />
+                          <Input placeholder="MM/YY" className="bg-background border-input text-foreground" />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>CVV</Label>
-                        <Input placeholder="123" className="w-24" />
+                        <Input placeholder="123" className="w-24 bg-background border-input text-foreground" />
                       </div>
                     </TabsContent>
                     
                     <TabsContent value="agent" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg">
+                      <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
                         <MapPin className="h-8 w-8 text-primary" />
                         <div>
-                          <h3 className="font-medium">Agent Location</h3>
+                          <h3 className="font-medium text-foreground">Agent Location</h3>
                           <p className="text-sm text-muted-foreground">
                             Pay cash at any of our authorized agent locations
                           </p>
@@ -383,7 +384,7 @@ export default function Payment() {
                       <div className="space-y-2">
                         <Label>Select Nearest Location</Label>
                         <Select>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue placeholder="Choose location" />
                           </SelectTrigger>
                           <SelectContent>
@@ -398,8 +399,8 @@ export default function Payment() {
                   </Tabs>
                 </div>
 
-                <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                  <Shield className="h-5 w-5 text-blue-600" />
+                <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   <div className="text-sm">
                     <p className="font-medium text-blue-800 dark:text-blue-200">Secure Payment</p>
                     <p className="text-blue-600 dark:text-blue-300">

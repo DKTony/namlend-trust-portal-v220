@@ -19,22 +19,22 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600" />;
+        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
       case 'stable':
-        return <Minus className="h-4 w-4 text-gray-600" />;
+        return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up':
-        return 'text-green-600';
+        return 'text-green-600 dark:text-green-400';
       case 'down':
-        return 'text-red-600';
+        return 'text-red-600 dark:text-red-400';
       case 'stable':
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
@@ -70,7 +70,10 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-2">
+            <div 
+              className="text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums"
+              title={typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
+            >
               {typeof kpi.value === 'number' 
                 ? kpi.value.toLocaleString() 
                 : kpi.value

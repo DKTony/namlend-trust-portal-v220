@@ -92,21 +92,21 @@ const ReportGenerator: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">From Date</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">From Date</label>
               <input
                 type="date"
                 value={dateRange.from}
                 onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">To Date</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">To Date</label>
               <input
                 type="date"
                 value={dateRange.to}
                 onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
               />
             </div>
           </div>
@@ -123,36 +123,36 @@ const ReportGenerator: React.FC = () => {
             <Card 
               key={report.id}
               className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
               }`}
               onClick={() => handleReportSelection(report.id)}
             >
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-full ${
-                    isSelected ? 'bg-blue-100' : 'bg-gray-100'
+                  <div className={`p-3 rounded-full shrink-0 ${
+                    isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-muted'
                   }`}>
                     <Icon className={`h-6 w-6 ${
-                      isSelected ? 'text-blue-600' : 'text-gray-600'
+                      isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
                     }`} />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{report.name}</h3>
+                      <h3 className="font-semibold text-foreground truncate" title={report.name}>{report.name}</h3>
                       {isSelected && (
-                        <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center shrink-0 ml-2">
                           <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">{report.description}</p>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]" title={report.description}>{report.description}</p>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="bg-gray-100 px-2 py-1 rounded-full text-gray-700">
+                      <span className="bg-muted px-2 py-1 rounded-full text-muted-foreground shrink-0">
                         {report.category}
                       </span>
-                      <span className="text-gray-500">{report.estimatedTime}</span>
+                      <span className="text-muted-foreground shrink-0 ml-2">{report.estimatedTime}</span>
                     </div>
                   </div>
                 </div>
@@ -164,14 +164,14 @@ const ReportGenerator: React.FC = () => {
 
       {/* Generate Reports Section */}
       {selectedReports.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-blue-900 mb-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">
                   {selectedReports.length} report{selectedReports.length > 1 ? 's' : ''} selected
                 </h3>
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-blue-700 dark:text-blue-400">
                   Estimated generation time: {Math.max(...selectedReports.map(id => 
                     parseInt(reportTypes.find(r => r.id === id)?.estimatedTime?.split('-')[1] || '0')
                   ))} minutes
@@ -203,24 +203,24 @@ const ReportGenerator: React.FC = () => {
               { name: 'Risk Assessment - Q4 2024', date: '2025-01-02', status: 'completed' },
               { name: 'Financial Performance - December 2024', date: '2025-01-01', status: 'processing' }
             ].map((report, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-gray-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">{report.name}</p>
-                    <p className="text-sm text-gray-500">Generated on {report.date}</p>
+              <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center space-x-3 min-w-0 flex-1 mr-4">
+                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground truncate" title={report.name}>{report.name}</p>
+                    <p className="text-sm text-muted-foreground tabular-nums">Generated on {report.date}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 shrink-0">
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     report.status === 'completed' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
+                  } shrink-0`}>
                     {report.status}
                   </span>
                   {report.status === 'completed' && (
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="shrink-0">
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>

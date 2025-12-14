@@ -123,10 +123,10 @@ const SettledLoansList: React.FC = () => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-card">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -137,27 +137,27 @@ const SettledLoansList: React.FC = () => {
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <input
           type="text"
           placeholder="Search by client name, email, or loan ID..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-teal-500 focus:border-input text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Summary */}
-      <Card className="bg-teal-50 border-teal-200">
+      <Card className="bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800">
         <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BadgeCheck className="h-8 w-8 text-teal-600" />
+              <BadgeCheck className="h-8 w-8 text-teal-600 dark:text-teal-400" />
               <div>
-                <h3 className="font-semibold text-teal-900">
+                <h3 className="font-semibold text-teal-900 dark:text-teal-300">
                   {filteredLoans.length} Settled Loan{filteredLoans.length !== 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-teal-700">
+                <p className="text-sm text-teal-700 dark:text-teal-400">
                   Total collected: {formatNAD(filteredLoans.reduce((sum, l) => sum + (l.total_paid || l.total_repayment || 0), 0))}
                 </p>
               </div>
@@ -172,12 +172,12 @@ const SettledLoansList: React.FC = () => {
 
       {/* Loans List */}
       {filteredLoans.length === 0 ? (
-        <Card>
+        <Card className="bg-card">
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <BadgeCheck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Settled Loans</h3>
-              <p className="text-gray-500">
+              <BadgeCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Settled Loans</h3>
+              <p className="text-muted-foreground">
                 {searchTerm ? 'No loans match your search criteria' : 'No loans have been fully settled yet'}
               </p>
             </div>
@@ -186,49 +186,49 @@ const SettledLoansList: React.FC = () => {
       ) : (
         <div className="grid gap-4">
           {filteredLoans.map((loan) => (
-            <Card key={loan.id} className="hover:shadow-md transition-shadow">
+            <Card key={loan.id} className="hover:shadow-md transition-shadow bg-card border-border">
               <CardContent className="pt-4">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <Badge className="bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400 hover:bg-teal-100 shrink-0">
                         <BadgeCheck className="h-3 w-3 mr-1" />
                         Settled
                       </Badge>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground truncate tabular-nums">
                         ID: {loan.id.slice(0, 8)}...
                       </span>
                     </div>
                     
-                    <div className="flex items-center gap-2 mb-3">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <span className="font-medium">{getFullName(loan.profile)}</span>
-                      <span className="text-sm text-gray-500">({loan.profile?.email || 'No email'})</span>
+                    <div className="flex items-center gap-2 mb-3 min-w-0">
+                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-medium truncate text-foreground" title={getFullName(loan.profile)}>{getFullName(loan.profile)}</span>
+                      <span className="text-sm text-muted-foreground truncate" title={loan.profile?.email || 'No email'}>({loan.profile?.email || 'No email'})</span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Principal</p>
-                        <p className="font-semibold">{formatNAD(loan.amount)}</p>
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground truncate">Principal</p>
+                        <p className="font-semibold truncate tabular-nums text-foreground" title={formatNAD(loan.amount)}>{formatNAD(loan.amount)}</p>
                       </div>
-                      <div>
-                        <p className="text-gray-500">Total Paid</p>
-                        <p className="font-semibold text-teal-600">{formatNAD(loan.total_paid || loan.total_repayment)}</p>
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground truncate">Total Paid</p>
+                        <p className="font-semibold text-teal-600 dark:text-teal-400 truncate tabular-nums" title={formatNAD(loan.total_paid || loan.total_repayment)}>{formatNAD(loan.total_paid || loan.total_repayment)}</p>
                       </div>
-                      <div>
-                        <p className="text-gray-500">Disbursed</p>
-                        <p className="font-medium">{formatDate(loan.disbursed_at)}</p>
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground truncate">Disbursed</p>
+                        <p className="font-medium truncate tabular-nums text-foreground">{formatDate(loan.disbursed_at)}</p>
                       </div>
-                      <div>
-                        <p className="text-gray-500">Settled</p>
-                        <p className="font-medium text-teal-600">{formatDate(loan.settled_at)}</p>
+                      <div className="min-w-0">
+                        <p className="text-muted-foreground truncate">Settled</p>
+                        <p className="font-medium text-teal-600 dark:text-teal-400 truncate tabular-nums">{formatDate(loan.settled_at)}</p>
                       </div>
                     </div>
 
                     {loan.purpose && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                        <FileText className="h-4 w-4" />
-                        <span>{loan.purpose}</span>
+                      <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="truncate" title={loan.purpose}>{loan.purpose}</span>
                       </div>
                     )}
                   </div>

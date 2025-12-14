@@ -224,11 +224,11 @@ export default function KYC() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <h4 className="font-medium text-sm text-blue-800 dark:text-blue-200 mb-1">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-1">
                       Upload Instructions:
                     </h4>
-                    <p className="text-xs text-blue-600 dark:text-blue-300">
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
                       {doc.instructions}
                     </p>
                   </div>
@@ -243,6 +243,7 @@ export default function KYC() {
                       accept=".pdf,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileUpload(e, doc.type)}
                       disabled={uploading || uploadedDocs.includes(doc.type)}
+                      className="bg-background border-input text-foreground"
                     />
                     <p className="text-xs text-muted-foreground">
                       Accepted formats: PDF, JPG, PNG (Max 5MB)
@@ -250,8 +251,8 @@ export default function KYC() {
                   </div>
                   
                   {uploadedDocs.includes(doc.type) && (
-                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded">
-                      <Check className="h-4 w-4 text-green-600" />
+                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <span className="text-sm text-green-700 dark:text-green-300">
                         Document uploaded successfully
                       </span>
@@ -263,8 +264,8 @@ export default function KYC() {
           ))}
         </div>
 
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-          <h3 className="font-medium mb-2">Document Requirements:</h3>
+        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <h3 className="font-medium mb-2 text-foreground">Document Requirements:</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Documents must be clear and readable</li>
             <li>• All information must be visible</li>

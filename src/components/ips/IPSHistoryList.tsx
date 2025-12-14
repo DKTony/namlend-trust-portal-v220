@@ -158,18 +158,18 @@ function TransactionRow({ transaction }: TransactionRowProps) {
   const StatusIcon = () => {
     const status = transaction.status;
     if (status === 'pending' || status === 'sent' || status === 'initiated') {
-      return <Clock className="h-4 w-4 text-yellow-500" />;
+      return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
     }
     if (isSuccess) {
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
     }
     if (status === 'failed') {
-      return <XCircle className="h-4 w-4 text-red-500" />;
+      return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
     }
     if (status === 'reversed') {
-      return <AlertTriangle className="h-4 w-4 text-purple-500" />;
+      return <AlertTriangle className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
     }
-    return <Clock className="h-4 w-4 text-gray-500" />;
+    return <Clock className="h-4 w-4 text-muted-foreground" />;
   };
 
   return (
@@ -178,20 +178,20 @@ function TransactionRow({ transaction }: TransactionRowProps) {
       <div
         className={cn(
           'flex h-10 w-10 items-center justify-center rounded-full',
-          isDisbursement ? 'bg-blue-100' : 'bg-green-100'
+          isDisbursement ? 'bg-blue-100 dark:bg-blue-900/20' : 'bg-green-100 dark:bg-green-900/20'
         )}
       >
         {isDisbursement ? (
-          <ArrowUpRight className="h-5 w-5 text-blue-600" />
+          <ArrowUpRight className="h-5 w-5 text-blue-600 dark:text-blue-400" />
         ) : (
-          <ArrowDownLeft className="h-5 w-5 text-green-600" />
+          <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
         )}
       </div>
 
       {/* Details */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">
+          <span className="font-medium text-sm text-foreground">
             {isDisbursement ? 'Disbursement' : 'Payment'}
           </span>
           <StatusIcon />
@@ -215,7 +215,7 @@ function TransactionRow({ transaction }: TransactionRowProps) {
         <div
           className={cn(
             'font-semibold',
-            isDisbursement ? 'text-blue-600' : 'text-green-600'
+            isDisbursement ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
           )}
         >
           {isDisbursement ? '-' : '+'}{formatCurrency(transaction.amount)}

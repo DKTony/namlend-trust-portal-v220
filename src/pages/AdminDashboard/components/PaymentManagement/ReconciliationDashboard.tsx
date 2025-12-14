@@ -161,7 +161,7 @@ export const ReconciliationDashboard: React.FC = () => {
         <CardContent>
           <div className="animate-pulse space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+              <div key={i} className="h-20 bg-muted rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -171,9 +171,9 @@ export const ReconciliationDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-destructive/50 bg-destructive/10">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-2 text-red-600">
+          <div className="flex items-center space-x-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
             <span>{error}</span>
           </div>
@@ -192,10 +192,10 @@ export const ReconciliationDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Unmatched Transactions</p>
+                <p className="text-xs text-muted-foreground">Unmatched Transactions</p>
                 <p className="text-2xl font-bold">{transactions.length}</p>
               </div>
-              <Upload className="h-8 w-8 text-blue-600" />
+              <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -203,10 +203,10 @@ export const ReconciliationDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Unmatched Payments</p>
+                <p className="text-xs text-muted-foreground">Unmatched Payments</p>
                 <p className="text-2xl font-bold">{payments.length}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-orange-600" />
+              <DollarSign className="h-8 w-8 text-orange-600 dark:text-orange-400" />
             </div>
           </CardContent>
         </Card>
@@ -214,12 +214,12 @@ export const ReconciliationDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Total Amount</p>
+                <p className="text-xs text-muted-foreground">Total Amount</p>
                 <p className="text-2xl font-bold">
                   {formatNAD(transactions.reduce((sum, t) => sum + t.transaction_amount, 0))}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -227,12 +227,12 @@ export const ReconciliationDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600">Match Rate</p>
+                <p className="text-xs text-muted-foreground">Match Rate</p>
                 <p className="text-2xl font-bold">
                   {transactions.length > 0 ? '0%' : '100%'}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-purple-600" />
+              <CheckCircle className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             </div>
           </CardContent>
         </Card>
@@ -251,7 +251,7 @@ export const ReconciliationDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {matchedCount > 0 && (
-                <Badge className="bg-blue-100 text-blue-800">
+                <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                   {matchedCount} selected for matching
                 </Badge>
               )}
@@ -278,7 +278,7 @@ export const ReconciliationDashboard: React.FC = () => {
                 size="sm"
                 onClick={handleAutoMatch}
                 disabled={matchingLoading || transactions.length === 0 || payments.length === 0}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Auto-Match
@@ -288,7 +288,7 @@ export const ReconciliationDashboard: React.FC = () => {
                   size="sm"
                   onClick={handleManualMatch}
                   disabled={matchingLoading}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Link2 className="h-4 w-4 mr-2" />
                   Manual Match
@@ -308,8 +308,8 @@ export const ReconciliationDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             {transactions.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Upload className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Upload className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p>No unmatched transactions</p>
                 <Button
                   variant="outline"
@@ -330,20 +330,20 @@ export const ReconciliationDashboard: React.FC = () => {
                     )}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedTransaction === txn.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-border hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <p className="font-mono text-sm font-medium">{txn.transaction_reference}</p>
-                        <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
+                        <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(txn.transaction_date)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
                           {formatNAD(txn.transaction_amount)}
                         </p>
                         <Badge variant="outline" className="text-xs mt-1">
@@ -352,7 +352,7 @@ export const ReconciliationDashboard: React.FC = () => {
                       </div>
                     </div>
                     {txn.description && (
-                      <p className="text-xs text-gray-600 truncate">{txn.description}</p>
+                      <p className="text-xs text-muted-foreground truncate">{txn.description}</p>
                     )}
                   </div>
                 ))}
@@ -368,8 +368,8 @@ export const ReconciliationDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             {payments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p>All payments matched!</p>
               </div>
             ) : (
@@ -382,8 +382,8 @@ export const ReconciliationDashboard: React.FC = () => {
                     )}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedPayment === payment.id
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                        : 'border-border hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -391,13 +391,13 @@ export const ReconciliationDashboard: React.FC = () => {
                         <p className="font-mono text-sm font-medium">
                           {payment.reference_number || 'No reference'}
                         </p>
-                        <div className="flex items-center space-x-2 text-xs text-gray-600 mt-1">
+                        <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(payment.created_at)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-orange-600">
+                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
                           {formatNAD(payment.amount)}
                         </p>
                         <Badge variant="outline" className="text-xs mt-1">
@@ -405,7 +405,7 @@ export const ReconciliationDashboard: React.FC = () => {
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600">Loan: {payment.loan_id.slice(-8)}</p>
+                    <p className="text-xs text-muted-foreground">Loan: {payment.loan_id.slice(-8)}</p>
                   </div>
                 ))}
               </div>

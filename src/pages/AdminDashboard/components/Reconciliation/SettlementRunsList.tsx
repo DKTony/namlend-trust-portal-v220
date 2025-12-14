@@ -151,16 +151,16 @@ export function SettlementRunsList() {
                 ) : (
                   runs?.map((run) => (
                     <TableRow key={run.id}>
-                      <TableCell className="font-mono text-sm">
+                      <TableCell className="font-mono text-sm tabular-nums">
                         {run.run_id}
                       </TableCell>
                       <TableCell>{run.window_id}</TableCell>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {new Date(run.settlement_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={SETTLEMENT_STATE_COLORS[run.state]}
+                          className={`${SETTLEMENT_STATE_COLORS[run.state]} shrink-0`}
                           variant="outline"
                         >
                           {SETTLEMENT_STATE_LABELS[run.state]}
@@ -172,13 +172,13 @@ export function SettlementRunsList() {
                           className="h-2"
                         />
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         {run.transaction_count.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         {formatCurrency(run.total_principal)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right tabular-nums">
                         {run.net_instruction_count}
                       </TableCell>
                       <TableCell>
@@ -357,17 +357,17 @@ export function SettlementRunsList() {
                             <TableCell className="font-medium">
                               {exp.participant}
                             </TableCell>
-                            <TableCell className="text-right text-red-600">
+                            <TableCell className="text-right text-red-600 dark:text-red-400">
                               {formatCurrency(exp.gross_payables)}
                             </TableCell>
-                            <TableCell className="text-right text-green-600">
+                            <TableCell className="text-right text-green-600 dark:text-green-400">
                               {formatCurrency(exp.gross_receivables)}
                             </TableCell>
                             <TableCell
                               className={`text-right font-medium ${
                                 exp.net_position >= 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : 'text-red-600 dark:text-red-400'
                               }`}
                             >
                               {formatCurrency(exp.net_position)}

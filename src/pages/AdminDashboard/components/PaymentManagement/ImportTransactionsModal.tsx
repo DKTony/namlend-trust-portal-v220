@@ -157,12 +157,12 @@ export const ImportTransactionsModal: React.FC<Props> = ({
 
         <div className="space-y-4 py-4">
           {/* CSV Format Help */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <div className="flex items-start space-x-2">
-              <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800 dark:text-blue-300">
                 <p className="font-medium mb-1">Expected CSV Format:</p>
-                <code className="text-xs bg-white px-2 py-1 rounded block">
+                <code className="text-xs bg-white dark:bg-black/40 px-2 py-1 rounded block border border-blue-100 dark:border-blue-800/50">
                   Reference,Date,Amount,Type,Bank,Account,Description<br/>
                   TXN001,2025-10-07,5000.00,credit,FNB,123456,Payment received
                 </code>
@@ -179,12 +179,12 @@ export const ImportTransactionsModal: React.FC<Props> = ({
               id="csv-data"
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
-              className="w-full min-h-[200px] p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+              className="w-full min-h-[200px] p-3 border border-input bg-background rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
               placeholder="Paste CSV data here..."
               disabled={loading}
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {csvText.split('\n').filter(l => l.trim()).length - 1} rows
               </p>
               <Button
@@ -206,22 +206,22 @@ export const ImportTransactionsModal: React.FC<Props> = ({
               <div className="border rounded-lg overflow-hidden">
                 <div className="max-h-60 overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 sticky top-0">
+                    <thead className="bg-muted/50 sticky top-0">
                       <tr>
-                        <th className="text-left p-2 text-xs">Reference</th>
-                        <th className="text-left p-2 text-xs">Date</th>
-                        <th className="text-right p-2 text-xs">Amount</th>
-                        <th className="text-left p-2 text-xs">Type</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Reference</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Date</th>
+                        <th className="text-right p-2 text-xs font-medium text-muted-foreground">Amount</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Type</th>
                       </tr>
                     </thead>
                     <tbody>
                       {preview.slice(0, 10).map((txn, idx) => (
-                        <tr key={idx} className="border-t">
+                        <tr key={idx} className="border-t border-border hover:bg-muted/30">
                           <td className="p-2 font-mono text-xs">{txn.transaction_reference}</td>
                           <td className="p-2 text-xs">{txn.transaction_date}</td>
                           <td className="p-2 text-right text-xs">NAD {txn.transaction_amount.toFixed(2)}</td>
                           <td className="p-2 text-xs">
-                            <span className={txn.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'}>
+                            <span className={txn.transaction_type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                               {txn.transaction_type}
                             </span>
                           </td>
@@ -231,7 +231,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
                   </table>
                 </div>
                 {preview.length > 10 && (
-                  <div className="bg-gray-50 p-2 text-xs text-center text-gray-600">
+                  <div className="bg-muted/30 p-2 text-xs text-center text-muted-foreground border-t border-border">
                     ... and {preview.length - 10} more
                   </div>
                 )}
@@ -240,9 +240,9 @@ export const ImportTransactionsModal: React.FC<Props> = ({
           )}
 
           {/* Warning */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start space-x-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-800">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex items-start space-x-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-800 dark:text-yellow-300">
               <p className="font-medium">Important:</p>
               <p className="mt-1">
                 Duplicate transactions (same reference) will be automatically skipped.

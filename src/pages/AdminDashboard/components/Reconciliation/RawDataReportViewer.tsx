@@ -193,33 +193,34 @@ export function RawDataReportViewer() {
                     ) : (
                       filteredData.map((entry, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-mono text-xs">
+                          <TableCell className="font-mono text-xs max-w-[150px] truncate" title={entry.txId}>
                             {entry.txId}
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-sm tabular-nums">
                             {new Date(entry.timestamp).toLocaleString()}
                           </TableCell>
-                          <TableCell>{entry.remitterParticipant}</TableCell>
-                          <TableCell>{entry.beneficiaryParticipant}</TableCell>
+                          <TableCell className="max-w-[150px] truncate" title={entry.remitterParticipant}>{entry.remitterParticipant}</TableCell>
+                          <TableCell className="max-w-[150px] truncate" title={entry.beneficiaryParticipant}>{entry.beneficiaryParticipant}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{entry.productType}</Badge>
+                            <Badge variant="outline" className="shrink-0">{entry.productType}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge
                               variant={
                                 entry.status === 'SUCCESS' ? 'default' : 'secondary'
                               }
+                              className="shrink-0"
                             >
                               {entry.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right tabular-nums">
                             {formatCurrency(entry.amount)} {entry.currency}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right tabular-nums">
                             {formatCurrency(entry.interchangeAmount)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right tabular-nums">
                             {formatCurrency(entry.switchingFee)}
                           </TableCell>
                         </TableRow>

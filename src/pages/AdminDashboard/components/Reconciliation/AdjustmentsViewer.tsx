@@ -138,26 +138,27 @@ export function AdjustmentsViewer() {
                 ) : (
                   adjustments?.map((adj) => (
                     <TableRow key={adj.id}>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {new Date(adj.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{adj.adjustment_type}</Badge>
+                        <Badge variant="outline" className="shrink-0">{adj.adjustment_type}</Badge>
                       </TableCell>
-                      <TableCell>{adj.source_participant}</TableCell>
-                      <TableCell>{adj.target_participant}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">
+                      <TableCell className="max-w-[120px] truncate" title={adj.source_participant}>{adj.source_participant}</TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={adj.target_participant}>{adj.target_participant}</TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <div className="flex items-center truncate" title={adj.reason_description}>
                           {adj.reason_code && (
-                            <Badge variant="secondary" className="mr-1">
+                            <Badge variant="secondary" className="mr-1 shrink-0">
                               {adj.reason_code}
                             </Badge>
                           )}
-                          {adj.reason_description?.substring(0, 30)}
-                          {(adj.reason_description?.length || 0) > 30 && '...'}
-                        </span>
+                          <span className="truncate text-sm">
+                            {adj.reason_description}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium tabular-nums">
                         {formatCurrency(adj.amount)}
                       </TableCell>
                       <TableCell>
@@ -171,16 +172,17 @@ export function AdjustmentsViewer() {
                               ? 'default'
                               : 'secondary'
                           }
+                          className="shrink-0"
                         >
                           {adj.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="tabular-nums">
                         {adj.response_required_by && (
                           <span
                             className={
                               new Date(adj.response_required_by) < new Date()
-                                ? 'text-red-600'
+                                ? 'text-red-600 dark:text-red-400'
                                 : ''
                             }
                           >

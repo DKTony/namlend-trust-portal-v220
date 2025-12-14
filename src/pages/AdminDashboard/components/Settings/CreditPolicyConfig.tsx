@@ -185,7 +185,7 @@ export function CreditPolicyConfig() {
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+            <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
               Unsaved Changes
             </Badge>
           )}
@@ -222,13 +222,13 @@ export function CreditPolicyConfig() {
       </div>
 
       {/* Regulatory Notice */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
         <CardContent className="pt-4">
           <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+            <Info className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-900">Regulatory Compliance</h4>
-              <p className="text-sm text-blue-700">
+              <h4 className="font-medium text-blue-900 dark:text-blue-300">Regulatory Compliance</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-400">
                 Namibian regulations limit APR to {MAX_APR}%. Interest rates exceeding this limit 
                 will be automatically rejected. Ensure all configurations comply with local lending laws.
               </p>
@@ -600,19 +600,19 @@ export function CreditPolicyConfig() {
               </div>
 
               <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-medium mb-2">Scoring Range Breakdown</h4>
+                <h4 className="font-medium mb-2 text-foreground">Scoring Range Breakdown</h4>
                 <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="text-center p-2 bg-red-100 rounded">
-                    <div className="font-medium text-red-700">0 - {policy.autoRejectThreshold}</div>
-                    <div className="text-red-600 text-xs">Auto-Reject</div>
+                  <div className="text-center p-2 bg-red-100 dark:bg-red-900/30 rounded">
+                    <div className="font-medium text-red-700 dark:text-red-300">0 - {policy.autoRejectThreshold}</div>
+                    <div className="text-red-600 dark:text-red-400 text-xs">Auto-Reject</div>
                   </div>
-                  <div className="text-center p-2 bg-yellow-100 rounded">
-                    <div className="font-medium text-yellow-700">{policy.autoRejectThreshold} - {policy.autoApproveThreshold}</div>
-                    <div className="text-yellow-600 text-xs">Manual Review</div>
+                  <div className="text-center p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                    <div className="font-medium text-yellow-700 dark:text-yellow-300">{policy.autoRejectThreshold} - {policy.autoApproveThreshold}</div>
+                    <div className="text-yellow-600 dark:text-yellow-400 text-xs">Manual Review</div>
                   </div>
-                  <div className="text-center p-2 bg-green-100 rounded">
-                    <div className="font-medium text-green-700">{policy.autoApproveThreshold} - 100</div>
-                    <div className="text-green-600 text-xs">Auto-Approve</div>
+                  <div className="text-center p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                    <div className="font-medium text-green-700 dark:text-green-300">{policy.autoApproveThreshold} - 100</div>
+                    <div className="text-green-600 dark:text-green-400 text-xs">Auto-Approve</div>
                   </div>
                 </div>
               </div>
@@ -645,7 +645,7 @@ export function CreditPolicyConfig() {
                       step={0.5}
                       className="flex-1"
                     />
-                    <span className="w-16 text-right font-medium">{policy.originationFeePercent}%</span>
+                    <span className="w-16 text-right font-medium tabular-nums">{policy.originationFeePercent}%</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Fee charged at loan disbursement
@@ -663,7 +663,7 @@ export function CreditPolicyConfig() {
                       step={0.5}
                       className="flex-1"
                     />
-                    <span className="w-16 text-right font-medium">{policy.latePaymentFeePercent}%</span>
+                    <span className="w-16 text-right font-medium tabular-nums">{policy.latePaymentFeePercent}%</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Fee on overdue payments

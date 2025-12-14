@@ -60,10 +60,10 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: 'bg-green-100 text-green-800 border-green-200',
-      inactive: 'bg-gray-100 text-gray-800 border-gray-200',
-      suspended: 'bg-red-100 text-red-800 border-red-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      active: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      inactive: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      suspended: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
     };
 
     const icons = {
@@ -74,7 +74,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 text-gray-800'}>
+      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -83,9 +83,9 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   const getRiskBadge = (riskLevel: string) => {
     const variants = {
-      low: 'bg-green-100 text-green-800 border-green-200',
-      medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      high: 'bg-red-100 text-red-800 border-red-200'
+      low: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      high: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     return (
@@ -98,9 +98,9 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   const getKycBadge = (kycStatus: string) => {
     const variants = {
-      verified: 'bg-green-100 text-green-800 border-green-200',
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      rejected: 'bg-red-100 text-red-800 border-red-200'
+      verified: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      rejected: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
     };
 
     return (
@@ -114,15 +114,15 @@ const ClientsList: React.FC<ClientsListProps> = ({
     return (
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i} className="animate-pulse bg-card">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                <div className="h-12 w-12 bg-muted rounded-full"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-1/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
-                <div className="h-8 bg-gray-200 rounded w-20"></div>
+                <div className="h-8 bg-muted rounded w-20"></div>
               </div>
             </CardContent>
           </Card>
@@ -133,10 +133,10 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   if (error) {
     return (
-      <Card className="border-red-200 bg-red-50">
+      <Card className="border-destructive/50 bg-destructive/10">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-red-600">
+            <div className="flex items-center space-x-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               <span>Failed to load clients: {error}</span>
             </div>
@@ -151,12 +151,12 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   if (!clients || clients.length === 0) {
     return (
-      <Card>
+      <Card className="bg-card">
         <CardContent className="pt-6">
           <div className="text-center py-8">
-            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No clients found</h3>
-            <p className="text-gray-500">
+            <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No clients found</h3>
+            <p className="text-muted-foreground">
               {searchTerm 
                 ? `No clients match "${searchTerm}"`
                 : `No ${status === 'all' ? '' : status} clients at this time`
@@ -173,15 +173,15 @@ const ClientsList: React.FC<ClientsListProps> = ({
       {clients.map((client) => (
         <Card 
           key={client.id} 
-          className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
+          className="hover:shadow-md transition-shadow duration-200 cursor-pointer bg-card border-border"
           onClick={() => onClientSelect(client.id)}
         >
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
               {/* Client Avatar */}
               <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-600" />
+                <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
 
@@ -189,7 +189,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center">
                       {client.fullName}
                       {client.isPremium && (
                         <Star className="h-4 w-4 text-yellow-500 ml-2" />
@@ -199,49 +199,52 @@ const ClientsList: React.FC<ClientsListProps> = ({
                     {getRiskBadge(client.riskLevel)}
                     {getKycBadge(client.kycStatus)}
                   </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-gray-900">
+                  <div className="text-right shrink-0">
+                    <div 
+                      className="text-xl sm:text-2xl font-bold text-foreground truncate tabular-nums"
+                      title={formatCurrency(client.totalValue)}
+                    >
                       {formatCurrency(client.totalValue)}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       Portfolio Value
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <Mail className="h-4 w-4" />
-                    <span className="truncate">{client.email}</span>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <span className="truncate" title={client.email}>{client.email}</span>
                   </div>
                   {client.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4" />
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <Phone className="h-4 w-4 shrink-0" />
                       <span>{client.phone}</span>
                     </div>
                   )}
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <Calendar className="h-4 w-4 shrink-0" />
                     <span>Joined {formatDate(client.joinedAt)}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4" />
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <DollarSign className="h-4 w-4 shrink-0" />
                     <span>{client.totalLoans} loan{client.totalLoans !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
 
                 {/* Additional Details */}
-                <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-4">
                       {client.address && (
-                        <div className="flex items-center space-x-1 text-gray-500">
+                        <div className="flex items-center space-x-1 text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span className="truncate max-w-xs">{client.address}</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-gray-500">
+                    <div className="text-muted-foreground">
                       Last activity: {formatDate(client.lastActivity)}
                     </div>
                   </div>

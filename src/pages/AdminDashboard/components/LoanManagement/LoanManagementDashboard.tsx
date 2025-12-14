@@ -166,7 +166,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground"
                 />
               </div>
               <div className="space-y-2">
@@ -175,7 +175,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground"
                 />
               </div>
 
@@ -187,7 +187,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMin}
                   onChange={(e) => setAmountMin(e.target.value)}
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               <div className="space-y-2">
@@ -197,7 +197,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMax}
                   onChange={(e) => setAmountMax(e.target.value)}
                   placeholder="100000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
@@ -208,7 +208,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
                   >
                     <option value="all">All Priorities</option>
                     <option value="urgent">Urgent</option>
@@ -274,19 +274,19 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
         {/* Search and Filter Bar */}
         <div className="flex space-x-4 items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
               type="text"
               placeholder="Search by applicant name, ID, or amount..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
             data-testid="filter-status-select"
           >
             <option value="all" data-testid="filter-all">All Statuses</option>

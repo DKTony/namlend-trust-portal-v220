@@ -167,14 +167,14 @@ const WorkflowManagementDashboard: React.FC = () => {
                 <Card key={workflow.id} className={workflow.is_active ? 'border-blue-200' : ''}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{workflow.name}</CardTitle>
-                        <CardDescription className="mt-1">
+                      <div className="flex-1 min-w-0 mr-2">
+                        <CardTitle className="text-lg truncate" title={workflow.name}>{workflow.name}</CardTitle>
+                        <CardDescription className="mt-1 truncate">
                           {getEntityTypeLabel(workflow.entity_type)}
                         </CardDescription>
                       </div>
                       {workflow.is_active && (
-                        <Badge className="bg-green-500">Active</Badge>
+                        <Badge className="bg-green-500 shrink-0">Active</Badge>
                       )}
                     </div>
                   </CardHeader>
@@ -182,21 +182,21 @@ const WorkflowManagementDashboard: React.FC = () => {
                     <div className="space-y-3">
                       {/* Description */}
                       {workflow.description && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]" title={workflow.description}>
                           {workflow.description}
                         </p>
                       )}
 
                       {/* Stages */}
                       <div className="flex items-center text-sm">
-                        <GitBranch className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <span>{workflow.stages.length} stages</span>
+                        <GitBranch className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="tabular-nums">{workflow.stages.length} stages</span>
                       </div>
 
                       {/* Version */}
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Version {workflow.version}</span>
+                        <Settings className="mr-2 h-4 w-4 shrink-0" />
+                        <span className="tabular-nums">Version {workflow.version}</span>
                       </div>
 
                       {/* Actions */}
@@ -308,26 +308,26 @@ const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition |
         <Card key={instance.id}>
           <CardHeader>
             <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-lg">
+              <div className="flex-1 min-w-0 mr-2">
+                <CardTitle className="text-lg truncate" title={(instance.workflow_definitions as any)?.name || 'Unknown Workflow'}>
                   {(instance.workflow_definitions as any)?.name || 'Unknown Workflow'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="truncate" title={`Entity: ${instance.entity_type} • Stage ${instance.current_stage}`}>
                   Entity: {instance.entity_type} • Stage {instance.current_stage}
                 </CardDescription>
               </div>
-              <Badge className="bg-blue-500">In Progress</Badge>
+              <Badge className="bg-blue-500 shrink-0">In Progress</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Started:</span>
-                <span>{new Date(instance.started_at).toLocaleString()}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground shrink-0 mr-2">Started:</span>
+                <span className="truncate tabular-nums text-right">{new Date(instance.started_at).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Entity ID:</span>
-                <span className="font-mono text-xs">{instance.entity_id.slice(0, 8)}...</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground shrink-0 mr-2">Entity ID:</span>
+                <span className="font-mono text-xs truncate tabular-nums text-right">{instance.entity_id.slice(0, 8)}...</span>
               </div>
             </div>
           </CardContent>

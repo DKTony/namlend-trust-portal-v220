@@ -155,10 +155,13 @@ const PaymentOverview: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold mb-1">
+              <div 
+                className="text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums"
+                title={typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
+              >
                 {typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mb-1">
+              <p className="text-xs text-muted-foreground mb-1 truncate">
                 {card.description}
                 {card.count !== undefined && (
                   <span className="ml-1 font-medium">({card.count} items)</span>

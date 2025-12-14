@@ -28,10 +28,10 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900">{`Month: ${label}`}</p>
+        <div className="bg-background p-3 border border-border rounded-lg shadow-lg">
+          <p className="font-medium text-foreground">{`Month: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
+            <p key={index} style={{ color: entry.color }} className="text-sm tabular-nums">
               {`${entry.dataKey === 'revenue' ? 'Revenue' : 
                  entry.dataKey === 'disbursed' ? 'Disbursed' : 'Repayments'}: ${formatCurrency(entry.value)}`}
             </p>
@@ -44,7 +44,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle>Revenue Analytics</CardTitle>
         </CardHeader>
@@ -59,12 +59,12 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
 
   // Temporary placeholder while recharts is disabled
   return (
-    <Card>
+    <Card className="bg-card border-border">
       <CardHeader>
         <CardTitle>Revenue Analytics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
+        <div className="h-80 flex items-center justify-center border-2 border-dashed border-border rounded-lg">
           <div className="text-center">
             <div className="text-lg font-medium text-muted-foreground mb-2">Chart Temporarily Disabled</div>
             <div className="text-sm text-muted-foreground">
@@ -73,12 +73,16 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
             <div className="mt-4 text-xs text-muted-foreground">
               Data points: {data.length} months
             </div>
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Disbursed</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Repayments</span>
+            <div className="flex items-center justify-center space-x-4 mt-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
+                <span className="text-sm text-muted-foreground">Disbursed</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
+                <span className="text-sm text-muted-foreground">Repayments</span>
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>

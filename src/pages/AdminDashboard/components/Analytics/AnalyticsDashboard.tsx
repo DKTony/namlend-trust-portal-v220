@@ -39,7 +39,7 @@ const AnalyticsDashboard: React.FC = () => {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -63,48 +63,48 @@ const AnalyticsDashboard: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Portfolio Value</p>
-                <p className="text-2xl font-bold">N$2.4M</p>
-                <p className="text-xs text-green-600">+12% vs last month</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Total Portfolio Value</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">N$2.4M</p>
+                <p className="text-xs text-green-600 dark:text-green-400 truncate">+12% vs last month</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Loans</p>
-                <p className="text-2xl font-bold">156</p>
-                <p className="text-xs text-blue-600">+8 this month</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Active Loans</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">156</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 truncate">+8 this month</p>
               </div>
-              <FileText className="h-8 w-8 text-blue-600" />
+              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Portfolio Health</p>
-                <p className="text-2xl font-bold">94.2%</p>
-                <p className="text-xs text-green-600">Excellent</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Portfolio Health</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">94.2%</p>
+                <p className="text-xs text-green-600 dark:text-green-400 truncate">Excellent</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600" />
+              <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Risk Score</p>
-                <p className="text-2xl font-bold">2.1</p>
-                <p className="text-xs text-green-600">Low Risk</p>
+              <div className="min-w-0 flex-1 mr-2">
+                <p className="text-sm text-muted-foreground truncate">Risk Score</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">2.1</p>
+                <p className="text-xs text-green-600 dark:text-green-400 truncate">Low Risk</p>
               </div>
-              <BarChart3 className="h-8 w-8 text-orange-600" />
+              <BarChart3 className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />
             </div>
           </CardContent>
         </Card>

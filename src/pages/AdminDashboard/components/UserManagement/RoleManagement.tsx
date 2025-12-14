@@ -163,15 +163,15 @@ const RoleManagement: React.FC = () => {
   const getRoleIcon = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
-        return <Shield className="h-5 w-5 text-purple-600" />;
+        return <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
       case 'loan officer':
-        return <Users className="h-5 w-5 text-blue-600" />;
+        return <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
       case 'client':
-        return <Users className="h-5 w-5 text-green-600" />;
+        return <Users className="h-5 w-5 text-green-600 dark:text-green-400" />;
       case 'support':
-        return <Settings className="h-5 w-5 text-orange-600" />;
+        return <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
       default:
-        return <Shield className="h-5 w-5 text-gray-600" />;
+        return <Shield className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -397,22 +397,22 @@ const RoleManagement: React.FC = () => {
           <Card key={role.id} className={`${!role.isActive ? 'opacity-60' : ''}`}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {getRoleIcon(role.name)}
-                  <div>
-                    <CardTitle className="text-lg">{role.name}</CardTitle>
-                    <div className="flex items-center space-x-2 mt-1">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="shrink-0">{getRoleIcon(role.name)}</div>
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-lg truncate" title={role.name}>{role.name}</CardTitle>
+                    <div className="flex items-center space-x-2 mt-1 flex-wrap gap-y-1">
                       {role.isSystemRole && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs shrink-0">
                           System Role
                         </Badge>
                       )}
                       <Badge 
                         variant="outline" 
-                        className={role.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                        }
+                        className={`${role.isActive 
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' 
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+                        } shrink-0`}
                       >
                         {role.isActive ? (
                           <>
@@ -429,7 +429,7 @@ const RoleManagement: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 shrink-0 ml-2">
                   <Button
                     variant="ghost"
                     size="sm"

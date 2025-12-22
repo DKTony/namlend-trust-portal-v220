@@ -1,8 +1,8 @@
 # NamLend Trust - Loan Management Platform
 
-**Version**: 2.6.0  
-**Last Updated**: December 10, 2025  
-**Status**: ✅ Production-Ready Digital Lending Platform  
+**Version**: 2.7.0  
+**Last Updated**: December 21, 2025  
+**Status**: ✅ Production-Ready Digital Lending Platform with TigerBeetle Ledger  
 **Database**: PostgreSQL 17+ (Supabase eu-north-1)  
 **Design System**: Neo-Fintech / "Black Card" Aesthetic  
 **Live URL**: https://namlend-trust-portal-v220.netlify.app
@@ -25,6 +25,14 @@
 - **✅ Phase 4**: Payment Gateway, SMS/WhatsApp Integration, AI Credit Scoring
 - **✅ Database**: All Phase 4 tables deployed to production (9 new tables)
 - **✅ v2.6.0**: Payment system fixes, schema alignment, settled loans visibility
+- **✅ v2.7.0**: TigerBeetle financial ledger integration (shadow mode)
+
+### TigerBeetle Financial Ledger ✅ (December 2025)
+- **✅ TigerBeetle Server**: Running on `127.0.0.1:3001` (v0.16.67)
+- **✅ 11 Global Accounts**: Clearing, Settlement, Income, Expense accounts initialized
+- **✅ Shadow Ledger**: Double-entry bookkeeping with outbox pattern
+- **✅ Service Integration**: disbursementService & paymentService post to ledger
+- **✅ Reconciliation**: Automated comparison between Supabase and TigerBeetle
 
 ### UI/UX Refresh ✅ (December 2025)
 - **✅ Neo-Fintech Design**: Zinc/Black palette with Electric Blue accents
@@ -61,20 +69,23 @@
 | TN Mobile | ✅ Implemented | Telecom Namibia mobile money |
 | PayToday | ✅ Implemented | Online payment gateway |
 | Bank EFT | ✅ Implemented | Traditional bank transfers |
+| **TigerBeetle** | ✅ Integrated | Financial ledger for double-entry bookkeeping |
 
 > See [docs/IPP_INTEGRATION.md](./docs/IPP_INTEGRATION.md) for IPP integration details.
+> See [docs/TIGERBEETLE_IMPLEMENTATION.md](./docs/TIGERBEETLE_IMPLEMENTATION.md) for ledger integration.
 
 ## 🛠 Technology Stack
 
 - **Frontend**: React 18.3.1 with TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth + Real-time + RLS)
+- **Financial Ledger**: TigerBeetle (OLTP double-entry bookkeeping)
 - **Styling**: Tailwind CSS with Neo-Fintech design system
 - **UI Components**: shadcn/ui with custom styling (rounded-3xl, shadow-soft)
 - **Icons**: Lucide React
 - **Build Tool**: Vite with optimized production builds
 - **Deployment**: Netlify with automated deployments
 - **Currency**: NAD (Namibian Dollar) with proper formatting
-- **Payments**: IPP/IPN (UPI-based), Mobile Money, Online Gateway
+- **Payments**: IPP/IPN (UPI-based), Mobile Money, Online Gateway, TigerBeetle Ledger
 
 ## 🚀 Quick Start
 

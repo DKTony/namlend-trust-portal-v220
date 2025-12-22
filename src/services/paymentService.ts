@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
+import { postRepayment, postLateFeeAccrual } from './ledgerService';
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed';
 export type ScheduleStatus = 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'waived';
@@ -114,6 +115,44 @@ export async function processLoanPayment(
         newOutstanding: result.new_outstanding,
         loanSettled: result.loan_settled
       });
+
+      // Post to TigerBeetle ledger (non-blocking via outbox pattern)
+      if (result.payment_id && result.amount_applied) {
+        try {
+          // Get payment allocation from schedules
+          const { data: schedules } = await supabase
+            .from('payment_schedules')
+            .select('principal_amount, interest_amount, fee_amount, late_fee_applied, amount_paid')
+            .eq('loan_id', input.loanId)
+            .eq('status', 'paid')
+            .order('installment_number', { ascending: false })
+            .limit(1);
+
+          // Estimate allocation (simplified - actual would track per-payment)
+          const allocation = {
+            principal: schedules?.[0]?.principal_amount || result.amount_applied * 0.7,
+            interest: schedules?.[0]?.interest_amount || result.amount_applied * 0.25,
+            fees: schedules?.[0]?.fee_amount || 0,
+            lateFees: schedules?.[0]?.late_fee_applied || 0,
+          };
+
+          const ledgerResult = await postRepayment(
+            result.payment_id,
+            input.loanId,
+            allocation,
+            input.reference_number || result.payment_id
+          );
+
+          if (ledgerResult.success) {
+            debugLog('📒 TigerBeetle: Repayment queued', { outboxId: ledgerResult.outboxId });
+          } else {
+            debugLog('⚠️ TigerBeetle: Queue failed (will retry)', ledgerResult.error);
+          }
+        } catch (ledgerError) {
+          // Non-blocking - outbox worker will retry
+          debugLog('⚠️ TigerBeetle: Error (non-blocking)', ledgerError);
+        }
+      }
 
       return result;
     } catch (error) {

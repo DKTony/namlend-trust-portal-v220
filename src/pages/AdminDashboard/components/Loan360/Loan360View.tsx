@@ -47,6 +47,7 @@ import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
 import { LoanStatusTimeline, generateLoanTimeline } from '@/components/LoanStatusTimeline';
 import { cn } from '@/lib/utils';
+import { TigerBeetleBalance } from '@/components/TigerBeetleBalance';
 
 interface Loan360Props {
   loanId: string;
@@ -291,7 +292,10 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
 
               <Card>
                 <CardContent className="pt-4">
-                  <div className="text-sm text-muted-foreground mb-1 truncate">Remaining Balance</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm text-muted-foreground truncate">Remaining Balance</div>
+                    <TigerBeetleBalance loanId={loan.id} compact showDetails={false} />
+                  </div>
                   <div className="text-2xl font-bold truncate tabular-nums" title={formatNAD(remainingBalance)}>{formatNAD(remainingBalance)}</div>
                   <Progress value={progressPercent} className="mt-2 h-2" />
                   <div className="text-xs text-muted-foreground mt-1 truncate tabular-nums">

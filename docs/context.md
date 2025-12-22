@@ -1,8 +1,8 @@
 # NamLend Trust - Technical Context & Handover Document
 
-**Version**: 2.7.0  
-**Last Updated**: December 12, 2025  
-**Status**: ✅ Production-ready core; IPS in Mock Mode; settlement offline pipeline scaffolded  
+**Version**: 3.0.0  
+**Last Updated**: December 22, 2025  
+**Status**: ✅ Production-ready; IPS Mock Mode; Admin Configuration Panels Complete  
 **Supabase Project ID**: `puahejtaskncpazjyxqp`  
 **Database Region**: eu-north-1
 
@@ -23,6 +23,8 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 - ✅ **Database Migration** - All Phase 4 tables deployed to production
 - ✅ **Functionality Mapped** - Complete feature-to-database mapping in `FUNCTIONALITY_MAP.md`
 - ✅ **Settlement System Scaffold** - BON/IPP DNS schema + admin reconciliation UI (pacs.009/NTSL viewers, adjustments, acknowledgements)
+- ✅ **Admin Configuration Panels** - TigerBeetle, Settlement, IPS configuration with database persistence
+- ✅ **User Management Refinement** - Full database wiring for user administration
 
 ### Phase 4 Integration Complete ✅
 
@@ -31,6 +33,15 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 - ✅ **WhatsApp Business API** - Meta Cloud API integration
 - ✅ **AI Credit Scoring** - Multi-factor scoring engine (300-850 scale)
 - ✅ **Notification System** - Multi-channel with real-time delivery
+
+### Phase 5: Admin Configuration & User Management ✅
+
+- ✅ **TigerBeetle Config** - Connection, outbox, reconciliation, account structure settings
+- ✅ **Settlement Config** - Settlement parameters, IPS integration, reconciliation automation
+- ✅ **System Configuration Table** - Persistent admin settings with RLS and RPCs
+- ✅ **User Management Dashboard** - Real-time stats, export, add user, advanced filters
+- ✅ **User Profile Integration** - Database-backed profile editing and suspension
+- ✅ **User Audit Log** - Real-time audit log queries with filtering
 
 ---
 
@@ -112,7 +123,7 @@ namlend-trust-main-3/
 │   └── constants/           # App constants
 │       └── regulatory.ts    # Namibian regulatory constants
 ├── supabase/
-│   ├── migrations/          # Database migrations (28 files)
+│   ├── migrations/          # Database migrations (33 files)
 │   ├── functions/           # Edge functions
 │   └── config.toml          # Supabase configuration
 ├── e2e/                     # E2E tests
@@ -166,6 +177,7 @@ Users (auth.users)
 | `credit_scores` | Credit score history | user_id, score, risk_level, factors |
 | `payment_transactions` | Payment logs | provider, reference, amount, status |
 | `communication_logs` | SMS/WhatsApp logs | channel, recipient, content, status |
+| `system_configuration` | Admin settings | config_key, config_value, category, updated_by |
 
 ---
 
@@ -309,6 +321,9 @@ Application → Under Review → Approved/Rejected → Disbursement → Active �
 | `calculate_credit_score` | Calculate & store score | System |
 | `get_current_credit_score` | Get latest score | User |
 | `process_payment_webhook` | Handle payment callback | Service Role |
+| `get_system_config` | Get configuration by category | Admin |
+| `upsert_system_config` | Create/update configuration | Admin |
+| `reset_system_config` | Reset config to defaults | Admin |
 
 ---
 
@@ -524,6 +539,9 @@ npm run test:e2e
 | `src/services/settlementService.ts` | Settlement data access, pacs.009/report parsers |
 | `src/hooks/useSettlement.ts` | React Query hooks for reconciliation dashboards |
 | `src/pages/AdminDashboard/components/Reconciliation/ReconciliationDashboard.tsx` | Admin settlement UI entrypoint (runs, batches, reports, adjustments) |
+| `src/pages/AdminDashboard/components/Settings/TigerBeetleConfig.tsx` | TigerBeetle ledger configuration panel |
+| `src/pages/AdminDashboard/components/Settings/SettlementConfig.tsx` | Settlement & IPS configuration panel |
+| `supabase/migrations/20251222050000_system_configuration.sql` | System configuration table, RLS, RPCs |
 | `docs/DESIGN_SYSTEM.md` | Neo-Fintech UI/UX Specification |
 
 ---
@@ -581,6 +599,6 @@ For technical questions, refer to:
 
 ---
 
-*Document Version: 2.7.0*  
-*Last Updated: December 12, 2025*  
-*Handover Status: Core platform production-ready; IPS in Mock Mode; settlement pipeline awaiting orchestration/transport*
+*Document Version: 3.0.0*  
+*Last Updated: December 22, 2025*  
+*Handover Status: Core platform production-ready; IPS in Mock Mode; Admin configuration complete; User management fully wired*

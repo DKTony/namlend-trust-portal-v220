@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserData {
   id: string;
@@ -25,7 +26,34 @@ interface UseUserProfileReturn {
   loading: boolean;
   error: string | null;
   refetch: () => void;
+  updateUser: (updates: Partial<UserData>) => Promise<boolean>;
+  suspendUser: () => Promise<boolean>;
 }
+
+// Helper to get permissions based on role
+const getRolePermissions = (role: string): string[] => {
+  switch (role) {
+    case 'admin':
+      return ['user_management', 'loan_approval', 'system_admin', 'financial_reports', 'audit_logs'];
+    case 'loan_officer':
+      return ['loan_processing', 'client_management', 'payment_processing', 'basic_reports'];
+    case 'support':
+      return ['client_support', 'ticket_management', 'basic_reports'];
+    case 'client':
+    default:
+      return ['profile_view', 'loan_application', 'payment_history'];
+  }
+};
+
+// Helper to get department based on role
+const getDepartmentByRole = (role: string): string => {
+  switch (role) {
+    case 'admin': return 'Administration';
+    case 'loan_officer': return 'Lending';
+    case 'support': return 'Customer Support';
+    default: return 'N/A';
+  }
+};
 
 export const useUserProfile = (userId: string): UseUserProfileReturn => {
   const [user, setUser] = useState<UserData | null>(null);
@@ -33,39 +61,117 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserProfile = async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      // TODO: Replace with actual Supabase query
-      // For now, return mock data based on userId
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      // Fetch user profile with roles from the view
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles_with_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-      const mockUser: UserData = {
-        id: userId,
-        fullName: `User ${userId.slice(0, 8)}`,
-        email: `user.${userId.slice(0, 8)}@namlend.com`,
-        phone: '+264 81 123 4567',
-        role: 'loan_officer',
-        status: 'active',
-        isVerified: true,
-        lastLogin: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        permissions: ['loan_processing', 'client_management', 'payment_processing', 'basic_reports'],
-        loginCount: Math.floor(Math.random() * 500) + 50,
-        department: 'Loan Operations',
-        address: '123 Independence Ave, Windhoek, Namibia',
-        dateOfBirth: '1985-03-15',
-        emergencyContact: '+264 81 987 6543',
-        notes: 'Active user with good performance record.'
+      if (profileError) {
+        throw profileError;
+      }
+
+      if (!profile) {
+        throw new Error('User not found');
+      }
+
+      // Get login count from view_logs (approximate)
+      const { count: loginCount } = await supabase
+        .from('view_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      const userData: UserData = {
+        id: profile.user_id,
+        fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User',
+        email: profile.email || 'No email',
+        phone: profile.phone_number,
+        role: (profile.primary_role as UserData['role']) || 'client',
+        status: profile.verified ? 'active' : 'pending',
+        isVerified: profile.verified || false,
+        lastLogin: profile.last_login || profile.updated_at || profile.created_at,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at || profile.created_at,
+        permissions: getRolePermissions(profile.primary_role || 'client'),
+        loginCount: loginCount || 0,
+        department: getDepartmentByRole(profile.primary_role || 'client'),
+        notes: ''
       };
 
-      setUser(mockUser);
+      setUser(userData);
     } catch (err) {
+      console.error('Error fetching user profile:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch user profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateUser = async (updates: Partial<UserData>): Promise<boolean> => {
+    if (!userId || !user) return false;
+
+    try {
+      // Update profile in database
+      const profileUpdates: any = {};
+      
+      if (updates.fullName) {
+        const nameParts = updates.fullName.split(' ');
+        profileUpdates.first_name = nameParts[0] || '';
+        profileUpdates.last_name = nameParts.slice(1).join(' ') || '';
+      }
+      if (updates.phone !== undefined) profileUpdates.phone_number = updates.phone;
+      if (updates.isVerified !== undefined) profileUpdates.verified = updates.isVerified;
+      profileUpdates.updated_at = new Date().toISOString();
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(profileUpdates)
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setUser(prev => prev ? { ...prev, ...updates } : null);
+      return true;
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+      return false;
+    }
+  };
+
+  const suspendUser = async (): Promise<boolean> => {
+    if (!userId) return false;
+
+    try {
+      // Update user to suspended (set verified to false)
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          verified: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setUser(prev => prev ? { ...prev, status: 'suspended', isVerified: false } : null);
+      return true;
+    } catch (err) {
+      console.error('Error suspending user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to suspend user');
+      return false;
     }
   };
 
@@ -83,97 +189,8 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
     user,
     loading,
     error,
-    refetch
+    refetch,
+    updateUser,
+    suspendUser
   };
 };
-
-// TODO: Implement actual Supabase integration
-/*
-Example Supabase implementation:
-
-import { supabase } from '@/integrations/supabase/client';
-
-export const useUserProfile = (userId: string): UseUserProfileReturn => {
-  // ... existing state
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Fetch user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (rolesError) throw rolesError;
-
-      // Fetch user permissions
-      const { data: permissions, error: permissionsError } = await supabase
-        .from('role_permissions')
-        .select('permission')
-        .in('role', userRoles.map(ur => ur.role));
-
-      if (permissionsError) throw permissionsError;
-
-      // Fetch login statistics
-      const { data: loginStats, error: statsError } = await supabase
-        .from('user_login_logs')
-        .select('created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (statsError) throw statsError;
-
-      const userData: UserData = {
-        id: profile.id,
-        fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown',
-        email: profile.email,
-        phone: profile.phone,
-        role: userRoles[0]?.role || 'client',
-        status: profile.status,
-        isVerified: profile.email_verified,
-        lastLogin: loginStats[0]?.created_at || profile.created_at,
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at,
-        permissions: permissions.map(p => p.permission),
-        loginCount: await getLoginCount(userId),
-        department: profile.department,
-        address: profile.address,
-        dateOfBirth: profile.date_of_birth,
-        emergencyContact: profile.emergency_contact,
-        notes: profile.notes
-      };
-
-      setUser(userData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch user profile');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ... rest of implementation
-};
-
-const getLoginCount = async (userId: string): Promise<number> => {
-  const { count, error } = await supabase
-    .from('user_login_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-
-  if (error) return 0;
-  return count || 0;
-};
-*/

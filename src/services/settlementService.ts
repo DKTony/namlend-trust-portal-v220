@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { amountToTBUnits, uuidToTBId } from './ledgerService';
 import type {
   SettlementRunSummary,
   SettlementRunDetails,
@@ -773,5 +774,99 @@ export function parseRawDataReport(
     return [];
   } catch {
     return [];
+  }
+}
+
+// ============================================================================
+// TIGERBEETLE SETTLEMENT INTEGRATION
+// ============================================================================
+
+/**
+ * Post settlement net position to TigerBeetle outbox
+ * Creates transfers for net settlement amounts between participants
+ */
+export async function postSettlementToTigerBeetle(
+  runId: string,
+  participantId: string,
+  netAmount: number,
+  currency: string = 'NAD'
+): Promise<{ success: boolean; outboxId?: string; error?: string }> {
+  try {
+    const { high, low } = uuidToTBId(runId);
+    const amountUnits = amountToTBUnits(Math.abs(netAmount));
+
+    // Queue settlement event in TigerBeetle outbox
+    const { data, error } = await supabase
+      .from('tigerbeetle_outbox')
+      .insert({
+        event_type: 'SETTLEMENT_NET',
+        source_table: 'settlement_net_instructions',
+        source_id: runId,
+        payload: {
+          run_id: runId,
+          participant_id: participantId,
+          net_amount: netAmount,
+          amount_units: amountUnits.toString(),
+          currency,
+          direction: netAmount >= 0 ? 'RECEIVE' : 'PAY',
+          tb_id_high: high.toString(),
+          tb_id_low: low.toString(),
+        },
+        status: 'pending',
+        retry_count: 0,
+        max_retries: 5,
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, outboxId: data.id };
+  } catch (error) {
+    console.error('Failed to post settlement to TigerBeetle:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
+
+/**
+ * Post all net instructions from a settlement run to TigerBeetle
+ */
+export async function postSettlementRunToTigerBeetle(
+  runId: string
+): Promise<{ success: boolean; posted: number; errors: number }> {
+  try {
+    // Get net instructions for this run
+    const { data: instructions, error } = await supabase
+      .from('settlement_net_instructions')
+      .select('*')
+      .eq('run_id', runId);
+
+    if (error) throw error;
+
+    let posted = 0;
+    let errors = 0;
+
+    for (const instruction of instructions || []) {
+      const result = await postSettlementToTigerBeetle(
+        runId,
+        instruction.participant_id,
+        instruction.net_amount,
+        instruction.currency || 'NAD'
+      );
+
+      if (result.success) {
+        posted++;
+      } else {
+        errors++;
+      }
+    }
+
+    return { success: errors === 0, posted, errors };
+  } catch (error) {
+    console.error('Failed to post settlement run to TigerBeetle:', error);
+    return { success: false, posted: 0, errors: 1 };
   }
 }

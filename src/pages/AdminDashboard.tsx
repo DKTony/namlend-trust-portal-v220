@@ -28,7 +28,8 @@ import {
   X,
   LogOut,
   Settings,
-  CheckSquare
+  CheckSquare,
+  Database
 } from 'lucide-react';
 import { NotificationBell } from '@/components/ApprovalNotifications';
 import { ModeToggle } from '@/components/ModeToggle';
@@ -44,8 +45,11 @@ import ApprovalManagementDashboard from '@/pages/AdminDashboard/components/Appro
 import UserManagementDashboard from '@/pages/AdminDashboard/components/UserManagement/UserManagementDashboard';
 import { CollectionsDashboard } from '@/pages/AdminDashboard/components/CollectionsManagement';
 import { CreditPolicyConfig } from '@/pages/AdminDashboard/components/Settings';
+import { TigerBeetleConfig } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig';
+import { SettlementConfig } from '@/pages/AdminDashboard/components/Settings/SettlementConfig';
 import { BatchOperations } from '@/pages/AdminDashboard/components/BatchOperations';
 import PortfolioAnalytics from '@/pages/AdminDashboard/components/Analytics/PortfolioAnalytics';
+import { LedgerDashboard } from '@/pages/AdminDashboard/components/TigerBeetle';
 
 
 const AdminDashboard: React.FC = () => {
@@ -196,7 +200,10 @@ const AdminDashboard: React.FC = () => {
     { id: 'users', label: 'User Management', icon: Users },
     ...(isAdmin ? [
       { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+      { id: 'ledger', label: 'TigerBeetle Ledger', icon: Database },
       { id: 'settings', label: 'Credit Policy', icon: Settings },
+      { id: 'tigerbeetle-config', label: 'TB Config', icon: Database },
+      { id: 'settlement-config', label: 'Settlement', icon: DollarSign },
     ] : []),
   ];
 
@@ -331,10 +338,31 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
+            {/* TigerBeetle Ledger - Admin Only */}
+            {activeTab === 'ledger' && isAdmin && (
+              <div className="space-y-6">
+                <LedgerDashboard key={`ledger-${refreshKey}`} />
+              </div>
+            )}
+
             {/* Credit Policy Settings - Admin Only */}
             {activeTab === 'settings' && isAdmin && (
               <div className="space-y-6">
                 <CreditPolicyConfig key={`settings-${refreshKey}`} />
+              </div>
+            )}
+
+            {/* TigerBeetle Configuration - Admin Only */}
+            {activeTab === 'tigerbeetle-config' && isAdmin && (
+              <div className="space-y-6">
+                <TigerBeetleConfig key={`tb-config-${refreshKey}`} />
+              </div>
+            )}
+
+            {/* Settlement & Reconciliation Configuration - Admin Only */}
+            {activeTab === 'settlement-config' && isAdmin && (
+              <div className="space-y-6">
+                <SettlementConfig key={`settlement-config-${refreshKey}`} />
               </div>
             )}
           </div>

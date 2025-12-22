@@ -1,7 +1,7 @@
 # NamLend Trust - Database Schema Documentation
 
-**Version**: 2.7.0  
-**Last Updated**: December 12, 2025  
+**Version**: 3.0.0  
+**Last Updated**: December 22, 2025  
 **Database**: PostgreSQL 15+ (Supabase)  
 **Project**: puahejtaskncpazjyxqp  
 **Region**: eu-north-1
@@ -624,6 +624,43 @@ Logs all IPS API calls for debugging and audit.
 
 ---
 
+## System Configuration Tables
+
+### `system_configuration`
+
+Stores admin-configurable system settings for TigerBeetle, Settlement, IPS, and Reconciliation.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PK, DEFAULT gen_random_uuid() | Primary key |
+| `config_key` | TEXT | NOT NULL, UNIQUE | Configuration key identifier |
+| `config_value` | JSONB | NOT NULL | Configuration value (JSON) |
+| `category` | TEXT | NOT NULL | Category: tigerbeetle, settlement, reconciliation, ips |
+| `description` | TEXT | | Human-readable description |
+| `updated_by` | UUID | FK → auth.users | Last user who updated |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Last update timestamp |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
+
+**RLS Policies:**
+- Only admins can SELECT, INSERT, UPDATE system configuration
+- No DELETE operations allowed (soft delete pattern)
+
+**RPC Functions:**
+- `get_system_config(p_category TEXT)` - Get all configs for a category
+- `upsert_system_config(p_key TEXT, p_value JSONB, p_category TEXT, p_description TEXT)` - Create/update config
+- `reset_system_config(p_category TEXT)` - Reset category to defaults
+
+**Seeded Configurations:**
+- `tigerbeetle_connection` - Cluster ID, addresses, replica count
+- `tigerbeetle_outbox` - Batch size, poll interval, retry settings
+- `tigerbeetle_reconciliation` - Schedule, thresholds
+- `tigerbeetle_accounts` - Account codes and ledger IDs
+- `settlement_processing` - Windows, batch sizes, cutoff times
+- `ips_integration` - Endpoint URLs, credentials, timeouts
+- `reconciliation_automation` - Schedules, tolerance, auto-matching
+
+---
+
 ## Database Functions (Phase 4)
 
 | Function | Returns | Description |
@@ -658,6 +695,7 @@ Logs all IPS API calls for debugging and audit.
 | **20251212044600_ips_integration** | **Dec 2025** | **IPS tables, VPA registry, API logs** |
 | **20251212050000_ips_monitoring** | **Dec 2025** | **IPS monitoring and alerts** |
 | **20251212053000_settlement_system** | **Dec 2025** | **BON settlement reconciliation (13 tables)** |
+| **20251222050000_system_configuration** | **Dec 2025** | **Admin configuration table, RLS, RPCs** |
 
 ---
 
@@ -665,13 +703,13 @@ Logs all IPS API calls for debugging and audit.
 
 | Metric | Value |
 |--------|-------|
-| Total Tables | 48+ |
-| Total Migrations | 31 |
-| RLS Policies | 60+ |
-| Database Functions | 35+ |
-| Indexes | 50+ |
+| Total Tables | 49+ |
+| Total Migrations | 33 |
+| RLS Policies | 65+ |
+| Database Functions | 38+ |
+| Indexes | 52+ |
 
 ---
 
-*Document Version: 2.7.0*  
-*Last Updated: December 12, 2025*
+*Document Version: 3.0.0*  
+*Last Updated: December 22, 2025*

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,12 @@ import {
   UserPlus,
   UserX,
   LogIn,
-  LogOut
+  LogOut,
+  Loader2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuditLogEntry {
   id: string;
@@ -48,108 +51,170 @@ interface AuditLogEntry {
 }
 
 const UserAuditLog: React.FC = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('7d');
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock audit log data
-  const auditLogs: AuditLogEntry[] = [
-    {
-      id: '1',
-      timestamp: '2024-01-15T14:30:00Z',
-      userId: 'user-123',
-      userName: 'John Doe',
-      adminId: 'admin-456',
-      adminName: 'Admin User',
-      action: 'Role Changed',
-      actionType: 'role',
-      details: 'User role changed from client to loan_officer',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      severity: 'medium',
-      changes: [
-        { field: 'role', oldValue: 'client', newValue: 'loan_officer' }
-      ]
-    },
-    {
-      id: '2',
-      timestamp: '2024-01-15T14:25:00Z',
-      userId: 'user-789',
-      userName: 'Jane Smith',
-      adminId: 'admin-456',
-      adminName: 'Admin User',
-      action: 'Account Suspended',
-      actionType: 'status',
-      details: 'User account suspended due to policy violation',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      severity: 'high',
-      changes: [
-        { field: 'status', oldValue: 'active', newValue: 'suspended' }
-      ]
-    },
-    {
-      id: '3',
-      timestamp: '2024-01-15T14:20:00Z',
-      userId: 'user-456',
-      userName: 'Bob Johnson',
-      adminId: 'system',
-      adminName: 'System',
-      action: 'Failed Login Attempt',
-      actionType: 'login',
-      details: 'Multiple failed login attempts detected',
-      ipAddress: '203.0.113.45',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      severity: 'medium'
-    },
-    {
-      id: '4',
-      timestamp: '2024-01-15T14:15:00Z',
-      userId: 'user-321',
-      userName: 'Alice Wilson',
-      adminId: 'admin-789',
-      adminName: 'Super Admin',
-      action: 'Permissions Updated',
-      actionType: 'permission',
-      details: 'Added loan_processing and client_management permissions',
-      ipAddress: '192.168.1.101',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      severity: 'medium',
-      changes: [
-        { field: 'permissions', oldValue: 'basic_access', newValue: 'basic_access,loan_processing,client_management' }
-      ]
-    },
-    {
-      id: '5',
-      timestamp: '2024-01-15T14:10:00Z',
-      userId: 'user-654',
-      userName: 'Charlie Brown',
-      adminId: 'admin-456',
-      adminName: 'Admin User',
-      action: 'User Created',
-      actionType: 'create',
-      details: 'New user account created with client role',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      severity: 'low'
-    },
-    {
-      id: '6',
-      timestamp: '2024-01-15T14:05:00Z',
-      userId: 'user-987',
-      userName: 'Diana Prince',
-      adminId: 'system',
-      adminName: 'System',
-      action: 'Password Reset',
-      actionType: 'update',
-      details: 'User requested password reset via email',
-      ipAddress: '198.51.100.23',
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15',
-      severity: 'low'
+  // Map action types to severity
+  const getActionSeverity = (action: string): 'low' | 'medium' | 'high' | 'critical' => {
+    switch (action) {
+      case 'delete':
+      case 'reject':
+        return 'high';
+      case 'approve':
+      case 'update':
+        return 'medium';
+      case 'login':
+      case 'logout':
+      case 'view':
+        return 'low';
+      case 'create':
+        return 'low';
+      default:
+        return 'medium';
     }
-  ];
+  };
+
+  // Map database action to UI action type
+  const mapActionType = (action: string): AuditLogEntry['actionType'] => {
+    switch (action) {
+      case 'login': return 'login';
+      case 'logout': return 'logout';
+      case 'create': return 'create';
+      case 'update': return 'update';
+      case 'delete': return 'delete';
+      case 'approve':
+      case 'reject':
+        return 'status';
+      default:
+        return 'update';
+    }
+  };
+
+  // Fetch audit logs from database
+  const fetchAuditLogs = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Calculate date filter
+      const now = new Date();
+      let startDate: Date | null = null;
+      
+      switch (filterDateRange) {
+        case '1d':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '7d':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '30d':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = null;
+      }
+
+      let query = supabase
+        .from('audit_logs')
+        .select(`
+          id,
+          timestamp,
+          user_id,
+          user_role,
+          action,
+          entity_type,
+          entity_id,
+          old_state,
+          new_state,
+          ip_address,
+          user_agent,
+          metadata
+        `)
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (startDate) {
+        query = query.gte('timestamp', startDate.toISOString());
+      }
+
+      if (filterAction !== 'all') {
+        query = query.eq('action', filterAction);
+      }
+
+      const { data, error: fetchError } = await query;
+
+      if (fetchError) throw fetchError;
+
+      // Transform database records to UI format
+      const transformedLogs: AuditLogEntry[] = (data || []).map((log: any) => {
+        // Extract user name from metadata or old_state/new_state
+        const userName = log.metadata?.user_name || 
+                        log.new_state?.full_name || 
+                        log.old_state?.full_name ||
+                        `User ${log.user_id?.slice(0, 8) || 'Unknown'}`;
+        
+        // Extract admin info from metadata
+        const adminName = log.metadata?.admin_name || log.user_role || 'System';
+        
+        // Build changes array from old_state and new_state
+        const changes: { field: string; oldValue: string; newValue: string }[] = [];
+        if (log.old_state && log.new_state) {
+          const oldKeys = Object.keys(log.old_state);
+          const newKeys = Object.keys(log.new_state);
+          const allKeys = [...new Set([...oldKeys, ...newKeys])];
+          
+          allKeys.forEach(key => {
+            const oldVal = log.old_state?.[key];
+            const newVal = log.new_state?.[key];
+            if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+              changes.push({
+                field: key,
+                oldValue: String(oldVal ?? ''),
+                newValue: String(newVal ?? '')
+              });
+            }
+          });
+        }
+
+        return {
+          id: log.id,
+          timestamp: log.timestamp,
+          userId: log.entity_id || log.user_id || '',
+          userName: userName,
+          adminId: log.user_id || 'system',
+          adminName: adminName,
+          action: `${log.action} ${log.entity_type}`.trim(),
+          actionType: mapActionType(log.action),
+          details: log.metadata?.description || `${log.action} performed on ${log.entity_type}`,
+          ipAddress: log.ip_address || 'Unknown',
+          userAgent: log.user_agent || 'Unknown',
+          severity: getActionSeverity(log.action),
+          changes: changes.length > 0 ? changes : undefined
+        };
+      });
+
+      setAuditLogs(transformedLogs);
+    } catch (err) {
+      console.error('Error fetching audit logs:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load audit logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [filterDateRange, filterAction]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-NA', {
@@ -252,14 +317,36 @@ const UserAuditLog: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">User Audit Log</h2>
-          <p className="text-gray-600">Track all user-related administrative actions</p>
+          <h2 className="text-2xl font-bold text-foreground">User Audit Log</h2>
+          <p className="text-muted-foreground">Track all user-related administrative actions</p>
         </div>
-        <Button onClick={handleExportLogs} variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export Logs
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={fetchAuditLogs} variant="outline" disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
+            Refresh
+          </Button>
+          <Button onClick={handleExportLogs} variant="outline" disabled={loading || filteredLogs.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Logs
+          </Button>
+        </div>
       </div>
+
+      {error && (
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Failed to load audit logs: {error}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchAuditLogs}>
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>

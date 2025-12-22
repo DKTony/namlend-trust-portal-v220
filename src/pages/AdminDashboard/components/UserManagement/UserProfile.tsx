@@ -22,15 +22,18 @@ import {
   Activity,
   Key,
   UserX,
-  UserCheck
+  UserCheck,
+  Loader2
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfileProps {
   userId: string;
   onClose: () => void;
+  onUserUpdated?: () => void;
 }
 
 interface UserData {
@@ -53,11 +56,13 @@ interface UserData {
   notes?: string;
 }
 
-const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
-  const { user, loading, error } = useUserProfile(userId);
+const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdated }) => {
+  const { user, loading, error, updateUser, suspendUser, refetch } = useUserProfile(userId);
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<UserData | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Mock user data for demonstration
   const mockUser: UserData = {
@@ -158,12 +163,50 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    if (editedUser) {
-      // Here you would typically save to backend
-      console.log('Saving user changes:', editedUser);
-      setIsEditing(false);
-      alert('User profile updated successfully!');
+  const handleSave = async () => {
+    if (!editedUser) return;
+    
+    setSaving(true);
+    try {
+      const success = await updateUser({
+        fullName: editedUser.fullName,
+        phone: editedUser.phone,
+        isVerified: editedUser.isVerified
+      });
+      
+      if (success) {
+        toast({ title: 'Success', description: 'User profile updated successfully' });
+        setIsEditing(false);
+        refetch();
+        onUserUpdated?.();
+      } else {
+        toast({ title: 'Error', description: 'Failed to update user profile', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!confirm('Are you sure you want to suspend this user?')) return;
+    
+    setSaving(true);
+    try {
+      const success = await suspendUser();
+      
+      if (success) {
+        toast({ title: 'User Suspended', description: 'User has been suspended successfully' });
+        refetch();
+        onUserUpdated?.();
+      } else {
+        toast({ title: 'Error', description: 'Failed to suspend user', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to suspend', variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -247,11 +290,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
           <div className="flex items-center space-x-2 shrink-0">
             {isEditing ? (
               <>
-                <Button variant="outline" size="sm" onClick={handleCancel}>
+                <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                   Save Changes
                 </Button>
               </>
@@ -261,8 +304,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Profile
                 </Button>
-                <Button variant="outline" size="sm">
-                  <UserX className="h-4 w-4 mr-2" />
+                <Button variant="outline" size="sm" onClick={handleSuspend} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserX className="h-4 w-4 mr-2" />}
                   Suspend
                 </Button>
               </>

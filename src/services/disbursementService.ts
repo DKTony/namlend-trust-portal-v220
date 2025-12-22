@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
+import { postDisbursement, createLoanAccounts } from './ledgerService';
 
 export type DisbursementStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
 
@@ -175,6 +176,32 @@ export async function completeDisbursement(
       }
 
       debugLog('✅ Disbursement completed successfully', result);
+
+      // Post to TigerBeetle ledger (non-blocking via outbox pattern)
+      if (result.loan_id && result.amount) {
+        try {
+          // Ensure loan accounts exist in TigerBeetle
+          await createLoanAccounts(result.loan_id, '');
+          
+          // Queue disbursement transfer
+          const ledgerResult = await postDisbursement(
+            disbursementId,
+            result.loan_id,
+            result.amount,
+            paymentReference
+          );
+          
+          if (ledgerResult.success) {
+            debugLog('📒 TigerBeetle: Disbursement queued', { outboxId: ledgerResult.outboxId });
+          } else {
+            debugLog('⚠️ TigerBeetle: Queue failed (will retry)', ledgerResult.error);
+          }
+        } catch (ledgerError) {
+          // Non-blocking - outbox worker will retry
+          debugLog('⚠️ TigerBeetle: Error (non-blocking)', ledgerError);
+        }
+      }
+
       return result;
     } catch (error) {
       handleDatabaseError(error, 'completeDisbursement', { disbursementId, paymentReference });

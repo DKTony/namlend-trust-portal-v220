@@ -5,6 +5,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-12-22
+
+### Added
+
+#### Admin Dashboard Configuration Panels
+- **TigerBeetleConfig** (`src/pages/AdminDashboard/components/Settings/TigerBeetleConfig.tsx`)
+  - Connection settings (cluster ID, addresses, replica count)
+  - Outbox processing configuration (batch size, intervals, retry policies)
+  - Reconciliation schedules and thresholds
+  - Account structure configuration (codes, ledger IDs)
+  - Connection test functionality with real-time feedback
+  - Reset to defaults capability
+
+- **SettlementConfig** (`src/pages/AdminDashboard/components/Settings/SettlementConfig.tsx`)
+  - Settlement processing parameters (windows, batch sizes, cutoff times)
+  - IPS integration settings (endpoint URLs, credentials, timeout configurations)
+  - Reconciliation automation (schedules, tolerance thresholds, auto-matching)
+  - Three-tab interface: Settlement, IPS Integration, Reconciliation
+
+- **System Configuration Database** (`supabase/migrations/20251222050000_system_configuration.sql`)
+  - `system_configuration` table for persistent admin settings
+  - RLS policies restricting access to admins only
+  - RPC functions: `get_system_config()`, `upsert_system_config()`, `reset_system_config()`
+  - Seeded default configurations for TigerBeetle, Settlement, Reconciliation, and IPS
+
+#### User Management Enhancements
+- **Real-time Stats Cards** - Dashboard stats now fetch live data from database
+  - Total users from `profiles` table
+  - Active users (verified) count
+  - Admin users from `user_roles` table
+  - Pending actions from `approval_requests` table
+
+- **Export Users** - CSV export functionality with user data from `profiles_with_roles` view
+
+- **Add User Modal** - Form for inviting new users with role assignment
+
+- **Advanced Filters Modal** - Multi-criteria filtering (role, status, search)
+
+- **User Profile Database Integration** (`useUserProfile.ts`)
+  - Real database queries to `profiles_with_roles` view
+  - `updateUser()` function for saving profile changes
+  - `suspendUser()` function for account suspension
+  - Login count from `view_logs` table
+
+- **User Audit Log Database Integration** (`UserAuditLog.tsx`)
+  - Real-time queries to `audit_logs` table
+  - Date range filtering (1d, 7d, 30d, 90d)
+  - Action type filtering
+  - Refresh and retry functionality
+  - Error state handling
+
+### Changed
+
+- **Admin Dashboard Navigation** - Added TigerBeetle Ledger and Settlement tabs
+- **UserProfile Component** - Save and Suspend buttons now persist to database
+- **UserManagementDashboard** - Header buttons fully functional
+
+### Database Migrations
+- `20251222050000_system_configuration.sql` - System configuration table with RLS and RPCs
+
+### Technical Notes
+- All User Management components now use real database connections
+- Configuration panels support loading, saving, resetting, and testing
+- Toast notifications provide user feedback for all operations
+- TypeScript compiles without errors
+
+---
+
 ## [2.9.0] - 2025-12-14
 
 ### Added

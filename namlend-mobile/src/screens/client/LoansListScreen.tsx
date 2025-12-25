@@ -1,30 +1,31 @@
 /**
  * Loans List Screen
- * Version: v2.7.1 - Theme system integration
+ * Version: v2.7.1 - Neo-Fintech Design
  */
 
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
-  StyleSheet,
   RefreshControl,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FileText, DollarSign, Calendar, TrendingUp, Plus } from 'lucide-react-native';
+import { FileText, DollarSign, Plus, Filter } from 'lucide-react-native';
 import { useMyLoans } from '../../hooks/useLoans';
 import { formatNAD } from '../../utils/currency';
 import { Loan } from '../../types';
 import { useTheme } from '../../theme';
-import { BalanceCard, TransactionItem, PrimaryButton } from '../../components/ui';
+import { NeoBalanceCard } from '../../components/neo/NeoBalanceCard';
+import { NeoTransactionItem } from '../../components/neo/NeoTransactionItem';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 import type { ClientStackParamList } from '../../navigation/ClientStack';
 
 const LoansListScreen: React.FC = () => {
-  const { colors, tokens } = useTheme();
+  const { colors, mode } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<ClientStackParamList, 'LoansList'>>();
   const { data: loans, isLoading, refetch } = useMyLoans();
   const [refreshing, setRefreshing] = useState(false);
@@ -49,188 +50,127 @@ const LoansListScreen: React.FC = () => {
     loan.status === 'active' || loan.status === 'disbursed' ? sum + (loan.total_repayment || loan.amount) : sum, 0) || 0;
   const activeLoansCount = loans?.filter(l => l.status === 'active' || l.status === 'disbursed').length || 0;
 
-  const renderLoanItem = ({ item }: { item: Loan }) => {
+  // Theme styles
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-500' : 'text-zinc-500';
+  const activeFilterBg = 'bg-blue-600 border-blue-500';
+  const inactiveFilterBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200';
+  const activeFilterText = 'text-white';
+  const inactiveFilterText = mode === 'dark' ? 'text-zinc-400' : 'text-zinc-600';
+
+  const renderLoanItem = (item: Loan) => {
     return (
-      <TransactionItem
+      <NeoTransactionItem
+        key={item.id}
         title={`${formatNAD(item.amount)} Loan`}
         subtitle={`${item.term_months} months • ${formatNAD(item.monthly_payment)}/mo • ${item.status}`}
         amount={item.total_repayment || item.amount}
         type={item.status === 'completed' ? 'income' : 'expense'}
         icon={DollarSign}
         onPress={() => navigation.navigate('LoanDetails', { loanId: item.id })}
+        className="mb-2"
       />
     );
   };
 
-  return (
-    <ScrollView 
-      style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+  const FilterTab = ({ label, value }: { label: string, value: typeof filter }) => (
+    <TouchableOpacity
+      onPress={() => setFilter(value)}
+      className={`px-4 py-2 rounded-full border mr-2 ${
+        filter === value 
+          ? activeFilterBg 
+          : inactiveFilterBg
+      }`}
     >
-      {/* Summary Cards */}
-      <View style={[styles.summarySection, { paddingHorizontal: tokens.spacing.base }]}>
-        <BalanceCard
-          amount={totalOutstanding}
-          label="Total Outstanding"
-          subtitle={`${activeLoansCount} active loan${activeLoansCount !== 1 ? 's' : ''}`}
-          style={{ marginBottom: tokens.spacing.base }}
-        />
-      </View>
+      <Text className={`text-xs font-sans-medium ${
+        filter === value ? activeFilterText : inactiveFilterText
+      }`}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
-      {/* Filter Tabs */}
-      <View style={[styles.filterContainer, { 
-        backgroundColor: colors.surface,
-        paddingHorizontal: tokens.spacing.base,
-      }]}>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            { borderRadius: tokens.radius.sm },
-            filter === 'all' && { backgroundColor: colors.primary }
-          ]}
-          onPress={() => setFilter('all')}
-        >
-          <Text style={[
-            styles.filterText,
-            { color: filter === 'all' ? '#FFFFFF' : colors.textSecondary }
-          ]}>
-            All
+  return (
+    <View className={`flex-1 ${containerBg}`}>
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
+      <ScrollView 
+        className="flex-1"
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            tintColor="#3b82f6"
+            colors={['#3b82f6']}
+          />
+        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <View className="px-6 pt-16 pb-6">
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+            PORTFOLIO
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            { borderRadius: tokens.radius.sm },
-            filter === 'active' && { backgroundColor: colors.primary }
-          ]}
-          onPress={() => setFilter('active')}
-        >
-          <Text style={[
-            styles.filterText,
-            { color: filter === 'active' ? '#FFFFFF' : colors.textSecondary }
-          ]}>
-            Active
+          <Text className={`${textColor} text-3xl font-sans-bold tracking-tight mb-6`}>
+            My Loans
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            { borderRadius: tokens.radius.sm },
-            filter === 'approved' && { backgroundColor: colors.primary }
-          ]}
-          onPress={() => setFilter('approved')}
-        >
-          <Text style={[
-            styles.filterText,
-            { color: filter === 'approved' ? '#FFFFFF' : colors.textSecondary }
-          ]}>
-            Approved
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            { borderRadius: tokens.radius.sm },
-            filter === 'completed' && { backgroundColor: colors.primary }
-          ]}
-          onPress={() => setFilter('completed')}
-        >
-          <Text style={[
-            styles.filterText,
-            { color: filter === 'completed' ? '#FFFFFF' : colors.textSecondary }
-          ]}>
-            Completed
-          </Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Loans List */}
-      <View style={[styles.listSection, { paddingHorizontal: tokens.spacing.base }]}>
-        {filteredLoans.length > 0 ? (
-          filteredLoans.map((loan) => (
-            <View key={loan.id}>
-              {renderLoanItem({ item: loan })}
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <FileText color={colors.textTertiary} size={64} />
-            <Text style={[styles.emptyTitle, {
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h2.fontSize,
-            }]}>
-              No Loans Found
-            </Text>
-            <Text style={[styles.emptyText, {
-              color: colors.textSecondary,
-              fontSize: tokens.typography.body.fontSize,
-            }]}>
-              {filter === 'all' 
-                ? "You don't have any loans yet."
-                : `You don't have any ${filter} loans.`}
-            </Text>
+          {/* Summary Card */}
+          <NeoBalanceCard
+            amount={totalOutstanding}
+            label="TOTAL OUTSTANDING"
+            subtitle={`${activeLoansCount} active loan${activeLoansCount !== 1 ? 's' : ''}`}
+            className="mb-8"
+          />
+
+          {/* Filter Tabs */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            className="mb-6"
+          >
+            <FilterTab label="All" value="all" />
+            <FilterTab label="Active" value="active" />
+            <FilterTab label="Approved" value="approved" />
+            <FilterTab label="Completed" value="completed" />
+          </ScrollView>
+
+          {/* Loans List */}
+          <View className="mb-24">
+            {filteredLoans.length > 0 ? (
+              filteredLoans.map((loan) => renderLoanItem(loan))
+            ) : (
+              <View className="items-center justify-center py-16 opacity-50">
+                <FileText color={mode === 'dark' ? "#71717a" : "#94a3b8"} size={64} />
+                <Text className={`${mode === 'dark' ? 'text-white' : 'text-zinc-900'} text-lg font-sans-semibold mt-4 mb-2`}>
+                  No Loans Found
+                </Text>
+                <Text className={`${subTextColor} text-sm text-center px-8`}>
+                  {filter === 'all' 
+                    ? "You don't have any loans yet."
+                    : `You don't have any ${filter} loans.`}
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </View>
+      </ScrollView>
 
-      {/* Apply for Loan Button */}
-      <View style={[styles.actionSection, { paddingHorizontal: tokens.spacing.base }]}>
-        <PrimaryButton
+      {/* Floating Action Button for New Loan */}
+      <View className="absolute bottom-24 right-6 left-6">
+        <NeoButton
           title="Apply for New Loan"
           onPress={() => navigation.navigate('LoanApplicationStart')}
           variant="primary"
+          icon={<Plus size={20} color="white" />}
+          className="shadow-lg shadow-blue-900/30"
+          testID="apply-loan-button"
         />
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  summarySection: {
-    paddingTop: 16,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    padding: 8,
-    gap: 8,
-    marginBottom: 16,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listSection: {
-    paddingTop: 8,
-  },
-  emptyState: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 64,
-  },
-  emptyTitle: {
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyText: {
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  actionSection: {
-    paddingVertical: 24,
-  },
-});
-
 export default LoansListScreen;
+
+

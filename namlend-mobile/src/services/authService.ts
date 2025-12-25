@@ -150,8 +150,10 @@ export class AuthService {
         return 'client'; // Default role
       }
 
+      const rolesData = data as { role: string }[];
+
       // Priority: admin > loan_officer > client
-      const roles = data.map(r => r.role);
+      const roles = rolesData.map(r => r.role);
       if (roles.includes('admin')) return 'admin';
       if (roles.includes('loan_officer')) return 'loan_officer';
       return 'client';

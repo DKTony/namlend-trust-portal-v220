@@ -6,13 +6,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, Animated, Platform } from 'react-native';
 import * as Network from 'expo-network';
-import { WifiOff, Wifi } from 'lucide-react-native';
+import { WifiOff } from 'lucide-react-native';
 
 export default function NetworkBanner() {
   const [isOnline, setIsOnline] = useState(true);
-  const [slideAnim] = useState(new Animated.Value(-60));
+  const [slideAnim] = useState(new Animated.Value(-100));
 
   useEffect(() => {
     checkNetworkStatus();
@@ -31,7 +31,7 @@ export default function NetworkBanner() {
     } else {
       // Slide up
       Animated.timing(slideAnim, {
-        toValue: -60,
+        toValue: -100,
         duration: 300,
         useNativeDriver: true,
       }).start();
@@ -41,7 +41,7 @@ export default function NetworkBanner() {
   const checkNetworkStatus = async () => {
     try {
       const networkState = await Network.getNetworkStateAsync();
-      setIsOnline(networkState.isConnected === true && networkState.isInternetReachable === true);
+      setIsOnline(networkState.isConnected === true && networkState.isInternetReachable !== false);
     } catch (error) {
       console.error('Network check error:', error);
     }
@@ -49,53 +49,23 @@ export default function NetworkBanner() {
 
   return (
     <Animated.View
-      style={[
-        styles.banner,
-        {
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
+      className="absolute top-0 left-0 right-0 bg-red-600 z-50 shadow-lg shadow-black/20"
+      style={{
+        transform: [{ translateY: slideAnim }],
+        paddingTop: Platform.OS === 'ios' ? 50 : 40,
+        paddingBottom: 16,
+        paddingHorizontal: 20,
+      }}
     >
-      <View style={styles.content}>
-        <WifiOff color="#ffffff" size={20} />
-        <Text style={styles.text}>No internet connection</Text>
+      <View className="flex-row items-center justify-center gap-2 mb-1">
+        <WifiOff color="#ffffff" size={18} />
+        <Text className="text-white font-sans-bold text-sm tracking-wide">
+          No Internet Connection
+        </Text>
       </View>
-      <Text style={styles.subtext}>Changes will sync when online</Text>
+      <Text className="text-red-100 text-xs font-sans text-center">
+        Changes will be saved and synced when you're back online
+      </Text>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  banner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#ef4444',
-    paddingTop: 40,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  subtext: {
-    fontSize: 12,
-    color: '#fee2e2',
-    marginLeft: 28,
-  },
-});

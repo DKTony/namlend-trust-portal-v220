@@ -1,13 +1,6 @@
 /**
  * Enhanced Document Upload Screen
- * Version: v2.6.0
- * 
- * Features:
- * - Image compression (max 2MB)
- * - Upload progress indicators
- * - Retry mechanism with exponential backoff
- * - Offline queue integration
- * - Multiple document types with validation
+ * Version: v2.7.0 - Neo-Fintech Design
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,17 +8,18 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { FileText, CheckCircle, AlertCircle, X, RefreshCw } from 'lucide-react-native';
+import { FileText, CheckCircle, AlertCircle, X, RefreshCw, Upload } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabaseClient';
 import { enqueue } from '../../utils/offlineQueue';
 import { useTheme } from '../../theme';
-import { PrimaryButton } from '../../components/ui';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const COMPRESSION_QUALITY = 0.7;
@@ -55,7 +49,7 @@ interface UploadProgress {
 
 export default function DocumentUploadScreenEnhanced() {
   const { user } = useAuth();
-  const { colors, tokens } = useTheme();
+  const { colors, mode } = useTheme();
   const [uploadedDocs, setUploadedDocs] = useState<UploadedDocument[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, UploadProgress>>({});
   const [loading, setLoading] = useState(true);
@@ -189,29 +183,24 @@ export default function DocumentUploadScreenEnhanced() {
       return;
     }
 
-    // Initialize progress
     setUploadProgress((prev) => ({
       ...prev,
       [docType]: { type: docType, progress: 0, status: 'uploading' },
     }));
 
     try {
-      // Fetch file
       const response = await fetch(uri);
       const blob = await response.blob();
 
-      // Check file size
       if (blob.size > MAX_FILE_SIZE) {
         throw new Error(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
       }
 
-      // Update progress
       setUploadProgress((prev) => ({
         ...prev,
         [docType]: { ...prev[docType], progress: 30 },
       }));
 
-      // Upload to Supabase Storage
       const path = `${user.id}/${Date.now()}-${fileName}`;
       const { error: uploadError } = await supabase.storage
         .from('documents')
@@ -223,13 +212,11 @@ export default function DocumentUploadScreenEnhanced() {
 
       if (uploadError) throw uploadError;
 
-      // Update progress
       setUploadProgress((prev) => ({
         ...prev,
         [docType]: { ...prev[docType], progress: 70 },
       }));
 
-      // Insert document record
       const { error: insertError } = await supabase.from('documents').insert({
         user_id: user.id,
         document_type: docType,
@@ -242,7 +229,6 @@ export default function DocumentUploadScreenEnhanced() {
 
       if (insertError) throw insertError;
 
-      // Success
       setUploadProgress((prev) => ({
         ...prev,
         [docType]: { ...prev[docType], progress: 100, status: 'success' },
@@ -251,7 +237,6 @@ export default function DocumentUploadScreenEnhanced() {
       Alert.alert('Success', 'Document uploaded successfully');
       await loadUploadedDocuments();
 
-      // Clear progress after 2 seconds
       setTimeout(() => {
         setUploadProgress((prev) => {
           const newProgress = { ...prev };
@@ -262,7 +247,6 @@ export default function DocumentUploadScreenEnhanced() {
     } catch (error) {
       console.error('Upload error:', error);
 
-      // Try to queue for offline upload
       try {
         await enqueue({
           type: 'upload_document',
@@ -341,311 +325,176 @@ export default function DocumentUploadScreenEnhanced() {
     return doc.verified ? 'verified' : 'uploaded';
   };
 
+  // Theme styles
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+  const cardBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const cardBorder = mode === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+  const docInfoBg = mode === 'dark' ? 'bg-zinc-800/30' : 'bg-zinc-100';
+  const iconColor = mode === 'dark' ? '#e4e4e7' : '#3f3f46';
+
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading documents...</Text>
+      <View className={`flex-1 ${containerBg} justify-center items-center`}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className={`${subTextColor} mt-4 font-sans`}>Loading documents...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.contentContainer, { padding: tokens.spacing.base }]}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Document Upload</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Upload required documents for KYC verification
-        </Text>
-      </View>
+    <View className={`flex-1 ${containerBg}`}>
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+        {/* Header */}
+        <View className="mb-8 mt-4">
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+            VERIFICATION
+          </Text>
+          <Text className={`${textColor} text-3xl font-sans-bold tracking-tight mb-2`}>
+            Documents
+          </Text>
+          <Text className={`${subTextColor} text-base font-sans leading-6`}>
+            Upload required documents for KYC verification. Ensure photos are clear.
+          </Text>
+        </View>
 
-      {/* Document Types */}
-      {documentTypes.map((docType) => {
-        const status = getDocumentStatus(docType.id);
-        const progress = uploadProgress[docType.id];
-        const uploadedDoc = uploadedDocs.find((d) => d.type === docType.id);
+        {/* Document Types */}
+        {documentTypes.map((docType) => {
+          const status = getDocumentStatus(docType.id);
+          const progress = uploadProgress[docType.id];
+          const uploadedDoc = uploadedDocs.find((d) => d.type === docType.id);
 
-        return (
-          <View
-            key={docType.id}
-            style={[
-              styles.documentCard,
-              { backgroundColor: colors.surface, borderRadius: tokens.radius.md, ...tokens.shadows.card },
-            ]}
-          >
-            <View style={styles.documentHeader}>
-              <View style={styles.documentInfo}>
-                <View style={styles.documentTitleRow}>
-                  <FileText color={colors.textPrimary} size={20} />
-                  <Text style={[styles.documentTitle, { color: colors.textPrimary }]}>{docType.label}</Text>
-                  {docType.required && (
-                    <Text
-                      style={[
-                        styles.requiredBadge,
-                        { color: colors.error, backgroundColor: `${colors.error}1A` },
-                      ]}
-                    >
-                      Required
+          return (
+            <NeoCard key={docType.id} variant="glass" className="mb-6 p-5">
+              <View className="flex-row justify-between items-start mb-4">
+                <View className="flex-1 mr-4">
+                  <View className="flex-row items-center gap-2 mb-1">
+                    <FileText color={iconColor} size={20} />
+                    <Text className={`${textColor} font-sans-bold text-base flex-1 tracking-tight`}>
+                      {docType.label}
                     </Text>
+                  </View>
+                  {docType.required && (
+                    <View className="self-start bg-red-500/10 rounded px-2 py-0.5 mt-1 border border-red-500/20">
+                      <Text className="text-red-400 text-[10px] font-sans-bold uppercase">Required</Text>
+                    </View>
                   )}
+                  <Text className={`${subTextColor} text-xs font-sans mt-2 leading-5`}>
+                    {docType.description}
+                  </Text>
                 </View>
-                <Text style={[styles.documentDescription, { color: colors.textSecondary }]}>
-                  {docType.description}
-                </Text>
+
+                {/* Status Icon */}
+                {status === 'verified' && <CheckCircle color="#10b981" size={24} />}
+                {status === 'uploaded' && <AlertCircle color="#f59e0b" size={24} />}
               </View>
 
-              {/* Status Icon */}
-              {status === 'verified' && <CheckCircle color={colors.success} size={24} />}
-              {status === 'uploaded' && <AlertCircle color={colors.warning} size={24} />}
-            </View>
+              {/* Upload Progress */}
+              {progress && progress.status === 'uploading' && (
+                <View className="mb-4">
+                  <View className={`h-2 ${mode === 'dark' ? 'bg-zinc-800' : 'bg-zinc-200'} rounded-full overflow-hidden mb-1`}>
+                    <View
+                      className="h-full bg-blue-600"
+                      style={{ width: `${progress.progress}%` }}
+                    />
+                  </View>
+                  <Text className={`${subTextColor} text-xs text-right font-sans-medium`}>
+                    {Math.round(progress.progress)}%
+                  </Text>
+                </View>
+              )}
 
-            {/* Upload Progress */}
-            {progress && progress.status === 'uploading' && (
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { backgroundColor: colors.divider }]}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${progress.progress}%`, backgroundColor: colors.primary },
-                    ]}
+              {/* Error Message */}
+              {progress && progress.status === 'error' && (
+                <View className="bg-red-500/10 p-3 rounded-lg flex-row items-center mb-4 border border-red-500/20">
+                  <AlertCircle color="#ef4444" size={16} />
+                  <Text className="text-red-400 text-xs flex-1 ml-2 mr-2 font-sans-medium">
+                    {progress.error}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleRetry(docType.id)} className="p-1">
+                    <RefreshCw color="#3b82f6" size={16} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Uploaded Document Info */}
+              {uploadedDoc && !progress && (
+                <View className={`${docInfoBg} p-3 rounded-xl mb-4 border ${cardBorder}`}>
+                  <Text className={`${textColor} text-sm font-sans-medium mb-1`} numberOfLines={1}>
+                    {uploadedDoc.fileName}
+                  </Text>
+                  <Text className={`${subTextColor} text-xs mb-2`}>
+                    {(uploadedDoc.fileSize / 1024).toFixed(1)} KB •{' '}
+                    {new Date(uploadedDoc.uploadedAt).toLocaleDateString()}
+                  </Text>
+                  
+                  <View className={`flex-row items-center gap-1.5 self-start px-2 py-1 rounded ${
+                    uploadedDoc.verified ? 'bg-emerald-500/10' : 'bg-yellow-500/10'
+                  }`}>
+                    {uploadedDoc.verified ? (
+                      <>
+                        <CheckCircle color="#10b981" size={12} />
+                        <Text className="text-emerald-500 text-[10px] font-sans-bold uppercase">Verified</Text>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle color="#f59e0b" size={12} />
+                        <Text className="text-yellow-500 text-[10px] font-sans-bold uppercase">Pending Review</Text>
+                      </>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {/* Action Buttons */}
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <NeoButton
+                    title={uploadedDoc ? 'Replace' : 'Upload'}
+                    onPress={() => handleUpload(docType.id)}
+                    variant="primary"
+                    size="sm"
+                    loading={progress?.status === 'uploading'}
+                    disabled={progress?.status === 'uploading'}
+                    icon={!uploadedDoc ? <Upload size={16} color="white" /> : undefined}
+                    className={!uploadedDoc ? "shadow-lg shadow-blue-900/20" : ""}
                   />
                 </View>
-                <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-                  {Math.round(progress.progress)}%
-                </Text>
-              </View>
-            )}
 
-            {/* Error Message */}
-            {progress && progress.status === 'error' && (
-              <View style={[styles.errorContainer, { backgroundColor: `${colors.error}1A` }]}>
-                <AlertCircle color={colors.error} size={16} />
-                <Text style={[styles.errorText, { color: colors.error }]}>{progress.error}</Text>
-                <TouchableOpacity onPress={() => handleRetry(docType.id)} style={styles.retryButton}>
-                  <RefreshCw color={colors.primary} size={16} />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Uploaded Document Info */}
-            {uploadedDoc && !progress && (
-              <View style={[styles.uploadedInfo, { backgroundColor: colors.surfaceAlt }]}>
-                <Text style={[styles.uploadedFileName, { color: colors.textPrimary }]}>
-                  {uploadedDoc.fileName}
-                </Text>
-                <Text style={[styles.uploadedMeta, { color: colors.textSecondary }]}>
-                  {(uploadedDoc.fileSize / 1024).toFixed(1)} KB •{' '}
-                  {new Date(uploadedDoc.uploadedAt).toLocaleDateString()}
-                </Text>
-                {uploadedDoc.verified ? (
-                  <View style={styles.verifiedBadge}>
-                    <CheckCircle color={colors.success} size={14} />
-                    <Text style={[styles.verifiedText, { color: colors.success }]}>Verified</Text>
-                  </View>
-                ) : (
-                  <View style={styles.pendingBadge}>
-                    <AlertCircle color={colors.warning} size={14} />
-                    <Text style={[styles.pendingText, { color: colors.warning }]}>Pending Verification</Text>
-                  </View>
+                {uploadedDoc && !progress && (
+                  <TouchableOpacity
+                    className="w-10 h-10 items-center justify-center rounded-full bg-red-500/10 border border-red-500/30"
+                    onPress={() => handleDelete(uploadedDoc.id, docType.id)}
+                  >
+                    <X color="#ef4444" size={18} />
+                  </TouchableOpacity>
                 )}
               </View>
-            )}
+            </NeoCard>
+          );
+        })}
 
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              <PrimaryButton
-                title={uploadedDoc ? 'Replace' : 'Upload'}
-                onPress={() => handleUpload(docType.id)}
-                variant="primary"
-                size="medium"
-                loading={progress?.status === 'uploading'}
-                disabled={progress?.status === 'uploading'}
-                style={{ flex: 1 }}
-                textStyle={{ fontWeight: '600' }}
-              />
-
-              {uploadedDoc && !progress && (
-                <TouchableOpacity
-                  style={[styles.deleteButton, { backgroundColor: `${colors.error}1A` }]}
-                  onPress={() => handleDelete(uploadedDoc.id, docType.id)}
-                >
-                  <X color={colors.error} size={18} />
-                </TouchableOpacity>
-              )}
-            </View>
+        {/* Help Text */}
+        <View className="bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20 flex-row items-start mb-8">
+          <AlertCircle color="#3b82f6" size={20} />
+          <View className="ml-3 flex-1">
+            <Text className="text-blue-500 text-sm font-sans-bold mb-1">
+              Upload Tips
+            </Text>
+            <Text className="text-blue-400 text-xs leading-5 font-sans">
+              • Ensure documents are clear and readable{'\n'}
+              • Maximum file size: 2MB per document{'\n'}
+              • Accepted formats: JPG, PNG, PDF{'\n'}
+              • Documents will be verified within 24-48 hours
+            </Text>
           </View>
-        );
-      })}
-
-      {/* Help Text */}
-      <View style={[styles.helpCard, { backgroundColor: `${colors.primary}1A` }]}>
-        <AlertCircle color={colors.primary} size={20} />
-        <Text style={[styles.helpText, { color: colors.primary }]}>
-          <Text style={styles.helpBold}>Tips for uploading:</Text>
-          {'\n'}• Ensure documents are clear and readable
-          {'\n'}• Maximum file size: 2MB per document
-          {'\n'}• Accepted formats: JPG, PNG, PDF
-          {'\n'}• Documents will be verified within 24-48 hours
-        </Text>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-  },
-  documentCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  documentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  documentInfo: {
-    flex: 1,
-  },
-  documentTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  documentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  requiredBadge: {
-    fontSize: 10,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  documentDescription: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  progressContainer: {
-    marginBottom: 12,
-  },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: '100%',
-  },
-  progressText: {
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 12,
-    gap: 8,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 12,
-  },
-  retryButton: {
-    padding: 4,
-  },
-  uploadedInfo: {
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  uploadedFileName: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  uploadedMeta: {
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  verifiedText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  pendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  pendingText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  deleteButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  helpCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-  },
-  helpText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  helpBold: {
-    fontWeight: '600',
-  },
-});
+

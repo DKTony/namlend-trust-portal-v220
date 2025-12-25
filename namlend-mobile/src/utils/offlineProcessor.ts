@@ -85,7 +85,7 @@ async function flushOnce() {
   });
 }
 
-let intervalId: NodeJS.Timer | undefined;
+let intervalId: ReturnType<typeof setInterval> | undefined;
 let appStateSub: { remove: () => void } | undefined;
 
 export function startOfflineProcessor() {

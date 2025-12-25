@@ -4,10 +4,9 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { Delete } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../../theme';
 
 interface NumericKeypadProps {
   onNumberPress: (number: string) => void;
@@ -28,8 +27,6 @@ export const NumericKeypad: React.FC<NumericKeypadProps> = ({
   style,
   testID,
 }) => {
-  const { colors, tokens } = useTheme();
-
   const handlePress = (value: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onNumberPress(value);
@@ -47,77 +44,56 @@ export const NumericKeypad: React.FC<NumericKeypadProps> = ({
     }
   };
 
-  const renderButton = (value: string, isSpecial = false) => (
+  const renderButton = (value: string) => (
     <TouchableOpacity
       key={value}
       onPress={() => handlePress(value)}
-      style={[
-        styles.button,
-        {
-          backgroundColor: isSpecial ? colors.surface : 'transparent',
-          borderRadius: tokens.radius.md,
-        },
-      ]}
+      className="flex-1 h-16 justify-center items-center mx-1.5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-sm"
       activeOpacity={0.7}
     >
-      <Text
-        style={[
-          styles.buttonText,
-          {
-            color: colors.textPrimary,
-            fontSize: 24,
-            fontWeight: tokens.typography.bodyMedium.fontWeight,
-          },
-        ]}
-      >
+      <Text className="text-white text-2xl font-sans-bold tracking-tight">
         {value}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <View testID={testID} style={[styles.container, style]}>
+    <View testID={testID} style={style} className="w-full">
       {/* Row 1: 1, 2, 3 */}
-      <View style={styles.row}>
+      <View className="flex-row justify-between mb-3">
         {renderButton('1')}
         {renderButton('2')}
         {renderButton('3')}
       </View>
 
       {/* Row 2: 4, 5, 6 */}
-      <View style={styles.row}>
+      <View className="flex-row justify-between mb-3">
         {renderButton('4')}
         {renderButton('5')}
         {renderButton('6')}
       </View>
 
       {/* Row 3: 7, 8, 9 */}
-      <View style={styles.row}>
+      <View className="flex-row justify-between mb-3">
         {renderButton('7')}
         {renderButton('8')}
         {renderButton('9')}
       </View>
 
       {/* Row 4: Decimal/Empty, 0, Delete */}
-      <View style={styles.row}>
+      <View className="flex-row justify-between mb-3">
         {showDecimal ? (
-          renderButton('.', true)
+          renderButton('.')
         ) : (
-          <View style={styles.button} />
+          <View className="flex-1 h-16 mx-1.5" />
         )}
         {renderButton('0')}
         <TouchableOpacity
           onPress={handleDelete}
-          style={[
-            styles.button,
-            {
-              backgroundColor: colors.surface,
-              borderRadius: tokens.radius.md,
-            },
-          ]}
+          className="flex-1 h-16 justify-center items-center mx-1.5 rounded-2xl bg-zinc-900/50 border border-zinc-800"
           activeOpacity={0.7}
         >
-          <Delete size={24} color={colors.textPrimary} />
+          <Delete size={24} color="#ef4444" />
         </TouchableOpacity>
       </View>
 
@@ -125,26 +101,10 @@ export const NumericKeypad: React.FC<NumericKeypadProps> = ({
       {onConfirmPress && (
         <TouchableOpacity
           onPress={handleConfirm}
-          style={[
-            styles.confirmButton,
-            {
-              backgroundColor: colors.primary,
-              borderRadius: tokens.radius.pill,
-              marginTop: tokens.spacing.base,
-            },
-          ]}
+          className="h-14 justify-center items-center w-full bg-blue-600 rounded-full mt-4 shadow-lg shadow-blue-900/20"
           activeOpacity={0.8}
         >
-          <Text
-            style={[
-              styles.confirmText,
-              {
-                color: '#FFFFFF',
-                fontSize: tokens.typography.button.fontSize,
-                fontWeight: tokens.typography.button.fontWeight,
-              },
-            ]}
-          >
+          <Text className="text-white text-lg font-sans-bold tracking-tight">
             {confirmLabel}
           </Text>
         </TouchableOpacity>
@@ -153,32 +113,3 @@ export const NumericKeypad: React.FC<NumericKeypadProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  button: {
-    flex: 1,
-    height: 64,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 6,
-  },
-  buttonText: {
-    textAlign: 'center',
-  },
-  confirmButton: {
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  confirmText: {
-    textAlign: 'center',
-  },
-});

@@ -11,24 +11,24 @@ export const tokens = {
   colors: {
     dark: {
       // Backgrounds
-      background: '#1C1C1E',
-      surface: '#2C2C2E',
-      surfaceAlt: '#3A3A3C',
+      background: '#09090b', // zinc-950
+      surface: '#18181b',    // zinc-900
+      surfaceAlt: '#27272a', // zinc-800
       
       // Text
       textPrimary: '#FFFFFF',
-      textSecondary: '#AEAEB2',
-      textTertiary: '#8E8E93',
+      textSecondary: '#a1a1aa', // zinc-400
+      textTertiary: '#71717a',  // zinc-500
       
       // Semantic
-      success: '#34C759',
-      error: '#FF3B30',
-      warning: '#FF9500',
-      primary: '#007AFF',
+      success: '#22c55e', // green-500
+      error: '#ef4444',   // red-500
+      warning: '#f97316', // orange-500
+      primary: '#2563eb', // blue-600
       
       // UI Elements
-      divider: '#38383A',
-      overlay: 'rgba(0, 0, 0, 0.4)',
+      divider: '#27272a', // zinc-800
+      overlay: 'rgba(9, 9, 11, 0.8)', // zinc-950/80
     },
     light: {
       // Backgrounds

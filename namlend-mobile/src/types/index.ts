@@ -14,6 +14,7 @@ export interface User {
   email: string;
   role: UserRole;
   profile?: UserProfile;
+  created_at?: string;
 }
 
 export interface UserProfile {
@@ -88,6 +89,7 @@ export interface LoanApplication {
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 export type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order';
+export type ScheduleStatus = 'pending' | 'paid' | 'partially_paid' | 'overdue' | 'waived';
 
 export interface Payment {
   id: string;
@@ -101,6 +103,115 @@ export interface Payment {
   is_overdue?: boolean;
   days_overdue?: number;
   payment_notes?: string;
+  ips_transaction_id?: string;
+  payer_vpa?: string;
+}
+
+export interface PaymentSchedule {
+  id: string;
+  loan_id: string;
+  installment_number: number;
+  due_date: string;
+  principal_amount: number;
+  interest_amount: number;
+  fee_amount: number;
+  late_fee_applied: number;
+  total_amount: number;
+  amount_paid: number;
+  balance: number;
+  status: ScheduleStatus;
+  paid_at?: string;
+  days_overdue: number;
+}
+
+export interface ProcessPaymentResult {
+  success: boolean;
+  payment_id?: string;
+  reference_number?: string;
+  amount_paid?: number;
+  amount_applied?: number;
+  overpayment?: number;
+  schedules_updated?: number;
+  previous_outstanding?: number;
+  new_outstanding?: number;
+  loan_settled?: boolean;
+  settlement_details?: {
+    settled: boolean;
+    settled_at?: string;
+    total_paid?: number;
+    outstanding_balance?: number;
+  };
+  error?: string;
+}
+
+export interface LoanPaymentDetails {
+  success: boolean;
+  loan?: {
+    id: string;
+    amount: number;
+    interest_rate: number;
+    term_months: number;
+    monthly_payment: number;
+    total_repayment: number;
+    status: LoanStatus;
+    disbursed_at?: string;
+    settled_at?: string;
+    purpose?: string;
+  };
+  summary?: {
+    total_scheduled: number;
+    total_paid: number;
+    outstanding_balance: number;
+    installments_paid: number;
+    installments_remaining: number;
+    total_installments: number;
+    next_due_date?: string;
+    overdue_amount: number;
+    is_settled: boolean;
+  };
+  schedules?: PaymentSchedule[];
+  payments?: Array<{
+    id: string;
+    amount: number;
+    payment_method: string;
+    reference_number?: string;
+    status: PaymentStatus;
+    paid_at?: string;
+    notes?: string;
+  }>;
+  error?: string;
+}
+
+export interface LoanPortfolioSummary {
+  success: boolean;
+  user_id?: string;
+  portfolio?: {
+    total_loans: number;
+    active_loans: number;
+    settled_loans: number;
+    total_borrowed: number;
+    total_paid: number;
+    total_outstanding: number;
+    next_payment_due?: string;
+  };
+  loans?: Array<{
+    loan_id: string;
+    principal_amount: number;
+    total_repayment: number;
+    monthly_payment: number;
+    status: LoanStatus;
+    total_paid: number;
+    outstanding_balance: number;
+    installments_paid: number;
+    installments_remaining: number;
+    total_installments: number;
+    next_due_date?: string;
+    next_payment_amount: number;
+    disbursed_at?: string;
+    settled_at?: string;
+    progress_percent: number;
+  }>;
+  error?: string;
 }
 
 // ============================================================================
@@ -189,6 +300,99 @@ export interface Document {
   verified: boolean;
   verified_at?: string;
   verified_by?: string;
+}
+
+// ============================================================================
+// IPS/VPA TYPES (Instant Payment System)
+// ============================================================================
+
+export type IPSTransactionStatus = 'initiated' | 'pending_callback' | 'completed' | 'failed' | 'timeout';
+export type IPSTransactionType = 'PAY' | 'COLLECT' | 'REVERSAL' | 'REFUND';
+
+export interface VPA {
+  id: string;
+  user_id: string;
+  vpa_address: string;
+  provider: string;
+  is_default: boolean;
+  is_verified: boolean;
+  verified_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IPSTransaction {
+  id: string;
+  loan_id?: string;
+  payment_id?: string;
+  transaction_type: IPSTransactionType;
+  payer_vpa: string;
+  payee_vpa: string;
+  amount: number;
+  currency: string;
+  status: IPSTransactionStatus;
+  ips_ref_id?: string;
+  ips_txn_id?: string;
+  error_code?: string;
+  error_message?: string;
+  initiated_at: string;
+  completed_at?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================================
+// NOTIFICATION TYPES (Backend Integration)
+// ============================================================================
+
+export type NotificationCategory = 'loan' | 'payment' | 'kyc' | 'account' | 'general' | 'marketing' | 'collections';
+export type NotificationChannel = 'in_app' | 'sms' | 'whatsapp' | 'email' | 'push';
+
+export interface BackendNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  category: NotificationCategory;
+  is_read: boolean;
+  read_at?: string;
+  action_url?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+  channel: NotificationChannel;
+  category: NotificationCategory;
+  enabled: boolean;
+  updated_at: string;
+}
+
+// ============================================================================
+// CREDIT SCORE TYPES
+// ============================================================================
+
+export type ScoreRange = 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'very_high';
+
+export interface CreditScore {
+  score: number;
+  scoreRange: ScoreRange;
+  riskLevel: RiskLevel;
+  maxApprovedAmount: number;
+  suggestedInterestRate: number;
+  debtToIncomeRatio: number;
+  factors: CreditScoreFactor[];
+  recommendations: string[];
+}
+
+export interface CreditScoreFactor {
+  name: string;
+  value: number;
+  weight: number;
+  impact: 'positive' | 'negative' | 'neutral';
+  description: string;
 }
 
 // ============================================================================

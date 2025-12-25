@@ -159,25 +159,41 @@ export class LoanService {
         throw new Error('User not authenticated');
       }
 
-      const { data: loans } = await supabase
+      const { data, error } = await supabase
         .from('loans')
         .select('*')
         .eq('user_id', user.id);
 
-      const activeLoans = loans?.filter(l => l.status === 'active' || l.status === 'disbursed') || [];
-      const totalBorrowed = loans?.reduce((sum, l) => sum + (Number(l.amount) || 0), 0) || 0;
+      if (error) {
+        console.error('Error fetching loans for stats:', error);
+        throw error;
+      }
+
+      const loans = (data || []) as Loan[];
+
+      const activeLoans = loans.filter(l => l.status === 'active' || l.status === 'disbursed');
+      const totalBorrowed = loans.reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
       const totalOutstanding = activeLoans.reduce((sum, l) => sum + (Number(l.total_repayment) || 0), 0);
       
       // Get most recent disbursed_at as proxy for next payment tracking
       const lastDisbursedLoan = activeLoans
         .filter(l => l.disbursed_at)
-        .sort((a, b) => new Date(b.disbursed_at).getTime() - new Date(a.disbursed_at).getTime())[0];
+        .sort((a, b) => new Date(b.disbursed_at!).getTime() - new Date(a.disbursed_at!).getTime())[0];
+
+      // Estimate next payment date (1 month after last disbursement)
+      let nextPaymentDate = null;
+      if (lastDisbursedLoan?.disbursed_at) {
+        const date = new Date(lastDisbursedLoan.disbursed_at);
+        date.setMonth(date.getMonth() + 1);
+        nextPaymentDate = date.toISOString();
+      }
 
       return {
         activeLoans: activeLoans.length,
         totalBorrowed,
         totalOutstanding,
         lastDisbursedDate: lastDisbursedLoan?.disbursed_at || null,
+        nextPaymentDate,
       };
     } catch (error) {
       console.error('Error calculating loan stats:', error);
@@ -186,6 +202,7 @@ export class LoanService {
         totalBorrowed: 0,
         totalOutstanding: 0,
         lastDisbursedDate: null,
+        nextPaymentDate: null,
       };
     }
   }

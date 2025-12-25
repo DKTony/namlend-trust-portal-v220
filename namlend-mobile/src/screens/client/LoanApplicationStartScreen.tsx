@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   Alert,
   Pressable,
@@ -16,10 +15,15 @@ import {
   DollarSign,
   Clock,
   Shield,
+  ChevronRight,
+  X,
 } from 'lucide-react-native';
 import { formatNAD } from '../../utils/currency';
 import { useTheme } from '../../theme';
-import { PrimaryButton, NumericKeypad } from '../../components/ui';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
+import { NumericKeypad } from '../../components/ui';
 import type { ClientStackParamList } from '../../navigation/ClientStack';
 
 const MAX_APR = parseInt(process.env.EXPO_PUBLIC_MAX_APR || '32', 10);
@@ -28,13 +32,25 @@ const MAX_AMOUNT = 50000;
 
 export default function LoanApplicationStartScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<ClientStackParamList, 'LoanApplicationStart'>>();
-  const { colors, tokens } = useTheme();
+  const { colors, mode } = useTheme();
 
   const [agreed, setAgreed] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [sheetValue, setSheetValue] = useState(`${MIN_AMOUNT}`);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [amountModalVisible, setAmountModalVisible] = useState(false);
+
+  // Theme styles
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+  const cardBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const iconContainerBg = mode === 'dark' ? 'bg-zinc-800 border-zinc-700/50' : 'bg-zinc-100 border-zinc-200';
+  const modalBg = mode === 'dark' ? 'bg-zinc-950 border-zinc-800' : 'bg-white border-zinc-200';
+  const checkboxBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-300';
+  const inputBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-50 border-zinc-200';
+  const closeButtonBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200';
+  const iconColor = mode === 'dark' ? '#a1a1aa' : '#71717a';
 
   const quickAmounts = useMemo(() => [5000, 10000, 20000, 30000, 40000], []);
 
@@ -105,119 +121,57 @@ export default function LoanApplicationStartScreen() {
   const formattedSelectedAmount = selectedAmount ? formatNAD(selectedAmount) : 'Select loan amount';
 
   return (
-    <>
+    <View className={`flex-1 ${containerBg}`}>
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        className="flex-1"
         contentContainerStyle={{
-          paddingHorizontal: tokens.spacing.base,
-          paddingBottom: tokens.spacing['3xl'],
-          paddingTop: tokens.spacing['2xl'],
+          paddingHorizontal: 24,
+          paddingBottom: 40,
+          paddingTop: 32,
         }}
       >
-        <View style={{ marginBottom: tokens.spacing['2xl'] }}>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.caption.fontSize,
-              lineHeight: tokens.typography.caption.lineHeight,
-            }}
-          >
-            Loan Application
+        <View className="mb-8">
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+            LOAN APPLICATION
           </Text>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h1.fontSize,
-              lineHeight: tokens.typography.h1.lineHeight,
-              fontWeight: tokens.typography.h1.fontWeight,
-              marginTop: tokens.spacing.xs,
-            }}
-          >
+          <Text className={`${textColor} text-3xl font-sans-bold tracking-tight mb-2`}>
             Apply for a Loan
           </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.body.fontSize,
-              lineHeight: tokens.typography.body.lineHeight,
-              marginTop: tokens.spacing.sm,
-            }}
-          >
+          <Text className={`${subTextColor} text-base font-sans leading-6`}>
             Get quick access to funds with transparent terms and fair rates.
           </Text>
         </View>
 
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderRadius: tokens.radius.lg,
-              padding: tokens.spacing.lg,
-              marginBottom: tokens.spacing.lg,
-              ...tokens.shadows.card,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h2.fontSize,
-              fontWeight: tokens.typography.h2.fontWeight,
-              marginBottom: tokens.spacing.md,
-            }}
-          >
+        {/* Eligibility Card */}
+        <NeoCard variant="glass" className="mb-6 p-5">
+          <Text className={`${textColor} text-lg font-sans-bold tracking-tight mb-4`}>
             Eligibility Requirements
           </Text>
 
-          {[`Namibian citizen or permanent resident`,
+          {[
+            `Namibian citizen or permanent resident`,
             `Age 18 years or older`,
-            `Regular monthly income (minimum ${formatNAD(2000)})`,
+            `Regular monthly income (min ${formatNAD(2000)})`,
             `Valid ID or passport`,
-            `Proof of address (utility bill or bank statement)`,
-          ].map((requirement) => (
+            `Proof of address`,
+          ].map((requirement, index) => (
             <View
-              key={requirement}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                marginBottom: tokens.spacing.sm,
-              }}
+              key={index}
+              className="flex-row items-center mb-3 last:mb-0"
             >
-              <CheckCircle color={colors.success} size={20} />
-              <Text
-                style={{
-                  marginLeft: tokens.spacing.sm,
-                  color: colors.textSecondary,
-                  fontSize: tokens.typography.body.fontSize,
-                }}
-              >
+              <CheckCircle color="#22c55e" size={18} />
+              <Text className={`ml-3 ${mode === 'dark' ? 'text-zinc-300' : 'text-zinc-600'} text-sm font-sans`}>
                 {requirement}
               </Text>
             </View>
           ))}
-        </View>
+        </NeoCard>
 
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderRadius: tokens.radius.lg,
-              padding: tokens.spacing.lg,
-              marginBottom: tokens.spacing.lg,
-              ...tokens.shadows.card,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h2.fontSize,
-              fontWeight: tokens.typography.h2.fontWeight,
-              marginBottom: tokens.spacing.md,
-            }}
-          >
+        {/* Features Card */}
+        <NeoCard variant="glass" className="mb-6 p-5">
+          <Text className={`${textColor} text-lg font-sans-bold tracking-tight mb-4`}>
             Loan Features
           </Text>
 
@@ -225,259 +179,138 @@ export default function LoanApplicationStartScreen() {
             {
               icon: DollarSign,
               title: 'Flexible Amounts',
-              text: `Borrow from ${formatNAD(MIN_AMOUNT)} to ${formatNAD(MAX_AMOUNT)}`,
+              text: `Borrow ${formatNAD(MIN_AMOUNT)} - ${formatNAD(MAX_AMOUNT)}`,
             },
             {
               icon: Clock,
               title: 'Flexible Terms',
-              text: 'Repayment terms available: 1, 3, or 5 months',
+              text: 'Repayment terms: 1, 3, or 5 months',
             },
             {
               icon: Shield,
               title: 'Transparent Rates',
               text: `Representative APR: up to ${MAX_APR}% p.a.`,
             },
-          ].map(({ icon: Icon, title, text }) => (
-            <View
-              key={title}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                marginBottom: tokens.spacing.md,
-              }}
-            >
-              <Icon color={colors.primary} size={24} />
-              <View style={{ marginLeft: tokens.spacing.md, flex: 1 }}>
-                <Text
-                  style={{
-                    color: colors.textPrimary,
-                    fontSize: tokens.typography.bodyMedium.fontSize,
-                    fontWeight: tokens.typography.bodyMedium.fontWeight,
-                    marginBottom: tokens.spacing.xs,
-                  }}
-                >
+          ].map(({ icon: Icon, title, text }, index) => (
+            <View key={index} className="flex-row items-start mb-5 last:mb-0">
+              <View className={`w-10 h-10 rounded-xl items-center justify-center mr-3 border ${iconContainerBg}`}>
+                <Icon color="#3b82f6" size={20} />
+              </View>
+              <View className="flex-1 pt-1">
+                <Text className={`${mode === 'dark' ? 'text-zinc-100' : 'text-zinc-800'} text-sm font-sans-bold tracking-tight mb-0.5`}>
                   {title}
                 </Text>
-                <Text
-                  style={{
-                    color: colors.textSecondary,
-                    fontSize: tokens.typography.body.fontSize,
-                    lineHeight: tokens.typography.body.lineHeight,
-                  }}
-                >
+                <Text className={`${subTextColor} text-xs font-sans`}>
                   {text}
                 </Text>
               </View>
             </View>
           ))}
 
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              padding: tokens.spacing.md,
-              borderRadius: tokens.radius.md,
-              backgroundColor: `${colors.warning}1A`,
-            }}
-          >
-            <AlertCircle color={colors.warning} size={20} />
-            <Text
-              style={{
-                marginLeft: tokens.spacing.sm,
-                color: colors.warning,
-                fontSize: tokens.typography.caption.fontSize,
-                lineHeight: tokens.typography.caption.lineHeight,
-              }}
-            >
+          <View className={`flex-row items-start p-3 ${mode === 'dark' ? 'bg-zinc-800/50' : 'bg-orange-50'} rounded-xl mt-2 border border-orange-500/20`}>
+            <AlertCircle color="#f97316" size={18} />
+            <Text className={`ml-2 ${mode === 'dark' ? 'text-orange-400' : 'text-orange-600'} text-xs font-sans flex-1 leading-5`}>
               Interest rates up to {MAX_APR}% APR per annum in compliance with Namibian regulations.
             </Text>
           </View>
-        </View>
+        </NeoCard>
 
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderRadius: tokens.radius.lg,
-              padding: tokens.spacing.lg,
-              marginBottom: tokens.spacing.lg,
-              ...tokens.shadows.card,
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.bodyMedium.fontSize,
-              fontWeight: tokens.typography.bodyMedium.fontWeight,
-            }}
-          >
-            Selected Amount
+        {/* Amount Selection */}
+        <NeoCard variant="elevated" className="mb-6 p-5">
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+            SELECTED AMOUNT
           </Text>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.display.fontSize,
-              fontWeight: tokens.typography.display.fontWeight,
-              marginTop: tokens.spacing.sm,
-            }}
-          >
+          <Text className={`${textColor} text-4xl font-sans-bold tracking-tighter mb-2`}>
             {formattedSelectedAmount}
           </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              marginTop: tokens.spacing.sm,
-              fontSize: tokens.typography.caption.fontSize,
-            }}
-          >
-            Choose an amount between {formatNAD(MIN_AMOUNT)} and {formatNAD(MAX_AMOUNT)}.
+          <Text className={`${subTextColor} text-xs font-sans mb-6`}>
+            Choose between {formatNAD(MIN_AMOUNT)} and {formatNAD(MAX_AMOUNT)}.
           </Text>
 
-          <PrimaryButton
+          <NeoButton
             title="Choose loan amount"
             variant="secondary"
             onPress={openAmountSheet}
-            style={{ marginTop: tokens.spacing.lg }}
+            icon={<DollarSign size={18} color={mode === 'dark' ? 'white' : '#1f2937'} />}
           />
-        </View>
+        </NeoCard>
 
+        {/* Terms Agreement */}
         <Pressable
-          style={{
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            marginBottom: tokens.spacing.lg,
-          }}
+          className="flex-row items-start mb-8 p-2"
           onPress={() => setAgreed((prev) => !prev)}
+          testID="terms-agreement-checkbox"
         >
           <View
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: tokens.radius.sm,
-              borderWidth: 2,
-              borderColor: agreed ? colors.primary : colors.divider,
-              backgroundColor: agreed ? colors.primary : 'transparent',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: tokens.spacing.md,
-            }}
+            className={`w-6 h-6 rounded-lg border-2 items-center justify-center mr-3 ${
+              agreed ? 'bg-blue-600 border-blue-600' : checkboxBg
+            }`}
           >
-            {agreed && <CheckCircle color="#FFFFFF" size={16} />}
+            {agreed && <CheckCircle color="white" size={14} />}
           </View>
-          <Text
-            style={{
-              flex: 1,
-              color: colors.textSecondary,
-              fontSize: tokens.typography.body.fontSize,
-              lineHeight: tokens.typography.body.lineHeight,
-            }}
-          >
-            I have read and agree to the <Text style={{ color: colors.primary }}>terms and conditions</Text> and{' '}
-            <Text style={{ color: colors.primary }}>privacy policy</Text>.
+          <Text className={`flex-1 ${subTextColor} text-sm font-sans leading-5 pt-0.5`}>
+            I have read and agree to the <Text className="text-blue-500 font-sans-medium">terms and conditions</Text> and{' '}
+            <Text className="text-blue-500 font-sans-medium">privacy policy</Text>.
           </Text>
         </Pressable>
 
-        <PrimaryButton
-          title="Continue to application"
+        <NeoButton
+          title="Continue to Application"
           onPress={handleContinue}
           disabled={!agreed || !selectedAmount}
-          style={{ marginBottom: tokens.spacing.md }}
-          textStyle={{ textTransform: 'capitalize' }}
+          variant="primary"
+          size="lg"
+          className="mb-4 shadow-lg shadow-blue-900/20"
+          icon={<ChevronRight size={20} color="white" />}
         />
 
-        <View style={{ alignItems: 'center', marginTop: tokens.spacing.sm }}>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.caption.fontSize,
-              lineHeight: tokens.typography.caption.lineHeight,
-              textAlign: 'center',
-            }}
-          >
-            Applications are reviewed within 24-48 hours. We'll notify you via email and in-app alerts.
-          </Text>
-        </View>
+        <Text className={`${mode === 'dark' ? 'text-zinc-600' : 'text-zinc-400'} text-xs text-center px-4 font-sans mb-8`}>
+          Applications are reviewed within 24-48 hours. We'll notify you via email and in-app alerts.
+        </Text>
       </ScrollView>
 
+      {/* Amount Picker Modal */}
       <Modal
         visible={amountModalVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setAmountModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderTopLeftRadius: tokens.radius['2xl'],
-              borderTopRightRadius: tokens.radius['2xl'],
-              paddingHorizontal: tokens.spacing.xl,
-              paddingTop: tokens.spacing.xl,
-              paddingBottom: tokens.spacing['2xl'],
-              width: '100%',
-            }}
-          >
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: tokens.typography.h2.fontSize,
-                fontWeight: tokens.typography.h2.fontWeight,
-                marginBottom: tokens.spacing.sm,
-              }}
-            >
-              Select loan amount
-            </Text>
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: tokens.typography.caption.fontSize,
-                marginBottom: tokens.spacing.sm,
-              }}
-            >
-              Range: {formatNAD(MIN_AMOUNT)} - {formatNAD(MAX_AMOUNT)}
-            </Text>
-            <Text
-              style={{
-                color: colors.textPrimary,
-                fontSize: tokens.typography.display.fontSize,
-                fontWeight: tokens.typography.display.fontWeight,
-                marginBottom: tokens.spacing.md,
-              }}
-            >
-              {formatNAD(parseInt(sheetValue, 10) || 0)}
-            </Text>
+        <View className="flex-1 justify-end bg-black/90">
+          <View className={`${modalBg} rounded-t-[32px] p-6 w-full border-t shadow-2xl`}>
+            <View className="flex-row justify-between items-center mb-8">
+              <View>
+                <Text className={`${textColor} text-xl font-sans-bold tracking-tight`}>Select Amount</Text>
+                <Text className={`${subTextColor} text-xs tracking-wide`}>
+                  RANGE: {formatNAD(MIN_AMOUNT)} - {formatNAD(MAX_AMOUNT)}
+                </Text>
+              </View>
+              <Pressable onPress={() => setAmountModalVisible(false)} className={`p-2 rounded-full border ${closeButtonBg}`}>
+                <X size={20} color={iconColor} />
+              </Pressable>
+            </View>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                marginBottom: tokens.spacing.lg,
-              }}
-            >
+            <View className="items-center mb-8">
+              <Text className={`${textColor} text-5xl font-sans-bold tracking-tighter`}>
+                {formatNAD(parseInt(sheetValue, 10) || 0)}
+              </Text>
+            </View>
+
+            <View className="flex-row flex-wrap justify-center mb-8 gap-2">
               {quickAmounts.map((value) => {
                 const isActive = parseInt(sheetValue, 10) === value;
                 return (
                   <Pressable
                     key={value}
                     onPress={() => handleQuickAmount(value)}
-                    style={{
-                      paddingVertical: tokens.spacing.sm,
-                      paddingHorizontal: tokens.spacing.md,
-                      borderRadius: tokens.radius.pill,
-                      borderWidth: 1,
-                      borderColor: isActive ? colors.primary : colors.divider,
-                      backgroundColor: isActive ? `${colors.primary}1A` : 'transparent',
-                      marginRight: tokens.spacing.sm,
-                      marginBottom: tokens.spacing.sm,
-                    }}
+                    className={`px-4 py-2.5 rounded-full border ${
+                      isActive ? 'bg-blue-600 border-blue-500' : inputBg
+                    }`}
                   >
                     <Text
-                      style={{
-                        color: isActive ? colors.primary : colors.textSecondary,
-                        fontSize: tokens.typography.caption.fontSize,
-                      }}
+                      className={`text-xs font-sans-bold ${
+                        isActive ? 'text-white' : subTextColor
+                      }`}
                     >
                       {formatNAD(value)}
                     </Text>
@@ -487,13 +320,7 @@ export default function LoanApplicationStartScreen() {
             </View>
 
             {sheetError && (
-              <Text
-                style={{
-                  color: colors.error,
-                  fontSize: tokens.typography.caption.fontSize,
-                  marginBottom: tokens.spacing.sm,
-                }}
-              >
+              <Text className="text-red-400 text-xs text-center mb-4 font-sans-medium">
                 {sheetError}
               </Text>
             )}
@@ -502,34 +329,15 @@ export default function LoanApplicationStartScreen() {
               onNumberPress={handleNumberPress}
               onDeletePress={handleDelete}
               onConfirmPress={handleConfirmAmount}
-              confirmLabel="Set amount"
+              confirmLabel="Set Amount"
               showDecimal={false}
             />
-
-            <PrimaryButton
-              title="Cancel"
-              variant="secondary"
-              onPress={() => setAmountModalVisible(false)}
-              style={{ marginTop: tokens.spacing.lg }}
-            />
+            
+            <View className="h-8" />
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  card: {
-    // Dynamic styling applied inline
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-});
 

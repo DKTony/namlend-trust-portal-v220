@@ -1,26 +1,29 @@
 /**
  * Login Screen with Biometric Support
- * Version: v2.4.2
+ * Version: v2.7.0 (Neo-Fintech Design)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
-import { Fingerprint } from 'lucide-react-native';
+import { Fingerprint, Shield, Mail, Lock } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
+import { NeoInput } from '../../components/neo/NeoInput';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
+import { useTheme } from '../../theme';
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
   
   const { signIn, biometricEnabled, authenticateWithBiometric } = useAuth();
 
@@ -43,9 +46,9 @@ const LoginScreen: React.FC = () => {
     const result = await authenticateWithBiometric();
     
     if (result.success) {
-      // Biometric auth successful - would typically retrieve stored credentials
-      // For now, show message that biometric is enabled
-      Alert.alert('Biometric Authentication', 'Please enter your credentials first');
+      // In a real app, you'd auto-login here. 
+      // For now, we simulate success or show message.
+      Alert.alert('Authenticated', 'Biometric verified successfully');
     } else {
       Alert.alert('Authentication Failed', 'Biometric authentication failed');
     }
@@ -53,178 +56,99 @@ const LoginScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 bg-zinc-950"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
-        {/* Logo/Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>NamLend</Text>
-          <Text style={styles.subtitle}>Trusted Lending Platform</Text>
-        </View>
+      <AmbientGlow position="top" />
+      
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+        <View className="flex-1 justify-center px-6 py-12">
+          {/* Header Section */}
+          <View className="items-center mb-12">
+            {/* Logo Motif: Rotated Square */}
+            <View className="relative w-24 h-24 items-center justify-center mb-6">
+              <View className="absolute w-16 h-16 bg-blue-600 rounded-2xl rotate-45 shadow-lg shadow-blue-500/20" />
+              <View className="w-20 h-20 bg-zinc-900 rounded-3xl items-center justify-center border border-zinc-800 shadow-xl z-10">
+                <Shield size={32} color="#3b82f6" fill="#3b82f6" fillOpacity={0.1} />
+              </View>
+            </View>
 
-        {/* Login Form */}
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            editable={!loading}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-            editable={!loading}
-          />
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Signing In...' : 'Sign In'}
+            <Text className="text-4xl font-sans-bold text-white mb-2 tracking-tight text-center">
+              NamLend
             </Text>
-          </TouchableOpacity>
+            <Text className="text-zinc-500 text-xs font-sans-medium tracking-wider uppercase text-center">
+              Financial Freedom Starts Here
+            </Text>
+          </View>
 
-          {/* Biometric Login */}
+          {/* Form Section */}
+          <View className="space-y-4 mb-8">
+            <NeoInput
+              label="EMAIL ADDRESS"
+              placeholder="name@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              icon={<Mail size={20} color="#71717a" />}
+              editable={!loading}
+            />
+
+            <NeoInput
+              label="PASSWORD"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+              icon={<Lock size={20} color="#71717a" />}
+              editable={!loading}
+            />
+
+            <NeoButton
+              title={loading ? "Verifying..." : "Sign In"}
+              onPress={handleLogin}
+              loading={loading}
+              variant="primary"
+              size="lg"
+              className="mt-4"
+            />
+          </View>
+
+          {/* Biometric Section */}
           {biometricEnabled && (
-            <>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>OR</Text>
-                <View style={styles.dividerLine} />
+            <View className="mt-4 mb-8">
+              <View className="flex-row items-center mb-6">
+                <View className="flex-1 h-[1px] bg-zinc-800" />
+                <Text className="mx-4 text-zinc-500 text-xs font-sans-medium tracking-wider">OR LOGIN WITH</Text>
+                <View className="flex-1 h-[1px] bg-zinc-800" />
               </View>
 
-              <TouchableOpacity
-                style={styles.biometricButton}
+              <NeoButton
+                title={Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint'}
                 onPress={handleBiometricLogin}
-                disabled={loading}
-              >
-                <Fingerprint color="#2563eb" size={24} />
-                <Text style={styles.biometricText}>
-                  Use {Platform.OS === 'ios' ? 'Face ID / Touch ID' : 'Fingerprint'}
-                </Text>
-              </TouchableOpacity>
-            </>
+                variant="outline"
+                icon={<Fingerprint size={20} color="#3b82f6" />}
+                className="border-zinc-800 bg-zinc-900"
+              />
+            </View>
           )}
-        </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Regulated by Bank of Namibia
-          </Text>
-          <Text style={styles.footerText}>
-            Maximum APR: 32%
-          </Text>
+          {/* Footer */}
+          <View className="items-center mt-auto pt-8">
+            <Text className="text-zinc-600 text-xs text-center mb-1 font-sans">
+              Regulated by Bank of Namibia
+            </Text>
+            <Text className="text-zinc-700 text-[10px] text-center font-sans tracking-wide">
+              MAXIMUM APR: 32% • v2.7.0
+            </Text>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  form: {
-    marginBottom: 32,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  button: {
-    height: 50,
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#93c5fd',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  biometricButton: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  biometricText: {
-    color: '#2563eb',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 4,
-  },
-});
-
 export default LoginScreen;
+

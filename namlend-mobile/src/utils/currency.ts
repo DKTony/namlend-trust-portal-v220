@@ -12,10 +12,10 @@
  */
 export const formatNAD = (amount: number | null | undefined): string => {
   if (amount === null || amount === undefined || isNaN(amount)) {
-    return 'N$0.00';
+    return 'N$ 0.00';
   }
 
-  return `N$${amount.toLocaleString('en-NA', {
+  return `N$ ${amount.toLocaleString('en-NA', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

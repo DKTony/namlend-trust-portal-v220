@@ -1,6 +1,6 @@
 /**
  * Client Dashboard Screen
- * Version: v2.7.0 - Perpetio-inspired redesign
+ * Version: v2.7.0 - Neo-Fintech Redesign
  */
 
 import React from 'react';
@@ -8,12 +8,13 @@ import {
   View,
   Text,
   ScrollView,
-  StyleSheet,
   RefreshControl,
   ActivityIndicator,
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import {
   FileText,
@@ -22,15 +23,23 @@ import {
   TrendingUp,
   Percent,
   Bell,
+  Plus,
+  Sun,
+  Moon,
 } from 'lucide-react-native';
 import { useMyLoans, useLoanStats, useMyApplications } from '../../hooks/useLoans';
 import { formatNAD } from '../../utils/currency';
-import { BalanceCard, TransactionItem, CurrencyCard } from '../../components/ui';
 import { useTheme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
+import { NeoBalanceCard } from '../../components/neo/NeoBalanceCard';
+import { NeoCurrencyCard } from '../../components/neo/NeoCurrencyCard';
+import { NeoTransactionItem } from '../../components/neo/NeoTransactionItem';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
+import { NeoCard } from '../../components/neo/NeoCard';
 
-const DashboardScreen: React.FC = () => {
-  const { colors, tokens } = useTheme();
+const DashboardScreen: React.FC = ({ navigation }: any) => {
+  const { colors, mode, toggleTheme } = useTheme();
   const { user } = useAuth();
   const { data: loans, isLoading: loansLoading, refetch: refetchLoans } = useMyLoans();
   const { data: applications, isLoading: appsLoading, refetch: refetchApps } = useMyApplications();
@@ -40,8 +49,8 @@ const DashboardScreen: React.FC = () => {
   const [activeCard, setActiveCard] = React.useState(0);
 
   const screenWidth = Dimensions.get('window').width;
-  const cardWidth = screenWidth - tokens.spacing.base * 2;
-  const cardSpacing = tokens.spacing.base;
+  const cardWidth = screenWidth - 48; // padding 24 * 2
+  const cardSpacing = 16;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -57,17 +66,17 @@ const DashboardScreen: React.FC = () => {
   const balanceCards = React.useMemo(
     () => [
       {
-        label: 'Available Credit',
+        label: 'AVAILABLE CREDIT',
         subtitle: 'Your borrowing power',
         amount: Math.max(availableCredit, 0),
       },
       {
-        label: 'Outstanding Balance',
+        label: 'OUTSTANDING BALANCE',
         subtitle: 'Total remaining',
         amount: stats?.totalOutstanding || 0,
       },
       {
-        label: 'Total Borrowed',
+        label: 'TOTAL BORROWED',
         subtitle: 'All time',
         amount: stats?.totalBorrowed || 0,
       },
@@ -98,263 +107,212 @@ const DashboardScreen: React.FC = () => {
 
   const displayName = user?.profile
     ? `${user.profile.first_name} ${user.profile.last_name}`.trim()
-    : user?.email || 'NamLend Client';
+    : user?.email?.split('@')[0] || 'Client';
+
+  // Theme-derived styles
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-500' : 'text-zinc-500';
+  const iconBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200';
+  const iconColor = mode === 'dark' ? '#a1a1aa' : '#71717a';
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
-        />
-      }
-    >
-      <View
-        style={[
-          styles.header,
-          {
-            paddingHorizontal: tokens.spacing.base,
-            paddingTop: tokens.spacing['3xl'],
-            paddingBottom: tokens.spacing.lg,
-          },
-        ]}
-      >
-        <View>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.caption.fontSize,
-              lineHeight: tokens.typography.caption.lineHeight,
-              marginBottom: tokens.spacing.xs,
-            }}
-          >
-            Welcome back,
-          </Text>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h1.fontSize,
-              lineHeight: tokens.typography.h1.lineHeight,
-              fontWeight: tokens.typography.h1.fontWeight,
-            }}
-          >
-            {displayName}
-          </Text>
-        </View>
-        <View style={[styles.statusPill, { borderColor: colors.divider }]}
-        >
-          <Bell color={colors.textSecondary} size={18} />
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.caption.fontSize,
-              lineHeight: tokens.typography.caption.lineHeight,
-              marginLeft: 8,
-            }}
-          >
-            Next payment: {nextPaymentDate}
-          </Text>
-        </View>
-      </View>
-
-      <View style={{ marginBottom: tokens.spacing.xl }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          snapToAlignment="center"
-          decelerationRate="fast"
-          contentContainerStyle={{ paddingHorizontal: tokens.spacing.base }}
-          onMomentumScrollEnd={handleCardScroll}
-          snapToInterval={cardWidth + cardSpacing}
-          disableIntervalMomentum
-          scrollEventThrottle={16}
-        >
-          {balanceCards.map((card, index) => (
-            <View
-              key={card.label}
-              style={{
-                width: cardWidth,
-                marginRight:
-                  index === balanceCards.length - 1 ? 0 : tokens.spacing.base,
-              }}
-            >
-              <BalanceCard
-                amount={card.amount}
-                label={card.label}
-                subtitle={card.subtitle}
-              />
-            </View>
-          ))}
-        </ScrollView>
-        <View style={[styles.paginationDots, { marginTop: tokens.spacing.md }]}
-        >
-          {balanceCards.map((_, index) => (
-            <View
-              key={`dot-${index}`}
-              style={{
-                width: index === activeCard ? 16 : 6,
-                height: 6,
-                borderRadius: 3,
-                marginHorizontal: 4,
-                backgroundColor:
-                  index === activeCard ? colors.primary : colors.divider,
-              }}
-            />
-          ))}
-        </View>
-      </View>
-
+    <View className={`flex-1 ${mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ paddingLeft: tokens.spacing.base, marginBottom: tokens.spacing['2xl'] }}
-        contentContainerStyle={{ paddingRight: tokens.spacing.base }}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#3b82f6"
+            colors={['#3b82f6']}
+          />
+        }
       >
-        <CurrencyCard
-          icon={DollarSign}
-          label="Total Borrowed"
-          primaryValue={formatNAD(stats?.totalBorrowed || 0)}
-          style={{ marginRight: tokens.spacing.base, width: 160 }}
-        />
-        <CurrencyCard
-          icon={TrendingUp}
-          label="Outstanding"
-          primaryValue={formatNAD(stats?.totalOutstanding || 0)}
-          style={{ marginRight: tokens.spacing.base, width: 160 }}
-        />
-        <CurrencyCard
-          icon={Percent}
-          label="APR"
-          primaryValue="≤ 32%"
-          secondaryValue="Compliant"
-          style={{ marginRight: tokens.spacing.base, width: 160 }}
-        />
-        <CurrencyCard
-          icon={Calendar}
-          label="Payments Due"
-          primaryValue={stats?.activeLoans ? `${stats.activeLoans} active` : '0 active'}
-          secondaryValue={nextPaymentDate}
-          style={{ width: 160 }}
-        />
-      </ScrollView>
-
-      <View style={{ paddingHorizontal: tokens.spacing.base }}>
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: tokens.spacing.md,
-        }}>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: tokens.typography.h2.fontSize,
-              lineHeight: tokens.typography.h2.lineHeight,
-              fontWeight: tokens.typography.h2.fontWeight,
-            }}
-          >
-            Activity
-          </Text>
-          <Text
-            style={{
-              color: colors.textSecondary,
-              fontSize: tokens.typography.caption.fontSize,
-              lineHeight: tokens.typography.caption.lineHeight,
-            }}
-          >
-            Last 30 days
-          </Text>
+        {/* Header */}
+        <View className="px-6 pt-16 pb-6 flex-row justify-between items-center">
+          <View>
+            <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+              WELCOME BACK
+            </Text>
+            <Text className={`${textColor} text-2xl font-sans-bold tracking-tight`}>
+              {displayName}
+            </Text>
+          </View>
+          <View className="flex-row gap-3">
+            <TouchableOpacity 
+              onPress={toggleTheme}
+              className={`${iconBg} border rounded-full p-2.5 shadow-sm`}
+            >
+              {mode === 'dark' ? (
+                <Sun size={20} color={iconColor} />
+              ) : (
+                <Moon size={20} color={iconColor} />
+              )}
+            </TouchableOpacity>
+            
+            <View className={`${iconBg} border rounded-full p-2.5 relative shadow-sm`}>
+              <Bell size={20} color={iconColor} />
+              <View className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-900" />
+            </View>
+          </View>
         </View>
 
-        {isLoading && (
-          <View style={{ paddingVertical: tokens.spacing['2xl'], alignItems: 'center' }}>
-            <ActivityIndicator color={colors.primary} />
+        {/* Balance Cards Carousel */}
+        <View className="mb-8">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            snapToAlignment="center"
+            decelerationRate="fast"
+            contentContainerStyle={{ paddingHorizontal: 24 }}
+            onMomentumScrollEnd={handleCardScroll}
+            snapToInterval={cardWidth + 16} // Using 16 as gap
+            disableIntervalMomentum
+            scrollEventThrottle={16}
+          >
+            {balanceCards.map((card, index) => (
+              <View
+                key={card.label}
+                style={{
+                  width: cardWidth,
+                  marginRight: index === balanceCards.length - 1 ? 0 : 16,
+                }}
+              >
+                <NeoBalanceCard
+                  amount={card.amount}
+                  label={card.label}
+                  subtitle={card.subtitle}
+                />
+              </View>
+            ))}
+          </ScrollView>
+          
+          {/* Pagination Dots */}
+          <View className="flex-row justify-center mt-4 space-x-2">
+            {balanceCards.map((_, index) => (
+              <View
+                key={`dot-${index}`}
+                className={`h-1.5 rounded-full ${
+                  index === activeCard ? 'w-4 bg-blue-600' : 'w-1.5 bg-zinc-300'
+                }`}
+              />
+            ))}
           </View>
-        )}
+        </View>
 
-        {recentApplications.map((app) => (
-          <TransactionItem
-            key={`application-${app.id}`}
-            title="Loan Application"
-            subtitle={`Submitted ${new Date(app.created_at).toLocaleDateString('en-NA')}`}
-            amount={app.request_data?.amount || 0}
-            type="expense"
-            icon={FileText}
+        {/* Quick Actions / Stats */}
+        <View className="mb-8">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 24, paddingRight: 8 }}
+          >
+            <NeoCurrencyCard
+              icon={DollarSign}
+              label="TOTAL BORROWED"
+              primaryValue={formatNAD(stats?.totalBorrowed || 0)}
+              className="mr-4"
+              variant="glass"
+            />
+            <NeoCurrencyCard
+              icon={TrendingUp}
+              label="OUTSTANDING"
+              primaryValue={formatNAD(stats?.totalOutstanding || 0)}
+              className="mr-4"
+              variant="glass"
+            />
+            <NeoCurrencyCard
+              icon={Percent}
+              label="CURRENT APR"
+              primaryValue="≤ 32%"
+              secondaryValue="Compliant"
+              className="mr-4"
+              variant="glass"
+            />
+            <NeoCurrencyCard
+              icon={Calendar}
+              label="NEXT PAYMENT"
+              primaryValue={stats?.activeLoans ? `${stats.activeLoans} active` : 'No active loans'}
+              secondaryValue={nextPaymentDate}
+              variant="glass"
+            />
+          </ScrollView>
+        </View>
+
+        {/* Action Button */}
+        <View className="px-6 mb-8">
+          <NeoButton
+            title="Apply for New Loan"
+            onPress={() => navigation.navigate('LoansTab', { screen: 'LoanApplicationStart' })}
+            variant="primary"
+            size="lg"
+            icon={<Plus size={20} color="white" />}
+            className="shadow-lg shadow-blue-900/20"
           />
-        ))}
+        </View>
 
-        {recentActiveLoans.map((loan) => (
-          <TransactionItem
-            key={`loan-${loan.id}`}
-            title={`Loan • ${loan.term_months} months`}
-            subtitle={`Monthly: ${formatNAD(loan.monthly_payment)}`}
-            amount={loan.amount}
-            type="income"
-            icon={DollarSign}
-          />
-        ))}
-
-        {showEmptyState && (
-          <View style={styles.emptyState}>
-            <FileText color={colors.textTertiary} size={64} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}
-            >
-              No activity yet
+        {/* Activity Section */}
+        <View className="px-6">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className={`${textColor} text-lg font-sans-bold tracking-tight`}>
+              Recent Activity
             </Text>
-            <Text
-              style={[styles.emptyText, { color: colors.textSecondary }]}
-            >
-              Apply for your first loan to see updates here.
+            <Text className={`${subTextColor} text-xs font-sans tracking-wide`}>
+              LAST 30 DAYS
             </Text>
           </View>
-        )}
-      </View>
-    </ScrollView>
+
+          <NeoCard variant="glass" className="p-2">
+            {isLoading ? (
+              <View className="py-8 items-center">
+                <ActivityIndicator color="#3b82f6" />
+              </View>
+            ) : showEmptyState ? (
+              <View className="py-8 items-center justify-center">
+                <FileText color={mode === 'dark' ? "#3f3f46" : "#cbd5e1"} size={48} />
+                <Text className={`${mode === 'dark' ? 'text-zinc-300' : 'text-zinc-600'} text-base font-sans-medium mt-4 mb-2`}>
+                  No activity yet
+                </Text>
+                <Text className={`${subTextColor} text-sm text-center px-8`}>
+                  Your recent loan applications and payments will appear here.
+                </Text>
+              </View>
+            ) : (
+              <>
+                {recentApplications.map((app) => (
+                  <NeoTransactionItem
+                    key={`application-${app.id}`}
+                    title="Loan Application"
+                    subtitle={`Submitted ${new Date(app.created_at).toLocaleDateString('en-NA')}`}
+                    amount={app.request_data?.amount || 0}
+                    type="expense"
+                    icon={FileText}
+                  />
+                ))}
+
+                {recentActiveLoans.map((loan) => (
+                  <NeoTransactionItem
+                    key={`loan-${loan.id}`}
+                    title={`Loan • ${loan.term_months} months`}
+                    subtitle={`Monthly: ${formatNAD(loan.monthly_payment)}`}
+                    amount={loan.amount}
+                    type="income"
+                    icon={DollarSign}
+                  />
+                ))}
+              </>
+            )}
+          </NeoCard>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderRadius: 999,
-  },
-  emptyState: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 64,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  paginationDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
-
 export default DashboardScreen;
+

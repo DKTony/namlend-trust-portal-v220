@@ -1,45 +1,58 @@
 /**
  * Approver Stack Navigator with Bottom Tabs
- * Version: v2.4.2
+ * Version: v2.7.0 - Theme system integration
  */
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigatorScreenParams } from '@react-navigation/native';
 import { ClipboardList, User, Home } from 'lucide-react-native';
 import { supabase } from '../services/supabaseClient';
+import { useTheme } from '../theme';
 
 // Screens
 import ApprovalQueueScreen from '../screens/approver/ApprovalQueueScreen';
 import ReviewApplicationScreen from '../screens/approver/ReviewApplicationScreen';
-import ProfileScreen from '../screens/client/ProfileScreen';
 import ApproverProfileScreen from '../screens/approver/ApproverProfileScreen';
 import ApproverDashboardScreen from '../screens/approver/ApproverDashboardScreen';
 
-export type ApproverStackParamList = {
-  ApproverDashboard: undefined;
+export type ApprovalsStackParamList = {
   ApprovalQueue: undefined;
   ReviewApplication: { requestId: string };
-  ApproverProfile: undefined;
 };
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator<ApproverStackParamList>();
+export type ApproverTabParamList = {
+  DashboardTab: undefined;
+  ApprovalsTab: NavigatorScreenParams<ApprovalsStackParamList>;
+  ProfileTab: undefined;
+};
+
+const Tab = createBottomTabNavigator<ApproverTabParamList>();
+const Stack = createNativeStackNavigator<ApprovalsStackParamList>();
 
 // Approvals Stack (for nested navigation)
 const ApprovalsStack = () => {
+  const { colors } = useTheme();
+
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.textPrimary,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
       <Stack.Screen 
         name="ApprovalQueue" 
         component={ApprovalQueueScreen}
-        options={{ title: 'Approval Queue' }}
+        options={{ title: 'Approval Queue', headerShown: false }}
       />
       <Stack.Screen 
         name="ReviewApplication" 
         component={ReviewApplicationScreen}
-        options={{ title: 'Review Application' }}
+        options={{ title: 'Review Application', headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -56,6 +69,7 @@ const TabBarBadge: React.FC<{ count: number }> = ({ count }) => {
 };
 
 const ApproverStack: React.FC = () => {
+  const { colors } = useTheme();
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -91,13 +105,26 @@ const ApproverStack: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#2563eb',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarActiveTintColor: '#3b82f6',
+        tabBarInactiveTintColor: '#71717a',
         tabBarStyle: {
+          backgroundColor: 'rgba(24, 24, 27, 0.9)',
+          borderTopColor: '#27272a',
+          borderTopWidth: 1,
           paddingBottom: 5,
           paddingTop: 5,
           height: 60,
+          position: 'absolute',
+          bottom: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -10 },
+          shadowOpacity: 0.5,
+          shadowRadius: 20,
+          elevation: 0,
         },
+        headerStyle: { backgroundColor: '#09090b', borderBottomColor: '#27272a', borderBottomWidth: 1 },
+        headerTintColor: '#ffffff',
+        headerShadowVisible: false,
       }}
     >
       <Tab.Screen
@@ -105,6 +132,7 @@ const ApproverStack: React.FC = () => {
         component={ApproverDashboardScreen}
         options={{
           title: 'Dashboard',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Home color={color} size={size} />
           ),
@@ -127,6 +155,7 @@ const ApproverStack: React.FC = () => {
         component={ApproverProfileScreen}
         options={{
           title: 'Profile',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <User color={color} size={size} />
           ),

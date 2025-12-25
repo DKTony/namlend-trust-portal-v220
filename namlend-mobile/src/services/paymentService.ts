@@ -1,12 +1,13 @@
 /**
  * Payment Service
- * Version: v2.4.2
+ * Version: v3.0.0
  * 
- * Handles payment operations and mobile money integration
+ * Handles payment operations with full RPC integration
+ * Aligned with main platform paymentService.ts
  */
 
 import { supabase } from './supabaseClient';
-import { Payment, PaymentMethod } from '../types';
+import { Payment, PaymentMethod, PaymentSchedule, LoanPaymentDetails, LoanPortfolioSummary, ProcessPaymentResult } from '../types';
  
 
 export class PaymentService {
@@ -61,14 +62,16 @@ export class PaymentService {
   }
 
   /**
-   * Initiate a payment
+   * Process a loan payment using the RPC for atomic processing
+   * This integrates with the main platform's process_loan_payment RPC
    */
-  static async initiatePayment(
+  static async processLoanPayment(
     loanId: string,
     amount: number,
     paymentMethod: PaymentMethod,
-    referenceNumber?: string
-  ): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+    referenceNumber?: string,
+    notes?: string
+  ): Promise<ProcessPaymentResult> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -81,26 +84,23 @@ export class PaymentService {
         return { success: false, error: 'Invalid payment amount' };
       }
 
-      const { data, error } = await supabase
-        .from('payments')
-        .insert({
-          loan_id: loanId,
-          amount,
-          payment_method: paymentMethod,
-          paid_at: new Date().toISOString(),
-          status: 'pending',
-          reference_number: referenceNumber,
-        })
-        .select()
-        .single();
+      // Use the atomic RPC for payment processing
+      const { data, error } = await supabase.rpc('process_loan_payment', {
+        p_loan_id: loanId,
+        p_amount: amount,
+        p_payment_method: paymentMethod,
+        p_reference_number: referenceNumber || null,
+        p_notes: notes || null
+      });
 
       if (error) {
+        console.error('Process loan payment RPC failed:', error);
         return { success: false, error: error.message };
       }
 
-      return { success: true, paymentId: data.id };
+      return data as ProcessPaymentResult;
     } catch (error) {
-      console.error('Error initiating payment:', error);
+      console.error('Error processing payment:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
@@ -109,40 +109,144 @@ export class PaymentService {
   }
 
   /**
-   * Get payment statistics
+   * Legacy initiatePayment - now uses processLoanPayment internally
+   */
+  static async initiatePayment(
+    loanId: string,
+    amount: number,
+    paymentMethod: PaymentMethod,
+    referenceNumber?: string
+  ): Promise<{ success: boolean; paymentId?: string; error?: string }> {
+    const result = await this.processLoanPayment(loanId, amount, paymentMethod, referenceNumber);
+    return {
+      success: result.success,
+      paymentId: result.payment_id,
+      error: result.error
+    };
+  }
+
+  /**
+   * Get comprehensive loan payment details using RPC
+   * Includes schedule, payments, and summary
+   */
+  static async getLoanPaymentDetails(loanId: string): Promise<LoanPaymentDetails> {
+    try {
+      const { data, error } = await supabase.rpc('get_loan_payment_details', {
+        p_loan_id: loanId
+      });
+
+      if (error) {
+        console.error('Get loan payment details RPC failed:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data as LoanPaymentDetails;
+    } catch (error) {
+      console.error('Error fetching loan payment details:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Get payment schedule for a loan using RPC
+   */
+  static async getPaymentSchedule(loanId: string): Promise<{
+    success: boolean;
+    schedule?: PaymentSchedule[];
+    error?: string;
+  }> {
+    try {
+      const { data, error } = await supabase.rpc('get_payment_schedule', {
+        p_loan_id: loanId
+      });
+
+      if (error) {
+        console.error('Get payment schedule RPC failed:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, schedule: data as PaymentSchedule[] || [] };
+    } catch (error) {
+      console.error('Error fetching payment schedule:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Get user's loan portfolio summary using RPC
+   */
+  static async getLoanPortfolioSummary(userId?: string): Promise<LoanPortfolioSummary> {
+    try {
+      const { data, error } = await supabase.rpc('get_loan_portfolio_summary', {
+        p_user_id: userId || null
+      });
+
+      if (error) {
+        console.error('Get loan portfolio summary RPC failed:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data as LoanPortfolioSummary;
+    } catch (error) {
+      console.error('Error fetching portfolio summary:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  }
+
+  /**
+   * Get payment statistics (enhanced version using payment details)
    */
   static async getPaymentStats(loanId: string) {
     try {
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('loan_id', loanId);
+      const details = await this.getLoanPaymentDetails(loanId);
+      
+      if (!details.success || !details.summary) {
+        // Fallback to basic query
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('loan_id', loanId);
 
-      const list: Payment[] = (payments ?? []) as Payment[];
+        const list: Payment[] = (payments ?? []) as Payment[];
+        const completed = list.filter((p: Payment) => p.status === 'completed');
+        const pending = list.filter((p: Payment) => p.status === 'pending');
 
-      const completed = list.filter((p: Payment) => p.status === 'completed');
-      const pending = list.filter((p: Payment) => p.status === 'pending');
+        const toNumber = (v: unknown): number => {
+          const n = Number(v);
+          return Number.isFinite(n) ? n : 0;
+        };
 
-      const toNumber = (v: unknown): number => {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : 0;
-      };
-
-      const totalPaid: number = completed.reduce((sum: number, p: Payment) => sum + toNumber(p.amount), 0);
-
-      const pendingPayments: number = pending.reduce((sum: number, p: Payment) => sum + toNumber(p.amount), 0);
-
-      const lastPaymentDate: string | null = (completed
-        .map((p: Payment) => p.paid_at)
-        .filter((d: string | undefined): d is string => Boolean(d))
-        .sort()
-        .reverse()[0]) ?? null;
+        return {
+          totalPaid: completed.reduce((sum, p) => sum + toNumber(p.amount), 0),
+          pendingPayments: pending.reduce((sum, p) => sum + toNumber(p.amount), 0),
+          lastPaymentDate: completed.map(p => p.paid_at).filter(Boolean).sort().reverse()[0] || null,
+          paymentCount: list.length,
+          outstandingBalance: 0,
+          isSettled: false,
+        };
+      }
 
       return {
-        totalPaid,
-        pendingPayments,
-        lastPaymentDate,
-        paymentCount: list.length,
+        totalPaid: details.summary.total_paid,
+        pendingPayments: details.summary.overdue_amount,
+        lastPaymentDate: details.payments?.filter(p => p.paid_at).sort((a, b) => 
+          new Date(b.paid_at!).getTime() - new Date(a.paid_at!).getTime()
+        )[0]?.paid_at || null,
+        paymentCount: details.payments?.length || 0,
+        outstandingBalance: details.summary.outstanding_balance,
+        isSettled: details.summary.is_settled,
+        nextDueDate: details.summary.next_due_date,
+        installmentsPaid: details.summary.installments_paid,
+        installmentsRemaining: details.summary.installments_remaining,
       };
     } catch (error) {
       console.error('Error calculating payment stats:', error);
@@ -151,6 +255,8 @@ export class PaymentService {
         pendingPayments: 0,
         lastPaymentDate: null,
         paymentCount: 0,
+        outstandingBalance: 0,
+        isSettled: false,
       };
     }
   }

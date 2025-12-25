@@ -1,6 +1,6 @@
 /**
  * Approval Queue Screen
- * Version: v2.4.2
+ * Version: v2.7.0 - Neo-Fintech Design
  */
 
 import React, { useState } from 'react';
@@ -9,17 +9,24 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  StyleSheet,
   RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ClipboardList, ChevronRight, Filter } from 'lucide-react-native';
 import { useApprovalQueue } from '../../hooks/useApprovals';
 import { ApprovalRequest } from '../../types';
 import { formatNAD } from '../../utils/currency';
+import { useTheme } from '../../theme';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
+import { ApprovalsStackParamList } from '../../navigation/ApproverStack';
+
+type ApprovalQueueNavigationProp = NativeStackNavigationProp<ApprovalsStackParamList, 'ApprovalQueue'>;
 
 const ApprovalQueueScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<ApprovalQueueNavigationProp>();
+  const { colors } = useTheme();
   const [statusFilter, setStatusFilter] = useState<string>('pending');
   const [priorityFilter, setPriorityFilter] = useState<string | undefined>();
   
@@ -36,107 +43,147 @@ const ApprovalQueueScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  const getPriorityStyle = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
+      case 'high':
+        return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' };
+      case 'normal':
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
+      default:
+        return { bg: 'bg-zinc-800', text: 'text-zinc-400', border: 'border-zinc-700' };
+    }
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+      case 'rejected':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
+      case 'under_review':
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
+      default:
+        return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' };
+    }
+  };
+
   const renderApplicationItem = ({ item }: { item: ApprovalRequest }) => {
     const loanAmount = item.request_data?.amount || 0;
+    const priorityStyle = getPriorityStyle(item.priority);
+    const statusStyle = getStatusStyle(item.status);
     
     return (
       <TouchableOpacity
-        style={styles.applicationCard}
-        onPress={() => navigation.navigate('ReviewApplication' as never, { requestId: item.id } as never)}
+        onPress={() => navigation.navigate('ReviewApplication', { requestId: item.id })}
       >
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.applicationType}>
-              {item.request_type.replace('_', ' ').toUpperCase()}
+        <NeoCard className="mb-3 bg-zinc-900 border-zinc-800 p-4">
+          <View className="flex-row justify-between items-start mb-3">
+            <View>
+              <Text className="text-zinc-100 text-sm font-sans-bold uppercase tracking-tight">
+                {item.request_type.replace('_', ' ')}
+              </Text>
+              {loanAmount > 0 && (
+                <Text className="text-blue-400 text-lg font-sans-bold mt-1 tracking-tight">
+                  {formatNAD(loanAmount)}
+                </Text>
+              )}
+            </View>
+            <ChevronRight color="#52525b" size={20} />
+          </View>
+
+          <View className="mb-4">
+            <Text className="text-white text-base font-sans-medium mb-0.5">
+              {item.user?.email || 'Unknown'}
             </Text>
-            {loanAmount > 0 && (
-              <Text style={styles.loanAmount}>{formatNAD(loanAmount)}</Text>
+            {item.profile && (
+              <Text className="text-zinc-500 text-xs font-sans">
+                {item.profile.first_name} {item.profile.last_name}
+              </Text>
             )}
           </View>
-          <ChevronRight color="#9ca3af" size={24} />
-        </View>
 
-        <View style={styles.cardBody}>
-          <Text style={styles.applicantEmail}>{item.user?.email || 'Unknown'}</Text>
-          {item.profile && (
-            <Text style={styles.applicantName}>
-              {item.profile.first_name} {item.profile.last_name}
+          <View className="flex-row items-center justify-between border-t border-zinc-800 pt-3">
+            <View className="flex-row gap-2">
+              <View className={`px-2 py-0.5 rounded border ${priorityStyle.bg} ${priorityStyle.border}`}>
+                <Text className={`text-[10px] font-sans-bold uppercase ${priorityStyle.text}`}>
+                  {item.priority}
+                </Text>
+              </View>
+              <View className={`px-2 py-0.5 rounded border ${statusStyle.bg} ${statusStyle.border}`}>
+                <Text className={`text-[10px] font-sans-bold uppercase ${statusStyle.text}`}>
+                  {item.status.replace('_', ' ')}
+                </Text>
+              </View>
+            </View>
+            <Text className="text-zinc-600 text-[10px] font-sans">
+              {new Date(item.created_at).toLocaleDateString('en-NA')}
             </Text>
-          )}
-        </View>
-
-        <View style={styles.cardFooter}>
-          <View style={[styles.priorityBadge, getPriorityStyle(item.priority)]}>
-            <Text style={styles.priorityText}>{item.priority.toUpperCase()}</Text>
           </View>
-          <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-            <Text style={styles.statusText}>{item.status.replace('_', ' ').toUpperCase()}</Text>
-          </View>
-          <Text style={styles.dateText}>
-            {new Date(item.created_at).toLocaleDateString('en-NA')}
-          </Text>
-        </View>
+        </NeoCard>
       </TouchableOpacity>
     );
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterTab, statusFilter === 'pending' && styles.filterTabActive]}
-          onPress={() => setStatusFilter('pending')}
-        >
-          <Text style={[styles.filterText, statusFilter === 'pending' && styles.filterTextActive]}>
-            Pending
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterTab, statusFilter === 'under_review' && styles.filterTabActive]}
-          onPress={() => setStatusFilter('under_review')}
-        >
-          <Text style={[styles.filterText, statusFilter === 'under_review' && styles.filterTextActive]}>
-            Under Review
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterTab, statusFilter === 'approved' && styles.filterTabActive]}
-          onPress={() => setStatusFilter('approved')}
-        >
-          <Text style={[styles.filterText, statusFilter === 'approved' && styles.filterTextActive]}>
-            Approved
-          </Text>
-        </TouchableOpacity>
-      </View>
+  const FilterTab = ({ label, value }: { label: string, value: string }) => (
+    <TouchableOpacity
+      onPress={() => setStatusFilter(value)}
+      className={`flex-1 py-2 rounded-full border items-center ${
+        statusFilter === value 
+          ? 'bg-blue-600 border-blue-500' 
+          : 'bg-zinc-900 border-zinc-800'
+      }`}
+    >
+      <Text className={`text-xs font-sans-medium ${
+        statusFilter === value ? 'text-white' : 'text-zinc-400'
+      }`}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
-      {/* Priority Filter */}
-      <View style={styles.priorityFilterContainer}>
-        <Text style={styles.priorityFilterLabel}>Priority:</Text>
-        <TouchableOpacity
-          style={[styles.priorityChip, !priorityFilter && styles.priorityChipActive]}
-          onPress={() => setPriorityFilter(undefined)}
-        >
-          <Text style={[styles.priorityChipText, !priorityFilter && styles.priorityChipTextActive]}>
-            All
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.priorityChip, priorityFilter === 'urgent' && styles.priorityChipActive]}
-          onPress={() => setPriorityFilter('urgent')}
-        >
-          <Text style={[styles.priorityChipText, priorityFilter === 'urgent' && styles.priorityChipTextActive]}>
-            Urgent
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.priorityChip, priorityFilter === 'high' && styles.priorityChipActive]}
-          onPress={() => setPriorityFilter('high')}
-        >
-          <Text style={[styles.priorityChipText, priorityFilter === 'high' && styles.priorityChipTextActive]}>
-            High
-          </Text>
-        </TouchableOpacity>
+  const PriorityChip = ({ label, value }: { label: string, value: string | undefined }) => (
+    <TouchableOpacity
+      onPress={() => setPriorityFilter(value)}
+      className={`px-3 py-1.5 rounded-full border mr-2 ${
+        priorityFilter === value 
+          ? 'bg-zinc-800 border-zinc-600' 
+          : 'bg-transparent border-zinc-800'
+      }`}
+    >
+      <Text className={`text-[10px] font-sans-bold uppercase ${
+        priorityFilter === value ? 'text-white' : 'text-zinc-500'
+      }`}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View className="flex-1 bg-zinc-950">
+      <AmbientGlow position="top" />
+      
+      {/* Header */}
+      <View className="px-6 pt-16 pb-4 bg-zinc-900 border-b border-zinc-800">
+        <Text className="text-white text-2xl font-sans-bold tracking-tight mb-4">
+          Approval Queue
+        </Text>
+        
+        {/* Status Filters */}
+        <View className="flex-row gap-2 mb-4">
+          <FilterTab label="Pending" value="pending" />
+          <FilterTab label="In Review" value="under_review" />
+          <FilterTab label="Approved" value="approved" />
+        </View>
+
+        {/* Priority Filters */}
+        <View className="flex-row items-center pt-3 border-t border-zinc-800">
+          <Filter size={14} color="#71717a" className="mr-3" />
+          <PriorityChip label="All" value={undefined} />
+          <PriorityChip label="Urgent" value="urgent" />
+          <PriorityChip label="High" value="high" />
+        </View>
       </View>
 
       {/* Applications List */}
@@ -144,16 +191,18 @@ const ApprovalQueueScreen: React.FC = () => {
         data={queue || []}
         renderItem={renderApplicationItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
         }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <ClipboardList color="#9ca3af" size={64} />
-            <Text style={styles.emptyTitle}>No Applications</Text>
-            <Text style={styles.emptyText}>
-              No {statusFilter} applications at the moment.
+          <View className="items-center py-16 opacity-50">
+            <ClipboardList color="#71717a" size={64} />
+            <Text className="text-white text-lg font-sans-semibold mt-4 mb-2">
+              No Applications
+            </Text>
+            <Text className="text-zinc-500 text-sm text-center px-8">
+              No {statusFilter.replace('_', ' ')} applications found with current filters.
             </Text>
           </View>
         }
@@ -162,190 +211,5 @@ const ApprovalQueueScreen: React.FC = () => {
   );
 };
 
-const getPriorityStyle = (priority: string) => {
-  switch (priority) {
-    case 'urgent':
-      return { backgroundColor: '#fecaca' };
-    case 'high':
-      return { backgroundColor: '#fed7aa' };
-    case 'normal':
-      return { backgroundColor: '#fef3c7' };
-    default:
-      return { backgroundColor: '#e5e7eb' };
-  }
-};
-
-const getStatusStyle = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return { backgroundColor: '#d1fae5' };
-    case 'rejected':
-      return { backgroundColor: '#fecaca' };
-    case 'under_review':
-      return { backgroundColor: '#dbeafe' };
-    default:
-      return { backgroundColor: '#fef3c7' };
-  }
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    padding: 8,
-    gap: 8,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  filterTabActive: {
-    backgroundColor: '#2563eb',
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  filterTextActive: {
-    color: '#ffffff',
-  },
-  priorityFilterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: 12,
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  priorityFilterLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  priorityChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-  },
-  priorityChipActive: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  priorityChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  priorityChipTextActive: {
-    color: '#ffffff',
-  },
-  listContent: {
-    padding: 16,
-  },
-  applicationCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  applicationType: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  loanAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2563eb',
-  },
-  cardBody: {
-    marginBottom: 12,
-  },
-  applicantEmail: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  applicantName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginLeft: 'auto',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 64,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-});
-
 export default ApprovalQueueScreen;
+

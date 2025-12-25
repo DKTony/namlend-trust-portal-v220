@@ -1,6 +1,6 @@
 /**
  * Loan Application Form Screen
- * Version: v2.6.0
+ * Version: v2.7.0 - Neo-Fintech Design
  * 
  * Multi-step loan application form with validation and offline support
  */
@@ -9,22 +9,24 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
-  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { ArrowLeft, ArrowRight, Check, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, Check, AlertCircle, DollarSign, Calendar, Briefcase, CreditCard } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { LoanService } from '../../services/loanService';
 import { formatNAD } from '../../utils/currency';
 import { enqueue } from '../../utils/offlineQueue';
 import { useTheme } from '../../theme';
-import { PrimaryButton, CurrencyCard } from '../../components/ui';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoInput } from '../../components/neo/NeoInput';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 import type { ClientStackParamList } from '../../navigation/ClientStack';
 
 const MAX_APR = parseInt(process.env.EXPO_PUBLIC_MAX_APR || '32', 10);
@@ -56,7 +58,7 @@ export default function LoanApplicationFormScreen() {
   const route = useRoute<RouteProp<ClientStackParamList, 'LoanApplicationForm'>>();
   const prefilledAmount = route.params?.amount ? route.params.amount.toString() : '';
   const { user } = useAuth();
-  const { colors, tokens } = useTheme();
+  const { colors, mode } = useTheme();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -79,6 +81,16 @@ export default function LoanApplicationFormScreen() {
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
+
+  // Theme constants
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const headerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-white';
+  const borderColor = mode === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+  const inputBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const cardBorder = mode === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+  const iconColor = mode === 'dark' ? '#ffffff' : '#18181b';
 
   // Calculate loan details when amount or term changes
   useEffect(() => {
@@ -261,300 +273,251 @@ export default function LoanApplicationFormScreen() {
   const progress = (step / 3) * 100;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className={`flex-1 ${containerBg}`}
+    >
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.divider }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <ArrowLeft color={colors.textPrimary} size={24} />
+      <View className={`flex-row items-center px-4 pt-16 pb-4 ${headerBg} border-b ${borderColor}`}>
+        <TouchableOpacity onPress={handleBack} className={`p-2 -ml-2 rounded-full ${inputBg} border ${borderColor}`}>
+          <ArrowLeft color={iconColor} size={24} />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Loan Application</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Step {step} of 3</Text>
+        <View className="ml-4 flex-1">
+          <Text className={`${textColor} text-lg font-sans-bold tracking-tight`}>Loan Application</Text>
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wide uppercase`}>Step {step} of 3</Text>
         </View>
       </View>
 
       {/* Progress Bar */}
-      <View style={[styles.progressContainer, { backgroundColor: colors.surface }]}>
-        <View style={[styles.progressBar, { backgroundColor: colors.divider }]}>
-          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: colors.primary }]} />
-        </View>
-        <Text style={[styles.progressText, { color: colors.textSecondary }]}>{Math.round(progress)}% complete</Text>
+      <View className={`h-1 ${mode === 'dark' ? 'bg-zinc-900' : 'bg-zinc-200'} w-full`}>
+        <View className="h-full bg-blue-600" style={{ width: `${progress}%` }} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView className="flex-1 px-6 pt-6" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Step 1: Loan Details */}
         {step === 1 && (
-          <View style={styles.stepContainer}>
-            <Text style={[styles.stepTitle, { color: colors.textPrimary }]}>Loan Details</Text>
-            <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>Choose your loan amount and repayment term</Text>
+          <View>
+            <Text className={`text-2xl font-sans-bold ${textColor} mb-2 tracking-tight`}>Loan Details</Text>
+            <Text className={`${subTextColor} text-sm mb-8 font-sans`}>Choose your loan amount and repayment term</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Loan Amount (NAD)</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { backgroundColor: colors.surface, borderColor: errors.amount ? colors.error : colors.divider, color: colors.textPrimary },
-                ]}
-                placeholder="5000"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numeric"
-                value={formData.amount}
-                onChangeText={(text) => setFormData({ ...formData, amount: text })}
-              />
-              {errors.amount && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.amount}</Text>
-              )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                Between {formatNAD(MIN_AMOUNT)} and {formatNAD(MAX_AMOUNT)}
-              </Text>
-            </View>
+            <NeoInput
+              label="LOAN AMOUNT (NAD)"
+              placeholder="5000"
+              keyboardType="numeric"
+              value={formData.amount}
+              onChangeText={(text) => setFormData({ ...formData, amount: text })}
+              error={errors.amount}
+              icon={<DollarSign size={20} color={mode === 'dark' ? "#71717a" : "#9ca3af"} />}
+              testID="amount-input"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Loan Term (months)</Text>
-              <View style={styles.pickerContainer}>
-                <TouchableOpacity
-                  style={[styles.picker, { borderColor: errors.term ? colors.error : colors.divider, backgroundColor: colors.surface }]}
-                  onPress={() => {
-                    Alert.alert('Select Loan Term', '', [
-                      { text: '1 month', onPress: () => setFormData({ ...formData, term: '1' }) },
-                      { text: '3 months', onPress: () => setFormData({ ...formData, term: '3' }) },
-                      { text: '5 months', onPress: () => setFormData({ ...formData, term: '5' }) },
-                      { text: 'Cancel', style: 'cancel' },
-                    ]);
-                  }}
-                >
-                  <Text style={[styles.pickerText, { color: formData.term ? colors.textPrimary : colors.textTertiary }]}>
-                    {formData.term ? `${formData.term} months` : 'Select term (1, 3, or 5)'}
-                  </Text>
-                </TouchableOpacity>
+            <View className="mb-6">
+              <Text className={`${subTextColor} text-xs font-sans-medium mb-2 ml-1`}>LOAN TERM</Text>
+              <View className="flex-row justify-between gap-2">
+                {[1, 3, 5].map((termValue) => (
+                  <TouchableOpacity
+                    key={termValue}
+                    onPress={() => setFormData({ ...formData, term: termValue.toString() })}
+                    className={`flex-1 py-3 px-2 rounded-xl border ${
+                      formData.term === termValue.toString()
+                        ? 'bg-blue-600/20 border-blue-500'
+                        : `${inputBg} ${borderColor}`
+                    }`}
+                    testID={termValue === 1 ? 'term-input' : undefined}
+                  >
+                    <Text
+                      className={`text-center font-sans-bold ${
+                        formData.term === termValue.toString() ? 'text-blue-400' : subTextColor
+                      }`}
+                    >
+                      {termValue} Month{termValue > 1 ? 's' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              {errors.term && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.term}</Text>
-              )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>Allowed: 1, 3, or 5 months</Text>
+              {errors.term && <Text className="text-red-400 text-xs mt-1 ml-1">{errors.term}</Text>}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Purpose of Loan</Text>
-              <TextInput
-                style={[
-                  styles.textArea,
-                  { backgroundColor: colors.surface, borderColor: errors.purpose ? colors.error : colors.divider, color: colors.textPrimary },
-                ]}
-                placeholder="e.g., Home improvement, education, medical expenses..."
-                placeholderTextColor={colors.textTertiary}
-                multiline
-                numberOfLines={4}
-                value={formData.purpose}
-                onChangeText={(text) => setFormData({ ...formData, purpose: text })}
-                maxLength={500}
-              />
-              {errors.purpose && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.purpose}</Text>
-              )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                {formData.purpose.length}/500 characters
-              </Text>
-            </View>
+            <NeoInput
+              label="PURPOSE OF LOAN"
+              placeholder="e.g., Home improvement, education..."
+              value={formData.purpose}
+              onChangeText={(text) => setFormData({ ...formData, purpose: text })}
+              error={errors.purpose}
+              multiline
+              numberOfLines={3}
+              containerClassName="h-32"
+              testID="purpose-input"
+            />
 
             {/* Loan Calculation Preview */}
             {loanDetails.amount > 0 && loanDetails.term > 0 && (
-              <View style={[styles.calculationCard, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.calculationTitle, { color: colors.textPrimary }]}>Estimated Repayment</Text>
-                <View style={styles.calculationRow}>
-                  <Text style={[styles.calculationLabel, { color: colors.textSecondary }]}>Monthly Payment:</Text>
-                  <Text style={[styles.calculationValue, { color: colors.textPrimary }]}>
-                    {formatNAD(loanDetails.monthlyPayment)}
-                  </Text>
+              <NeoCard variant="glass" className="mt-4 p-5">
+                <Text className={`${textColor} text-sm font-sans-bold tracking-tight mb-4`}>ESTIMATED REPAYMENT</Text>
+                
+                <View className="flex-row justify-between mb-3">
+                  <Text className={`${subTextColor} text-sm font-sans`}>Monthly Payment:</Text>
+                  <Text className={`${textColor} text-sm font-sans-bold tracking-tight`}>{formatNAD(loanDetails.monthlyPayment)}</Text>
                 </View>
-                <View style={styles.calculationRow}>
-                  <Text style={[styles.calculationLabel, { color: colors.textSecondary }]}>Total Repayment:</Text>
-                  <Text style={[styles.calculationValue, { color: colors.textPrimary }]}>
-                    {formatNAD(loanDetails.totalRepayment)}
-                  </Text>
+                
+                <View className="flex-row justify-between mb-3">
+                  <Text className={`${subTextColor} text-sm font-sans`}>Total Repayment:</Text>
+                  <Text className={`${textColor} text-sm font-sans-bold tracking-tight`}>{formatNAD(loanDetails.totalRepayment)}</Text>
                 </View>
-                <View style={styles.calculationRow}>
-                  <Text style={[styles.calculationLabel, { color: colors.textSecondary }]}>Interest Rate:</Text>
-                  <Text style={[styles.calculationValue, { color: colors.textPrimary }]}>{MAX_APR}% APR</Text>
+                
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} text-sm font-sans`}>Interest Rate:</Text>
+                  <Text className="text-emerald-500 text-sm font-sans-bold">{MAX_APR}% APR</Text>
                 </View>
-                <View style={[styles.aprNotice, { backgroundColor: `${colors.warning}1A` }]}>
-                  <AlertCircle color={colors.warning} size={16} />
-                  <Text style={[styles.aprNoticeText, { color: colors.warning }]}>
+
+                <View className="flex-row items-center bg-yellow-500/10 p-3 rounded-lg mt-4 border border-yellow-500/20">
+                  <AlertCircle color="#f59e0b" size={16} />
+                  <Text className="text-yellow-500 text-xs ml-2 flex-1 font-sans-medium">
                     Representative APR: up to {MAX_APR}% p.a.
                   </Text>
                 </View>
-              </View>
+              </NeoCard>
             )}
           </View>
         )}
 
         {/* Step 2: Financial Information */}
         {step === 2 && (
-          <View style={styles.stepContainer}>
-            <Text style={[styles.stepTitle, { color: colors.textPrimary }]}>Financial Information</Text>
-            <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>Tell us about your financial situation</Text>
+          <View>
+            <Text className={`text-2xl font-sans-bold ${textColor} mb-2 tracking-tight`}>Financial Info</Text>
+            <Text className={`${subTextColor} text-sm mb-8 font-sans`}>Tell us about your financial situation</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Employment Status</Text>
-              <View style={styles.pickerContainer}>
-                <TouchableOpacity
-                  style={[styles.picker, { borderColor: errors.employment_status ? colors.error : colors.divider, backgroundColor: colors.surface }]}
-                  onPress={() => {
-                    Alert.alert('Select Employment Status', '', [
-                      {
-                        text: 'Employed Full-time',
-                        onPress: () =>
-                          setFormData({ ...formData, employment_status: 'employed_full_time' }),
-                      },
-                      {
-                        text: 'Employed Part-time',
-                        onPress: () =>
-                          setFormData({ ...formData, employment_status: 'employed_part_time' }),
-                      },
-                      {
-                        text: 'Self-employed',
-                        onPress: () =>
-                          setFormData({ ...formData, employment_status: 'self_employed' }),
-                      },
-                      {
-                        text: 'Retired',
-                        onPress: () =>
-                          setFormData({ ...formData, employment_status: 'retired' }),
-                      },
-                      { text: 'Cancel', style: 'cancel' },
-                    ]);
-                  }}
-                >
-                  <Text style={[styles.pickerText, { color: formData.employment_status ? colors.textPrimary : colors.textTertiary }]}>
-                    {formData.employment_status
-                      ? formData.employment_status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
-                      : 'Select employment status'}
-                  </Text>
-                </TouchableOpacity>
+            <View className="mb-6">
+              <Text className={`${subTextColor} text-xs font-sans-medium mb-2 ml-1`}>EMPLOYMENT STATUS</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {[
+                  { label: 'Full-time', value: 'employed_full_time' },
+                  { label: 'Part-time', value: 'employed_part_time' },
+                  { label: 'Self-employed', value: 'self_employed' },
+                  { label: 'Retired', value: 'retired' },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    onPress={() => setFormData({ ...formData, employment_status: option.value })}
+                    className={`py-2.5 px-4 rounded-full border mb-2 ${
+                      formData.employment_status === option.value
+                        ? 'bg-blue-600/20 border-blue-500'
+                        : `${inputBg} ${borderColor}`
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm font-sans-medium ${
+                        formData.employment_status === option.value ? 'text-blue-400' : subTextColor
+                      }`}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
               {errors.employment_status && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.employment_status}</Text>
+                <Text className="text-red-400 text-xs mt-1 ml-1">{errors.employment_status}</Text>
               )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Monthly Income (NAD)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: errors.monthly_income ? colors.error : colors.divider, color: colors.textPrimary }]}
-                placeholder="5000"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numeric"
-                value={formData.monthly_income}
-                onChangeText={(text) => setFormData({ ...formData, monthly_income: text })}
-              />
-              {errors.monthly_income && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.monthly_income}</Text>
-              )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                Minimum {formatNAD(MIN_INCOME)} required
-              </Text>
-            </View>
+            <NeoInput
+              label="MONTHLY INCOME (NAD)"
+              placeholder="5000"
+              keyboardType="numeric"
+              value={formData.monthly_income}
+              onChangeText={(text) => setFormData({ ...formData, monthly_income: text })}
+              error={errors.monthly_income}
+              icon={<DollarSign size={20} color={mode === 'dark' ? "#71717a" : "#9ca3af"} />}
+              testID="income-input"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Monthly Expenses (NAD)</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: errors.monthly_expenses ? colors.error : colors.divider, color: colors.textPrimary }]}
-                placeholder="3000"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numeric"
-                value={formData.monthly_expenses}
-                onChangeText={(text) => setFormData({ ...formData, monthly_expenses: text })}
-              />
-              {errors.monthly_expenses && (
-                <Text style={[styles.errorText, { color: colors.error }]}>{errors.monthly_expenses}</Text>
-              )}
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                Include rent, utilities, food, transport, etc.
-              </Text>
-            </View>
+            <NeoInput
+              label="MONTHLY EXPENSES (NAD)"
+              placeholder="3000"
+              keyboardType="numeric"
+              value={formData.monthly_expenses}
+              onChangeText={(text) => setFormData({ ...formData, monthly_expenses: text })}
+              error={errors.monthly_expenses}
+              icon={<CreditCard size={20} color={mode === 'dark' ? "#71717a" : "#9ca3af"} />}
+              testID="expenses-input"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Existing Debt (NAD) - Optional</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.divider, color: colors.textPrimary }]}
-                placeholder="0"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numeric"
-                value={formData.existing_debt}
-                onChangeText={(text) => setFormData({ ...formData, existing_debt: text })}
-              />
-              <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                Total monthly debt payments (loans, credit cards, etc.)
-              </Text>
-            </View>
+            <NeoInput
+              label="EXISTING DEBT (NAD)"
+              placeholder="0"
+              keyboardType="numeric"
+              value={formData.existing_debt}
+              onChangeText={(text) => setFormData({ ...formData, existing_debt: text })}
+              icon={<AlertCircle size={20} color={mode === 'dark' ? "#71717a" : "#9ca3af"} />}
+            />
           </View>
         )}
 
         {/* Step 3: Review & Submit */}
         {step === 3 && (
-          <View style={styles.stepContainer}>
-            <Text style={[styles.stepTitle, { color: colors.textPrimary }]}>Review & Submit</Text>
-            <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>Please review your application details</Text>
+          <View>
+            <Text className={`text-2xl font-sans-bold ${textColor} mb-2 tracking-tight`}>Review</Text>
+            <Text className={`${subTextColor} text-sm mb-8 font-sans`}>Please review your application details</Text>
 
-            <View style={[styles.reviewCard, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.reviewSectionTitle, { color: colors.textPrimary }]}>Loan Details</Text>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Amount:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{formatNAD(loanDetails.amount)}</Text>
+            <NeoCard variant="glass" className="mb-4 p-5">
+              <Text className={`${subTextColor} text-xs font-sans-medium mb-4 uppercase tracking-wider`}>Loan Details</Text>
+              <View className="space-y-3">
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Amount</Text>
+                  <Text className={`${textColor} font-sans-bold tracking-tight`}>{formatNAD(loanDetails.amount)}</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Term</Text>
+                  <Text className={`${textColor} font-sans-medium`}>{loanDetails.term} months</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Purpose</Text>
+                  <Text className={`${textColor} font-sans-medium flex-1 text-right ml-4`} numberOfLines={1}>{formData.purpose}</Text>
+                </View>
               </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Term:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{loanDetails.term} months</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Purpose:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{formData.purpose}</Text>
-              </View>
-            </View>
+            </NeoCard>
 
-            <View style={[styles.reviewCard, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.reviewSectionTitle, { color: colors.textPrimary }]}>Financial Information</Text>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Employment:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>
-                  {formData.employment_status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                </Text>
+            <NeoCard variant="glass" className="mb-4 p-5">
+              <Text className={`${subTextColor} text-xs font-sans-medium mb-4 uppercase tracking-wider`}>Financials</Text>
+              <View className="space-y-3">
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Employment</Text>
+                  <Text className={`${textColor} font-sans-medium capitalize`}>
+                    {formData.employment_status.replace(/_/g, ' ')}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Income</Text>
+                  <Text className={`${textColor} font-sans-bold tracking-tight`}>{formatNAD(parseFloat(formData.monthly_income))}</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Expenses</Text>
+                  <Text className={`${textColor} font-sans-bold tracking-tight`}>{formatNAD(parseFloat(formData.monthly_expenses))}</Text>
+                </View>
               </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Monthly Income:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{formatNAD(parseFloat(formData.monthly_income))}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Monthly Expenses:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{formatNAD(parseFloat(formData.monthly_expenses))}</Text>
-              </View>
-            </View>
+            </NeoCard>
 
-            <View style={[styles.reviewCard, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.reviewSectionTitle, { color: colors.textPrimary }]}>Repayment Summary</Text>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Monthly Payment:</Text>
-                <Text style={[styles.reviewValue, { color: colors.primary, fontWeight: '600' }]}>
-                  {formatNAD(loanDetails.monthlyPayment)}
-                </Text>
+            <NeoCard variant="elevated" className="mb-6 p-5 border-blue-500/20">
+              <Text className={`${subTextColor} text-xs font-sans-medium mb-4 uppercase tracking-wider`}>Summary</Text>
+              <View className="space-y-3">
+                <View className="flex-row justify-between items-center">
+                  <Text className={`${subTextColor} font-sans`}>Monthly Payment</Text>
+                  <Text className="text-blue-500 font-sans-bold text-xl tracking-tight">
+                    {formatNAD(loanDetails.monthlyPayment)}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className={`${subTextColor} font-sans`}>Total Repayment</Text>
+                  <Text className={`${textColor} font-sans-bold tracking-tight`}>{formatNAD(loanDetails.totalRepayment)}</Text>
+                </View>
               </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Total Repayment:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{formatNAD(loanDetails.totalRepayment)}</Text>
-              </View>
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Interest Rate:</Text>
-                <Text style={[styles.reviewValue, { color: colors.textPrimary }]}>{MAX_APR}% APR</Text>
-              </View>
-            </View>
+            </NeoCard>
 
-            <View style={[styles.finalNotice, { backgroundColor: `${colors.primary}1A` }]}>
-              <AlertCircle color={colors.primary} size={20} />
-              <Text style={[styles.finalNoticeText, { color: colors.primary }]}>
+            <View className="flex-row items-start p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-8">
+              <Check color="#3b82f6" size={20} />
+              <Text className="ml-3 text-blue-500 text-xs flex-1 leading-5 font-sans">
                 By submitting this application, you confirm that all information provided is accurate
                 and complete. Your application will be reviewed within 24-48 hours.
               </Text>
@@ -564,282 +527,28 @@ export default function LoanApplicationFormScreen() {
       </ScrollView>
 
       {/* Footer Buttons */}
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.divider }]}>
+      <View className={`px-6 py-4 ${headerBg} border-t ${borderColor}`}>
         {step < 3 ? (
-          <PrimaryButton
-            title="Next"
+          <NeoButton
+            title="Next Step"
             onPress={handleNext}
             variant="primary"
+            size="lg"
           />
         ) : (
-          <PrimaryButton
+          <NeoButton
             title={loading ? 'Submitting...' : 'Submit Application'}
             onPress={handleSubmit}
             loading={loading}
-            variant="primary"
+            variant="success"
+            size="lg"
+            className="bg-emerald-500/10 border-emerald-500/50"
+            textClassName="text-emerald-500"
           />
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  progressContainer: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#2563eb',
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 8,
-    textAlign: 'right',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  stepContainer: {
-    marginBottom: 16,
-  },
-  stepTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  stepDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 24,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#111827',
-  },
-  inputError: {
-    borderColor: '#ef4444',
-  },
-  textArea: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#111827',
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  pickerContainer: {
-    backgroundColor: '#ffffff',
-  },
-  picker: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-  },
-  pickerText: {
-    fontSize: 16,
-    color: '#111827',
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#ef4444',
-    marginTop: 4,
-  },
-  helperText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  calculationCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  calculationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  calculationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  calculationLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  calculationValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  aprNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef3c7',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    gap: 8,
-  },
-  aprNoticeText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#92400e',
-  },
-  reviewCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  reviewSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  reviewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  reviewLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    flex: 1,
-  },
-  reviewValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
-    flex: 1,
-    textAlign: 'right',
-  },
-  reviewHighlight: {
-    color: '#2563eb',
-    fontWeight: '600',
-  },
-  finalNotice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#eff6ff',
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
-  },
-  finalNoticeText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#1e40af',
-    lineHeight: 18,
-  },
-  footer: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 16,
-    gap: 8,
-  },
-  nextButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10b981',
-    borderRadius: 8,
-    padding: 16,
-    gap: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#9ca3af',
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-});
+

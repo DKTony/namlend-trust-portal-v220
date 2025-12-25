@@ -65,12 +65,14 @@ export const BottomSheet = forwardRef<GorhomBottomSheet, BottomSheetProps>(
         onClose={onClose}
         backdropComponent={renderBackdrop}
         backgroundStyle={{
-          backgroundColor: colors.background,
-          borderTopLeftRadius: tokens.radius['2xl'],
-          borderTopRightRadius: tokens.radius['2xl'],
+          backgroundColor: '#18181b', // zinc-900
+          borderTopLeftRadius: 24, // tokens.radius['2xl']
+          borderTopRightRadius: 24,
+          borderWidth: 1,
+          borderColor: '#27272a', // zinc-800
         }}
         handleIndicatorStyle={{
-          backgroundColor: colors.textTertiary,
+          backgroundColor: '#3f3f46', // zinc-700
           width: 40,
           height: 4,
         }}
@@ -90,7 +92,7 @@ export const BottomSheet = forwardRef<GorhomBottomSheet, BottomSheetProps>(
                   paddingHorizontal: tokens.spacing.xl,
                   paddingBottom: tokens.spacing.base,
                   borderBottomWidth: 1,
-                  borderBottomColor: colors.divider,
+                  borderBottomColor: '#27272a', // zinc-800
                 },
               ]}
             >
@@ -98,10 +100,11 @@ export const BottomSheet = forwardRef<GorhomBottomSheet, BottomSheetProps>(
                 style={[
                   styles.title,
                   {
-                    color: colors.textPrimary,
-                    fontSize: tokens.typography.h1.fontSize,
-                    fontWeight: tokens.typography.h1.fontWeight,
-                    lineHeight: tokens.typography.h1.lineHeight,
+                    color: '#ffffff', // textPrimary
+                    fontSize: 20, // h2
+                    fontWeight: '700',
+                    fontFamily: 'Inter-Bold',
+                    letterSpacing: -0.5,
                   },
                 ]}
               >

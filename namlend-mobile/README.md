@@ -279,12 +279,32 @@ npm run test:e2e
 - [ ] Build production bundles
 - [ ] Submit to app stores
 
+## Documentation
+
+### Project Documentation
+- **`docs/context.md`** - Comprehensive technical handover document
+- **`docs/ARCHITECTURE_INTEGRATION.md`** - Backend integration details
+- **`COMPLETION_SUMMARY.md`** - Project completion status
+- **`NEO_FINTECH_PORT_SUMMARY.md`** - Design system porting details
+- **`DESIGN_SYSTEM.md`** - Design token reference
+- **`DEPLOYMENT_GUIDE.md`** - Deployment instructions
+- **`QUICK_START.md`** - Quick start guide
+- **`TEST_PLAN.md`** - Testing strategy
+
+### External Resources
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Supabase Documentation](https://supabase.com/docs)
+- [NativeWind Documentation](https://www.nativewind.dev/)
+- [TailwindCSS Documentation](https://tailwindcss.com/)
+
 ## Support
 
 For issues or questions:
 - Technical Documentation: `/docs`
 - Backend API: Supabase Dashboard
 - Mobile Issues: GitHub Issues
+- Design System: `DESIGN_SYSTEM.md`
 
 ## License
 

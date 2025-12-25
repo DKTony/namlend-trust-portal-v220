@@ -6,8 +6,10 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Lock, Fingerprint } from 'lucide-react-native';
+import { NeoButton } from './neo/NeoButton';
+import { AmbientGlow } from './neo/AmbientGlow';
 
 interface SessionLockScreenProps {
   onUnlock: () => Promise<boolean>;
@@ -26,91 +28,37 @@ export default function SessionLockScreen({ onUnlock, biometricAvailable }: Sess
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Lock color="#2563eb" size={64} />
+    <View className="flex-1 bg-zinc-950 justify-center items-center px-8">
+      <AmbientGlow position="top" />
+      
+      <View className="items-center w-full max-w-sm">
+        <View className="w-32 h-32 rounded-full bg-zinc-900 border-2 border-zinc-800 items-center justify-center mb-8 shadow-lg shadow-black/50">
+          <Lock color="#3b82f6" size={64} />
         </View>
 
-        <Text style={styles.title}>Session Locked</Text>
-        <Text style={styles.subtitle}>
+        <Text className="text-3xl font-sans-bold text-white mb-3 text-center tracking-tight">
+          Session Locked
+        </Text>
+        <Text className="text-zinc-400 text-center font-sans text-base leading-6 mb-8">
           Your session has been locked due to inactivity
         </Text>
 
-        <TouchableOpacity
-          style={styles.unlockButton}
-          onPress={handleUnlock}
-          disabled={unlocking}
-        >
-          {biometricAvailable && <Fingerprint color="#ffffff" size={24} />}
-          <Text style={styles.unlockButtonText}>
-            {unlocking ? 'Unlocking...' : biometricAvailable ? 'Unlock with Biometrics' : 'Unlock'}
-          </Text>
-        </TouchableOpacity>
+        <View className="w-full">
+          <NeoButton
+            title={unlocking ? 'Unlocking...' : biometricAvailable ? 'Unlock with Biometrics' : 'Unlock'}
+            onPress={handleUnlock}
+            disabled={unlocking}
+            variant="primary"
+            size="lg"
+            icon={biometricAvailable ? <Fingerprint color="#ffffff" size={24} /> : undefined}
+            className="shadow-lg shadow-blue-900/20"
+          />
+        </View>
 
-        <Text style={styles.securityNote}>
+        <Text className="text-zinc-600 text-xs text-center mt-6 font-sans">
           This helps keep your account secure
         </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    maxWidth: 400,
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#eff6ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-  unlockButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    backgroundColor: '#2563eb',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    minWidth: 250,
-    marginBottom: 16,
-  },
-  unlockButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  securityNote: {
-    fontSize: 13,
-    color: '#9ca3af',
-    textAlign: 'center',
-  },
-});

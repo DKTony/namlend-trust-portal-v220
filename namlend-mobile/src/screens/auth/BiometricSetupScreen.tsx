@@ -1,19 +1,20 @@
 /**
  * Biometric Setup Screen
- * Version: v2.4.2
+ * Version: v2.7.0 (Neo-Fintech Design)
  */
 
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
 } from 'react-native';
-import { Fingerprint, Check } from 'lucide-react-native';
+import { Fingerprint, Check, Shield } from 'lucide-react-native';
 import { AuthService } from '../../services/authService';
 import { useAuthStore } from '../../store/authStore';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 
 const BiometricSetupScreen: React.FC = () => {
   const [isEnabled, setIsEnabled] = useState(false);
@@ -50,111 +51,75 @@ const BiometricSetupScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Icon */}
-        <View style={styles.iconContainer}>
+    <View className="flex-1 bg-zinc-950 px-6 justify-center">
+      <AmbientGlow position="top" />
+      
+      <View className="items-center mb-10">
+        <View className={`w-24 h-24 rounded-full items-center justify-center mb-6 border-2 shadow-lg shadow-black/50 ${
+          isEnabled 
+            ? 'bg-emerald-500/10 border-emerald-500/30' 
+            : 'bg-blue-600/10 border-blue-500/30'
+        }`}>
           {isEnabled ? (
-            <Check color="#10b981" size={80} />
+            <Check color="#10b981" size={48} />
           ) : (
-            <Fingerprint color="#2563eb" size={80} />
+            <Fingerprint color="#3b82f6" size={48} />
           )}
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>
-          {isEnabled ? 'Biometric Enabled' : 'Enable Biometric Login'}
+        <Text className="text-3xl font-sans-bold text-white mb-3 text-center tracking-tight">
+          {isEnabled ? 'Secured & Ready' : 'Secure Access'}
         </Text>
-
-        {/* Description */}
-        <Text style={styles.description}>
+        
+        <Text className="text-zinc-400 text-center font-sans text-base leading-6 px-4">
           {isEnabled
-            ? 'You can now use biometric authentication to quickly and securely access your account.'
-            : 'Use Face ID, Touch ID, or Fingerprint to quickly and securely access your account.'}
+            ? 'Your account is now protected with biometric security.'
+            : 'Enable Face ID or Fingerprint for faster, secure access to your financial dashboard.'}
         </Text>
+      </View>
 
-        {/* Actions */}
+      <NeoCard className="bg-zinc-900 border-zinc-800 mb-8 p-6">
+        <View className="flex-row items-center mb-4">
+          <Shield size={20} color="#71717a" className="mr-3" />
+          <Text className="text-zinc-200 font-sans-medium text-sm">Bank-Grade Security</Text>
+        </View>
+        <Text className="text-zinc-500 text-xs leading-5 font-sans">
+          Your biometric data is stored securely on your device and never shared with NamLend servers. We use native device security enclave.
+        </Text>
+      </NeoCard>
+
+      <View className="space-y-4">
         {!isEnabled ? (
           <>
-            <TouchableOpacity
-              style={styles.button}
+            <NeoButton
+              title="Enable Biometrics"
               onPress={handleEnableBiometric}
-            >
-              <Text style={styles.buttonText}>Enable Biometric Login</Text>
-            </TouchableOpacity>
+              variant="primary"
+              size="lg"
+              icon={<Fingerprint size={20} color="white" />}
+              className="shadow-lg shadow-blue-900/20"
+            />
 
-            <TouchableOpacity
-              style={styles.skipButton}
+            <NeoButton
+              title="Skip for Now"
               onPress={handleSkip}
-            >
-              <Text style={styles.skipButtonText}>Skip for Now</Text>
-            </TouchableOpacity>
+              variant="ghost"
+              size="md"
+            />
           </>
         ) : (
-          <TouchableOpacity
-            style={styles.button}
+          <NeoButton
+            title="Continue to Dashboard"
             onPress={handleSkip}
-          >
-            <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
+            variant="success"
+            size="lg"
+            className="bg-emerald-600 border-emerald-500"
+          />
         )}
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-  iconContainer: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 48,
-    lineHeight: 24,
-  },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  skipButton: {
-    width: '100%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  skipButtonText: {
-    color: '#6b7280',
-    fontSize: 16,
-  },
-});
-
 export default BiometricSetupScreen;
+

@@ -1,10 +1,11 @@
 /**
  * Authentication Stack Navigator
- * Version: v2.4.2
+ * Version: v2.7.0 - Theme system integration
  */
 
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTheme } from '../theme';
 
 // Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -18,11 +19,14 @@ export type AuthStackParamList = {
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 const AuthStack: React.FC = () => {
+  const { colors } = useTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen 

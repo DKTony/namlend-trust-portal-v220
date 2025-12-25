@@ -49,18 +49,24 @@ export class ApprovalService {
           .from('approval_requests')
           .select('*')
           .order('created_at', { ascending: false });
+        
         if (filters?.status) q = q.eq('status', filters.status);
         if (filters?.priority) q = q.eq('priority', filters.priority);
         if (filters?.limit) q = q.limit(filters.limit);
-        const { data: base, error: baseErr } = await q;
+        
+        const { data, error: baseErr } = await q;
         if (baseErr) throw baseErr;
+        
+        const base = data as ApprovalRequest[] | null;
         const userIds = Array.from(new Set((base || []).map(r => r.user_id).filter(Boolean)));
         if (!userIds.length) return base as any;
+        
         const { data: profiles } = await supabase
           .from('profiles')
           .select('*')
           .in('user_id', userIds);
-        const map = new Map((profiles || []).map(p => [p.user_id, p]));
+          
+        const map = new Map((profiles || []).map((p: any) => [p.user_id, p]));
         const merged = (base || []).map(r => ({ ...r, profile: map.get(r.user_id) }));
         return merged as any;
       }

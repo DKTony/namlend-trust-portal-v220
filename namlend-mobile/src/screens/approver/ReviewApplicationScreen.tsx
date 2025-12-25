@@ -1,6 +1,6 @@
 /**
  * Review Application Screen with Approve/Reject Actions
- * Version: v2.4.2
+ * Version: v2.7.0 - Neo-Fintech Design
  */
 
 import React, { useState } from 'react';
@@ -10,19 +10,22 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { CheckCircle, XCircle, User, DollarSign, Briefcase, FileText } from 'lucide-react-native';
+import { CheckCircle, XCircle, User, DollarSign, Briefcase, FileText, ChevronLeft, Calendar } from 'lucide-react-native';
 import { useApprovalQueue, useApproveRequest, useRejectRequest } from '../../hooks/useApprovals';
 import { formatNAD, formatPercentage } from '../../utils/currency';
+import { useTheme } from '../../theme';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoCard } from '../../components/neo/NeoCard';
 
 const ReviewApplicationScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { requestId } = route.params as { requestId: string };
+  const { colors } = useTheme();
 
   const { data: queue } = useApprovalQueue();
   const approveRequest = useApproveRequest();
@@ -102,342 +105,229 @@ const ReviewApplicationScreen: React.FC = () => {
     );
   };
 
+  const getPriorityStyle = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' };
+      case 'high':
+        return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' };
+      case 'normal':
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' };
+      default:
+        return { bg: 'bg-zinc-800', text: 'text-zinc-400', border: 'border-zinc-700' };
+    }
+  };
+
   if (!application) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View className="flex-1 bg-zinc-950 justify-center items-center">
+        <ActivityIndicator size="large" color="#3b82f6" />
       </View>
     );
   }
 
   const loanData = application.request_data;
   const profile = application.profile;
+  const priorityStyle = getPriorityStyle(application.priority);
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Application Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {application.request_type.replace('_', ' ').toUpperCase()}
+    <View className="flex-1 bg-zinc-950">
+      {/* Header */}
+      <View className="px-4 pt-16 pb-4 bg-zinc-900 border-b border-zinc-800 flex-row items-center justify-between">
+        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full bg-zinc-800 border border-zinc-700">
+          <ChevronLeft color="#fff" size={24} />
+        </TouchableOpacity>
+        <Text className="text-white text-lg font-sans-bold tracking-tight">
+          Review Application
         </Text>
-        <View style={[styles.priorityBadge, getPriorityStyle(application.priority)]}>
-          <Text style={styles.priorityText}>{application.priority.toUpperCase()}</Text>
-        </View>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Loan Details */}
-      {loanData && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Loan Details</Text>
-          <View style={styles.card}>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Requested Amount</Text>
-              <Text style={styles.amountValue}>{formatNAD(loanData.amount || 0)}</Text>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+        {/* Application Header Card */}
+        <NeoCard className="mb-6 bg-zinc-900 border-zinc-800 p-5">
+          <View className="flex-row justify-between items-start mb-4">
+            <View>
+              <Text className="text-zinc-500 text-xs font-sans-medium uppercase tracking-wider mb-1">Request Type</Text>
+              <Text className="text-white text-xl font-sans-bold uppercase tracking-tight">
+                {application.request_type.replace('_', ' ')}
+              </Text>
             </View>
-            <DetailRow label="Term" value={`${loanData.term || loanData.term_months || 0} months`} />
-            <DetailRow 
-              label="Interest Rate" 
-              value={formatPercentage(loanData.interest_rate || loanData.interestRate || 0)} 
-            />
-            <DetailRow 
-              label="Monthly Payment" 
-              value={formatNAD(loanData.monthly_payment || loanData.monthlyPayment || 0)} 
-            />
-            <DetailRow 
-              label="Total Repayment" 
-              value={formatNAD(loanData.total_repayment || loanData.totalRepayment || 0)} 
-            />
-            {(loanData.purpose || loanData.loanPurpose) && (
-              <DetailRow 
-                label="Purpose" 
-                value={loanData.purpose || loanData.loanPurpose || ''} 
-              />
-            )}
+            <View className={`px-3 py-1 rounded-full border ${priorityStyle.bg} ${priorityStyle.border}`}>
+              <Text className={`text-[10px] font-sans-bold uppercase tracking-wide ${priorityStyle.text}`}>
+                {application.priority}
+              </Text>
+            </View>
           </View>
-        </View>
-      )}
-
-      {/* Applicant Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Applicant Information</Text>
-        <View style={styles.card}>
-          <DetailRow 
-            icon={<User color="#6b7280" size={20} />}
-            label="Name" 
-            value={profile ? `${profile.first_name} ${profile.last_name}` : 'N/A'} 
-          />
-          <DetailRow 
-            icon={<FileText color="#6b7280" size={20} />}
-            label="Email" 
-            value={application.user?.email || 'N/A'} 
-          />
-          {profile?.phone_number && (
-            <DetailRow 
-              icon={<FileText color="#6b7280" size={20} />}
-              label="Phone" 
-              value={profile.phone_number} 
-            />
-          )}
-          {profile?.employment_status && (
-            <DetailRow 
-              icon={<Briefcase color="#6b7280" size={20} />}
-              label="Employment" 
-              value={profile.employment_status} 
-            />
-          )}
-          {profile?.monthly_income && (
-            <DetailRow 
-              icon={<DollarSign color="#6b7280" size={20} />}
-              label="Monthly Income" 
-              value={formatNAD(profile.monthly_income)} 
-            />
-          )}
-          {profile?.credit_score && (
-            <DetailRow 
-              label="Credit Score" 
-              value={`${profile.credit_score} (${profile.risk_category || 'Standard'})`} 
-            />
-          )}
-        </View>
-      </View>
-
-      {/* Application Timeline */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Timeline</Text>
-        <View style={styles.card}>
-          <DetailRow 
-            label="Submitted" 
-            value={new Date(application.created_at).toLocaleString('en-NA')} 
-          />
-          {application.reviewed_at && (
-            <DetailRow 
-              label="Reviewed" 
-              value={new Date(application.reviewed_at).toLocaleString('en-NA')} 
-            />
-          )}
-        </View>
-      </View>
-
-      {/* Review Notes */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Review Notes</Text>
-        <TextInput
-          style={styles.notesInput}
-          placeholder="Add notes or reason for decision..."
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-      </View>
-
-      {/* Action Buttons */}
-      {application.status === 'pending' || application.status === 'under_review' ? (
-        <View style={styles.actionSection}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.rejectButton, isProcessing && styles.buttonDisabled]}
-            onPress={handleReject}
-            disabled={isProcessing}
-          >
-            <XCircle color="#ffffff" size={20} />
-            <Text style={styles.actionButtonText}>
-              {isProcessing ? 'Processing...' : 'Reject'}
+          
+          <View className="flex-row items-center">
+            <Calendar size={14} color="#71717a" className="mr-2" />
+            <Text className="text-zinc-500 text-xs font-sans">
+              Submitted: {new Date(application.created_at).toLocaleString('en-NA')}
             </Text>
-          </TouchableOpacity>
+          </View>
+        </NeoCard>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.approveButton, isProcessing && styles.buttonDisabled]}
-            onPress={handleApprove}
-            disabled={isProcessing}
-          >
-            <CheckCircle color="#ffffff" size={20} />
-            <Text style={styles.actionButtonText}>
-              {isProcessing ? 'Processing...' : 'Approve'}
+        {/* Loan Details */}
+        {loanData && (
+          <View className="mb-6">
+            <Text className="text-zinc-500 text-xs font-sans-medium uppercase mb-3 ml-1 tracking-wider">Loan Details</Text>
+            <NeoCard className="bg-zinc-900 border-zinc-800 p-5">
+              <View className="border-b border-zinc-800 pb-4 mb-4">
+                <Text className="text-zinc-400 text-sm mb-1 font-sans">Requested Amount</Text>
+                <Text className="text-blue-400 text-3xl font-sans-bold tracking-tighter">
+                  {formatNAD(loanData.amount || 0)}
+                </Text>
+              </View>
+              
+              <View className="space-y-3">
+                <DetailRow label="Term" value={`${loanData.term || loanData.term_months || 0} months`} />
+                <DetailRow 
+                  label="Interest Rate" 
+                  value={formatPercentage(loanData.interest_rate || loanData.interestRate || 0)} 
+                />
+                <DetailRow 
+                  label="Monthly Payment" 
+                  value={formatNAD(loanData.monthly_payment || loanData.monthlyPayment || 0)} 
+                />
+                <DetailRow 
+                  label="Total Repayment" 
+                  value={formatNAD(loanData.total_repayment || loanData.totalRepayment || 0)} 
+                />
+                {(loanData.purpose || loanData.loanPurpose) && (
+                  <DetailRow 
+                    label="Purpose" 
+                    value={loanData.purpose || loanData.loanPurpose || ''} 
+                  />
+                )}
+              </View>
+            </NeoCard>
+          </View>
+        )}
+
+        {/* Applicant Information */}
+        <View className="mb-6">
+          <Text className="text-zinc-500 text-xs font-sans-medium uppercase mb-3 ml-1 tracking-wider">Applicant Profile</Text>
+          <NeoCard className="bg-zinc-900 border-zinc-800 p-5">
+            <View className="space-y-4">
+              <DetailRow 
+                icon={<User color="#71717a" size={18} />}
+                label="Name" 
+                value={profile ? `${profile.first_name} ${profile.last_name}` : 'N/A'} 
+              />
+              <DetailRow 
+                icon={<FileText color="#71717a" size={18} />}
+                label="Email" 
+                value={application.user?.email || 'N/A'} 
+              />
+              {profile?.phone_number && (
+                <DetailRow 
+                  icon={<FileText color="#71717a" size={18} />}
+                  label="Phone" 
+                  value={profile.phone_number} 
+                />
+              )}
+              {profile?.employment_status && (
+                <DetailRow 
+                  icon={<Briefcase color="#71717a" size={18} />}
+                  label="Employment" 
+                  value={profile.employment_status.replace(/_/g, ' ')} 
+                  valueClassName="capitalize"
+                />
+              )}
+              {profile?.monthly_income && (
+                <DetailRow 
+                  icon={<DollarSign color="#71717a" size={18} />}
+                  label="Monthly Income" 
+                  value={formatNAD(profile.monthly_income)} 
+                />
+              )}
+              {profile?.credit_score && (
+                <DetailRow 
+                  label="Credit Score" 
+                  value={`${profile.credit_score}`}
+                  subValue={profile.risk_category || 'Standard'}
+                />
+              )}
+            </View>
+          </NeoCard>
+        </View>
+
+        {/* Review Notes */}
+        <View className="mb-6">
+          <Text className="text-zinc-500 text-xs font-sans-medium uppercase mb-3 ml-1 tracking-wider">Review Notes</Text>
+          <TextInput
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-zinc-100 text-base font-sans min-h-[120px]"
+            placeholder="Add notes or reason for decision..."
+            placeholderTextColor="#52525b"
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+        </View>
+      </ScrollView>
+
+      {/* Action Footer */}
+      <View className="absolute bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-6 pb-8">
+        {application.status === 'pending' || application.status === 'under_review' ? (
+          <View className="flex-row gap-4">
+            <View className="flex-1">
+              <NeoButton
+                title="Reject"
+                onPress={handleReject}
+                variant="danger"
+                size="lg"
+                loading={isProcessing}
+                icon={<XCircle color="#f87171" size={20} />}
+              />
+            </View>
+
+            <View className="flex-1">
+              <NeoButton
+                title="Approve"
+                onPress={handleApprove}
+                variant="success"
+                size="lg"
+                loading={isProcessing}
+                icon={<CheckCircle color="#34d399" size={20} />}
+                className="bg-emerald-600/20 border-emerald-500"
+                textClassName="text-emerald-400"
+              />
+            </View>
+          </View>
+        ) : (
+          <View className="items-center py-2">
+            <Text className="text-zinc-500 font-sans-medium italic">
+              This application has been {application.status}
             </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.statusSection}>
-          <Text style={styles.statusText}>
-            This application has been {application.status}
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+          </View>
+        )}
+      </View>
+    </View>
   );
 };
 
 const DetailRow: React.FC<{ 
   icon?: React.ReactNode; 
   label: string; 
-  value: string 
-}> = ({ icon, label, value }) => (
-  <View style={styles.detailRow}>
-    <View style={styles.detailLeft}>
+  value: string;
+  subValue?: string;
+  valueClassName?: string;
+}> = ({ icon, label, value, subValue, valueClassName = '' }) => (
+  <View className="flex-row justify-between items-center py-1">
+    <View className="flex-row items-center gap-3 flex-1">
       {icon}
-      <Text style={styles.detailLabel}>{label}</Text>
+      <Text className="text-zinc-400 text-sm font-sans">{label}</Text>
     </View>
-    <Text style={styles.detailValue}>{value}</Text>
+    <View className="items-end flex-1">
+      <Text className={`text-zinc-100 text-sm font-sans-medium ${valueClassName}`}>{value}</Text>
+      {subValue && (
+        <Text className="text-zinc-500 text-xs font-sans">{subValue}</Text>
+      )}
+    </View>
   </View>
 );
-
-const getPriorityStyle = (priority: string) => {
-  switch (priority) {
-    case 'urgent':
-      return { backgroundColor: '#fecaca' };
-    case 'high':
-      return { backgroundColor: '#fed7aa' };
-    case 'normal':
-      return { backgroundColor: '#fef3c7' };
-    default:
-      return { backgroundColor: '#e5e7eb' };
-  }
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  priorityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  priorityText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#1f2937',
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  amountRow: {
-    paddingBottom: 16,
-    marginBottom: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#e5e7eb',
-  },
-  amountLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 8,
-  },
-  amountValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2563eb',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  detailLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-    textAlign: 'right',
-    flex: 1,
-  },
-  notesInput: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 14,
-    color: '#1f2937',
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    minHeight: 100,
-  },
-  actionSection: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 12,
-    paddingBottom: 32,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  approveButton: {
-    backgroundColor: '#10b981',
-  },
-  rejectButton: {
-    backgroundColor: '#ef4444',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  actionButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  statusSection: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  statusText: {
-    fontSize: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-});
 
 export default ReviewApplicationScreen;

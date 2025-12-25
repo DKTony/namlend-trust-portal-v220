@@ -1,6 +1,6 @@
 /**
  * Profile Edit Screen
- * Version: v2.7.1 - Theme system integration
+ * Version: v2.7.1 - Neo-Fintech Design
  * 
  * Allows users to edit their profile information
  * Schema-aligned with live profiles table
@@ -10,19 +10,22 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Save } from 'lucide-react-native';
+import { ArrowLeft, User, Phone, FileText, Briefcase, DollarSign } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabaseClient';
 import { useTheme } from '../../theme';
-import { PrimaryButton } from '../../components/ui';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoInput } from '../../components/neo/NeoInput';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 
 interface ProfileFormData {
   first_name: string;
@@ -34,7 +37,7 @@ interface ProfileFormData {
 }
 
 export default function ProfileEditScreen() {
-  const { colors, tokens } = useTheme();
+  const { colors, mode } = useTheme();
   const navigation = useNavigation();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,17 @@ export default function ProfileEditScreen() {
     monthly_income: '',
   });
   const [errors, setErrors] = useState<Partial<ProfileFormData>>({});
+
+  // Theme styles
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const headerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-white';
+  const borderColor = mode === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-500' : 'text-zinc-500';
+  const inputBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const iconColor = mode === 'dark' ? '#71717a' : '#9ca3af';
+  const headerIconColor = mode === 'dark' ? '#fff' : '#000';
+  const headerIconBg = mode === 'dark' ? 'bg-zinc-900 border-zinc-800' : 'bg-zinc-100 border-zinc-200';
 
   useEffect(() => {
     loadProfile();
@@ -173,111 +187,90 @@ export default function ProfileEditScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View className={`flex-1 ${containerBg} justify-center items-center`}>
+        <ActivityIndicator size="large" color="#3b82f6" />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className={`flex-1 ${containerBg}`}
+    >
+      {mode === 'dark' && <AmbientGlow position="top" />}
+      
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.divider }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft color={colors.textPrimary} size={24} />
+      <View className={`flex-row items-center justify-between px-4 pt-16 pb-4 ${headerBg} border-b ${borderColor}`}>
+        <TouchableOpacity onPress={() => navigation.goBack()} className={`p-2 -ml-2 rounded-full border ${headerIconBg}`}>
+          <ArrowLeft color={headerIconColor} size={24} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Edit Profile</Text>
-        <View style={{ width: 24 }} />
+        <Text className={`${textColor} text-lg font-sans-bold tracking-tight`}>Edit Profile</Text>
+        <View className="w-8" />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="flex-1 px-6 pt-6"
+        contentContainerStyle={{ paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Personal Information */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal Information</Text>
+        <View className="mb-8">
+          <Text className={`${subTextColor} text-xs font-sans-medium mb-4 uppercase tracking-wider`}>
+            Personal Information
+          </Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>First Name *</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: errors.first_name ? colors.error : colors.divider,
-                color: colors.textPrimary,
-              }]}
-              placeholder="John"
-              placeholderTextColor={colors.textTertiary}
-              value={formData.first_name}
-              onChangeText={(text) => setFormData({ ...formData, first_name: text })}
-            />
-            {errors.first_name && <Text style={[styles.errorText, { color: colors.error }]}>{errors.first_name}</Text>}
-          </View>
+          <NeoInput
+            label="FIRST NAME"
+            value={formData.first_name}
+            onChangeText={(text) => setFormData({ ...formData, first_name: text })}
+            error={errors.first_name}
+            icon={<User size={20} color={iconColor} />}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Last Name *</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: errors.last_name ? colors.error : colors.divider,
-                color: colors.textPrimary,
-              }]}
-              placeholder="Doe"
-              placeholderTextColor={colors.textTertiary}
-              value={formData.last_name}
-              onChangeText={(text) => setFormData({ ...formData, last_name: text })}
-            />
-            {errors.last_name && <Text style={[styles.errorText, { color: colors.error }]}>{errors.last_name}</Text>}
-          </View>
+          <NeoInput
+            label="LAST NAME"
+            value={formData.last_name}
+            onChangeText={(text) => setFormData({ ...formData, last_name: text })}
+            error={errors.last_name}
+            icon={<User size={20} color={iconColor} />}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Phone Number</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: errors.phone_number ? colors.error : colors.divider,
-                color: colors.textPrimary,
-              }]}
-              placeholder="+264 81 234 5678"
-              placeholderTextColor={colors.textTertiary}
-              keyboardType="phone-pad"
-              value={formData.phone_number}
-              onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
-            />
-            {errors.phone_number && <Text style={[styles.errorText, { color: colors.error }]}>{errors.phone_number}</Text>}
-          </View>
+          <NeoInput
+            label="PHONE NUMBER"
+            value={formData.phone_number}
+            onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
+            placeholder="+264 81 234 5678"
+            keyboardType="phone-pad"
+            error={errors.phone_number}
+            icon={<Phone size={20} color={iconColor} />}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>ID Number</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: colors.divider,
-                color: colors.textPrimary,
-              }]}
-              placeholder="12345678901"
-              placeholderTextColor={colors.textTertiary}
-              value={formData.id_number}
-              onChangeText={(text) => setFormData({ ...formData, id_number: text })}
-            />
-          </View>
+          <NeoInput
+            label="ID NUMBER"
+            value={formData.id_number}
+            onChangeText={(text) => setFormData({ ...formData, id_number: text })}
+            placeholder="12345678901"
+            icon={<FileText size={20} color={iconColor} />}
+          />
         </View>
 
         {/* Employment Information */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Employment Information</Text>
+        <View className="mb-8">
+          <Text className={`${subTextColor} text-xs font-sans-medium mb-4 uppercase tracking-wider`}>
+            Financial Information
+          </Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Employment Status</Text>
+          <View className="mb-4">
+            <Text className={`${subTextColor} text-xs font-sans-medium mb-1.5 ml-1`}>
+              EMPLOYMENT STATUS
+            </Text>
             <TouchableOpacity
-              style={[styles.picker, {
-                backgroundColor: colors.surface,
-                borderColor: colors.divider,
-              }]}
               onPress={handleEmploymentStatusSelect}
+              className={`flex-row items-center ${inputBg} border ${borderColor} rounded-xl px-4 py-3.5`}
             >
-              <Text style={[styles.pickerText, { color: formData.employment_status ? colors.textPrimary : colors.textTertiary }]}>
+              <Briefcase size={20} color={iconColor} className="mr-3" />
+              <Text className={`text-base font-sans-medium flex-1 ${formData.employment_status ? (mode === 'dark' ? 'text-zinc-100' : 'text-zinc-900') : (mode === 'dark' ? 'text-zinc-500' : 'text-zinc-400')}`}>
                 {formData.employment_status
                   ? formData.employment_status
                       .replace(/_/g, ' ')
@@ -287,122 +280,39 @@ export default function ProfileEditScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Monthly Income (NAD)</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.surface,
-                borderColor: errors.monthly_income ? colors.error : colors.divider,
-                color: colors.textPrimary,
-              }]}
-              placeholder="5000"
-              placeholderTextColor={colors.textTertiary}
-              keyboardType="numeric"
-              value={formData.monthly_income}
-              onChangeText={(text) => setFormData({ ...formData, monthly_income: text })}
-            />
-            {errors.monthly_income && (
-              <Text style={[styles.errorText, { color: colors.error }]}>{errors.monthly_income}</Text>
-            )}
-          </View>
+          <NeoInput
+            label="MONTHLY INCOME (NAD)"
+            value={formData.monthly_income}
+            onChangeText={(text) => setFormData({ ...formData, monthly_income: text })}
+            placeholder="5000"
+            keyboardType="numeric"
+            error={errors.monthly_income}
+            icon={<DollarSign size={20} color={iconColor} />}
+          />
         </View>
 
         {/* Note */}
-        <View style={[styles.noteCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.noteText, { color: colors.textSecondary }]}>
+        <NeoCard variant="glass" className="mb-8 p-5">
+          <Text className={`${subTextColor} text-xs leading-5 font-sans`}>
             * Required fields{'\n'}
-            Your profile information is used for loan application processing and verification.
+            Your profile information is used for loan application processing and verification. Keeping it up-to-date helps us serve you better.
           </Text>
-        </View>
+        </NeoCard>
       </ScrollView>
 
       {/* Save Button */}
-      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.divider }]}>
-        <PrimaryButton
+      <View className={`px-6 py-4 ${headerBg} border-t ${borderColor}`}>
+        <NeoButton
           title="Save Changes"
           onPress={handleSave}
           variant="primary"
+          size="lg"
           loading={saving}
+          className="shadow-lg shadow-blue-900/20"
         />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  picker: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-  },
-  pickerText: {
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  noteCard: {
-    borderRadius: 8,
-    padding: 12,
-  },
-  noteText: {
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-  },
-});
+

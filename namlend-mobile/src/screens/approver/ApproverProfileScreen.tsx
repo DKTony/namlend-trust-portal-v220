@@ -1,6 +1,6 @@
 /**
  * Approver Profile Screen
- * Version: v2.4.2
+ * Version: v2.7.0 - Neo-Fintech Design
  */
 
 import React from 'react';
@@ -9,14 +9,18 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
   Alert,
 } from 'react-native';
-import { User, Mail, Shield, LogOut, Settings } from 'lucide-react-native';
+import { User, Mail, Shield, LogOut, Settings, Phone, ChevronRight } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../theme';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 
 const ApproverProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { colors } = useTheme();
 
   const handleSignOut = () => {
     Alert.alert(
@@ -39,82 +43,125 @@ const ApproverProfileScreen: React.FC = () => {
   };
 
   const profile = user?.profile;
+  const fullName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Approver';
+  const initials = fullName.slice(0, 2).toUpperCase();
+
+  const MenuItem = ({ icon: Icon, label, subtitle, onPress }: any) => (
+    <TouchableOpacity
+      onPress={onPress}
+      className="flex-row items-center py-4 border-b border-zinc-800"
+    >
+      <View className="w-10 h-10 rounded-full bg-zinc-900 items-center justify-center mr-4 border border-zinc-800 shadow-sm">
+        <Icon size={20} color="#a1a1aa" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-zinc-100 text-base font-sans-medium mb-0.5 tracking-tight">
+          {label}
+        </Text>
+        {subtitle && (
+          <Text className="text-zinc-500 text-xs font-sans">
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      <ChevronRight size={16} color="#52525b" />
+    </TouchableOpacity>
+  );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header */}
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <User color="#ffffff" size={40} />
+    <View className="flex-1 bg-zinc-950">
+      <AmbientGlow position="top" />
+      
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Profile Header */}
+        <View className="items-center pt-16 pb-8 bg-zinc-900 border-b border-zinc-800">
+          <View className="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 items-center justify-center mb-4 shadow-lg shadow-black/50">
+            <Text className="text-3xl font-sans-bold text-zinc-400 tracking-tighter">
+              {initials}
+            </Text>
+          </View>
+          <Text className="text-white text-2xl font-sans-bold tracking-tight mb-1">
+            {fullName}
+          </Text>
+          <Text className="text-zinc-500 text-sm font-sans mb-4">
+            {user?.email}
+          </Text>
+          
+          <View className="bg-blue-600/10 px-3 py-1 rounded-full border border-blue-600/20 flex-row items-center">
+            <Shield size={12} color="#3b82f6" />
+            <Text className="text-blue-400 text-xs font-sans-bold ml-1.5 uppercase tracking-wide">
+              {user?.role?.toUpperCase()}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.name}>
-          {profile?.first_name} {profile?.last_name}
-        </Text>
-        <Text style={styles.email}>{user?.email}</Text>
-        <View style={styles.roleBadge}>
-          <Shield color="#ffffff" size={16} />
-          <Text style={styles.roleText}>{user?.role?.toUpperCase()}</Text>
+
+        <View className="p-6">
+          {/* Account Information */}
+          <View className="mb-8">
+            <Text className="text-zinc-500 text-xs font-sans-medium uppercase mb-3 ml-1 tracking-wider">Account Information</Text>
+            <NeoCard className="bg-zinc-900 border-zinc-800 p-5">
+              <View className="space-y-4">
+                <InfoRow
+                  icon={<Mail color="#71717a" size={18} />}
+                  label="Email"
+                  value={user?.email || 'N/A'}
+                />
+                <InfoRow
+                  icon={<Shield color="#71717a" size={18} />}
+                  label="Role"
+                  value={user?.role?.replace('_', ' ').toUpperCase() || 'N/A'}
+                />
+                {profile?.phone_number && (
+                  <InfoRow
+                    icon={<Phone color="#71717a" size={18} />}
+                    label="Phone"
+                    value={profile.phone_number}
+                  />
+                )}
+              </View>
+            </NeoCard>
+          </View>
+
+          {/* Settings Menu */}
+          <View className="mb-8">
+            <Text className="text-zinc-500 text-xs font-sans-medium uppercase mb-3 ml-1 tracking-wider">Settings</Text>
+            <View>
+              <MenuItem
+                icon={Settings}
+                label="Notification Preferences"
+                subtitle="Manage alerts and updates"
+                onPress={() => {}}
+              />
+              <MenuItem
+                icon={Shield}
+                label="Security"
+                subtitle="Password and authentication"
+                onPress={() => {}}
+              />
+            </View>
+          </View>
+
+          {/* Sign Out */}
+          <TouchableOpacity
+            onPress={handleSignOut}
+            className="flex-row items-center justify-center p-4 rounded-xl bg-red-500/10 border border-red-500/20 mt-4"
+          >
+            <LogOut color="#ef4444" size={20} />
+            <Text className="text-red-400 font-sans-bold text-base ml-2">Sign Out</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Profile Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
-        
-        <View style={styles.infoCard}>
-          <InfoRow
-            icon={<Mail color="#6b7280" size={20} />}
-            label="Email"
-            value={user?.email || 'N/A'}
-          />
-          <InfoRow
-            icon={<Shield color="#6b7280" size={20} />}
-            label="Role"
-            value={user?.role || 'N/A'}
-          />
-          {profile?.phone_number && (
-            <InfoRow
-              icon={<Mail color="#6b7280" size={20} />}
-              label="Phone"
-              value={profile.phone_number}
-            />
-          )}
+        {/* App Info */}
+        <View className="items-center pb-8">
+          <Text className="text-zinc-700 text-xs font-sans">
+            NamLend Mobile v2.7.0
+          </Text>
+          <Text className="text-zinc-800 text-[10px] font-sans mt-1">
+            Approver Portal • © 2025
+          </Text>
         </View>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Settings color="#6b7280" size={20} />
-          <Text style={styles.settingText}>Notification Preferences</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.settingItem}>
-          <Settings color="#6b7280" size={20} />
-          <Text style={styles.settingText}>Change Password</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Actions */}
-      <View style={styles.section}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.signOutButton]}
-          onPress={handleSignOut}
-        >
-          <LogOut color="#ef4444" size={20} />
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* App Info */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>NamLend Mobile v2.4.2</Text>
-        <Text style={styles.footerText}>© 2025 NamLend Trust</Text>
-        <Text style={styles.footerText}>Approver Portal</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -123,149 +170,14 @@ const InfoRow: React.FC<{ icon: React.ReactNode; label: string; value: string }>
   label,
   value,
 }) => (
-  <View style={styles.infoRow}>
-    <View style={styles.infoLeft}>
+  <View className="flex-row items-center py-2">
+    <View className="flex-row items-center gap-3 w-32">
       {icon}
-      <Text style={styles.infoLabel}>{label}</Text>
+      <Text className="text-zinc-400 text-sm font-sans">{label}</Text>
     </View>
-    <Text style={styles.infoValue}>{value}</Text>
+    <Text className="text-white text-sm font-sans-medium flex-1 text-right">{value}</Text>
   </View>
 );
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    backgroundColor: '#2563eb',
-    padding: 32,
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#1e40af',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 14,
-    color: '#bfdbfe',
-    marginBottom: 12,
-  },
-  roleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#1e40af',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  infoCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  infoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  settingText: {
-    fontSize: 16,
-    color: '#1f2937',
-  },
-  actionButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  signOutButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    borderColor: '#fecaca',
-    backgroundColor: '#fef2f2',
-  },
-  signOutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ef4444',
-  },
-  footer: {
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginBottom: 4,
-  },
-});
-
 export default ApproverProfileScreen;
+

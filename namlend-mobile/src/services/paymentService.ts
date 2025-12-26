@@ -18,7 +18,17 @@ export class PaymentService {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select('*')
+        .select(`
+          id,
+          loan_id,
+          amount,
+          payment_method,
+          status,
+          paid_at,
+          reference_number,
+          notes,
+          created_at
+        `)
         .eq('loan_id', loanId)
         .order('paid_at', { ascending: false });
 
@@ -213,7 +223,14 @@ export class PaymentService {
         // Fallback to basic query
         const { data: payments } = await supabase
           .from('payments')
-          .select('*')
+          .select(`
+            id,
+            loan_id,
+            amount,
+            payment_method,
+            status,
+            paid_at
+          `)
           .eq('loan_id', loanId);
 
         const list: Payment[] = (payments ?? []) as Payment[];

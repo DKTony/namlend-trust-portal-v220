@@ -14,6 +14,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { ThemeProvider, useTheme } from './src/theme';
 import AppNavigator from './src/navigation/AppNavigator';
 import SanityScreen from './src/screens/SanityScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import {
   useFonts,
   Inter_400Regular,
@@ -122,7 +123,7 @@ const AppInitializer: React.FC = () => {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <NavigationContainer
         theme={navigationTheme}
         linking={linking}
@@ -134,6 +135,6 @@ const AppInitializer: React.FC = () => {
         <AppNavigator />
       </NavigationContainer>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-    </>
+    </ErrorBoundary>
   );
 }

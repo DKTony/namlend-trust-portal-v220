@@ -143,7 +143,7 @@ const ReviewApplicationScreen: React.FC = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 200 }}>
         {/* Application Header Card */}
         <NeoCard className="mb-6 bg-zinc-900 border-zinc-800 p-5">
           <View className="flex-row justify-between items-start mb-4">
@@ -269,8 +269,8 @@ const ReviewApplicationScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Action Footer */}
-      <View className="absolute bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-6 pb-8">
+      {/* Action Footer - positioned above floating tab bar */}
+      <View className="absolute bottom-20 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-4 rounded-t-3xl shadow-lg shadow-black/50">
         {application.status === 'pending' || application.status === 'under_review' ? (
           <View className="flex-row gap-4">
             <View className="flex-1">

@@ -1,17 +1,19 @@
 /**
  * Client Stack Navigator with Bottom Tabs
- * Version: v2.7.0 - Theme system integration
+ * Version: v2.7.1 - Query prefetching + NetworkBanner
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import { Home, FileText, CreditCard, Upload, User } from 'lucide-react-native';
+import { Home, FileText, Upload, User } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme';
+import { usePrefetchDashboard, usePrefetchLoanDetails, usePrefetchProfile } from '../hooks/usePrefetch';
+import NetworkBanner from '../components/NetworkBanner';
 
 // Screens
 import DashboardScreen from '../screens/client/DashboardScreen';
@@ -139,9 +141,21 @@ const ProfileStack = () => {
 
 const ClientStack: React.FC = () => {
   const { colors, mode } = useTheme();
+  const { prefetch: prefetchDashboard } = usePrefetchDashboard();
+  const { prefetch: prefetchProfile } = usePrefetchProfile();
+
+  // Prefetch dashboard data on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchDashboard().catch(console.error);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [prefetchDashboard]);
 
   return (
-    <Tab.Navigator
+    <View style={{ flex: 1 }}>
+      <NetworkBanner />
+      <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#3b82f6', // blue-500
         tabBarInactiveTintColor: mode === 'dark' ? '#71717a' : '#94a3b8', // zinc-500 : slate-400
@@ -241,7 +255,8 @@ const ClientStack: React.FC = () => {
           };
         }}
       />
-    </Tab.Navigator>
+      </Tab.Navigator>
+    </View>
   );
 };
 

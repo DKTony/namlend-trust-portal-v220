@@ -1,8 +1,9 @@
 /**
  * Loan Service
- * Version: v2.4.2
+ * Version: v2.7.1
  * 
  * Handles loan-related API operations
+ * Optimized with specific column selections for performance
  */
 
 import { supabase } from './supabaseClient';
@@ -22,7 +23,20 @@ export class LoanService {
 
       const { data, error } = await supabase
         .from('loans')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          amount,
+          term_months,
+          interest_rate,
+          monthly_payment,
+          total_repayment,
+          status,
+          purpose,
+          disbursed_at,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -41,7 +55,22 @@ export class LoanService {
     try {
       const { data, error } = await supabase
         .from('loans')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          amount,
+          term_months,
+          interest_rate,
+          monthly_payment,
+          total_repayment,
+          status,
+          purpose,
+          disbursed_at,
+          approved_by,
+          approved_at,
+          created_at,
+          updated_at
+        `)
         .eq('id', loanId)
         .single();
 
@@ -72,7 +101,19 @@ export class LoanService {
 
       const { data, error } = await supabase
         .from('approval_requests')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          request_type,
+          request_data,
+          status,
+          priority,
+          assigned_to,
+          reviewed_at,
+          review_notes,
+          created_at,
+          updated_at
+        `)
         .eq('user_id', user.id)
         .eq('request_type', 'loan_application')
         .in('status', ['pending', 'under_review'])
@@ -93,7 +134,16 @@ export class LoanService {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select('*')
+        .select(`
+          id,
+          loan_id,
+          amount,
+          payment_method,
+          status,
+          paid_at,
+          reference_number,
+          created_at
+        `)
         .eq('loan_id', loanId)
         .order('paid_at', { ascending: true });
 
@@ -161,7 +211,13 @@ export class LoanService {
 
       const { data, error } = await supabase
         .from('loans')
-        .select('*')
+        .select(`
+          id,
+          amount,
+          total_repayment,
+          status,
+          disbursed_at
+        `)
         .eq('user_id', user.id);
 
       if (error) {

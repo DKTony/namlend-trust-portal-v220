@@ -1,8 +1,9 @@
 /**
  * Approval Service for Loan Officers/Admins
- * Version: v2.4.2
+ * Version: v2.7.1
  * 
  * Handles approval queue and workflow operations
+ * Optimized with specific column selections for performance
  */
 
 import { supabase } from './supabaseClient';
@@ -47,7 +48,20 @@ export class ApprovalService {
       } catch (err: any) {
         let q = supabase
           .from('approval_requests')
-          .select('*')
+          .select(`
+            id,
+            user_id,
+            request_type,
+            request_data,
+            status,
+            priority,
+            assigned_to,
+            reviewer_id,
+            reviewed_at,
+            review_notes,
+            created_at,
+            updated_at
+          `)
           .order('created_at', { ascending: false });
         
         if (filters?.status) q = q.eq('status', filters.status);
@@ -63,7 +77,15 @@ export class ApprovalService {
         
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('*')
+          .select(`
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone_number,
+            id_number,
+            date_of_birth
+          `)
           .in('user_id', userIds);
           
         const map = new Map((profiles || []).map((p: any) => [p.user_id, p]));

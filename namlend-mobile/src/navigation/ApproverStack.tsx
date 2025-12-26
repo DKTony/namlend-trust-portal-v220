@@ -1,6 +1,6 @@
 /**
  * Approver Stack Navigator with Bottom Tabs
- * Version: v2.7.0 - Theme system integration
+ * Version: v2.7.1 - Query prefetching + NetworkBanner
  */
 
 import React, { useEffect, useState } from 'react';
@@ -11,6 +11,8 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 import { ClipboardList, User, Home } from 'lucide-react-native';
 import { supabase } from '../services/supabaseClient';
 import { useTheme } from '../theme';
+import { usePrefetchApproverDashboard } from '../hooks/usePrefetch';
+import NetworkBanner from '../components/NetworkBanner';
 
 // Screens
 import ApprovalQueueScreen from '../screens/approver/ApprovalQueueScreen';
@@ -71,6 +73,15 @@ const TabBarBadge: React.FC<{ count: number }> = ({ count }) => {
 const ApproverStack: React.FC = () => {
   const { colors } = useTheme();
   const [pendingCount, setPendingCount] = useState(0);
+  const { prefetch: prefetchApprover } = usePrefetchApproverDashboard();
+
+  // Prefetch approver data on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      prefetchApprover().catch(console.error);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [prefetchApprover]);
 
   useEffect(() => {
     // Fetch pending count
@@ -103,8 +114,10 @@ const ApproverStack: React.FC = () => {
   }, []);
 
   return (
-    <Tab.Navigator
-      screenOptions={{
+    <View style={{ flex: 1 }}>
+      <NetworkBanner />
+      <Tab.Navigator
+        screenOptions={{
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#71717a',
         tabBarStyle: {
@@ -161,7 +174,8 @@ const ApproverStack: React.FC = () => {
           ),
         }}
       />
-    </Tab.Navigator>
+      </Tab.Navigator>
+    </View>
   );
 };
 

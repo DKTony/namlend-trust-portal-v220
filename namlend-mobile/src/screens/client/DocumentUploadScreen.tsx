@@ -1,6 +1,6 @@
 /**
  * Document Upload Screen with Camera Integration
- * Version: v2.4.2
+ * Version: v2.7.1 - Neo-Fintech Theme Update
  */
 
 import React, { useState } from 'react';
@@ -8,15 +8,19 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   ScrollView,
-  Image,
+  StatusBar,
 } from 'react-native';
-import { Camera, Upload, FileText, CheckCircle } from 'lucide-react-native';
+import { Upload, FileText, CheckCircle, Info, HelpCircle, MessageCircle } from 'lucide-react-native';
 import { supabase } from '../../services/supabaseClient';
+import { useTheme } from '../../theme';
+import { NeoCard } from '../../components/neo/NeoCard';
+import { NeoButton } from '../../components/neo/NeoButton';
+import { AmbientGlow } from '../../components/neo/AmbientGlow';
 
 const DocumentUploadScreen: React.FC = () => {
+  const { mode } = useTheme();
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
 
   const documentTypes = [
@@ -99,198 +103,129 @@ const DocumentUploadScreen: React.FC = () => {
     Alert.alert('Uploaded', 'Document uploaded successfully');
   };
 
+  // Theme-derived styles
+  const containerBg = mode === 'dark' ? 'bg-zinc-950' : 'bg-zinc-50';
+  const headerBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const borderColor = mode === 'dark' ? 'border-zinc-800' : 'border-zinc-200';
+  const textColor = mode === 'dark' ? 'text-white' : 'text-zinc-900';
+  const subTextColor = mode === 'dark' ? 'text-zinc-400' : 'text-zinc-500';
+  const cardBg = mode === 'dark' ? 'bg-zinc-900' : 'bg-white';
+  const iconBgDefault = mode === 'dark' ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200';
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Upload Documents</Text>
-        <Text style={styles.subtitle}>
-          Upload required documents for KYC verification
-        </Text>
-      </View>
+    <View className={`flex-1 ${containerBg}`}>
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} />
+      {mode === 'dark' && <AmbientGlow position="top" />}
 
-      {/* Document Types */}
-      <View style={styles.section}>
-        {documentTypes.map((docType) => {
-          const Icon = docType.icon;
-          const isUploaded = uploadedDocs.includes(docType.id);
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Header */}
+        <View className={`px-6 pt-16 pb-6 ${headerBg} border-b ${borderColor}`}>
+          <Text className={`${subTextColor} text-xs font-sans-medium tracking-wider uppercase mb-1`}>
+            KYC VERIFICATION
+          </Text>
+          <Text className={`${textColor} text-2xl font-sans-bold tracking-tight mb-1`}>
+            Upload Documents
+          </Text>
+          <Text className={`${subTextColor} text-sm font-sans`}>
+            Upload required documents for verification
+          </Text>
+        </View>
 
-          return (
-            <TouchableOpacity
-              key={docType.id}
-              style={[styles.docCard, isUploaded && styles.docCardUploaded]}
-              onPress={() => handleUpload(docType.id)}
-            >
-              <View style={styles.docLeft}>
-                <View style={styles.docIcon}>
-                  <Icon color={isUploaded ? '#10b981' : '#6b7280'} size={24} />
+        {/* Document Types */}
+        <View className="p-6">
+          <Text className={`${textColor} text-lg font-sans-bold tracking-tight mb-4`}>
+            Required Documents
+          </Text>
+          
+          {documentTypes.map((docType) => {
+            const Icon = docType.icon;
+            const isUploaded = uploadedDocs.includes(docType.id);
+
+            return (
+              <TouchableOpacity
+                key={docType.id}
+                onPress={() => handleUpload(docType.id)}
+                className={`flex-row items-center justify-between p-4 rounded-2xl border-2 mb-3 ${
+                  isUploaded
+                    ? 'bg-emerald-500/10 border-emerald-500'
+                    : `${cardBg} ${borderColor}`
+                }`}
+              >
+                <View className="flex-row items-center flex-1">
+                  <View className={`w-12 h-12 rounded-full items-center justify-center mr-4 border ${
+                    isUploaded 
+                      ? 'bg-emerald-500/20 border-emerald-500/30' 
+                      : iconBgDefault
+                  }`}>
+                    <Icon size={24} color={isUploaded ? '#10b981' : (mode === 'dark' ? '#71717a' : '#94a3b8')} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className={`text-base font-sans-medium ${isUploaded ? 'text-emerald-500' : textColor}`}>
+                      {docType.label}
+                    </Text>
+                    <Text className={`text-xs font-sans mt-0.5 ${isUploaded ? 'text-emerald-400' : subTextColor}`}>
+                      {isUploaded ? 'Uploaded ✓' : 'Required'}
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.docLabel}>{docType.label}</Text>
-                  <Text style={styles.docStatus}>
-                    {isUploaded ? 'Uploaded' : 'Required'}
+                {isUploaded ? (
+                  <CheckCircle color="#10b981" size={24} />
+                ) : (
+                  <Upload size={24} color={mode === 'dark' ? '#71717a' : '#94a3b8'} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Instructions */}
+        <View className="px-6 mb-6">
+          <NeoCard variant="glass" className="p-0 overflow-hidden">
+            <View className={`flex-row items-center px-4 py-3 border-b ${borderColor} ${mode === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+              <Info size={18} color="#3b82f6" />
+              <Text className="text-blue-500 text-sm font-sans-bold ml-2">Document Guidelines</Text>
+            </View>
+            <View className="p-4">
+              {[
+                'Documents must be clear and readable',
+                'File size should not exceed 5MB',
+                'Accepted formats: JPG, PNG, PDF',
+                'Ensure all corners are visible',
+                'No glare or shadows'
+              ].map((text, index) => (
+                <View key={index} className="flex-row items-start mb-2 last:mb-0">
+                  <Text className="text-blue-500 mr-2">•</Text>
+                  <Text className={`${mode === 'dark' ? 'text-blue-400' : 'text-blue-600'} text-sm font-sans flex-1`}>
+                    {text}
                   </Text>
                 </View>
-              </View>
-              {isUploaded ? (
-                <CheckCircle color="#10b981" size={24} />
-              ) : (
-                <Upload color="#6b7280" size={24} />
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+              ))}
+            </View>
+          </NeoCard>
+        </View>
 
-      {/* Instructions */}
-      <View style={styles.instructionsCard}>
-        <Text style={styles.instructionsTitle}>Document Guidelines</Text>
-        <Text style={styles.instructionText}>• Documents must be clear and readable</Text>
-        <Text style={styles.instructionText}>• File size should not exceed 5MB</Text>
-        <Text style={styles.instructionText}>• Accepted formats: JPG, PNG, PDF</Text>
-        <Text style={styles.instructionText}>• Ensure all corners are visible</Text>
-        <Text style={styles.instructionText}>• No glare or shadows</Text>
-      </View>
-
-      {/* Help Section */}
-      <View style={styles.helpSection}>
-        <Text style={styles.helpTitle}>Need Help?</Text>
-        <Text style={styles.helpText}>
-          Contact our support team if you have questions about document requirements.
-        </Text>
-        <TouchableOpacity style={styles.helpButton}>
-          <Text style={styles.helpButtonText}>Contact Support</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        {/* Help Section */}
+        <View className="px-6 mb-8">
+          <NeoCard variant="glass" className="p-4">
+            <View className="flex-row items-center mb-3">
+              <HelpCircle size={20} color={mode === 'dark' ? '#a1a1aa' : '#71717a'} />
+              <Text className={`${textColor} text-base font-sans-bold ml-2`}>Need Help?</Text>
+            </View>
+            <Text className={`${subTextColor} text-sm font-sans mb-4 leading-5`}>
+              Contact our support team if you have questions about document requirements.
+            </Text>
+            <NeoButton
+              title="Contact Support"
+              onPress={() => Alert.alert('Support', 'Contact support@namlend.com')}
+              variant="outline"
+              size="md"
+              icon={<MessageCircle size={18} color="#3b82f6" />}
+            />
+          </NeoCard>
+        </View>
+      </ScrollView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    padding: 24,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  section: {
-    padding: 16,
-  },
-  docCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  docCardUploaded: {
-    borderColor: '#10b981',
-    backgroundColor: '#f0fdf4',
-  },
-  docLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  docIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  docLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  docStatus: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  instructionsCard: {
-    backgroundColor: '#eff6ff',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e40af',
-    marginBottom: 12,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#1e40af',
-    marginBottom: 6,
-  },
-  helpSection: {
-    padding: 16,
-    marginBottom: 32,
-  },
-  helpTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-  },
-  helpText: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  helpButton: {
-    height: 44,
-    borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  helpButtonText: {
-    color: '#2563eb',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#ef4444',
-  },
-});
 
 export default DocumentUploadScreen;

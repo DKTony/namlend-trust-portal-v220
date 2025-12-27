@@ -24,3 +24,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local MCP server (has its own git repo)
+mcp-tiggerbeetle/

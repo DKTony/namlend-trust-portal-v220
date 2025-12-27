@@ -31,6 +31,8 @@ import { PendingAdjustmentResponse } from './PendingAdjustmentResponse';
 import { PendingStatusReport } from './PendingStatusReport';
 import { TimeoutReportViewer } from './TimeoutReportViewer';
 import { AcknowledgementsViewer } from './AcknowledgementsViewer';
+import { IPSTransactionsViewer } from './IPSTransactionsViewer';
+import { IPSHealthWidget } from './IPSHealthWidget';
 
 export function ReconciliationDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -130,6 +132,11 @@ export function ReconciliationDashboard() {
         </Card>
       </div>
 
+      {/* IPS Health Widget */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <IPSHealthWidget />
+      </div>
+
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="flex flex-wrap h-auto gap-1">
@@ -173,6 +180,10 @@ export function ReconciliationDashboard() {
             )}
             <span className="hidden sm:inline">Acknowledgements</span>
           </TabsTrigger>
+          <TabsTrigger value="ips" className="flex items-center gap-1">
+            <FileSpreadsheet className="h-4 w-4 text-green-500" />
+            <span className="hidden sm:inline">IPS Transactions</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -209,6 +220,10 @@ export function ReconciliationDashboard() {
 
         <TabsContent value="acks" className="space-y-4">
           <AcknowledgementsViewer />
+        </TabsContent>
+
+        <TabsContent value="ips" className="space-y-4">
+          <IPSTransactionsViewer />
         </TabsContent>
       </Tabs>
     </div>

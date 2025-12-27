@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2025-12-27
+
+### Added
+
+#### Mobile Application v2.7.1 - Production Optimizations
+- **Query Optimization** - Replaced `select('*')` with specific column selections
+  - Updated loanService.ts, paymentService.ts, approvalService.ts
+  - Reduced network payload size significantly
+  - Improved query performance across all services
+
+- **Navigation-Aware Prefetching** - Intelligent data preloading
+  - usePrefetchDashboard hook for client dashboard
+  - usePrefetchLoanDetails hook for loan details
+  - usePrefetchProfile hook for profile data
+  - usePrefetchApproverDashboard hook for approver queue
+  - Improved perceived performance via background prefetching
+
+- **Global Error Handling** - Enhanced crash resilience
+  - ErrorBoundary component wrapping NavigationContainer
+  - Graceful error recovery with user-friendly messages
+  - Error logging for debugging
+
+- **Network Status Indicator** - Global connectivity awareness
+  - NetworkBanner component extended to all navigation stacks
+  - Slide animation for offline/online status
+  - Visible across ClientStack and ApproverStack
+
+- **UI Improvements**
+  - Fixed ReviewApplicationScreen button positioning
+  - Action buttons now visible above floating tab bar
+  - Improved theme consistency in PaymentScreen and DocumentUploadScreen
+
+#### IPS Payment Method in Client Payment Modal
+- **PaymentModal.tsx** - Added "IPP Instant" as primary payment method option
+  - Green-highlighted button for instant payments
+  - Info panel showing benefits (no fees, real-time, secure)
+  - 3-column grid layout for 5 payment methods
+
+#### IPS Transactions Reconciliation Dashboard
+- **IPSTransactionsViewer.tsx** - New admin reconciliation component
+  - Transaction statistics (total, success, pending, failed, deemed)
+  - Filter by status and transaction type
+  - Search by ID, VPA
+  - Real-time data refresh
+
+### Fixed
+
+#### IPS Adapter Edge Function
+- Fixed 404 error for `/validate-vpa` endpoint
+- Updated URL path extraction to handle `/functions/v1/` prefix correctly
+- Fixed `ipsService.ts` to use absolute Supabase URL instead of relative path
+
+#### Database Constraints
+- Added `'ips'` to `payment_method_valid` check constraint on `payments` table
+- Allowed values now: `bank_transfer`, `mobile_money`, `cash`, `debit_order`, `ips`
+
+### Documentation
+
+#### Mobile App Documentation Updates
+- **namlend-mobile/docs/context.md** - Updated to v2.7.1
+  - Added P1/P2 improvements section
+  - Updated architecture with new components
+  - Documented performance optimizations
+
+- **namlend-mobile/docs/TECHNICAL_AUDIT_REPORT.md** - Audit completion
+  - Marked all P1 issues as resolved
+  - Marked core P2 issues as resolved
+  - Added post-audit improvements summary
+
+- **namlend-mobile/docs/HANDOVER_SUMMARY.md** - Updated handover
+  - Updated to v1.1.0
+  - Added recent improvements section
+  - Updated metrics and achievements
+
+#### Main Project Documentation Updates
+- **docs/context.md** - Updated to v3.3.0
+  - Added Phase 6: IPP Integration & Mobile Optimization
+  - Updated project structure with mobile app
+  - Added mobile v2.7.1 achievements
+  - Updated core tables with IPS tables
+
+- **docs/CHANGELOG.md** - This file
+  - Added mobile v2.7.1 improvements
+  - Documented all optimization work
+
+---
+
 ## [3.2.0] - 2025-12-27
 
 ### Added

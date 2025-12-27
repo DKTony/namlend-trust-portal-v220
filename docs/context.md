@@ -1,8 +1,8 @@
 # NamLend Trust - Technical Context & Handover Document
 
-**Version**: 3.0.0  
-**Last Updated**: December 22, 2025  
-**Status**: ✅ Production-ready; IPS Mock Mode; Admin Configuration Panels Complete  
+**Version**: 3.3.0  
+**Last Updated**: December 27, 2025  
+**Status**: ✅ Production-ready; IPS/IPP Integration Complete; Mobile App v2.7.1 Optimized  
 **Supabase Project ID**: `puahejtaskncpazjyxqp`  
 **Database Region**: eu-north-1
 
@@ -25,6 +25,8 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 - ✅ **Settlement System Scaffold** - BON/IPP DNS schema + admin reconciliation UI (pacs.009/NTSL viewers, adjustments, acknowledgements)
 - ✅ **Admin Configuration Panels** - TigerBeetle, Settlement, IPS configuration with database persistence
 - ✅ **User Management Refinement** - Full database wiring for user administration
+- ✅ **IPP Onboarding System** - Complete customer/merchant onboarding with VPA registration
+- ✅ **Mobile App v2.7.1** - Production-ready with Neo-Fintech design, query optimization, error handling
 
 ### Phase 4 Integration Complete ✅
 
@@ -42,6 +44,18 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 - ✅ **User Management Dashboard** - Real-time stats, export, add user, advanced filters
 - ✅ **User Profile Integration** - Database-backed profile editing and suspension
 - ✅ **User Audit Log** - Real-time audit log queries with filtering
+
+### Phase 6: IPP Integration & Mobile Optimization ✅
+
+- ✅ **IPP Onboarding System** - 8 database tables for customer/merchant onboarding
+- ✅ **IPS Adapter Edge Function** - Complete IPP API integration with 15+ endpoints
+- ✅ **Client Banking Section** - Self-service IPP enrollment wizard
+- ✅ **Admin IPP Dashboard** - Onboarding management and monitoring
+- ✅ **Mobile App v2.7.1** - Neo-Fintech design complete with optimizations
+  - Query optimization with specific column selections
+  - Navigation-aware query prefetching
+  - Global ErrorBoundary and NetworkBanner
+  - All P1/P2 audit items resolved
 
 ---
 
@@ -93,10 +107,13 @@ namlend-trust-main-3/
 │   │   ├── ui/              # shadcn/ui primitives (49 components)
 │   │   ├── DashboardSidebar.tsx  # Collapsible sidebar navigation
 │   │   ├── StatCard.tsx     # Metric display cards
+│   │   ├── BankingSection.tsx    # IPP onboarding wizard
 │   │   └── [feature].tsx    # Feature components
 │   ├── pages/               # Route pages
 │   │   ├── AdminDashboard/  # Back office interface
 │   │   │   ├── components/  # Admin UI components
+│   │   │   │   ├── IPPOnboarding/  # IPP onboarding management
+│   │   │   │   └── IPS/            # IPS transactions viewer
 │   │   │   └── hooks/       # Admin data hooks (16 hooks)
 │   │   ├── Auth.tsx         # Authentication (Split-screen layout)
 │   │   ├── Dashboard.tsx    # Client dashboard (Sidebar layout)
@@ -114,7 +131,9 @@ namlend-trust-main-3/
 │   │   ├── whatsappGateway.ts    # Phase 4: Meta WhatsApp API
 │   │   ├── creditScoring.ts      # Phase 4: AI credit scoring
 │   │   ├── notificationService.ts # Phase 4: Multi-channel notifications
-│   │   └── collectionsService.ts # Phase 2: Collections management
+│   │   ├── collectionsService.ts # Phase 2: Collections management
+│   │   ├── ipsService.ts         # Phase 6: IPS payment integration
+│   │   └── ipsOnboardingService.ts # Phase 6: IPP onboarding flows
 │   ├── hooks/               # Shared React hooks
 │   │   └── useAuth.tsx      # Authentication context
 │   ├── integrations/
@@ -122,9 +141,27 @@ namlend-trust-main-3/
 │   ├── utils/               # Utility functions
 │   └── constants/           # App constants
 │       └── regulatory.ts    # Namibian regulatory constants
+├── namlend-mobile/          # Mobile application (React Native + Expo)
+│   ├── src/
+│   │   ├── components/      # Neo-Fintech design components
+│   │   │   ├── neo/         # 8 reusable Neo components
+│   │   │   ├── ErrorBoundary.tsx  # Global error boundary
+│   │   │   └── NetworkBanner.tsx  # Network status indicator
+│   │   ├── screens/         # 14 fully themed screens
+│   │   │   ├── client/      # 10 client screens
+│   │   │   └── approver/    # 4 approver screens
+│   │   ├── services/        # Optimized RPC services
+│   │   ├── hooks/           # React Query + prefetch hooks
+│   │   └── navigation/      # Navigation stacks
+│   └── docs/                # Mobile documentation
+│       ├── context.md       # Technical handover
+│       ├── TECHNICAL_AUDIT_REPORT.md
+│       └── HANDOVER_SUMMARY.md
 ├── supabase/
-│   ├── migrations/          # Database migrations (33 files)
-│   ├── functions/           # Edge functions
+│   ├── migrations/          # Database migrations (35+ files)
+│   ├── functions/           # Edge functions (8 deployed)
+│   │   ├── ips-adapter/     # IPP API integration
+│   │   └── [other-functions]/
 │   └── config.toml          # Supabase configuration
 ├── e2e/                     # E2E tests
 │   ├── fixtures.ts          # Test fixtures with auth isolation
@@ -178,6 +215,9 @@ Users (auth.users)
 | `payment_transactions` | Payment logs | provider, reference, amount, status |
 | `communication_logs` | SMS/WhatsApp logs | channel, recipient, content, status |
 | `system_configuration` | Admin settings | config_key, config_value, category, updated_by |
+| `ips_onboarding` | IPP onboarding state | user_id, state, device_binding_id, linked_accounts |
+| `ips_device_bindings` | Device registrations | device_id, mobile_number, status |
+| `ips_transactions` | IPS payment records | transaction_id, vpa_from, vpa_to, amount, status |
 
 ---
 

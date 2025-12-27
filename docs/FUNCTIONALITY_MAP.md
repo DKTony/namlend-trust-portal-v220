@@ -1,6 +1,6 @@
 # NamLend Trust - Complete Functionality Map
 
-**Version**: 3.1.0  
+**Version**: 3.3.0  
 **Created**: December 7, 2025  
 **Updated**: December 27, 2025  
 **Purpose**: Comprehensive mapping of all features, services, and database dependencies for wiring verification
@@ -17,6 +17,8 @@
 | Disbursement | disbursementService | disbursements, loans, audit_logs | ✅ Working |
 | Payments | paymentService, paymentGateway | payments, payment_schedules, payment_transactions | ✅ Working |
 | **IPS Payments** | ipsService | ips_transactions, ips_vpa_registry, ips_api_logs | ✅ Working (Mock Mode) |
+| **IPS Client Payments** | PaymentModal | ips_transactions, payments | ✅ Working |
+| **IPS Reconciliation** | IPSTransactionsViewer | ips_transactions | ✅ Working |
 | **IPP Onboarding** | ipsOnboardingService | ips_onboarding, ips_device_bindings, ips_alias_directory, ips_sov_providers | ✅ Working |
 | Collections | collectionsService | collections_activities, promise_to_pay, reschedule_requests, collections_interactions | ✅ Working |
 | Credit Scoring | creditScoring | credit_scores, credit_score_factors, profiles | ✅ Working |

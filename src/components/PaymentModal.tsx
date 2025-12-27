@@ -23,7 +23,8 @@ import {
   ArrowRight,
   Receipt,
   Banknote,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
 import { 
@@ -172,6 +173,7 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
 
     // Normalize method to UI-supported enums
     const normalizeMethod = (m: string) => {
+      if (m === 'ips') return 'ips';
       if (m === 'bank') return 'bank_transfer';
       if (m === 'mobile') return 'mobile_money';
       if (m === 'card') return 'debit_order';
@@ -430,21 +432,24 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
             <div className="p-6 bg-muted/30 space-y-6 flex flex-col h-full">
               <div className="space-y-3 flex-1">
                  <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Payment Method</Label>
-                 <div className="grid grid-cols-2 gap-2">
+                 <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: 'bank', icon: Building2, label: 'Bank Transfer' },
-                      { id: 'mobile', icon: Smartphone, label: 'Mobile Money' },
+                      { id: 'ips', icon: Zap, label: 'IPP Instant', highlight: true },
+                      { id: 'bank', icon: Building2, label: 'Bank EFT' },
+                      { id: 'mobile', icon: Smartphone, label: 'Mobile' },
                       { id: 'card', icon: CreditCard, label: 'Card' },
-                      { id: 'agent', icon: MapPin, label: 'Agent Cash' }
+                      { id: 'agent', icon: MapPin, label: 'Agent' }
                     ].map((method) => (
                       <button
                         key={method.id}
                         onClick={() => setPaymentMethod(method.id)}
                         className={cn(
-                          "flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200",
+                          "flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative",
                           paymentMethod === method.id 
                             ? "bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400" 
-                            : "bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                            : (method as any).highlight
+                              ? "bg-green-500/5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10"
+                              : "bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground"
                         )}
                       >
                          <method.icon className="h-5 w-5" />
@@ -454,6 +459,27 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
                  </div>
 
                  <div className="mt-4 pt-4 border-t border-border">
+                    {paymentMethod === 'ips' && (
+                       <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium mb-1">
+                                <Zap className="h-4 w-4" />
+                                <span>Instant Payment</span>
+                             </div>
+                             <p className="text-xs text-muted-foreground">
+                                Pay instantly using your VPA. Funds are transferred in real-time.
+                             </p>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                             <CheckCircle2 className="h-3 w-3 text-green-500" />
+                             <span>No additional fees</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                             <CheckCircle2 className="h-3 w-3 text-green-500" />
+                             <span>Secure bank-to-bank transfer</span>
+                          </div>
+                       </div>
+                    )}
                     {paymentMethod === 'bank' && (
                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                           <Select value={bankDetails.bank} onValueChange={(v) => setBankDetails({...bankDetails, bank: v})}>

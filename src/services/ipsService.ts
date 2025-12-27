@@ -32,7 +32,9 @@ import type {
 // CONFIGURATION
 // =============================================================================
 
-const IPS_ADAPTER_URL = '/functions/v1/ips-adapter';
+// Use the Supabase project URL for edge function calls
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://puahejtaskncpazjyxqp.supabase.co';
+const IPS_ADAPTER_URL = `${SUPABASE_URL}/functions/v1/ips-adapter`;
 
 // =============================================================================
 // DISBURSEMENT OPERATIONS

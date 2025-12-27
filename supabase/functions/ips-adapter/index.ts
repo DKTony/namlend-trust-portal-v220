@@ -1117,8 +1117,10 @@ serve(async (req: Request) => {
   }
   
   // Parse URL to get endpoint
+  // URL format: /functions/v1/ips-adapter/endpoint or /ips-adapter/endpoint
   const url = new URL(req.url);
-  const endpoint = url.pathname.replace('/ips-adapter', '');
+  const pathParts = url.pathname.split('/ips-adapter');
+  const endpoint = pathParts.length > 1 ? pathParts[1] : '';
   
   // Create Supabase client
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

@@ -12,3 +12,5 @@ export { PendingAdjustmentResponse } from './PendingAdjustmentResponse';
 export { PendingStatusReport } from './PendingStatusReport';
 export { TimeoutReportViewer } from './TimeoutReportViewer';
 export { AcknowledgementsViewer } from './AcknowledgementsViewer';
+export { IPSTransactionsViewer } from './IPSTransactionsViewer';
+export { IPSHealthWidget } from './IPSHealthWidget';

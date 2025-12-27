@@ -1,8 +1,8 @@
 # NamLend Trust - Services Documentation
 
-**Version**: 3.0.0  
-**Last Updated**: December 22, 2025  
-**Status**: ✅ All Services Implemented (IPS Active in Mock Mode; Admin Config Complete)
+**Version**: 3.3.0  
+**Last Updated**: December 27, 2025  
+**Status**: ✅ All Services Implemented (IPS Payment Method Active in Mock Mode; Reconciliation Dashboard Complete)
 
 ---
 

@@ -73,10 +73,12 @@ const ONBOARDING_STEPS = [
   },
   {
     state: 'DEVICE_BOUND' as IPPOnboardingState,
-    label: 'Device Bound',
-    description: 'Your device has been successfully bound.',
-    action: null,
-    requiresInput: false,
+    label: 'Select Your Bank',
+    description: 'Device bound successfully! Now select your bank or mobile money provider to continue.',
+    action: 'select_sov',
+    requiresInput: true,
+    inputLabel: 'Select your bank or payment provider',
+    nextStep: 'Bank Selection',
   },
   {
     state: 'SOV_SELECTION_PENDING' as IPPOnboardingState,
@@ -88,10 +90,12 @@ const ONBOARDING_STEPS = [
   },
   {
     state: 'SOV_SELECTED' as IPPOnboardingState,
-    label: 'Bank Selected',
-    description: 'Your bank has been selected. Fetching your accounts...',
-    action: null,
-    requiresInput: false,
+    label: 'Select Account',
+    description: 'Bank selected! Now choose which account to link with IPP.',
+    action: 'select_account',
+    requiresInput: true,
+    inputLabel: 'Select the account to link',
+    nextStep: 'Account Selection',
   },
   {
     state: 'ACCOUNTS_LISTED' as IPPOnboardingState,
@@ -111,10 +115,12 @@ const ONBOARDING_STEPS = [
   },
   {
     state: 'VERIFIED' as IPPOnboardingState,
-    label: 'Account Verified',
-    description: 'Your account has been verified successfully.',
-    action: null,
-    requiresInput: false,
+    label: 'Set Your IPS PIN',
+    description: 'Account verified! Create a 6-digit PIN to secure your payments.',
+    action: 'set_pin',
+    requiresInput: true,
+    inputLabel: 'Create your 6-digit IPS PIN',
+    nextStep: 'PIN Setup',
   },
   {
     state: 'IPS_PIN_SETTING' as IPPOnboardingState,
@@ -126,10 +132,12 @@ const ONBOARDING_STEPS = [
   },
   {
     state: 'IPS_PIN_SET' as IPPOnboardingState,
-    label: 'PIN Set',
-    description: 'Your IPS PIN has been set successfully.',
-    action: null,
-    requiresInput: false,
+    label: 'Create Your VPA',
+    description: 'PIN set! Create your Virtual Payment Address to complete enrollment.',
+    action: 'create_alias',
+    requiresInput: true,
+    inputLabel: 'Choose your VPA username',
+    nextStep: 'VPA Registration',
   },
   {
     state: 'ALIAS_REGISTRATION_PENDING' as IPPOnboardingState,
@@ -141,10 +149,11 @@ const ONBOARDING_STEPS = [
   },
   {
     state: 'ALIAS_REGISTERED' as IPPOnboardingState,
-    label: 'VPA Created',
-    description: 'Your VPA has been registered successfully.',
-    action: null,
+    label: 'Complete Enrollment',
+    description: 'VPA created! Finalizing your IPP enrollment...',
+    action: 'finalize',
     requiresInput: false,
+    nextStep: 'Finalization',
   },
   {
     state: 'READY_FOR_IPP_PAYMENTS' as IPPOnboardingState,
@@ -289,6 +298,17 @@ export function BankingSection() {
           stepData = {
             sov_provider_code: selectedProvider,
             sov_provider_name: provider?.provider_name || selectedProvider,
+            sov_provider_handle: provider?.provider_handle || 'namlend',
+          };
+          break;
+
+        case 'select_account':
+          // In mock mode, we simulate account selection
+          stepName = 'account_selection';
+          stepData = {
+            selected_account_ref: 'MOCK_ACC_' + Date.now(),
+            selected_account_masked: '****' + Math.floor(1000 + Math.random() * 9000),
+            selected_account_type: 'SAVINGS',
           };
           break;
           
@@ -325,6 +345,12 @@ export function BankingSection() {
             long_alias: `${vpaUsername}@${vpaHandle}`,
             mobile_id_status: 'ACTIVE',
           };
+          break;
+
+        case 'finalize':
+          // Finalize enrollment - transition to READY state
+          stepName = 'finalize_enrollment';
+          stepData = {};
           break;
           
         default:
@@ -407,6 +433,14 @@ export function BankingSection() {
       case 'select_sov':
         return (
           <div className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  Select your bank to link your account with IPP for instant payments.
+                </p>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Select Your Bank or Provider</Label>
               <Select value={selectedProvider} onValueChange={setSelectedProvider}>
@@ -425,6 +459,40 @@ export function BankingSection() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        );
+
+      case 'select_account':
+        return (
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                    Connecting to {onboardingData?.sov_provider_name || 'your bank'}...
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    In production, you would select from your available accounts. For now, we'll create a mock account link.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Savings Account</p>
+                  <p className="text-sm text-muted-foreground">****1234 (Mock)</p>
+                </div>
+                <CheckCircle className="h-5 w-5 text-green-600 ml-auto" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Click Continue to link this account
+            </p>
           </div>
         );
         
@@ -512,6 +580,47 @@ export function BankingSection() {
                 </p>
               </div>
             )}
+          </div>
+        );
+
+      case 'finalize':
+        return (
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <div>
+                  <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+                    Almost done!
+                  </p>
+                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                    Click Continue to finalize your IPP enrollment and start making instant payments.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">Device bound</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">Bank account linked</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">Account verified</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">IPS PIN set</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">VPA: {onboardingData?.long_alias}</span>
+              </div>
+            </div>
           </div>
         );
         
@@ -611,22 +720,21 @@ export function BankingSection() {
                 <Progress value={progress} className="h-2" />
               </div>
 
-              {/* Current Step Info */}
+              {/* Current Step Info - Action Required */}
               {!isReady && (
-                <div className="p-4 bg-muted rounded-lg space-y-3">
+                <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/30 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {currentStep.requiresInput ? (
-                        <AlertCircle className="h-5 w-5 text-primary" />
-                      ) : (
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                      )}
+                    <div className="p-2 bg-primary/20 rounded-lg animate-pulse">
+                      <Zap className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">
-                        {currentStep.requiresInput ? 'Action Required' : 'Processing'}
+                      <h4 className="font-semibold text-foreground flex items-center gap-2">
+                        <span>Next Step:</span>
+                        <Badge variant="default" className="bg-primary">
+                          {currentStep.label}
+                        </Badge>
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {currentStep.description}
                       </p>
                     </div>
@@ -634,11 +742,19 @@ export function BankingSection() {
                   
                   {currentStep.action && (
                     <Button 
-                      className="w-full"
+                      size="lg"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
                       onClick={() => handleStartAction(currentStep.action!)}
                     >
-                      {currentStep.label}
-                      <ChevronRight className="h-4 w-4 ml-2" />
+                      <span className="mr-2">👉</span>
+                      {currentStep.action === 'select_sov' ? 'Select Your Bank' :
+                       currentStep.action === 'select_account' ? 'Link Account' :
+                       currentStep.action === 'verify_otp' ? 'Verify with OTP' :
+                       currentStep.action === 'set_pin' ? 'Set IPS PIN' :
+                       currentStep.action === 'create_alias' ? 'Create VPA Address' :
+                       currentStep.action === 'finalize' ? 'Complete Enrollment' :
+                       currentStep.label}
+                      <ChevronRight className="h-5 w-5 ml-2" />
                     </Button>
                   )}
                 </div>
@@ -686,30 +802,29 @@ export function BankingSection() {
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { icon: Phone, label: 'Device Binding', states: ['DEVICE_BINDING_REQUIRED', 'DEVICE_BOUND'] },
-                  { icon: Building2, label: 'Bank Selection', states: ['SOV_SELECTION_PENDING', 'SOV_SELECTED', 'ACCOUNTS_LISTED'] },
-                  { icon: Shield, label: 'Verification', states: ['VERIFICATION_PENDING', 'VERIFIED'] },
-                  { icon: Key, label: 'IPS PIN Setup', states: ['IPS_PIN_SETTING', 'IPS_PIN_SET'] },
-                  { icon: UserCheck, label: 'VPA Registration', states: ['ALIAS_REGISTRATION_PENDING', 'ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
+                  { icon: Phone, label: 'Device Binding', states: ['DEVICE_BINDING_REQUIRED', 'DEVICE_BOUND'], action: 'bind_device', completedStates: ['DEVICE_BOUND'] },
+                  { icon: Building2, label: 'Bank Selection', states: ['DEVICE_BOUND', 'SOV_SELECTION_PENDING', 'SOV_SELECTED'], action: 'select_sov', completedStates: ['SOV_SELECTED', 'ACCOUNTS_LISTED', 'VERIFICATION_PENDING', 'VERIFIED', 'IPS_PIN_SETTING', 'IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING', 'ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
+                  { icon: CreditCard, label: 'Link Account', states: ['SOV_SELECTED', 'ACCOUNTS_LISTED'], action: 'select_account', completedStates: ['VERIFICATION_PENDING', 'VERIFIED', 'IPS_PIN_SETTING', 'IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING', 'ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
+                  { icon: Shield, label: 'Verify Account', states: ['VERIFICATION_PENDING'], action: 'verify_otp', completedStates: ['VERIFIED', 'IPS_PIN_SETTING', 'IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING', 'ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
+                  { icon: Key, label: 'Set IPS PIN', states: ['VERIFIED', 'IPS_PIN_SETTING'], action: 'set_pin', completedStates: ['IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING', 'ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
+                  { icon: UserCheck, label: 'Create VPA', states: ['IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING'], action: 'create_alias', completedStates: ['ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'] },
                 ].map((step, index) => {
                   const Icon = step.icon;
-                  const stateIndex = ONBOARDING_STEPS.findIndex(s => s.state === onboardingData?.state);
-                  const stepStates = step.states;
-                  const isCompleted = stepStates.some(s => {
-                    const sIndex = ONBOARDING_STEPS.findIndex(os => os.state === s);
-                    return stateIndex > sIndex || (stateIndex === sIndex && s.includes('REGISTERED') || s.includes('SET') || s.includes('BOUND') || s.includes('VERIFIED') || s.includes('READY'));
-                  });
-                  const isCurrent = stepStates.includes(onboardingData?.state || 'NOT_STARTED');
+                  const currentState = onboardingData?.state || 'NOT_STARTED';
+                  const isCompleted = step.completedStates.includes(currentState);
+                  const isCurrent = step.states.includes(currentState) && !isCompleted;
+                  const canAction = isCurrent && step.action;
                   
                   return (
                     <div 
                       key={index}
-                      className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                      onClick={() => canAction && handleStartAction(step.action)}
+                      className={`flex items-center gap-4 p-3 rounded-lg transition-all ${
                         isCurrent 
-                          ? 'bg-primary/10 border border-primary/20' 
+                          ? 'bg-primary/10 border-2 border-primary/30 cursor-pointer hover:bg-primary/20' 
                           : isCompleted 
                             ? 'bg-green-50 dark:bg-green-900/10' 
-                            : 'bg-muted/50'
+                            : 'bg-muted/50 opacity-60'
                       }`}
                     >
                       <div className={`p-2 rounded-full ${
@@ -735,14 +850,17 @@ export function BankingSection() {
                         }`}>
                           {step.label}
                         </p>
+                        {isCurrent && (
+                          <p className="text-xs text-primary mt-0.5">Click to complete this step</p>
+                        )}
                       </div>
                       {isCompleted && (
                         <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
-                          Complete
+                          ✓ Done
                         </Badge>
                       )}
-                      {isCurrent && !isCompleted && (
-                        <Badge variant="default">Current</Badge>
+                      {isCurrent && (
+                        <ChevronRight className="h-5 w-5 text-primary" />
                       )}
                     </div>
                   );

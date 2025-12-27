@@ -1,6 +1,6 @@
 # NamLend Trust - Database Schema Documentation
 
-**Version**: 3.1.0  
+**Version**: 3.3.0  
 **Last Updated**: December 27, 2025  
 **Database**: PostgreSQL 15+ (Supabase)  
 **Project**: puahejtaskncpazjyxqp  
@@ -52,7 +52,7 @@ Payment records for loan repayments.
 | `id` | UUID | PK | Primary key |
 | `loan_id` | UUID | FK → loans | Associated loan |
 | `amount` | NUMERIC | NOT NULL | Payment amount (NAD) |
-| `payment_method` | VARCHAR(50) | NOT NULL | bank_transfer, mobile_money, cash, debit_order |
+| `payment_method` | VARCHAR(50) | NOT NULL | bank_transfer, mobile_money, cash, debit_order, ips |
 | `reference_number` | VARCHAR(100) | | External reference |
 | `status` | VARCHAR(20) | | pending, completed, failed |
 | `paid_at` | TIMESTAMPTZ | | When payment was processed |

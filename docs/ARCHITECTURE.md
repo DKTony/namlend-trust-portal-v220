@@ -1,8 +1,8 @@
 # NamLend Trust - System Architecture
 
-**Version**: 3.0.0  
-**Last Updated**: December 22, 2025  
-**Status**: ✅ Production Architecture Complete (IPS Integration Active; Admin Config Panels Complete)
+**Version**: 3.2.0  
+**Last Updated**: December 27, 2025  
+**Status**: ✅ Production Architecture Complete (IPS/IPP Integration Active; Admin Config Panels Complete)
 
 ---
 

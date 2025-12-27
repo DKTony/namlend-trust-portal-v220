@@ -739,6 +739,80 @@ Stores admin-configurable system settings for TigerBeetle, Settlement, IPS, and 
 | **20251212050000_ips_monitoring** | **Dec 2025** | **IPS monitoring and alerts** |
 | **20251212053000_settlement_system** | **Dec 2025** | **BON settlement reconciliation (13 tables)** |
 | **20251222050000_system_configuration** | **Dec 2025** | **Admin configuration table, RLS, RPCs** |
+| **20251227100000_ipp_onboarding_system** | **Dec 2025** | **IPP onboarding state machine (8 tables, 6 RPCs)** |
+
+---
+
+## IPP Onboarding Tables
+
+### `ips_device_bindings`
+Device binding records for IPP/IPS mobile registration.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `user_id` | UUID | FK → auth.users |
+| `device_fingerprint` | TEXT | Device unique identifier |
+| `mobile_number` | VARCHAR(20) | Registered mobile |
+| `status` | VARCHAR(20) | pending, active, expired, revoked, replaced |
+| `bound_at` | TIMESTAMPTZ | When bound |
+
+### `ips_onboarding`
+Customer IPP onboarding state machine tracking.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `user_id` | UUID | FK → auth.users, UNIQUE |
+| `state` | ipp_onboarding_state | Current onboarding state |
+| `sov_provider_code` | VARCHAR(30) | Selected bank code |
+| `long_alias` | VARCHAR(100) | Full VPA (e.g., user@fnb) |
+| `ips_pin_set` | BOOLEAN | Whether IPS PIN is configured |
+| `last_error_code` | VARCHAR(20) | Last error if any |
+
+**States**: NOT_STARTED → DEVICE_BINDING_REQUIRED → DEVICE_BOUND → SOV_SELECTED → ACCOUNTS_LISTED → VERIFIED → IPS_PIN_SET → ALIAS_REGISTERED → READY_FOR_IPP_PAYMENTS
+
+### `ips_alias_directory`
+Local cache of IPS Alias Directory entries.
+
+### `ips_merchants`
+Merchant registration for P2M payments.
+
+### `ips_vae_entries`
+Verified Address Entries for merchant anti-spoofing.
+
+### `ips_keys_cache`
+Cached public keys from IPS participants.
+
+### `ips_sov_providers`
+Store of Value providers (banks, mobile money).
+
+| Seeded Providers | Handle |
+|-----------------|--------|
+| First National Bank Namibia | @fnb |
+| Standard Bank Namibia | @sbn |
+| Nedbank Namibia | @nedbank |
+| Bank Windhoek | @bankwindhoek |
+| NamPost Savings Bank | @nampost |
+| MTC Mobile Money | @mtc |
+| TN Mobile Money | @tn |
+
+### `ips_onboarding_history`
+Audit trail for all IPP onboarding state transitions.
+
+---
+
+## IPP Onboarding RPCs
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `get_or_create_ips_onboarding(uuid)` | JSONB | Get/create onboarding record |
+| `advance_ips_onboarding_step(...)` | JSONB | Advance to next state |
+| `is_user_ipp_ready(uuid)` | BOOLEAN | Check if user can make IPP payments |
+| `get_ipp_onboarding_summary()` | JSONB | Admin summary stats |
+| `get_users_pending_ipp_onboarding(...)` | JSONB | List users by state |
+| `admin_initiate_ipp_onboarding(uuid, varchar)` | JSONB | Start onboarding for user |
+| `queue_ipp_onboarding_notification(...)` | UUID | Queue notification for user |
 
 ---
 
@@ -746,13 +820,13 @@ Stores admin-configurable system settings for TigerBeetle, Settlement, IPS, and 
 
 | Metric | Value |
 |--------|-------|
-| Total Tables | 49+ |
-| Total Migrations | 33 |
-| RLS Policies | 65+ |
-| Database Functions | 38+ |
-| Indexes | 52+ |
+| Total Tables | 57+ |
+| Total Migrations | 34 |
+| RLS Policies | 73+ |
+| Database Functions | 45+ |
+| Indexes | 60+ |
 
 ---
 
-*Document Version: 3.0.0*  
-*Last Updated: December 22, 2025*
+*Document Version: 3.1.0*  
+*Last Updated: December 27, 2025*

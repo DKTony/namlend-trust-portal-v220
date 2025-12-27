@@ -32,6 +32,7 @@ import PaymentModal from '@/components/PaymentModal';
 import { LoanStatusTimeline, generateLoanTimeline } from '@/components/LoanStatusTimeline';
 import { SelfServicePortal } from '@/components/SelfServicePortal';
 import ClientProfileDashboard from '@/components/ClientProfileDashboard';
+import { BankingSection } from '@/components/BankingSection';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { ModeToggle } from '@/components/ModeToggle';
 
@@ -501,6 +502,9 @@ export default function Dashboard() {
           </div>
         );
       
+      case 'banking':
+        return <BankingSection />;
+
       case 'self-service':
         return <SelfServicePortal />;
       

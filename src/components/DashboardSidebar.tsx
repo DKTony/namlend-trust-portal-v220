@@ -9,7 +9,8 @@ import {
   LogOut, 
   X,
   ShieldCheck,
-  Menu
+  Menu,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     { id: 'loans', label: 'My Loans', icon: CreditCard },
     { id: 'applications', label: 'Applications', icon: FileText },
     { id: 'payments', label: 'Payments', icon: DollarSign },
+    { id: 'banking', label: 'Banking', icon: Wallet },
     { id: 'self-service', label: 'Self Service', icon: Settings },
     { id: 'profile', label: 'Profile', icon: User },
   ];

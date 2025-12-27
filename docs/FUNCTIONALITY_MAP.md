@@ -17,6 +17,7 @@
 | Disbursement | disbursementService | disbursements, loans, audit_logs | ✅ Working |
 | Payments | paymentService, paymentGateway | payments, payment_schedules, payment_transactions | ✅ Working |
 | **IPS Payments** | ipsService | ips_transactions, ips_vpa_registry, ips_api_logs | ✅ Working (Mock Mode) |
+| **IPP Onboarding** | ipsOnboardingService | ips_onboarding, ips_device_bindings, ips_alias_directory, ips_sov_providers | ✅ Working |
 | Collections | collectionsService | collections_activities, promise_to_pay, reschedule_requests, collections_interactions | ✅ Working |
 | Credit Scoring | creditScoring | credit_scores, credit_score_factors, profiles | ✅ Working |
 | Notifications | notificationService | notifications, notification_queue, notification_templates | ✅ Working |

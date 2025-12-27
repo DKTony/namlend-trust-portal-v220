@@ -407,6 +407,13 @@ upsertVPA(params: UpsertVPAParams): Promise<VPA>
 | `/pay` | POST | Process IPS payment |
 | `/validate-vpa` | POST | Validate VPA address |
 | `/check-status` | POST | Check transaction status |
+| `/list-acc-pvd` | POST | List SoV providers |
+| `/list-account` | POST | List user accounts |
+| `/register-mobile` | POST | Register mobile device |
+| `/get-alias` | POST | Get alias directory |
+| `/reg-mapper` | POST | Register VPA alias |
+| `/set-cred` | POST | Set IPS PIN |
+| `/list-keys` | POST | List encryption keys |
 
 ### Mock Mode
 
@@ -447,8 +454,70 @@ The following tables support these services:
 | `ips_transactions` | **IPS** | IPS payment transactions |
 | `ips_vpa_registry` | **IPS** | User VPA records |
 | `ips_api_logs` | **IPS** | API call logging |
+| `ips_onboarding` | **IPP Onboarding** | Customer onboarding state machine |
+| `ips_device_bindings` | **IPP Onboarding** | Device binding records |
+| `ips_alias_directory` | **IPP Onboarding** | VPA alias cache |
+| `ips_sov_providers` | **IPP Onboarding** | SoV providers (banks, mobile money) |
+| `ips_onboarding_history` | **IPP Onboarding** | Onboarding audit trail |
 
 ---
 
-*Document Version: 2.7.0*  
-*Last Updated: December 12, 2025*
+## IPP Onboarding Service
+
+**File**: `src/services/ipsOnboardingService.ts`
+
+### Purpose
+
+Manages customer enrollment into IPP (Instant Payment Platform) for real-time payments.
+
+### Onboarding States
+
+| State | Description |
+|-------|-------------|
+| `NOT_STARTED` | User has not begun enrollment |
+| `DEVICE_BINDING_REQUIRED` | Device binding needed |
+| `DEVICE_BOUND` | Device successfully bound |
+| `SOV_SELECTED` | Bank/provider selected |
+| `ACCOUNTS_LISTED` | Accounts fetched from bank |
+| `VERIFIED` | Account verified via OTP |
+| `IPS_PIN_SET` | 6-digit IPS PIN created |
+| `ALIAS_REGISTERED` | VPA created and active |
+| `READY_FOR_IPP_PAYMENTS` | Fully enrolled, can transact |
+
+### Key Functions
+
+```typescript
+// Get onboarding status
+getOnboardingStatus(userId?: string): Promise<OnboardingStatusResponse>
+
+// Advance onboarding step
+advanceOnboardingStep(stepName, stepData): Promise<StepResult>
+
+// Customer flow functions
+startDeviceBinding(mobileNumber): Promise<DeviceBindingResult>
+selectSovProvider(providerCode): Promise<SovSelectionResult>
+verifyWithOTP(otpCode): Promise<VerificationResult>
+setIPSPin(pin): Promise<PinSetResult>
+registerAlias(vpaUsername): Promise<AliasResult>
+```
+
+### Client-Side UI
+
+**Component**: `src/components/BankingSection.tsx`
+
+Provides self-service IPP enrollment in the client dashboard under the **Banking** tab.
+
+### Admin Dashboard UI
+
+**Component**: `src/pages/AdminDashboard/components/IPPOnboarding/IPPOnboardingDashboard.tsx`
+
+Allows admins to:
+- View enrollment statistics
+- Initiate onboarding for customers
+- Monitor onboarding progress
+- View detailed user status
+
+---
+
+*Document Version: 3.1.0*  
+*Last Updated: December 27, 2025*

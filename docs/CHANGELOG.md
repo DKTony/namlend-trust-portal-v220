@@ -5,6 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-12-27
+
+### Added
+
+#### IPP Onboarding System
+- **Database Schema** (migration: `20251227100000_ipp_onboarding_system`)
+  - `ips_device_bindings` - Device binding records for mobile registration
+  - `ips_onboarding` - Customer onboarding state machine (15 states)
+  - `ips_alias_directory` - VPA alias cache
+  - `ips_merchants` - Merchant registration for P2M payments
+  - `ips_vae_entries` - Verified Address Entries
+  - `ips_keys_cache` - Encryption keys cache
+  - `ips_sov_providers` - Store of Value providers (7 Namibian banks seeded)
+  - `ips_onboarding_history` - Audit trail for state transitions
+
+- **RPC Functions**
+  - `get_or_create_ips_onboarding()` - Get/create onboarding record
+  - `advance_ips_onboarding_step()` - Advance to next state
+  - `is_user_ipp_ready()` - Check if user can make IPP payments
+  - `get_ipp_onboarding_summary()` - Admin summary stats
+  - `get_users_pending_ipp_onboarding()` - List users by state
+  - `admin_initiate_ipp_onboarding()` - Start onboarding for user
+  - `queue_ipp_onboarding_notification()` - Queue notification for user
+
+- **IPS Adapter Edge Function** - Added onboarding endpoints
+  - `/list-acc-pvd` - List SoV providers
+  - `/list-account` - List user accounts
+  - `/register-mobile` - Register mobile device
+  - `/get-alias` - Get alias directory
+  - `/reg-mapper` - Register VPA alias
+  - `/set-cred` - Set IPS PIN
+  - `/list-keys` - List encryption keys
+
+- **TypeScript Types** (`src/types/ips.ts`)
+  - Added IPP onboarding types, state machine enums, and utility functions
+
+- **IPP Onboarding Service** (`src/services/ipsOnboardingService.ts`)
+  - Customer and merchant onboarding flows
+  - State machine management
+  - IPS adapter integration
+
+- **Admin Dashboard IPP Onboarding UI** (`src/pages/AdminDashboard/components/IPPOnboarding/`)
+  - Statistics overview (total users, by state, ready, in-progress)
+  - User listing with state filtering
+  - Initiate onboarding for customers
+  - View detailed onboarding status modal
+
+- **Client Banking Section** (`src/components/BankingSection.tsx`)
+  - Self-service IPP enrollment UI
+  - Step-by-step onboarding wizard (Device Binding → Bank Selection → OTP → IPS PIN → VPA)
+  - Linked accounts view
+  - Payment methods overview
+
+- **Dashboard Integration**
+  - Added "Banking" tab to client dashboard sidebar
+  - Notification triggers for onboarding steps requiring user input
+
+---
+
 ## [3.1.0] - 2025-12-27
 
 ### Fixed

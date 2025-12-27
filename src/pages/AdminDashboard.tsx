@@ -50,6 +50,7 @@ import { SettlementConfig } from '@/pages/AdminDashboard/components/Settings/Set
 import { BatchOperations } from '@/pages/AdminDashboard/components/BatchOperations';
 import PortfolioAnalytics from '@/pages/AdminDashboard/components/Analytics/PortfolioAnalytics';
 import { LedgerDashboard } from '@/pages/AdminDashboard/components/TigerBeetle';
+import { IPPOnboardingDashboard } from '@/pages/AdminDashboard/components/IPPOnboarding';
 
 
 const AdminDashboard: React.FC = () => {
@@ -196,6 +197,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'payments', label: 'Payments', icon: DollarSign },
     { id: 'approvals', label: 'Approvals', icon: CheckCircle2 },
     { id: 'collections', label: 'Collections', icon: AlertTriangle },
+    { id: 'ipp-onboarding', label: 'IPP Onboarding', icon: UserCheck },
     { id: 'batch', label: 'Batch Operations', icon: CheckSquare },
     { id: 'users', label: 'User Management', icon: Users },
     ...(isAdmin ? [
@@ -308,6 +310,13 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'batch' && (
               <div className="space-y-6">
                 <BatchOperations key={`batch-${refreshKey}`} />
+              </div>
+            )}
+
+            {/* IPP Onboarding */}
+            {activeTab === 'ipp-onboarding' && (
+              <div className="space-y-6">
+                <IPPOnboardingDashboard key={`ipp-onboarding-${refreshKey}`} />
               </div>
             )}
 

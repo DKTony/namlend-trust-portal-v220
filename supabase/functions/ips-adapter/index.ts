@@ -70,6 +70,147 @@ interface IPSCheckStatusResponse {
 }
 
 // =============================================================================
+// ONBOARDING TYPES
+// =============================================================================
+
+interface IPSListAccPvdRequest {
+  // No parameters needed - lists all available providers
+}
+
+interface IPSListAccPvdResponse {
+  success: boolean;
+  error?: string;
+  providers?: Array<{
+    providerCode: string;
+    providerName: string;
+    providerHandle: string;
+    supportsDebitCard: boolean;
+    supportsWalletPin: boolean;
+    isActive: boolean;
+  }>;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSListAccountRequest {
+  userId: string;
+  mobileNumber: string;
+  providerCode: string;
+}
+
+interface IPSListAccountResponse {
+  success: boolean;
+  error?: string;
+  accounts?: Array<{
+    accRefNumber: string;
+    accType: string;
+    maskedAccNumber: string;
+    accountHolderName: string;
+    ifsc?: string;
+    mmid?: string;
+    allowedCredentials: string[];
+  }>;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSRegisterMobileRequest {
+  userId: string;
+  mobileNumber: string;
+  providerCode: string;
+  accountRef: string;
+  // Encrypted credentials (from Common Library)
+  encryptedOtp?: string;
+  encryptedPin?: string;
+  encryptedCardDigits?: string;
+  encryptedExpDate?: string;
+  keyId?: string;
+}
+
+interface IPSRegisterMobileResponse {
+  success: boolean;
+  error?: string;
+  registered?: boolean;
+  ipsPinSet?: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSGetAliasRequest {
+  aliasAddress: string;
+  mobileNumber?: string;
+}
+
+interface IPSGetAliasResponse {
+  success: boolean;
+  error?: string;
+  exists?: boolean;
+  status?: string;
+  entityType?: string;
+  cmId?: string;
+  expiryTs?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSRegMapperRequest {
+  userId: string;
+  aliasAddress: string;
+  entityType: 'PERSON' | 'ENTITY';
+  mobileNumber: string;
+  numericId?: string;
+  operation: 'ADD' | 'MODIFY' | 'BLOCK' | 'UNBLOCK' | 'DEREGISTER';
+}
+
+interface IPSRegMapperResponse {
+  success: boolean;
+  error?: string;
+  registered?: boolean;
+  cmId?: string;
+  status?: string;
+  expiryTs?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSSetCredRequest {
+  userId: string;
+  mobileNumber: string;
+  providerCode: string;
+  operation: 'SET' | 'CHANGE' | 'RESET';
+  encryptedOldPin?: string;
+  encryptedNewPin: string;
+  keyId?: string;
+}
+
+interface IPSSetCredResponse {
+  success: boolean;
+  error?: string;
+  updated?: boolean;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+interface IPSListKeysRequest {
+  orgId?: string;
+}
+
+interface IPSListKeysResponse {
+  success: boolean;
+  error?: string;
+  keys?: Array<{
+    keyId: string;
+    orgId: string;
+    keyType: string;
+    publicKey: string;
+    validFrom: string;
+    validTo: string;
+  }>;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+// =============================================================================
 // CONFIGURATION
 // =============================================================================
 
@@ -186,6 +327,119 @@ function getMockCheckStatusResponse(request: IPSCheckStatusRequest): IPSCheckSta
 }
 
 // =============================================================================
+// MOCK RESPONSES FOR ONBOARDING (development)
+// =============================================================================
+
+function getMockListAccPvdResponse(): IPSListAccPvdResponse {
+  return {
+    success: true,
+    providers: [
+      { providerCode: 'FNB', providerName: 'First National Bank Namibia', providerHandle: 'fnb', supportsDebitCard: true, supportsWalletPin: false, isActive: true },
+      { providerCode: 'SBN', providerName: 'Standard Bank Namibia', providerHandle: 'sbn', supportsDebitCard: true, supportsWalletPin: false, isActive: true },
+      { providerCode: 'NED', providerName: 'Nedbank Namibia', providerHandle: 'nedbank', supportsDebitCard: true, supportsWalletPin: false, isActive: true },
+      { providerCode: 'BOW', providerName: 'Bank Windhoek', providerHandle: 'bankwindhoek', supportsDebitCard: true, supportsWalletPin: false, isActive: true },
+      { providerCode: 'NAMPOST', providerName: 'NamPost Savings Bank', providerHandle: 'nampost', supportsDebitCard: false, supportsWalletPin: true, isActive: true },
+      { providerCode: 'MTC', providerName: 'MTC Mobile Money', providerHandle: 'mtc', supportsDebitCard: false, supportsWalletPin: true, isActive: true },
+      { providerCode: 'TN', providerName: 'TN Mobile Money', providerHandle: 'tn', supportsDebitCard: false, supportsWalletPin: true, isActive: true },
+    ],
+  };
+}
+
+function getMockListAccountResponse(request: IPSListAccountRequest): IPSListAccountResponse {
+  // Return mock accounts based on provider
+  const providerAccounts: Record<string, Array<{ accRefNumber: string; accType: string; maskedAccNumber: string; accountHolderName: string; ifsc?: string; allowedCredentials: string[] }>> = {
+    'FNB': [
+      { accRefNumber: 'FNB001', accType: 'SAVINGS', maskedAccNumber: '****5678', accountHolderName: 'Test User', ifsc: 'FNBN001', allowedCredentials: ['OTP', 'PIN'] },
+      { accRefNumber: 'FNB002', accType: 'CURRENT', maskedAccNumber: '****1234', accountHolderName: 'Test User', ifsc: 'FNBN001', allowedCredentials: ['OTP', 'PIN'] },
+    ],
+    'SBN': [
+      { accRefNumber: 'SBN001', accType: 'SAVINGS', maskedAccNumber: '****9012', accountHolderName: 'Test User', ifsc: 'SBNN001', allowedCredentials: ['OTP', 'PIN'] },
+    ],
+    'MTC': [
+      { accRefNumber: 'MTC001', accType: 'WALLET', maskedAccNumber: '****' + request.mobileNumber.slice(-4), accountHolderName: 'Test User', allowedCredentials: ['PIN'] },
+    ],
+    'TN': [
+      { accRefNumber: 'TN001', accType: 'WALLET', maskedAccNumber: '****' + request.mobileNumber.slice(-4), accountHolderName: 'Test User', allowedCredentials: ['PIN'] },
+    ],
+  };
+
+  return {
+    success: true,
+    accounts: providerAccounts[request.providerCode] || [
+      { accRefNumber: 'DEFAULT001', accType: 'SAVINGS', maskedAccNumber: '****0000', accountHolderName: 'Test User', allowedCredentials: ['OTP', 'PIN'] },
+    ],
+  };
+}
+
+function getMockRegisterMobileResponse(request: IPSRegisterMobileRequest): IPSRegisterMobileResponse {
+  // Simulate successful registration
+  return {
+    success: true,
+    registered: true,
+    ipsPinSet: true,
+  };
+}
+
+function getMockGetAliasResponse(request: IPSGetAliasRequest): IPSGetAliasResponse {
+  // Check if alias exists (simulate)
+  const aliasExists = !request.aliasAddress.includes('new');
+  
+  if (aliasExists) {
+    return {
+      success: true,
+      exists: true,
+      status: 'ACTIVE',
+      entityType: 'PERSON',
+      cmId: `CM${Date.now()}`,
+      expiryTs: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+  
+  return {
+    success: true,
+    exists: false,
+  };
+}
+
+function getMockRegMapperResponse(request: IPSRegMapperRequest): IPSRegMapperResponse {
+  // Simulate successful alias registration
+  const expiryTs = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  
+  return {
+    success: true,
+    registered: request.operation === 'ADD' || request.operation === 'MODIFY',
+    cmId: `CM${Date.now()}`,
+    status: request.operation === 'DEREGISTER' ? 'DEREGISTER' : 'ACTIVE',
+    expiryTs,
+  };
+}
+
+function getMockSetCredResponse(request: IPSSetCredRequest): IPSSetCredResponse {
+  // Simulate successful PIN set/change
+  return {
+    success: true,
+    updated: true,
+  };
+}
+
+function getMockListKeysResponse(request: IPSListKeysRequest): IPSListKeysResponse {
+  // Return mock public keys
+  return {
+    success: true,
+    keys: [
+      {
+        keyId: 'KEY001',
+        orgId: request.orgId || 'NAMLEND',
+        keyType: 'encryption',
+        publicKey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...', // Truncated mock key
+        validFrom: new Date().toISOString(),
+        validTo: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+  };
+}
+
+// =============================================================================
 // IPS API CALLS (Production)
 // =============================================================================
 
@@ -223,6 +477,73 @@ async function callIPSCheckStatus(request: IPSCheckStatusRequest): Promise<IPSCh
   }
   
   // TODO: Implement actual IPS ReqChkTxn API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+// =============================================================================
+// IPS ONBOARDING API CALLS (Production stubs + mock mode)
+// =============================================================================
+
+async function callIPSListAccPvd(): Promise<IPSListAccPvdResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+    return getMockListAccPvdResponse();
+  }
+  // TODO: Implement actual IPS ReqListAccPvd API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSListAccount(request: IPSListAccountRequest): Promise<IPSListAccountResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 500));
+    return getMockListAccountResponse(request);
+  }
+  // TODO: Implement actual IPS ReqListAccount API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSRegisterMobile(request: IPSRegisterMobileRequest): Promise<IPSRegisterMobileResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+    return getMockRegisterMobileResponse(request);
+  }
+  // TODO: Implement actual IPS ReqRegMob API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSGetAlias(request: IPSGetAliasRequest): Promise<IPSGetAliasResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+    return getMockGetAliasResponse(request);
+  }
+  // TODO: Implement actual IPS ReqGetAdd API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSRegMapper(request: IPSRegMapperRequest): Promise<IPSRegMapperResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 600));
+    return getMockRegMapperResponse(request);
+  }
+  // TODO: Implement actual IPS ReqRegMapper API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSSetCred(request: IPSSetCredRequest): Promise<IPSSetCredResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 600));
+    return getMockSetCredResponse(request);
+  }
+  // TODO: Implement actual IPS ReqSetCre API call
+  throw new Error('Production IPS integration not yet implemented');
+}
+
+async function callIPSListKeys(request: IPSListKeysRequest): Promise<IPSListKeysResponse> {
+  if (MOCK_MODE) {
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+    return getMockListKeysResponse(request);
+  }
+  // TODO: Implement actual IPS ReqListKeys API call
   throw new Error('Production IPS integration not yet implemented');
 }
 
@@ -460,6 +781,324 @@ async function handleCheckStatus(
 }
 
 // =============================================================================
+// ONBOARDING REQUEST HANDLERS
+// =============================================================================
+
+async function handleListAccPvd(
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] Listing SoV providers`);
+  
+  try {
+    const response = await callIPSListAccPvd();
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqListAccPvd',
+      'OUTBOUND',
+      {},
+      { providerCount: response.providers?.length || 0 },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] List providers error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'LIST_PROVIDERS_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleListAccount(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSListAccountRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] Listing accounts for:`, request.mobileNumber, request.providerCode);
+  
+  try {
+    const response = await callIPSListAccount(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqListAccount',
+      'OUTBOUND',
+      { providerCode: request.providerCode, mobileNumber: request.mobileNumber?.slice(-4) },
+      { accountCount: response.accounts?.length || 0 },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] List accounts error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'LIST_ACCOUNTS_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleRegisterMobile(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSRegisterMobileRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] Registering mobile:`, request.mobileNumber, request.providerCode);
+  
+  try {
+    const response = await callIPSRegisterMobile(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqRegMob',
+      'OUTBOUND',
+      { providerCode: request.providerCode, accountRef: request.accountRef },
+      { registered: response.registered, ipsPinSet: response.ipsPinSet },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] Register mobile error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'REGISTER_MOBILE_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleGetAlias(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSGetAliasRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] Getting alias:`, request.aliasAddress);
+  
+  try {
+    const response = await callIPSGetAlias(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqGetAdd',
+      'OUTBOUND',
+      { aliasAddress: request.aliasAddress },
+      { exists: response.exists, status: response.status },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] Get alias error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'GET_ALIAS_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleRegMapper(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSRegMapperRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] RegMapper operation:`, request.operation, request.aliasAddress);
+  
+  try {
+    const response = await callIPSRegMapper(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqRegMapper',
+      'OUTBOUND',
+      { aliasAddress: request.aliasAddress, operation: request.operation, entityType: request.entityType },
+      { registered: response.registered, cmId: response.cmId, status: response.status },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] RegMapper error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'REG_MAPPER_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleSetCred(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSSetCredRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] SetCred operation:`, request.operation);
+  
+  try {
+    const response = await callIPSSetCred(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqSetCre',
+      'OUTBOUND',
+      { operation: request.operation, providerCode: request.providerCode },
+      { updated: response.updated },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] SetCred error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'SET_CRED_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleListKeys(
+  supabase: ReturnType<typeof createClient>,
+  request: IPSListKeysRequest
+): Promise<Response> {
+  const correlationId = crypto.randomUUID();
+  const sentAt = new Date();
+  
+  console.log(`[${correlationId}] Listing keys for:`, request.orgId || 'all');
+  
+  try {
+    const response = await callIPSListKeys(request);
+    const receivedAt = new Date();
+    
+    await logAPICall(
+      supabase,
+      correlationId,
+      null,
+      'ReqListKeys',
+      'OUTBOUND',
+      { orgId: request.orgId },
+      { keyCount: response.keys?.length || 0 },
+      response.success ? 200 : 400,
+      response.success ? 'SUCCESS' : 'FAILURE',
+      response.errorCode || null,
+      sentAt,
+      receivedAt
+    );
+    
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error(`[${correlationId}] List keys error:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'LIST_KEYS_ERROR',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// =============================================================================
 // MAIN HANDLER
 // =============================================================================
 
@@ -498,6 +1137,28 @@ serve(async (req: Request) => {
       
       case '/check-status':
         return await handleCheckStatus(supabase, body as IPSCheckStatusRequest);
+      
+      // IPP Onboarding endpoints
+      case '/list-acc-pvd':
+        return await handleListAccPvd(supabase);
+      
+      case '/list-account':
+        return await handleListAccount(supabase, body as IPSListAccountRequest);
+      
+      case '/register-mobile':
+        return await handleRegisterMobile(supabase, body as IPSRegisterMobileRequest);
+      
+      case '/get-alias':
+        return await handleGetAlias(supabase, body as IPSGetAliasRequest);
+      
+      case '/reg-mapper':
+        return await handleRegMapper(supabase, body as IPSRegMapperRequest);
+      
+      case '/set-cred':
+        return await handleSetCred(supabase, body as IPSSetCredRequest);
+      
+      case '/list-keys':
+        return await handleListKeys(supabase, body as IPSListKeysRequest);
       
       default:
         return new Response(JSON.stringify({ error: 'Unknown endpoint' }), {

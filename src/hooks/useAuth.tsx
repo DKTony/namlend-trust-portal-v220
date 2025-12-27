@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,6 +23,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Track if we've completed the initial session check to avoid race conditions
+  const initialCheckComplete = useRef(false);
 
   const isAdmin = userRole === 'admin';
   const isLoanOfficer = userRole === 'loan_officer' || userRole === 'admin';
@@ -76,24 +78,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, !!session?.user);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    // Check for existing session
+    // Check for existing session FIRST before setting up listener
+    // This prevents race conditions where INITIAL_SESSION fires with null
+    // before the session is restored from storage
     const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -111,14 +98,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserRole(null);
         }
         
+        // Mark initial check as complete BEFORE setting loading to false
+        initialCheckComplete.current = true;
         setLoading(false);
       } catch (error) {
         console.error('Error in initAuth:', error);
+        initialCheckComplete.current = true;
         setLoading(false);
       }
     };
 
     initAuth();
+
+    // Set up auth state listener for subsequent changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, !!session?.user);
+        
+        // Skip INITIAL_SESSION events - we handle initial state via getSession()
+        // This prevents the race condition where INITIAL_SESSION fires with null
+        // before the persisted session is restored
+        if (event === 'INITIAL_SESSION') {
+          console.log('Skipping INITIAL_SESSION event (handled by getSession)');
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+        }
+        
+        // Only set loading false if initial check hasn't happened yet
+        // (shouldn't normally happen, but safety check)
+        if (!initialCheckComplete.current) {
+          initialCheckComplete.current = true;
+          setLoading(false);
+        }
+      }
+    );
 
     return () => {
       subscription?.unsubscribe();

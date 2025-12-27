@@ -16,7 +16,8 @@ import {
   Users,
   ArrowRight,
   ArrowLeft,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -194,10 +195,10 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-border">
+    <div className="w-full">
+      <div className="bg-card rounded-lg w-full border border-border">
         {/* Header */}
-        <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border px-6 py-4 flex items-center justify-between z-10">
+        <div className="border-b border-border px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">User Import Wizard</h2>
             <p className="text-muted-foreground">Import users from CSV file</p>
@@ -498,7 +499,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border px-6 py-4 flex items-center justify-between">
+        <div className="border-t border-border px-6 py-4 flex items-center justify-between">
           <Button 
             variant="outline" 
             onClick={handlePreviousStep}

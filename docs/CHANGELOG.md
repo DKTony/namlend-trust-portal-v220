@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-12-27
+
+### Fixed
+
+#### Authentication
+- **Auth Race Condition Fix** (`src/hooks/useAuth.tsx`)
+  - Fixed page refresh causing momentary sign-out/redirect flash
+  - Added `initialCheckComplete` ref to track session initialization state
+  - Skip `INITIAL_SESSION` events from `onAuthStateChange` to prevent premature null session handling
+  - Rely on `getSession()` for initial state, `onAuthStateChange` for subsequent changes
+
+#### User Management Database Integration
+- **RPC Type Mismatch Fix** (`get_profiles_with_roles_admin`)
+  - Fixed `varchar(255)` to `text` type casting for email field
+  - Migration: `fix_get_profiles_with_roles_admin_type_cast`
+
+- **Audit Logs Query Fix** (`UserAuditLog.tsx`)
+  - Changed `timestamp` → `created_at` (correct column name)
+  - Changed `old_state`/`new_state` → `old_values`/`new_values`
+  - Changed `entity_type`/`entity_id` → `table_name`/`record_id`
+
+- **profiles_with_roles View Enhancement** (migration applied)
+  - Added aggregated role columns: `roles[]`, `primary_role`, `is_admin`, `is_loan_officer`, `is_client`
+  - Added `account_status` derived from `verified` field
+  - Enables proper filtering and display in User Management dashboard
+
+### Changed
+
+#### User Import Wizard (`UserImportWizard.tsx`)
+- Converted from modal overlay to inline tab content
+- Cancel/X buttons now navigate back to "All Users" tab
+- Added missing `Loader2` import
+- Fixed app freeze issue when closing wizard
+
+#### Role Management (`RoleManagement.tsx`)
+- **View Users Dialog** - Replaced `window.alert()` popup with proper card-based dialog
+  - Card layout for each user with avatar initials
+  - Displays name, email, phone, and account status
+  - Loading and empty state handling
+  - User count in footer
+  - Consistent with app design system
+
+### Database Migrations
+- `fix_get_profiles_with_roles_admin_type_cast` - Cast varchar to text in RPC
+- `fix_profiles_with_roles_view` - Add aggregated role columns to view
+
+### Technical Notes
+- All User Management features now fully functional end-to-end
+- Auth flow stable on page refresh
+- TypeScript compiles without errors
+- Dark mode contrast maintained across all updated components
+
+---
+
 ## [3.0.0] - 2025-12-22
 
 ### Added

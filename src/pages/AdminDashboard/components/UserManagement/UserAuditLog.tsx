@@ -124,27 +124,26 @@ const UserAuditLog: React.FC = () => {
           startDate = null;
       }
 
+      // Use created_at (actual column name) instead of timestamp
       let query = supabase
         .from('audit_logs')
         .select(`
           id,
-          timestamp,
+          created_at,
           user_id,
-          user_role,
           action,
-          entity_type,
-          entity_id,
-          old_state,
-          new_state,
+          table_name,
+          record_id,
+          old_values,
+          new_values,
           ip_address,
-          user_agent,
-          metadata
+          user_agent
         `)
-        .order('timestamp', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(100);
 
       if (startDate) {
-        query = query.gte('timestamp', startDate.toISOString());
+        query = query.gte('created_at', startDate.toISOString());
       }
 
       if (filterAction !== 'all') {
@@ -157,25 +156,24 @@ const UserAuditLog: React.FC = () => {
 
       // Transform database records to UI format
       const transformedLogs: AuditLogEntry[] = (data || []).map((log: any) => {
-        // Extract user name from metadata or old_state/new_state
-        const userName = log.metadata?.user_name || 
-                        log.new_state?.full_name || 
-                        log.old_state?.full_name ||
+        // Extract user name from new_values or old_values
+        const userName = log.new_values?.full_name || 
+                        log.old_values?.full_name ||
                         `User ${log.user_id?.slice(0, 8) || 'Unknown'}`;
         
-        // Extract admin info from metadata
-        const adminName = log.metadata?.admin_name || log.user_role || 'System';
+        // Extract admin info
+        const adminName = 'Admin';
         
-        // Build changes array from old_state and new_state
+        // Build changes array from old_values and new_values
         const changes: { field: string; oldValue: string; newValue: string }[] = [];
-        if (log.old_state && log.new_state) {
-          const oldKeys = Object.keys(log.old_state);
-          const newKeys = Object.keys(log.new_state);
+        if (log.old_values && log.new_values) {
+          const oldKeys = Object.keys(log.old_values);
+          const newKeys = Object.keys(log.new_values);
           const allKeys = [...new Set([...oldKeys, ...newKeys])];
           
           allKeys.forEach(key => {
-            const oldVal = log.old_state?.[key];
-            const newVal = log.new_state?.[key];
+            const oldVal = log.old_values?.[key];
+            const newVal = log.new_values?.[key];
             if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
               changes.push({
                 field: key,
@@ -188,14 +186,14 @@ const UserAuditLog: React.FC = () => {
 
         return {
           id: log.id,
-          timestamp: log.timestamp,
-          userId: log.entity_id || log.user_id || '',
+          timestamp: log.created_at,
+          userId: log.record_id || log.user_id || '',
           userName: userName,
           adminId: log.user_id || 'system',
           adminName: adminName,
-          action: `${log.action} ${log.entity_type}`.trim(),
+          action: `${log.action} ${log.table_name || ''}`.trim(),
           actionType: mapActionType(log.action),
-          details: log.metadata?.description || `${log.action} performed on ${log.entity_type}`,
+          details: `${log.action} performed on ${log.table_name || 'record'}`,
           ipAddress: log.ip_address || 'Unknown',
           userAgent: log.user_agent || 'Unknown',
           severity: getActionSeverity(log.action),

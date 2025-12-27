@@ -410,10 +410,11 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
 
         <TabsContent value="import" className="space-y-6">
           <UserImportWizard 
-            onClose={() => setShowImportWizard(false)}
+            onClose={() => setActiveTab('users')}
             onComplete={(users) => {
               console.log('Imported users:', users);
-              setShowImportWizard(false);
+              setActiveTab('users');
+              fetchStats();
             }} 
           />
         </TabsContent>

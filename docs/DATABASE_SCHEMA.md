@@ -1,7 +1,7 @@
 # NamLend Trust - Database Schema Documentation
 
-**Version**: 3.0.0  
-**Last Updated**: December 22, 2025  
+**Version**: 3.1.0  
+**Last Updated**: December 27, 2025  
 **Database**: PostgreSQL 15+ (Supabase)  
 **Project**: puahejtaskncpazjyxqp  
 **Region**: eu-north-1
@@ -201,20 +201,19 @@ Comprehensive audit logging for all system actions.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | UUID | PK | Primary key |
-| `timestamp` | TIMESTAMPTZ | DEFAULT NOW() | Event time |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Event time |
 | `user_id` | UUID | FK → auth.users | Actor |
-| `user_role` | TEXT | | Role at time of action |
-| `action` | TEXT | CHECK constraint | view, create, update, delete, approve, reject, login, logout, export, download |
-| `entity_type` | TEXT | NOT NULL | Table/entity name |
-| `entity_id` | UUID | NOT NULL | Record ID |
-| `old_state` | JSONB | | State before action |
-| `new_state` | JSONB | | State after action |
+| `action` | TEXT | NOT NULL | view, create, update, delete, approve, reject, login, logout, export, download |
+| `table_name` | TEXT | | Table/entity name |
+| `record_id` | UUID | | Record ID |
+| `old_values` | JSONB | | State before action |
+| `new_values` | JSONB | | State after action |
 | `ip_address` | INET | | Client IP |
 | `user_agent` | TEXT | | Browser/client info |
-| `session_id` | TEXT | | Session identifier |
-| `metadata` | JSONB | DEFAULT '{}' | Additional context |
 
 **Design Note:** This table is append-only. Updates are prevented to ensure audit integrity.
+
+> **v3.1.0 Update:** Column names updated from `timestamp`→`created_at`, `entity_type`→`table_name`, `entity_id`→`record_id`, `old_state`→`old_values`, `new_state`→`new_values`.
 
 ---
 
@@ -334,6 +333,50 @@ LEFT JOIN profiles up ON ar.user_id = up.user_id
 LEFT JOIN profiles ap ON ar.assigned_to = ap.user_id
 LEFT JOIN profiles rp ON ar.reviewer_id = rp.user_id;
 ```
+
+### `profiles_with_roles` (v3.1.0)
+
+User profiles with aggregated role information for admin dashboards.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Profile primary key |
+| `user_id` | UUID | FK → auth.users |
+| `first_name` | TEXT | First name |
+| `last_name` | TEXT | Last name |
+| `email` | VARCHAR(255) | Email address |
+| `phone_number` | TEXT | Contact phone |
+| `verified` | BOOLEAN | KYC verification status |
+| `roles` | app_role[] | Array of all assigned roles |
+| `primary_role` | app_role | Highest priority role (admin > loan_officer > client) |
+| `is_admin` | BOOLEAN | True if user has admin role |
+| `is_loan_officer` | BOOLEAN | True if user has loan_officer role |
+| `is_client` | BOOLEAN | True if user has client role |
+| `account_status` | TEXT | Derived: 'active' (verified), 'pending' (!verified), 'inactive' |
+| `created_at` | TIMESTAMPTZ | Profile creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last modification timestamp |
+
+```sql
+CREATE VIEW profiles_with_roles AS
+SELECT
+  p.*,
+  COALESCE(array_agg(ur.role ORDER BY ur.role), ARRAY[]::app_role[]) AS roles,
+  COALESCE((SELECT ur.role FROM user_roles ur WHERE ur.user_id = p.user_id 
+    ORDER BY CASE ur.role WHEN 'admin' THEN 1 WHEN 'loan_officer' THEN 2 ELSE 3 END 
+    LIMIT 1), 'client'::app_role) AS primary_role,
+  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'admin') AS is_admin,
+  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'loan_officer') AS is_loan_officer,
+  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'client') AS is_client,
+  CASE WHEN p.verified = true THEN 'active' WHEN p.verified = false THEN 'pending' ELSE 'inactive' END AS account_status
+FROM profiles p
+LEFT JOIN user_roles ur ON ur.user_id = p.user_id
+GROUP BY p.id;
+```
+
+**Used By:**
+- `get_profiles_with_roles_admin` RPC
+- User Management Dashboard
+- Role Management component
 
 ---
 

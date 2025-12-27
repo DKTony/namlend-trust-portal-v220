@@ -118,6 +118,10 @@ const RoleManagement: React.FC = () => {
   const [loadingCounts, setLoadingCounts] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedAppRole, setSelectedAppRole] = useState<AppRole | null>(null);
+  const [viewUsersOpen, setViewUsersOpen] = useState(false);
+  const [viewUsersRole, setViewUsersRole] = useState<string | null>(null);
+  const [viewUsersData, setViewUsersData] = useState<any[]>([]);
+  const [viewUsersLoading, setViewUsersLoading] = useState(false);
 
   const nameToAppRole = (roleName: string): 'admin' | 'loan_officer' | 'client' => {
     const n = roleName.toLowerCase();
@@ -226,17 +230,22 @@ const RoleManagement: React.FC = () => {
 
   const handleViewUsers = async (roleName: string) => {
     try {
+      setViewUsersRole(roleName);
+      setViewUsersLoading(true);
+      setViewUsersOpen(true);
+      setViewUsersData([]);
+      
       const appRole = nameToAppRole(roleName);
       const res = await getProfilesWithRoles({ role: appRole, limit: 50, offset: 0 });
       if (res.success) {
-        const names = (res.results || []).map((u: any) => `${u.first_name || ''} ${u.last_name || ''} <${u.email || ''}>`.trim());
-        const text = names.length ? names.join('\n') : 'No users found for this role';
-        if (typeof window !== 'undefined') window.alert(text);
+        setViewUsersData(res.results || []);
       } else {
         toast({ title: 'Load users failed', description: res.error || 'Unknown error', variant: 'destructive' });
       }
     } catch (e) {
       toast({ title: 'Load error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+    } finally {
+      setViewUsersLoading(false);
     }
   };
 
@@ -528,6 +537,86 @@ const RoleManagement: React.FC = () => {
           setAssignOpen(false);
         }}
       />
+
+      {/* View Users Dialog */}
+      <Dialog open={viewUsersOpen} onOpenChange={setViewUsersOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {viewUsersRole && getRoleIcon(viewUsersRole)}
+              {viewUsersRole} Users
+            </DialogTitle>
+            <DialogDescription>
+              Users with the {viewUsersRole?.toLowerCase()} role
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto py-4">
+            {viewUsersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-3 text-muted-foreground">Loading users...</span>
+              </div>
+            ) : viewUsersData.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No users found with this role</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {viewUsersData.map((user: any, index: number) => (
+                  <Card key={user.user_id || index} className="bg-muted/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="text-primary font-semibold text-sm">
+                            {(user.first_name?.[0] || '').toUpperCase()}
+                            {(user.last_name?.[0] || '').toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">
+                            {user.first_name || ''} {user.last_name || ''}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {user.email || 'No email'}
+                          </p>
+                        </div>
+                        <div className="shrink-0">
+                          <Badge 
+                            variant="outline" 
+                            className={`${
+                              user.account_status === 'active' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                            }`}
+                          >
+                            {user.account_status || 'pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {user.phone_number && (
+                        <p className="text-xs text-muted-foreground mt-2 ml-14">
+                          📞 {user.phone_number}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              {viewUsersData.length} user{viewUsersData.length !== 1 ? 's' : ''} found
+            </p>
+            <Button variant="outline" onClick={() => setViewUsersOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

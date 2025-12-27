@@ -51,7 +51,7 @@ import {
   IPPOnboardingState,
   IPP_ONBOARDING_STATE_LABELS,
   IPP_ONBOARDING_STATE_COLORS,
-  calculateOnboardingProgress,
+  getIPPOnboardingProgress,
 } from '@/types/ips';
 
 // Onboarding step configuration
@@ -529,7 +529,7 @@ export function BankingSection() {
   }
 
   const currentStep = getCurrentStep();
-  const progress = onboardingData ? calculateOnboardingProgress(onboardingData.state) : 0;
+  const progress = onboardingData ? getIPPOnboardingProgress(onboardingData.state) : 0;
   const isReady = onboardingData?.state === 'READY_FOR_IPP_PAYMENTS';
 
   return (

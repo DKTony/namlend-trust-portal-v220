@@ -8,8 +8,16 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_PROJECT_ID = 'puahejtaskncpazjyxqp';
+
+const SUPABASE_URL =
+  process.env.VITE_SUPABASE_URL ||
+  (process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID
+    ? `https://${process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`
+    : `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`);
+
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 // Admin credentials for authentication
 const ADMIN_EMAIL = 'admin@test.namlend.com';

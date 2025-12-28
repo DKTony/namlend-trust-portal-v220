@@ -9,8 +9,20 @@ import 'dotenv/config';
 import { test as base } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_PROJECT_ID = 'puahejtaskncpazjyxqp';
+
+const SUPABASE_URL =
+  process.env.VITE_SUPABASE_URL ||
+  process.env.EXPO_PUBLIC_SUPABASE_URL ||
+  (process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID
+    ? `https://${process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`
+    : `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`);
+
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  '';
 
 // Test user credentials
 export const TEST_USERS = {

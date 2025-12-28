@@ -2,10 +2,10 @@ import { Page, expect } from '@playwright/test';
 
 export const baseURL = process.env.BASE_URL || 'http://localhost:8080';
 
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'anthnydklrk@gmail.com';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || '123abc';
-const CLIENT_EMAIL = process.env.E2E_CLIENT_EMAIL || 'client@namlend.com';
-const CLIENT_PASSWORD = process.env.E2E_CLIENT_PASSWORD || '123abc';
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'test123';
+const CLIENT_EMAIL = process.env.E2E_CLIENT_EMAIL || 'client1@test.namlend.com';
+const CLIENT_PASSWORD = process.env.E2E_CLIENT_PASSWORD || 'test123';
 
 export async function login(page: Page, preferAdmin: boolean = true): Promise<'admin'|'client'> {
   await page.goto(`${baseURL}/auth`);

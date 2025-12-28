@@ -9,6 +9,9 @@ const CLIENT_PASSWORD = process.env.E2E_CLIENT_PASSWORD || 'test123';
 
 export async function login(page: Page, preferAdmin: boolean = true): Promise<'admin'|'client'> {
   await page.goto(`${baseURL}/auth`);
+  // Wait for DOM to be ready (avoid networkidle which can hang on websockets)
+  await page.waitForLoadState('domcontentloaded');
+  
   // Ensure Sign In tab is active
   try { await page.getByRole('tab', { name: /Sign In/i }).click(); } catch {}
 
@@ -17,27 +20,22 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
     : [{ email: CLIENT_EMAIL, password: CLIENT_PASSWORD, role: 'client' as const }, { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, role: 'admin' as const }];
 
   for (const c of candidates) {
-    // Fill email
-    try {
-      await page.getByLabel('Email').fill(c.email);
-    } catch {
-      const emailLocator = page.locator('input[type="email"], input[name*="email" i]');
-      await emailLocator.first().fill(c.email);
-    }
+    // Wait for email input to be visible
+    const emailInput = page.locator('input[type="email"]');
+    await emailInput.waitFor({ state: 'visible', timeout: 15000 });
+    await emailInput.fill(c.email);
+    
     // Fill password
-    try {
-      await page.getByLabel('Password').fill(c.password);
-    } catch {
-      const pwLocator = page.locator('input[type="password"], input[name*="password" i]');
-      await pwLocator.first().fill(c.password);
-    }
+    const passwordInput = page.locator('input[type="password"]');
+    await passwordInput.fill(c.password);
 
-    await page.getByRole('button', { name: /Sign In|Sign in|Log In|Log in/ }).click();
+    // Click sign in button
+    await page.getByRole('button', { name: /Sign In/i }).click();
 
     // Wait for navigation to dashboard or admin, or detect auth error
     const outcome = await Promise.race<"success"|"error"|"timeout">([
-      page.waitForURL(/\/(admin|dashboard)/, { timeout: 15000 }).then(() => 'success').catch(() => 'timeout'),
-      page.getByText(/invalid credentials|invalid_email|login failed/i).first().waitFor({ state: 'visible', timeout: 15000 }).then(() => 'error').catch(() => 'none' as any)
+      page.waitForURL(/\/(admin|dashboard)/, { timeout: 20000 }).then(() => 'success').catch(() => 'timeout'),
+      page.getByText(/invalid credentials|invalid_email|login failed/i).first().waitFor({ state: 'visible', timeout: 20000 }).then(() => 'error').catch(() => 'none' as any)
     ]);
 
     if (outcome === 'success') {
@@ -46,6 +44,7 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
 
     // If error or timeout, try next candidate by reloading auth page
     await page.goto(`${baseURL}/auth`);
+    await page.waitForLoadState('domcontentloaded');
     try { await page.getByRole('tab', { name: /Sign In/i }).click(); } catch {}
   }
 

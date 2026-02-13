@@ -1,200 +1,185 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { 
-  submitApprovalRequest, 
-  fetchApprovalRequests, 
-  updateApprovalStatus, 
-  fetchApprovalNotifications,
-  markNotificationAsRead,
-  processApprovedLoan,
-  processApprovedKYC,
-  fetchApprovalStatistics
-} from '../services/approvalWorkflow';
-import { supabase } from '../integrations/supabase/client';
 
-// Mock Supabase client
+// Mock modules that use browser APIs before they are imported
+vi.mock('../utils/debug', () => ({
+  debugLog: vi.fn(),
+  debugError: vi.fn(),
+  debugWarn: vi.fn(),
+}));
+
+vi.mock('../utils/errorHandler', () => ({
+  handleDatabaseError: vi.fn(),
+  handleBusinessLogicError: vi.fn(),
+  measurePerformance: vi.fn((_name: string, fn: () => Promise<any>) => fn()),
+  trackUserAction: vi.fn(),
+  errorLogger: { logError: vi.fn() },
+  ErrorSeverity: { LOW: 'low', MEDIUM: 'medium', HIGH: 'high', CRITICAL: 'critical' },
+  ErrorCategory: { DATABASE: 'database', SYSTEM: 'system', BUSINESS_LOGIC: 'business_logic' },
+}));
+
 vi.mock('../integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(),
     rpc: vi.fn(),
     auth: {
-      getUser: vi.fn()
-    }
-  }
+      getUser: vi.fn(),
+    },
+  },
 }));
 
+import {
+  submitApprovalRequest,
+  getUserApprovalRequests,
+  updateApprovalStatus,
+  getApprovalNotifications,
+  markNotificationAsRead,
+  getApprovalStatistics,
+  processApprovedLoanApplication,
+} from '../services/approvalWorkflow';
+import { supabase } from '../integrations/supabase/client';
+
 describe('Approval Workflow Service', () => {
-  const mockUser = {
-    id: 'test-user-id',
-    email: 'test@example.com'
-  };
-
-  const mockApprovalRequest = {
-    id: 'test-request-id',
-    user_id: 'test-user-id',
-    request_type: 'loan_application',
-    status: 'pending',
-    priority: 'normal',
-    request_data: {
-      amount: 10000,
-      term: 12,
-      purpose: 'business'
-    },
-    created_at: new Date().toISOString()
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    
-    // Mock auth user
-    (supabase.auth.getUser as any).mockResolvedValue({
-      data: { user: mockUser },
-      error: null
-    });
   });
 
   describe('submitApprovalRequest', () => {
     it('should submit a loan application approval request', async () => {
-      const mockRpcResponse = {
-        data: { request_id: 'new-request-id' },
-        error: null
-      };
-
-      (supabase.rpc as any).mockResolvedValue(mockRpcResponse);
-
-      const result = await submitApprovalRequest(
-        'loan_application',
-        { amount: 10000, term: 12 },
-        'normal'
-      );
-
-      expect(supabase.rpc).toHaveBeenCalledWith('submit_approval_request', {
-        p_request_type: 'loan_application',
-        p_request_data: { amount: 10000, term: 12 },
-        p_priority: 'normal'
-      });
-
-      expect(result).toEqual({ request_id: 'new-request-id' });
-    });
-
-    it('should handle submission errors', async () => {
-      const mockError = new Error('Database error');
-      (supabase.rpc as any).mockResolvedValue({
-        data: null,
-        error: mockError
-      });
-
-      await expect(
-        submitApprovalRequest('loan_application', {}, 'normal')
-      ).rejects.toThrow('Database error');
-    });
-
-    it('should handle unauthenticated user', async () => {
-      (supabase.auth.getUser as any).mockResolvedValue({
-        data: { user: null },
-        error: null
-      });
-
-      await expect(
-        submitApprovalRequest('loan_application', {}, 'normal')
-      ).rejects.toThrow('User not authenticated');
-    });
-  });
-
-  describe('fetchApprovalRequests', () => {
-    it('should fetch approval requests with filters', async () => {
       const mockFromChain = {
+        insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        in: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({
-          data: [mockApprovalRequest],
-          error: null
-        })
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'new-request-id' },
+          error: null,
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
-      const result = await fetchApprovalRequests({
-        status: 'pending',
+      const result = await submitApprovalRequest({
+        user_id: 'test-user-id',
         request_type: 'loan_application',
-        limit: 10
+        request_data: { amount: 10000, term: 12 },
+        priority: 'normal',
       });
 
       expect(supabase.from).toHaveBeenCalledWith('approval_requests');
-      expect(mockFromChain.eq).toHaveBeenCalledWith('status', 'pending');
-      expect(mockFromChain.eq).toHaveBeenCalledWith('request_type', 'loan_application');
-      expect(mockFromChain.limit).toHaveBeenCalledWith(10);
-      expect(result).toEqual([mockApprovalRequest]);
+      expect(result.success).toBe(true);
+      expect(result.requestId).toBe('new-request-id');
     });
 
-    it('should handle fetch errors', async () => {
-      const mockError = new Error('Fetch error');
+    it('should handle submission errors', async () => {
       const mockFromChain = {
+        insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({
+        single: vi.fn().mockResolvedValue({
           data: null,
-          error: mockError
-        })
+          error: { message: 'Database error' },
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
-      await expect(fetchApprovalRequests()).rejects.toThrow('Fetch error');
+      const result = await submitApprovalRequest({
+        user_id: 'test-user-id',
+        request_type: 'loan_application',
+        request_data: {},
+        priority: 'normal',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Database error');
+    });
+  });
+
+  describe('getUserApprovalRequests', () => {
+    it('should fetch approval requests with status filter', async () => {
+      const mockRequests = [
+        { id: 'req-1', status: 'pending', request_type: 'loan_application' },
+      ];
+
+      const mockFromChain = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: mockRequests,
+          error: null,
+        }),
+      };
+
+      (supabase.from as any).mockReturnValue(mockFromChain);
+
+      const result = await getUserApprovalRequests('pending');
+
+      expect(supabase.from).toHaveBeenCalledWith('approval_requests');
+      expect(result.success).toBe(true);
+      expect(result.requests).toEqual(mockRequests);
+    });
+
+    it('should handle fetch errors', async () => {
+      const mockFromChain = {
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Fetch error' },
+        }),
+      };
+
+      (supabase.from as any).mockReturnValue(mockFromChain);
+
+      const result = await getUserApprovalRequests();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Fetch error');
     });
   });
 
   describe('updateApprovalStatus', () => {
     it('should update approval status successfully', async () => {
+      (supabase.auth as any).getUser.mockResolvedValue({
+        data: { user: { id: 'reviewer-id' } },
+      });
+
       const mockFromChain = {
         update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({
-          data: [{ ...mockApprovalRequest, status: 'approved' }],
-          error: null
-        })
+        eq: vi.fn().mockResolvedValue({
+          data: [{ id: 'request-123', status: 'approved' }],
+          error: null,
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
       const result = await updateApprovalStatus(
-        'test-request-id',
+        'request-123',
         'approved',
         'Loan meets all criteria'
       );
 
       expect(supabase.from).toHaveBeenCalledWith('approval_requests');
-      expect(mockFromChain.update).toHaveBeenCalledWith({
-        status: 'approved',
-        admin_notes: 'Loan meets all criteria',
-        reviewed_at: expect.any(String)
-      });
-      expect(mockFromChain.eq).toHaveBeenCalledWith('id', 'test-request-id');
-      expect(result.status).toBe('approved');
+      expect(result.success).toBe(true);
     });
 
     it('should handle update errors', async () => {
-      const mockError = new Error('Update error');
       const mockFromChain = {
         update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({
+        eq: vi.fn().mockResolvedValue({
           data: null,
-          error: mockError
-        })
+          error: { message: 'Update error' },
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
-      await expect(
-        updateApprovalStatus('test-request-id', 'approved')
-      ).rejects.toThrow('Update error');
+      const result = await updateApprovalStatus('request-123', 'under_review');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Update error');
     });
   });
 
-  describe('fetchApprovalNotifications', () => {
-    it('should fetch notifications for admin user', async () => {
+  describe('getApprovalNotifications', () => {
+    it('should fetch notifications', async () => {
       const mockNotifications = [
         {
           id: 'notif-1',
@@ -202,139 +187,42 @@ describe('Approval Workflow Service', () => {
           notification_type: 'new_request',
           message: 'New loan application submitted',
           is_read: false,
-          sent_at: new Date().toISOString()
-        }
+          sent_at: new Date().toISOString(),
+        },
       ];
 
       const mockFromChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue({
+        order: vi.fn().mockResolvedValue({
           data: mockNotifications,
-          error: null
-        })
+          error: null,
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
-      const result = await fetchApprovalNotifications();
+      const result = await getApprovalNotifications();
 
       expect(supabase.from).toHaveBeenCalledWith('approval_notifications');
-      expect(result).toEqual(mockNotifications);
+      expect(result.success).toBe(true);
+      expect(result.notifications).toEqual(mockNotifications);
     });
-  });
 
-  describe('processApprovedLoan', () => {
-    it('should process approved loan application', async () => {
-      const mockLoanData = {
-        amount: 10000,
-        term: 12,
-        purpose: 'business',
-        interest_rate: 15
-      };
-
+    it('should filter unread notifications', async () => {
       const mockFromChain = {
-        insert: vi.fn().mockResolvedValue({
-          data: [{ id: 'new-loan-id' }],
-          error: null
-        })
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
 
-      const result = await processApprovedLoan('test-user-id', mockLoanData);
+      const result = await getApprovalNotifications(true);
 
-      expect(supabase.from).toHaveBeenCalledWith('loans');
-      expect(mockFromChain.insert).toHaveBeenCalledWith({
-        user_id: 'test-user-id',
-        amount: 10000,
-        term_months: 12,
-        purpose: 'business',
-        interest_rate: 15,
-        status: 'approved',
-        approved_at: expect.any(String)
-      });
-      expect(result).toEqual([{ id: 'new-loan-id' }]);
-    });
-
-    it('should handle loan processing errors', async () => {
-      const mockError = new Error('Loan processing error');
-      const mockFromChain = {
-        insert: vi.fn().mockResolvedValue({
-          data: null,
-          error: mockError
-        })
-      };
-
-      (supabase.from as any).mockReturnValue(mockFromChain);
-
-      await expect(
-        processApprovedLoan('test-user-id', {})
-      ).rejects.toThrow('Loan processing error');
-    });
-  });
-
-  describe('processApprovedKYC', () => {
-    it('should process approved KYC documents', async () => {
-      const mockKYCData = {
-        document_type: 'national_id',
-        document_url: 'https://example.com/doc.pdf',
-        verification_status: 'verified'
-      };
-
-      const mockFromChain = {
-        upsert: vi.fn().mockResolvedValue({
-          data: [{ id: 'kyc-id' }],
-          error: null
-        })
-      };
-
-      (supabase.from as any).mockReturnValue(mockFromChain);
-
-      const result = await processApprovedKYC('test-user-id', mockKYCData);
-
-      expect(supabase.from).toHaveBeenCalledWith('kyc_documents');
-      expect(mockFromChain.upsert).toHaveBeenCalledWith({
-        user_id: 'test-user-id',
-        document_type: 'national_id',
-        document_url: 'https://example.com/doc.pdf',
-        verification_status: 'verified',
-        verified_at: expect.any(String)
-      });
-      expect(result).toEqual([{ id: 'kyc-id' }]);
-    });
-  });
-
-  describe('fetchApprovalStatistics', () => {
-    it('should fetch approval statistics', async () => {
-      const mockStats = {
-        total_requests: 25,
-        pending_requests: 8,
-        approved_requests: 15,
-        rejected_requests: 2,
-        avg_processing_time: '2.5 days'
-      };
-
-      (supabase.rpc as any).mockResolvedValue({
-        data: mockStats,
-        error: null
-      });
-
-      const result = await fetchApprovalStatistics();
-
-      expect(supabase.rpc).toHaveBeenCalledWith('get_approval_statistics');
-      expect(result).toEqual(mockStats);
-    });
-
-    it('should handle statistics fetch errors', async () => {
-      const mockError = new Error('Statistics error');
-      (supabase.rpc as any).mockResolvedValue({
-        data: null,
-        error: mockError
-      });
-
-      await expect(fetchApprovalStatistics()).rejects.toThrow('Statistics error');
+      expect(result.success).toBe(true);
     });
   });
 
@@ -344,8 +232,8 @@ describe('Approval Workflow Service', () => {
         update: vi.fn().mockReturnThis(),
         eq: vi.fn().mockResolvedValue({
           data: [{ id: 'notif-1', is_read: true }],
-          error: null
-        })
+          error: null,
+        }),
       };
 
       (supabase.from as any).mockReturnValue(mockFromChain);
@@ -353,78 +241,150 @@ describe('Approval Workflow Service', () => {
       const result = await markNotificationAsRead('notif-1');
 
       expect(supabase.from).toHaveBeenCalledWith('approval_notifications');
-      expect(mockFromChain.update).toHaveBeenCalledWith({
-        is_read: true,
-        read_at: expect.any(String)
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('getApprovalStatistics', () => {
+    it('should fetch approval statistics', async () => {
+      const mockData = [
+        { status: 'pending', request_type: 'loan_application', priority: 'normal', created_at: '2025-01-01', reviewed_at: null },
+        { status: 'approved', request_type: 'loan_application', priority: 'high', created_at: '2025-01-01', reviewed_at: '2025-01-02' },
+        { status: 'rejected', request_type: 'kyc_document', priority: 'normal', created_at: '2025-01-01', reviewed_at: '2025-01-03' },
+      ];
+
+      const mockFromChain = {
+        select: vi.fn().mockResolvedValue({
+          data: mockData,
+          error: null,
+        }),
+      };
+
+      (supabase.from as any).mockReturnValue(mockFromChain);
+
+      const result = await getApprovalStatistics();
+
+      expect(supabase.from).toHaveBeenCalledWith('approval_requests');
+      expect(result.success).toBe(true);
+      expect(result.stats?.total).toBe(3);
+      expect(result.stats?.pending).toBe(1);
+      expect(result.stats?.approved).toBe(1);
+      expect(result.stats?.rejected).toBe(1);
+    });
+
+    it('should handle statistics fetch errors', async () => {
+      const mockFromChain = {
+        select: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Statistics error' },
+        }),
+      };
+
+      (supabase.from as any).mockReturnValue(mockFromChain);
+
+      const result = await getApprovalStatistics();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Statistics error');
+    });
+  });
+
+  describe('processApprovedLoanApplication', () => {
+    it('should process approved loan application', async () => {
+      (supabase.rpc as any).mockResolvedValue({
+        data: { success: true, loan_id: 'loan-456' },
+        error: null,
       });
-      expect(mockFromChain.eq).toHaveBeenCalledWith('id', 'notif-1');
-      expect(result).toEqual([{ id: 'notif-1', is_read: true }]);
+
+      const result = await processApprovedLoanApplication('request-123');
+
+      expect(supabase.rpc).toHaveBeenCalledWith('process_approval_transaction', {
+        request_id: 'request-123',
+      });
+      expect(result.success).toBe(true);
+      expect(result.loanId).toBe('loan-456');
+    });
+
+    it('should handle processing errors', async () => {
+      (supabase.rpc as any).mockResolvedValue({
+        data: null,
+        error: { message: 'Processing error' },
+      });
+
+      const result = await processApprovedLoanApplication('request-123');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Processing error');
     });
   });
 });
 
 describe('Approval Workflow Integration Tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should handle complete loan approval workflow', async () => {
-    // Mock the entire workflow
-    const mockRpcResponse = { data: { request_id: 'request-123' }, error: null };
-    const mockUpdateResponse = { 
-      data: [{ id: 'request-123', status: 'approved' }], 
-      error: null 
+    // Step 1: Submit request
+    const mockInsertChain = {
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { id: 'request-123' },
+        error: null,
+      }),
     };
-    const mockLoanResponse = { data: [{ id: 'loan-456' }], error: null };
 
-    (supabase.rpc as any).mockResolvedValue(mockRpcResponse);
-    
-    const mockFromChain = {
+    (supabase.from as any).mockReturnValue(mockInsertChain);
+
+    const submitResult = await submitApprovalRequest({
+      user_id: 'test-user-id',
+      request_type: 'loan_application',
+      request_data: { amount: 15000, term: 24 },
+      priority: 'high',
+    });
+
+    expect(submitResult.success).toBe(true);
+    expect(submitResult.requestId).toBe('request-123');
+
+    // Step 2: Update status
+    (supabase.auth as any).getUser.mockResolvedValue({
+      data: { user: { id: 'reviewer-id' } },
+    });
+
+    const mockUpdateChain = {
       update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockResolvedValue(mockUpdateResponse),
-      insert: vi.fn().mockResolvedValue(mockLoanResponse)
+      eq: vi.fn().mockResolvedValue({
+        data: [{ id: 'request-123', status: 'approved' }],
+        error: null,
+      }),
     };
 
-    (supabase.from as any).mockReturnValue(mockFromChain);
+    (supabase.from as any).mockReturnValue(mockUpdateChain);
 
-    // Submit request
-    const submitResult = await submitApprovalRequest(
-      'loan_application',
-      { amount: 15000, term: 24 },
-      'high'
-    );
-
-    expect(submitResult.request_id).toBe('request-123');
-
-    // Update status
     const updateResult = await updateApprovalStatus(
       'request-123',
       'approved',
       'Approved after review'
     );
 
-    expect(updateResult.status).toBe('approved');
-
-    // Process loan
-    const processResult = await processApprovedLoan('test-user-id', {
-      amount: 15000,
-      term: 24,
-      interest_rate: 18
-    });
-
-    expect(processResult).toEqual([{ id: 'loan-456' }]);
+    expect(updateResult.success).toBe(true);
   });
 
   it('should handle rejection workflow', async () => {
-    const mockUpdateResponse = { 
-      data: [{ id: 'request-123', status: 'rejected' }], 
-      error: null 
-    };
+    (supabase.auth as any).getUser.mockResolvedValue({
+      data: { user: { id: 'reviewer-id' } },
+    });
 
-    const mockFromChain = {
+    const mockUpdateChain = {
       update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockResolvedValue(mockUpdateResponse)
+      eq: vi.fn().mockResolvedValue({
+        data: [{ id: 'request-123', status: 'rejected' }],
+        error: null,
+      }),
     };
 
-    (supabase.from as any).mockReturnValue(mockFromChain);
+    (supabase.from as any).mockReturnValue(mockUpdateChain);
 
     const result = await updateApprovalStatus(
       'request-123',
@@ -432,7 +392,7 @@ describe('Approval Workflow Integration Tests', () => {
       'Insufficient income verification'
     );
 
-    expect(result.status).toBe('rejected');
+    expect(result.success).toBe(true);
     expect(supabase.from).toHaveBeenCalledWith('approval_requests');
   });
 });

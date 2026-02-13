@@ -19,4 +19,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  test: {
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'tests/**/*.test.{ts,tsx}',
+    ],
+    exclude: [
+      'namlend-mobile/**',
+      'e2e/**',
+      'node_modules/**',
+    ],
+  },
 }));

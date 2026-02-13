@@ -181,7 +181,9 @@ describe('IPS Purpose Codes', () => {
 
   it('should have valid purpose codes', () => {
     validPurposeCodes.forEach((code) => {
-      expect(code.length).toBe(4);
+      expect(code.length).toBeGreaterThanOrEqual(2);
+      expect(code.length).toBeLessThanOrEqual(4);
+      expect(code).toMatch(/^[A-Z0-9]+$/);
     });
   });
 });

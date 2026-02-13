@@ -3,92 +3,100 @@
  * Tests dev tool gating, auth flows, and APR validation
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { safeExposeWindow, isDebugEnabled, debugLog } from '../utils/devToolsHelper';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { APR_LIMIT, isValidAPR, formatNAD } from '../constants/regulatory';
 
-// Mock environment variables
-const mockEnv = {
-  DEV: false,
-  VITE_DEBUG_TOOLS: 'false'
-};
-
-vi.mock('import.meta', () => ({
-  env: mockEnv
-}));
-
 describe('Security - Dev Tool Gating', () => {
+  let originalDEV: boolean;
+  let originalDebugTools: string | undefined;
+
   beforeEach(() => {
+    // Save original env values
+    originalDEV = import.meta.env.DEV;
+    originalDebugTools = import.meta.env.VITE_DEBUG_TOOLS;
     // Reset environment and window
-    mockEnv.DEV = false;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
+    import.meta.env.DEV = false as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
     delete (global as any).window;
   });
 
-  it('should not expose debug tools in production', () => {
-    mockEnv.DEV = false;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
-    
+  afterEach(() => {
+    // Restore original env values
+    import.meta.env.DEV = originalDEV as any;
+    import.meta.env.VITE_DEBUG_TOOLS = originalDebugTools as any;
+  });
+
+  it('should not expose debug tools in production', async () => {
+    import.meta.env.DEV = false as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
+
     const mockWindow = {};
     (global as any).window = mockWindow;
-    
+
+    // Dynamic import to pick up current env values
+    const { safeExposeWindow } = await import('../utils/devToolsHelper');
     safeExposeWindow('testTool', { test: true });
-    
+
     expect(mockWindow).not.toHaveProperty('testTool');
   });
 
-  it('should not expose debug tools in dev without VITE_DEBUG_TOOLS', () => {
-    mockEnv.DEV = true;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
-    
+  it('should not expose debug tools in dev without VITE_DEBUG_TOOLS', async () => {
+    import.meta.env.DEV = true as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
+
     const mockWindow = {};
     (global as any).window = mockWindow;
-    
+
+    const { safeExposeWindow } = await import('../utils/devToolsHelper');
     safeExposeWindow('testTool', { test: true });
-    
+
     expect(mockWindow).not.toHaveProperty('testTool');
   });
 
-  it('should expose debug tools only when properly gated', () => {
-    mockEnv.DEV = true;
-    mockEnv.VITE_DEBUG_TOOLS = 'true';
-    
+  it('should expose debug tools only when properly gated', async () => {
+    import.meta.env.DEV = true as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'true';
+
     const mockWindow = {};
     (global as any).window = mockWindow;
-    
+
+    const { safeExposeWindow } = await import('../utils/devToolsHelper');
     safeExposeWindow('testTool', { test: true });
-    
+
     expect(mockWindow).toHaveProperty('testTool');
     expect((mockWindow as any).testTool).toEqual({ test: true });
   });
 
-  it('should correctly identify debug enabled state', () => {
-    mockEnv.DEV = false;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
+  it('should correctly identify debug enabled state', async () => {
+    const { isDebugEnabled } = await import('../utils/devToolsHelper');
+
+    import.meta.env.DEV = false as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
     expect(isDebugEnabled()).toBe(false);
 
-    mockEnv.DEV = true;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
+    import.meta.env.DEV = true as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
     expect(isDebugEnabled()).toBe(false);
 
-    mockEnv.DEV = true;
-    mockEnv.VITE_DEBUG_TOOLS = 'true';
+    import.meta.env.DEV = true as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'true';
     expect(isDebugEnabled()).toBe(true);
   });
 
-  it('should only log debug messages when enabled', () => {
+  it('should only log debug messages when enabled', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    
-    mockEnv.DEV = false;
-    mockEnv.VITE_DEBUG_TOOLS = 'false';
+    const { debugLog } = await import('../utils/devToolsHelper');
+
+    import.meta.env.DEV = false as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'false';
     debugLog('test message');
     expect(consoleSpy).not.toHaveBeenCalled();
 
-    mockEnv.DEV = true;
-    mockEnv.VITE_DEBUG_TOOLS = 'true';
+    import.meta.env.DEV = true as any;
+    import.meta.env.VITE_DEBUG_TOOLS = 'true';
     debugLog('test message');
     expect(consoleSpy).toHaveBeenCalledWith('test message');
-    
+
     consoleSpy.mockRestore();
   });
 });

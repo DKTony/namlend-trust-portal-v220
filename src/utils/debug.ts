@@ -1,10 +1,10 @@
 // Debug utility functions for development and troubleshooting
 
 // Safe serialization to prevent circular reference errors
-const safeStringify = (obj: any, maxDepth: number = 3): string => {
+const safeStringify = (obj: unknown, maxDepth: number = 3): string => {
   const seen = new WeakSet();
   
-  const replacer = (key: string, value: any, depth: number = 0): any => {
+  const replacer = (key: string, value: unknown, depth: number = 0): unknown => {
     if (depth > maxDepth) {
       return '[Max Depth Reached]';
     }
@@ -43,7 +43,7 @@ const safeStringify = (obj: any, maxDepth: number = 3): string => {
       );
     }
     
-    const safeObj: any = {};
+    const safeObj: Record<string, unknown> = {};
     const keys = Object.keys(value).slice(0, 20); // Limit object keys
     
     for (const k of keys) {
@@ -60,11 +60,11 @@ const safeStringify = (obj: any, maxDepth: number = 3): string => {
   try {
     return JSON.stringify(replacer('', obj), null, 2);
   } catch (err) {
-    return `[Serialization Failed: ${err.message}]`;
+    return `[Serialization Failed: ${err instanceof Error ? err.message : String(err)}]`;
   }
 };
 
-export const debugLog = (message: string, data?: any) => {
+export const debugLog = (message: string, data?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
     if (data) {
       try {
@@ -78,7 +78,7 @@ export const debugLog = (message: string, data?: any) => {
   }
 };
 
-export const debugError = (message: string, error?: any) => {
+export const debugError = (message: string, error?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
     try {
       if (error) {
@@ -92,7 +92,7 @@ export const debugError = (message: string, error?: any) => {
   }
 };
 
-export const debugWarn = (message: string, data?: any) => {
+export const debugWarn = (message: string, data?: unknown) => {
   if (process.env.NODE_ENV === 'development') {
     if (data) {
       try {

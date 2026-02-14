@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,7 +46,7 @@ export function IPSHistoryList({
 
   if (isLoading) {
     return (
-      <Card className={className}>
+      <ThemedCard className={className}>
         {showTitle && (
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -66,13 +67,13 @@ export function IPSHistoryList({
             </div>
           ))}
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
   if (isError || !data?.success) {
     return (
-      <Card className={className}>
+      <ThemedCard className={className}>
         {showTitle && (
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -86,7 +87,7 @@ export function IPSHistoryList({
             Failed to load transaction history
           </p>
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
@@ -94,7 +95,7 @@ export function IPSHistoryList({
 
   if (transactions.length === 0) {
     return (
-      <Card className={className}>
+      <ThemedCard className={className}>
         {showTitle && (
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -108,12 +109,12 @@ export function IPSHistoryList({
             No IPS transactions yet
           </p>
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
   return (
-    <Card className={className}>
+    <ThemedCard className={className}>
       {showTitle && (
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -131,7 +132,7 @@ export function IPSHistoryList({
           </div>
         </ScrollArea>
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 }
 

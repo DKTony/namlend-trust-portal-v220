@@ -1,34 +1,29 @@
 # IPP Settlement (IRCS Back Office) — Developer Implementation Guide
 
+**Doc Revision**: 2026-01-19  
+**Status**: Active (schema + RPCs implemented; outbound transport pending)
+
 > **Purpose**: This document describes, end-to-end, how to implement the IPP settlement process as executed by the **IRCS Back Office (offline environment)**, including **netting**, **pacs.009 (MNSB) generation**, the **NISS/SWIFT/AXWAY file flow**, **acknowledgements**, **reporting**, **exception handling**, and **operational controls**.
 >
 > **Primary sources**: IPP Functional Specification Document (FSD) v10.0 (Back Office & Settlement Services, Section 20) and IPN Scheme Rules v0.3.
 
 ---
 
-## Implementation Status (v2.9.0 - December 2025)
+## Implementation Status (2026-01-10)
 
-### ✅ Implemented
+### Implemented in schema and code
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Settlement Tables** | ✅ Complete | 13 tables: participants, windows, runs, obligations, net_instructions, pacs009_batches, acknowledgements, reports, adjustments, timeout_transactions, exposures, fee_rules, holiday_calendar |
-| **Settlement RPCs** | ✅ Complete | `create_settlement_run`, `ingest_ips_transactions_for_settlement`, `compute_settlement_netting`, `generate_pacs009_batches`, `generate_settlement_reports`, `mark_settlement_settled` |
-| **pacs.009 XML Generation** | ✅ Complete | ISO 20022 compliant XML with Group Header and CdtTrfTxInf blocks |
-| **Bilateral Netting** | ✅ Complete | Principal + Interchange netting, separate switching fee settlement |
-| **Report Generation** | ✅ Complete | NTSL and Raw Data reports per participant |
-| **Service Layer** | ✅ Complete | `settlementService.ts` with TypeScript functions |
-| **React Query Hooks** | ✅ Complete | `useSettlement.ts` with mutations and queries |
-| **Admin UI** | ✅ Complete | ReconciliationDashboard with settlement run management |
-| **Namibian Banks** | ✅ Seeded | FNB, Standard Bank, Nedbank, Bank Windhoek, NamLend |
+- Settlement tables and RLS policies (13+ tables).
+- RPCs for run creation, netting, batch/report generation, and settlement marking.
+- `settlementService.ts` and `useSettlement.ts` (React Query hooks).
+- Admin UI for reconciliation and run management.
+- Seeded windows, participants, and fee rules.
 
-### 🔶 Mock Mode (Development)
+### Partial / Mock
 
-| Component | Status | Production Requirement |
-|-----------|--------|------------------------|
-| **NISS Integration** | 🔶 Simulated | Real NISS connectivity via SWIFT/AXWAY |
-| **File Transport** | 🔶 Simulated | SFTP outbound/inbound folders |
-| **Acknowledgements** | 🔶 Auto-generated | Real xsys.001/002/003 parsing |
+- pacs.009 XML generation exists in SQL but outbound file transport is not wired.
+- NISS/SWIFT/AXWAY connectivity is not implemented.
+- Acknowledgement ingestion (xsys.001/002/003) is not implemented; no live listener.
 
 ### Key Files
 

@@ -27,12 +27,12 @@ export const testPasswordReset = async () => {
     
     // Step 2: Find target user
     console.log('2. Finding target user...');
-    const targetUser = users?.find((u: any) => u.id === targetUserId);
+    const targetUser = users?.find((u: { id: string; email: string }) => u.id === targetUserId);
     
     if (!targetUser) {
       console.error('❌ Target user not found');
       console.log('Available users:');
-      users?.forEach((u: any, i: number) => {
+      users?.forEach((u: { id: string; email: string }, i: number) => {
         console.log(`   ${i + 1}. ${u.email} (${u.id})`);
       });
       return { success: false, step: 'find_user', error: 'User not found' };

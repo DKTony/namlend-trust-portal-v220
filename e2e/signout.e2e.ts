@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { test, expect } from '@playwright/test';
 import { login, baseURL } from './helpers/auth';
+import { ensureAdminReady } from './helpers/admin';
 
 /**
  * E2E: verifies Sign Out works from Header (desktop + mobile) and Admin sidebar.
@@ -47,12 +48,10 @@ test.describe('Sign Out flows', () => {
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available; skipping admin sign-out');
     await page.setViewportSize({ width: 1200, height: 800 });
-    // Ensure we are on admin
-    if (!/\/admin/.test(page.url())) {
-      await page.goto(`${baseURL}/admin`);
-    }
-    // Click sidebar Sign Out
-    await page.getByTestId('signout-button-admin').click();
+    await ensureAdminReady(page);
+    await page.getByTestId('sidebar-trigger').click();
+    const drawer = page.getByTestId('sidebar-drawer');
+    await drawer.getByRole('button', { name: /Sign Out/i }).click();
     await assertSignedOut(page);
   });
 });

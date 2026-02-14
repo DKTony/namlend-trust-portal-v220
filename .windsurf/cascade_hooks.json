@@ -1,31 +1,44 @@
 {
   "hooks": {
-    "post_write_code": {
-      "command": "prettier --write ${file_path} 2>/dev/null || echo 'Prettier not available'",
-      "description": "Auto-format code after edits",
-      "enabled": true
-    },
-    "pre_run_command": {
-      "command": "bash -c 'if [[ \"${command}\" =~ ^(rm|supabase\\ db\\ reset|supabase\\ db\\ push\\ --force|npm\\ run\\ build\\ --force) ]]; then echo \"⚠️  Dangerous command detected: ${command}\"; exit 1; fi'",
-      "description": "Block dangerous commands",
-      "enabled": true
-    },
-    "post_run_command": {
-      "command": "echo \"[$(date)] Command executed: ${command}\" >> .windsurf/command_log.txt",
-      "description": "Log all executed commands",
-      "enabled": false
-    },
-    "pre_mcp_tool_use": {
-      "command": "echo \"[$(date)] MCP Tool: ${tool_name}\" >> .windsurf/mcp_log.txt",
-      "description": "Log MCP tool usage",
-      "enabled": false
-    }
+    "pre_run_command": [
+      {
+        "command": "bash -c 'DANGEROUS_CMDS=\"rm -rf|supabase db reset|DROP TABLE|DELETE FROM|TRUNCATE|--force\"; if echo \"${command}\" | grep -qE \"$DANGEROUS_CMDS\"; then echo \"⚠️ BLOCKED: Potentially dangerous command detected\"; echo \"Command: ${command}\"; exit 2; fi'",
+        "description": "Block dangerous commands in fintech context",
+        "show_output": true
+      }
+    ],
+    "pre_write_code": [
+      {
+        "command": "bash -c 'if echo \"${file_path}\" | grep -qE \"(supabase/migrations|audit|security)\"; then echo \"📝 Writing to sensitive file: ${file_path}\"; fi; exit 0'",
+        "description": "Alert on sensitive file modifications",
+        "show_output": true
+      }
+    ],
+    "post_write_code": [
+      {
+        "command": "prettier --write \"${file_path}\" 2>/dev/null || true",
+        "description": "Auto-format code after edits",
+        "show_output": false
+      }
+    ]
   },
-  "notes": [
-    "Hooks run in the project root directory",
-    "Available variables: ${file_path}, ${command}, ${tool_name}",
-    "Exit code 0 = continue, non-zero = abort",
-    "Enable/disable individual hooks with 'enabled' flag",
-    "Logs are written to .windsurf/ directory (add to .gitignore)"
+  "namlend_notes": [
+    "🏦 NamLend Fintech Hooks Configuration",
+    "These hooks enforce safety for financial operations",
+    "",
+    "Hook Events:",
+    "- pre_run_command: Blocks dangerous DB operations",
+    "- pre_write_code: Alerts on migration/security file changes",
+    "- post_write_code: Auto-formats and type-checks",
+    "",
+    "Exit Codes:",
+    "- 0: Continue execution",
+    "- 2: Block the action (pre-hooks only)",
+    "",
+    "Blocked Commands:",
+    "- rm -rf (recursive delete)",
+    "- supabase db reset (data loss)",
+    "- DROP/DELETE/TRUNCATE (SQL data loss)",
+    "- --force flags (bypasses safety checks)"
   ]
 }

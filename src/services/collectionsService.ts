@@ -1,6 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
+import {
+  RecordActivityResponse,
+  AssignToAgentResponse,
+  RecordPaymentPromiseResponse,
+  OverdueLoan,
+  CollectionsInteraction
+} from '@/types/services';
 
 export type ActivityType = 
   | 'call_attempt' 
@@ -131,7 +138,7 @@ export async function recordCollectionActivity(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as RecordActivityResponse;
       debugLog('✅ Collection activity recorded', result);
       return result;
     } catch (error) {
@@ -171,7 +178,7 @@ export async function assignToCollectionAgent(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as AssignToAgentResponse;
       debugLog('✅ Loan assigned to agent', result);
       return result;
     } catch (error) {
@@ -213,7 +220,7 @@ export async function recordPaymentPromise(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as RecordPaymentPromiseResponse;
       debugLog('✅ Payment promise recorded', result);
       return result;
     } catch (error) {
@@ -247,7 +254,7 @@ export async function markPromiseFulfilled(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as { success: boolean; activity_id?: string; message?: string; error?: string };
       debugLog('✅ Promise marked as fulfilled', result);
       return result;
     } catch (error) {
@@ -297,7 +304,7 @@ export async function getCollectionActivities(
  */
 export async function getOverdueLoans(): Promise<{
   success: boolean;
-  loans?: any[];
+  loans?: OverdueLoan[];
   error?: string;
 }> {
   return measurePerformance('get_overdue_loans', async () => {
@@ -659,7 +666,7 @@ export async function logInteraction(
  */
 export async function getInteractions(loanId: string): Promise<{
   success: boolean;
-  data?: any[];
+  data?: CollectionsInteraction[];
   error?: string;
 }> {
   return measurePerformance('get_interactions', async () => {

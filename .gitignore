@@ -27,3 +27,8 @@ dist-ssr
 
 # Local MCP server (has its own git repo)
 mcp-tiggerbeetle/
+node_modules/
+.tmp/
+dist/
+.netlify/state.json
+.claude/settings.local.json

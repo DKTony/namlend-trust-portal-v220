@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -10,15 +10,10 @@ import {
   CheckCircle, 
   Clock,
   AlertTriangle,
-  Send,
-  Eye,
-  PlayCircle,
-  XCircle
+  Eye
 } from 'lucide-react';
 import { useDisbursements } from '../../hooks/useDisbursements';
 import { formatNAD } from '@/utils/currency';
-import { useToast } from '@/hooks/use-toast';
-import CompleteDisbursementModal from './CompleteDisbursementModal';
 import DisbursementDetailsModal from '@/components/DisbursementDetailsModal';
 
 type DisbursementStatus = 'all' | 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
@@ -32,25 +27,24 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
   const { 
     disbursements, 
     loading, 
-    error, 
-    refetch,
-    approveDisbursement,
-    markProcessing,
-    completeDisbursement: completeDisbursementAction,
-    failDisbursement
+    error
   } = useDisbursements(status, searchTerm);
-  const [selectedDisbursements, setSelectedDisbursements] = useState<string[]>([]);
-  const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [selectedDisbursement, setSelectedDisbursement] = useState<{
+  
+  interface DisbursementDetails {
     id: string;
+    loan_id: string;
+    client_name: string;
     amount: number;
-    clientName: string;
-    loanId: string;
-  } | null>(null);
-  const [selectedDisbursementDetails, setSelectedDisbursementDetails] = useState<any>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const { toast } = useToast();
+    status: string;
+    method: string;
+    reference: string | null;
+    payment_reference: string | null;
+    scheduled_at: string;
+    created_at: string;
+  }
+
+  const [selectedDisbursementDetails, setSelectedDisbursementDetails] = useState<DisbursementDetails | null>(null);
 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
@@ -87,80 +81,19 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     );
   };
 
-  const handleApprove = async (disbursementId: string) => {
-    setActionLoading(disbursementId);
-    try {
-      await approveDisbursement(disbursementId);
-      toast({
-        title: 'Success',
-        description: 'Disbursement approved successfully'
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to approve disbursement',
-        variant: 'destructive'
-      });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleMarkProcessing = async (disbursementId: string) => {
-    setActionLoading(disbursementId);
-    try {
-      await markProcessing(disbursementId);
-      toast({
-        title: 'Success',
-        description: 'Disbursement marked as processing'
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to mark as processing',
-        variant: 'destructive'
-      });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleOpenCompleteModal = (disbursement: any) => {
-    setSelectedDisbursement({
-      id: disbursement.id,
-      amount: disbursement.amount,
-      clientName: disbursement.client_name,
-      loanId: disbursement.loan_id
-    });
-    setCompleteModalOpen(true);
-  };
-
-  const handleCompleteSuccess = () => {
-    refetch();
-    setSelectedDisbursement(null);
-  };
-
-  const handleFail = async (disbursementId: string) => {
-    const reason = prompt('Enter reason for failure:');
-    if (!reason) return;
-
-    setActionLoading(disbursementId);
-    try {
-      await failDisbursement(disbursementId, reason);
-      toast({
-        title: 'Success',
-        description: 'Disbursement marked as failed'
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to mark as failed',
-        variant: 'destructive'
-      });
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  // Type for disbursement row data
+  interface DisbursementRow {
+    id: string;
+    amount: number;
+    client_name: string;
+    loan_id: string;
+    status: string;
+    method: string;
+    reference: string | null;
+    payment_reference?: string | null;
+    scheduled_at: string;
+    created_at: string;
+  }
 
   if (loading) {
     return (
@@ -241,18 +174,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
         </Card>
       </div>
 
-      {/* Complete Disbursement Modal */}
-      <CompleteDisbursementModal
-        open={completeModalOpen}
-        onClose={() => {
-          setCompleteModalOpen(false);
-          setSelectedDisbursement(null);
-        }}
-        onSuccess={handleCompleteSuccess}
-        disbursement={selectedDisbursement}
-      />
-
-      {/* Disbursement Details Modal */}
+      {/* Disbursement Details Modal (View Only) */}
       <DisbursementDetailsModal
         open={detailsModalOpen}
         onClose={() => {
@@ -319,56 +241,13 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions - View Only (Disbursement actions moved to Loan Management) */}
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-muted-foreground">
                         Created: {formatDate(disbursement.created_at)}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {disbursement.status === 'pending' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handleApprove(disbursement.id)}
-                            disabled={actionLoading === disbursement.id}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                        )}
-                        {disbursement.status === 'approved' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => handleMarkProcessing(disbursement.id)}
-                            disabled={actionLoading === disbursement.id}
-                            className="bg-orange-600 hover:bg-orange-700"
-                          >
-                            <PlayCircle className="h-4 w-4 mr-2" />
-                            Mark Processing
-                          </Button>
-                        )}
-                        {disbursement.status === 'processing' && (
-                          <>
-                            <Button 
-                              size="sm"
-                              onClick={() => handleOpenCompleteModal(disbursement)}
-                              disabled={actionLoading === disbursement.id}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Complete
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleFail(disbursement.id)}
-                              disabled={actionLoading === disbursement.id}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Mark Failed
-                            </Button>
-                          </>
-                        )}
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -381,7 +260,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                               status: disbursement.status,
                               method: disbursement.method,
                               reference: disbursement.reference,
-                              payment_reference: (disbursement as any).payment_reference,
+                              payment_reference: (disbursement as DisbursementRow).payment_reference ?? null,
                               scheduled_at: disbursement.scheduled_at,
                               created_at: disbursement.created_at
                             });

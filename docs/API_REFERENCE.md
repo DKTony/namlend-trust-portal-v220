@@ -1,692 +1,404 @@
 # NamLend Trust - API Reference
 
-**Version**: 2.7.0  
-**Last Updated**: December 12, 2025
+**Doc Revision**: 2026-01-19
 
 ---
 
 ## Overview
 
-NamLend Trust uses Supabase as its backend, providing:
+NamLend Trust uses Supabase for:
 
-- **REST API** (PostgREST) - Auto-generated from schema
-- **Database RPCs** - Custom business logic functions
-- **Real-time** - WebSocket subscriptions (planned)
-- **Storage API** - Document management
+- REST API (PostgREST)
+- RPC functions for business logic
+- Edge Functions for privileged operations
 
-All API calls require authentication via JWT token from Supabase Auth.
+All requests require JWT auth unless explicitly public.
 
 ---
 
 ## Authentication
 
-### Sign Up
-
-```typescript
-const { data, error } = await supabase.auth.signUp({
-  email: 'user@example.com',
-  password: 'securepassword',
-  options: {
-    emailRedirectTo: `${window.location.origin}/dashboard`,
-    data: { full_name: 'John Doe' }
-  }
-});
-```
-
-### Sign In
-
-```typescript
+```ts
 const { data, error } = await supabase.auth.signInWithPassword({
-  email: 'user@example.com',
-  password: 'securepassword'
+  email,
+  password,
 });
-// Returns: { user, session }
-```
 
-### Sign Out
-
-```typescript
 await supabase.auth.signOut({ scope: 'global' });
-// Invalidates all sessions
-```
-
-### Get Current Session
-
-```typescript
-const { data: { session } } = await supabase.auth.getSession();
-const { data: { user } } = await supabase.auth.getUser();
 ```
 
 ---
 
-## Loan Operations
-
-### Get User's Loans
-
-```typescript
-const { data: loans, error } = await supabase
-  .from('loans')
-  .select('*')
-  .order('created_at', { ascending: false });
-```
-
-### Get Loan by ID
-
-```typescript
-const { data: loan, error } = await supabase
-  .from('loans')
-  .select(`
-    *,
-    disbursements(*),
-    payments(*)
-  `)
-  .eq('id', loanId)
-  .single();
-```
-
-### Create Loan Application (via Approval Workflow)
-
-```typescript
-// Submit through approval workflow
-const { data, error } = await supabase
-  .from('approval_requests')
-  .insert({
-    user_id: userId,
-    request_type: 'loan_application',
-    request_data: {
-      amount: 10000,
-      term_months: 12,
-      interest_rate: 28,
-      purpose: 'Business expansion'
-    },
-    status: 'pending',
-    priority: 'normal'
-  })
-  .select()
-  .single();
-```
-
----
-
-## Disbursement RPCs
-
-### Create Disbursement on Approval
-
-```typescript
-const { data, error } = await supabase.rpc('create_disbursement_on_approval', {
-  p_loan_id: 'uuid-here'
-});
-
-// Response:
-{
-  success: true,
-  disbursement_id: 'uuid',
-  loan_id: 'uuid',
-  amount: 10000,
-  status: 'pending',
-  message: 'Disbursement created successfully'
-}
-```
-
-### Approve Disbursement
-
-```typescript
-const { data, error } = await supabase.rpc('approve_disbursement', {
-  p_disbursement_id: 'uuid-here',
-  p_notes: 'Approved for processing'
-});
-
-// Response:
-{
-  success: true,
-  disbursement_id: 'uuid',
-  status: 'approved',
-  message: 'Disbursement approved'
-}
-```
-
-### Mark Disbursement Processing
-
-```typescript
-const { data, error } = await supabase.rpc('mark_disbursement_processing', {
-  p_disbursement_id: 'uuid-here',
-  p_notes: 'Processing with bank'
-});
-
-// Response:
-{
-  success: true,
-  disbursement_id: 'uuid',
-  status: 'processing'
-}
-```
-
-### Complete Disbursement
-
-```typescript
-const { data, error } = await supabase.rpc('complete_disbursement', {
-  p_disbursement_id: 'uuid-here',
-  p_payment_method: 'bank_transfer', // bank_transfer | mobile_money | cash | debit_order
-  p_payment_reference: 'REF-2025-001234',
-  p_notes: 'Transferred to client bank account'
-});
-
-// Response:
-{
-  success: true,
-  disbursement_id: 'uuid',
-  loan_id: 'uuid',
-  amount: 10000,
-  status: 'completed',
-  payment_reference: 'REF-2025-001234',
-  message: 'Disbursement completed'
-}
-```
-
-### Fail Disbursement
-
-```typescript
-const { data, error } = await supabase.rpc('fail_disbursement', {
-  p_disbursement_id: 'uuid-here',
-  p_reason: 'Bank transfer failed - invalid account'
-});
-
-// Response:
-{
-  success: true,
-  disbursement_id: 'uuid',
-  status: 'failed',
-  message: 'Disbursement marked as failed'
-}
-```
-
-### Get Pending Disbursements
-
-```typescript
-const { data, error } = await supabase.rpc('get_pending_disbursements');
-
-// Response: Array of disbursements with client names
-[
-  {
-    id: 'uuid',
-    loan_id: 'uuid',
-    client_name: 'John Doe',
-    amount: 10000,
-    status: 'pending',
-    method: 'bank_transfer',
-    reference: 'DISB-2025-001',
-    scheduled_at: '2025-12-01T00:00:00Z',
-    created_at: '2025-11-30T10:00:00Z'
-  }
-]
-```
-
----
-
-## Payment RPCs
-
-### Generate Payment Schedule
-
-```typescript
-const { data, error } = await supabase.rpc('generate_payment_schedule', {
-  p_loan_id: 'uuid-here'
-});
-
-// Response:
-{
-  success: true,
-  loan_id: 'uuid',
-  installments_created: 12
-}
-```
-
-### Get Payment Schedule
-
-```typescript
-const { data, error } = await supabase.rpc('get_payment_schedule', {
-  p_loan_id: 'uuid-here'
-});
-
-// Response: Array of payment schedule entries
-[
-  {
-    id: 'uuid',
-    loan_id: 'uuid',
-    installment_number: 1,
-    due_date: '2025-01-01',
-    principal_amount: 800,
-    interest_amount: 200,
-    fee_amount: 0,
-    late_fee_applied: 0,
-    total_amount: 1000,
-    amount_paid: 0,
-    balance: 1000,
-    status: 'pending',
-    days_overdue: 0
-  }
-]
-```
-
-### Apply Payment to Schedule
-
-```typescript
-const { data, error } = await supabase.rpc('apply_payment_to_schedule', {
-  p_payment_id: 'uuid-here',
-  p_amount: 1000
-});
-
-// Response:
-{
-  success: true,
-  payment_id: 'uuid',
-  amount_applied: 1000,
-  schedules_updated: 1,
-  remaining_amount: 0
-}
-```
-
-### Mark Overdue Payments
-
-```typescript
-const { data, error } = await supabase.rpc('mark_overdue_payments');
-
-// Response:
-{
-  success: true,
-  schedules_marked: 5,
-  processed_at: '2025-12-01T00:00:00Z'
-}
-```
-
-### Calculate Late Fee
-
-```typescript
-const { data, error } = await supabase.rpc('calculate_late_fee', {
-  p_schedule_id: 'uuid-here'
-});
-
-// Response:
-{
-  success: true,
-  late_fee: 50,
-  days_overdue: 15,
-  outstanding_balance: 1000,
-  calculation_method: 'percentage',
-  max_fee_cap: 100
-}
-```
-
----
-
-## Approval Workflow Operations
+## Approval Workflow
 
 ### Submit Approval Request
 
-```typescript
+```ts
 const { data, error } = await supabase
   .from('approval_requests')
   .insert({
-    user_id: userId,
+    user_id,
     request_type: 'loan_application',
-    request_data: { /* loan data */ },
-    priority: 'normal'
+    request_data: {
+      amount,
+      term_months,
+      interest_rate,
+      monthly_payment,
+      total_repayment,
+      purpose,
+    },
+    status: 'pending',
+    priority: 'normal',
   })
   .select()
   .single();
 ```
 
-### Get All Approval Requests (Admin)
+### Process Approved Loan (RPC)
 
-```typescript
-const { data, error } = await supabase
-  .from('approval_requests_expanded')
-  .select('*')
-  .order('created_at', { ascending: false });
-
-// Includes user_first_name, user_last_name, etc.
-```
-
-### Update Approval Status
-
-```typescript
-const { error } = await supabase
-  .from('approval_requests')
-  .update({
-    status: 'approved',
-    reviewer_id: adminUserId,
-    reviewed_at: new Date().toISOString(),
-    review_notes: 'Application meets all criteria'
-  })
-  .eq('id', requestId);
-```
-
-### Process Approved Loan (Atomic)
-
-```typescript
+```ts
 const { data, error } = await supabase.rpc('process_approval_transaction', {
-  request_id: 'uuid-here'
+  p_request_id: approvalRequestId,
+});
+```
+
+---
+
+## Disbursements
+
+```ts
+await supabase.rpc('create_disbursement_on_approval', {
+  p_loan_id: loanId,
 });
 
-// Response:
-{
-  success: true,
+await supabase.rpc('complete_disbursement', {
+  p_disbursement_id: disbursementId,
+  p_payment_method: 'bank_transfer',
+  p_payment_reference: 'REF-2026-001',
+  p_notes: 'Manual transfer',
+});
+```
+
+---
+
+## Payments
+
+### Create Payment (RPC - idempotent)
+
+```ts
+await supabase.rpc('create_payment', {
+  p_loan_id: loanId,
+  p_amount: 500,
+  p_payment_method: 'bank_transfer',
+  p_processing_fee: 25,
+  p_idempotency_key: 'client-ref-123',
+});
+```
+
+### Process Payment + Apply to Schedule
+
+```ts
+await supabase.rpc('process_loan_payment', {
+  p_loan_id: loanId,
+  p_amount: 500,
+  p_payment_method: 'bank_transfer',
+  p_reference_number: 'PAY-2026-001',
+});
+```
+
+---
+
+## IPS / IPP
+
+### Initiate IPS Repayment (RPC + Edge)
+
+```ts
+await supabase.rpc('initiate_ips_repayment', {
+  p_loan_id: loanId,
+  p_amount: 500,
+  p_payer_vpa: 'user@bank',
+});
+```
+
+### IPS Adapter (Edge Function)
+
+```ts
+const res = await fetch(`${SUPABASE_URL}/functions/v1/ips-adapter/pay`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    ipsTransactionId,
+    msgId,
+    txnId,
+    amount,
+    currency: 'NAD',
+    payerVpa,
+    payeeVpa,
+    purposeCode: 'PERS',
+  }),
+});
+```
+
+---
+
+## Notifications
+
+```ts
+await supabase.rpc('queue_notification', {
+  p_user_id: userId,
+  p_template_code: 'PAYMENT_RECEIVED',
+  p_data: { amount: '500.00', date: '2026-01-10' },
+});
+```
+
+---
+
+## Collections
+
+```ts
+await supabase.rpc('generate_collection_queue');
+
+await supabase.rpc('record_collection_activity', {
+  p_loan_id: loanId,
+  p_activity_type: 'call_attempt',
+  p_notes: 'Left voicemail',
+});
+```
+
+---
+
+## Settlement
+
+```ts
+await supabase.rpc('create_settlement_run', {
+  p_settlement_date: '2026-01-10',
+  p_window_id: 'SW1',
+});
+
+await supabase.rpc('process_settlement_run', {
+  p_run_id: runId,
+});
+```
+
+---
+
+## Edge Functions
+
+| Function | Purpose |
+| --- | --- |
+| `payment-webhook` | Provider webhook processing |
+| `send-sms` | SMS delivery |
+| `send-whatsapp` | WhatsApp delivery |
+| `send-notification` | Staff notification send |
+| `scheduled-tasks` | Overdue + reminders |
+| `tigerbeetle-outbox-worker` | Ledger outbox processing |
+
+Each Edge Function requires a valid `Authorization: Bearer <JWT>` header unless explicitly documented.
+
+---
+
+## API Orchestration Layer
+
+Centralized API endpoints for backoffice operations with consistent security, validation, and audit logging.
+
+### Base URL
+
+```
+https://puahejtaskncpazjyxqp.supabase.co/functions/v1/
+```
+
+Use `VITE_SUPABASE_URL` in client builds to avoid hardcoding the project URL.
+
+### api-loans
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-loans/list` | List loans with pagination/filters | All (filtered by role) |
+| GET | `/api-loans/:id` | Get loan details | All (owner or staff) |
+| POST | `/api-loans/apply` | Submit loan application | client |
+| POST | `/api-loans/approve` | Approve loan | loan_officer, admin |
+| POST | `/api-loans/reject` | Reject loan | loan_officer, admin |
+| POST | `/api-loans/disburse` | Initiate disbursement | loan_officer, admin |
+| GET | `/api-loans/approval-requests` | List pending approvals | loan_officer, admin |
+| GET | `/api-loans/schedules/:id` | Get payment schedule | All (owner or staff) |
+
+### api-users
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-users/profile` | Get current user profile | All |
+| PATCH | `/api-users/profile` | Update current user profile | All |
+| GET | `/api-users/list` | List all users | admin |
+| GET | `/api-users/:id` | Get user by ID | admin, loan_officer |
+| PATCH | `/api-users/:id/role` | Update user role | admin |
+| GET | `/api-users/roles` | List available roles | admin, loan_officer |
+
+### api-payments
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-payments/list` | List payments with filters | All (filtered by role) |
+| GET | `/api-payments/:id` | Get payment details | All (owner or staff) |
+| POST | `/api-payments/record` | Record a payment | loan_officer, admin |
+| POST | `/api-payments/reverse` | Reverse a payment | admin |
+| GET | `/api-payments/loan/:loanId` | Get payments for loan | All (owner or staff) |
+| GET | `/api-payments/reconciliation` | Get reconciliation data | admin |
+
+### api-admin
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-admin/dashboard` | Dashboard statistics | loan_officer, admin |
+| GET | `/api-admin/audit-logs` | View audit logs | admin |
+| GET | `/api-admin/system-health` | System health check | admin |
+| POST | `/api-admin/bulk-approve` | Bulk approve loans | admin |
+| GET | `/api-admin/compliance-report` | Compliance report | admin |
+| GET | `/api-admin/collections` | Collections overview | loan_officer, admin |
+
+### api-audit
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-audit/logs` | List audit logs with filters | admin |
+| GET | `/api-audit/logs/:id` | Get audit log details | admin |
+| GET | `/api-audit/financial` | Financial operation logs | admin |
+| GET | `/api-audit/user/:userId` | Audit logs for a user | admin |
+| GET | `/api-audit/table/:tableName` | Audit logs for a table | admin |
+| GET | `/api-audit/export` | Export logs (CSV/JSON) | admin |
+| GET | `/api-audit/summary` | Audit summary statistics | admin |
+| GET | `/api-audit/actions` | List all action types | admin |
+
+### api-analytics
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-analytics/portfolio` | Portfolio summary statistics | loan_officer, admin |
+| GET | `/api-analytics/loan-performance` | Loan performance metrics | loan_officer, admin |
+| GET | `/api-analytics/collections-stats` | Collections statistics | loan_officer, admin |
+| GET | `/api-analytics/disbursement-stats` | Disbursement statistics | loan_officer, admin |
+| GET | `/api-analytics/risk-analysis` | Risk analysis report | admin |
+| GET | `/api-analytics/trends` | Trend analysis over time | loan_officer, admin |
+
+### api-disbursements
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-disbursements/list` | List disbursements with filters | loan_officer, admin |
+| GET | `/api-disbursements/pending` | List pending disbursements | loan_officer, admin |
+| GET | `/api-disbursements/:id` | Get disbursement details | loan_officer, admin |
+| POST | `/api-disbursements/approve` | Approve disbursement | loan_officer, admin |
+| POST | `/api-disbursements/process` | Mark as processing | loan_officer, admin |
+| POST | `/api-disbursements/complete` | Mark as completed | loan_officer, admin |
+| POST | `/api-disbursements/fail` | Mark as failed | loan_officer, admin |
+| GET | `/api-disbursements/queue` | Get disbursement queue | loan_officer, admin |
+
+### api-collections
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-collections/queue` | Get collections work queue | loan_officer, admin |
+| GET | `/api-collections/case/:loanId` | Get collection case details | loan_officer, admin |
+| POST | `/api-collections/interaction` | Record borrower interaction | loan_officer, admin |
+| POST | `/api-collections/promise` | Create promise to pay | loan_officer, admin |
+| PATCH | `/api-collections/promise/:id` | Update promise status | loan_officer, admin |
+| POST | `/api-collections/escalate` | Escalate collection case | admin |
+| GET | `/api-collections/reminders` | List payment reminders | loan_officer, admin |
+| POST | `/api-collections/reminder` | Schedule payment reminder | loan_officer, admin |
+
+### api-reconciliation
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-reconciliation/runs` | List reconciliation runs | loan_officer, admin |
+| GET | `/api-reconciliation/runs/:id` | Get run details | loan_officer, admin |
+| POST | `/api-reconciliation/runs` | Create new reconciliation run | admin |
+| POST | `/api-reconciliation/import` | Import bank transactions | loan_officer, admin |
+| POST | `/api-reconciliation/auto-match` | Auto-match transactions | loan_officer, admin |
+| POST | `/api-reconciliation/manual-match` | Manual match transaction | loan_officer, admin |
+| GET | `/api-reconciliation/unmatched` | List unmatched transactions | loan_officer, admin |
+| GET | `/api-reconciliation/summary` | Reconciliation summary | loan_officer, admin |
+
+### api-notifications
+
+| Method | Endpoint | Description | Roles |
+| --- | --- | --- | --- |
+| GET | `/api-notifications/list` | List user notifications | All |
+| GET | `/api-notifications/:id` | Get notification details | All |
+| POST | `/api-notifications/mark-read` | Mark notification as read | All |
+| POST | `/api-notifications/mark-all-read` | Mark all as read | All |
+| DELETE | `/api-notifications/:id` | Delete notification | All |
+| GET | `/api-notifications/preferences` | Get notification preferences | All |
+| PUT | `/api-notifications/preferences` | Update notification preferences | All |
+| POST | `/api-notifications/send` | Send notification | admin |
+
+### Usage Example
+
+```typescript
+import { 
+  loansAPI, usersAPI, paymentsAPI, adminAPI,
+  analyticsAPI, disbursementsAPI, notificationsAPI 
+} from '@/services/api-client';
+
+// List loans with pagination
+const result = await loansAPI.list({ page: 1, limit: 20, status: 'active' });
+if (result.success) {
+  const { data, meta } = result;
+}
+
+// Get user profile
+const profile = await usersAPI.getProfile();
+
+// Record a payment
+await paymentsAPI.record({
   loan_id: 'uuid',
-  error: null
+  amount: 500,
+  payment_method: 'bank_transfer'
+});
+
+// Admin dashboard stats
+const stats = await adminAPI.getDashboard();
+
+// Analytics - portfolio metrics
+const portfolio = await analyticsAPI.getPortfolio({ period: '30d' });
+
+// Disbursements - list with filters
+const disbursements = await disbursementsAPI.list({ status: 'pending' });
+
+// Notifications - list and mark as read
+const notifications = await notificationsAPI.list({ limit: 50 });
+await notificationsAPI.markRead({ notification_id: 'uuid' });
+```
+
+---
+
+## Frontend Integration Status
+
+The following components have been migrated to use the API Orchestration Layer:
+
+| Component | API Module | Status |
+| --- | --- | --- |
+| `useDisbursements.ts` | `disbursementsAPI` | ✅ Migrated |
+| `PortfolioAnalytics.tsx` | `analyticsAPI` | ✅ Migrated |
+| `NotificationCenter.tsx` | `notificationsAPI` | ✅ Migrated |
+| `CollectionsDashboard.tsx` | `collectionsAPI` | ✅ Migrated |
+| `usePaymentsList.ts` | `paymentsAPI` | ✅ Migrated |
+| `useLoanApplications.ts` | `loansAPI` | ✅ Migrated |
+
+### Migration Pattern
+
+```typescript
+// Before (direct Supabase)
+const { data, error } = await supabase.from('table').select('*');
+
+// After (API client)
+import { someAPI } from '@/services/api-client';
+const result = await someAPI.list({ params });
+if (result.success) {
+  // Handle result.data
+} else {
+  // Handle result.error
 }
 ```
-
----
-
-## Audit Operations
-
-### Log View Access
-
-```typescript
-const { data, error } = await supabase.rpc('log_view_access', {
-  p_entity_type: 'loan',
-  p_entity_id: 'uuid-here',
-  p_fields_viewed: ['amount', 'status', 'user_id'],
-  p_view_duration_ms: 5000
-});
-```
-
-### Log State Transition
-
-```typescript
-const { data, error } = await supabase.rpc('log_state_transition', {
-  p_entity_type: 'loan',
-  p_entity_id: 'uuid-here',
-  p_from_state: 'pending',
-  p_to_state: 'approved',
-  p_reason: 'Manual approval by admin'
-});
-```
-
-### Generate Compliance Report
-
-```typescript
-const { data, error } = await supabase.rpc('generate_compliance_report', {
-  p_report_type: 'monthly_approvals',
-  p_period_start: '2025-11-01T00:00:00Z',
-  p_period_end: '2025-11-30T23:59:59Z'
-});
-```
-
-### Get Audit Logs
-
-```typescript
-const { data, error } = await supabase
-  .from('audit_logs')
-  .select('*')
-  .eq('entity_type', 'loan')
-  .eq('entity_id', loanId)
-  .order('timestamp', { ascending: false });
-```
-
----
-
-## User Management
-
-### Get User Role
-
-```typescript
-const { data, error } = await supabase
-  .from('user_roles')
-  .select('role')
-  .eq('user_id', userId);
-
-// Response: [{ role: 'admin' }]
-```
-
-### Assign User Role (Admin Only)
-
-```typescript
-const { data, error } = await supabase.rpc('assign_user_role', {
-  p_user_id: 'uuid-here',
-  p_role: 'loan_officer'
-});
-```
-
-### Check Role
-
-```typescript
-const { data, error } = await supabase.rpc('has_role', {
-  _user_id: userId,
-  _role: 'admin'
-});
-
-// Response: true | false
-```
-
----
-
-## Profile Operations
-
-### Get User Profile
-
-```typescript
-const { data, error } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('user_id', userId)
-  .single();
-```
-
-### Update Profile
-
-```typescript
-const { error } = await supabase
-  .from('profiles')
-  .update({
-    first_name: 'John',
-    last_name: 'Doe',
-    phone_number: '+264811234567',
-    monthly_income: 25000
-  })
-  .eq('user_id', userId);
-```
-
----
-
-## Document Upload
-
-### Upload KYC Document
-
-```typescript
-// 1. Upload file to storage
-const { data: fileData, error: uploadError } = await supabase.storage
-  .from('documents')
-  .upload(`kyc/${userId}/${filename}`, file);
-
-// 2. Create document record
-const { data, error } = await supabase
-  .from('kyc_documents')
-  .insert({
-    user_id: userId,
-    document_type: 'id_card',
-    file_path: fileData.path,
-    status: 'pending'
-  })
-  .select()
-  .single();
-```
-
-### Get User Documents
-
-```typescript
-const { data, error } = await supabase
-  .from('kyc_documents')
-  .select('*')
-  .eq('user_id', userId)
-  .order('created_at', { ascending: false });
-```
-
----
-
-## Error Handling
-
-### Standard Error Response
-
-```typescript
-interface SupabaseError {
-  message: string;
-  details: string | null;
-  hint: string | null;
-  code: string;  // PostgreSQL error code
-}
-
-// Common error codes:
-// 23505 - Unique constraint violation
-// 23503 - Foreign key violation
-// 42501 - Insufficient privilege (RLS)
-// PGRST301 - No rows found
-```
-
-### Error Handling Pattern
-
-```typescript
-try {
-  const { data, error } = await supabase.rpc('some_function', params);
-  
-  if (error) {
-    console.error('Database error:', error.message);
-    return { success: false, error: error.message };
-  }
-  
-  return { success: true, data };
-} catch (err) {
-  console.error('Unexpected error:', err);
-  return { success: false, error: 'An unexpected error occurred' };
-}
-```
-
----
-
-## IPS (Instant Payment System) API
-
-### Edge Function: ips-adapter
-
-Base URL: `https://puahejtaskncpazjyxqp.supabase.co/functions/v1/ips-adapter`
-
-#### POST /pay
-
-Process an IPS payment.
-
-```typescript
-// Request
-{
-  transactionId: string;   // UUID
-  amount: number;          // Payment amount (NAD)
-  currency: string;        // "NAD"
-  payerVpa: string;        // Payer VPA (e.g., "user@bank")
-  payeeVpa: string;        // Payee VPA
-  note?: string;           // Optional note
-}
-
-// Response
-{
-  success: boolean;
-  rrn?: string;            // IPS Reference Number
-  txnId?: string;          // IPS Transaction ID
-  status: string;          // "completed", "pending", "failed"
-  timestamp: string;       // ISO timestamp
-  error?: string;          // Error message if failed
-}
-```
-
-#### POST /validate-vpa
-
-Validate a VPA address.
-
-```typescript
-// Request
-{ vpa: string }
-
-// Response
-{
-  valid: boolean;
-  vpa: string;
-  accountHolderName?: string;
-  providerCode?: string;
-  providerName?: string;
-  error?: string;
-}
-```
-
-#### POST /check-status
-
-Check transaction status.
-
-```typescript
-// Request
-{ transactionId: string }
-
-// Response
-{
-  success: boolean;
-  status: string;          // "pending", "completed", "failed", "timeout"
-  rrn?: string;
-  completedAt?: string;
-  error?: string;
-}
-```
-
-### IPS RPC Functions
-
-#### initiate_ips_repayment
-
-```typescript
-const { data, error } = await supabase.rpc('initiate_ips_repayment', {
-  p_loan_id: 'uuid',
-  p_amount: 1000.00,
-  p_payer_vpa: 'user@bank'
-});
-// Returns: { success: boolean, transaction_id: string, ... }
-```
-
-#### initiate_ips_disbursement
-
-```typescript
-const { data, error } = await supabase.rpc('initiate_ips_disbursement', {
-  p_loan_id: 'uuid',
-  p_payee_vpa: 'recipient@bank'
-});
-// Returns: { success: boolean, transaction_id: string, ... }
-```
-
-#### get_ips_transaction_status
-
-```typescript
-const { data, error } = await supabase.rpc('get_ips_transaction_status', {
-  p_transaction_id: 'uuid'
-});
-// Returns: { status: string, ips_rrn: string, ... }
-```
-
----
-
-## Rate Limits
-
-| Tier | Requests/Second | Concurrent Connections |
-|------|-----------------|------------------------|
-| Free | 100 | 60 |
-| Pro | 1000 | 200 |
-| Enterprise | Custom | Custom |
-
----
-
-## Best Practices
-
-1. **Always handle errors** - Never ignore the error return value
-2. **Use transactions** - For multi-step operations, use RPCs
-3. **Validate inputs** - Validate on frontend AND backend
-4. **Use proper types** - Leverage TypeScript for type safety
-5. **Implement retry logic** - For network failures
-6. **Log audit events** - Track all sensitive operations
-7. **Use RLS** - Never bypass row-level security
-8. **Validate VPAs first** - Always validate VPA before initiating payment
-
----
-
-*Document Version: 2.7.0*  
-*Last Updated: December 12, 2025*

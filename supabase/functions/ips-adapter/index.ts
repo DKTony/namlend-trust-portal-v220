@@ -1099,6 +1099,86 @@ async function handleListKeys(
 }
 
 // =============================================================================
+// AUTHORIZATION HELPER
+// =============================================================================
+
+interface AuthResult {
+  authorized: boolean;
+  userId?: string;
+  userRole?: string;
+  error?: string;
+}
+
+// Endpoints that require staff role (admin/loan_officer)
+const STAFF_ONLY_ENDPOINTS = ['/pay', '/register-mobile', '/reg-mapper', '/set-cred'];
+
+// Endpoints that any authenticated user can access
+const AUTH_REQUIRED_ENDPOINTS = ['/validate-vpa', '/check-status', '/list-acc-pvd', '/list-account', '/get-alias', '/list-keys'];
+
+async function verifyAuthorization(
+  req: Request,
+  endpoint: string,
+  supabaseUrl: string,
+  anonKey: string
+): Promise<AuthResult> {
+  // Extract JWT from Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { authorized: false, error: 'Missing or invalid Authorization header' };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Create user-scoped client to verify JWT
+  const { createClient: createUserClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.3');
+  const supabaseUser = createUserClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  // Verify JWT and get user
+  const { data: authData, error: authError } = await supabaseUser.auth.getUser(token);
+  if (authError || !authData?.user) {
+    return { authorized: false, error: 'Invalid or expired token' };
+  }
+
+  const userId = authData.user.id;
+
+  // Check if endpoint requires staff role
+  if (STAFF_ONLY_ENDPOINTS.includes(endpoint)) {
+    // Get user roles (handle multi-role users)
+    const { data: roleData, error: roleError } = await supabaseUser
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', ['admin', 'loan_officer']);
+
+    if (roleError || !roleData || roleData.length === 0) {
+      return { 
+        authorized: false, 
+        userId, 
+        error: 'Insufficient permissions: Staff role required for this operation' 
+      };
+    }
+
+    // Return highest privilege role
+    const hasAdmin = roleData.some((r: { role: string }) => r.role === 'admin');
+    return { 
+      authorized: true, 
+      userId, 
+      userRole: hasAdmin ? 'admin' : 'loan_officer' 
+    };
+  }
+
+  // For auth-required endpoints, any authenticated user is allowed
+  if (AUTH_REQUIRED_ENDPOINTS.includes(endpoint)) {
+    return { authorized: true, userId };
+  }
+
+  // Unknown endpoint - deny by default
+  return { authorized: false, error: 'Unknown endpoint' };
+}
+
+// =============================================================================
 // MAIN HANDLER
 // =============================================================================
 
@@ -1122,9 +1202,31 @@ serve(async (req: Request) => {
   const pathParts = url.pathname.split('/ips-adapter');
   const endpoint = pathParts.length > 1 ? pathParts[1] : '';
   
-  // Create Supabase client
+  // Get environment variables
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  
+  // =========================================================================
+  // P0-001 FIX: Verify JWT and role authorization before processing
+  // =========================================================================
+  const authResult = await verifyAuthorization(req, endpoint, supabaseUrl, supabaseAnonKey);
+  
+  if (!authResult.authorized) {
+    console.warn(`[IPS Adapter] Authorization failed for endpoint ${endpoint}:`, authResult.error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'UNAUTHORIZED',
+      errorMessage: authResult.error || 'Authorization required',
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  
+  console.log(`[IPS Adapter] Authorized request: userId=${authResult.userId}, role=${authResult.userRole || 'client'}, endpoint=${endpoint}`);
+  
+  // Create service role client for database operations (after auth verification)
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
   try {

@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { collectionsAPI, analyticsAPI } from '@/services/api-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,14 +49,7 @@ import {
   HandshakeIcon
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
-import {
-  getCollectionsQueue,
-  getCollectionsStats,
-  createPromiseToPay,
-  logInteraction,
-  type CollectionsQueueItem,
-  type CollectionsStats
-} from '@/services/collectionsService';
+import { type CollectionsQueueItem, type CollectionsStats } from '@/services/collectionsService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -117,19 +111,28 @@ export function CollectionsDashboard() {
 
     try {
       const [queueResult, statsResult] = await Promise.all([
-        getCollectionsQueue({
-          riskBucket: selectedBucket === 'all' ? undefined : selectedBucket,
-          search: searchTerm || undefined
+        collectionsAPI.getQueue({
+          priority: selectedBucket === 'all' ? undefined : selectedBucket as 'high' | 'medium' | 'low' | undefined,
         }),
-        getCollectionsStats()
+        analyticsAPI.getCollectionsStats()
       ]);
 
       if (queueResult.success && queueResult.data) {
-        setQueue(queueResult.data);
+        // Apply search filter client-side if needed
+        let queueData = queueResult.data as CollectionsQueueItem[];
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          queueData = queueData.filter((item: CollectionsQueueItem) =>
+            item.first_name?.toLowerCase().includes(searchLower) ||
+            item.last_name?.toLowerCase().includes(searchLower) ||
+            item.phone_number?.toLowerCase().includes(searchLower)
+          );
+        }
+        setQueue(queueData);
       }
 
-      if (statsResult.success && statsResult.stats) {
-        setStats(statsResult.stats);
+      if (statsResult.success && statsResult.data) {
+        setStats(statsResult.data as CollectionsStats);
       }
     } catch (error) {
       console.error('Error fetching collections data:', error);
@@ -154,14 +157,13 @@ export function CollectionsDashboard() {
     
     setSubmitting(true);
     try {
-      const result = await logInteraction(
-        selectedItem.loan_id,
-        interactionType as any,
-        outcome || undefined,
-        notes || undefined,
-        undefined,
-        nextActionDate || undefined
-      );
+      const result = await collectionsAPI.recordInteraction({
+        loan_id: selectedItem.loan_id,
+        interaction_type: interactionType,
+        notes: notes || '',
+        outcome: outcome || undefined,
+        next_action_date: nextActionDate || undefined
+      });
 
       if (result.success) {
         toast({
@@ -191,12 +193,12 @@ export function CollectionsDashboard() {
     
     setSubmitting(true);
     try {
-      const result = await createPromiseToPay(
-        selectedItem.loan_id,
-        parseFloat(ptpAmount),
-        ptpDate,
-        notes || undefined
-      );
+      const result = await collectionsAPI.createPromise({
+        loan_id: selectedItem.loan_id,
+        promised_amount: parseFloat(ptpAmount),
+        promised_date: ptpDate,
+        notes: notes || undefined
+      });
 
       if (result.success) {
         toast({

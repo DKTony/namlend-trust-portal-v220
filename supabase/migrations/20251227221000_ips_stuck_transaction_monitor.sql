@@ -286,9 +286,10 @@ $$;
 
 -- Step 6: Schedule the monitoring job (pg_cron)
 -- Note: pg_cron must be enabled in Supabase Dashboard > Database > Extensions
+-- Run manually after enabling pg_cron:
+--   SELECT cron.schedule('check-stuck-ips-transactions', '*/15 * * * *', 'SELECT check_stuck_ips_transactions()');
 
--- Check if pg_cron extension is available
-DO $$
+DO $outer$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM pg_extension WHERE extname = 'pg_cron'
@@ -299,8 +300,8 @@ BEGIN
     -- Schedule job to run every 15 minutes
     PERFORM cron.schedule(
       'check-stuck-ips-transactions',
-      '*/15 * * * *',  -- Every 15 minutes
-      $$SELECT check_stuck_ips_transactions()$$
+      '*/15 * * * *',
+      'SELECT check_stuck_ips_transactions()'
     );
     
     RAISE NOTICE 'pg_cron job scheduled: check-stuck-ips-transactions (every 15 minutes)';
@@ -311,7 +312,7 @@ BEGIN
 EXCEPTION
   WHEN OTHERS THEN
     RAISE NOTICE 'Could not schedule pg_cron job: %. Run manually: SELECT check_stuck_ips_transactions();', SQLERRM;
-END $$;
+END $outer$;
 
 
 -- Step 7: Grant execute permissions
@@ -321,5 +322,5 @@ GRANT EXECUTE ON FUNCTION acknowledge_ips_alert TO authenticated;
 GRANT EXECUTE ON FUNCTION resolve_ips_alert TO authenticated;
 
 
--- Step 8: Run initial check
-SELECT * FROM check_stuck_ips_transactions();
+-- Step 8: Run initial check (commented out - run manually after migration)
+-- SELECT * FROM check_stuck_ips_transactions();

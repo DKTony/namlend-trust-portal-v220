@@ -5,6 +5,184 @@ All notable changes to the NamLend Trust Platform will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.4] - 2026-01-08 (Data Consistency & Access Control)
+
+### Fixed
+
+- **Loan Balance Terminal Status Alignment** (MEDIUM - Data Consistency)
+  - Fixed `loan_balance_summary` view to match `CLOSED_LOAN_STATUSES` from `loanStatuses.ts`
+  - Terminal statuses now correctly include: `settled`, `completed`, `defaulted`, `rejected`
+  - Previous version only zeroed balances for `settled`, `closed`, `written_off`
+  - **Impact**: Completed/defaulted/rejected loans now correctly show zero balances
+
+- **Approval RPC Access Scope Correction** (LOW - Security)
+  - Removed `approver` role from `process_approval_transaction` RPC
+  - Restored original staff-only access (`admin`, `loan_officer`)
+  - Approvers can approve/reject requests but not execute final loan creation
+  - **Impact**: Prevents unintended privilege escalation for approver role
+
+### Added
+
+- **Migration**: `20260108070200_fix_loan_balance_terminal_statuses.sql`
+- **Migration**: `20260108070300_restrict_approval_rpc_to_staff.sql`
+
+### Technical
+
+- `loan_balance_summary` view: Updated terminal status list to match frontend constants
+- `process_approval_transaction` RPC: Reverted to original staff-only authorization
+- All security controls from v2.8.3 maintained (FOR UPDATE + status validation + 23505 handler)
+
+## [2.8.3] - 2026-01-08 (Security Regression Fixes)
+
+### Fixed
+
+- **Approval RPC Status Validation Regression** (HIGH - Security)
+  - Restored critical `status = 'approved'` validation removed in v2.8.2
+  - Re-added `FOR UPDATE` row locking to prevent concurrent status modifications
+  - Prevents loan creation from pending/rejected approval requests
+  - Maintains 23505 idempotency handler for race condition protection
+  - **Impact**: Blocks unauthorized loan creation from non-approved requests
+
+- **Loan Balance View Missing Terminal Statuses** (MEDIUM - Runtime Error)
+  - Expanded `loan_balance_summary` view to include ALL loan statuses
+  - Terminal states (settled/closed/written_off) now return zero balances
+  - Prevents PGRST116 errors when querying balances for completed loans
+  - **Impact**: Balance reads now work for loans in any status
+
+- **getLoanBalance Error Handling** (MEDIUM - Resilience)
+  - Changed `.single()` to `.maybeSingle()` in ledgerService
+  - Added graceful null handling for missing loan records
+  - Returns zero balances instead of throwing errors
+  - **Impact**: Improved resilience for edge cases
+
+### Added
+
+- **Migration**: `20260108070000_fix_approval_rpc_status_validation.sql`
+- **Migration**: `20260108070100_expand_loan_balance_summary_view.sql`
+
+### Security
+
+- Approval workflow now enforces status validation with row-level locking
+- Prevents race conditions in concurrent approval processing
+- Maintains complete audit trail for all approval operations
+
+### Technical
+
+- `process_approval_transaction` RPC: Restored FOR UPDATE + status check
+- `loan_balance_summary` view: Removed restrictive status filter
+- `ledgerService.getLoanBalance`: Added null-safe fallback logic
+
+## [2.8.2] - 2026-01-08 (Data Integrity & UX Fixes)
+
+### Fixed
+
+- **TigerBeetle Balance Hook Schema Mismatch** (HIGH)
+  - Fixed `useTigerBeetleBalance.ts` to match actual `tigerbeetle_transfers` schema
+  - Replaced non-existent columns (`debit_amount`, `credit_amount`, `account_type`, `status`) with actual schema (`amount`, `debit_account_id`, `credit_account_id`, `is_posted`)
+  - Added proper account code mapping for balance categorization (principal/interest/fees)
+
+- **Missing loan_balance_summary View** (HIGH)
+  - Created `loan_balance_summary` view as fallback for balance reads
+  - Calculates balances from loans, payments, and payment_schedules tables
+  - Ensures graceful degradation when TigerBeetle data unavailable
+
+- **Payment RPC Idempotency Race Condition** (MEDIUM)
+  - Added 23505 `unique_violation` exception handler to `create_payment` RPC
+  - Concurrent requests that race past pre-check now return existing payment instead of error
+  - True idempotency under concurrent load
+
+- **IPS Fee Messaging Mismatch** (LOW - UX)
+  - Fixed Payment UI claiming "No additional fees" for IPS while charging NAD 25
+  - Made processing fee dynamic: 0 for IPS, 25 for other payment methods
+  - UI now accurately reflects actual fee structure
+
+### Added
+
+- **Migration**: `20260108050000_create_loan_balance_summary_view.sql`
+- **Migration**: `20260108050100_fix_create_payment_idempotency.sql`
+
+### Technical
+
+- TigerBeetle balance hook now uses `is_posted` boolean instead of `status` string
+- Payment fee logic moved from static state to dynamic `getProcessingFee()` function
+- All financial operations maintain audit trails
+
+## [2.8.1] - 2026-01-08 (E2E Test Fixes)
+
+### Fixed
+
+- **IPS Payment Flow E2E Tests** (All 5 failures resolved)
+  - Fixed VPA input locator issues in `ips-payment-flow.e2e.ts`
+  - Replaced fragile `input[placeholder*="@"]` selectors with robust `[data-testid="vpa-input"]`
+  - Added explicit "Use a different address" radio selection (VPAInput conditionally rendered)
+  - Included VPA verification step in error handling tests (required by business logic)
+  - Fixed currency format assertions and multiple-element matches
+  - **Test Results**: 11/11 passing (was 6/11)
+
+### Testing
+
+- **E2E Test Coverage: 100%**
+  - Total tests: 126/126 passing
+  - IPS payment flow: 11/11 tests passing
+  - All UI locator issues resolved
+  - No known test failures
+
+### Documentation
+
+- Updated `docs/TESTING.md` with latest test coverage (126/126 passing)
+- Updated `docs/IPS_TESTING.md` with resolved E2E test status
+- Added troubleshooting guidance for VPA input conditional rendering
+
+## [2.8.0] - 2026-01-06 (Production Blockers Remediation)
+
+### Fixed
+
+- **P0-001: IPS Adapter Security** (Critical)
+  - Added JWT verification and role-based authorization to `ips-adapter` edge function
+  - Staff-only endpoints (`/pay`, `/register-mobile`, `/reg-mapper`, `/set-cred`) now require admin/loan_officer role
+  - All IPS endpoints now require valid authentication token
+
+- **P0-002: TigerBeetle Schema Migration** (Critical)
+  - Created `20260106_create_tigerbeetle_schema.sql` migration
+  - Added `tigerbeetle_accounts`, `tigerbeetle_outbox`, `tigerbeetle_transfers`, `tigerbeetle_reconciliation` tables
+  - Added `queue_tigerbeetle_event` RPC function for outbox pattern
+  - Implemented RLS policies for all TigerBeetle tables
+
+- **P0-003: Payment Webhook Wrong ID** (Critical)
+  - Fixed `payment-webhook` to use `payments.id` instead of `payment_transactions.id`
+  - Now correctly captures payment ID before calling `apply_payment_to_schedule` RPC
+
+- **P0-004: process-loan-application Notification Column** (Critical)
+  - Fixed notification insert to use `category` column instead of non-existent `type` column
+
+- **P0-005: send-notification Column Mismatch** (Critical)
+  - Fixed notification insert to map `type` parameter to `category` column
+
+- **P1-001: Admin Dashboard Overdue Metrics**
+  - Fixed overdue count query to use `payment_schedules` table instead of `payments`
+  - Now correctly counts schedules where `due_date < now() AND status != 'paid'`
+
+- **P1-003: Multi-Role Staff Authorization**
+  - Fixed `send-sms` and `send-notification` edge functions to handle users with multiple roles
+  - Changed from `.maybeSingle()` to `.in('role', ['admin', 'loan_officer'])` query pattern
+
+### Added
+
+- **REMEDIATION_PLAN.md** - Comprehensive documentation of all verified findings and fixes
+- **Authorization helper** in IPS adapter for centralized JWT/role validation
+
+### Security
+
+- IPS adapter now enforces authentication on all endpoints
+- Staff-only financial operations protected by role verification
+- Multi-role users now properly authorized across all edge functions
+
+### Migration Notes
+
+- Run `20260106_create_tigerbeetle_schema.sql` before deploying
+- TigerBeetle outbox worker will now have required tables
+- All existing edge functions updated - redeploy required
+
 ## [2.7.1] - 2025-10-18 (Mobile Phase 3: Schema Alignment & Payments)
 
 ### Added

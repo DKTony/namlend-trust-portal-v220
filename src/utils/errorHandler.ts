@@ -1,4 +1,37 @@
 import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
+
+// Generic error type for external errors
+export interface ErrorLike {
+  message?: string;
+  stack?: string;
+  name?: string;
+  code?: string | number;
+  [key: string]: unknown;
+}
+
+// User action tracking type
+export interface UserAction {
+  action: string;
+  data?: Record<string, unknown>;
+  timestamp: string;
+}
+
+// React error info type
+export interface ReactErrorInfo {
+  componentStack?: string;
+  [key: string]: unknown;
+}
+
+// Sanitized value type (recursive structure)
+export type SanitizedValue = 
+  | string 
+  | number 
+  | boolean 
+  | null 
+  | undefined 
+  | SanitizedValue[] 
+  | { [key: string]: SanitizedValue };
 
 // Error severity levels
 export enum ErrorSeverity {
@@ -28,7 +61,7 @@ export interface AppError {
   severity: ErrorSeverity;
   timestamp: string;
   userId?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   stack?: string;
   userAgent?: string;
   url?: string;
@@ -112,19 +145,19 @@ class ErrorLogger {
     }
   }
 
-  private sanitizeContext(context: any): Record<string, any> {
+  private sanitizeContext(context: unknown): Record<string, SanitizedValue> {
     if (!context || typeof context !== 'object') {
       return {};
     }
 
-    const sanitized: Record<string, any> = {};
+    const sanitized: Record<string, SanitizedValue> = {};
     const seen = new WeakSet();
 
-    const sanitizeValue = (key: string, value: any, depth: number = 0): any => {
+    const sanitizeValue = (key: string, value: unknown, depth: number = 0): SanitizedValue => {
       if (depth > 3) return '[Max Depth]';
       
       if (value === null || typeof value !== 'object') {
-        return value;
+        return value as SanitizedValue;
       }
 
       if (seen.has(value)) {
@@ -155,8 +188,8 @@ class ErrorLogger {
         );
       }
 
-      const result: any = {};
-      const keys = Object.keys(value).slice(0, 10);
+      const result: Record<string, SanitizedValue> = {};
+      const keys = Object.keys(value as object).slice(0, 10);
       
       for (const k of keys) {
         try {
@@ -187,7 +220,7 @@ class ErrorLogger {
     return stack.split('\n').slice(0, 10).join('\n');
   }
 
-  private safeConsoleError(message: string, data: any): void {
+  private safeConsoleError(message: string, data: AppError): void {
     try {
       // Create a safe representation for console logging
       const safeData = {
@@ -247,7 +280,7 @@ class ErrorLogger {
 export const errorLogger = ErrorLogger.getInstance();
 
 // Helper functions for common error scenarios
-export const handleAuthError = (error: any, context?: Record<string, any>) => {
+export const handleAuthError = (error: ErrorLike | PostgrestError | Error, context?: Record<string, unknown>) => {
   errorLogger.logError({
     message: error.message || 'Authentication error',
     category: ErrorCategory.AUTHENTICATION,
@@ -257,17 +290,20 @@ export const handleAuthError = (error: any, context?: Record<string, any>) => {
   });
 };
 
-export const handleDatabaseError = (error: any, operation: string, context?: Record<string, any>) => {
+export const handleDatabaseError = (error: ErrorLike | PostgrestError | Error | unknown, operation: string, context?: Record<string, unknown>) => {
+  const errorMessage = error instanceof Error ? error.message : 
+    (typeof error === 'object' && error !== null && 'message' in error) ? String((error as ErrorLike).message) : 'Unknown error';
+  const errorStack = error instanceof Error ? error.stack : undefined;
   errorLogger.logError({
-    message: `Database error during ${operation}: ${error.message || 'Unknown error'}`,
+    message: `Database error during ${operation}: ${errorMessage}`,
     category: ErrorCategory.DATABASE,
     severity: ErrorSeverity.HIGH,
-    context: { operation, ...context, originalError: error },
-    stack: error.stack
+    context: { operation, ...context, originalError: String(error) },
+    stack: errorStack
   });
 };
 
-export const handleValidationError = (field: string, value: any, rule: string) => {
+export const handleValidationError = (field: string, value: unknown, rule: string) => {
   errorLogger.logError({
     message: `Validation failed for ${field}: ${rule}`,
     category: ErrorCategory.VALIDATION,
@@ -276,7 +312,7 @@ export const handleValidationError = (field: string, value: any, rule: string) =
   });
 };
 
-export const handleBusinessLogicError = (operation: string, reason: string, context?: Record<string, any>) => {
+export const handleBusinessLogicError = (operation: string, reason: string, context?: Record<string, unknown>) => {
   errorLogger.logError({
     message: `Business logic error in ${operation}: ${reason}`,
     category: ErrorCategory.BUSINESS_LOGIC,
@@ -285,7 +321,7 @@ export const handleBusinessLogicError = (operation: string, reason: string, cont
   });
 };
 
-export const handleNetworkError = (url: string, method: string, error: any) => {
+export const handleNetworkError = (url: string, method: string, error: ErrorLike | Error) => {
   errorLogger.logError({
     message: `Network error: ${method} ${url} - ${error.message || 'Unknown error'}`,
     category: ErrorCategory.NETWORK,
@@ -296,7 +332,7 @@ export const handleNetworkError = (url: string, method: string, error: any) => {
 };
 
 // Error boundary helper
-export const handleComponentError = (componentName: string, error: any, errorInfo: any) => {
+export const handleComponentError = (componentName: string, error: Error, errorInfo: ReactErrorInfo) => {
   errorLogger.logError({
     message: `Component error in ${componentName}: ${error.message}`,
     category: ErrorCategory.SYSTEM,
@@ -329,7 +365,7 @@ export const trackUserAction = (action: string, data?: Record<string, any>) => {
 };
 
 // Get recent user actions for error context
-export const getRecentUserActions = (): any[] => {
+export const getRecentUserActions = (): UserAction[] => {
   return JSON.parse(localStorage.getItem('recentUserActions') || '[]');
 };
 
@@ -376,7 +412,7 @@ export const retryWithBackoff = async <T>(
   maxRetries: number = 3,
   baseDelay: number = 1000
 ): Promise<T> => {
-  let lastError: any;
+  let lastError: Error | unknown;
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {

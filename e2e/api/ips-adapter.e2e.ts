@@ -26,10 +26,15 @@ const TEST_PREFIX = 'IPS-ADAPTER-TEST-';
 test.describe('IPS Adapter Edge Function', () => {
   let authToken: string;
 
-  test.beforeAll(async ({ adminSupabase }) => {
-    // Get auth token for API calls
-    const { data: session } = await adminSupabase.auth.getSession();
-    authToken = session?.session?.access_token || '';
+  test.beforeEach(async ({ adminSupabase }) => {
+    const { data: { session }, error } = await adminSupabase.auth.getSession();
+    if (error) {
+      throw new Error(`Failed to get admin session for IPS adapter tests: ${error.message}`);
+    }
+    authToken = session?.access_token || '';
+    if (!authToken) {
+      throw new Error('Admin auth token missing for IPS adapter tests.');
+    }
   });
 
   test.afterAll(async () => {
@@ -343,7 +348,7 @@ test.describe('IPS Adapter Edge Function', () => {
   });
 
   test.describe('Error Handling', () => {
-    test('should return 404 for unknown endpoint', async () => {
+    test('should return 401 for unknown endpoint', async () => {
       const response = await fetch(`${IPS_ADAPTER_URL}/unknown-endpoint`, {
         method: 'POST',
         headers: {
@@ -353,9 +358,10 @@ test.describe('IPS Adapter Edge Function', () => {
         body: JSON.stringify({}),
       });
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(401);
       const data = await response.json();
-      expect(data.error).toBe('Unknown endpoint');
+      expect(data.error).toBe('UNAUTHORIZED');
+      expect(data.errorMessage).toBe('Unknown endpoint');
     });
 
     test('should return 405 for non-POST methods', async () => {

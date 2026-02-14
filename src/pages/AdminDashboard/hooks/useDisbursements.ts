@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
-  getPendingDisbursements,
-  approveDisbursement,
-  markDisbursementProcessing,
-  completeDisbursement,
-  failDisbursement
-} from '@/services/disbursementService';
+import { disbursementsAPI } from '@/services/api-client';
 
 // Use the interface that matches the RPC function return
 export interface Disbursement {
@@ -33,8 +27,8 @@ export const useDisbursements = (
       setLoading(true);
       setError(null);
 
-      // Fetch pending disbursements from service
-      const result = await getPendingDisbursements();
+      // Fetch disbursements via API Orchestration Layer
+      const result = await disbursementsAPI.list({ status: status === 'all' ? undefined : status });
 
       if (!result.success) {
         setError(result.error || 'Failed to fetch disbursements');
@@ -42,7 +36,7 @@ export const useDisbursements = (
         return;
       }
 
-      let filteredDisbursements = result.disbursements || [];
+      let filteredDisbursements = (result.data as Disbursement[]) || [];
 
       // Apply status filter
       if (status !== 'all') {
@@ -82,7 +76,7 @@ export const useDisbursements = (
 
   const approveDisbursementAction = async (disbursementId: string, notes?: string) => {
     try {
-      const result = await approveDisbursement(disbursementId, notes);
+      const result = await disbursementsAPI.approve({ disbursement_id: disbursementId, notes });
       if (!result.success) {
         throw new Error(result.error || 'Failed to approve disbursement');
       }
@@ -94,9 +88,9 @@ export const useDisbursements = (
     }
   };
 
-  const markProcessingAction = async (disbursementId: string, notes?: string) => {
+  const markProcessingAction = async (disbursementId: string, paymentReference: string) => {
     try {
-      const result = await markDisbursementProcessing(disbursementId, notes);
+      const result = await disbursementsAPI.process({ disbursement_id: disbursementId, payment_reference: paymentReference });
       if (!result.success) {
         throw new Error(result.error || 'Failed to mark as processing');
       }
@@ -110,11 +104,10 @@ export const useDisbursements = (
 
   const completeDisbursementAction = async (
     disbursementId: string,
-    paymentReference: string,
-    notes?: string
+    confirmationReference: string
   ) => {
     try {
-      const result = await completeDisbursement(disbursementId, paymentReference, notes);
+      const result = await disbursementsAPI.complete({ disbursement_id: disbursementId, confirmation_reference: confirmationReference });
       if (!result.success) {
         throw new Error(result.error || 'Failed to complete disbursement');
       }
@@ -128,7 +121,7 @@ export const useDisbursements = (
 
   const failDisbursementAction = async (disbursementId: string, reason: string) => {
     try {
-      const result = await failDisbursement(disbursementId, reason);
+      const result = await disbursementsAPI.fail({ disbursement_id: disbursementId, reason });
       if (!result.success) {
         throw new Error(result.error || 'Failed to mark as failed');
       }

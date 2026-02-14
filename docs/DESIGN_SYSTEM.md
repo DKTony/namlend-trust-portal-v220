@@ -1,5 +1,8 @@
 # NamLend Trust - Design System Specification
 
+**Doc Revision**: 2026-01-19  
+**Status**: Implemented with Tailwind + CSS variables. Google Fonts are loaded in `index.html` (Inter, Playfair Display, Space Grotesk).
+
 **Version**: 2.2.0  
 **Last Updated**: December 14, 2025  
 **Theme**: Neo-Fintech / "The Black Card Aesthetic"  
@@ -55,7 +58,7 @@ Used sparingly for primary actions, active states, and data visualization.
 
 ## 3. Typography
 
-**Font Family**: `Inter` (Variable) - optimized for UI readability.
+**Font Family**: `Inter` (loaded via Google Fonts) - optimized for UI readability.
 
 ### Scales & Weights
 Heavier weights and tighter tracking create a bold, confident look.
@@ -146,7 +149,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter var', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       borderRadius: {
         '3xl': '1.5rem', // 24px

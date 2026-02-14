@@ -5,10 +5,14 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 // Temporary placeholder for recharts components
+interface PlaceholderProps {
+  children?: React.ReactNode;
+}
+
 const RechartsPrimitive = {
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  Tooltip: ({ children }: any) => <div>{children}</div>,
-} as any;
+  ResponsiveContainer: ({ children }: PlaceholderProps) => <div>{children}</div>,
+  Tooltip: ({ children }: PlaceholderProps) => <div>{children}</div>,
+} as const & { Legend: React.FC; LegendProps: { payload?: unknown[]; verticalAlign?: string } };
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const

@@ -1,12 +1,26 @@
 import { supabaseAdmin } from '@/integrations/supabase/adminClient';
 import { debugLog } from './devToolsHelper';
 
+// Check if admin client is available (only when VITE_ALLOW_LOCAL_ADMIN=true)
+const isAdminAvailable = import.meta.env.DEV && import.meta.env.VITE_ALLOW_LOCAL_ADMIN === 'true';
+
 /**
  * Reset a user's password using the admin client
  * This is a development utility for testing password reset functionality
+ * Requires VITE_ALLOW_LOCAL_ADMIN=true to function
  */
 export const resetUserPassword = async (userId: string, newPassword: string) => {
   debugLog(`🔄 Attempting to reset password for user: ${userId}`);
+  
+  // Guard: Check if admin client is available
+  if (!isAdminAvailable) {
+    debugLog('⚠️ Admin client is disabled. Set VITE_ALLOW_LOCAL_ADMIN="true" to enable password reset.');
+    debugLog('💡 To reset password manually:');
+    debugLog('   1. Go to Supabase Dashboard → Authentication → Users');
+    debugLog(`   2. Find user with ID: ${userId}`);
+    debugLog('   3. Click "Reset Password"');
+    return { success: false, error: 'Admin client disabled - use Supabase Dashboard' };
+  }
   
   try {
     // First, let's check if the user exists
@@ -47,22 +61,12 @@ export const resetUserPassword = async (userId: string, newPassword: string) => 
   }
 };
 
-// Auto-run for the specific user if in development
-if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
-  const targetUserId = '98812e7a-784d-4379-b3aa-e8327d214095';
-  const newPassword = '123abc';
-  
-  console.log('🚀 Auto-running password reset...');
-  resetUserPassword(targetUserId, newPassword).then((result) => {
-    if (result.success) {
-      console.log('✅ Password reset completed!', result.message);
-    } else {
-      console.log('❌ Password reset failed:', result.error);
-    }
-  }).catch((error) => {
-    console.log('❌ Password reset error:', error);
-  });
-}
+// DISABLED: Auto-run requires admin client which is disabled by default for security.
+// Run manually via console: window.resetUserPassword('user-id', 'new-password')
+//
+// if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
+//   resetUserPassword('user-id', 'password');
+// }
 
 // Expose to window for manual testing
 if (import.meta.env.DEV) {

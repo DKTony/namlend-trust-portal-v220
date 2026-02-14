@@ -1,832 +1,191 @@
-# NamLend Trust - Database Schema Documentation
+# NamLend Trust - Database Schema Summary
 
-**Version**: 3.3.0  
-**Last Updated**: December 27, 2025  
-**Database**: PostgreSQL 15+ (Supabase)  
-**Project**: puahejtaskncpazjyxqp  
-**Region**: eu-north-1
+**Doc Revision**: 2026-01-19  \
+**Database**: PostgreSQL 15+ (Supabase)  \
+**Project**: `puahejtaskncpazjyxqp` (eu-north-1)
 
 ---
 
-## Schema Overview
+## Source of Truth
 
-The database follows financial services best practices with comprehensive audit trails, row-level security, and proper data integrity constraints.
+- Schema is defined in `supabase/migrations/`.
+- Generated types live in `src/integrations/supabase/types.ts` and should be regenerated after migrations:
 
----
+```bash
+npx supabase gen types typescript --local > src/integrations/supabase/types.ts
+```
 
-## Core Tables
-
-### `loans`
-
-Primary loan record table storing loan applications and their lifecycle state.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK, DEFAULT gen_random_uuid() | Primary key |
-| `user_id` | UUID | FK → auth.users, NOT NULL | Borrower |
-| `amount` | NUMERIC | NOT NULL | Loan principal (NAD) |
-| `interest_rate` | NUMERIC | NOT NULL | Annual interest rate |
-| `term_months` | INTEGER | NOT NULL | Loan duration |
-| `monthly_payment` | NUMERIC | NOT NULL | Calculated monthly payment |
-| `total_repayment` | NUMERIC | NOT NULL | Principal + interest |
-| `purpose` | TEXT | | Loan purpose description |
-| `status` | VARCHAR(20) | CHECK constraint | pending, approved, rejected, funded, paid_off |
-| `disbursed_at` | TIMESTAMPTZ | | When funds were released |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
-| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Last modification |
-
-**RLS Policies:**
-
-- Users can view their own loans
-- Admins can view all loans
-- Admins can update loan status
+**Note**: The repo currently has some drift between migrations and generated types/services (see Reconciliation section below). Regenerate types after applying new migrations.
 
 ---
 
-### `payments`
+## Core Tables (by domain)
 
-Payment records for loan repayments.
+### Identity and Access
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `loan_id` | UUID | FK → loans | Associated loan |
-| `amount` | NUMERIC | NOT NULL | Payment amount (NAD) |
-| `payment_method` | VARCHAR(50) | NOT NULL | bank_transfer, mobile_money, cash, debit_order, ips |
-| `reference_number` | VARCHAR(100) | | External reference |
-| `status` | VARCHAR(20) | | pending, completed, failed |
-| `paid_at` | TIMESTAMPTZ | | When payment was processed |
-| `is_overdue` | BOOLEAN | DEFAULT FALSE | Overdue flag |
-| `days_overdue` | INTEGER | | Days past due date |
-| `payment_notes` | TEXT | | Admin notes |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
+- `profiles`: user profile data, KYC status, income, risk metadata.
+- `user_roles`: role assignments (`client`, `loan_officer`, `admin`).
+- `document_verification_requirements`: per-user document requirements.
+- `kyc_documents`: document uploads and status.
+
+### Lending Core
+
+- `loans`: loan records with amount, term, interest rate, status, and approval linkage.
+- `loan_reviews`: review records for automated/manual decisions.
+- `disbursements`: disbursement queue and processing metadata.
+- `payments`: repayments with method, reference, status.
+- `payment_schedules`: amortization schedule and overdue tracking.
+
+### Approval Workflow
+
+- `approval_requests`: unified approval queue (loan app, KYC, profile updates).
+- `approval_workflow_history`: status transitions and audit.
+- `approval_notifications`: per-request notifications.
+- `approval_workflow_rules`: rules for automatic routing/priority.
+
+### Notifications and Comms
+
+- `notifications`: in-app messages.
+- `notification_templates`: reusable message templates.
+- `notification_preferences`: per-user channel preferences.
+- `notification_queue`: queued delivery payloads.
+- `communication_logs`: SMS/WhatsApp delivery log.
+- `whatsapp_conversations`: active WhatsApp threads.
+
+### Payments and Webhooks
+
+- `payment_transactions`: provider transaction log.
+- `payment_webhooks`: raw webhook payload archive.
+
+### Reconciliation
+
+- `reconciliation_runs`: reconciliation batches/sessions (2026-01-17 migration).
+- `bank_transactions`: imported bank statement lines and matching status (2026-01-17 migration).
+- `payment_reconciliations`: **legacy table** referenced by current client services/types, but not created in recent migrations (schema drift).
+
+### Collections
+
+- `collections_interactions`: agent interactions and outcomes.
+- `promise_to_pay`: promises and status tracking.
+- `reschedule_requests`: payment reschedule workflow.
+- `payment_reminders`: reminder tracking (if enabled).
+- `collections_queue` (view): prioritized queue view.
+
+### IPS/IPP
+
+- `ips_transactions`: IPS disbursement/repayment activity.
+- `ips_vpa_registry`: VPA ownership and validation.
+- `ips_api_logs`: IPS adapter logging.
+- `ips_error_codes`: IPS error lookup.
+- `ips_alert_thresholds` / `ips_transaction_alerts`: monitoring alerts.
+- `ips_onboarding`: onboarding state machine.
+- `ips_device_bindings`, `ips_alias_directory`, `ips_merchants`, `ips_vae_entries`, `ips_keys_cache`, `ips_sov_providers`, `ips_onboarding_history`.
+
+### Settlement (IRCS Back Office)
+
+- `settlement_runs`, `settlement_obligations`, `settlement_net_instructions`.
+- `settlement_pacs009_batches`, `settlement_acknowledgements`.
+- `settlement_reports`, `settlement_adjustments`, `settlement_timeout_transactions`.
+- `settlement_exposures`, `settlement_participants`, `settlement_fee_rules`, `settlement_windows`, `settlement_holiday_calendar`.
+
+### TigerBeetle Outbox
+
+- `tigerbeetle_accounts`: account mappings for entities.
+- `tigerbeetle_outbox`: pending TB events.
+- `tigerbeetle_transfers`: shadow ledger transfers.
+- `tigerbeetle_reconciliation`: reconciliation snapshots.
 
 ---
 
-### `disbursements`
+## Views
 
-Tracks fund disbursements for approved loans.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `loan_id` | UUID | FK → loans, UNIQUE | One disbursement per loan |
-| `amount` | NUMERIC | NOT NULL | Disbursement amount (NAD) |
-| `status` | VARCHAR(20) | CHECK constraint | pending, approved, processing, completed, failed |
-| `method` | VARCHAR(50) | | Payment method |
-| `reference` | VARCHAR(100) | | System reference |
-| `payment_reference` | VARCHAR(100) | | External payment reference |
-| `scheduled_at` | TIMESTAMPTZ | | Scheduled disbursement date |
-| `processed_at` | TIMESTAMPTZ | | When actually processed |
-| `processing_notes` | TEXT | | Admin notes |
-| `created_by` | UUID | FK → auth.users | Creator |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
-| `updated_at` | TIMESTAMPTZ | | Last modification |
+- `approval_requests_expanded` (admin queue with profile join).
+- `profiles_with_roles` (admin user view).
+- `loan_applications_unified` (approval + loan join for dashboard).
+- `loan_balance_summary` (fallback balances when TB unavailable).
+- `collections_queue` (prioritized collections view).
 
 ---
 
-### `profiles`
+## Row Level Security (RLS)
 
-User profile information including KYC and credit data.
+RLS is enabled on core user-data tables with policies for:
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users, UNIQUE | User reference |
-| `first_name` | VARCHAR(100) | | First name |
-| `last_name` | VARCHAR(100) | | Last name |
-| `phone_number` | VARCHAR(20) | | Contact phone |
-| `id_number` | VARCHAR(50) | | National ID number |
-| `monthly_income` | NUMERIC | | Monthly income (NAD) |
-| `employment_status` | VARCHAR(50) | | Employment status |
-| `credit_score` | INTEGER | | Credit score (0-850) |
-| `risk_category` | VARCHAR(20) | | low, medium, high |
-| `verified` | BOOLEAN | DEFAULT FALSE | KYC verification status |
-| `last_login` | TIMESTAMPTZ | | Last login timestamp |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
-| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Last modification |
+- Own-data access (e.g., `auth.uid() = user_id`).
+- Staff/admin access via `user_roles`.
+- Service-role access for Edge Functions when required.
+
+Review migrations for full policy coverage.
 
 ---
 
-### `user_roles`
+## Key RPC Functions
 
-Role-based access control assignments.
+### Loan & Disbursement Flow
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users, NOT NULL | User reference |
-| `role` | app_role ENUM | NOT NULL, DEFAULT 'client' | client, loan_officer, admin |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Assignment timestamp |
+| Function | Purpose | Status |
+|----------|---------|--------|
+| `create_disbursement_on_approval` | Creates disbursement when loan approved | Creates with `approved` status |
+| `initiate_ips_disbursement` | Initiates IPS payment | Expects `approved` status |
+| `complete_disbursement` | Marks disbursement complete | Updates loan to `disbursed` |
+| `process_approval_transaction` | Processes loan approval | Creates loan + disbursement atomically |
 
-**Role Enum Values:**
+### Recent Migrations (2026-01-10)
 
-```sql
-CREATE TYPE app_role AS ENUM ('client', 'loan_officer', 'admin');
+- `20260110180000_fix_create_disbursement_on_approval_status.sql` - Fixed disbursement status from `pending` to `approved`
+
+### Recent Migrations (2026-01-17)
+
+- `20260117170000_create_reconciliation_system.sql` - Added `reconciliation_runs`, `bank_transactions`, and `payments.bank_transaction_id`
+
+---
+
+## Retention
+
+- Financial data is retained for 7 years (do not hard-delete records).
+- Audit and workflow tables are append-only by design.
+
+---
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    profiles ||--o{ loans : "applies for"
+    profiles ||--o{ user_roles : "has"
+    profiles ||--o{ kyc_documents : "uploads"
+
+    loans ||--o{ disbursements : "has"
+    loans ||--o{ payments : "receives"
+    loans ||--o{ payment_schedules : "has"
+
+    approval_requests ||--|| loans : "creates"
+    approval_requests ||--o{ approval_workflow_history : "tracks"
+    approval_requests ||--o{ approval_notifications : "generates"
+
+    disbursements ||--o{ ips_transactions : "uses"
+    payments ||--o{ ips_transactions : "uses"
+    payments ||--o{ payment_transactions : "logged in"
+
+    ips_transactions ||--o{ ips_api_logs : "logs"
+    ips_vpa_registry ||--|| profiles : "belongs to"
+
+    loans ||--o{ collections_interactions : "triggers"
+    loans ||--o{ promise_to_pay : "has"
+
+    settlement_runs ||--o{ settlement_obligations : "contains"
+    settlement_runs ||--o{ settlement_pacs009_batches : "generates"
+
+    tigerbeetle_accounts ||--|| loans : "maps"
+    tigerbeetle_outbox ||--o{ tigerbeetle_transfers : "processes"
 ```
 
 ---
 
-## Approval Workflow Tables
-
-### `approval_requests`
-
-Central workflow queue for all approval-required actions.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | Requester |
-| `request_type` | VARCHAR(50) | NOT NULL | loan_application, kyc_document, profile_update, payment, document_upload |
-| `request_data` | JSONB | NOT NULL | Request payload |
-| `status` | VARCHAR(20) | CHECK constraint | pending, under_review, approved, rejected, requires_info |
-| `priority` | VARCHAR(10) | CHECK constraint | low, normal, high, urgent |
-| `assigned_to` | UUID | FK → auth.users | Assigned reviewer |
-| `reviewer_id` | UUID | FK → auth.users | Who reviewed |
-| `reviewed_at` | TIMESTAMPTZ | | When reviewed |
-| `review_notes` | TEXT | | Review comments |
-| `reference_id` | UUID | | FK to related entity |
-| `reference_table` | VARCHAR(50) | | Related table name |
-| `auto_approve_eligible` | BOOLEAN | DEFAULT FALSE | Auto-approval flag |
-| `risk_score` | INTEGER | CHECK 0-100 | Risk assessment |
-| `compliance_flags` | JSONB | DEFAULT '[]' | Compliance issues |
-| `metadata` | JSONB | DEFAULT '{}' | Additional data |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Submission time |
-| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Last update |
-
----
-
-### `approval_workflow_history`
-
-Audit trail for approval status changes.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `approval_request_id` | UUID | FK → approval_requests | Parent request |
-| `previous_status` | VARCHAR(20) | | Status before change |
-| `new_status` | VARCHAR(20) | NOT NULL | Status after change |
-| `changed_by` | UUID | FK → auth.users | Who made the change |
-| `change_reason` | TEXT | | Reason for change |
-| `changed_at` | TIMESTAMPTZ | DEFAULT NOW() | When changed |
-| `additional_data` | JSONB | DEFAULT '{}' | Extra context |
-
----
-
-### `approval_notifications`
-
-Notification records for approval workflow.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `approval_request_id` | UUID | FK → approval_requests | Related request |
-| `recipient_id` | UUID | FK → auth.users | Notification recipient |
-| `notification_type` | VARCHAR(30) | NOT NULL | new_request, status_update, assignment, reminder |
-| `title` | VARCHAR(200) | NOT NULL | Notification title |
-| `message` | TEXT | NOT NULL | Notification body |
-| `is_read` | BOOLEAN | DEFAULT FALSE | Read status |
-| `sent_at` | TIMESTAMPTZ | DEFAULT NOW() | When sent |
-| `read_at` | TIMESTAMPTZ | | When read |
-| `metadata` | JSONB | DEFAULT '{}' | Additional data |
-
----
-
-## Audit Tables
-
-### `audit_logs`
-
-Comprehensive audit logging for all system actions.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Event time |
-| `user_id` | UUID | FK → auth.users | Actor |
-| `action` | TEXT | NOT NULL | view, create, update, delete, approve, reject, login, logout, export, download |
-| `table_name` | TEXT | | Table/entity name |
-| `record_id` | UUID | | Record ID |
-| `old_values` | JSONB | | State before action |
-| `new_values` | JSONB | | State after action |
-| `ip_address` | INET | | Client IP |
-| `user_agent` | TEXT | | Browser/client info |
-
-**Design Note:** This table is append-only. Updates are prevented to ensure audit integrity.
-
-> **v3.1.0 Update:** Column names updated from `timestamp`→`created_at`, `entity_type`→`table_name`, `entity_id`→`record_id`, `old_state`→`old_values`, `new_state`→`new_values`.
-
----
-
-### `view_logs`
-
-Tracks who viewed sensitive data (PII, financial records).
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `timestamp` | TIMESTAMPTZ | DEFAULT NOW() | View time |
-| `user_id` | UUID | FK → auth.users | Viewer |
-| `entity_type` | TEXT | NOT NULL | What was viewed |
-| `entity_id` | UUID | NOT NULL | Record ID |
-| `view_duration_ms` | INTEGER | | How long viewed |
-| `fields_viewed` | TEXT[] | | Specific fields accessed |
-| `ip_address` | INET | | Client IP |
-| `session_id` | TEXT | | Session identifier |
-
----
-
-### `state_transitions`
-
-Detailed status change tracking for compliance.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `timestamp` | TIMESTAMPTZ | DEFAULT NOW() | Transition time |
-| `entity_type` | TEXT | NOT NULL | Entity type |
-| `entity_id` | UUID | NOT NULL | Entity ID |
-| `from_state` | TEXT | NOT NULL | Previous status |
-| `to_state` | TEXT | NOT NULL | New status |
-| `transition_reason` | TEXT | | Why changed |
-| `triggered_by` | UUID | FK → auth.users | Who triggered |
-| `workflow_instance_id` | UUID | FK → workflow_instances | Related workflow |
-| `metadata` | JSONB | DEFAULT '{}' | Additional data |
-
----
-
-## Document Tables
-
-### `kyc_documents`
-
-KYC document uploads for verification.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | Document owner |
-| `document_type` | VARCHAR(50) | NOT NULL | id_card, proof_income, proof_residence, etc. |
-| `file_path` | TEXT | NOT NULL | Storage path |
-| `status` | VARCHAR(20) | DEFAULT 'pending' | pending, approved, rejected |
-| `verified_at` | TIMESTAMPTZ | | When verified |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Upload time |
-
----
-
-## Database Views
-
-### `financial_summary`
-
-Aggregated financial metrics for dashboards.
-
-```sql
-CREATE VIEW financial_summary AS
-SELECT
-  COUNT(DISTINCT user_id) as total_clients,
-  COUNT(*) as total_loans,
-  SUM(amount) FILTER (WHERE status = 'funded') as total_disbursed,
-  SUM(amount) FILTER (WHERE status = 'pending') as pending_amount,
-  SUM(amount) FILTER (WHERE status = 'rejected') as rejected_amount,
-  (SELECT SUM(amount) FROM payments WHERE status = 'completed') as total_repayments,
-  (SELECT COUNT(*) FROM payments WHERE is_overdue = true) as overdue_payments
-FROM loans;
-```
-
-### `client_portfolio`
-
-Client portfolio overview for admin dashboards.
-
-```sql
-CREATE VIEW client_portfolio AS
-SELECT
-  p.user_id,
-  p.first_name,
-  p.last_name,
-  p.phone_number,
-  p.credit_score,
-  p.monthly_income,
-  p.risk_category,
-  p.verified,
-  COUNT(l.id) as total_loans,
-  SUM(l.amount) as total_borrowed,
-  ...
-FROM profiles p
-LEFT JOIN loans l ON l.user_id = p.user_id
-GROUP BY p.user_id, ...;
-```
-
-### `approval_requests_expanded`
-
-Expanded view with user profile information.
-
-```sql
-CREATE VIEW approval_requests_expanded AS
-SELECT
-  ar.*,
-  up.first_name as user_first_name,
-  up.last_name as user_last_name,
-  ap.first_name as assigned_first_name,
-  ap.last_name as assigned_last_name,
-  rp.first_name as reviewer_first_name,
-  rp.last_name as reviewer_last_name
-FROM approval_requests ar
-LEFT JOIN profiles up ON ar.user_id = up.user_id
-LEFT JOIN profiles ap ON ar.assigned_to = ap.user_id
-LEFT JOIN profiles rp ON ar.reviewer_id = rp.user_id;
-```
-
-### `profiles_with_roles` (v3.1.0)
-
-User profiles with aggregated role information for admin dashboards.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Profile primary key |
-| `user_id` | UUID | FK → auth.users |
-| `first_name` | TEXT | First name |
-| `last_name` | TEXT | Last name |
-| `email` | VARCHAR(255) | Email address |
-| `phone_number` | TEXT | Contact phone |
-| `verified` | BOOLEAN | KYC verification status |
-| `roles` | app_role[] | Array of all assigned roles |
-| `primary_role` | app_role | Highest priority role (admin > loan_officer > client) |
-| `is_admin` | BOOLEAN | True if user has admin role |
-| `is_loan_officer` | BOOLEAN | True if user has loan_officer role |
-| `is_client` | BOOLEAN | True if user has client role |
-| `account_status` | TEXT | Derived: 'active' (verified), 'pending' (!verified), 'inactive' |
-| `created_at` | TIMESTAMPTZ | Profile creation timestamp |
-| `updated_at` | TIMESTAMPTZ | Last modification timestamp |
-
-```sql
-CREATE VIEW profiles_with_roles AS
-SELECT
-  p.*,
-  COALESCE(array_agg(ur.role ORDER BY ur.role), ARRAY[]::app_role[]) AS roles,
-  COALESCE((SELECT ur.role FROM user_roles ur WHERE ur.user_id = p.user_id 
-    ORDER BY CASE ur.role WHEN 'admin' THEN 1 WHEN 'loan_officer' THEN 2 ELSE 3 END 
-    LIMIT 1), 'client'::app_role) AS primary_role,
-  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'admin') AS is_admin,
-  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'loan_officer') AS is_loan_officer,
-  EXISTS(SELECT 1 FROM user_roles ur WHERE ur.user_id = p.user_id AND ur.role = 'client') AS is_client,
-  CASE WHEN p.verified = true THEN 'active' WHEN p.verified = false THEN 'pending' ELSE 'inactive' END AS account_status
-FROM profiles p
-LEFT JOIN user_roles ur ON ur.user_id = p.user_id
-GROUP BY p.id;
-```
-
-**Used By:**
-- `get_profiles_with_roles_admin` RPC
-- User Management Dashboard
-- Role Management component
-
----
-
-## Key Database Functions (RPCs)
-
-### Disbursement Functions
-
-```sql
--- Create disbursement on loan approval
-CREATE OR REPLACE FUNCTION create_disbursement_on_approval(p_loan_id UUID)
-RETURNS JSONB AS $$
--- Returns: {success, disbursement_id, loan_id, amount, status, message}
-
--- Complete disbursement with payment reference
-CREATE OR REPLACE FUNCTION complete_disbursement(
-  p_disbursement_id UUID,
-  p_payment_method TEXT,
-  p_payment_reference TEXT,
-  p_notes TEXT DEFAULT NULL
-) RETURNS JSONB AS $$
--- Returns: {success, disbursement_id, status, payment_reference, message}
-
--- Get pending disbursements queue
-CREATE OR REPLACE FUNCTION get_pending_disbursements()
-RETURNS TABLE(...) AS $$
--- Returns: Disbursement records with client names
-```
-
-### Payment Functions
-
-```sql
--- Generate payment schedule for loan
-CREATE OR REPLACE FUNCTION generate_payment_schedule(p_loan_id UUID)
-RETURNS JSONB AS $$
--- Creates amortization schedule entries
-
--- Apply payment to oldest due schedules
-CREATE OR REPLACE FUNCTION apply_payment_to_schedule(
-  p_payment_id UUID,
-  p_amount NUMERIC
-) RETURNS JSONB AS $$
-
--- Mark overdue payments (scheduled job)
-CREATE OR REPLACE FUNCTION mark_overdue_payments()
-RETURNS JSONB AS $$
-```
-
-### Audit Functions
-
-```sql
--- Log audit entry
-CREATE OR REPLACE FUNCTION log_audit_entry(
-  p_action TEXT,
-  p_entity_type TEXT,
-  p_entity_id UUID,
-  p_old_state JSONB DEFAULT NULL,
-  p_new_state JSONB DEFAULT NULL,
-  p_metadata JSONB DEFAULT '{}'::jsonb
-) RETURNS UUID
-
--- Log state transition
-CREATE OR REPLACE FUNCTION log_state_transition(
-  p_entity_type TEXT,
-  p_entity_id UUID,
-  p_from_state TEXT,
-  p_to_state TEXT,
-  p_reason TEXT DEFAULT NULL,
-  p_workflow_instance_id UUID DEFAULT NULL
-) RETURNS UUID
-```
-
----
-
-## Indexes
-
-### Performance Indexes
-
-```sql
--- Loans
-CREATE INDEX idx_loans_user_id ON loans(user_id);
-CREATE INDEX idx_loans_status ON loans(status);
-CREATE INDEX idx_loans_created_at ON loans(created_at);
-
--- Payments
-CREATE INDEX idx_payments_loan_id ON payments(loan_id);
-CREATE INDEX idx_payments_status ON payments(status);
-
--- Approval Requests
-CREATE INDEX idx_approval_requests_user_id ON approval_requests(user_id);
-CREATE INDEX idx_approval_requests_status ON approval_requests(status);
-CREATE INDEX idx_approval_requests_type ON approval_requests(request_type);
-CREATE INDEX idx_approval_requests_assigned_to ON approval_requests(assigned_to);
-CREATE INDEX idx_approval_requests_created_at ON approval_requests(created_at);
-CREATE INDEX idx_approval_requests_priority ON approval_requests(priority);
-
--- Audit Logs
-CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
-CREATE INDEX idx_audit_logs_user ON audit_logs(user_id, timestamp DESC);
-CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id, timestamp DESC);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action, timestamp DESC);
-```
-
----
-
-## Row Level Security Policies
-
-### Pattern: User Owns Data
-
-```sql
-CREATE POLICY "Users can view own loans"
-  ON loans FOR SELECT
-  USING (auth.uid() = user_id);
-```
-
-### Pattern: Admin Full Access
-
-```sql
-CREATE POLICY "Admins can view all loans"
-  ON loans FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
-    )
-  );
-```
-
-### Pattern: System Insert
-
-```sql
-CREATE POLICY "System can insert audit logs"
-  ON audit_logs FOR INSERT
-  WITH CHECK (true);
-```
-
----
-
-## Front Office Integration Tables (Phase 4)
-
-### `notification_templates`
-
-Reusable notification templates for multi-channel messaging.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `code` | VARCHAR(50) | UNIQUE, NOT NULL | Template identifier |
-| `name` | VARCHAR(100) | NOT NULL | Display name |
-| `category` | VARCHAR(30) | CHECK constraint | loan, payment, kyc, etc. |
-| `channels` | TEXT[] | NOT NULL | ['in_app', 'sms', 'email', 'whatsapp'] |
-| `title` | VARCHAR(200) | NOT NULL | Notification title |
-| `body` | TEXT | NOT NULL | Message body with {variables} |
-| `priority` | VARCHAR(10) | DEFAULT 'normal' | low, normal, high, urgent |
-
----
-
-### `notifications`
-
-In-app notifications for users.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | Recipient |
-| `title` | VARCHAR(200) | NOT NULL | Notification title |
-| `message` | TEXT | NOT NULL | Notification body |
-| `category` | VARCHAR(30) | NOT NULL | Category for filtering |
-| `is_read` | BOOLEAN | DEFAULT false | Read status |
-| `read_at` | TIMESTAMPTZ | | When marked read |
-
----
-
-### `credit_scores`
-
-Historical credit score records for users.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | User being scored |
-| `loan_id` | UUID | FK → loans | Associated loan (optional) |
-| `score` | INTEGER | CHECK 300-850 | Credit score value |
-| `score_range` | VARCHAR(20) | NOT NULL | EXCELLENT, GOOD, FAIR, POOR |
-| `risk_level` | VARCHAR(20) | NOT NULL | low, medium, high, very_high |
-| `max_approved_amount` | DECIMAL(15,2) | | Calculated max loan |
-| `suggested_interest_rate` | DECIMAL(5,2) | | Risk-based rate |
-| `is_current` | BOOLEAN | DEFAULT true | Current score flag |
-
----
-
-### `payment_transactions`
-
-Detailed payment transaction logs.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `loan_id` | UUID | FK → loans | Associated loan |
-| `provider` | VARCHAR(50) | NOT NULL | Payment provider |
-| `reference_number` | VARCHAR(100) | NOT NULL | Unique reference |
-| `amount` | DECIMAL(15,2) | NOT NULL | Transaction amount |
-| `status` | VARCHAR(20) | CHECK constraint | pending, completed, failed |
-| `payment_method` | VARCHAR(50) | NOT NULL | bank_transfer, mobile_money, etc. |
-
----
-
-### `communication_logs`
-
-All outbound SMS/WhatsApp/Email logs.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | Recipient |
-| `channel` | VARCHAR(20) | NOT NULL | sms, whatsapp, email |
-| `recipient` | VARCHAR(255) | NOT NULL | Phone/email |
-| `content` | TEXT | NOT NULL | Message content |
-| `status` | VARCHAR(20) | DEFAULT 'pending' | Delivery status |
-| `provider` | VARCHAR(50) | | africastalking, meta_whatsapp |
-
----
-
-## IPS (Instant Payment System) Tables
-
-### `ips_transactions`
-
-Stores all IPS payment transactions for loan repayments and disbursements.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `loan_id` | UUID | FK → loans | Associated loan |
-| `user_id` | UUID | FK → auth.users | User who initiated |
-| `transaction_type` | TEXT | NOT NULL | REPAYMENT, DISBURSEMENT |
-| `amount` | DECIMAL(15,2) | NOT NULL | Transaction amount (NAD) |
-| `currency` | TEXT | DEFAULT 'NAD' | Currency code |
-| `payer_vpa` | TEXT | | Payer VPA address |
-| `payee_vpa` | TEXT | | Payee VPA address |
-| `status` | TEXT | DEFAULT 'pending' | pending, sent, completed, failed, timeout, reversed |
-| `ips_rrn` | TEXT | | IPS Reference Number |
-| `ips_txn_id` | TEXT | | IPS Transaction ID |
-| `error_code` | TEXT | | Error code if failed |
-| `error_message` | TEXT | | Error description |
-| `is_retryable` | BOOLEAN | DEFAULT false | Can retry on failure |
-| `initiated_at` | TIMESTAMPTZ | DEFAULT NOW() | When initiated |
-| `completed_at` | TIMESTAMPTZ | | When completed |
-| `note` | TEXT | | Transaction note |
-| `metadata` | JSONB | | Additional metadata |
-
----
-
-### `ips_vpa_registry`
-
-User VPA (Virtual Payment Address) records for IPS payments.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `user_id` | UUID | FK → auth.users | User owner |
-| `vpa_address` | TEXT | NOT NULL | VPA (e.g., user@bank) |
-| `vpa_type` | TEXT | DEFAULT 'MOBILE' | MOBILE, ACCOUNT, AADHAAR |
-| `provider_code` | TEXT | | Bank/provider code |
-| `account_holder_name` | TEXT | | Verified name |
-| `is_validated` | BOOLEAN | DEFAULT false | Server validated |
-| `is_default` | BOOLEAN | DEFAULT false | Default VPA |
-| `validated_at` | TIMESTAMPTZ | | When validated |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
-
-**Constraints**: UNIQUE(user_id, vpa_address)
-
----
-
-### `ips_api_logs`
-
-Logs all IPS API calls for debugging and audit.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Primary key |
-| `endpoint` | TEXT | NOT NULL | API endpoint called |
-| `method` | TEXT | NOT NULL | HTTP method |
-| `request_body` | JSONB | | Request payload |
-| `response_body` | JSONB | | Response payload |
-| `status_code` | INTEGER | | HTTP status code |
-| `duration_ms` | INTEGER | | Response time |
-| `error` | TEXT | | Error message if any |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Log timestamp |
-
----
-
-## System Configuration Tables
-
-### `system_configuration`
-
-Stores admin-configurable system settings for TigerBeetle, Settlement, IPS, and Reconciliation.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK, DEFAULT gen_random_uuid() | Primary key |
-| `config_key` | TEXT | NOT NULL, UNIQUE | Configuration key identifier |
-| `config_value` | JSONB | NOT NULL | Configuration value (JSON) |
-| `category` | TEXT | NOT NULL | Category: tigerbeetle, settlement, reconciliation, ips |
-| `description` | TEXT | | Human-readable description |
-| `updated_by` | UUID | FK → auth.users | Last user who updated |
-| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Last update timestamp |
-| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Record creation |
-
-**RLS Policies:**
-- Only admins can SELECT, INSERT, UPDATE system configuration
-- No DELETE operations allowed (soft delete pattern)
-
-**RPC Functions:**
-- `get_system_config(p_category TEXT)` - Get all configs for a category
-- `upsert_system_config(p_key TEXT, p_value JSONB, p_category TEXT, p_description TEXT)` - Create/update config
-- `reset_system_config(p_category TEXT)` - Reset category to defaults
-
-**Seeded Configurations:**
-- `tigerbeetle_connection` - Cluster ID, addresses, replica count
-- `tigerbeetle_outbox` - Batch size, poll interval, retry settings
-- `tigerbeetle_reconciliation` - Schedule, thresholds
-- `tigerbeetle_accounts` - Account codes and ledger IDs
-- `settlement_processing` - Windows, batch sizes, cutoff times
-- `ips_integration` - Endpoint URLs, credentials, timeouts
-- `reconciliation_automation` - Schedules, tolerance, auto-matching
-
----
-
-## Database Functions (Phase 4)
-
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `get_unread_notification_count()` | INTEGER | User's unread count |
-| `mark_notification_read(uuid)` | BOOLEAN | Mark as read |
-| `mark_all_notifications_read()` | INTEGER | Mark all read |
-| `queue_notification(...)` | UUID[] | Queue from template |
-| `calculate_credit_score(...)` | UUID | Calculate & store score |
-| `get_current_credit_score(uuid)` | TABLE | Get current score |
-| `process_payment_webhook(...)` | UUID | Process payment callback |
-
----
-
-## Migration History
-
-| Migration | Date | Description |
-|-----------|------|-------------|
-| 20250729164907 | Jul 2025 | Initial schema |
-| 20250731184302 | Jul 2025 | Enhanced loan processing |
-| 20250803_fix_user_roles_rls | Aug 2025 | RLS policy fixes |
-| 20250906_create_approval_workflow_system | Sep 2025 | Approval workflow |
-| 20250921_enhance_client_profile_system | Sep 2025 | Profile enhancements |
-| 20251005_harden_assign_user_role | Oct 2025 | Role assignment security |
-| 20251009_create_audit_trail_schema | Oct 2025 | Comprehensive audit logging |
-| 20251009_create_workflow_engine_schema | Oct 2025 | Workflow engine |
-| 20251011195800_documents_bucket_and_table | Oct 2025 | Document storage |
-| 20251020_update_complete_disbursement | Oct 2025 | Disbursement with payment method |
-| 20251205_create_notification_system | Dec 2025 | Notification system |
-| 20251206_create_collections_system | Dec 2025 | Collections management |
-| **20251206_front_office_integrations** | **Dec 2025** | **Notifications, Credit Scoring, Payments, Communications** |
-| **20251212044600_ips_integration** | **Dec 2025** | **IPS tables, VPA registry, API logs** |
-| **20251212050000_ips_monitoring** | **Dec 2025** | **IPS monitoring and alerts** |
-| **20251212053000_settlement_system** | **Dec 2025** | **BON settlement reconciliation (13 tables)** |
-| **20251222050000_system_configuration** | **Dec 2025** | **Admin configuration table, RLS, RPCs** |
-| **20251227100000_ipp_onboarding_system** | **Dec 2025** | **IPP onboarding state machine (8 tables, 6 RPCs)** |
-
----
-
-## IPP Onboarding Tables
-
-### `ips_device_bindings`
-Device binding records for IPP/IPS mobile registration.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `user_id` | UUID | FK → auth.users |
-| `device_fingerprint` | TEXT | Device unique identifier |
-| `mobile_number` | VARCHAR(20) | Registered mobile |
-| `status` | VARCHAR(20) | pending, active, expired, revoked, replaced |
-| `bound_at` | TIMESTAMPTZ | When bound |
-
-### `ips_onboarding`
-Customer IPP onboarding state machine tracking.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `user_id` | UUID | FK → auth.users, UNIQUE |
-| `state` | ipp_onboarding_state | Current onboarding state |
-| `sov_provider_code` | VARCHAR(30) | Selected bank code |
-| `long_alias` | VARCHAR(100) | Full VPA (e.g., user@fnb) |
-| `ips_pin_set` | BOOLEAN | Whether IPS PIN is configured |
-| `last_error_code` | VARCHAR(20) | Last error if any |
-
-**States**: NOT_STARTED → DEVICE_BINDING_REQUIRED → DEVICE_BOUND → SOV_SELECTED → ACCOUNTS_LISTED → VERIFIED → IPS_PIN_SET → ALIAS_REGISTERED → READY_FOR_IPP_PAYMENTS
-
-### `ips_alias_directory`
-Local cache of IPS Alias Directory entries.
-
-### `ips_merchants`
-Merchant registration for P2M payments.
-
-### `ips_vae_entries`
-Verified Address Entries for merchant anti-spoofing.
-
-### `ips_keys_cache`
-Cached public keys from IPS participants.
-
-### `ips_sov_providers`
-Store of Value providers (banks, mobile money).
-
-| Seeded Providers | Handle |
-|-----------------|--------|
-| First National Bank Namibia | @fnb |
-| Standard Bank Namibia | @sbn |
-| Nedbank Namibia | @nedbank |
-| Bank Windhoek | @bankwindhoek |
-| NamPost Savings Bank | @nampost |
-| MTC Mobile Money | @mtc |
-| TN Mobile Money | @tn |
-
-### `ips_onboarding_history`
-Audit trail for all IPP onboarding state transitions.
-
----
-
-## IPP Onboarding RPCs
-
-| Function | Returns | Description |
-|----------|---------|-------------|
-| `get_or_create_ips_onboarding(uuid)` | JSONB | Get/create onboarding record |
-| `advance_ips_onboarding_step(...)` | JSONB | Advance to next state |
-| `is_user_ipp_ready(uuid)` | BOOLEAN | Check if user can make IPP payments |
-| `get_ipp_onboarding_summary()` | JSONB | Admin summary stats |
-| `get_users_pending_ipp_onboarding(...)` | JSONB | List users by state |
-| `admin_initiate_ipp_onboarding(uuid, varchar)` | JSONB | Start onboarding for user |
-| `queue_ipp_onboarding_notification(...)` | UUID | Queue notification for user |
-
----
-
-## Database Statistics
-
-| Metric | Value |
-|--------|-------|
-| Total Tables | 57+ |
-| Total Migrations | 34 |
-| RLS Policies | 73+ |
-| Database Functions | 45+ |
-| Indexes | 60+ |
-
----
-
-*Document Version: 3.1.0*  
-*Last Updated: December 27, 2025*
+## See Also
+
+- [INDEX.md](./INDEX.md) - Documentation index
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture with flow diagrams
+- [SERVICES.md](./SERVICES.md) - Service layer using these tables
+- [SECURITY.md](./SECURITY.md) - RLS policy details
+- [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) - TypeScript types for tables

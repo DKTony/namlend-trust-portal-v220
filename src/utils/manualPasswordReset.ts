@@ -1,12 +1,25 @@
 import { supabaseAdmin } from '@/integrations/supabase/adminClient';
 import { debugLog } from './devToolsHelper';
 
+// Check if admin client is available (only when VITE_ALLOW_LOCAL_ADMIN=true)
+const isAdminAvailable = import.meta.env.DEV && import.meta.env.VITE_ALLOW_LOCAL_ADMIN === 'true';
+
 /**
  * Manual password reset utility for development
  * This provides instructions and attempts automated reset
+ * Requires VITE_ALLOW_LOCAL_ADMIN=true to function
  */
 export const manualPasswordReset = async (targetUserId: string, newPassword: string) => {
   debugLog(`🔄 Manual password reset for user: ${targetUserId}`);
+  
+  // Guard: Check if admin client is available
+  if (!isAdminAvailable) {
+    debugLog(`⚠️ Admin client is disabled. To reset password manually:`);
+    debugLog('   1. Go to Supabase Dashboard → Authentication → Users');
+    debugLog(`   2. Find user with ID: ${targetUserId}`);
+    debugLog(`   3. Click "Reset Password" and set to: ${newPassword}`);
+    return { success: false, error: 'Admin client disabled - use Supabase Dashboard' };
+  }
   
   try {
     debugLog(`⚠️ Note: This requires service role key, not anon key`);

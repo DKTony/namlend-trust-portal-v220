@@ -329,7 +329,7 @@ CREATE POLICY "Users can view their own IPS transactions"
     OR EXISTS (
       SELECT 1 FROM user_roles 
       WHERE user_id = auth.uid() 
-      AND role IN ('admin', 'loan_officer', 'collections_agent')
+      AND role IN ('admin', 'loan_officer')
     )
   );
 
@@ -644,7 +644,7 @@ BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM user_roles 
       WHERE user_id = auth.uid() 
-      AND role IN ('admin', 'loan_officer', 'collections_agent')
+      AND role IN ('admin', 'loan_officer')
     ) THEN
       RETURN jsonb_build_object(
         'success', false,
@@ -1008,7 +1008,7 @@ BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM user_roles 
       WHERE user_id = auth.uid() 
-      AND role IN ('admin', 'loan_officer', 'collections_agent')
+      AND role IN ('admin', 'loan_officer')
     ) THEN
       IF NOT EXISTS (
         SELECT 1 FROM loans WHERE id = v_txn.loan_id AND user_id = auth.uid()
@@ -1206,7 +1206,7 @@ BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM user_roles 
       WHERE user_id = auth.uid() 
-      AND role IN ('admin', 'loan_officer', 'collections_agent')
+      AND role IN ('admin', 'loan_officer')
     ) THEN
       RETURN jsonb_build_object('success', false, 'error', 'UNAUTHORIZED');
     END IF;

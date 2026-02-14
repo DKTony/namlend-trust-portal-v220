@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getUserApprovalRequests } from '@/services/approvalWorkflow';
+import { useTheme } from '@/context/ThemeContext';
+import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -25,7 +24,7 @@ import {
   ArrowUpRight,
   X
 } from 'lucide-react';
-import DashboardSidebar from '@/components/DashboardSidebar';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import { formatNAD } from '@/utils/currency';
 import PaymentModal from '@/components/PaymentModal';
@@ -34,7 +33,11 @@ import { SelfServicePortal } from '@/components/SelfServicePortal';
 import ClientProfileDashboard from '@/components/ClientProfileDashboard';
 import { BankingSection } from '@/components/BankingSection';
 import { NotificationCenter } from '@/components/NotificationCenter';
-import { ModeToggle } from '@/components/ModeToggle';
+import { HeroCard } from '@/components/ui/HeroCard';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -63,6 +66,7 @@ interface LoanApplication {
 
 export default function Dashboard() {
   const { user, loading: authLoading, userRole } = useAuth();
+  const { styles, theme } = useTheme();
   const navigate = useNavigate();
   const { handleAsyncOperation, trackAction } = useErrorHandler();
   
@@ -75,8 +79,10 @@ export default function Dashboard() {
   // UI State
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // KYC eligibility for status indicator
+  const { eligibility, isEligible, verificationProgress, loading: eligibilityLoading } = useKYCEligibility();
 
   // Mock Chart Data (replace with real aggregation if available)
   const chartData = [
@@ -141,19 +147,22 @@ export default function Dashboard() {
         if (applicationsResult.requests) {
           const loanApps = applicationsResult.requests
             .filter(req => req.request_type === 'loan_application')
-            .map(req => ({
-              id: req.id,
-              amount: req.request_data?.amount || 0,
-              purpose: req.request_data?.purpose || 'Not specified',
-              status: req.status || 'pending',
-              submittedAt: req.created_at || new Date().toISOString(),
-              termMonths: req.request_data?.term_months || req.request_data?.term || 0,
-              interestRate: req.request_data?.interest_rate || 0,
-              monthlyPayment: req.request_data?.monthly_payment || 0,
-              priority: req.priority || 'normal',
-              created_at: req.created_at,
-              request_data: req.request_data
-            }));
+            .map(req => {
+              const data = req.request_data as any || {};
+              return {
+                id: req.id,
+                amount: Number(data.amount || 0),
+                purpose: String(data.purpose || 'Not specified'),
+                status: req.status || 'pending',
+                submittedAt: req.created_at || new Date().toISOString(),
+                termMonths: Number(data.term_months || data.term || 0),
+                interestRate: Number(data.interest_rate || 0),
+                monthlyPayment: Number(data.monthly_payment || 0),
+                priority: req.priority || 'normal',
+                created_at: req.created_at,
+                request_data: req.request_data
+              };
+            });
           setLoanApplications(loanApps);
         }
 
@@ -168,8 +177,8 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+      <div className={cn("min-h-screen flex items-center justify-center", styles.background)}>
+        <Loader2 className={cn("h-8 w-8 animate-spin", styles.textClass)} />
       </div>
     );
   }
@@ -180,8 +189,24 @@ export default function Dashboard() {
   const pendingLoan = loanApplications.find(app => app.status === 'pending');
 
   const handleTabChange = (tab: string) => {
+    // Handle sidebar menu items that map to different tab names
+    if (tab === 'dashboard') {
+      setActiveTab('overview');
+      return;
+    }
+    
+    // Handle sidebar items that route to external pages
+    if (tab === 'budget') {
+      navigate('/budget');
+      return;
+    }
+    if (tab === 'documents') {
+      navigate('/kyc');
+      return;
+    }
+    
+    // Handle internal tabs (self-service, profile, loans, payments, etc.)
     setActiveTab(tab);
-    setSidebarOpen(false);
   };
 
   // Render Content based on Active Tab
@@ -193,19 +218,20 @@ export default function Dashboard() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-4">
               <div>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">
+                <h2 className={cn("text-3xl md:text-4xl font-extrabold tracking-tight", styles.textClass)}>
                   Hello, {profile?.first_name || 'Client'}
                 </h2>
                 <p className="text-muted-foreground mt-2 text-base md:text-lg">
                   Your financial health is looking good today.
                 </p>
               </div>
-              <button 
+              <ThemedButton 
                  onClick={() => navigate('/loan-application')}
-                 className="w-full md:w-auto bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                 variant="primary"
+                 className="w-full md:w-auto rounded-full shadow-lg shadow-primary/20"
               >
                  <Plus size={20} /> <span className="md:inline">New Application</span>
-              </button>
+              </ThemedButton>
             </div>
 
             {/* Stat Cards */}
@@ -223,64 +249,130 @@ export default function Dashboard() {
                 icon={TrendingUp} 
                 color="green"
               />
-              <StatCard 
-                label="Next Payment" 
-                value={activeLoan ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "--"} 
+              <StatCard
+                label="Next Payment"
+                value={activeLoan ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "--"}
                 subValue={activeLoan ? formatNAD(activeLoan.monthly_payment) : ""}
-                icon={Calendar} 
+                icon={Calendar}
                 color="blue"
               />
             </div>
 
+            {/* KYC Verification Status Card */}
+            {!eligibilityLoading && !isEligible && (
+              <ThemedCard className="border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 to-transparent">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+                      <Shield className="h-6 w-6 text-yellow-500" />
+                    </div>
+                    <div>
+                      <h3 className={cn("font-bold", styles.textClass)}>Complete Your Verification</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {eligibility
+                          ? `${eligibility.verified_docs} of ${eligibility.required_docs} documents verified`
+                          : 'Upload required documents to apply for loans'
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 w-full md:w-auto">
+                    {eligibility && (
+                      <div className="flex-1 md:w-32">
+                        <Progress value={verificationProgress} className="h-2 bg-muted" />
+                        <p className="text-xs text-muted-foreground mt-1 text-center">{verificationProgress}%</p>
+                      </div>
+                    )}
+                    <ThemedButton
+                      onClick={() => navigate('/kyc')}
+                      variant="secondary"
+                      className="whitespace-nowrap"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Upload Documents
+                    </ThemedButton>
+                  </div>
+                </div>
+              </ThemedCard>
+            )}
+
+            {/* KYC Verified Success Badge */}
+            {!eligibilityLoading && isEligible && (
+              <ThemedCard className="border-green-500/20 bg-gradient-to-r from-green-500/5 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className={cn("font-medium", styles.textClass)}>Verification Complete</h3>
+                      <p className="text-sm text-muted-foreground">You're ready to apply for loans</p>
+                    </div>
+                  </div>
+                  <ThemedBadge className="bg-green-500/10 text-green-500 border-green-500/20">
+                    Verified
+                  </ThemedBadge>
+                </div>
+              </ThemedCard>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main Chart Section */}
-              <div className="lg:col-span-2 bg-card p-6 md:p-8 rounded-3xl shadow-soft border border-border">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-                  <h3 className="text-xl font-bold text-foreground">Spending Overview</h3>
-                  <select className="bg-muted border-none text-sm font-medium text-muted-foreground rounded-lg px-3 py-1 cursor-pointer hover:text-foreground">
-                    <option>Last 6 months</option>
-                    <option>This Year</option>
-                  </select>
-                </div>
-                <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
-                  {/* CSS-only Mock Chart */}
-                  {chartData.map((item, index) => (
-                    <div key={index} className="flex flex-col items-center gap-2 w-full group cursor-pointer">
-                      <div className="relative w-full flex items-end justify-center h-48">
-                        <div 
-                          className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-300 group-hover:bg-primary/40 relative overflow-hidden"
-                          style={{ height: `${(item.amount / 10000) * 100}%` }}
-                        >
-                          <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary/30 to-transparent" />
+              <div className="lg:col-span-2">
+                <ThemedCard className="h-full">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+                    <h3 className={cn("text-xl font-bold", styles.textClass)}>Spending Overview</h3>
+                    <select className="bg-muted border-none text-sm font-medium text-muted-foreground rounded-lg px-3 py-1 cursor-pointer hover:text-foreground">
+                      <option>Last 6 months</option>
+                      <option>This Year</option>
+                    </select>
+                  </div>
+                  <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
+                    {/* CSS-only Mock Chart */}
+                    {chartData.map((item, index) => (
+                      <div key={index} className="flex flex-col items-center gap-2 w-full group cursor-pointer">
+                        <div className="relative w-full flex items-end justify-center h-48">
+                          <div 
+                            className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-300 group-hover:bg-primary/40 relative overflow-hidden"
+                            style={{ height: `${(item.amount / 10000) * 100}%` }}
+                          >
+                            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary/30 to-transparent" />
+                          </div>
+                          <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-foreground text-background px-2 py-1 rounded">
+                            {formatNAD(item.amount)}
+                          </div>
                         </div>
-                        <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-foreground text-background px-2 py-1 rounded">
-                          {formatNAD(item.amount)}
-                        </div>
+                        <span className="text-xs text-muted-foreground font-medium">{item.name}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground font-medium">{item.name}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </ThemedCard>
               </div>
 
               {/* Side Action Panel */}
               <div className="space-y-6">
-                <div className="bg-primary text-primary-foreground p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 blur-[80px] rounded-full opacity-40"></div>
+                <div className={cn(
+                  "p-8 relative overflow-hidden",
+                  styles.cardClass,
+                  styles.radius,
+                  "bg-primary text-primary-foreground border-none"
+                )}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white blur-[80px] rounded-full opacity-20"></div>
                   <div className="relative z-10">
                     <h3 className="text-lg font-bold mb-2">Need Funds?</h3>
                     <p className="text-primary-foreground/80 text-sm mb-6 leading-relaxed">Get approved in minutes with our AI-powered risk assessment.</p>
                     
                     {pendingLoan ? (
-                      <div className="bg-primary-foreground/10 p-4 rounded-2xl border border-primary-foreground/10">
+                      <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-bold uppercase text-primary-foreground/70 tracking-wider">Processing</span>
-                          <span className="text-primary-foreground font-bold truncate tabular-nums max-w-[120px] text-right" title={formatNAD(pendingLoan.amount)}>
+                          <span className="text-xs font-bold uppercase text-white/70 tracking-wider">Processing</span>
+                          <span className="text-white font-bold truncate tabular-nums max-w-[120px] text-right" title={formatNAD(pendingLoan.amount)}>
                             {formatNAD(pendingLoan.amount)}
                           </span>
                         </div>
-                        <div className="w-full bg-primary-foreground/20 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-primary-foreground h-full w-2/3 animate-pulse"></div>
+                        <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                          <div className="bg-white h-full w-2/3 animate-pulse"></div>
                         </div>
                       </div>
                     ) : (
@@ -294,26 +386,26 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="bg-card p-6 rounded-3xl shadow-soft border border-border">
-                  <h3 className="text-lg font-bold text-foreground">Quick Actions</h3>
+                <ThemedCard>
+                  <h3 className={cn("text-lg font-bold mb-4", styles.textClass)}>Quick Actions</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <button 
                       onClick={() => setShowPaymentModal(true)}
                       disabled={!activeLoan}
-                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center disabled:opacity-50"
+                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center disabled:opacity-50 flex flex-col items-center justify-center gap-2"
                     >
-                      <Wallet className="mx-auto mb-2 text-muted-foreground" size={24} />
+                      <Wallet className="text-muted-foreground" size={24} />
                       <span className="text-xs font-medium text-foreground">Make Payment</span>
                     </button>
                     <button 
                       onClick={() => navigate('/kyc')}
-                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center"
+                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center flex flex-col items-center justify-center gap-2"
                     >
-                      <FileText className="mx-auto mb-2 text-muted-foreground" size={24} />
+                      <FileText className="text-muted-foreground" size={24} />
                       <span className="text-xs font-medium text-foreground">Documents</span>
                     </button>
                   </div>
-                </div>
+                </ThemedCard>
               </div>
             </div>
           </div>
@@ -322,7 +414,7 @@ export default function Dashboard() {
       case 'loans':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Your Loans</h2>
+            <h2 className={cn("text-2xl font-bold", styles.textClass)}>Your Loans</h2>
             {loans.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {loans.map((loan) => {
@@ -333,22 +425,20 @@ export default function Dashboard() {
                     : 0;
                   
                   return (
-                    <Card key={loan.id} className={`rounded-3xl shadow-soft border-border ${isSettled ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-card'}`}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-xl font-bold">{formatNAD(loan.amount)}</CardTitle>
-                            <CardDescription>{loan.purpose}</CardDescription>
-                          </div>
-                          <Badge 
-                            variant={isSettled ? 'default' : isActive ? 'secondary' : 'outline'}
-                            className={isSettled ? 'bg-green-600 dark:bg-green-500 text-white' : ''}
-                          >
-                            {isSettled ? '✓ Settled' : loan.status}
-                          </Badge>
+                    <ThemedCard key={loan.id} className={cn(isSettled ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : '')}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className={cn("text-xl font-bold", styles.textClass)}>{formatNAD(loan.amount)}</h3>
+                          <p className="text-sm text-muted-foreground">{loan.purpose}</p>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
+                        <ThemedBadge 
+                          className={isSettled ? 'bg-green-600 dark:bg-green-500 text-white' : ''}
+                        >
+                          {isSettled ? '✓ Settled' : loan.status}
+                        </ThemedBadge>
+                      </div>
+                      
+                      <div className="space-y-4">
                         {/* Progress Bar for Active Loans */}
                         {(isActive || isSettled) && (
                           <div className="space-y-2">
@@ -386,14 +476,14 @@ export default function Dashboard() {
 
                         {/* Action Button for Active Loans */}
                         {isActive && (
-                          <Button 
+                          <ThemedButton 
                             className="w-full mt-2" 
-                            variant="outline"
+                            variant="secondary"
                             onClick={() => setShowPaymentModal(true)}
                           >
                             <DollarSign className="h-4 w-4 mr-2" />
                             Make Payment
-                          </Button>
+                          </ThemedButton>
                         )}
                         
                         {isSettled && loan.settled_at && (
@@ -401,20 +491,20 @@ export default function Dashboard() {
                             Settled on {new Date(loan.settled_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
                         )}
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </ThemedCard>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-center py-12 bg-card rounded-3xl shadow-soft border border-border">
+              <ThemedCard className="text-center py-12">
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground">No loans yet</h3>
+                <h3 className={cn("text-lg font-semibold", styles.textClass)}>No loans yet</h3>
                 <p className="text-muted-foreground mb-4">You don't have any loans at the moment.</p>
-                <Button onClick={() => navigate('/loan-application')}>
+                <ThemedButton onClick={() => navigate('/loan-application')}>
                   Apply for a Loan
-                </Button>
-              </div>
+                </ThemedButton>
+              </ThemedCard>
             )}
           </div>
         );
@@ -423,23 +513,23 @@ export default function Dashboard() {
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-foreground">Applications</h2>
-            <Button onClick={() => navigate('/loan-application')} variant="outline" className="rounded-full">
+            <h2 className={cn("text-2xl font-bold", styles.textClass)}>Applications</h2>
+            <ThemedButton onClick={() => navigate('/loan-application')} variant="secondary" className="rounded-full">
               <Plus size={16} className="mr-2" /> New Application
-            </Button>
+            </ThemedButton>
           </div>
           
           <div className="space-y-4">
             {loanApplications.map((application) => (
-              <div key={application.id} className="bg-card p-6 rounded-3xl shadow-soft border border-border">
+              <ThemedCard key={application.id}>
                 <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
                   <div>
-                    <h3 className="text-lg font-bold text-foreground">{formatNAD(application.amount)}</h3>
+                    <h3 className={cn("text-lg font-bold", styles.textClass)}>{formatNAD(application.amount)}</h3>
                     <p className="text-sm text-muted-foreground">{application.purpose}</p>
                   </div>
-                  <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="w-fit">
+                  <ThemedBadge className="w-fit">
                     {application.status}
-                  </Badge>
+                  </ThemedBadge>
                 </div>
                 
                 <div className="mt-4 pt-4 border-t border-border">
@@ -453,17 +543,17 @@ export default function Dashboard() {
                     orientation="horizontal"
                   />
                 </div>
-              </div>
+              </ThemedCard>
             ))}
             
             {loanApplications.length === 0 && (
-              <div className="text-center py-12 bg-card rounded-3xl shadow-soft border border-border">
+              <ThemedCard className="text-center py-12">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground">No pending applications</h3>
-                <Button onClick={() => navigate('/loan-application')} className="mt-4 rounded-full">
+                <h3 className={cn("text-lg font-semibold", styles.textClass)}>No pending applications</h3>
+                <ThemedButton onClick={() => navigate('/loan-application')} className="mt-4 rounded-full">
                   Start Application
-                </Button>
-              </div>
+                </ThemedButton>
+              </ThemedCard>
             )}
           </div>
         </div>
@@ -472,8 +562,8 @@ export default function Dashboard() {
       case 'payments':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Payment History</h2>
-            <div className="bg-card rounded-3xl shadow-soft border border-border overflow-hidden">
+            <h2 className={cn("text-2xl font-bold", styles.textClass)}>Payment History</h2>
+            <ThemedCard className="overflow-hidden p-0">
               {payments.length > 0 ? (
                 <div className="divide-y divide-border">
                   {payments.map((payment) => (
@@ -487,9 +577,9 @@ export default function Dashboard() {
                           <p className="text-xs text-muted-foreground">{new Date(payment.paid_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className="border-border text-muted-foreground">
+                      <ThemedBadge className="border-border text-muted-foreground bg-transparent">
                         {payment.status}
-                      </Badge>
+                      </ThemedBadge>
                     </div>
                   ))}
                 </div>
@@ -498,7 +588,7 @@ export default function Dashboard() {
                   No payments found.
                 </div>
               )}
-            </div>
+            </ThemedCard>
           </div>
         );
       
@@ -517,43 +607,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <DashboardSidebar 
-        activeTab={activeTab} 
-        onTabChange={handleTabChange}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        userEmail={user?.email}
-        userRole={userRole}
-      />
+    <DashboardLayout
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      variant="client"
+      userName={profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : undefined}
+    >
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="hidden xl:block absolute top-20 right-10 2xl:right-20 opacity-50 2xl:opacity-60 scale-75 2xl:scale-100 z-0 animate-float">
+          <HeroCard />
+        </div>
+      </div>
       
-      <div className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Mobile Header */}
-        <header className="lg:hidden bg-card border-b border-border p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-primary-foreground text-sm">N</div>
-             <span className="font-bold text-foreground">NamLend</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ModeToggle />
-            <NotificationCenter />
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-              <Menu size={20} />
-            </Button>
-          </div>
-        </header>
-
-        {/* Desktop Header with Notifications */}
-        <header className="hidden lg:flex bg-card border-b border-border p-4 items-center justify-end gap-2">
-          <ModeToggle />
-          <NotificationCenter />
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
-        </main>
+      <div className="relative z-10">
+        {renderContent()}
       </div>
 
       <PaymentModal
@@ -562,6 +629,6 @@ export default function Dashboard() {
         userId={user?.id || ''}
         onPaymentSuccess={fetchDashboardData}
       />
-    </div>
+    </DashboardLayout>
   );
 }

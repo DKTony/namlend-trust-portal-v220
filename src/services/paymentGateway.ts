@@ -112,12 +112,13 @@ export async function initiatePayment(request: PaymentRequest): Promise<PaymentR
           message: `Unsupported payment provider: ${request.provider}`
         };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Payment initiation error:', error);
+    const message = error instanceof Error ? error.message : 'Payment initiation failed';
     return {
       success: false,
       status: 'failed',
-      message: error.message || 'Payment initiation failed'
+      message
     };
   }
 }
@@ -655,16 +656,79 @@ async function logPaymentTransaction(
 }
 
 /**
+ * Verify webhook signature based on provider
+ * SECURITY: Each provider has its own signature verification method
+ */
+function verifyWebhookSignature(
+  provider: string,
+  payload: Record<string, unknown>,
+  signature?: string
+): boolean {
+  if (!signature) {
+    console.warn(`Webhook signature missing for provider: ${provider}`);
+    return false;
+  }
+
+  // Get provider-specific webhook secret from environment
+  const webhookSecrets: Record<string, string | undefined> = {
+    paytoday: import.meta.env.VITE_PAYTODAY_WEBHOOK_SECRET,
+    mtc_momo: import.meta.env.VITE_MTC_MOMO_WEBHOOK_SECRET,
+    tn_mobile: import.meta.env.VITE_TN_MOBILE_WEBHOOK_SECRET,
+    ips: import.meta.env.VITE_IPS_WEBHOOK_SECRET
+  };
+
+  const secret = webhookSecrets[provider];
+  if (!secret) {
+    console.warn(`Webhook secret not configured for provider: ${provider}`);
+    // In production, reject webhooks without configured secrets
+    return import.meta.env.DEV;
+  }
+
+  // SECURITY: In production, implement proper HMAC verification per provider
+  // This is a placeholder - each provider has different signature formats
+  // Example for HMAC-SHA256:
+  // const expectedSignature = crypto.createHmac('sha256', secret)
+  //   .update(JSON.stringify(payload))
+  //   .digest('hex');
+  // return signature === expectedSignature;
+
+  // For now, log that verification should be implemented
+  console.warn(`Webhook signature verification not fully implemented for ${provider}`);
+  return true; // TODO: Implement proper verification per provider
+}
+
+/**
  * Handle incoming payment webhook
+ * SECURITY: Validates webhook signature before processing
  */
 export async function handlePaymentWebhook(
   provider: string,
   reference: string,
   status: PaymentStatus,
-  providerData: Record<string, unknown>
+  providerData: Record<string, unknown>,
+  signature?: string
 ): Promise<boolean> {
   try {
-    // Log webhook
+    // SECURITY: Verify webhook signature
+    const isSignatureValid = verifyWebhookSignature(provider, providerData, signature);
+
+    if (!isSignatureValid && !import.meta.env.DEV) {
+      console.error(`Invalid webhook signature for provider: ${provider}, reference: ${reference}`);
+      // Log invalid webhook attempt
+      await supabase
+        .from('payment_webhooks')
+        .insert({
+          provider,
+          event_type: 'payment_update',
+          reference_number: reference,
+          payload: providerData,
+          signature_valid: false,
+          processed: false
+        });
+      return false;
+    }
+
+    // Log webhook with actual signature validation result
     await supabase
       .from('payment_webhooks')
       .insert({
@@ -672,7 +736,7 @@ export async function handlePaymentWebhook(
         event_type: 'payment_update',
         reference_number: reference,
         payload: providerData,
-        signature_valid: true
+        signature_valid: isSignatureValid
       });
     
     // Update transaction

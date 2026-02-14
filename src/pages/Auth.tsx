@@ -5,6 +5,10 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, ShieldCheck, Mail, Lock, ArrowRight, User, Phone, FileText, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { useTheme } from '@/context/ThemeContext';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedInput } from '@/components/ui/ThemedInput';
+import { cn } from '@/lib/utils';
 
 // Email validation schema
 const emailSchema = z.string().email('Please enter a valid email address').min(1, 'Email is required');
@@ -12,9 +16,11 @@ const emailSchema = z.string().email('Please enter a valid email address').min(1
 type AuthMode = 'login' | 'signup' | 'forgot_password';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading, resetPassword, updatePassword } = useAuth();
+  const { user, signIn, signUp, loading, resetPassword, updatePassword, userRole, isAdmin } = useAuth();
+  const { styles } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const nextParam = searchParams.get('next');
   
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isPasswordReset, setIsPasswordReset] = useState(false);
@@ -48,6 +54,20 @@ export default function Auth() {
     }
   }, [searchParams]);
 
+  // Redirect authenticated users away from /auth
+  useEffect(() => {
+    if (!user || isPasswordReset) return;
+    if (nextParam) {
+      navigate(nextParam, { replace: true });
+      return;
+    }
+    if (isAdmin || userRole === 'loan_officer') {
+      navigate('/admin', { replace: true });
+      return;
+    }
+    navigate('/dashboard', { replace: true });
+  }, [user, isPasswordReset, nextParam, navigate, isAdmin, userRole]);
+
   // Handlers
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +87,7 @@ export default function Auth() {
 
       const normalizedLoginEmail = email.trim().toLowerCase();
       
-      const { error } = await signIn(normalizedLoginEmail, password);
+      const { error, data } = await signIn(normalizedLoginEmail, password);
       if (error) {
         toast({
           title: "Login Failed",
@@ -77,36 +97,57 @@ export default function Auth() {
         setIsLoading(false);
         return;
       }
+      if (data?.session) {
+        try {
+          window.localStorage.setItem('namlend-auth', JSON.stringify(data.session));
+        } catch {}
+      }
 
-      await new Promise(resolve => setTimeout(resolve, 200));
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Wait for auth state to settle and role to be determined
+      // Poll for userRole to be set in auth context (max 3 seconds)
+      let attempts = 0;
+      const maxAttempts = 30;
       
-      if (userError || !user) {
-        toast({ title: "Login Error", description: "Failed to establish session.", variant: "destructive" });
-        setIsLoading(false);
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+        
+        // Check if we have a session
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+        if (!sessionUser) continue;
+
+        if (!data?.session) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            try {
+              window.localStorage.setItem('namlend-auth', JSON.stringify(session));
+            } catch {}
+          }
+        }
+        
+        // Query role directly for navigation decision
+        const { data: rolesData } = await supabase.from('user_roles').select('role').eq('user_id', sessionUser.id);
+        const roles = rolesData?.map(r => r.role) ?? [];
+        
+        let resolvedRole = 'client';
+        if (roles.includes('admin')) resolvedRole = 'admin';
+        else if (roles.includes('loan_officer')) resolvedRole = 'loan_officer';
+        
+        // Role is determined by database - no email-based fallbacks for security
+        
+        // Navigate based on role
+        if (resolvedRole === 'admin' || resolvedRole === 'loan_officer') {
+          toast({ title: "Welcome back!", description: `Logged in as ${resolvedRole}.` });
+          navigate('/admin', { replace: true });
+        } else {
+          toast({ title: "Welcome back!", description: `You have been successfully logged in.` });
+          navigate('/dashboard', { replace: true });
+        }
         return;
       }
-
-      // Determine role
-      let resolvedRole = 'client';
-      const { data: rolesData } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
-      const roles = rolesData?.map(r => r.role) ?? [];
       
-      if (roles.includes('admin')) resolvedRole = 'admin';
-      else if (roles.includes('loan_officer')) resolvedRole = 'loan_officer';
-      
-      // Mock fallback
-      if (user.email?.includes('admin')) resolvedRole = 'admin';
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      if (resolvedRole === 'admin' || resolvedRole === 'loan_officer') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-      
-      toast({ title: "Welcome back!", description: `You have been successfully logged in.` });
+      // Fallback if polling times out
+      toast({ title: "Login Error", description: "Session timeout. Please try again.", variant: "destructive" });
       
     } catch (error) {
       console.error('Login error:', error);
@@ -214,22 +255,26 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
+      <div className={cn("min-h-screen flex items-center justify-center", styles.background)}>
+        <Loader2 className={cn("h-8 w-8 animate-spin", styles.textClass)} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 font-sans">
-      <div className="max-w-5xl w-full bg-card rounded-[32px] shadow-2xl overflow-hidden flex min-h-[650px] border border-border">
+    <div className={cn("min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500", styles.background)}>
+      <div className={cn(
+        "max-w-5xl w-full overflow-hidden flex md:min-h-[650px]",
+        styles.cardClass,
+        styles.radius
+      )}>
         
         {/* Left Side: Brand & Visual */}
         <div className="w-1/2 bg-zinc-950 text-white p-12 hidden md:flex flex-col justify-between relative overflow-hidden">
           {/* Abstract Background Elements */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-20 -mr-20 -mt-20 pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600 rounded-full blur-[100px] opacity-20 -ml-10 -mb-10 pointer-events-none"></div>
-            
+
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-primary-foreground text-xl shadow-glow">N</div>
@@ -239,43 +284,43 @@ export default function Auth() {
 
           <div className="relative z-10 max-w-md">
             <h2 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight text-white">
-              Financial freedom <br/> <span className="text-zinc-500">starts here.</span>
+              Financial freedom <br/> <span className="text-zinc-400">starts here.</span>
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed">
               Access fair, regulated loans with AI-powered instant approval. Designed for the modern Namibian economy.
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center gap-3 text-sm text-zinc-500 font-medium bg-white/5 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
+          <div className="relative z-10 flex items-center gap-3 text-sm text-zinc-400 font-medium bg-white/5 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
             <ShieldCheck size={18} className="text-emerald-500" />
             <span>Bank-Grade Security Encryption</span>
           </div>
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center relative bg-card">
+        <div className={cn("w-full md:w-1/2 p-5 sm:p-8 lg:p-12 flex flex-col justify-center relative", styles.variant === 'glass' ? "bg-white/5 backdrop-blur-sm" : "bg-card")}>
           <div className="max-w-md mx-auto w-full">
             
             {/* Header Section */}
             <div className="mb-8">
               {isPasswordReset ? (
                 <>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Reset Password</h3>
+                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Reset Password</h3>
                   <p className="text-muted-foreground">Create a new secure password.</p>
                 </>
               ) : authMode === 'login' ? (
                 <>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Welcome back</h3>
+                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Welcome back</h3>
                   <p className="text-muted-foreground">Please enter your details to sign in.</p>
                 </>
               ) : authMode === 'signup' ? (
                 <>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Create Account</h3>
+                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Create Account</h3>
                   <p className="text-muted-foreground">Join NamLend for instant loan access.</p>
                 </>
               ) : (
                 <>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Forgot Password?</h3>
+                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Forgot Password?</h3>
                   <p className="text-muted-foreground">We'll send you a reset link.</p>
                 </>
               )}
@@ -286,79 +331,80 @@ export default function Auth() {
               // PASSWORD RESET FORM
               <form onSubmit={handlePasswordReset} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">New Password</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>New Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
-                    <input
+                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
+                    <ThemedInput
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
+                      className="pl-12"
                       placeholder="••••••••"
                       required
-                      minLength={6}
                     />
                   </div>
                 </div>
+                
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Confirm Password</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
-                    <input
+                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
+                    <ThemedInput
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
+                      className="pl-12"
                       placeholder="••••••••"
                       required
-                      minLength={6}
                     />
                   </div>
                 </div>
-                <button
+
+                <ThemedButton
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-4"
                 >
-                  {isLoading ? <Loader2 className="animate-spin" /> : <>Update Password <ArrowRight size={20} /></>}
-                </button>
+                  {isLoading ? <Loader2 className="animate-spin" /> : 'Update Password'}
+                </ThemedButton>
               </form>
             ) : authMode === 'login' ? (
               // LOGIN FORM
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Email</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
-                    <input
+                    <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
+                    <ThemedInput
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
+                      className="pl-12"
                       placeholder="name@example.com"
                       required
                       data-testid="email-input"
                     />
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-foreground">Password</label>
-                    <button 
+                    <label className={cn("text-sm font-semibold", styles.textClass)}>Password</label>
+                    <button
                       type="button"
                       onClick={() => setAuthMode('forgot_password')}
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-xs text-primary hover:text-primary/80 font-medium"
                     >
-                      Forgot Password?
+                      Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
-                    <input
+                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
+                    <ThemedInput
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
+                      className="pl-12"
                       placeholder="••••••••"
                       required
                       data-testid="password-input"
@@ -366,40 +412,40 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <button
+                <ThemedButton
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-4"
                   data-testid="login-button"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
-                </button>
+                </ThemedButton>
               </form>
             ) : authMode === 'signup' ? (
               // SIGNUP FORM
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">First Name</label>
+                    <label className={cn("text-sm font-semibold", styles.textClass)}>First Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                      <input
+                      <User className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <ThemedInput
                         value={signupData.firstName}
                         onChange={(e) => setSignupData({...signupData, firstName: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                        className="pl-10"
                         placeholder="John"
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Last Name</label>
+                    <label className={cn("text-sm font-semibold", styles.textClass)}>Last Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                      <input
+                      <User className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <ThemedInput
                         value={signupData.lastName}
                         onChange={(e) => setSignupData({...signupData, lastName: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                        className="pl-10"
                         placeholder="Doe"
                         required
                       />
@@ -408,42 +454,42 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Email</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                    <input
+                    <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                    <ThemedInput
                       type="email"
                       value={signupData.email}
                       onChange={(e) => setSignupData({...signupData, email: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                      className="pl-10"
                       placeholder="name@example.com"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Phone</label>
+                    <label className={cn("text-sm font-semibold", styles.textClass)}>Phone</label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                      <input
+                      <Phone className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <ThemedInput
                         value={signupData.phone}
                         onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                        className="pl-10"
                         placeholder="+264 81..."
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">ID Number</label>
+                    <label className={cn("text-sm font-semibold", styles.textClass)}>ID Number</label>
                     <div className="relative">
-                      <FileText className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                      <input
+                      <FileText className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <ThemedInput
                         value={signupData.idNumber}
                         onChange={(e) => setSignupData({...signupData, idNumber: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                        className="pl-10"
                         placeholder="ID Number"
                         required
                       />
@@ -452,14 +498,14 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Password</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                    <input
+                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                    <ThemedInput
                       type="password"
                       value={signupData.password}
                       onChange={(e) => setSignupData({...signupData, password: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                      className="pl-10"
                       placeholder="Create password"
                       required
                     />
@@ -467,59 +513,59 @@ export default function Auth() {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Confirm Password</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
-                    <input
+                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                    <ThemedInput
                       type="password"
                       value={signupData.confirmPassword}
                       onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-sm text-foreground"
+                      className="pl-10"
                       placeholder="Confirm password"
                       required
                     />
                   </div>
                 </div>
 
-                <button
+                <ThemedButton
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-4"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : <>Create Account <ArrowRight size={20} /></>}
-                </button>
+                </ThemedButton>
               </form>
             ) : (
               // FORGOT PASSWORD FORM
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">Email</label>
+                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={20} />
-                    <input
+                    <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
+                    <ThemedInput
                       type="email"
                       value={forgotPasswordEmail}
                       onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-secondary/50 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-medium text-foreground"
+                      className="pl-12"
                       placeholder="name@example.com"
                       required
                     />
                   </div>
                 </div>
 
-                <button
+                <ThemedButton
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full mt-4"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : 'Send Reset Link'}
-                </button>
+                </ThemedButton>
                 
                 <div className="text-center">
                   <button 
                     type="button"
                     onClick={() => setAuthMode('login')}
-                    className="text-sm text-muted-foreground hover:text-foreground font-medium"
+                    className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Back to Sign In
                   </button>

@@ -226,6 +226,7 @@ DECLARE
   result JSON;
   reconciled_count INTEGER := 0;
   mismatch_count INTEGER := 0;
+  v_temp_count INTEGER := 0;
 BEGIN
   -- Mark successful disbursements as reconciled
   UPDATE ips_transactions t
@@ -249,7 +250,8 @@ BEGIN
     AND p.status = 'completed'
     AND t.transaction_type = 'REPAYMENT';
   
-  GET DIAGNOSTICS reconciled_count = reconciled_count + ROW_COUNT;
+  GET DIAGNOSTICS v_temp_count = ROW_COUNT;
+  reconciled_count := reconciled_count + v_temp_count;
   
   -- Count mismatches
   SELECT COUNT(*) INTO mismatch_count
@@ -346,7 +348,7 @@ CREATE POLICY "Admins can manage alert thresholds"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_id = auth.uid()
-      AND role IN ('admin', 'super_admin')
+      AND role = 'admin'
     )
   );
 

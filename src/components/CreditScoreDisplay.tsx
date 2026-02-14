@@ -4,10 +4,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
@@ -96,24 +97,24 @@ export function CreditScoreDisplay({
 
   if (loading) {
     return (
-      <Card className={cn(compact && 'p-4')}>
+      <ThemedCard className={cn(compact && 'p-4')}>
         <CardContent className="flex items-center justify-center h-48">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
             <p className="text-sm text-muted-foreground">Calculating credit score...</p>
           </div>
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
   if (!score) {
     return (
-      <Card>
+      <ThemedCard>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-muted-foreground">Unable to calculate credit score</p>
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
@@ -121,7 +122,7 @@ export function CreditScoreDisplay({
 
   if (compact) {
     return (
-      <Card>
+      <ThemedCard>
         <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div>
@@ -150,14 +151,14 @@ export function CreditScoreDisplay({
             className={cn('h-2 mt-3', SCORE_BG_COLORS[score.scoreRange])}
           />
         </CardContent>
-      </Card>
+      </ThemedCard>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Main Score Card */}
-      <Card>
+      <ThemedCard>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -170,10 +171,10 @@ export function CreditScoreDisplay({
               </CardDescription>
             </div>
             {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh}>
+              <ThemedButton variant="secondary" size="sm" onClick={onRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Recalculate
-              </Button>
+              </ThemedButton>
             )}
           </div>
         </CardHeader>
@@ -310,11 +311,11 @@ export function CreditScoreDisplay({
             </div>
           )}
         </CardContent>
-      </Card>
+      </ThemedCard>
 
       {/* Loan Recommendation Card */}
       {showRecommendation && recommendation && (
-        <Card className={cn(
+        <ThemedCard className={cn(
           'border-2',
           recommendation.approved ? 'border-green-500' : 'border-red-500'
         )}>
@@ -398,7 +399,7 @@ export function CreditScoreDisplay({
               </div>
             )}
           </CardContent>
-        </Card>
+        </ThemedCard>
       )}
     </div>
   );

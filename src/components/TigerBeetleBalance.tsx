@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Database, AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
 import { useTigerBeetleBalance } from '@/hooks/useTigerBeetleBalance';
@@ -55,7 +56,7 @@ export function TigerBeetleBalance({
   }
 
   return (
-    <Card className={className}>
+    <ThemedCard className={className}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -103,7 +104,7 @@ export function TigerBeetleBalance({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 }
 

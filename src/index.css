@@ -58,6 +58,11 @@ All colors MUST be HSL.
     --success-green: 145 63% 42%;
     --neutral-gray: 240 3.8% 46.1%;
 
+    /* Brand color variables (can be overridden by BrandingContext) */
+    --brand-primary: #0EA5E9;
+    --brand-secondary: #10B981;
+    --brand-accent: #8b5cf6;
+
     /* Loan status colors */
     --status-pending: 45 93% 47%;
     --status-pending-bg: 45 93% 95%;
@@ -146,5 +151,53 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Theme variant data attributes */
+  [data-theme="glass"] {
+    --theme-glow-color: rgba(99, 102, 241, 0.3);
+  }
+  
+  [data-theme="lux"] {
+    --theme-glow-color: rgba(245, 158, 11, 0.2);
+  }
+  
+  [data-theme="neo"] {
+    --theme-glow-color: rgba(16, 185, 129, 0.2);
+  }
+}
+
+@layer utilities {
+  .glass-effect {
+    @apply backdrop-blur-xl bg-white/10 border border-white/20;
+  }
+  
+  .glass-effect-dark {
+    @apply backdrop-blur-xl bg-black/20 border border-white/10;
+  }
+  
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+  
+  .hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-[0_0_30px_var(--theme-glow-color)];
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

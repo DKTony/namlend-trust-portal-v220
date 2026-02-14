@@ -272,7 +272,7 @@ const CollectionsCenter: React.FC = () => {
             />
           </div>
         </div>
-        <Select value={stageFilter} onValueChange={(value: any) => setStageFilter(value)}>
+        <Select value={stageFilter} onValueChange={(value: 'all' | 'early' | 'formal' | 'legal' | 'writeoff') => setStageFilter(value)}>
           <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by stage" />

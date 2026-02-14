@@ -1,6 +1,6 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
@@ -37,8 +37,8 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <Card className={cn("border-border shadow-sm hover:shadow-md transition-shadow duration-200 bg-card", className)}>
-      <CardContent className="p-6 flex items-start justify-between">
+    <ThemedCard className={className}>
+      <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
           <h3 
@@ -56,8 +56,8 @@ const StatCard: React.FC<StatCardProps> = ({
         <div className={cn("p-3 rounded-xl", colorStyles[color])}>
           <Icon size={24} className={iconColorStyles[color]} />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </ThemedCard>
   );
 };
 

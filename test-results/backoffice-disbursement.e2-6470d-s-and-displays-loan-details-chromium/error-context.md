@@ -1,0 +1,188 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - button [ref=e4] [cursor=pointer]:
+      - img [ref=e5] [cursor=pointer]
+    - generic [ref=e7]:
+      - button [ref=e8] [cursor=pointer]:
+        - img [ref=e9] [cursor=pointer]
+      - generic [ref=e12]:
+        - img [ref=e14]
+        - generic [ref=e17]:
+          - heading "NamLend Admin" [level=1] [ref=e18]
+          - paragraph [ref=e19]: Admin Portal
+      - generic [ref=e20]:
+        - button "Financial" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22] [cursor=pointer]:
+            - img [ref=e23] [cursor=pointer]
+            - generic [ref=e26] [cursor=pointer]: Financial
+        - button "Loans" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29] [cursor=pointer]:
+            - img [ref=e30] [cursor=pointer]
+            - generic [ref=e33] [cursor=pointer]: Loans
+        - button "Clients" [ref=e34] [cursor=pointer]:
+          - generic [ref=e35] [cursor=pointer]:
+            - img [ref=e36] [cursor=pointer]
+            - generic [ref=e40] [cursor=pointer]: Clients
+        - button "Payments" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43] [cursor=pointer]:
+            - img [ref=e44] [cursor=pointer]
+            - generic [ref=e46] [cursor=pointer]: Payments
+        - button "Approvals" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49] [cursor=pointer]:
+            - img [ref=e50] [cursor=pointer]
+            - generic [ref=e53] [cursor=pointer]: Approvals
+        - button "Collections" [ref=e55] [cursor=pointer]:
+          - generic [ref=e56] [cursor=pointer]:
+            - img [ref=e57] [cursor=pointer]
+            - generic [ref=e59] [cursor=pointer]: Collections
+        - button "IPP Onboarding" [ref=e61] [cursor=pointer]:
+          - generic [ref=e62] [cursor=pointer]:
+            - img [ref=e63] [cursor=pointer]
+            - generic [ref=e67] [cursor=pointer]: IPP Onboarding
+        - button "Batch Operations" [ref=e69] [cursor=pointer]:
+          - generic [ref=e70] [cursor=pointer]:
+            - img [ref=e71] [cursor=pointer]
+            - generic [ref=e74] [cursor=pointer]: Batch Operations
+        - button "User Management" [ref=e76] [cursor=pointer]:
+          - generic [ref=e77] [cursor=pointer]:
+            - img [ref=e78] [cursor=pointer]
+            - generic [ref=e83] [cursor=pointer]: User Management
+        - button "Analytics" [ref=e85] [cursor=pointer]:
+          - generic [ref=e86] [cursor=pointer]:
+            - img [ref=e87] [cursor=pointer]
+            - generic [ref=e89] [cursor=pointer]: Analytics
+        - button "TigerBeetle Ledger" [ref=e91] [cursor=pointer]:
+          - generic [ref=e92] [cursor=pointer]:
+            - img [ref=e93] [cursor=pointer]
+            - generic [ref=e97] [cursor=pointer]: TigerBeetle Ledger
+        - button "Credit Policy" [ref=e99] [cursor=pointer]:
+          - generic [ref=e100] [cursor=pointer]:
+            - img [ref=e101] [cursor=pointer]
+            - generic [ref=e104] [cursor=pointer]: Credit Policy
+        - button "TB Config" [ref=e106] [cursor=pointer]:
+          - generic [ref=e107] [cursor=pointer]:
+            - img [ref=e108] [cursor=pointer]
+            - generic [ref=e112] [cursor=pointer]: TB Config
+        - button "Settlement" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115] [cursor=pointer]:
+            - img [ref=e116] [cursor=pointer]
+            - generic [ref=e118] [cursor=pointer]: Settlement
+        - button "Branding" [ref=e120] [cursor=pointer]:
+          - generic [ref=e121] [cursor=pointer]:
+            - img [ref=e122] [cursor=pointer]
+            - generic [ref=e128] [cursor=pointer]: Branding
+      - generic [ref=e130]:
+        - generic [ref=e131]: A
+        - generic [ref=e132]:
+          - paragraph [ref=e133]: admin
+          - paragraph [ref=e134]: admin@test.namlend.com
+        - button "Sign Out" [ref=e135] [cursor=pointer]:
+          - img [ref=e136] [cursor=pointer]
+    - generic [ref=e139]:
+      - banner [ref=e140]:
+        - heading "Admin Dashboard" [level=1] [ref=e142]
+        - generic [ref=e143]:
+          - button "Refresh" [ref=e144] [cursor=pointer]:
+            - img [ref=e145] [cursor=pointer]
+            - text: Refresh
+          - button "Reports" [ref=e150] [cursor=pointer]:
+            - img [ref=e151] [cursor=pointer]
+            - text: Reports
+          - button [ref=e153] [cursor=pointer]:
+            - img [ref=e154] [cursor=pointer]
+      - main [ref=e162]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]:
+              - heading "Loan Management" [level=2] [ref=e168]
+              - paragraph [ref=e169]: Review applications, manage portfolio, and process loan decisions
+            - generic [ref=e170]:
+              - button "Filters" [ref=e171] [cursor=pointer]:
+                - img [ref=e172] [cursor=pointer]
+                - text: Filters
+              - button "Export" [ref=e174] [cursor=pointer]:
+                - img [ref=e175] [cursor=pointer]
+                - text: Export
+          - generic [ref=e178]:
+            - generic [ref=e180] [cursor=pointer]:
+              - generic [ref=e181] [cursor=pointer]:
+                - heading "Pending Applications" [level=3] [ref=e182] [cursor=pointer]
+                - img [ref=e184] [cursor=pointer]
+              - paragraph [ref=e189] [cursor=pointer]: Awaiting review
+            - generic [ref=e191] [cursor=pointer]:
+              - generic [ref=e192] [cursor=pointer]:
+                - heading "Approved This Month" [level=3] [ref=e193] [cursor=pointer]
+                - img [ref=e195] [cursor=pointer]
+              - paragraph [ref=e200] [cursor=pointer]: Ready for disbursement
+            - generic [ref=e202] [cursor=pointer]:
+              - generic [ref=e203] [cursor=pointer]:
+                - heading "Total Portfolio Value" [level=3] [ref=e204] [cursor=pointer]
+                - img [ref=e206] [cursor=pointer]
+              - paragraph [ref=e210] [cursor=pointer]: Active loans
+            - generic [ref=e212] [cursor=pointer]:
+              - generic [ref=e213] [cursor=pointer]:
+                - heading "Average Processing Time" [level=3] [ref=e214] [cursor=pointer]
+                - img [ref=e216] [cursor=pointer]
+              - paragraph [ref=e220] [cursor=pointer]: Application to decision
+            - generic [ref=e222] [cursor=pointer]:
+              - generic [ref=e223] [cursor=pointer]:
+                - heading "Approval Rate" [level=3] [ref=e224] [cursor=pointer]
+                - img [ref=e226] [cursor=pointer]
+              - paragraph [ref=e231] [cursor=pointer]: Last 30 days
+            - generic [ref=e233] [cursor=pointer]:
+              - generic [ref=e234] [cursor=pointer]:
+                - heading "High Risk Applications" [level=3] [ref=e235] [cursor=pointer]
+                - img [ref=e237] [cursor=pointer]
+              - paragraph [ref=e241] [cursor=pointer]: Requires special review
+          - generic [ref=e242]:
+            - tablist [ref=e243]:
+              - tab "Pending Review" [ref=e244] [cursor=pointer]:
+                - img [ref=e245] [cursor=pointer]
+                - text: Pending Review
+              - tab "Approved" [active] [selected] [ref=e248] [cursor=pointer]:
+                - img [ref=e249] [cursor=pointer]
+                - text: Approved
+              - tab "Rejected" [ref=e252] [cursor=pointer]:
+                - img [ref=e253] [cursor=pointer]
+                - text: Rejected
+              - tab "All Loans" [ref=e257] [cursor=pointer]:
+                - img [ref=e258] [cursor=pointer]
+                - text: All Loans
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - img [ref=e263]
+                - textbox "Search by applicant name, ID, or amount..." [ref=e266]
+              - combobox [ref=e267]:
+                - option "All Statuses" [selected]
+                - option "Pending"
+                - option "Approved"
+                - option "Rejected"
+                - option "Disbursed"
+            - tabpanel "Approved" [ref=e268]:
+              - generic [ref=e271]:
+                - generic [ref=e272]:
+                  - img [ref=e273]
+                  - generic [ref=e275]: "Failed to load loan applications: startDate: Invalid datetime; endDate: Invalid datetime"
+                - button "Retry" [ref=e276] [cursor=pointer]
+  - generic [ref=e278] [cursor=pointer]:
+    - img [ref=e280] [cursor=pointer]
+    - generic:
+      - button "Switch to Dark Mode":
+        - generic:
+          - img
+      - generic:
+        - button "Neo":
+          - img
+          - generic: Neo
+        - button "Glass":
+          - img
+          - generic: Glass
+        - button "Lux":
+          - img
+          - generic: Lux
+```

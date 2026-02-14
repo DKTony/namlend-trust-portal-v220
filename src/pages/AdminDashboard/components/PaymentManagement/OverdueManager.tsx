@@ -246,7 +246,7 @@ const OverdueManager: React.FC = () => {
             />
           </div>
         </div>
-        <Select value={riskFilter} onValueChange={(value: any) => setRiskFilter(value)}>
+        <Select value={riskFilter} onValueChange={(value: 'all' | 'low' | 'medium' | 'high') => setRiskFilter(value)}>
           <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by risk" />

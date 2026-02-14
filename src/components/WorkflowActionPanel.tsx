@@ -5,8 +5,9 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
@@ -62,7 +63,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
   }
 
   return (
-    <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+    <ThemedCard className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
       <CardHeader>
         <CardTitle className="text-lg">Action Required</CardTitle>
         <CardDescription>
@@ -89,7 +90,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
 
         {/* Action buttons */}
         <div className="flex space-x-3">
-          <Button
+          <ThemedButton
             onClick={handleApprove}
             disabled={loading}
             className="flex-1 bg-green-600 hover:bg-green-700"
@@ -100,9 +101,9 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
               <CheckCircle className="mr-2 h-4 w-4" />
             )}
             Approve
-          </Button>
+          </ThemedButton>
           
-          <Button
+          <ThemedButton
             onClick={handleReject}
             disabled={loading}
             variant="destructive"
@@ -114,19 +115,19 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
               <XCircle className="mr-2 h-4 w-4" />
             )}
             Reject
-          </Button>
+          </ThemedButton>
         </div>
 
         {/* Toggle notes */}
         {!showNotes && (
-          <Button
+          <ThemedButton
             variant="outline"
             size="sm"
             onClick={() => setShowNotes(true)}
             className="w-full"
           >
             Add Notes
-          </Button>
+          </ThemedButton>
         )}
 
         {/* Stage info */}
@@ -135,7 +136,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
           <p>Created: {new Date(stageExecution.created_at).toLocaleString()}</p>
         </div>
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 };
 

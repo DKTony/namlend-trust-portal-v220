@@ -1,25 +1,17 @@
 import 'dotenv/config';
 import { test, expect } from '@playwright/test';
-import { login, baseURL } from './helpers/auth';
+import { login } from './helpers/auth';
+import { ensureAdminReady, openAdminTab } from './helpers/admin';
 
 test.describe('Admin Approvals (visibility & filters)', () => {
   test('Filters are visible and first request can be selected (if present)', async ({ page }) => {
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available; skipping approvals test');
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(`${baseURL}/admin`);
-    await page.waitForLoadState('domcontentloaded');
-    // Wait for either admin sidebar or access denied then handle accordingly
-    const adminNav = page.getByTestId('nav-financial');
-    const accessDenied = page.getByText('Access Denied');
-    const outcome = await Promise.race([
-      adminNav.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'admin').catch(() => 'none'),
-      accessDenied.waitFor({ state: 'visible', timeout: 20000 }).then(() => 'denied').catch(() => 'none')
-    ]);
-    if (outcome !== 'admin') test.skip(true, 'Admin UI not available in environment; skipping approvals test');
+    await ensureAdminReady(page);
 
     // Navigate to Approvals tab
-    await page.getByTestId('nav-approvals').click();
+    await openAdminTab(page, 'approvals');
 
     // Filters visible
     await expect(page.getByTestId('approvals-filter-status')).toBeVisible();
@@ -32,17 +24,36 @@ test.describe('Admin Approvals (visibility & filters)', () => {
     await page.getByRole('option', { name: /Loan Applications/i }).click();
 
     // Either select the first request card or assert empty state
-    const firstRequest = page.locator('[data-testid^="approvals-request-"]').first();
-    const hasRequest = await firstRequest.count().then(c => c > 0);
+    const requests = page.locator('[data-testid^="approvals-request-"]');
+    const emptyState = page.getByText(/No approval requests found/i);
+    const hasRequest = await Promise.race([
+      requests.first().waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false),
+      emptyState.waitFor({ state: 'visible', timeout: 15000 }).then(() => false).catch(() => false),
+    ]);
 
     if (hasRequest) {
-      await firstRequest.click();
-      // Buttons visible but we won't click them (non-mutating)
-      await expect(page.getByTestId('approvals-approve-btn')).toBeVisible();
-      await expect(page.getByTestId('approvals-reject-btn')).toBeVisible();
-      await expect(page.getByTestId('approvals-requestinfo-btn')).toBeVisible();
+      await requests.first().click();
+
+      // Check for either action buttons (pending) or processed state (approved/rejected)
+      const approveBtn = page.getByTestId('approvals-approve-btn');
+      const processedState = page.getByTestId('approvals-processed-state');
+
+      const isPending = await Promise.race([
+        approveBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false),
+        processedState.waitFor({ state: 'visible', timeout: 5000 }).then(() => false).catch(() => false),
+      ]);
+
+      if (isPending) {
+        // Pending request - buttons should be visible
+        await expect(approveBtn).toBeVisible();
+        await expect(page.getByTestId('approvals-reject-btn')).toBeVisible();
+        await expect(page.getByTestId('approvals-requestinfo-btn')).toBeVisible();
+      } else {
+        // Already processed - should show processed state
+        await expect(processedState).toBeVisible();
+      }
     } else {
-      await expect(page.getByText(/No approval requests found/i)).toBeVisible();
+      await expect(emptyState).toBeVisible();
     }
   });
 });

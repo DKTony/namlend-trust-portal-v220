@@ -182,8 +182,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
       } else {
         toast({ title: 'Error', description: 'Failed to update user profile', variant: 'destructive' });
       }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to save', variant: 'destructive' });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to save';
+      toast({ title: 'Error', description: errMsg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -203,8 +204,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
       } else {
         toast({ title: 'Error', description: 'Failed to suspend user', variant: 'destructive' });
       }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to suspend', variant: 'destructive' });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to suspend';
+      toast({ title: 'Error', description: errMsg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -217,13 +219,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const handleStatusChange = (newStatus: string) => {
     if (editedUser) {
-      setEditedUser({ ...editedUser, status: newStatus as any });
+      setEditedUser({ ...editedUser, status: newStatus as UserData['status'] });
     }
   };
 
   const handleRoleChange = (newRole: string) => {
     if (editedUser) {
-      setEditedUser({ ...editedUser, role: newRole as any });
+      setEditedUser({ ...editedUser, role: newRole as UserData['role'] });
     }
   };
 

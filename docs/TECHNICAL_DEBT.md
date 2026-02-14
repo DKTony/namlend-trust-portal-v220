@@ -1,321 +1,456 @@
 # NamLend Trust - Technical Debt & Outstanding Work
 
-**Version**: 2.0.0  
-**Last Updated**: December 2025  
-**Overall Status**: Production Ready (with minor improvements pending)
+**Doc Revision**: 2026-01-19
+**Status**: Active - Tracking technical debt items with remediation steps.
 
 ---
 
-## Executive Summary
+## Table of Contents
 
-The NamLend Trust platform is **production-ready** with all critical functionality implemented. This document tracks remaining improvements, technical debt, and future enhancements for the handover team.
-
-### Current State
-
-| Area | Completion | Priority |
-|------|------------|----------|
-| Core Loan Management | 100% | ✅ Complete |
-| Approval Workflow | 100% | ✅ Complete |
-| Disbursement Processing | 100% | ✅ Complete |
-| Payment Processing | 95% | ✅ Nearly Complete |
-| Security & Auth | 100% | ✅ Complete |
-| Audit Trail | 100% | ✅ Complete |
-| E2E Test Coverage | 100% (52/52) | ✅ Complete |
-| Mobile Responsiveness | 80% | ⏳ Minor Issues |
+- [Summary](#summary)
+- [High Priority](#high-priority)
+- [Medium Priority](#medium-priority)
+- [Low Priority](#low-priority)
+- [Remediation Checklist](#remediation-checklist)
+- [Tracking Progress](#tracking-progress)
 
 ---
 
-## High Priority Items
+## Summary
 
-### 1. ✅ E2E Test Coverage - COMPLETED
+Core lending and backoffice workflows are implemented. This document tracks technical debt items that need attention before full production hardening.
 
-**Current State**: 100% (52 tests passing, 12 intentionally skipped)  
-**Completed**: December 2025
+### Quick Stats
 
-#### Test Results Summary
-
-| Test Area | Status | Tests |
-|-----------|--------|-------|
-| Disbursement API | ✅ 100% | 6/6 |
-| Disbursements RLS | ✅ 100% | 16/16 (1 skipped) |
-| Documents RLS | ✅ 100% | 14/14 |
-| Backoffice UI | ✅ 80% | 8/10 (2 skipped) |
-| Other E2E tests | ✅ 100% | All passing |
-
-#### Completed Work
-
-- ✅ Migrated `disbursements-rls.e2e.ts` to fixtures pattern
-- ✅ Migrated `disbursement.e2e.ts` to fixtures pattern  
-- ✅ Added global setup for test data seeding (`e2e/global-setup.ts`)
-- ✅ Fixed UI test selectors (tabs vs filter dropdown)
-- ✅ Added data-testid attributes to all disbursement components
-
-#### Skipped Tests (Documented Reasons)
-
-- `Complete disbursement flow` - UI passes loan ID instead of disbursement ID (application bug)
-- `Repayments visible after disbursement` - Complex test data setup, covered by API tests
+| Priority | Count | Status |
+|----------|-------|--------|
+| High | 4 | Blocking production features |
+| Medium | 4 | Quality/maintainability issues |
+| Low | 2 | Nice-to-have improvements |
 
 ---
 
-### 2. ✅ data-testid Attributes - COMPLETED
+## High Priority
 
-**Current State**: All disbursement components have data-testid  
-**Completed**: December 2025
+### 1. IPS Adapter is Mock
 
-#### Components with data-testid
+**Status**: Not Started
+**Impact**: Cannot process real IPS payments
 
-- `LoanApplicationsList.tsx` - `loan-card-*`, `disburse-loan-*`
-- `CompleteDisbursementModal.tsx` - All form elements and buttons
-- `LoanManagementDashboard.tsx` - `nav-loans`, `filter-status-select`
+**Problem**:
+- `supabase/functions/ips-adapter` returns mock responses
+- Production IPS API endpoints not configured
+- mTLS certificates not set up
+- Switch connectivity not established
 
-#### Pattern Used
+**Remediation Steps**:
 
-```typescript
-// Button example
-<Button data-testid={`disburse-loan-${application.id}`}>Disburse</Button>
-
-// Modal example  
-<DialogContent data-testid="disbursement-modal">
-
-// Form inputs
-<Input data-testid="payment-reference-input" />
-```
-
----
-
-### 3. Service Role Key Verification
-
-**Current State**: May need verification  
-**Risk**: Admin operations could fail  
-**Estimated Effort**: 30 minutes
-
-#### Verification Steps
-
-1. Go to Supabase Dashboard → Settings → API
-2. Verify `service_role` key matches `.env`
-3. Test admin operations in staging
-4. Regenerate if necessary
-
----
-
-## Medium Priority Items
-
-### 4. Mobile Responsiveness Improvements
-
-**Affected Areas:**
-
-- Admin dashboard tables (horizontal scroll needed)
-- Complex forms on mobile
-- Chart visualizations
-
-**Recommended Fixes:**
-
-```typescript
-// Use responsive table pattern
-<div className="overflow-x-auto">
-  <Table className="min-w-[800px]">
-    ...
-  </Table>
-</div>
-
-// Stack form fields on mobile
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  ...
-</div>
-```
-
----
-
-### 5. Real-time Updates
-
-**Current State**: Manual refresh required  
-**Enhancement**: Supabase Realtime subscriptions
-
-#### Implementation Pattern
-
-```typescript
-useEffect(() => {
-  const channel = supabase
-    .channel('loans-changes')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'loans' },
-      (payload) => {
-        queryClient.invalidateQueries(['loans']);
-      }
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, []);
-```
-
-**Priority Areas:**
-
-- Approval notifications (admin)
-- Loan status updates (client)
-- Payment confirmations
-
----
-
-### 6. Error Boundary Improvements
-
-**Current State**: Basic error boundary  
-**Enhancement**: Granular error boundaries
-
-```typescript
-// Per-feature error boundaries
-<ErrorBoundary fallback={<LoanErrorFallback />}>
-  <LoanManagement />
-</ErrorBoundary>
-
-<ErrorBoundary fallback={<PaymentErrorFallback />}>
-  <PaymentManagement />
-</ErrorBoundary>
-```
-
----
-
-## Low Priority Items
-
-### 7. Code Cleanup
-
-**Files to review/remove:**
-
-```
-src/pages/AdminDashboard_BACKUP.tsx  (backup file)
-src/pages/AdminDashboard_broken.tsx  (old version)
-src/pages/AdminDashboard_working.tsx (empty file)
-src/utils/test*.ts                   (28 test utilities - consolidate)
-```
-
-**Recommendation:** Keep for now, remove after thorough testing of production.
-
----
-
-### 8. Performance Optimization
-
-**Opportunities:**
-
-1. **Query Optimization**
-
-   ```typescript
-   // Add pagination to large lists
-   const { data } = await supabase
-     .from('loans')
-     .select('*')
-     .range(0, 49);  // First 50 records
+1. Obtain production IPS credentials from Bank of Namibia
+2. Generate and configure mTLS certificates:
+   ```bash
+   # Generate CSR for IPS connectivity
+   openssl req -new -newkey rsa:2048 -nodes \
+     -keyout namlend-ips.key -out namlend-ips.csr
    ```
-
-2. **Component Memoization**
-
-   ```typescript
-   const MemoizedLoanRow = React.memo(LoanRow);
+3. Update edge function secrets:
+   ```bash
+   supabase secrets set IPS_API_URL=https://ips.bon.com.na/api
+   supabase secrets set IPS_CLIENT_CERT=<base64-cert>
+   supabase secrets set IPS_CLIENT_KEY=<base64-key>
    ```
+4. Replace mock responses with actual API calls in `ips-adapter/index.ts`
+5. Implement proper error handling and retry logic
+6. Test with IPS sandbox environment first
 
-3. **Virtual Scrolling** for large tables
-
----
-
-### 9. Documentation Improvements
-
-**Areas for enhancement:**
-
-- Inline code documentation (JSDoc)
-- README updates for new features
-- Deployment runbook
-- Troubleshooting guide
+**Files**:
+- `supabase/functions/ips-adapter/index.ts`
+- `src/services/ipsService.ts`
 
 ---
 
-### 10. Bulk Operations
+### 2. TigerBeetle Posting is Simulated
 
-**Feature Request:** Batch processing for admins
+**Status**: Not Started
+**Impact**: Financial ledger not recording actual transactions
 
-- Bulk loan approval/rejection
-- Batch disbursement processing
-- Mass notification sending
+**Problem**:
+- `tigerbeetle-outbox-worker` does not connect to a live cluster
+- Direct TB client is Node-only and not used by the worker
+- Shadow mode records to Supabase but not TigerBeetle
 
----
+**Remediation Steps**:
 
-## Technical Debt Tracking
+1. Deploy TigerBeetle cluster:
+   ```bash
+   # Production cluster setup
+   tigerbeetle format --cluster=0 --replica=0 /data/tigerbeetle/0.tigerbeetle
+   tigerbeetle start --addresses=0.0.0.0:3001 /data/tigerbeetle/0.tigerbeetle
+   ```
+2. Configure edge function connection:
+   ```bash
+   supabase secrets set TIGERBEETLE_ADDRESS=tigerbeetle.namlend.com:3001
+   supabase secrets set TIGERBEETLE_CLUSTER_ID=0
+   ```
+3. Update `tigerbeetle-outbox-worker/index.ts`:
+   - Import TigerBeetle client
+   - Replace simulated posting with actual client calls
+   - Implement proper error handling and idempotency
+4. Create account structure for NamLend chart of accounts
+5. Test with shadow mode comparison before switching
 
-### Code Quality
+**Files**:
+- `supabase/functions/tigerbeetle-outbox-worker/index.ts`
+- `src/services/tigerBeetleService.ts`
 
-| Issue | Location | Severity | Notes |
-|-------|----------|----------|-------|
-| Duplicate types | Various services | Low | Consolidate to shared types |
-| Console.log statements | Multiple files | Low | Replace with debugLog |
-| Magic strings | Status values | Low | Use enums/constants |
-
-### Dependencies
-
-| Package | Current | Latest | Action |
-|---------|---------|--------|--------|
-| React | 18.3.1 | 18.3.1 | ✅ Current |
-| TypeScript | 5.5.3 | 5.x | ✅ Current |
-| Vite | 5.4.1 | 5.x | ✅ Current |
-| TanStack Query | 5.56.2 | 5.x | ✅ Current |
-
-Run `npm outdated` periodically to check for updates.
-
----
-
-## Migration Checklist for Future Work
-
-### Before Starting
-
-- [ ] Review this document
-- [ ] Read `docs/context.md`
-- [ ] Set up local environment
-- [ ] Run existing tests to verify baseline
-
-### During Development
-
-- [ ] Follow existing patterns (see services/)
-- [ ] Add tests for new features
-- [ ] Update documentation
-- [ ] Use TypeScript strictly
-
-### Before Deployment
-
-- [ ] Run full E2E test suite
-- [ ] Verify RLS policies
-- [ ] Check audit logging
-- [ ] Update CHANGELOG.md
+**Documentation**:
+- [TIGERBEETLE_IMPLEMENTATION.md](./TIGERBEETLE_IMPLEMENTATION.md)
+- [TIGERBEETLE_PRODUCTION.md](./TIGERBEETLE_PRODUCTION.md)
 
 ---
 
-## Estimated Effort Summary
+### 3. Admin Route Guard Blocks Loan Officers
 
-| Category | Items | Estimated Hours |
-|----------|-------|-----------------|
-| High Priority | E2E tests, test IDs, key verification | 8-10 hours |
-| Medium Priority | Mobile, real-time, error boundaries | 6-8 hours |
-| Low Priority | Cleanup, optimization, docs | 4-6 hours |
-| **Total** | | **18-24 hours** |
+**Status**: Not Started
+**Impact**: Loan officers cannot access admin dashboard
+
+**Problem**:
+- `/admin/*` routes use `requireAdmin` in `ProtectedRoute`
+- UI components allow loan_officer inside AdminDashboard
+- Router blocks loan_officer role at route level
+
+**Remediation Steps**:
+
+1. Update `src/components/ProtectedRoute.tsx`:
+   ```typescript
+   // Change from:
+   if (requireAdmin && !isAdmin) { redirect('/dashboard'); }
+
+   // To:
+   if (requireAdmin && !isStaff) { redirect('/dashboard'); }
+
+   // Where isStaff = isAdmin || isLoanOfficer
+   ```
+2. Add role-based component visibility within admin pages:
+   ```typescript
+   // Only show certain features to admins
+   {isAdmin && <UserManagementPanel />}
+
+   // Show to all staff
+   <ApprovalQueue />
+   ```
+3. Update navigation to show appropriate menu items per role
+4. Add E2E tests for loan officer admin access
+
+**Files**:
+- `src/components/ProtectedRoute.tsx`
+- `src/pages/AdminDashboard/index.tsx`
+- `src/components/Layout/AdminSidebar.tsx`
 
 ---
 
-## Contacts and Resources
+### 4. Generated Supabase Types Drift
 
-### Key Files
+**Status**: Partial
+**Impact**: TypeScript errors, runtime mismatches
 
-- **Architecture**: `docs/ARCHITECTURE.md`
-- **API Reference**: `docs/API_REFERENCE.md`
-- **Security**: `docs/SECURITY.md`
-- **Database**: `docs/DATABASE_SCHEMA.md`
-- **Context**: `docs/context.md`
+**Problem**:
+- `src/integrations/supabase/types.ts` does not fully match migrations
+- New columns/tables added without type regeneration
+- Reconciliation tables differ between recent migrations (`reconciliation_runs`, new `bank_transactions`) and legacy services/types (`payment_reconciliations`, legacy `bank_transactions`)
+- Some components use manual types instead of generated
 
-### External Resources
+**Remediation Steps**:
 
-- [Supabase Dashboard](https://supabase.com/dashboard)
-- [Netlify Dashboard](https://app.netlify.com)
-- [Playwright Documentation](https://playwright.dev)
+1. Regenerate types from production schema:
+   ```bash
+   npx supabase gen types typescript \
+     --project-id puahejtaskncpazjyxqp \
+     > src/integrations/supabase/types.ts
+   ```
+2. Compare generated types with existing usage:
+   ```bash
+   # Find type mismatches
+   npx tsc --noEmit 2>&1 | grep "supabase/types"
+   ```
+3. Update components to use generated types:
+   ```typescript
+   import { Database } from '@/integrations/supabase/types';
+   type Loan = Database['public']['Tables']['loans']['Row'];
+   ```
+4. Add type generation to CI pipeline
+5. Create pre-commit hook to check type freshness
+
+**Files**:
+- `src/integrations/supabase/types.ts` (generated types)
 
 ---
 
-*Document Version: 2.0.0*  
-*Last Updated: December 2025*
+## Medium Priority
+
+### 1. Unit/Integration Tests Not Wired
+
+**Status**: Not Started
+**Impact**: No automated unit test coverage
+
+**Problem**:
+- Vitest-style tests exist in `tests/` and `src/tests/`
+- `vitest` is not defined in `package.json` scripts
+- Only Playwright E2E tests are runnable
+
+**Remediation Steps**:
+
+1. Add Vitest to project:
+   ```bash
+   npm install -D vitest @testing-library/react @testing-library/jest-dom
+   ```
+2. Add scripts to `package.json`:
+   ```json
+   {
+     "scripts": {
+       "test": "vitest",
+       "test:ui": "vitest --ui",
+       "test:coverage": "vitest --coverage"
+     }
+   }
+   ```
+3. Create `vitest.config.ts`:
+   ```typescript
+   import { defineConfig } from 'vitest/config';
+   export default defineConfig({
+     test: {
+       environment: 'jsdom',
+       setupFiles: ['./tests/setup.ts'],
+     },
+   });
+   ```
+4. Fix existing tests to use correct imports
+5. Add coverage threshold requirements
+
+**Files**:
+- `package.json`
+- `vitest.config.ts` (create)
+- `tests/setup.ts` (create)
+
+---
+
+### 2. PaymentGateway Not Wired to UI
+
+**Status**: Not Started
+**Impact**: Unused code, potential confusion
+
+**Problem**:
+- `src/services/paymentGateway.ts` exists but unused
+- Payment flows use RPCs directly
+- Gateway provides abstraction but not utilized
+
+**Remediation Steps**:
+
+1. Audit gateway vs. direct RPC usage:
+   ```bash
+   rg "paymentGateway" src
+   rg "supabase.rpc.*payment" src
+   ```
+2. Decision needed:
+   - **Option A**: Wire UI to use gateway (recommended for abstraction)
+   - **Option B**: Remove gateway if RPC pattern is preferred
+3. If keeping gateway, update payment components to use it:
+   ```typescript
+   // Instead of direct RPC
+   import { processPayment } from '@/services/paymentGateway';
+   await processPayment({ loanId, amount, method });
+   ```
+4. Add gateway tests
+
+**Files**:
+- `src/services/paymentGateway.ts`
+- `src/pages/Payment.tsx`
+- `src/components/ips/PaymentModal.tsx`
+
+---
+
+### 3. Credit Scoring Not Integrated
+
+**Status**: Partial
+**Impact**: Credit scoring exists but not used in loan decisions
+
+**Problem**:
+- `creditScoring.ts` has AI scoring logic
+- `CreditScoreDisplay` component exists
+- Neither integrated into loan submission/approval flow
+
+**Remediation Steps**:
+
+1. Add credit score fetch to loan application:
+   ```typescript
+   // In LoanApplication.tsx
+   const { data: creditScore } = await getCreditScore(userId);
+   ```
+2. Display score in application form
+3. Add score to approval review panel
+4. Consider auto-reject threshold (configurable)
+5. Store score with loan record for audit
+
+**Files**:
+- `src/services/creditScoring.ts`
+- `src/components/CreditScoreDisplay.tsx`
+- `src/pages/LoanApplication.tsx`
+- `src/components/admin/LoanReviewPanel.tsx`
+
+---
+
+### 4. Realtime Updates Limited
+
+**Status**: Partial
+**Impact**: Users must manually refresh for updates
+
+**Problem**:
+- Only notifications subscribe to Supabase Realtime
+- Loan status changes require manual refresh
+- Admin dashboards don't auto-update
+
+**Remediation Steps**:
+
+1. Add realtime subscription to loan status:
+   ```typescript
+   useEffect(() => {
+     const channel = supabase
+       .channel('loan-changes')
+       .on('postgres_changes', {
+         event: 'UPDATE',
+         schema: 'public',
+         table: 'loans',
+         filter: `user_id=eq.${userId}`,
+       }, handleLoanUpdate)
+       .subscribe();
+
+     return () => { supabase.removeChannel(channel); };
+   }, [userId]);
+   ```
+2. Add to dashboard metrics
+3. Add to approval queue
+4. Consider throttling for high-volume tables
+
+**Files**:
+- `src/hooks/useLoanApplications.ts`
+- `src/pages/AdminDashboard/index.tsx`
+- `src/components/admin/ApprovalQueue.tsx`
+
+---
+
+## Low Priority
+
+### 1. Documentation Snapshots
+
+**Status**: Complete
+**Impact**: Historical docs could cause confusion
+
+**Problem**:
+- Several docs are historical (release notes, audits, deployment checklists)
+- Need clear labeling as snapshots
+
+**Remediation**:
+- Added status notes to historical docs (2026-01-15)
+- Created `docs/INDEX.md` with clear categorization
+- See [INDEX.md](./INDEX.md) for document status
+
+---
+
+### 2. Design System Drift
+
+**Status**: Not Started
+**Impact**: Minor visual inconsistency
+
+**Problem**:
+- Design system doc references Inter font
+- Font not currently imported in project
+- Using Tailwind default sans stack
+
+**Remediation Steps**:
+
+1. Option A - Import Inter font:
+   ```html
+   <!-- In index.html -->
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+   ```
+   ```css
+   /* In tailwind.config.ts */
+   fontFamily: { sans: ['Inter', ...defaultTheme.fontFamily.sans] }
+   ```
+2. Option B - Update documentation to reflect actual font stack
+3. Audit other design system discrepancies
+
+**Files**:
+- `index.html`
+- `tailwind.config.ts`
+- `docs/DESIGN_SYSTEM.md`
+
+---
+
+## Remediation Checklist
+
+Use this checklist to track progress:
+
+```markdown
+## High Priority
+- [ ] IPS Adapter: Obtain credentials
+- [ ] IPS Adapter: Configure mTLS
+- [ ] IPS Adapter: Replace mock responses
+- [ ] IPS Adapter: Test with sandbox
+- [ ] TigerBeetle: Deploy cluster
+- [ ] TigerBeetle: Configure connection
+- [ ] TigerBeetle: Update worker
+- [ ] Admin Routes: Update ProtectedRoute
+- [ ] Admin Routes: Add role-based visibility
+- [ ] Admin Routes: Add E2E tests
+- [ ] Supabase Types: Regenerate
+- [ ] Supabase Types: Update components
+- [ ] Supabase Types: Add to CI
+
+## Medium Priority
+- [ ] Vitest: Install and configure
+- [ ] Vitest: Fix existing tests
+- [ ] PaymentGateway: Decide keep/remove
+- [ ] PaymentGateway: Implement decision
+- [ ] Credit Scoring: Integrate in UI
+- [ ] Credit Scoring: Add to approval flow
+- [ ] Realtime: Add loan subscriptions
+- [ ] Realtime: Add dashboard updates
+
+## Low Priority
+- [ ] Documentation: Complete (done 2026-01-15)
+- [ ] Design System: Font decision
+```
+
+---
+
+## Tracking Progress
+
+### Metrics
+
+Track debt reduction over time:
+
+```bash
+# Count TODO/FIXME comments
+rg "TODO|FIXME" src --type ts -c
+
+# Count any usage (type safety)
+rg "\bany\b" src --type ts -c
+
+# Count console.log (debug remnants)
+rg "console\.(log|warn|error)" src --type ts -c
+```
+
+### Review Schedule
+
+- **Weekly**: Review high-priority items
+- **Bi-weekly**: Medium-priority triage
+- **Monthly**: Full debt inventory
+
+---
+
+## See Also
+
+- [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) - TypeScript type improvements
+- [TESTING.md](./TESTING.md) - Testing strategy
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
+- [INDEX.md](./INDEX.md) - Documentation index

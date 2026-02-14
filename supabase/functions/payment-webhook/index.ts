@@ -92,10 +92,25 @@ serve(async (req) => {
         break;
     }
 
-    // Verify signature if secret is configured
+    // Verify signature - FAIL CLOSED in production if secret is not configured
     let signatureValid = true;
     if (secret) {
       signatureValid = await verifySignature(provider, rawBody, signature, secret);
+    } else {
+      // No secret configured - check environment to determine behavior
+      // ENVIRONMENT=production explicitly marks production
+      // ENVIRONMENT=staging or ENVIRONMENT=development allows missing secrets with warning
+      const environment = Deno.env.get("ENVIRONMENT") ?? "production";
+      const isStrictMode = environment === "production";
+      
+      if (isStrictMode) {
+        console.error(`SECURITY: Webhook secret not configured for provider ${provider} in production`);
+        return new Response(
+          JSON.stringify({ success: false, error: "Webhook secret not configured" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+        );
+      }
+      console.warn(`[${environment}]: Webhook signature verification skipped for ${provider} - no secret configured`);
     }
 
     // Log webhook receipt
@@ -171,20 +186,29 @@ serve(async (req) => {
 
         // If payment completed, update the payment record and apply to schedule
         if (normalizedStatus === 'completed') {
-          // Update payment record
-          await supabase
+          // P0-003 FIX: Update payment record AND capture the payment ID
+          const { data: paymentRecord, error: paymentError } = await supabase
             .from('payments')
             .update({
               status: 'completed',
               paid_at: new Date().toISOString(),
             })
-            .eq('reference_number', payload.reference);
+            .eq('reference_number', payload.reference)
+            .select('id')
+            .single();
 
-          // Apply payment to schedule using RPC
+          if (paymentError) {
+            console.error("Error updating payment record:", paymentError);
+          }
+
+          // P0-003 FIX: Use payments.id (not payment_transactions.id) for schedule application
+          const paymentId = paymentRecord?.id || transaction.id;
+          
+          // Apply payment to schedule using RPC with correct payment ID
           const { data: applyResult, error: applyError } = await supabase.rpc(
             'apply_payment_to_schedule',
             {
-              p_payment_id: transaction.id,
+              p_payment_id: paymentId,
               p_amount: payload.amount || transaction.amount,
             }
           );

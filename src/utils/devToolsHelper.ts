@@ -11,7 +11,7 @@
  * @param value - Value to expose
  * @param logMessage - Optional custom log message
  */
-export const safeExposeWindow = (name: string, value: any, logMessage?: string) => {
+export const safeExposeWindow = (name: string, value: unknown, logMessage?: string) => {
   // Triple gate: DEV environment + explicit debug flag + window exists
   if (
     import.meta.env.DEV && 
@@ -41,7 +41,7 @@ export const isDebugEnabled = (): boolean => {
  * Safe console logging for dev utilities
  * Only logs when debug tools are enabled
  */
-export const debugLog = (message: string, ...args: any[]) => {
+export const debugLog = (message: string, ...args: unknown[]) => {
   if (isDebugEnabled()) {
     console.log(message, ...args);
   }

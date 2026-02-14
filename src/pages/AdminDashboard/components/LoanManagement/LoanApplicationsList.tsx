@@ -17,29 +17,12 @@ import {
   Briefcase,
   FileText
 } from 'lucide-react';
-import { useLoanApplications } from '../../hooks/useLoanApplications';
+import { useLoanApplications, LoanApplication } from '../../hooks/useLoanApplications';
 import { useLoanActions } from '../../hooks/useLoanActions';
 import LoanDetailsModal from '@/components/LoanDetailsModal';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface LoanApplication {
-  id: string;
-  applicantName: string;
-  applicantEmail: string;
-  amount: number;
-  purpose: string;
-  status: 'pending' | 'approved' | 'rejected' | 'disbursed';
-  submittedAt: string;
-  riskScore?: number;
-  monthlyIncome?: number;
-  employmentStatus?: string;
-  creditScore?: number;
-  disbursedAt?: string | null;
-  // Indicates whether this row came from loans table or approvals view
-  source?: 'loan' | 'approval';
-}
 
 interface LoanApplicationsListProps {
   status: 'pending' | 'approved' | 'rejected' | 'all';
@@ -167,16 +150,32 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     const application = applications.find(app => app.id === selectedLoanId);
     if (!application) return null;
 
+    // Use actual term/rate from data if available, otherwise defaults
+    const termMonths = application.termMonths || 12;
+    const annualRate = application.interestRate || 32; // 32% APR as per Namibian regulations
+    const monthlyRate = annualRate / 100 / 12;
+    const principal = application.amount;
+
+    // Amortization formula: P * (r * (1+r)^n) / ((1+r)^n - 1)
+    const monthlyPayment = monthlyRate > 0
+      ? (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+        (Math.pow(1 + monthlyRate, termMonths) - 1)
+      : principal / termMonths;
+    const totalRepayment = monthlyPayment * termMonths;
+
     return {
       id: application.id,
       amount: application.amount,
-      term_months: 12, // Default, could be added to LoanApplication interface
-      interest_rate: 32, // Default NAD rate
-      monthly_payment: application.amount / 12, // Simple calculation
-      total_repayment: application.amount * 1.32, // With 32% interest
+      term_months: termMonths,
+      interest_rate: annualRate,
+      monthly_payment: isNaN(monthlyPayment) ? 0 : monthlyPayment,
+      total_repayment: isNaN(totalRepayment) ? 0 : totalRepayment,
       purpose: application.purpose,
       status: application.status,
       created_at: application.submittedAt,
+      // Include approval/disbursement timestamps for status history
+      approved_at: application.approvedAt || undefined,
+      disbursed_at: application.disbursedAt || undefined,
       request_data: {
         applicant_name: application.applicantName,
         applicant_email: application.applicantEmail,

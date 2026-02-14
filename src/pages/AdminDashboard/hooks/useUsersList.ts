@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getProfilesWithRoles } from '@/services/adminService';
+import { PostgrestError } from '@supabase/supabase-js';
+
+// Database row type for profiles_with_roles view
+interface ProfileWithRolesRow {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  verified?: boolean;
+  created_at: string;
+  updated_at?: string;
+  last_login?: string;
+  email?: string;
+  primary_role?: string;
+  roles?: string[];
+  is_admin?: boolean;
+  is_loan_officer?: boolean;
+  is_client?: boolean;
+}
 
 interface User {
   id: string;
@@ -166,12 +185,12 @@ export const useUsersList = (): UseUsersListReturn => {
         setLoading(true);
         
         // Prefer service layer (RPC under the hood) with fallback to view if needed
-        let usersData: any[] | null = null;
-        let usersError: any = null;
+        let usersData: ProfileWithRolesRow[] | null = null;
+        let usersError: PostgrestError | null = null;
 
         const svc = await getProfilesWithRoles({});
         if (svc.success && svc.results) {
-          usersData = svc.results as any[];
+          usersData = svc.results as ProfileWithRolesRow[];
         } else {
           const { data, error } = await supabase
             .from('profiles_with_roles')
@@ -191,8 +210,8 @@ export const useUsersList = (): UseUsersListReturn => {
               is_loan_officer,
               is_client
             `);
-          usersData = data as any[] | null;
-          usersError = error as any;
+          usersData = data as ProfileWithRolesRow[] | null;
+          usersError = error as PostgrestError | null;
         }
 
         if (usersError) {
@@ -202,12 +221,12 @@ export const useUsersList = (): UseUsersListReturn => {
           setError('Using mock data - database connection issue');
         } else if (usersData) {
           // Transform Supabase data to match our User interface
-          const transformedUsers: User[] = usersData.map((profile: any) => ({
+          const transformedUsers: User[] = usersData.map((profile: ProfileWithRolesRow) => ({
             id: profile.user_id,
             fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User',
             email: profile.email || 'No email',
             phone: profile.phone_number,
-            role: profile.primary_role || 'client',
+            role: (profile.primary_role || 'client') as User['role'],
             status: profile.verified ? 'active' : 'pending',
             lastLogin: profile.last_login || profile.updated_at || profile.created_at,
             createdAt: profile.created_at,
@@ -255,12 +274,12 @@ export const useUsersList = (): UseUsersListReturn => {
     setLoading(true);
     try {
       // Re-fetch users from Supabase
-      let usersData: any[] | null = null;
-      let usersError: any = null;
+      let usersData: ProfileWithRolesRow[] | null = null;
+      let usersError: PostgrestError | null = null;
 
       const svc = await getProfilesWithRoles({});
       if (svc.success && svc.results) {
-        usersData = svc.results as any[];
+        usersData = svc.results as ProfileWithRolesRow[];
       } else {
         const { data, error } = await supabase
           .from('profiles_with_roles')
@@ -280,20 +299,20 @@ export const useUsersList = (): UseUsersListReturn => {
             is_loan_officer,
             is_client
           `);
-        usersData = data as any[] | null;
-        usersError = error as any;
+        usersData = data as ProfileWithRolesRow[] | null;
+        usersError = error as PostgrestError | null;
       }
 
       if (usersError) {
         console.error('Error refreshing users:', usersError);
         setError('Failed to refresh users');
       } else if (usersData) {
-        const transformedUsers: User[] = usersData.map((profile: any) => ({
+        const transformedUsers: User[] = usersData.map((profile: ProfileWithRolesRow) => ({
           id: profile.user_id,
           fullName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User',
           email: profile.email || 'No email',
           phone: profile.phone_number,
-          role: profile.primary_role || 'client',
+          role: (profile.primary_role || 'client') as User['role'],
           status: profile.verified ? 'active' : 'pending',
           lastLogin: profile.last_login || profile.updated_at || profile.created_at,
           createdAt: profile.created_at,

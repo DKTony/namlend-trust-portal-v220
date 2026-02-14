@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { withRpcResult, withArrayResult, withServiceResult, ServiceResult } from '@/utils/serviceUtils';
 import type {
   InitiateIPSDisbursementParams,
   InitiateIPSDisbursementResult,
@@ -241,34 +242,18 @@ export async function initiateIPSRepayment(
 export async function completeIPSTransaction(
   params: CompleteIPSTransactionParams
 ): Promise<CompleteIPSTransactionResult> {
-  try {
-    const { data, error } = await supabase.rpc('complete_ips_transaction', {
+  return withRpcResult<CompleteIPSTransactionResult>(
+    () => supabase.rpc('complete_ips_transaction', {
       p_ips_txn_id: params.ipsTransactionId,
       p_ips_result: params.ipsResult,
       p_ips_error_code: params.ipsErrorCode || null,
       p_ips_txn_id_response: params.ipsTxnIdResponse || null,
       p_ips_rrn: params.ipsRrn || null,
       p_error_message: params.errorMessage || null,
-    });
-
-    if (error) {
-      console.error('Complete IPS transaction error:', error);
-      return {
-        success: false,
-        error: 'DATABASE_ERROR',
-        message: error.message,
-      };
-    }
-
-    return data as CompleteIPSTransactionResult;
-  } catch (error) {
-    console.error('Complete IPS transaction error:', error);
-    return {
-      success: false,
-      error: 'UNEXPECTED_ERROR',
-      message: error instanceof Error ? error.message : 'An unexpected error occurred',
-    };
-  }
+    }),
+    'completeIPSTransaction',
+    { ipsTransactionId: params.ipsTransactionId }
+  );
 }
 
 /**
@@ -277,27 +262,13 @@ export async function completeIPSTransaction(
 export async function getIPSTransactionStatus(
   transactionId: string
 ): Promise<IPSTransactionStatusResult> {
-  try {
-    const { data, error } = await supabase.rpc('get_ips_transaction_status', {
+  return withRpcResult<IPSTransactionStatusResult>(
+    () => supabase.rpc('get_ips_transaction_status', {
       p_ips_txn_id: transactionId,
-    });
-
-    if (error) {
-      console.error('Get IPS transaction status error:', error);
-      return {
-        success: false,
-        error: 'DATABASE_ERROR',
-      };
-    }
-
-    return data as IPSTransactionStatusResult;
-  } catch (error) {
-    console.error('Get IPS transaction status error:', error);
-    return {
-      success: false,
-      error: 'UNEXPECTED_ERROR',
-    };
-  }
+    }),
+    'getIPSTransactionStatus',
+    { transactionId }
+  );
 }
 
 /**
@@ -408,85 +379,48 @@ export async function validateVPA(
  * Get user's saved VPAs
  */
 export async function getUserVPAs(userId?: string): Promise<UserVPAsResult> {
-  try {
-    const { data, error } = await supabase.rpc('get_user_vpas', {
+  return withRpcResult<UserVPAsResult>(
+    () => supabase.rpc('get_user_vpas', {
       p_user_id: userId || null,
-    });
-
-    if (error) {
-      console.error('Get user VPAs error:', error);
-      return {
-        success: false,
-        error: 'DATABASE_ERROR',
-      };
-    }
-
-    return data as UserVPAsResult;
-  } catch (error) {
-    console.error('Get user VPAs error:', error);
-    return {
-      success: false,
-      error: 'UNEXPECTED_ERROR',
-    };
-  }
+    }),
+    'getUserVPAs',
+    { userId }
+  );
 }
 
 /**
  * Add or update a user's VPA
  */
 export async function upsertUserVPA(params: UpsertVPAParams): Promise<UpsertVPAResult> {
-  try {
-    const { data, error } = await supabase.rpc('upsert_user_vpa', {
+  return withRpcResult<UpsertVPAResult>(
+    () => supabase.rpc('upsert_user_vpa', {
       p_vpa_address: params.vpaAddress,
       p_vpa_type: params.vpaType || 'HANDLE',
       p_display_name: params.displayName || null,
       p_set_default: params.setDefault || false,
-    });
-
-    if (error) {
-      console.error('Upsert user VPA error:', error);
-      return {
-        success: false,
-        error: 'DATABASE_ERROR',
-        message: error.message,
-      };
-    }
-
-    return data as UpsertVPAResult;
-  } catch (error) {
-    console.error('Upsert user VPA error:', error);
-    return {
-      success: false,
-      error: 'UNEXPECTED_ERROR',
-      message: error instanceof Error ? error.message : 'Failed to save VPA',
-    };
-  }
+    }),
+    'upsertUserVPA',
+    { vpaAddress: params.vpaAddress }
+  );
 }
 
 /**
  * Delete a user's VPA (soft delete)
  */
-export async function deleteUserVPA(vpaId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await supabase
+export async function deleteUserVPA(vpaId: string): Promise<ServiceResult<null>> {
+  return withServiceResult<null>(
+    () => supabase
       .from('ips_vpa_registry')
       .update({
         is_active: false,
         deactivated_at: new Date().toISOString(),
         deactivation_reason: 'User deleted',
       })
-      .eq('id', vpaId);
-
-    if (error) {
-      console.error('Delete user VPA error:', error);
-      return { success: false, error: 'DATABASE_ERROR' };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Delete user VPA error:', error);
-    return { success: false, error: 'UNEXPECTED_ERROR' };
-  }
+      .eq('id', vpaId)
+      .select(),
+    'deleteUserVPA',
+    { vpaId }
+  );
 }
 
 /**
@@ -526,58 +460,28 @@ export async function setDefaultVPA(vpaId: string): Promise<{ success: boolean; 
 export async function getLoanIPSTransactions(
   loanId: string
 ): Promise<LoanIPSTransactionsResult> {
-  try {
-    const { data, error } = await supabase.rpc('get_loan_ips_transactions', {
+  return withRpcResult<LoanIPSTransactionsResult>(
+    () => supabase.rpc('get_loan_ips_transactions', {
       p_loan_id: loanId,
-    });
-
-    if (error) {
-      console.error('Get loan IPS transactions error:', error);
-      return {
-        success: false,
-        error: 'DATABASE_ERROR',
-      };
-    }
-
-    return data as LoanIPSTransactionsResult;
-  } catch (error) {
-    console.error('Get loan IPS transactions error:', error);
-    return {
-      success: false,
-      error: 'UNEXPECTED_ERROR',
-    };
-  }
+    }),
+    'getLoanIPSTransactions',
+    { loanId }
+  );
 }
 
 /**
  * Get pending IPS transactions (for admin monitoring)
  */
-export async function getPendingIPSTransactions(): Promise<{
-  success: boolean;
-  error?: string;
-  transactions?: IPSTransaction[];
-}> {
-  try {
-    const { data, error } = await supabase
+export async function getPendingIPSTransactions(): Promise<ServiceResult<IPSTransaction[]>> {
+  return withArrayResult<IPSTransaction>(
+    () => supabase
       .from('ips_transactions')
       .select('*')
       .in('status', ['initiated', 'pending', 'sent'])
       .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (error) {
-      console.error('Get pending IPS transactions error:', error);
-      return { success: false, error: 'DATABASE_ERROR' };
-    }
-
-    return {
-      success: true,
-      transactions: data as IPSTransaction[],
-    };
-  } catch (error) {
-    console.error('Get pending IPS transactions error:', error);
-    return { success: false, error: 'UNEXPECTED_ERROR' };
-  }
+      .limit(100),
+    'getPendingIPSTransactions'
+  );
 }
 
 // =============================================================================

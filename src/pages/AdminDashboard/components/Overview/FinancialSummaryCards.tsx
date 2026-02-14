@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { DollarSign, TrendingUp, Users, AlertTriangle } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 
 interface FinancialMetrics {
   totalClients: number;
@@ -22,9 +24,10 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
   metrics, 
   loading = false 
 }) => {
+  const { styles } = useTheme();
   const formatCurrency = (amount: number) => formatNAD(amount);
 
-const cards = [
+  const cards = [
     {
       title: 'Total Clients',
       value: metrics?.totalClients || 0,
@@ -63,16 +66,16 @@ const cards = [
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="animate-pulse bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <ThemedCard key={i} className="animate-pulse">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="h-4 bg-muted rounded w-24"></div>
               <div className="h-4 w-4 bg-muted rounded"></div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
               <div className="h-8 bg-muted rounded w-32 mb-2"></div>
               <div className="h-3 bg-muted rounded w-20"></div>
-            </CardContent>
-          </Card>
+            </div>
+          </ThemedCard>
         ))}
       </div>
     );
@@ -83,18 +86,18 @@ const cards = [
       {cards.map((card, index) => {
         const Icon = card.icon;
         return (
-          <Card key={index} className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+          <ThemedCard key={index} className="hover:shadow-lg transition-shadow duration-200">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-2">
+              <h3 className="text-sm font-medium text-muted-foreground">
                 {card.title}
-              </CardTitle>
+              </h3>
               <div className={`p-2 rounded-full ${card.bgColor}`}>
                 <Icon className={`h-4 w-4 ${card.color}`} />
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
               <div 
-                className="text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums text-foreground" 
+                className={cn("text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums", styles.textClass)} 
                 title={card.format(card.value)}
               >
                 {card.format(card.value)}
@@ -105,8 +108,8 @@ const cards = [
                   : 'Updated in real-time'
                 }
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </ThemedCard>
         );
       })}
     </div>

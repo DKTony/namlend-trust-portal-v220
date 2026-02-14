@@ -1,0 +1,62 @@
+{
+  "recommendations": [
+    "eamodio.gitlens",
+    "GitHub.vscode-pull-request-github",
+    "bierner.markdown-mermaid",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-playwright.playwright",
+    "Prisma.prisma",
+    "ms-vscode.vscode-typescript-next",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "ms-azuretools.vscode-docker",
+    "mikestead.dotenv"
+  ],
+  "unwantedRecommendations": [
+    "GitHub.copilot",
+    "tabnine.tabnine-vscode"
+  ],
+  "namlend_extension_guide": {
+    "essential": {
+      "GitLens (eamodio.gitlens)": "Git blame, history, and code authorship visualization",
+      "ESLint (dbaeumer.vscode-eslint)": "JavaScript/TypeScript linting",
+      "Prettier (esbenp.prettier-vscode)": "Code formatting",
+      "Tailwind CSS IntelliSense (bradlc.vscode-tailwindcss)": "Tailwind class autocomplete"
+    },
+    "testing": {
+      "Playwright Test (ms-playwright.playwright)": "E2E test runner and debugging"
+    },
+    "database": {
+      "Prisma (Prisma.prisma)": "SQL syntax highlighting for migrations"
+    },
+    "productivity": {
+      "Error Lens (usernamehw.errorlens)": "Inline error display",
+      "Path Intellisense (christian-kohler.path-intellisense)": "File path autocomplete",
+      "Auto Rename Tag (formulahendry.auto-rename-tag)": "Auto-rename paired HTML/JSX tags",
+      "Code Spell Checker (streetsidesoftware.code-spell-checker)": "Spell checking in code"
+    },
+    "devops": {
+      "Docker (ms-azuretools.vscode-docker)": "Docker support for Supabase local dev",
+      "DotENV (mikestead.dotenv)": "Environment file syntax highlighting"
+    }
+  },
+  "settings_recommendations": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "tailwindCSS.includeLanguages": {
+      "typescript": "javascript",
+      "typescriptreact": "javascript"
+    },
+    "files.associations": {
+      "*.sql": "sql"
+    }
+  }
+}

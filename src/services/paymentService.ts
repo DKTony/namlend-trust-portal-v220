@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
-import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
+import { handleDatabaseError, measurePerformance, ErrorCategory, ErrorSeverity, errorLogger } from '@/utils/errorHandler';
+import { withArrayResult, withSingleResult, withServiceResult } from '@/utils/serviceUtils';
 import { postRepayment, postLateFeeAccrual } from './ledgerService';
 
 export type PaymentStatus = 'pending' | 'completed' | 'failed';
@@ -8,6 +9,62 @@ export type ScheduleStatus = 'pending' | 'paid' | 'partially_paid' | 'overdue' |
 export type LoanStatus = 'pending' | 'approved' | 'disbursed' | 'active' | 'funded' | 'settled' | 'defaulted' | 'rejected';
 
 export interface ListPaymentsFilter { loanId?: string; status?: PaymentStatus }
+
+export interface Payment {
+  id: string;
+  loan_id: string;
+  amount: number;
+  payment_method: string;
+  reference_number?: string;
+  status: PaymentStatus;
+  notes?: string;
+  paid_at?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GenerateScheduleResult {
+  success: boolean;
+  loan_id?: string;
+  installments_created?: number;
+  error?: string;
+}
+
+export interface ApplyPaymentResult {
+  success: boolean;
+  payment_id?: string;
+  amount_applied?: number;
+  schedules_updated?: number;
+  remaining_amount?: number;
+  error?: string;
+}
+
+export interface MarkOverdueResult {
+  success: boolean;
+  schedules_marked?: number;
+  processed_at?: string;
+  error?: string;
+}
+
+export interface CalculateLateFeeResult {
+  success: boolean;
+  late_fee?: number;
+  days_overdue?: number;
+  outstanding_balance?: number;
+  calculation_method?: string;
+  max_fee_cap?: number;
+  message?: string;
+  error?: string;
+}
+
+export interface WaiveLateFeeResult {
+  success: boolean;
+  late_fee_id?: string;
+  fee_amount?: number;
+  message?: string;
+  error?: string;
+}
+
 export interface RecordPaymentInput {
   loanId: string;
   amount: number;
@@ -35,28 +92,22 @@ export interface PaymentSchedule {
 
 export async function listPayments(
   filters?: ListPaymentsFilter
-): Promise<{ success: boolean; payments?: any[]; error?: string }> {
-  try {
-    let query = supabase
-      .from('payments')
-      .select('*')
-      .order('created_at', { ascending: false });
+): Promise<{ success: boolean; payments?: Payment[]; error?: string }> {
+  return withArrayResult<Payment>(
+    () => {
+      let query = supabase
+        .from('payments')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (filters?.loanId) query = query.eq('loan_id', filters.loanId);
-    if (filters?.status) query = query.eq('status', filters.status);
+      if (filters?.loanId) query = query.eq('loan_id', filters.loanId);
+      if (filters?.status) query = query.eq('status', filters.status);
 
-    const { data, error } = await query;
-
-    if (error) {
-      debugLog('❌ listPayments error', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, payments: data || [] };
-  } catch (error) {
-    handleDatabaseError(error, 'listPayments', { filters });
-    return { success: false, error: 'Unexpected error occurred' };
-  }
+      return query;
+    },
+    'listPayments',
+    { filters }
+  );
 }
 
 export interface ProcessPaymentResult {
@@ -187,27 +238,13 @@ export async function generatePaymentSchedule(
   installments_created?: number;
   error?: string;
 }> {
-  return measurePerformance('generate_payment_schedule', async () => {
-    try {
-      debugLog('📅 Generating payment schedule', { loanId });
-
-      const { data, error } = await supabase.rpc('generate_payment_schedule', {
-        p_loan_id: loanId
-      });
-
-      if (error) {
-        debugLog('❌ Generate payment schedule failed', error);
-        return { success: false, error: error.message };
-      }
-
-      const result = data as any;
-      debugLog('✅ Payment schedule generated', result);
-      return result;
-    } catch (error) {
-      handleDatabaseError(error, 'generatePaymentSchedule', { loanId });
-      return { success: false, error: 'Unexpected error occurred' };
-    }
-  });
+  return withServiceResult(
+    () => supabase.rpc('generate_payment_schedule', {
+      p_loan_id: loanId
+    }),
+    'generatePaymentSchedule',
+    { loanId }
+  );
 }
 
 /**
@@ -220,29 +257,15 @@ export async function getPaymentSchedule(
   schedule?: PaymentSchedule[];
   error?: string;
 }> {
-  return measurePerformance('get_payment_schedule', async () => {
-    try {
-      debugLog('📋 Fetching payment schedule', { loanId });
-
-      const { data, error } = await supabase.rpc('get_payment_schedule', {
-        p_loan_id: loanId
-      });
-
-      if (error) {
-        debugLog('❌ Get payment schedule failed', error);
-        return { success: false, error: error.message };
-      }
-
-      debugLog('✅ Payment schedule retrieved', { count: data?.length || 0 });
-      return { 
-        success: true, 
-        schedule: data as PaymentSchedule[] || [] 
-      };
-    } catch (error) {
-      handleDatabaseError(error, 'getPaymentSchedule', { loanId });
-      return { success: false, error: 'Unexpected error occurred' };
-    }
-  });
+  return withArrayResult<PaymentSchedule>(
+    () => supabase
+      .from('payment_schedules')
+      .select('*')
+      .eq('loan_id', loanId)
+      .order('installment_number', { ascending: true }),
+    'getPaymentSchedule',
+    { loanId }
+  );
 }
 
 /**
@@ -273,7 +296,7 @@ export async function applyPaymentToSchedule(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as ApplyPaymentResult;
       debugLog('✅ Payment applied to schedule', result);
       return result;
     } catch (error) {
@@ -303,7 +326,7 @@ export async function markOverduePayments(): Promise<{
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as MarkOverdueResult;
       debugLog('✅ Overdue payments marked', result);
       return result;
     } catch (error) {
@@ -341,7 +364,7 @@ export async function calculateLateFee(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as CalculateLateFeeResult;
       debugLog('✅ Late fee calculated', result);
       return result;
     } catch (error) {
@@ -378,7 +401,7 @@ export async function waiveLateFee(
         return { success: false, error: error.message };
       }
 
-      const result = data as any;
+      const result = data as WaiveLateFeeResult;
       debugLog('✅ Late fee waived', result);
       return result;
     } catch (error) {

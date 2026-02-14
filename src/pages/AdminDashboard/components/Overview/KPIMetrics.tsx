@@ -1,6 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 
 interface KPIData {
   title: string;
@@ -16,6 +18,8 @@ interface KPIMetricsProps {
 }
 
 const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => {
+  const { styles } = useTheme();
+
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up':
@@ -42,19 +46,19 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-2">
+          <ThemedCard key={i} className="animate-pulse">
+            <div className="pb-2">
               <div className="h-4 bg-gray-200 rounded w-32"></div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div>
               <div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
               <div className="flex items-center space-x-2">
                 <div className="h-4 w-4 bg-gray-200 rounded"></div>
                 <div className="h-3 bg-gray-200 rounded w-16"></div>
               </div>
               <div className="h-3 bg-gray-200 rounded w-28 mt-2"></div>
-            </CardContent>
-          </Card>
+            </div>
+          </ThemedCard>
         ))}
       </div>
     );
@@ -63,15 +67,15 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {kpiData.map((kpi, index) => (
-        <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+        <ThemedCard key={index} className="hover:shadow-lg transition-shadow duration-200">
+          <div className="pb-2">
+            <h3 className="text-sm font-medium text-muted-foreground">
               {kpi.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h3>
+          </div>
+          <div>
             <div 
-              className="text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums"
+              className={cn("text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums", styles.textClass)}
               title={typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
             >
               {typeof kpi.value === 'number' 
@@ -88,8 +92,8 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
             <p className="text-xs text-muted-foreground">
               {kpi.description}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </ThemedCard>
       ))}
     </div>
   );

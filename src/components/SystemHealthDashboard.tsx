@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { AlertTriangle, CheckCircle, Clock, Database, Shield, Zap } from 'lucide-react';
 import { errorMonitor } from '@/utils/errorMonitoring';
 
@@ -56,7 +57,7 @@ const SystemHealthDashboard: React.FC<SystemHealthProps> = ({ isAdmin = false })
   }
 
   return (
-    <Card className="mb-4">
+    <ThemedCard className="mb-4">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-sm">
           <div className="flex items-center space-x-2">
@@ -67,13 +68,13 @@ const SystemHealthDashboard: React.FC<SystemHealthProps> = ({ isAdmin = false })
             </Badge>
           </div>
           {isAdmin && (
-            <Button
+            <ThemedButton
               variant="ghost"
               size="sm"
               onClick={() => setShowDetails(!showDetails)}
             >
               {showDetails ? 'Hide' : 'Details'}
-            </Button>
+            </ThemedButton>
           )}
         </CardTitle>
       </CardHeader>
@@ -138,7 +139,7 @@ const SystemHealthDashboard: React.FC<SystemHealthProps> = ({ isAdmin = false })
           </div>
         </CardContent>
       )}
-    </Card>
+    </ThemedCard>
   );
 };
 

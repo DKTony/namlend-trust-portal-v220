@@ -5,6 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { amountToTBUnits, uuidToTBId } from './ledgerService';
+import { withArrayResult, withSingleResult, type ServiceResult } from '@/utils/serviceUtils';
 import type {
   SettlementRunSummary,
   SettlementRunDetails,
@@ -34,20 +35,17 @@ export async function getSettlementRuns(params?: {
   dateTo?: string;
   state?: SettlementRunState;
   limit?: number;
-}): Promise<SettlementRunSummary[]> {
-  const { data, error } = await supabase.rpc('get_settlement_runs', {
-    p_date_from: params?.dateFrom || null,
-    p_date_to: params?.dateTo || null,
-    p_state: params?.state || null,
-    p_limit: params?.limit || 50,
-  });
-
-  if (error) {
-    console.error('Error fetching settlement runs:', error);
-    throw error;
-  }
-
-  return data || [];
+}): Promise<ServiceResult<SettlementRunSummary[]>> {
+  return withArrayResult<SettlementRunSummary>(
+    () => supabase.rpc('get_settlement_runs', {
+      p_date_from: params?.dateFrom || null,
+      p_date_to: params?.dateTo || null,
+      p_state: params?.state || null,
+      p_limit: params?.limit || 50,
+    }),
+    'getSettlementRuns',
+    params
+  );
 }
 
 /**
@@ -55,17 +53,13 @@ export async function getSettlementRuns(params?: {
  */
 export async function getSettlementRunDetails(
   runId: string
-): Promise<SettlementRunDetails | null> {
-  const { data, error } = await supabase.rpc('get_settlement_run_details', {
-    p_run_id: runId,
-  });
-
-  if (error) {
-    console.error('Error fetching settlement run details:', error);
-    throw error;
-  }
-
-  return data as SettlementRunDetails | null;
+): Promise<ServiceResult<SettlementRunDetails>> {
+  return withSingleResult<SettlementRunDetails>(
+    () => supabase.rpc('get_settlement_run_details', { p_run_id: runId }),
+    'getSettlementRunDetails',
+    'Settlement run not found',
+    { runId }
+  );
 }
 
 // ============================================================================
@@ -77,17 +71,13 @@ export async function getSettlementRunDetails(
  */
 export async function getPacs009BatchDetails(
   batchId: string
-): Promise<Pacs009BatchDetails | null> {
-  const { data, error } = await supabase.rpc('get_pacs009_batch', {
-    p_batch_id: batchId,
-  });
-
-  if (error) {
-    console.error('Error fetching pacs.009 batch:', error);
-    throw error;
-  }
-
-  return data as Pacs009BatchDetails | null;
+): Promise<ServiceResult<Pacs009BatchDetails>> {
+  return withSingleResult<Pacs009BatchDetails>(
+    () => supabase.rpc('get_pacs009_batch', { p_batch_id: batchId }),
+    'getPacs009BatchDetails',
+    'Batch not found',
+    { batchId }
+  );
 }
 
 /**
@@ -95,19 +85,12 @@ export async function getPacs009BatchDetails(
  */
 export async function getPacs009Batches(
   runId: string
-): Promise<SettlementPacs009Batch[]> {
-  const { data, error } = await supabase
-    .from('settlement_pacs009_batches')
-    .select('*')
-    .eq('run_id', runId)
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching pacs.009 batches:', error);
-    throw error;
-  }
-
-  return (data as SettlementPacs009Batch[]) || [];
+): Promise<ServiceResult<SettlementPacs009Batch[]>> {
+  return withArrayResult<SettlementPacs009Batch>(
+    () => supabase.from('settlement_pacs009_batches').select('*').eq('run_id', runId).order('created_at', { ascending: true }),
+    'getPacs009Batches',
+    { runId }
+  );
 }
 
 // ============================================================================
@@ -121,19 +104,16 @@ export async function getSettlementReports(params?: {
   runId?: string;
   reportType?: SettlementReportType;
   participantId?: string;
-}): Promise<ReportListItem[]> {
-  const { data, error } = await supabase.rpc('get_settlement_reports', {
-    p_run_id: params?.runId || null,
-    p_report_type: params?.reportType || null,
-    p_participant_id: params?.participantId || null,
-  });
-
-  if (error) {
-    console.error('Error fetching settlement reports:', error);
-    throw error;
-  }
-
-  return data || [];
+}): Promise<ServiceResult<ReportListItem[]>> {
+  return withArrayResult<ReportListItem>(
+    () => supabase.rpc('get_settlement_reports', {
+      p_run_id: params?.runId || null,
+      p_report_type: params?.reportType || null,
+      p_participant_id: params?.participantId || null,
+    }),
+    'getSettlementReports',
+    params
+  );
 }
 
 /**

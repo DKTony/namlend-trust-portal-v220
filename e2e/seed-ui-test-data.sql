@@ -8,6 +8,93 @@
 -- Clean up any existing UI test data first
 DELETE FROM disbursements WHERE reference LIKE 'UI-TEST-%';
 DELETE FROM loans WHERE purpose LIKE 'UI Test%';
+DELETE FROM kyc_documents WHERE file_path LIKE 'test/%';
+
+-- ============================================================================
+-- Add KYC Documents for Test Users (Required for Loan Eligibility)
+-- ============================================================================
+
+-- KYC Documents for client1@test.namlend.com (verified)
+INSERT INTO kyc_documents (
+  id,
+  user_id,
+  document_type,
+  file_path,
+  status,
+  verified_at,
+  created_at
+) VALUES 
+(
+  'ffffffff-kyc1-0000-0000-000000000001',
+  '11111111-0000-0000-0000-000000000001', -- client1
+  'national_id',
+  'test/client1/national_id.pdf',
+  'verified',
+  NOW() - INTERVAL '7 days',
+  NOW() - INTERVAL '10 days'
+),
+(
+  'ffffffff-kyc2-0000-0000-000000000002',
+  '11111111-0000-0000-0000-000000000001', -- client1
+  'proof_of_income',
+  'test/client1/proof_of_income.pdf',
+  'verified',
+  NOW() - INTERVAL '7 days',
+  NOW() - INTERVAL '10 days'
+),
+(
+  'ffffffff-kyc3-0000-0000-000000000003',
+  '11111111-0000-0000-0000-000000000001', -- client1
+  'proof_of_address',
+  'test/client1/proof_of_address.pdf',
+  'verified',
+  NOW() - INTERVAL '7 days',
+  NOW() - INTERVAL '10 days'
+)
+ON CONFLICT (id) DO UPDATE SET
+  status = EXCLUDED.status,
+  verified_at = EXCLUDED.verified_at;
+
+-- KYC Documents for client2@test.namlend.com (verified)
+INSERT INTO kyc_documents (
+  id,
+  user_id,
+  document_type,
+  file_path,
+  status,
+  verified_at,
+  created_at
+) VALUES 
+(
+  'ffffffff-kyc4-0000-0000-000000000004',
+  '22222222-0000-0000-0000-000000000002', -- client2
+  'national_id',
+  'test/client2/national_id.pdf',
+  'verified',
+  NOW() - INTERVAL '5 days',
+  NOW() - INTERVAL '8 days'
+),
+(
+  'ffffffff-kyc5-0000-0000-000000000005',
+  '22222222-0000-0000-0000-000000000002', -- client2
+  'proof_of_income',
+  'test/client2/proof_of_income.pdf',
+  'verified',
+  NOW() - INTERVAL '5 days',
+  NOW() - INTERVAL '8 days'
+),
+(
+  'ffffffff-kyc6-0000-0000-000000000006',
+  '22222222-0000-0000-0000-000000000002', -- client2
+  'proof_of_address',
+  'test/client2/proof_of_address.pdf',
+  'verified',
+  NOW() - INTERVAL '5 days',
+  NOW() - INTERVAL '8 days'
+)
+ON CONFLICT (id) DO UPDATE SET
+  status = EXCLUDED.status,
+  verified_at = EXCLUDED.verified_at;
 
 -- ============================================================================
 -- Create Approved Loans for Disbursement Testing
@@ -324,6 +411,17 @@ WHERE purpose LIKE 'UI Test%'
   AND status = 'disbursed'
 ORDER BY created_at DESC;
 
+-- Verify KYC documents
+SELECT 
+  k.id,
+  k.user_id,
+  k.document_type,
+  k.status,
+  k.verified_at
+FROM kyc_documents k
+WHERE k.file_path LIKE 'test/%'
+ORDER BY k.user_id, k.document_type;
+
 -- Summary
 SELECT 
   'Approved Loans' as category,
@@ -341,4 +439,10 @@ SELECT
   'Completed Disbursements' as category,
   COUNT(*) as count
 FROM disbursements
-WHERE reference LIKE 'UI-TEST-%' AND status = 'completed';
+WHERE reference LIKE 'UI-TEST-%' AND status = 'completed'
+UNION ALL
+SELECT 
+  'Verified KYC Documents' as category,
+  COUNT(*) as count
+FROM kyc_documents
+WHERE file_path LIKE 'test/%' AND status = 'verified';

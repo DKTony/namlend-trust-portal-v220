@@ -10,7 +10,7 @@ export interface SystemError {
   url?: string;
   userId?: string;
   contextKeys: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class ErrorMonitor {
@@ -88,7 +88,7 @@ class ErrorMonitor {
   }
 
   // Monitor database errors
-  monitorDatabaseError(operation: string, error: any): void {
+  monitorDatabaseError(operation: string, error: { code?: string; message?: string }): void {
     let severity: SystemError['severity'] = 'medium';
     let message = `Database error in ${operation}`;
 
@@ -163,7 +163,7 @@ export const monitorRpcCall = (procedure: string, duration: number, success: boo
 };
 
 // Integrate with database operations
-export const monitorDatabaseError = (operation: string, error: any) => {
+export const monitorDatabaseError = (operation: string, error: { code?: string; message?: string }) => {
   errorMonitor.monitorDatabaseError(operation, error);
 };
 

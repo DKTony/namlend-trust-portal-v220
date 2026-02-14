@@ -81,15 +81,15 @@ serve(async (req) => {
       );
     }
 
-    // Check if user has staff role (only staff can send SMS)
+    // P1-003 FIX: Check if user has staff role - handle multi-role users
     const { data: roleData } = await supabaseUser
       .from('user_roles')
       .select('role')
       .eq('user_id', authData.user.id)
-      .maybeSingle();
+      .in('role', ['admin', 'loan_officer']);
 
-    const role = roleData?.role as string | null;
-    if (role !== 'admin' && role !== 'loan_officer') {
+    // Check if ANY role matches (supports multi-role users)
+    if (!roleData || roleData.length === 0) {
       return new Response(
         JSON.stringify({ error: "Forbidden: Staff role required" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }

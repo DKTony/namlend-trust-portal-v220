@@ -53,17 +53,15 @@ serve(async (req) => {
     if (currentUser.id === user_id) {
       canNotify = true;
     } else {
+      // P1-003 FIX: Handle multi-role users - check if ANY role matches
       const { data: roleData, error: roleError } = await supabaseUser
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id)
-        .maybeSingle();
+        .in('role', ['admin', 'loan_officer']);
 
-      if (!roleError) {
-        const role = roleData?.role as string | null;
-        if (role === 'admin' || role === 'loan_officer') {
-          canNotify = true;
-        }
+      if (!roleError && roleData && roleData.length > 0) {
+        canNotify = true;
       }
     }
 
@@ -80,12 +78,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Insert notification into database
+    // P0-005 FIX: Use 'category' instead of 'type' (correct column name per schema)
     const { error: notificationError } = await supabaseAdmin
       .from("notifications")
       .insert({
         user_id,
-        type,
+        category: type,  // Fixed: map 'type' param to 'category' column
         title,
         message,
       });

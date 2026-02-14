@@ -371,12 +371,13 @@ async function sendWhatsAppMessage(request: WhatsAppMessage): Promise<WhatsAppRe
       message: 'WhatsApp message sent successfully',
       contacts: [{ wa_id: formattedNumber, input: request.to.phoneNumber }]
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('WhatsApp send error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send WhatsApp message';
     return {
       success: false,
       status: 'failed',
-      message: error.message || 'Failed to send WhatsApp message'
+      message: errorMessage
     };
   }
 }

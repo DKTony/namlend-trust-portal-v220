@@ -120,7 +120,16 @@ const RoleManagement: React.FC = () => {
   const [selectedAppRole, setSelectedAppRole] = useState<AppRole | null>(null);
   const [viewUsersOpen, setViewUsersOpen] = useState(false);
   const [viewUsersRole, setViewUsersRole] = useState<string | null>(null);
-  const [viewUsersData, setViewUsersData] = useState<any[]>([]);
+  interface UserWithRole {
+    user_id: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+    phone_number?: string | null;
+    account_status?: string | null;
+  }
+
+  const [viewUsersData, setViewUsersData] = useState<UserWithRole[]>([]);
   const [viewUsersLoading, setViewUsersLoading] = useState(false);
 
   const nameToAppRole = (roleName: string): 'admin' | 'loan_officer' | 'client' => {
@@ -564,7 +573,7 @@ const RoleManagement: React.FC = () => {
               </div>
             ) : (
               <div className="grid gap-3">
-                {viewUsersData.map((user: any, index: number) => (
+                {viewUsersData.map((user: UserWithRole, index: number) => (
                   <Card key={user.user_id || index} className="bg-muted/30">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">

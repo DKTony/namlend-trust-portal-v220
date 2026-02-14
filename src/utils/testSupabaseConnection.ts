@@ -33,7 +33,7 @@ export const testSupabaseConnection = async () => {
     
     // Test 3: Table access test
     console.log('📋 Testing table access...');
-    const tableResults: Record<string, any> = {};
+    const tableResults: Record<string, { accessible: boolean; count?: number; error?: string }> = {};
     
     // Test each table individually with proper typing
     try {
@@ -49,9 +49,10 @@ export const testSupabaseConnection = async () => {
         console.log('✅ profiles table accessible');
         tableResults['profiles'] = { accessible: true, count: profilesData?.length || 0 };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.log('❌ profiles table error:', err);
-      tableResults['profiles'] = { accessible: false, error: err.message };
+      tableResults['profiles'] = { accessible: false, error: errMsg };
     }
     
     try {
@@ -67,9 +68,10 @@ export const testSupabaseConnection = async () => {
         console.log('✅ loans table accessible');
         tableResults['loans'] = { accessible: true, count: loansData?.length || 0 };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.log('❌ loans table error:', err);
-      tableResults['loans'] = { accessible: false, error: err.message };
+      tableResults['loans'] = { accessible: false, error: errMsg };
     }
     
     try {
@@ -85,9 +87,10 @@ export const testSupabaseConnection = async () => {
         console.log('✅ payments table accessible');
         tableResults['payments'] = { accessible: true, count: paymentsData?.length || 0 };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.log('❌ payments table error:', err);
-      tableResults['payments'] = { accessible: false, error: err.message };
+      tableResults['payments'] = { accessible: false, error: errMsg };
     }
     
     try {
@@ -103,9 +106,10 @@ export const testSupabaseConnection = async () => {
         console.log('✅ kyc_documents table accessible');
         tableResults['kyc_documents'] = { accessible: true, count: kycData?.length || 0 };
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.log('❌ kyc_documents table error:', err);
-      tableResults['kyc_documents'] = { accessible: false, error: err.message };
+      tableResults['kyc_documents'] = { accessible: false, error: errMsg };
     }
     
     // Test 4: RLS policies test
@@ -151,7 +155,7 @@ export const testSupabaseConnection = async () => {
 // Auto-run test in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   // Add to window for manual testing
-  (window as any).testSupabaseConnection = testSupabaseConnection;
+  (window as unknown as { testSupabaseConnection: typeof testSupabaseConnection }).testSupabaseConnection = testSupabaseConnection;
   
   // Auto-run test after a short delay
   setTimeout(() => {

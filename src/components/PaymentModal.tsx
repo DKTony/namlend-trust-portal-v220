@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,27 +28,25 @@ import {
 import { formatNAD } from '@/utils/currency';
 import { 
   processLoanPayment, 
-  getLoanPaymentDetails,
-  type LoanPaymentDetails,
   type ProcessPaymentResult
 } from '@/services/paymentService';
+import { useFetchActiveLoans, type LoanWithDetails } from '@/hooks/useFetchActiveLoans';
 
-interface Loan {
-  id: string;
-  amount: number;
-  monthly_payment: number;
-  status: string;
-  total_repayment?: number;
-}
+// Payment method validation rules - replaces sequential if-statements
+const PAYMENT_VALIDATION_RULES: Record<string, (details: Record<string, string>) => boolean> = {
+  ips: () => true, // No additional fields required
+  bank: (d) => Boolean(d.bank && d.accountNumber),
+  card: (d) => Boolean(d.number && d.expiry && d.cvv),
+  mobile: (d) => Boolean(d.wallet && d.phoneNumber),
+  agent: (d) => Boolean(d.location),
+};
 
-interface LoanWithDetails extends Loan {
-  outstanding_balance: number;
-  total_paid: number;
-  next_due_date?: string;
-  next_payment_amount: number;
-  progress_percent: number;
-  is_settled: boolean;
-}
+const PAYMENT_VALIDATION_MESSAGES: Record<string, string> = {
+  bank: 'Select bank and enter account number.',
+  card: 'Enter valid card information.',
+  mobile: 'Enter wallet and phone number.',
+  agent: 'Select an agent location.',
+};
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -59,12 +56,18 @@ interface PaymentModalProps {
 }
 
 export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess }: PaymentModalProps) {
-  const [activeLoans, setActiveLoans] = useState<LoanWithDetails[]>([]);
-  const [selectedLoan, setSelectedLoan] = useState<string>('');
+  // Use custom hook for loan fetching - replaces ~90 lines of duplicated logic
+  const { 
+    loans: activeLoans, 
+    isLoading: fetchingDetails, 
+    selectedLoan: selectedLoanDetails,
+    setSelectedLoanId,
+    refetch: fetchActiveLoans 
+  } = useFetchActiveLoans({ userId, enabled: isOpen });
+
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fetchingDetails, setFetchingDetails] = useState(false);
   const [processingFee] = useState(25);
   const [paymentResult, setPaymentResult] = useState<ProcessPaymentResult | null>(null);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
@@ -75,74 +78,22 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
   const [mobileDetails, setMobileDetails] = useState({ wallet: '', phoneNumber: '' });
   const [agentLocation, setAgentLocation] = useState('');
 
-  const fetchLoanDetails = useCallback(async (loanId: string): Promise<LoanWithDetails | null> => {
-    const details = await getLoanPaymentDetails(loanId);
-    if (details.success && details.loan && details.summary) {
-      return {
-        id: details.loan.id,
-        amount: details.loan.amount,
-        monthly_payment: details.loan.monthly_payment,
-        status: details.loan.status,
-        total_repayment: details.loan.total_repayment,
-        outstanding_balance: details.summary.outstanding_balance,
-        total_paid: details.summary.total_paid,
-        next_due_date: details.summary.next_due_date,
-        next_payment_amount: details.summary.outstanding_balance > 0 
-          ? Math.min(details.loan.monthly_payment, details.summary.outstanding_balance)
-          : 0,
-        progress_percent: details.summary.total_scheduled > 0 
-          ? Math.round((details.summary.total_paid / details.summary.total_scheduled) * 100)
-          : 0,
-        is_settled: details.summary.is_settled
-      };
-    }
-    return null;
-  }, []);
-
+  // Sync payment amount when selected loan changes
   useEffect(() => {
-    if (isOpen && userId) {
-      fetchActiveLoans();
+    if (selectedLoanDetails) {
+      setPaymentAmount(selectedLoanDetails.next_payment_amount.toString());
+    }
+  }, [selectedLoanDetails]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
       setShowSuccessScreen(false);
       setPaymentResult(null);
     }
-  }, [isOpen, userId]);
+  }, [isOpen]);
 
-  const fetchActiveLoans = async () => {
-    setFetchingDetails(true);
-    try {
-      const { data } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('user_id', userId)
-        .in('status', ['active', 'disbursed', 'funded'])
-        .order('created_at', { ascending: false });
-      
-      if (data && data.length > 0) {
-        // Fetch detailed balance info for each loan
-        const loansWithDetails: LoanWithDetails[] = [];
-        for (const loan of data) {
-          const details = await fetchLoanDetails(loan.id);
-          if (details && !details.is_settled) {
-            loansWithDetails.push(details);
-          }
-        }
-        
-        setActiveLoans(loansWithDetails);
-        if (loansWithDetails.length > 0) {
-          setSelectedLoan(loansWithDetails[0].id);
-          setPaymentAmount(loansWithDetails[0].next_payment_amount.toString());
-        }
-      } else {
-        setActiveLoans([]);
-      }
-    } catch (error) {
-      console.error('Error fetching loans:', error);
-    } finally {
-      setFetchingDetails(false);
-    }
-  };
-
-  const selectedLoanDetails = activeLoans.find(loan => loan.id === selectedLoan);
+  const selectedLoan = selectedLoanDetails?.id || '';
   const totalAmount = parseFloat(paymentAmount || '0') + processingFee;
 
   const handlePayment = async () => {
@@ -155,18 +106,23 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
       return;
     }
 
-    // Validate payment method specific fields
-    if (paymentMethod === 'bank' && (!bankDetails.bank || !bankDetails.accountNumber)) {
-      toast({ title: "Incomplete Details", description: "Select bank and enter account number.", variant: "destructive" }); return;
-    }
-    if (paymentMethod === 'card' && (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvv)) {
-      toast({ title: "Incomplete Details", description: "Enter valid card information.", variant: "destructive" }); return;
-    }
-    if (paymentMethod === 'mobile' && (!mobileDetails.wallet || !mobileDetails.phoneNumber)) {
-      toast({ title: "Incomplete Details", description: "Enter wallet and phone number.", variant: "destructive" }); return;
-    }
-    if (paymentMethod === 'agent' && !agentLocation) {
-      toast({ title: "Incomplete Details", description: "Select an agent location.", variant: "destructive" }); return;
+    // Validate payment method specific fields using validation map
+    const validationDetails: Record<string, string> = {
+      bank: bankDetails.bank,
+      accountNumber: bankDetails.accountNumber,
+      number: cardDetails.number,
+      expiry: cardDetails.expiry,
+      cvv: cardDetails.cvv,
+      wallet: mobileDetails.wallet,
+      phoneNumber: mobileDetails.phoneNumber,
+      location: agentLocation,
+    };
+    
+    const validator = PAYMENT_VALIDATION_RULES[paymentMethod];
+    if (validator && !validator(validationDetails)) {
+      const message = PAYMENT_VALIDATION_MESSAGES[paymentMethod] || 'Please complete all required fields.';
+      toast({ title: "Incomplete Details", description: message, variant: "destructive" });
+      return;
     }
 
     setLoading(true);
@@ -224,7 +180,7 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
   };
 
   const resetForm = () => {
-    setSelectedLoan('');
+    setSelectedLoanId('');
     setPaymentMethod('bank');
     setPaymentAmount('');
     setBankDetails({ bank: '', accountNumber: '' });
@@ -255,10 +211,10 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
       </div>
       
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-bold text-white tracking-tight">
+        <h3 className="text-2xl font-bold text-foreground tracking-tight">
           {paymentResult?.loan_settled ? 'Loan Settled!' : 'Payment Successful'}
         </h3>
-        <p className="text-zinc-400 max-w-xs mx-auto text-sm">
+        <p className="text-muted-foreground max-w-xs mx-auto text-sm">
           {paymentResult?.loan_settled 
             ? 'You have successfully paid off this loan. A settlement letter has been emailed to you.'
             : `Transaction ID: ${paymentResult?.reference_number}`
@@ -266,15 +222,15 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
         </p>
       </div>
       
-      <div className="w-full max-w-sm bg-zinc-900/50 rounded-2xl border border-zinc-800/50 p-6 space-y-4">
-        <div className="flex justify-between items-center pb-4 border-b border-zinc-800/50">
-          <span className="text-sm text-zinc-500">Amount Paid</span>
-          <span className="text-lg font-bold text-white">{formatNAD(paymentResult?.amount_paid || 0)}</span>
+      <div className="w-full max-w-sm bg-muted/50 rounded-2xl border border-border p-6 space-y-4">
+        <div className="flex justify-between items-center pb-4 border-b border-border">
+          <span className="text-sm text-muted-foreground">Amount Paid</span>
+          <span className="text-lg font-bold text-foreground">{formatNAD(paymentResult?.amount_paid || 0)}</span>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-zinc-500">Applied to Principal</span>
-            <span className="text-zinc-300">{formatNAD(paymentResult?.amount_applied || 0)}</span>
+            <span className="text-muted-foreground">Applied to Principal</span>
+            <span className="text-foreground">{formatNAD(paymentResult?.amount_applied || 0)}</span>
           </div>
           {(paymentResult?.overpayment || 0) > 0 && (
             <div className="flex justify-between text-sm">
@@ -284,7 +240,7 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
           )}
           {!paymentResult?.loan_settled && (
              <div className="flex justify-between text-sm pt-2">
-               <span className="text-zinc-400">Remaining Balance</span>
+               <span className="text-muted-foreground">Remaining Balance</span>
                <span className="text-blue-400 font-medium">{formatNAD(paymentResult?.new_outstanding || 0)}</span>
              </div>
           )}
@@ -292,17 +248,17 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
       </div>
 
       <div className="flex gap-3 w-full max-w-sm">
-        <Button variant="outline" className="flex-1 bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" onClick={handleClose}>
+        <ThemedButton variant="outline" className="flex-1 bg-transparent border-border text-muted-foreground hover:bg-muted hover:text-foreground" onClick={handleClose}>
           Done
-        </Button>
+        </ThemedButton>
         {!paymentResult?.loan_settled && (
-          <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+          <ThemedButton className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
             setShowSuccessScreen(false);
             setPaymentResult(null);
             fetchActiveLoans();
           }}>
             Pay More
-          </Button>
+          </ThemedButton>
         )}
       </div>
     </div>
@@ -344,14 +300,12 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
         ) : (
           <div className="flex-1 overflow-y-auto grid md:grid-cols-2">
             {/* Left Panel: Loan & Amount */}
-            <div className="p-6 space-y-6 border-r border-border">
+            <div className="p-6 space-y-6 border-b md:border-b-0 md:border-r border-border">
               {/* Loan Selector */}
               <div className="space-y-3">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Select Loan</Label>
                 <Select value={selectedLoan} onValueChange={(value) => {
-                  setSelectedLoan(value);
-                  const loan = activeLoans.find(l => l.id === value);
-                  if (loan) setPaymentAmount(loan.next_payment_amount.toString());
+                  setSelectedLoanId(value);
                 }}>
                   <SelectTrigger className="bg-secondary border-transparent h-12 text-foreground">
                     <SelectValue placeholder="Choose a loan" />
@@ -376,15 +330,22 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
                    <div className="relative z-10">
                       <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Outstanding Balance</p>
                       <div className="flex items-baseline gap-2 mb-4">
-                         <span className="text-2xl font-bold tracking-tight">{formatNAD(selectedLoanDetails.outstanding_balance)}</span>
+                         <span className="text-2xl font-bold tracking-tight">{formatNAD(selectedLoanDetails.outstanding_balance ?? 0)}</span>
                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-0 text-[10px]">
-                            {selectedLoanDetails.progress_percent}% Paid
+                            {selectedLoanDetails.progress_percent ?? 0}% Paid
                          </Badge>
                       </div>
-                      <Progress value={selectedLoanDetails.progress_percent} className="h-1.5 bg-zinc-800 mb-4" indicatorClassName="bg-blue-500" />
+                      <Progress value={selectedLoanDetails.progress_percent ?? 0} className="h-1.5 bg-zinc-800 mb-4" indicatorClassName="bg-blue-500" />
                       <div className="flex justify-between text-xs text-zinc-400">
-                         <span>Next Due: <span className="text-zinc-200">{selectedLoanDetails.next_due_date ? new Date(selectedLoanDetails.next_due_date).toLocaleDateString('en-ZA', {day:'numeric', month:'short'}) : 'N/A'}</span></span>
-                         <span>Amt: <span className="text-blue-400">{formatNAD(selectedLoanDetails.next_payment_amount)}</span></span>
+                         <span>Next Due: <span className="text-zinc-200">{(() => {
+                           try {
+                             if (!selectedLoanDetails.next_due_date) return 'N/A';
+                             const date = new Date(selectedLoanDetails.next_due_date);
+                             if (isNaN(date.getTime())) return 'N/A';
+                             return date.toLocaleDateString('en-ZA', {day:'numeric', month:'short'});
+                           } catch { return 'N/A'; }
+                         })()}</span></span>
+                         <span>Amt: <span className="text-blue-400">{formatNAD(selectedLoanDetails.next_payment_amount ?? 0)}</span></span>
                       </div>
                    </div>
                 </div>
@@ -405,23 +366,23 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
                  </div>
                  {selectedLoanDetails && (
                     <div className="flex gap-2">
-                       <Button 
+                       <ThemedButton 
                          variant="outline" 
                          size="sm" 
                          className="flex-1 bg-secondary border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/80 text-xs h-8"
                          onClick={() => setPaymentAmount(selectedLoanDetails.monthly_payment.toString())}
                        >
                          Monthly
-                       </Button>
+                       </ThemedButton>
                        {selectedLoanDetails.outstanding_balance > selectedLoanDetails.monthly_payment && (
-                         <Button 
+                         <ThemedButton 
                            variant="outline" 
                            size="sm" 
                            className="flex-1 bg-secondary border-transparent text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 text-xs h-8"
                            onClick={() => setPaymentAmount(selectedLoanDetails.outstanding_balance.toString())}
                          >
                            Pay Full
-                         </Button>
+                         </ThemedButton>
                        )}
                     </div>
                  )}
@@ -558,7 +519,7 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
                     <span className="text-foreground">{formatNAD(totalAmount)}</span>
                  </div>
 
-                 <Button 
+                 <ThemedButton 
                    onClick={handlePayment}
                    disabled={loading || !paymentAmount || !selectedLoan}
                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg font-medium shadow-lg shadow-blue-900/20"
@@ -570,7 +531,7 @@ export default function PaymentModal({ isOpen, onClose, userId, onPaymentSuccess
                        Confirm Payment <ArrowRight className="h-4 w-4" />
                      </span>
                    )}
-                 </Button>
+                 </ThemedButton>
                  
                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Shield className="h-3 w-3" />

@@ -274,12 +274,13 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
         messageId: `MSG-${Date.now()}-${Math.random().toString(36).substring(7)}`
       }))
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('SMS send error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to send SMS';
     return {
       success: false,
       status: 'failed',
-      message: error.message || 'Failed to send SMS'
+      message
     };
   }
 }
@@ -381,25 +382,43 @@ export async function sendBulkSMS(
 
 /**
  * Generate OTP and send via SMS
+ * SECURITY: OTP is stored server-side and never returned to client
  */
 export async function sendOTP(
   phone: string,
   userId?: string
-): Promise<{ success: boolean; otp?: string; message: string }> {
+): Promise<{ success: boolean; message: string }> {
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  
+
   const result = await sendTemplateSMS('OTP_VERIFICATION', phone, { otp }, { userId });
-  
+
   if (result.success) {
-    // In production, store OTP hash in database with expiry
+    // Store OTP hash in database with expiry for verification
+    // The OTP should be hashed before storage in production
+    try {
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+      await supabase
+        .from('otp_verifications')
+        .upsert({
+          phone: phone,
+          user_id: userId,
+          otp_hash: otp, // In production: use bcrypt or similar to hash
+          expires_at: expiresAt,
+          verified: false
+        }, { onConflict: 'phone' });
+    } catch (error) {
+      // Log but don't fail - OTP was already sent
+      console.error('Failed to store OTP:', error);
+    }
+
     return {
       success: true,
-      otp, // In production, don't return this - just for development
+      // SECURITY: Never return OTP to client
       message: 'OTP sent successfully'
     };
   }
-  
+
   return {
     success: false,
     message: result.message

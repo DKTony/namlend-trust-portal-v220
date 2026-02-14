@@ -1,5 +1,8 @@
 # Transaction Settlement and Reconciliation Integrity Report
 
+**Doc Revision:** 2026-01-19  
+**Status:** Historical audit snapshot (Dec 2025). Verify against current data before action.
+
 **Report Date:** December 27, 2025  
 **Audit Period:** All historical transactions  
 **System:** NamLend Trust - IPS/IPP Integration  

@@ -9,10 +9,11 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { TBClient } from '@/types/services';
 
 // TigerBeetle client - dynamically imported for browser compatibility
-let tbClient: any = null;
-let tbClientPromise: Promise<any> | null = null;
+let tbClient: TBClient | null = null;
+let tbClientPromise: Promise<TBClient | null> | null = null;
 
 // TigerBeetle configuration
 const TB_CONFIG = {
@@ -24,7 +25,7 @@ const TB_CONFIG = {
  * Initialize TigerBeetle client (lazy loading)
  * Returns null in browser environment - use outbox pattern instead
  */
-async function getTigerBeetleClient(): Promise<any> {
+async function getTigerBeetleClient(): Promise<TBClient | null> {
   // Skip in browser environment
   if (typeof window !== 'undefined') {
     console.log('TigerBeetle client not available in browser - using outbox pattern');
@@ -133,8 +134,9 @@ export interface TBAccountMapping {
   id: string;
   entity_type: TBEntityType;
   entity_id: string;
-  tb_account_id_high: number;
-  tb_account_id_low: number;
+  // Store as string to preserve 64-bit precision (values > 2^53 lose precision as JS numbers)
+  tb_account_id_high: string;
+  tb_account_id_low: string;
   tb_ledger: number;
   tb_code: number;
   status: 'pending' | 'created' | 'failed';
@@ -220,13 +222,17 @@ export async function createLoanAccounts(
       }
 
       // Create account mapping
+      // CRITICAL: Use toString() to preserve 64-bit precision for TigerBeetle IDs
+      // Number() loses precision for values > 2^53 (JavaScript safe integer limit)
+      // Supabase handles bigint columns correctly when passed as strings
+      const lowWithOffset = BigInt(low) + BigInt(code);
       const { data, error } = await supabase
         .from('tigerbeetle_accounts')
         .insert({
           entity_type: type,
           entity_id: loanId,
-          tb_account_id_high: Number(high),
-          tb_account_id_low: Number(low) + code, // Offset by code for uniqueness
+          tb_account_id_high: high.toString(),
+          tb_account_id_low: lowWithOffset.toString(),
           tb_ledger: 1, // NAD ledger
           tb_code: code,
           status: 'pending',
@@ -562,22 +568,39 @@ export async function getLoanBalance(
       };
     }
 
-    // Fallback to Supabase view
+    // Fallback to Supabase view - use correct column names from loan_balance_summary
+    // Use maybeSingle() to gracefully handle missing rows (e.g., loan not found)
     const { data: loanData, error: loanError } = await supabase
       .from('loan_balance_summary')
-      .select('outstanding_balance, total_paid, total_repayment')
-      .eq('id', loanId)
-      .single();
+      .select('principal_balance, interest_balance, fees_balance, total_balance')
+      .eq('loan_id', loanId)
+      .maybeSingle();
 
+    // Handle query errors (but not "no rows" which returns null data)
     if (loanError) throw loanError;
+
+    // Handle case where loan doesn't exist in the view
+    if (!loanData) {
+      console.warn(`⚠️ getLoanBalance: No balance data found for loan ${loanId}`);
+      return {
+        success: true,
+        data: {
+          principal: 0,
+          interest: 0,
+          fees: 0,
+          total: 0,
+          source: 'supabase',
+        },
+      };
+    }
 
     return {
       success: true,
       data: {
-        principal: Number(loanData.outstanding_balance) || 0,
-        interest: 0, // Not broken down in current view
-        fees: 0,
-        total: Number(loanData.outstanding_balance) || 0,
+        principal: Number(loanData.principal_balance) || 0,
+        interest: Number(loanData.interest_balance) || 0,
+        fees: Number(loanData.fees_balance) || 0,
+        total: Number(loanData.total_balance) || 0,
         source: 'supabase',
       },
     };
@@ -948,14 +971,17 @@ export async function lookupTBAccount(
     }
 
     const account = accounts[0];
+    // Ensure bigint types for TigerBeetle account values
+    const creditsPosted = BigInt(account.credits_posted);
+    const debitsPosted = BigInt(account.debits_posted);
     return {
       success: true,
       data: {
-        debits_pending: account.debits_pending,
-        debits_posted: account.debits_posted,
-        credits_pending: account.credits_pending,
-        credits_posted: account.credits_posted,
-        balance: account.credits_posted - account.debits_posted,
+        debits_pending: BigInt(account.debits_pending),
+        debits_posted: debitsPosted,
+        credits_pending: BigInt(account.credits_pending),
+        credits_posted: creditsPosted,
+        balance: creditsPosted - debitsPosted,
       },
     };
   } catch (error) {

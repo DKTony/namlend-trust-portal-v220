@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ThemedButton } from "@/components/ui/ThemedButton";
 import { Menu, X, Shield, Phone, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { NotificationCenter } from "./NotificationCenter";
 import SignOutButton from "./SignOutButton";
-import { ModeToggle } from "@/components/ModeToggle";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -63,29 +62,26 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
-                <ModeToggle />
                 <NotificationCenter />
-                <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-header">
+                <ThemedButton variant="ghost" size="sm" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-header">
                   Dashboard
-                </Button>
+                </ThemedButton>
                 <SignOutButton variant="ghost" size="sm" data-testid="signout-button-header" />
               </>
             ) : (
               <>
-                <ModeToggle />
-                <Button variant="ghost" size="sm" onClick={handleSignIn}>
+                <ThemedButton variant="ghost" size="sm" onClick={handleSignIn}>
                   Sign In
-                </Button>
-                <Button variant="accent" size="sm" onClick={handleApplyNow} data-testid="apply-now-button-header">
+                </ThemedButton>
+                <ThemedButton variant="primary" size="sm" onClick={handleApplyNow} data-testid="apply-now-button-header">
                   Apply Now
-                </Button>
+                </ThemedButton>
               </>
             )}
           </div>
 
           {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center space-x-2">
-            <ModeToggle />
             <button
               className="h-11 w-11 -m-2 flex items-center justify-center rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -121,19 +117,19 @@ const Header = () => {
               <div className="flex flex-col space-y-2 pt-4">
                 {user ? (
                   <>
-                    <Button variant="ghost" size="lg" className="justify-start h-11" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-mobile">
+                    <ThemedButton variant="ghost" size="lg" className="justify-start h-11" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-mobile">
                       Dashboard
-                    </Button>
+                    </ThemedButton>
                     <SignOutButton variant="ghost" size="lg" className="justify-start h-11" data-testid="signout-button-mobile" />
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" size="lg" className="justify-start h-11" onClick={handleSignIn}>
+                    <ThemedButton variant="ghost" size="lg" className="justify-start h-11" onClick={handleSignIn}>
                       Sign In
-                    </Button>
-                    <Button variant="accent" size="lg" className="justify-start h-11" onClick={handleApplyNow} data-testid="apply-now-button-mobile">
+                    </ThemedButton>
+                    <ThemedButton variant="primary" size="lg" className="justify-start h-11" onClick={handleApplyNow} data-testid="apply-now-button-mobile">
                       Apply Now
-                    </Button>
+                    </ThemedButton>
                   </>
                 )}
               </div>

@@ -9,7 +9,7 @@ export type RpcOptions = {
 
 export type RpcResult<T> =
   | { ok: true; data: T; error: null; meta: { attempts: number; durationMs: number; source: 'rpc' } }
-  | { ok: false; data: null; error: any; meta: { attempts: number; durationMs: number; source: 'rpc' | 'circuit_open' } }
+  | { ok: false; data: null; error: unknown; meta: { attempts: number; durationMs: number; source: 'rpc' | 'circuit_open' } }
 
 // Simple circuit breaker state
 const CB: Record<string, { failures: number; openUntil: number }> = {}
@@ -37,9 +37,9 @@ const recordSuccess = (proc: string) => {
 const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
 const jitter = (ms: number) => ms + Math.floor(Math.random() * ms * 0.4) - ms * 0.2
 
-export async function callRpc<T = any>(
+export async function callRpc<T = unknown>(
   proc: string, 
-  args?: Record<string, any>, 
+  args?: Record<string, unknown>, 
   options?: RpcOptions
 ): Promise<RpcResult<T>> {
   const timeoutMs = options?.timeoutMs ?? 3000

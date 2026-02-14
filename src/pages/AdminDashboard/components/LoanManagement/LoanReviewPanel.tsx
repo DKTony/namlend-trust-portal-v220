@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,43 @@ import {
 
 interface LoanReviewPanelProps {
   loanId: string;
+  status?: string;
   onClose: () => void;
   onApprove: (loanId: string, comments?: string) => void;
   onReject: (loanId: string, reason: string) => void;
+}
+
+// Type definitions for Supabase query responses
+interface LoanRow {
+  id: string;
+  user_id: string;
+  amount: number;
+  purpose?: string;
+  term_months?: number;
+  interest_rate?: number;
+  status: string;
+  created_at: string;
+  approved_at?: string;
+  disbursed_at?: string;
+}
+
+interface ProfileRow {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  monthly_income?: number;
+  employment_status?: string;
+  employer_name?: string;
+}
+
+interface DocumentRow {
+  id: string;
+  file_name?: string;
+  document_type?: string;
+  status?: string;
+  created_at: string;
 }
 
 interface LoanDetails {
@@ -44,6 +78,9 @@ interface LoanDetails {
   creditScore: number;
   riskScore: number;
   submittedAt: string;
+  status: string;
+  approvedAt?: string;
+  disbursedAt?: string;
   documents: Array<{
     id: string;
     name: string;
@@ -61,6 +98,7 @@ interface LoanDetails {
 
 const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
   loanId,
+  status: propStatus,
   onClose,
   onApprove,
   onReject
@@ -69,36 +107,94 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
   const [comments, setComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [loanDetails, setLoanDetails] = useState<LoanDetails | null>(null);
 
-  // Mock data - replace with actual API call
-  const loanDetails: LoanDetails = {
-    id: loanId,
-    applicantName: 'John Doe',
-    applicantEmail: 'john.doe@email.com',
-    phone: '+264 81 123 4567',
-    address: '123 Independence Ave, Windhoek, Namibia',
-    amount: 50000,
-    purpose: 'Business expansion',
-    term: 24,
-    interestRate: 18.5,
-    monthlyIncome: 15000,
-    employmentStatus: 'Employed',
-    employer: 'ABC Corporation',
-    creditScore: 720,
-    riskScore: 35,
-    submittedAt: '2025-01-01T10:00:00Z',
-    documents: [
-      { id: '1', name: 'ID Document', type: 'identity', status: 'verified', uploadedAt: '2025-01-01T10:00:00Z' },
-      { id: '2', name: 'Proof of Income', type: 'income', status: 'verified', uploadedAt: '2025-01-01T10:05:00Z' },
-      { id: '3', name: 'Bank Statements', type: 'financial', status: 'pending', uploadedAt: '2025-01-01T10:10:00Z' },
-      { id: '4', name: 'Business Plan', type: 'business', status: 'verified', uploadedAt: '2025-01-01T10:15:00Z' }
-    ],
-    creditHistory: [
-      { type: 'Personal Loan', amount: 25000, status: 'Paid', date: '2024-06-15' },
-      { type: 'Credit Card', amount: 5000, status: 'Active', date: '2023-12-01' },
-      { type: 'Vehicle Loan', amount: 80000, status: 'Paid', date: '2022-03-20' }
-    ]
-  };
+  // Fetch real loan data
+  useEffect(() => {
+    const fetchLoanDetails = async () => {
+      setDataLoading(true);
+      try {
+        // Import supabase dynamically to avoid circular deps
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        // Fetch loan data - use select('*') to avoid complex type inference
+        const loanResult = await supabase
+          .from('loans')
+          .select('*')
+          .eq('id', loanId)
+          .single();
+        
+        if (loanResult.error || !loanResult.data) {
+          console.error('Error fetching loan:', loanResult.error);
+          return;
+        }
+
+        // Cast through unknown to bypass strict type checking
+        const loanData = loanResult.data as unknown as LoanRow;
+        
+        // Fetch profile data
+        const profileResult = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', loanData.user_id)
+          .single();
+        
+        const profileData = (profileResult.data as unknown as ProfileRow) || null;
+        
+        // Fetch documents
+        const docsResult = await supabase
+          .from('documents')
+          .select('*')
+          .eq('user_id', loanData.user_id)
+          .order('created_at', { ascending: false });
+        
+        const docsData = ((docsResult.data || []) as unknown as DocumentRow[]);
+        
+        // Transform to LoanDetails format
+        const details: LoanDetails = {
+          id: loanData.id,
+          applicantName: profileData 
+            ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown'
+            : 'Unknown',
+          applicantEmail: profileData?.email || `user-${loanData.user_id?.slice(0, 8)}@namlend.com`,
+          phone: profileData?.phone_number || '+264 XX XXX XXXX',
+          address: profileData?.address || 'Address not provided',
+          amount: loanData.amount || 0,
+          purpose: loanData.purpose || 'Not specified',
+          term: loanData.term_months || 12,
+          interestRate: loanData.interest_rate || 18,
+          monthlyIncome: profileData?.monthly_income || 0,
+          employmentStatus: profileData?.employment_status || 'Not specified',
+          employer: profileData?.employer_name || 'Not specified',
+          creditScore: 0, // Credit bureau integration pending - displays as "Not Available"
+          riskScore: 0, // Risk scoring integration pending - displays as "Not Available"
+          submittedAt: loanData.created_at,
+          status: loanData.status || propStatus || 'pending',
+          approvedAt: loanData.approved_at,
+          disbursedAt: loanData.disbursed_at,
+          documents: docsData.map((doc) => ({
+            id: doc.id,
+            name: doc.file_name || 'Document',
+            type: doc.document_type || 'other',
+            status: (doc.status as 'verified' | 'pending' | 'rejected') || 'pending',
+            uploadedAt: doc.created_at
+          })),
+          creditHistory: [] // TODO: Fetch from credit history table if available
+        };
+        
+        setLoanDetails(details);
+      } catch (error) {
+        console.error('Error fetching loan details:', error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+    
+    if (loanId) {
+      fetchLoanDetails();
+    }
+  }, [loanId, propStatus]);
 
   const formatCurrency = (amount: number) => {
     return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2 })}`;
@@ -152,6 +248,39 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
       setLoading(false);
     }
   };
+
+  // Helper to check if actions are allowed based on status
+  const canTakeAction = loanDetails && 
+    !['approved', 'rejected', 'disbursed', 'active', 'settled'].includes(loanDetails.status);
+
+  // Loading state
+  if (dataLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-background rounded-lg shadow-xl p-8 border border-border">
+          <div className="flex items-center space-x-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-foreground">Loading loan details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!loanDetails) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-background rounded-lg shadow-xl p-8 border border-border">
+          <div className="text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-foreground mb-4">Failed to load loan details</p>
+            <Button onClick={onClose}>Close</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const riskLevel = getRiskLevel(loanDetails.riskScore);
   const monthlyPayment = (loanDetails.amount * (loanDetails.interestRate / 100 / 12)) / 
@@ -245,9 +374,13 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                         <div className="min-w-0">
                           <label className="text-sm font-medium text-muted-foreground">Risk Assessment</label>
                           <div className="flex">
-                            <Badge variant="outline" className={`${riskLevel.color} shrink-0`}>
-                              {riskLevel.label} Risk ({loanDetails.riskScore}%)
-                            </Badge>
+                            {loanDetails.riskScore > 0 ? (
+                              <Badge variant="outline" className={`${riskLevel.color} shrink-0`}>
+                                {riskLevel.label} Risk ({loanDetails.riskScore}%)
+                              </Badge>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">Not Available</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -297,7 +430,9 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                       <div className="space-y-4 min-w-0">
                         <div className="min-w-0">
                           <label className="text-sm font-medium text-muted-foreground">Credit Score</label>
-                          <p className="text-xl font-semibold tabular-nums text-foreground">{loanDetails.creditScore}</p>
+                          <p className="text-xl font-semibold tabular-nums text-foreground">
+                            {loanDetails.creditScore > 0 ? loanDetails.creditScore : <span className="text-muted-foreground text-base">Not Available</span>}
+                          </p>
                         </div>
                         <div className="min-w-0">
                           <label className="text-sm font-medium text-muted-foreground">Debt-to-Income Ratio</label>
@@ -407,13 +542,19 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Risk Score:</span>
-                  <Badge variant="outline" className={riskLevel.color}>
-                    {loanDetails.riskScore}%
-                  </Badge>
+                  {loanDetails.riskScore > 0 ? (
+                    <Badge variant="outline" className={riskLevel.color}>
+                      {loanDetails.riskScore}%
+                    </Badge>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">N/A</span>
+                  )}
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Credit Score:</span>
-                  <span className="font-medium text-foreground">{loanDetails.creditScore}</span>
+                  <span className="font-medium text-foreground">
+                    {loanDetails.creditScore > 0 ? loanDetails.creditScore : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">DTI Ratio:</span>
@@ -445,26 +586,52 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                 />
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons - Conditional based on status */}
               <div className="space-y-3 pt-4">
-                <Button
-                  onClick={handleApprove}
-                  disabled={loading}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {loading ? 'Processing...' : 'Approve Application'}
-                </Button>
-                
-                <Button
-                  onClick={handleReject}
-                  disabled={loading || !rejectionReason.trim()}
-                  variant="outline"
-                  className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  {loading ? 'Processing...' : 'Reject Application'}
-                </Button>
+                {canTakeAction ? (
+                  <>
+                    <Button
+                      onClick={handleApprove}
+                      disabled={loading}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="approve-loan-button"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {loading ? 'Processing...' : 'Approve Application'}
+                    </Button>
+                    
+                    <Button
+                      onClick={handleReject}
+                      disabled={loading || !rejectionReason.trim()}
+                      variant="outline"
+                      className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      data-testid="reject-loan-button"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      {loading ? 'Processing...' : 'Reject Application'}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="p-4 rounded-lg bg-muted border border-border">
+                    <div className="flex items-center space-x-2 text-muted-foreground">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span>
+                        This application has been <strong className="text-foreground">{loanDetails.status}</strong>.
+                        No further action required.
+                      </span>
+                    </div>
+                    {loanDetails.approvedAt && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Approved on: {new Date(loanDetails.approvedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                    {loanDetails.disbursedAt && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Disbursed on: {new Date(loanDetails.disbursedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <Button
                   onClick={onClose}

@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedInput } from '@/components/ui/ThemedInput';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { submitApprovalRequest } from '@/services/approvalWorkflow';
 import { ArrowLeft, Upload, FileText, Check } from 'lucide-react';
 import Header from '@/components/Header';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 
 export default function KYC() {
   const { user } = useAuth();
+  const { styles } = useTheme();
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
@@ -182,21 +185,21 @@ export default function KYC() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/5 to-background">
+    <div className={cn("min-h-screen transition-colors duration-500", styles.background)}>
       <Header />
       
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <Button
+      <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
+        <ThemedButton
           variant="ghost"
           onClick={() => navigate('/dashboard')}
-          className="mb-4"
+          className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
-        </Button>
+        </ThemedButton>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className={cn("text-3xl font-bold mb-2", styles.textClass)}>
             Upload KYC Documents
           </h1>
           <p className="text-muted-foreground">
@@ -206,61 +209,57 @@ export default function KYC() {
 
         <div className="space-y-6">
           {documents.map((doc) => (
-            <Card key={doc.type}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    {doc.label}
-                    {doc.required && <span className="text-red-500">*</span>}
-                  </span>
-                  {uploadedDocs.includes(doc.type) && (
-                    <Check className="h-5 w-5 text-green-600" />
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  {doc.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-1">
-                      Upload Instructions:
-                    </h4>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                      {doc.instructions}
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor={doc.type}>
-                      Choose file {doc.required && <span className="text-red-500">*</span>}
-                    </Label>
-                    <Input
-                      id={doc.type}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload(e, doc.type)}
-                      disabled={uploading || uploadedDocs.includes(doc.type)}
-                      className="bg-background border-input text-foreground"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Accepted formats: PDF, JPG, PNG (Max 5MB)
-                    </p>
-                  </div>
-                  
-                  {uploadedDocs.includes(doc.type) && (
-                    <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <span className="text-sm text-green-700 dark:text-green-300">
-                        Document uploaded successfully
-                      </span>
-                    </div>
-                  )}
+            <ThemedCard key={doc.type}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={cn("flex items-center gap-2 font-bold", styles.textClass)}>
+                  <FileText className="h-5 w-5" />
+                  {doc.label}
+                  {doc.required && <span className="text-red-500">*</span>}
+                </span>
+                {uploadedDocs.includes(doc.type) && (
+                  <Check className="h-5 w-5 text-green-600" />
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {doc.description}
+              </p>
+              
+              <div className="space-y-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-1">
+                    Upload Instructions:
+                  </h4>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    {doc.instructions}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                
+                <div className="space-y-2">
+                  <Label htmlFor={doc.type}>
+                    Choose file {doc.required && <span className="text-red-500">*</span>}
+                  </Label>
+                  <ThemedInput
+                    id={doc.type}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload(e, doc.type)}
+                    disabled={uploading || uploadedDocs.includes(doc.type)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Accepted formats: PDF, JPG, PNG (Max 5MB)
+                  </p>
+                </div>
+                
+                {uploadedDocs.includes(doc.type) && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm text-green-700 dark:text-green-300">
+                      Document uploaded successfully
+                    </span>
+                  </div>
+                )}
+              </div>
+            </ThemedCard>
           ))}
         </div>
 

@@ -22,7 +22,7 @@ export type ProfileLiveColumns = Partial<{
 
 export async function getProfile(
   { userId }: { userId: string }
-): Promise<{ success: boolean; profile?: any; error?: string }> {
+): Promise<{ success: boolean; profile?: ProfileLiveColumns; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('profiles')
@@ -50,9 +50,9 @@ export async function updateProfile(
     const allowedKeys: (keyof ProfileLiveColumns)[] = [
       'first_name','last_name','phone_number','id_number','employment_status','monthly_income','verified','credit_score','risk_category','last_login','version','updated_at'
     ];
-    const safePatch: Record<string, any> = {};
+    const safePatch: Partial<ProfileLiveColumns> = {};
     for (const k of allowedKeys) {
-      if (typeof patch[k] !== 'undefined') safePatch[k as string] = patch[k];
+      if (typeof patch[k] !== 'undefined') (safePatch as Record<string, unknown>)[k as string] = patch[k];
     }
 
     if (Object.keys(safePatch).length === 0) {

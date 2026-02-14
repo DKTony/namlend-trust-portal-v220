@@ -5,10 +5,16 @@ export const createSampleLoans = async () => {
   debugLog('🔧 Creating sample loans...');
   
   try {
-    // Check if user is authenticated
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      debugLog('⚠️ No authenticated user found, skipping sample loan creation');
+    // Check for valid session (not just cached user) - session is required for RLS
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session?.access_token) {
+      debugLog('⚠️ No valid session found (required for RLS), skipping sample loan creation');
+      return;
+    }
+    
+    const user = session.user;
+    if (!user) {
+      debugLog('⚠️ No authenticated user in session, skipping sample loan creation');
       return;
     }
     
@@ -114,12 +120,19 @@ export const createSampleLoans = async () => {
   }
 };
 
-// Auto-run in development when explicitly enabled
-if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
-  console.log('🚀 Auto-running sample loan creation (VITE_RUN_DEV_SCRIPTS=true)...');
-  createSampleLoans().then(() => {
-    console.log('✅ Sample loan creation completed!');
-  }).catch((error) => {
-    console.log('❌ Sample loan creation failed:', error);
-  });
+// DISABLED: Auto-run causes RLS violations because it runs before auth is established.
+// These scripts should be run manually AFTER logging in via the browser console.
+// 
+// To run manually after logging in:
+//   window.createSampleLoans()
+//
+// if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
+//   createSampleLoans();
+// }
+
+// Expose for manual invocation after auth is established
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).createSampleLoans = createSampleLoans;
+  console.log('🔧 Debug utility available at: window.createSampleLoans()');
 }

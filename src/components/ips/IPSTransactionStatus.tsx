@@ -7,7 +7,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Loader2,
@@ -128,7 +129,7 @@ export function IPSTransactionStatus({
   }
 
   return (
-    <Card className={className}>
+    <ThemedCard className={className}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
@@ -235,7 +236,7 @@ export function IPSTransactionStatus({
           </div>
         )}
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 }
 

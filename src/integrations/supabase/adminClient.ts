@@ -9,16 +9,28 @@ import type { Database } from './types';
 const isLocalAdminAllowed = import.meta.env.DEV && import.meta.env.VITE_ALLOW_LOCAL_ADMIN === 'true';
 
 // Provide a throwing stub by default so accidental usage fails fast.
+// Uses a recursive proxy to handle deep property access chains like supabaseAdmin.auth.admin.getUserById()
 function createThrowingStub() {
-  const err = () => {
-    throw new Error(
-      'Supabase admin client is disabled. Set VITE_ALLOW_LOCAL_ADMIN="true" in local dev only to enable. Never enable or bundle this in production.'
-    );
+  const errorMessage =
+    'Supabase admin client is disabled. Set VITE_ALLOW_LOCAL_ADMIN="true" in local dev only to enable. Never enable or bundle this in production.';
+  
+  const createNestedProxy = (): unknown => {
+    return new Proxy(() => {
+      throw new Error(errorMessage);
+    }, {
+      get: (_target, prop) => {
+        // Allow 'then' to return undefined so await doesn't hang
+        if (prop === 'then') return undefined;
+        // Return another nested proxy for any property access
+        return createNestedProxy();
+      },
+      apply: () => {
+        throw new Error(errorMessage);
+      },
+    });
   };
-  return new Proxy({}, {
-    get: () => err,
-    apply: () => err,
-  }) as any;
+  
+  return createNestedProxy() as ReturnType<typeof createClient<Database>>;
 }
 
 let client: ReturnType<typeof createClient<Database>> | null = null;
@@ -38,8 +50,4 @@ if (isLocalAdminAllowed) {
 
 export const supabaseAdmin = client ?? createThrowingStub();
 
-// Expose to window only when explicitly allowed in local dev
-if (isLocalAdminAllowed) {
-  (window as any).supabaseAdmin = supabaseAdmin;
-  console.log('🔧 Admin Supabase client enabled locally at window.supabaseAdmin');
-}
+// SECURITY: Never expose admin client to window object - removed for security

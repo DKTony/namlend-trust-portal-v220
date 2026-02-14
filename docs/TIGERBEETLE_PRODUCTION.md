@@ -1,5 +1,8 @@
 # TigerBeetle Production Deployment Guide
 
+**Doc Revision**: 2026-01-19  
+**Status**: Planning only. Current code uses outbox + simulated posting.
+
 **Version**: 1.0.0  
 **Date**: December 21, 2025  
 **Status**: 📋 Production Planning

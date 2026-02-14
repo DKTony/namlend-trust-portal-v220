@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 export type SignOutButtonProps = React.ComponentProps<typeof Button> & {
   redirectTo?: string;
@@ -78,8 +79,11 @@ const SignOutButton: React.FC<SignOutButtonProps> = ({
       onClick={handleClick}
       disabled={disabled || busy}
       aria-busy={busy}
+      className={cn("group", buttonProps.className)}
     >
-      {withIcon && <LogOut className="w-4 h-4 mr-2" />}
+      {withIcon && (
+        <LogOut className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
+      )}
       {content}
     </Button>
   );

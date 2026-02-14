@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, XCircle, Circle } from 'lucide-react';
 import { WorkflowStageExecution } from '@/services/workflowEngine';
@@ -65,7 +66,7 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({
   };
 
   return (
-    <Card className="bg-card border-border">
+    <ThemedCard className="bg-card border-border">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg text-foreground">Workflow Progress</CardTitle>
@@ -145,7 +146,7 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 };
 

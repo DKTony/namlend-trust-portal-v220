@@ -125,11 +125,12 @@ serve(async (req) => {
     const notificationTitle = "Loan Application Received";
     const notificationMessage = `Your loan application for N$${loan.amount.toLocaleString()} has been received and is under review. We'll update you soon.`;
 
+    // P0-004 FIX: Use 'category' instead of 'type' (correct column name per schema)
     const { error: notificationError } = await supabaseAdmin
       .from("notifications")
       .insert({
         user_id: loan.user_id,
-        type: "loan_under_review",
+        category: "loan",  // Fixed: was 'type: "loan_under_review"'
         title: notificationTitle,
         message: notificationMessage,
       });

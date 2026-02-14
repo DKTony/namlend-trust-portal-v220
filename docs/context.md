@@ -1,61 +1,35 @@
-# NamLend Trust - Technical Context & Handover Document
+# NamLend Trust - Technical Context & Handover
 
-**Version**: 3.3.0  
-**Last Updated**: December 27, 2025  
-**Status**: ✅ Production-ready; IPS/IPP Integration Complete; Mobile App v2.7.1 Optimized  
-**Supabase Project ID**: `puahejtaskncpazjyxqp`  
-**Database Region**: eu-north-1
+**Doc Revision**: 2026-01-19  \
+**Status**: Core lending + backoffice flows implemented; external integrations are wired but depend on secrets; IPS adapter runs in mock mode; TigerBeetle uses outbox worker with simulated client.  \
+**Supabase Project ID**: `puahejtaskncpazjyxqp`  \
+**Database Region**: `eu-north-1`
 
 ---
 
 ## Executive Summary
 
-NamLend Trust is a production-grade **loan management platform** built for the Namibian financial services market. The platform provides comprehensive loan lifecycle management including application processing, approval workflows, disbursement tracking, payment processing, and compliance reporting.
+NamLend Trust is a React SPA backed by Supabase (PostgreSQL + Auth + Edge Functions) that delivers a full loan lifecycle: application intake, approval workflow, disbursement, repayment scheduling, collections, notifications, and admin operations. The codebase also includes IPS/IPP integration scaffolding (mock adapter), settlement/backoffice workflows, and a TigerBeetle outbox ledger bridge.
 
-### Key Achievements
+**What is implemented in code**
 
-- ✅ **Production Ready** - All critical security issues resolved
-- ✅ **Back Office Integration** - Comprehensive approval workflow system
-- ✅ **Regulatory Compliance** - 32% APR limit enforcement (Namibian regulations)
-- ✅ **Complete Audit Trail** - Full traceability for regulatory compliance
-- ✅ **Role-Based Access Control** - Admin, Loan Officer, Client roles with RLS
-- ✅ **E2E Test Coverage** - 67% coverage with proven fixture pattern
-- ✅ **Database Migration** - All Phase 4 tables deployed to production
-- ✅ **Functionality Mapped** - Complete feature-to-database mapping in `FUNCTIONALITY_MAP.md`
-- ✅ **Settlement System Scaffold** - BON/IPP DNS schema + admin reconciliation UI (pacs.009/NTSL viewers, adjustments, acknowledgements)
-- ✅ **Admin Configuration Panels** - TigerBeetle, Settlement, IPS configuration with database persistence
-- ✅ **User Management Refinement** - Full database wiring for user administration
-- ✅ **IPP Onboarding System** - Complete customer/merchant onboarding with VPA registration
-- ✅ **Mobile App v2.7.1** - Production-ready with Neo-Fintech design, query optimization, error handling
+- Loan application flow submits approval requests and enforces APR limit in UI validation.
+- Admin approval workflow with queue, review, and atomic loan creation via RPC.
+- Disbursement workflow with manual completion and IPS initiation options.
+- Payment processing with schedules, overdue marking, and reconciliation tools.
+- Collections workflow including activity logging, promise-to-pay, and reschedule requests.
+- Notification, SMS, and WhatsApp pipelines (queued + Edge Functions for delivery).
+- IPS/IPP onboarding wizard, VPA registry, and transaction status monitoring (mock adapter).
+- Settlement schema + processing RPCs + admin reconciliation UI (transport not implemented).
+- TigerBeetle outbox schema + worker; browser uses outbox, direct client only in Node.
 
-### Phase 4 Integration Complete ✅
+**Key gaps (handover risks)**
 
-- ✅ **Payment Gateway** - Bank Transfer, MTC MoMo, TN Mobile, PayToday, Cash
-- ✅ **SMS Gateway** - Africa's Talking integration with templates
-- ✅ **WhatsApp Business API** - Meta Cloud API integration
-- ✅ **AI Credit Scoring** - Multi-factor scoring engine (300-850 scale)
-- ✅ **Notification System** - Multi-channel with real-time delivery
-
-### Phase 5: Admin Configuration & User Management ✅
-
-- ✅ **TigerBeetle Config** - Connection, outbox, reconciliation, account structure settings
-- ✅ **Settlement Config** - Settlement parameters, IPS integration, reconciliation automation
-- ✅ **System Configuration Table** - Persistent admin settings with RLS and RPCs
-- ✅ **User Management Dashboard** - Real-time stats, export, add user, advanced filters
-- ✅ **User Profile Integration** - Database-backed profile editing and suspension
-- ✅ **User Audit Log** - Real-time audit log queries with filtering
-
-### Phase 6: IPP Integration & Mobile Optimization ✅
-
-- ✅ **IPP Onboarding System** - 8 database tables for customer/merchant onboarding
-- ✅ **IPS Adapter Edge Function** - Complete IPP API integration with 15+ endpoints
-- ✅ **Client Banking Section** - Self-service IPP enrollment wizard
-- ✅ **Admin IPP Dashboard** - Onboarding management and monitoring
-- ✅ **Mobile App v2.7.1** - Neo-Fintech design complete with optimizations
-  - Query optimization with specific column selections
-  - Navigation-aware query prefetching
-  - Global ErrorBoundary and NetworkBanner
-  - All P1/P2 audit items resolved
+- IPS adapter is mock; production API, mTLS, and switch connectivity are not wired.
+- TigerBeetle Edge worker simulates TB posting; real cluster connectivity is pending.
+- Admin route guard is admin-only; loan_officer access is blocked at router level.
+- Reconciliation schema drift exists between newer migrations and legacy client/types.
+- Several docs still reference historical snapshots; see Documentation Map below.
 
 ---
 
@@ -64,581 +38,231 @@ NamLend Trust is a production-grade **loan management platform** built for the N
 ### Frontend
 
 | Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 18.3.1 | UI Framework |
-| TypeScript | 5.5.3 | Type Safety |
-| Vite | 5.4.1 | Build Tool |
+| --- | --- | --- |
+| React | 18.3.1 | UI framework |
+| TypeScript | 5.5.3 | Type safety |
+| Vite | 5.4.1 | Build tool |
 | TailwindCSS | 3.4.11 | Styling |
-| shadcn/ui | Latest | Component Library |
-| TanStack Query | 5.56.2 | Server State Management |
+| shadcn/ui | Current | UI primitives |
+| TanStack Query | 5.56.2 | Server state |
 | React Router | 6.26.2 | Routing |
-| React Hook Form | 7.53.0 | Form Management |
-| Zod | 3.23.8 | Schema Validation |
+| React Hook Form | 7.53.0 | Forms |
+| Zod | 3.23.8 | Validation |
 | Lucide Icons | 0.462.0 | Icons |
 
 ### Backend (Supabase)
 
 | Component | Purpose |
-|-----------|---------|
-| PostgreSQL 15+ | Primary Database |
-| Supabase Auth | Authentication & Session Management |
-| Row Level Security (RLS) | Data Access Control |
-| Database Functions (RPCs) | Business Logic |
-| Storage Buckets | Document Management |
-| Edge Functions | Serverless Processing |
+| --- | --- |
+| PostgreSQL 15+ | Primary database |
+| Supabase Auth | Authentication and sessions |
+| Row Level Security | Data access control |
+| Edge Functions | Server-side operations |
+| Storage Buckets | Document storage |
+| Realtime | Optional subscriptions |
 
 ### Infrastructure
 
 | Component | Purpose |
-|-----------|---------|
-| Netlify | Hosting & Deployment |
-| Supabase Cloud | Database & Auth Hosting |
-| GitHub Actions | CI/CD Pipeline |
-| Playwright | E2E Testing |
+| --- | --- |
+| Netlify | Frontend hosting |
+| Supabase Cloud | DB/Auth/Functions |
+| GitHub Actions | CI workflows (web, mobile, e2e) |
+| Playwright | E2E testing |
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
-namlend-trust-main-3/
+namlend-trust-portal-v220-main/
 ├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── ui/              # shadcn/ui primitives (49 components)
-│   │   ├── DashboardSidebar.tsx  # Collapsible sidebar navigation
-│   │   ├── StatCard.tsx     # Metric display cards
-│   │   ├── BankingSection.tsx    # IPP onboarding wizard
-│   │   └── [feature].tsx    # Feature components
-│   ├── pages/               # Route pages
-│   │   ├── AdminDashboard/  # Back office interface
-│   │   │   ├── components/  # Admin UI components
-│   │   │   │   ├── IPPOnboarding/  # IPP onboarding management
-│   │   │   │   └── IPS/            # IPS transactions viewer
-│   │   │   └── hooks/       # Admin data hooks (16 hooks)
-│   │   ├── Auth.tsx         # Authentication (Split-screen layout)
-│   │   ├── Dashboard.tsx    # Client dashboard (Sidebar layout)
-│   │   ├── LoanApplication.tsx
-│   │   ├── Payment.tsx
-│   │   └── KYC.tsx
-│   ├── services/            # Business logic layer
-│   │   ├── disbursementService.ts
-│   │   ├── paymentService.ts
-│   │   ├── approvalWorkflow.ts
-│   │   ├── auditService.ts
-│   │   ├── reconciliationService.ts
-│   │   ├── paymentGateway.ts     # Phase 4: Payment providers
-│   │   ├── smsGateway.ts         # Phase 4: Africa's Talking
-│   │   ├── whatsappGateway.ts    # Phase 4: Meta WhatsApp API
-│   │   ├── creditScoring.ts      # Phase 4: AI credit scoring
-│   │   ├── notificationService.ts # Phase 4: Multi-channel notifications
-│   │   ├── collectionsService.ts # Phase 2: Collections management
-│   │   ├── ipsService.ts         # Phase 6: IPS payment integration
-│   │   └── ipsOnboardingService.ts # Phase 6: IPP onboarding flows
-│   ├── hooks/               # Shared React hooks
-│   │   └── useAuth.tsx      # Authentication context
-│   ├── integrations/
-│   │   └── supabase/        # Supabase clients & types
-│   ├── utils/               # Utility functions
-│   └── constants/           # App constants
-│       └── regulatory.ts    # Namibian regulatory constants
-├── namlend-mobile/          # Mobile application (React Native + Expo)
-│   ├── src/
-│   │   ├── components/      # Neo-Fintech design components
-│   │   │   ├── neo/         # 8 reusable Neo components
-│   │   │   ├── ErrorBoundary.tsx  # Global error boundary
-│   │   │   └── NetworkBanner.tsx  # Network status indicator
-│   │   ├── screens/         # 14 fully themed screens
-│   │   │   ├── client/      # 10 client screens
-│   │   │   └── approver/    # 4 approver screens
-│   │   ├── services/        # Optimized RPC services
-│   │   ├── hooks/           # React Query + prefetch hooks
-│   │   └── navigation/      # Navigation stacks
-│   └── docs/                # Mobile documentation
-│       ├── context.md       # Technical handover
-│       ├── TECHNICAL_AUDIT_REPORT.md
-│       └── HANDOVER_SUMMARY.md
+│   ├── components/         # UI components (shadcn + custom)
+│   ├── pages/              # Route pages (client + admin)
+│   ├── services/           # Business logic + RPC wrappers
+│   ├── hooks/              # React Query + custom hooks
+│   ├── integrations/       # Supabase client + types
+│   ├── types/              # Domain types
+│   ├── utils/              # Helpers, debug tooling
+│   └── constants/          # Regulatory constants
 ├── supabase/
-│   ├── migrations/          # Database migrations (35+ files)
-│   ├── functions/           # Edge functions (8 deployed)
-│   │   ├── ips-adapter/     # IPP API integration
-│   │   └── [other-functions]/
-│   └── config.toml          # Supabase configuration
-├── e2e/                     # E2E tests
-│   ├── fixtures.ts          # Test fixtures with auth isolation
-│   ├── api/                 # API tests
-│   └── [test-files].ts
-└── docs/                    # Documentation
+│   ├── migrations/         # Database migrations
+│   ├── functions/          # Edge Functions (Deno)
+│   └── config.toml          # Local Supabase config
+├── e2e/                    # Playwright E2E tests + fixtures
+├── tests/                  # Unit/integration tests
+├── docs/                   # Documentation (this folder)
+└── namlend-mobile/         # Separate React Native app (see subfolder docs)
 ```
 
 ---
 
-## Core Domain Model
+## Core Domain Model (Summary)
 
-### Entity Relationship Overview
+**Primary entities**
 
-```
-Users (auth.users)
-    │
-    ├──► Profiles (1:1)
-    │       └── KYC status, credit_score, income
-    │
-    ├──► User Roles (1:N)
-    │       └── client | loan_officer | admin
-    │
-    ├──► Loans (1:N)
-    │       ├── Loan Reviews (1:N)
-    │       ├── Disbursements (1:N)
-    │       ├── Payments (1:N)
-    │       │     └── Payment Schedules (1:N)
-    │       └── Documents (1:N)
-    │
-    └──► Approval Requests (1:N)
-            ├── Approval History (1:N)
-            └── Approval Notifications (1:N)
-```
+- `profiles` and `user_roles` (role-based access control, multi-role supported).
+- `approval_requests` + `approval_workflow_history` + `approval_notifications`.
+- `loans`, `disbursements`, `payments`, `payment_schedules`.
+- `audit_logs`, `view_logs`, `state_transitions`.
+- `notification_*` and `communication_logs` (SMS/WhatsApp).
+- `collections_*`, `promise_to_pay`, `reschedule_requests`.
+- `reconciliation_runs`, `bank_transactions` (bank reconciliation system).
+- `ips_*` tables for IPS/IPP transactions and onboarding state.
+- `settlement_*` tables for DNS settlement backoffice workflows.
+- `tigerbeetle_*` tables for outbox + shadow ledger.
 
-### Core Tables
+**Status conventions (not DB-enforced)**
 
-| Table | Purpose | Key Fields |
-|-------|---------|------------|
-| `loans` | Loan records | amount, term_months, interest_rate, status |
-| `payments` | Payment records | loan_id, amount, status, payment_method |
-| `disbursements` | Disbursement tracking | loan_id, amount, status, payment_reference |
-| `profiles` | User profiles | credit_score, monthly_income, verified |
-| `user_roles` | RBAC assignments | user_id, role (enum) |
-| `approval_requests` | Workflow queue | request_type, status, priority |
-| `audit_logs` | Compliance trail | action, entity_type, old_state, new_state |
-| `kyc_documents` | KYC verification | document_type, status, file_path |
-| `notifications` | In-app notifications | user_id, title, message, is_read |
-| `notification_templates` | Message templates | code, channels, title, body |
-| `credit_scores` | Credit score history | user_id, score, risk_level, factors |
-| `payment_transactions` | Payment logs | provider, reference, amount, status |
-| `communication_logs` | SMS/WhatsApp logs | channel, recipient, content, status |
-| `system_configuration` | Admin settings | config_key, config_value, category, updated_by |
-| `ips_onboarding` | IPP onboarding state | user_id, state, device_binding_id, linked_accounts |
-| `ips_device_bindings` | Device registrations | device_id, mobile_number, status |
-| `ips_transactions` | IPS payment records | transaction_id, vpa_from, vpa_to, amount, status |
+- `approval_requests.status`: `pending`, `under_review`, `approved`, `rejected`, `requires_info`.
+- `loans.status`: `pending`, `approved`, `disbursed`, `active`, `funded`, `settled`, `completed`, `defaulted`, `rejected`.
+- `disbursements.status`: `pending`, `approved`, `processing`, `completed`, `failed`.
+- `payments.status`: `pending`, `completed`, `failed`.
+
+For exact schemas and columns, see `supabase/migrations/` and `src/integrations/supabase/types.ts`.
 
 ---
 
 ## Authentication & Authorization
 
-### Authentication Flow
-
-1. **Sign Up**: Email/password → Supabase Auth → Auto-create profile
-2. **Sign In**: Email/password → Supabase Auth → Fetch user role → Route based on role
-3. **Session**: JWT tokens with auto-refresh, stored in localStorage
-4. **Sign Out**: Global sign out (invalidates all sessions)
-
-### Role Hierarchy
-
-```
-admin (highest)
-  └── Full system access, manage users, approve/reject
-loan_officer
-  └── Process loans, view clients, manage approvals
-client (lowest)
-  └── View own loans, submit applications, make payments
-```
-
-### Row Level Security (RLS)
-
-All tables enforce RLS with policies based on:
-
-- **Own data access**: `auth.uid() = user_id`
-- **Admin access**: `EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin')`
-- **Loan officer access**: Similar pattern with role check
+- Auth managed via Supabase with session persistence in `localStorage` key `namlend-auth`.
+- Roles stored in `user_roles` with precedence `admin` > `loan_officer` > `client`.
+- `ProtectedRoute` enforces authentication and role gating; `/admin/*` currently uses `requireAdmin` (admin-only).
+- Edge Functions validate JWT and enforce staff roles for privileged actions.
 
 ---
 
-## Business Logic Services
+## Service Layer Overview
 
-### Loan Lifecycle
+**Loan + approvals**
 
-```
-Application → Under Review → Approved/Rejected → Disbursement → Active → Paid Off
-     │             │              │                   │           │
-     └── approval_requests       │                   │           │
-                                 └── create_disbursement_on_approval
-                                                     └── payment_schedules
-                                                                  └── payments
-```
+- `approvalWorkflow.ts`: approval request CRUD, admin queue, `process_approval_transaction` RPC.
+- `loanService.ts`: loan status updates and disbursement creation helpers.
 
-### Key Services
+**Disbursements and payments**
 
-#### `disbursementService.ts`
+- `disbursementService.ts`: RPC-driven state machine and ledger outbox posts.
+- `paymentService.ts`: `process_loan_payment`, schedules, overdue, late fees.
+- `paymentGateway.ts`: bank transfer, mobile money, PayToday, cash (manual instructions + tracking).
 
-- `createDisbursementOnApproval(loanId)` - Auto-create on loan approval
-- `approveDisbursement(id, notes)` - Admin approves for processing
-- `completeDisbursement(id, method, reference, notes)` - Mark as complete with payment ref
-- `getPendingDisbursements()` - Get queue for processing
+**IPS/IPP**
 
-#### `paymentService.ts`
+- `ipsService.ts`: IPS payments and VPA management (calls `ips-adapter` Edge Function).
+- `ipsOnboardingService.ts`: onboarding workflow (RPC + adapter endpoints).
 
-- `generatePaymentSchedule(loanId)` - Create amortization schedule
-- `applyPaymentToSchedule(paymentId, amount)` - Apply payment to oldest due
-- `markOverduePayments()` - Scheduled job for overdue marking
-- `calculateLateFee(scheduleId)` - Compute late fees
+**Collections + reconciliation**
 
-#### `approvalWorkflow.ts`
+- `collectionsService.ts`: queue, interactions, promises, reschedules.
+- `reconciliationService.ts`: bank transaction import and payment matching.
 
-- `submitApprovalRequest(data)` - Queue request for admin review
-- `getAllApprovalRequests(filters)` - Admin view of queue
-- `updateApprovalStatus(id, status, notes)` - Process decision
-- `processApprovedLoanApplication(id)` - Atomic loan creation
+**Ledger and settlement**
 
-#### `auditService.ts`
+- `ledgerService.ts`: TigerBeetle outbox; direct TB client only in Node.
+- `settlementService.ts`: settlement runs, pacs.009, reports, adjustments.
 
-- `logViewAccess(entityType, entityId)` - Track sensitive data views
-- `logStateTransition(type, id, from, to)` - Status change logging
-- `generateComplianceReport(type, start, end)` - Regulatory reports
+**Admin + support**
 
-#### `reconciliationService.ts`
-
-- `importBankTransactions(transactions)` - Import bank statement
-- `autoMatchPayments()` - Auto-match by amount/date
-- `manualMatchPayment(paymentId, transactionId)` - Manual reconciliation
-- `getReconciliationReport(start, end)` - Variance reporting
-
-#### `paymentGateway.ts` (Phase 4)
-
-- `initiatePayment(request)` - Start payment via any provider
-- `verifyPayment(transactionId, provider)` - Check payment status
-- `handlePaymentWebhook(provider, reference, status, data)` - Process callbacks
-- `getPaymentHistory(loanId)` - Transaction history
-
-#### `smsGateway.ts` (Phase 4)
-
-- `sendSMS(request)` - Send individual SMS
-- `sendTemplateSMS(templateCode, to, variables)` - Template-based SMS
-- `sendBulkSMS(recipients, category)` - Batch SMS
-- `sendOTP(phone, userId)` - OTP verification
-
-#### `whatsappGateway.ts` (Phase 4)
-
-- `sendTextMessage(to, text)` - Simple text message
-- `sendTemplateMessage(to, templateName, params)` - Template message
-- `sendButtonMessage(to, body, buttons)` - Interactive buttons
-- `handleWebhook(payload)` - Process incoming messages
-
-#### `creditScoring.ts` (Phase 4)
-
-- `calculateCreditScore(factors)` - AI-powered score calculation
-- `getLoanRecommendation(factors, score)` - Loan recommendations
-- `getCreditFactorsForUser(userId)` - Fetch factors from profile
-- `saveCreditScore(userId, score, loanId)` - Store score to database
-- `getCurrentCreditScore(userId)` - Get latest score
-
-#### `notificationService.ts` (Phase 4)
-
-- `getNotifications(filters)` - Fetch user notifications
-- `markAsRead(notificationId)` - Mark single as read
-- `markAllAsRead()` - Mark all as read
-- `queueNotification(userId, templateCode, data)` - Queue for delivery
-- `subscribeToNotifications(userId, callback)` - Real-time updates
+- `adminService.ts`: admin profile and role data.
+- `roleManagementService.ts`: role hierarchy enforcement via RPCs.
+- `workflowEngine.ts`: multi-stage workflow engine via RPCs.
+- `auditService.ts`: audit log and state transitions.
+- `notificationService.ts`: notifications, preferences, realtime subscription.
 
 ---
 
-## Database RPCs (Key Functions)
+## Edge Functions
 
-| Function | Purpose | Access |
-|----------|---------|--------|
-| `create_disbursement_on_approval` | Create disbursement record | Admin |
-| `complete_disbursement` | Mark disbursement complete | Admin |
-| `approve_disbursement` | Approve for processing | Admin |
-| `get_pending_disbursements` | Queue view with client names | Admin |
-| `generate_payment_schedule` | Create loan amortization | System |
-| `apply_payment_to_schedule` | Apply payment to oldest due | System |
-| `mark_overdue_payments` | Batch update overdue status | System |
-| `process_approval_transaction` | Atomic loan approval | Admin |
-| `assign_user_role` | Hardened role assignment | Admin |
-| `log_audit_entry` | Create audit log | System |
-| `log_state_transition` | Log status changes | System |
-| `get_unread_notification_count` | User's unread count | User |
-| `mark_notification_read` | Mark notification read | User |
-| `mark_all_notifications_read` | Mark all read | User |
-| `queue_notification` | Queue from template | System |
-| `calculate_credit_score` | Calculate & store score | System |
-| `get_current_credit_score` | Get latest score | User |
-| `process_payment_webhook` | Handle payment callback | Service Role |
-| `get_system_config` | Get configuration by category | Admin |
-| `upsert_system_config` | Create/update configuration | Admin |
-| `reset_system_config` | Reset config to defaults | Admin |
+Located in `supabase/functions/`:
+
+- `ips-adapter`: IPS mock adapter (pay, validate, status, onboarding endpoints).
+- `payment-webhook`: PayToday/MTC/TN webhook handler (HMAC verification).
+- `process-loan-application`: server-side loan review status update (not called by SPA).
+- `scheduled-tasks`: overdue marking, notification queue, reminders, broken promises.
+- `send-notification`: staff-triggered in-app notification creation.
+- `send-sms`: Africa's Talking integration (requires secrets).
+- `send-whatsapp`: Meta Cloud API integration (requires secrets).
+- `tigerbeetle-outbox-worker`: processes outbox entries (simulated TB posting).
+- `api-*`: orchestration layer (loans, users, payments, admin, analytics, audit, collections, disbursements, reconciliation, notifications).
 
 ---
 
-## Transaction Settlement (IPP/IRCS Back Office)
+## IPS/IPP and Settlement Status
 
-### Current Status
-- Schema for DNS settlement is deployed via `supabase/migrations/20251212053000_settlement_system.sql` (13 tables, pacs.009 batch + ack stores, reports, exposures); seeded windows/fees/operator.
-- Admin reconciliation UI is live under `ReconciliationDashboard` with viewers for pacs.009, acknowledgements, NTSL/raw data, adjustments, timeouts, and exposures; powered by `src/hooks/useSettlement.ts` + `src/services/settlementService.ts` + `src/types/settlement.ts`.
-- RPC surface for read paths is in place (`get_settlement_runs`, `get_settlement_run_details`, `get_pacs009_batch`, `get_settlement_reports`, `get_settlement_adjustments`, `get_timeout_transactions`, `get_settlement_statistics`).
-- Netting/obligation creation, pacs.009 XML generation, and outbound SFTP/AXWAY dispatch are **not yet wired**; tables expect future jobs to populate `settlement_obligations`, `settlement_net_instructions`, `settlement_pacs009_batches`, and `settlement_acknowledgements`.
-- IPS remains in Mock Mode for online payments; settlement is still an offline/back-office pipeline awaiting switch connectivity and transport keys.
-
-### Components & Interfaces
-- Data: `settlement_runs`, `settlement_obligations`, `settlement_net_instructions`, `settlement_pacs009_batches`, `settlement_acknowledgements`, `settlement_reports`, `settlement_adjustments`, `settlement_timeout_transactions`, `settlement_exposures`, `settlement_windows`, `settlement_holiday_calendar`, `settlement_participants`, `settlement_fee_rules`.
-- UI: `src/pages/AdminDashboard/components/Reconciliation/*` (runs list, pacs.009 viewer, NTSL/raw data viewer, adjustments/timeouts), backed by `useSettlement` hooks.
-- Docs: `docs/settlement.md` (end-to-end DNS/pacs.009 blueprint) and source PDFs in `docs/IPP/` for FSD/RTGS requirements.
-- Access: RLS policies currently allow **admins only** to view/manage settlement objects; participant/operator-scoped access has not been modelled.
-
-### Operational Flow Snapshot
-- Run states mirror the settlement guide: collecting → cutoff_reached → prepare_inputs → netting → generated → dispatched → sent_to_swift → swift_validated → sent_to_niss → niss_accepted → settled/closed (failed_validation + adjustment_pending paths).
-- Two batch types per window (`main`, `switching_fee`); each batch produces a pacs.009 XML with msg id, totals, and bilateral net instructions.
-- Acknowledgements expected: xsys.001 (negative), xsys.002 (positive), xsys.003 (abort). Listener to ingest and update `settlement_acknowledgements` is pending.
-- Reports per run: raw data + NTSL + adjustment + pending + timeout; exposure snapshots stored in `settlement_exposures`.
-
-### Outstanding Items & Risks
-- Build the run driver to ingest IPS transaction store, resolve settlement participants (sponsor mapping), compute obligations/netting, and emit pacs.009 batches + checksums into `settlement_pacs009_batches`.
-- Implement outbound transport (SFTP → AXWAY → SWIFT → NISS) and inbound listener for xsys.* acknowledgements with state transitions and quarantine/reissue workflow.
-- Generate report payloads (populate `settlement_reports.report_data`/`file_content`) and exposure calculations; align with Scheme Rules timing and participant visibility.
-- Expand RLS beyond admin-only to operator/participant views, and add audit trails for amendments/reissues.
-- Update visual assets: sequence diagram for happy path + failure/reissue flow, data model diagram for settlement tables, and file naming/versioning matrix consistent with NISS guidance.
+- IPS adapter is mock; production IPS API, mTLS, and switch connectivity are pending.
+- IPS monitoring RPCs and alert tables exist; UI includes IPS health widgets.
+- IPP onboarding uses RPCs for state and adapter endpoints for provider operations.
+- Settlement schema and processing RPCs exist; admin UI can create/process runs.
+- File transport (SFTP/AXWAY/SWIFT/NISS) and ack ingestion are not implemented.
 
 ---
 
 ## Regulatory Compliance
 
-### Namibian Regulations
-
-```typescript
-// src/constants/regulatory.ts
-export const APR_LIMIT = 32;           // Maximum 32% APR
-export const CURRENCY_CODE = 'NAD';    // Namibian Dollar
-export const CURRENCY_SYMBOL = 'N$';
-```
-
-### Compliance Features
-
-1. **APR Validation**: All loan calculations enforce 32% cap
-2. **KYC Verification**: Document upload and admin verification workflow
-3. **Audit Trail**: Complete logging of all financial operations
-4. **Data Retention**: 7-year retention policy for audit logs
-5. **Access Logging**: Track who viewed sensitive data
+- APR cap enforced in UI and services via `APR_LIMIT = 32`.
+- Currency format: `N$ X,XXX.XX` via `formatNAD()`.
+- Data retention target: 7 years (no deletions of financial records).
+- KYC workflow: document upload + approval requests + profile verification.
 
 ---
 
-## Testing Infrastructure
+## Testing Overview
 
-### E2E Test Coverage
+- Playwright E2E suite in `e2e/` (fixtures, API/RLS, UI flows).
+- Unit/integration tests in `tests/` and `src/tests/`.
+- Run E2E: `npm run test:e2e` (Vite dev server uses port 8080).
 
-| Area | Coverage | Status |
-|------|----------|--------|
-| Disbursement API | 6/6 (100%) | ✅ Complete |
-| Disbursements RLS | 13/16 (81%) | ✅ Mostly Complete |
-| Documents RLS | 14/14 (100%) | ✅ Complete |
-| Backoffice UI | 3/10 (30%) | ⏳ In Progress |
-
-### Test Fixtures
-
-The project uses a **proven fixture pattern** for parallel test execution:
-
-```typescript
-// e2e/fixtures.ts
-import { test, expect } from '../fixtures';
-
-test('Admin can create disbursement', async ({ adminSupabase }) => {
-  // Pre-authenticated, isolated client
-  const { data } = await adminSupabase.from('disbursements').insert({...});
-});
-```
-
-**Key Pattern**: `testInfo.testId + Date.now()` for storage key isolation.
-
-### Test Users
-
-| User | Email | Role |
-|------|-------|------|
-| Admin | `admin@test.namlend.com` | admin |
-| Client 1 | `client1@test.namlend.com` | client |
-| Client 2 | `client2@test.namlend.com` | client |
-| Loan Officer | `loan_officer@test.namlend.com` | loan_officer |
+See `docs/TESTING.md` for current test inventory.
 
 ---
 
-## Deployment
+## Deployment Notes
 
-### Environment Variables
+- Vite dev server runs on port `8080` (see `vite.config.ts`).
+- Do not expose service role keys in client; use Edge Function secrets.
+- Debug tooling is gated by `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS`.
 
-```env
-VITE_SUPABASE_URL=https://[project-id].supabase.co
-VITE_SUPABASE_ANON_KEY=[anon-key]
-VITE_SUPABASE_SERVICE_ROLE_KEY=[service-key]  # Backend only
-VITE_DEBUG_TOOLS=false                        # Production: false
-VITE_RUN_DEV_SCRIPTS=false                    # Production: false
-```
-
-### Build Commands
-
-```bash
-npm run dev           # Development server (port 8081)
-npm run build         # Production build
-npm run test:e2e      # Run E2E tests
-npm run docs:lint     # Lint documentation
-```
-
-### Netlify Configuration
-
-```toml
-# netlify.toml
-[build]
-  command = "npm run build"
-  publish = "dist"
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-```
+Environment reference: `./.env.example` and `docs/DEPLOYMENT_2026_01_06.md` (historical).
 
 ---
 
-## Known Issues & Technical Debt
+## Documentation Map
 
-### High Priority
+**Current (authoritative)**
 
-1. **Settlement pipeline wiring**: Netting/pacs.009 generation + SFTP/AXWAY dispatch + xsys ack ingestion not yet implemented (schema/admin UI only)
-2. **Backoffice UI Tests**: 30% coverage - need `data-testid` attributes
-3. **External API Keys**: Configure production keys for payment/SMS/WhatsApp
-4. **WhatsApp Template Registration**: Register templates with Meta for production
+- `docs/context.md` (this file)
+- `docs/ARCHITECTURE.md`
+- `docs/SERVICES.md`
+- `docs/DATABASE_SCHEMA.md`
+- `docs/SECURITY.md`
+- `docs/TESTING.md`
+- `docs/FLOWS.md`
+- `docs/FUNCTIONALITY_MAP.md`
 
-### Medium Priority
+**Feature-specific (current, detailed)**
 
-1. **Real-time Updates**: Enhanced for notifications and collections
-2. **Credit Scoring Calibration**: Tune weights based on loan performance data
-3. **SMS Delivery Reports**: Implement delivery status webhooks
+- `docs/IPS_IMPLEMENTATION.md`
+- `docs/IPP_INTEGRATION.md`
+- `docs/TIGERBEETLE_IMPLEMENTATION.md`
+- `docs/settlement.md`
 
-### Low Priority
+**Historical or snapshot reports (reference only)**
 
-1. **Payment Reconciliation**: Auto-match with bank statements
-2. **Analytics Enhancement**: Add more portfolio metrics
-3. **USSD Channel**: Support for feature phones
-
----
-
-## Quick Start for New Developers
-
-### 1. Clone and Install
-
-```bash
-git clone <repository-url>
-cd namlend-trust-main-3
-npm install
-```
-
-### 2. Environment Setup
-
-```bash
-cp .env.example .env
-# Configure Supabase credentials
-```
-
-### 3. Run Development Server
-
-```bash
-npm run dev
-# Access at http://localhost:8081
-```
-
-### 4. Test Authentication
-
-- **Client**: `client1@test.namlend.com` / `test123`
-- **Admin**: `admin@test.namlend.com` / `test123`
-
-### 5. Run E2E Tests
-
-```bash
-npm run test:e2e
-```
+- Release notes, audit reports, deployment checklists, and market research files.
+- These have been marked as snapshots where applicable.
 
 ---
 
-## Key Files Reference
+## Key Files for Handover
 
-| File | Purpose |
-|------|---------|
-| `src/App.tsx` | Main router and providers |
-| `src/hooks/useAuth.tsx` | Authentication context |
-| `src/services/disbursementService.ts` | Disbursement operations |
-| `src/services/paymentService.ts` | Payment operations |
-| `src/services/approvalWorkflow.ts` | Approval workflow |
-| `src/integrations/supabase/types.ts` | Database type definitions |
-| `src/constants/regulatory.ts` | Namibian regulations |
-| `src/services/paymentGateway.ts` | Payment provider integrations |
-| `src/services/smsGateway.ts` | SMS via Africa's Talking |
-| `src/services/whatsappGateway.ts` | WhatsApp Business API |
-| `src/services/creditScoring.ts` | AI credit scoring engine |
-| `src/components/CreditScoreDisplay.tsx` | Credit score visualization |
-| `src/components/NotificationCenter.tsx` | In-app notifications |
-| `src/components/LoanCalculator.tsx` | Interactive loan calculator |
-| `src/components/SelfServicePortal.tsx` | Client self-service |
-| `e2e/fixtures.ts` | Test fixtures with auth isolation |
-| `docs/FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
-| `supabase/migrations/` | Database schema migrations |
-| `supabase/migrations/20251212053000_settlement_system.sql` | Settlement schema (13 tables), RLS, RPCs, seed windows/fees |
-| `docs/settlement.md` | IPP DNS/pacs.009 implementation guide for IRCS Back Office |
-| `src/services/settlementService.ts` | Settlement data access, pacs.009/report parsers |
-| `src/hooks/useSettlement.ts` | React Query hooks for reconciliation dashboards |
-| `src/pages/AdminDashboard/components/Reconciliation/ReconciliationDashboard.tsx` | Admin settlement UI entrypoint (runs, batches, reports, adjustments) |
-| `src/pages/AdminDashboard/components/Settings/TigerBeetleConfig.tsx` | TigerBeetle ledger configuration panel |
-| `src/pages/AdminDashboard/components/Settings/SettlementConfig.tsx` | Settlement & IPS configuration panel |
-| `supabase/migrations/20251222050000_system_configuration.sql` | System configuration table, RLS, RPCs |
-| `docs/DESIGN_SYSTEM.md` | Neo-Fintech UI/UX Specification |
-
----
-
-## Functionality Mapping & Wiring Status
-
-A comprehensive feature-to-database mapping is documented in `docs/FUNCTIONALITY_MAP.md`. This document provides:
-
-### Mapped Features
-
-| Feature Area | Tables | Services | Status |
-|--------------|--------|----------|--------|
-| Authentication | `auth.users`, `profiles`, `user_roles` | `useAuth` | ✅ Working |
-| Loan Application | `approval_requests`, `loans` | `approvalWorkflow` | ✅ Working |
-| Disbursement | `disbursements`, `loans`, `audit_logs` | `disbursementService` | ✅ Working |
-| Payments | `payments`, `payment_schedules` | `paymentService`, `paymentGateway` | ⚠️ Partial |
-| Collections | `collection_activities`, `promise_to_pay` | `collectionsService` | ⚠️ Partial |
-| Credit Scoring | `credit_scores`, `credit_score_factors` | `creditScoring` | ⚠️ Partial |
-| Notifications | `notifications`, `notification_queue` | `notificationService` | ⚠️ Partial |
-| Audit Trail | `audit_logs`, `view_logs`, `state_transitions` | `auditService` | ✅ Working |
-| Settlement (IPP/NISS) | `settlement_*`, `ips_transactions` (inputs) | `settlementService`, `useSettlement` | ⚠️ Partial (schema + admin UI; netting/pacs.009/transport pending) |
-
-### Wiring Checklist
-
-See `docs/FUNCTIONALITY_MAP.md` Section 13 for detailed checklist including:
-
-1. **Priority 1**: Verify core RPC functions (payment schedule, collections queue)
-2. **Priority 2**: Complete partial features (wire to UI)
-3. **Priority 3**: External integrations (API keys, Edge Functions)
-4. **Priority 4**: End-to-end testing
-
-### Key Documents
-
-| Document | Purpose |
-|----------|--------|
-| `FUNCTIONALITY_MAP.md` | Feature-to-database mapping |
-| `DATABASE_SCHEMA.md` | Table definitions and RLS |
-| `settlement.md` | IPP DNS/pacs.009 settlement guide with run states and exception handling |
-| `PRODUCT_IMPROVEMENT_PLAN.md` | Roadmap and implementation details |
-| `ARCHITECTURE.md` | System architecture and ADRs |
-| `DESIGN_SYSTEM.md` | UI/UX specifications |
-| `IPP/20251022_IPP Functional Specification Document (FSD)_v10.0.pdf` | Source IPP Back Office & Settlement requirements |
-| `IPP/20251117_BON_Instant Payment Solution (IPS) TSD_v0.7_unlocked.pdf` | TSD reference for switch/RTGS integration |
-
----
-
-## Contact & Support
-
-For technical questions, refer to:
-
-1. This documentation (`docs/` directory)
-2. Code comments and JSDoc annotations
-3. ADR documents for architectural decisions
-4. E2E test files for usage examples
-
----
-
-*Document Version: 3.0.0*  
-*Last Updated: December 22, 2025*  
-*Handover Status: Core platform production-ready; IPS in Mock Mode; Admin configuration complete; User management fully wired*
+- `src/App.tsx` (routing + providers)
+- `src/hooks/useAuth.tsx` (auth + role handling)
+- `src/services/approvalWorkflow.ts`
+- `src/services/disbursementService.ts`
+- `src/services/paymentService.ts`
+- `src/services/ipsService.ts`
+- `src/services/ipsOnboardingService.ts`
+- `src/services/ledgerService.ts`
+- `src/services/settlementService.ts`
+- `supabase/migrations/` (schema source of truth)
+- `supabase/functions/` (Edge Functions)
+- `e2e/fixtures.ts` (Playwright auth isolation)

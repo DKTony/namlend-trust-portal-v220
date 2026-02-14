@@ -99,10 +99,12 @@ CREATE TABLE IF NOT EXISTS ips_device_bindings (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   
   -- Constraints
-  CONSTRAINT ips_device_binding_status CHECK (status IN ('pending', 'active', 'expired', 'revoked', 'replaced')),
-  CONSTRAINT ips_device_one_active_per_user UNIQUE (user_id, status) 
-    WHERE status = 'active'
+  CONSTRAINT ips_device_binding_status CHECK (status IN ('pending', 'active', 'expired', 'revoked', 'replaced'))
 );
+
+-- Partial unique index (one active device per user)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ips_device_one_active_per_user 
+  ON ips_device_bindings(user_id) WHERE status = 'active';
 
 CREATE INDEX IF NOT EXISTS idx_ips_device_bindings_user ON ips_device_bindings(user_id);
 CREATE INDEX IF NOT EXISTS idx_ips_device_bindings_mobile ON ips_device_bindings(mobile_number);

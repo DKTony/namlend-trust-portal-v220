@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
 import { postDisbursement, createLoanAccounts } from './ledgerService';
+import { withMeasuredRpcResult, withSingleResult, withArrayResult } from '@/utils/serviceUtils';
 
 export type DisbursementStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
 
@@ -180,8 +181,18 @@ export async function completeDisbursement(
       // Post to TigerBeetle ledger (non-blocking via outbox pattern)
       if (result.loan_id && result.amount) {
         try {
+          // Fetch user_id from loan for TigerBeetle account creation
+          const { data: loanData } = await supabase
+            .from('loans')
+            .select('user_id')
+            .eq('id', result.loan_id)
+            .single();
+          
+          // Extract user_id safely from loan data
+          const userId = loanData && 'user_id' in loanData ? String(loanData.user_id) : '';
+          
           // Ensure loan accounts exist in TigerBeetle
-          await createLoanAccounts(result.loan_id, '');
+          await createLoanAccounts(result.loan_id, userId);
           
           // Queue disbursement transfer
           const ledgerResult = await postDisbursement(
@@ -256,27 +267,11 @@ export async function getPendingDisbursements(): Promise<{
   disbursements?: Disbursement[];
   error?: string;
 }> {
-  return measurePerformance('get_pending_disbursements', async () => {
-    try {
-      debugLog('📋 Fetching pending disbursements');
-
-      const { data, error } = await supabase.rpc('get_pending_disbursements');
-
-      if (error) {
-        debugLog('❌ Get pending disbursements failed', error);
-        return { success: false, error: error.message };
-      }
-
-      debugLog('✅ Pending disbursements retrieved', { count: data?.length || 0 });
-      return { 
-        success: true, 
-        disbursements: data as Disbursement[] || [] 
-      };
-    } catch (error) {
-      handleDatabaseError(error, 'getPendingDisbursements', {});
-      return { success: false, error: 'Unexpected error occurred' };
-    }
-  });
+  const result = await withArrayResult<Disbursement>(
+    () => supabase.rpc('get_pending_disbursements'),
+    'getPendingDisbursements'
+  );
+  return { success: result.success, disbursements: result.data, error: result.error };
 }
 
 /**
@@ -289,26 +284,13 @@ export async function getDisbursementById(
   disbursement?: Disbursement;
   error?: string;
 }> {
-  try {
-    debugLog('🔍 Fetching disbursement by ID', { disbursementId });
-
-    const { data, error } = await supabase
-      .from('disbursements')
-      .select('*')
-      .eq('id', disbursementId)
-      .single();
-
-    if (error) {
-      debugLog('❌ Get disbursement failed', error);
-      return { success: false, error: error.message };
-    }
-
-    debugLog('✅ Disbursement retrieved', data);
-    return { success: true, disbursement: data as Disbursement };
-  } catch (error) {
-    handleDatabaseError(error, 'getDisbursementById', { disbursementId });
-    return { success: false, error: 'Unexpected error occurred' };
-  }
+  const result = await withSingleResult<Disbursement>(
+    () => supabase.from('disbursements').select('*').eq('id', disbursementId).single(),
+    'getDisbursementById',
+    'Disbursement not found',
+    { disbursementId }
+  );
+  return { success: result.success, disbursement: result.data, error: result.error };
 }
 
 /**
@@ -321,26 +303,12 @@ export async function getDisbursementsForLoan(
   disbursements?: Disbursement[];
   error?: string;
 }> {
-  try {
-    debugLog('📋 Fetching disbursements for loan', { loanId });
-
-    const { data, error } = await supabase
-      .from('disbursements')
-      .select('*')
-      .eq('loan_id', loanId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      debugLog('❌ Get disbursements for loan failed', error);
-      return { success: false, error: error.message };
-    }
-
-    debugLog('✅ Disbursements retrieved', { count: data?.length || 0 });
-    return { success: true, disbursements: data as Disbursement[] || [] };
-  } catch (error) {
-    handleDatabaseError(error, 'getDisbursementsForLoan', { loanId });
-    return { success: false, error: 'Unexpected error occurred' };
-  }
+  const result = await withArrayResult<Disbursement>(
+    () => supabase.from('disbursements').select('*').eq('loan_id', loanId).order('created_at', { ascending: false }),
+    'getDisbursementsForLoan',
+    { loanId }
+  );
+  return { success: result.success, disbursements: result.data, error: result.error };
 }
 
 // Export all functions

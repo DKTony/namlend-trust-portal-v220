@@ -1,5 +1,8 @@
 # TigerBeetle MCP Server Setup Guide
 
+**Doc Revision**: 2026-01-19  
+**Status**: Optional dev tooling; not required for runtime integration.
+
 This guide explains how to install and configure the TigerBeetle MCP server for NamLend Trust integration.
 
 ## Prerequisites

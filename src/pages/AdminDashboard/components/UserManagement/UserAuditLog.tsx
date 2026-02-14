@@ -155,7 +155,20 @@ const UserAuditLog: React.FC = () => {
       if (fetchError) throw fetchError;
 
       // Transform database records to UI format
-      const transformedLogs: AuditLogEntry[] = (data || []).map((log: any) => {
+      interface AuditLogRow {
+        id: string;
+        created_at: string;
+        user_id: string | null;
+        action: string;
+        table_name: string | null;
+        record_id: string | null;
+        old_values: Record<string, unknown> | null;
+        new_values: Record<string, unknown> | null;
+        ip_address: string | null;
+        user_agent: string | null;
+      }
+
+      const transformedLogs: AuditLogEntry[] = (data || []).map((log: AuditLogRow) => {
         // Extract user name from new_values or old_values
         const userName = log.new_values?.full_name || 
                         log.old_values?.full_name ||

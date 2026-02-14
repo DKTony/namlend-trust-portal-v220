@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Calculator, Info } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/context/ThemeContext";
+import { cn } from "@/lib/utils";
+import LandingCard from "@/components/landing/LandingCard";
+import LandingButton from "@/components/landing/LandingButton";
+import { Slider } from "@/components/ui/slider";
+import { Calculator, Info, ArrowRight } from "lucide-react";
 
 const LoanCalculator = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { styles, theme, isDark } = useTheme();
+  
   const [loanAmount, setLoanAmount] = useState([5000]);
   const [loanTerm, setLoanTerm] = useState([3]);
-  const [monthlyPayment, setMonthlyPayment] = useState(0);
-  const [totalPayment, setTotalPayment] = useState(0);
-  const [interestRate, setInterestRate] = useState(28);
+  const interestRate = 28;
 
   const handleApplyClick = () => {
     if (user) {
@@ -23,43 +25,71 @@ const LoanCalculator = () => {
     }
   };
 
-  // Calculate loan payments
-  useEffect(() => {
+  const { monthlyPayment, totalPayment, totalInterest } = useMemo(() => {
     const principal = loanAmount[0];
     const months = loanTerm[0];
     const monthlyRate = interestRate / 100 / 12;
     
+    let monthly = 0;
+    let total = 0;
+    
     if (monthlyRate === 0) {
-      setMonthlyPayment(principal / months);
-      setTotalPayment(principal);
+      monthly = principal / months;
+      total = principal;
     } else {
-      const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / 
-                     (Math.pow(1 + monthlyRate, months) - 1);
-      setMonthlyPayment(payment);
-      setTotalPayment(payment * months);
+      monthly = principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / 
+                (Math.pow(1 + monthlyRate, months) - 1);
+      total = monthly * months;
     }
+    
+    return {
+      monthlyPayment: monthly,
+      totalPayment: total,
+      totalInterest: total - principal
+    };
   }, [loanAmount, loanTerm, interestRate]);
 
-  return (
-    <section id="loans" className="py-20 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
-              Loan Calculator
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              See how much your loan will cost with our transparent pricing calculator
-            </p>
-          </div>
+  const receiptNumber = useMemo(() => Math.floor(Math.random() * 10000).toString().padStart(4, '0'), []);
 
+  return (
+    <section id="loans" className="relative py-20 md:py-28">
+      <div className="container mx-auto px-4 md:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-16 animate-fade-in-up">
+          <h2 className={cn(
+            'text-3xl md:text-4xl lg:text-5xl font-bold mb-4',
+            styles.textClass,
+            theme === 'lux' ? 'font-serif' : theme === 'neo' ? 'font-mono' : 'font-sans'
+          )}>
+            Loan Calculator
+          </h2>
+          <p className={cn(
+            'text-lg md:text-xl max-w-2xl mx-auto opacity-70',
+            styles.textClass
+          )}>
+            See how much your loan will cost with our transparent pricing
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Calculator Inputs */}
-            <Card className="p-8 shadow-medium">
-              <div className="flex items-center space-x-3 mb-6">
-                <Calculator className="w-6 h-6 text-accent" />
-                <h3 className="text-xl font-semibold text-primary">
+            <LandingCard className="p-6 md:p-8">
+              <div className="flex items-center gap-3 mb-8">
+                <div className={cn(
+                  'w-12 h-12 flex items-center justify-center',
+                  theme === 'neo' 
+                    ? `border-2 ${isDark ? 'border-white' : 'border-black'}` 
+                    : theme === 'lux' 
+                      ? 'bg-amber-500/10 rounded-lg' 
+                      : 'bg-blue-500/10 rounded-2xl'
+                )}>
+                  <Calculator className={cn(
+                    'w-6 h-6',
+                    theme === 'lux' ? 'text-amber-500' : 'text-blue-500'
+                  )} />
+                </div>
+                <h3 className={cn('text-xl font-bold', styles.textClass)}>
                   Calculate Your Loan
                 </h3>
               </div>
@@ -68,10 +98,13 @@ const LoanCalculator = () => {
                 {/* Loan Amount Slider */}
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <label className="text-sm font-medium text-foreground">
+                    <label className={cn('text-sm font-medium', styles.textClass)}>
                       Loan Amount
                     </label>
-                    <span className="text-lg font-bold text-primary">
+                    <span className={cn(
+                      'text-xl font-bold',
+                      theme === 'lux' ? 'text-amber-500' : theme === 'neo' ? 'text-[#A855F7]' : 'text-blue-500'
+                    )}>
                       N$ {loanAmount[0].toLocaleString()}
                     </span>
                   </div>
@@ -83,7 +116,7 @@ const LoanCalculator = () => {
                     step={500}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                  <div className={cn('flex justify-between text-xs mt-3 opacity-50', styles.textClass)}>
                     <span>N$ 500</span>
                     <span>N$ 25,000</span>
                   </div>
@@ -92,17 +125,19 @@ const LoanCalculator = () => {
                 {/* Loan Term Slider */}
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <label className="text-sm font-medium text-foreground">
+                    <label className={cn('text-sm font-medium', styles.textClass)}>
                       Loan Term
                     </label>
-                    <span className="text-lg font-bold text-primary">
+                    <span className={cn(
+                      'text-xl font-bold',
+                      theme === 'lux' ? 'text-amber-500' : theme === 'neo' ? 'text-[#A855F7]' : 'text-blue-500'
+                    )}>
                       {loanTerm[0]} month{loanTerm[0] !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <Slider
                     value={loanTerm}
                     onValueChange={(value) => {
-                      // Snap to allowed values: 1, 3, or 5 months
                       const allowedValues = [1, 3, 5];
                       const closest = allowedValues.reduce((prev, curr) => 
                         Math.abs(curr - value[0]) < Math.abs(prev - value[0]) ? curr : prev
@@ -114,7 +149,7 @@ const LoanCalculator = () => {
                     step={1}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                  <div className={cn('flex justify-between text-xs mt-3 opacity-50', styles.textClass)}>
                     <span>1 month</span>
                     <span>3 months</span>
                     <span>5 months</span>
@@ -122,88 +157,151 @@ const LoanCalculator = () => {
                 </div>
 
                 {/* Interest Rate Display */}
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Info className="w-4 h-4 text-accent" />
-                    <span className="text-sm font-medium text-foreground">
+                <div className={cn(
+                  'p-4',
+                  theme === 'neo' 
+                    ? `border-2 ${isDark ? 'border-white' : 'border-black'}` 
+                    : theme === 'lux' 
+                      ? 'bg-amber-500/5 border border-amber-500/20 rounded-lg' 
+                      : 'bg-blue-500/5 border border-blue-500/10 rounded-2xl'
+                )}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Info className={cn(
+                      'w-4 h-4',
+                      theme === 'lux' ? 'text-amber-500' : 'text-blue-500'
+                    )} />
+                    <span className={cn('text-sm font-medium', styles.textClass)}>
                       Representative APR
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-primary mb-1">
+                  <p className={cn(
+                    'text-2xl font-bold',
+                    theme === 'lux' ? 'text-amber-500' : theme === 'neo' ? 'text-[#A855F7]' : 'text-blue-500'
+                  )}>
                     {interestRate}% p.a.
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Rate depends on loan amount, term, and credit assessment
+                  <p className={cn('text-xs mt-1 opacity-50', styles.textClass)}>
+                    Rate depends on credit assessment
                   </p>
                 </div>
               </div>
-            </Card>
+            </LandingCard>
 
             {/* Calculation Results - The "Receipt" */}
-            <Card className="p-8 shadow-strong bg-zinc-900 text-white relative overflow-hidden border-zinc-800 border">
+            <div className={cn(
+              'p-6 md:p-8 relative overflow-hidden',
+              theme === 'neo' 
+                ? `border-2 ${isDark ? 'border-white bg-zinc-800' : 'border-black bg-white'} shadow-[6px_6px_0px_0px_${isDark ? 'rgba(255,255,255,1)' : 'rgba(0,0,0,1)'}]` 
+                : theme === 'lux' 
+                  ? 'bg-gradient-to-br from-zinc-900 to-zinc-950 border border-amber-500/20 rounded-xl' 
+                  : 'bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 rounded-3xl backdrop-blur-xl'
+            )}>
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-8 border-b border-dashed border-zinc-700 pb-4">
-                  <h3 className="text-xl font-semibold">
+                <div className={cn(
+                  'flex items-center justify-between mb-8 pb-4 border-b border-dashed',
+                  isDark || theme !== 'neo' ? 'border-zinc-700' : 'border-zinc-300'
+                )}>
+                  <h3 className={cn(
+                    'text-xl font-semibold',
+                    theme === 'neo' && !isDark ? 'text-black' : 'text-white'
+                  )}>
                     Loan Estimate
                   </h3>
-                  <div className="px-2 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-400">
-                    RECEIPT #{Math.floor(Math.random() * 10000)}
+                  <div className={cn(
+                    'px-2 py-1 text-xs font-mono',
+                    theme === 'neo' 
+                      ? `border-2 ${isDark ? 'border-white text-white' : 'border-black text-black'}` 
+                      : 'bg-zinc-800 rounded text-zinc-400'
+                  )}>
+                    #{receiptNumber}
                   </div>
                 </div>
 
                 <div className="space-y-6">
                   {/* Monthly Payment */}
                   <div className="flex justify-between items-end">
-                    <div className="text-sm text-zinc-400">
+                    <span className={cn(
+                      'text-sm',
+                      theme === 'neo' && !isDark ? 'text-zinc-600' : 'text-zinc-400'
+                    )}>
                       Monthly Payment
-                    </div>
-                    <div className="text-3xl font-bold font-mono text-white">
+                    </span>
+                    <span className={cn(
+                      'text-2xl sm:text-3xl font-bold font-mono',
+                      theme === 'lux' ? 'text-amber-400' : theme === 'neo' && !isDark ? 'text-black' : 'text-white'
+                    )}>
                       N$ {monthlyPayment.toFixed(2)}
-                    </div>
+                    </span>
                   </div>
 
                   {/* Total Payment */}
                   <div className="flex justify-between items-end">
-                    <div className="text-sm text-zinc-400">
+                    <span className={cn(
+                      'text-sm',
+                      theme === 'neo' && !isDark ? 'text-zinc-600' : 'text-zinc-400'
+                    )}>
                       Total Amount
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-zinc-200">
+                    </span>
+                    <span className={cn(
+                      'text-2xl font-bold font-mono',
+                      theme === 'neo' && !isDark ? 'text-zinc-700' : 'text-zinc-200'
+                    )}>
                       N$ {totalPayment.toFixed(2)}
-                    </div>
+                    </span>
                   </div>
 
                   {/* Interest Cost */}
-                  <div className="flex justify-between items-end pb-6 border-b border-dashed border-zinc-700">
-                    <div className="text-sm text-zinc-400">
+                  <div className={cn(
+                    'flex justify-between items-end pb-6 border-b border-dashed',
+                    isDark || theme !== 'neo' ? 'border-zinc-700' : 'border-zinc-300'
+                  )}>
+                    <span className={cn(
+                      'text-sm',
+                      theme === 'neo' && !isDark ? 'text-zinc-600' : 'text-zinc-400'
+                    )}>
                       Total Interest
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-blue-400">
-                      N$ {(totalPayment - loanAmount[0]).toFixed(2)}
-                    </div>
+                    </span>
+                    <span className={cn(
+                      'text-2xl font-bold font-mono',
+                      theme === 'lux' ? 'text-amber-500' : theme === 'neo' ? 'text-[#A855F7]' : 'text-blue-400'
+                    )}>
+                      N$ {totalInterest.toFixed(2)}
+                    </span>
                   </div>
 
                   {/* CTA */}
                   <div className="pt-2">
-                    <Button variant="hero" size="lg" className="w-full mb-4 rounded-xl bg-blue-600 hover:bg-blue-500 border-none" onClick={handleApplyClick}>
-                      Apply Now
-                    </Button>
-                    <p className="text-xs text-zinc-500 text-center">
+                    <LandingButton variant="primary" fullWidth onClick={handleApplyClick}>
+                      Apply Now <ArrowRight className="w-5 h-5" />
+                    </LandingButton>
+                    <p className={cn(
+                      'text-xs text-center mt-4',
+                      theme === 'neo' && !isDark ? 'text-zinc-500' : 'text-zinc-500'
+                    )}>
                       Get pre-approved in 5 minutes. No hidden fees.
                     </p>
                   </div>
 
                   {/* Disclaimer */}
-                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-800">
-                    <p className="text-[10px] text-zinc-500 leading-relaxed">
+                  <div className={cn(
+                    'p-3 border',
+                    theme === 'neo' 
+                      ? isDark ? 'border-white/20 bg-white/5' : 'border-black/20 bg-black/5' 
+                      : 'border-zinc-800 bg-zinc-800/50 rounded-xl'
+                  )}>
+                    <p className={cn(
+                      'text-[10px] leading-relaxed',
+                      theme === 'neo' && !isDark ? 'text-zinc-500' : 'text-zinc-500'
+                    )}>
                       <strong>Note:</strong> Estimate only. Actual rates vary by credit profile. 
                       Regulated by NAMFISA. APR capped at {interestRate}%.
                     </p>
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

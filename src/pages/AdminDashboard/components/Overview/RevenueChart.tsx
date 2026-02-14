@@ -1,5 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 // Temporarily disabled recharts due to d3-array build issue
 // import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
@@ -21,16 +23,30 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   loading = false, 
   chartType = 'line' 
 }) => {
+  const { styles } = useTheme();
+  
   const formatCurrency = (value: number) => {
     return `N$${value.toLocaleString('en-NA')}`;
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipPayloadEntry {
+    dataKey: string;
+    value: number;
+    color: string;
+  }
+
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayloadEntry[];
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background p-3 border border-border rounded-lg shadow-lg">
           <p className="font-medium text-foreground">{`Month: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: TooltipPayloadEntry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm tabular-nums">
               {`${entry.dataKey === 'revenue' ? 'Revenue' : 
                  entry.dataKey === 'disbursed' ? 'Disbursed' : 'Repayments'}: ${formatCurrency(entry.value)}`}
@@ -44,26 +60,24 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
 
   if (loading) {
     return (
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle>Revenue Analytics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center">
-            <div className="animate-pulse text-muted-foreground">Loading chart...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <ThemedCard className="bg-card border-border">
+        <div className="pb-4 border-b border-border mb-4">
+          <h3 className={cn("text-lg font-semibold", styles.textClass)}>Revenue Analytics</h3>
+        </div>
+        <div className="h-80 flex items-center justify-center">
+          <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+        </div>
+      </ThemedCard>
     );
   }
 
   // Temporary placeholder while recharts is disabled
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle>Revenue Analytics</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <ThemedCard>
+      <div className="pb-4 border-b border-border mb-4">
+        <h3 className={cn("text-lg font-semibold", styles.textClass)}>Revenue Analytics</h3>
+      </div>
+      <div>
         <div className="h-80 flex items-center justify-center border-2 border-dashed border-border rounded-lg">
           <div className="text-center">
             <div className="text-lg font-medium text-muted-foreground mb-2">Chart Temporarily Disabled</div>
@@ -85,8 +99,8 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </ThemedCard>
   );
 };
 

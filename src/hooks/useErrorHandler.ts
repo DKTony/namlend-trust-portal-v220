@@ -15,7 +15,7 @@ import {
 } from '@/utils/errorHandler';
 
 interface UseErrorHandlerReturn {
-  handleError: (error: any, context?: Record<string, any>) => void;
+  handleError: (error: unknown, context?: Record<string, unknown>) => void;
   handleAsyncOperation: <T>(
     operation: () => Promise<T>,
     operationName: string,
@@ -26,7 +26,7 @@ interface UseErrorHandlerReturn {
       retries?: number;
     }
   ) => Promise<T | null>;
-  trackAction: (action: string, data?: Record<string, any>) => void;
+  trackAction: (action: string, data?: Record<string, unknown>) => void;
   showErrorToast: (message: string, title?: string) => void;
   showSuccessToast: (message: string, title?: string) => void;
 }
@@ -34,39 +34,40 @@ interface UseErrorHandlerReturn {
 export const useErrorHandler = (): UseErrorHandlerReturn => {
   const { toast } = useToast();
 
-  const handleError = useCallback((error: any, context?: Record<string, any>) => {
+  const handleError = useCallback((error: unknown, context?: Record<string, unknown>) => {
     // Determine error category and severity based on error type
     let category = ErrorCategory.SYSTEM;
     let severity = ErrorSeverity.MEDIUM;
 
-    if (error?.message?.includes('auth') || error?.code === 'PGRST301') {
+    const err = error as { message?: string; code?: string; name?: string; stack?: string } | null;
+    if (err?.message?.includes('auth') || err?.code === 'PGRST301') {
       category = ErrorCategory.AUTHENTICATION;
       severity = ErrorSeverity.HIGH;
-    } else if (error?.message?.includes('permission') || error?.code === 'PGRST116') {
+    } else if (err?.message?.includes('permission') || err?.code === 'PGRST116') {
       category = ErrorCategory.AUTHORIZATION;
       severity = ErrorSeverity.HIGH;
-    } else if (error?.message?.includes('database') || error?.code?.startsWith('PGRST')) {
+    } else if (err?.message?.includes('database') || err?.code?.startsWith('PGRST')) {
       category = ErrorCategory.DATABASE;
       severity = ErrorSeverity.HIGH;
-    } else if (error?.message?.includes('network') || error?.name === 'NetworkError') {
+    } else if (err?.message?.includes('network') || err?.name === 'NetworkError') {
       category = ErrorCategory.NETWORK;
       severity = ErrorSeverity.MEDIUM;
-    } else if (error?.message?.includes('validation')) {
+    } else if (err?.message?.includes('validation')) {
       category = ErrorCategory.VALIDATION;
       severity = ErrorSeverity.LOW;
     }
 
     errorLogger.logError({
-      message: error?.message || 'Unknown error occurred',
+      message: err?.message || 'Unknown error occurred',
       category,
       severity,
       context: {
         ...context,
         originalError: error,
-        errorCode: error?.code,
-        errorName: error?.name
+        errorCode: err?.code,
+        errorName: err?.name
       },
-      stack: error?.stack
+      stack: err?.stack
     });
   }, []);
 
@@ -86,7 +87,7 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
     });
   }, [toast]);
 
-  const trackAction = useCallback((action: string, data?: Record<string, any>) => {
+  const trackAction = useCallback((action: string, data?: Record<string, unknown>) => {
     trackUserAction(action, data);
   }, []);
 
@@ -125,8 +126,9 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
       }
 
       return result;
-    } catch (error: any) {
-      trackAction(`error_${operationName}`, { error: error?.message });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Unknown error';
+      trackAction(`error_${operationName}`, { error: errMsg });
       
       handleError(error, { 
         operation: operationName,
@@ -153,38 +155,39 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
 };
 
 // Helper function to convert technical errors to user-friendly messages
-const getUserFriendlyErrorMessage = (error: any, operation: string): string => {
+const getUserFriendlyErrorMessage = (error: unknown, operation: string): string => {
+  const err = error as { message?: string; code?: string; name?: string } | null;
   // Authentication errors
-  if (error?.message?.includes('auth') || error?.code === 'PGRST301') {
+  if (err?.message?.includes('auth') || err?.code === 'PGRST301') {
     return 'Please sign in again to continue.';
   }
 
   // Permission errors
-  if (error?.message?.includes('permission') || error?.code === 'PGRST116') {
+  if (err?.message?.includes('permission') || err?.code === 'PGRST116') {
     return 'You do not have permission to perform this action.';
   }
 
   // Network errors
-  if (error?.message?.includes('network') || error?.name === 'NetworkError') {
+  if (err?.message?.includes('network') || err?.name === 'NetworkError') {
     return 'Network connection issue. Please check your internet connection and try again.';
   }
 
   // Database errors
-  if (error?.message?.includes('database') || error?.code?.startsWith('PGRST')) {
+  if (err?.message?.includes('database') || err?.code?.startsWith('PGRST')) {
     return 'A database error occurred. Please try again in a moment.';
   }
 
   // Validation errors
-  if (error?.message?.includes('validation')) {
+  if (err?.message?.includes('validation')) {
     return 'Please check your input and try again.';
   }
 
   // Loan-specific errors
   if (operation.includes('loan')) {
-    if (error?.message?.includes('amount')) {
+    if (err?.message?.includes('amount')) {
       return 'Invalid loan amount. Please check the amount and try again.';
     }
-    if (error?.message?.includes('eligibility')) {
+    if (err?.message?.includes('eligibility')) {
       return 'You are not eligible for this loan. Please contact support for more information.';
     }
     return 'An error occurred while processing your loan request. Please try again.';
@@ -192,7 +195,7 @@ const getUserFriendlyErrorMessage = (error: any, operation: string): string => {
 
   // Payment-specific errors
   if (operation.includes('payment')) {
-    if (error?.message?.includes('insufficient')) {
+    if (err?.message?.includes('insufficient')) {
       return 'Insufficient funds. Please check your account balance.';
     }
     return 'Payment processing failed. Please try again or contact support.';

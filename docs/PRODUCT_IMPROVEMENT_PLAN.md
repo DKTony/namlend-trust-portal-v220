@@ -1,5 +1,8 @@
 # NamLend Trust - Product Improvement Plan
 
+**Doc Revision**: 2026-01-19  
+**Status Note**: Historical roadmap snapshot. Validate against current product backlog.
+
 **Version**: 2.4.0  
 **Created**: December 2025  
 **Last Updated**: December 7, 2025  

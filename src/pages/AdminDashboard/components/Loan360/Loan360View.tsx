@@ -65,6 +65,7 @@ interface LoanDetails {
   purpose: string;
   status: string;
   created_at: string;
+  approved_at?: string;
   disbursed_at?: string;
   user_id: string;
 }

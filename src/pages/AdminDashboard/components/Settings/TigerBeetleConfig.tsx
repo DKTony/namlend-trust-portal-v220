@@ -160,10 +160,10 @@ export function TigerBeetleConfig() {
 
       if (data && data.length > 0) {
         const loadedConfig = { ...DEFAULT_CONFIG };
-        data.forEach((item: { config_key: string; config_value: any }) => {
+        data.forEach((item: { config_key: string; config_value: TigerBeetleConnectionConfig | TigerBeetleOutboxConfig | TigerBeetleReconciliationConfig | TigerBeetleAccountsConfig }) => {
           const key = item.config_key.replace('tigerbeetle.', '') as keyof TigerBeetleConfig;
           if (key in loadedConfig) {
-            (loadedConfig as any)[key] = item.config_value;
+            loadedConfig[key] = item.config_value as TigerBeetleConfig[typeof key];
           }
         });
         setConfig(loadedConfig);
@@ -179,7 +179,7 @@ export function TigerBeetleConfig() {
   const updateConfig = <K extends keyof TigerBeetleConfig>(
     section: K,
     key: keyof TigerBeetleConfig[K],
-    value: any
+    value: string | number | boolean | string[] | TigerBeetleAccountsConfig['account_code_ranges']
   ) => {
     setConfig(prev => ({
       ...prev,
@@ -212,10 +212,11 @@ export function TigerBeetleConfig() {
         description: 'TigerBeetle configuration has been updated successfully.'
       });
       setHasChanges(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Failed to save configuration';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save configuration',
+        description: errMsg,
         variant: 'destructive'
       });
     } finally {

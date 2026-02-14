@@ -122,7 +122,7 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
 
     try {
       // Update profile in database
-      const profileUpdates: any = {};
+      const profileUpdates: Record<string, string | boolean> = {};
       
       if (updates.fullName) {
         const nameParts = updates.fullName.split(' ');

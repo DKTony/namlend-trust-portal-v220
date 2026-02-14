@@ -30,8 +30,17 @@ interface WorkflowStage {
   };
 }
 
+interface WorkflowDefinition {
+  id: string;
+  name: string;
+  description: string;
+  entity_type: string;
+  stages: WorkflowStage[];
+  is_active: boolean;
+}
+
 interface WorkflowEditorProps {
-  workflow: any | null;
+  workflow: WorkflowDefinition | null;
   onClose: () => void;
 }
 
@@ -87,13 +96,14 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ workflow, onClose }) =>
     setStages(newStages);
   };
 
-  const updateStage = (index: number, field: string, value: any) => {
+  const updateStage = (index: number, field: keyof WorkflowStage, value: string | number | boolean) => {
     const newStages = [...stages];
-    (newStages[index] as any)[field] = value;
+    if (field === 'conditions') return; // conditions handled separately
+    (newStages[index] as Record<keyof WorkflowStage, unknown>)[field] = value;
     setStages(newStages);
   };
 
-  const updateStageCondition = (index: number, field: string, value: any) => {
+  const updateStageCondition = (index: number, field: 'amount_min' | 'amount_max', value: string) => {
     const newStages = [...stages];
     newStages[index].conditions = {
       ...newStages[index].conditions,
@@ -165,11 +175,12 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ workflow, onClose }) =>
       }
 
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving workflow:', err);
+      const errMsg = err instanceof Error ? err.message : 'Failed to save workflow';
       toast({
         title: 'Save Failed',
-        description: err.message || 'Failed to save workflow',
+        description: errMsg,
         variant: 'destructive',
       });
     } finally {

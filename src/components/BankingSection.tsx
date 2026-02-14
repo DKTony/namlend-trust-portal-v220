@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -680,7 +681,7 @@ export function BankingSection() {
         {/* IPP Instant Payment Tab */}
         <TabsContent value="ipp" className="space-y-6">
           {/* Status Card */}
-          <Card className={`border-2 ${isReady ? 'border-green-500 dark:border-green-400' : 'border-primary/20'}`}>
+          <ThemedCard className={`border-2 ${isReady ? 'border-green-500 dark:border-green-400' : 'border-primary/20'}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -792,10 +793,10 @@ export function BankingSection() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </ThemedCard>
 
           {/* Enrollment Steps */}
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle className="text-lg">Enrollment Steps</CardTitle>
             </CardHeader>
@@ -867,12 +868,12 @@ export function BankingSection() {
                 })}
               </div>
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
 
         {/* Accounts Tab */}
         <TabsContent value="accounts" className="space-y-6">
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle>Linked Accounts</CardTitle>
               <CardDescription>Bank accounts connected to your profile</CardDescription>
@@ -901,12 +902,12 @@ export function BankingSection() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
 
         {/* Payment Methods Tab */}
         <TabsContent value="methods" className="space-y-6">
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle>Payment Methods</CardTitle>
               <CardDescription>Available payment options for loan repayments</CardDescription>
@@ -964,7 +965,7 @@ export function BankingSection() {
                 <Badge variant="outline">Available</Badge>
               </div>
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
       </Tabs>
 

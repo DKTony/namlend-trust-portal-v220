@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface LoanRow {
+  created_at: string;
+  amount: number;
+  status: string;
+}
+
 interface FinancialMetrics {
   totalClients: number;
   totalDisbursed: number;
@@ -70,7 +76,7 @@ export const useFinancialMetrics = () => {
       }
 
       // Process the data to create monthly revenue trends
-      const monthlyData: Record<string, RevenueData> = data.reduce((acc: Record<string, RevenueData>, loan: any) => {
+      const monthlyData: Record<string, RevenueData> = data.reduce((acc: Record<string, RevenueData>, loan: LoanRow) => {
         const month = new Date(loan.created_at).toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'short' 

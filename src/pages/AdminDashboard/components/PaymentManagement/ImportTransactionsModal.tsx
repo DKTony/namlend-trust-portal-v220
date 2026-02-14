@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { importBankTransactions, ImportTransactionInput } from '@/services/reconciliationService';
+import { formatNAD } from '@/utils/currency';
 import { Loader2, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 
 interface Props {
@@ -37,6 +38,20 @@ export const ImportTransactionsModal: React.FC<Props> = ({
     }
   };
 
+  const normalizeSource = (raw?: string): ImportTransactionInput['source'] => {
+    if (!raw) return 'csv';
+    const value = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+    if (!value) return 'csv';
+    if (value.includes('fnb')) return 'fnb';
+    if (value.includes('standard')) return 'standard_bank';
+    if (value.includes('nedbank')) return 'nedbank';
+    if (value.includes('windhoek')) return 'bank_windhoek';
+    if (value === 'api') return 'api';
+    if (value === 'manual') return 'manual';
+    if (value === 'csv') return 'csv';
+    return 'csv';
+  };
+
   const parseCsv = (text: string): ImportTransactionInput[] => {
     const lines = text.trim().split('\n');
     if (lines.length < 2) return [];
@@ -51,14 +66,22 @@ export const ImportTransactionsModal: React.FC<Props> = ({
       const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
       
       if (parts.length >= 4) {
+        const externalId = parts[0];
+        const amount = Number(parts[2]);
+        if (!externalId || Number.isNaN(amount)) {
+          continue;
+        }
+
+        const description = parts[6] || parts[5] || undefined;
+
         transactions.push({
-          transaction_reference: parts[0],
+          external_id: externalId,
           transaction_date: parts[1],
-          transaction_amount: parseFloat(parts[2]),
-          transaction_type: (parts[3].toLowerCase() === 'credit' ? 'credit' : 'debit'),
-          bank_name: parts[4] || undefined,
-          account_number: parts[5] || undefined,
-          description: parts[6] || undefined
+          amount,
+          transaction_type: (parts[3].toLowerCase() === 'debit' ? 'debit' : 'credit'),
+          reference: externalId,
+          description,
+          source: normalizeSource(parts[4])
         });
       }
     }
@@ -151,7 +174,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
             <span>Import Bank Transactions</span>
           </DialogTitle>
           <DialogDescription>
-            Paste CSV data with columns: Reference, Date, Amount, Type, Bank, Account, Description
+            Paste CSV data with columns: External ID, Date, Amount, Type, Source, Account (optional), Description
           </DialogDescription>
         </DialogHeader>
 
@@ -163,8 +186,8 @@ export const ImportTransactionsModal: React.FC<Props> = ({
               <div className="text-sm text-blue-800 dark:text-blue-300">
                 <p className="font-medium mb-1">Expected CSV Format:</p>
                 <code className="text-xs bg-white dark:bg-black/40 px-2 py-1 rounded block border border-blue-100 dark:border-blue-800/50">
-                  Reference,Date,Amount,Type,Bank,Account,Description<br/>
-                  TXN001,2025-10-07,5000.00,credit,FNB,123456,Payment received
+                  External ID,Date,Amount,Type,Source,Account,Description<br/>
+                  TXN001,2026-01-18,5000.00,credit,FNB,123456,Payment received
                 </code>
               </div>
             </div>
@@ -208,23 +231,25 @@ export const ImportTransactionsModal: React.FC<Props> = ({
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0">
                       <tr>
-                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Reference</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">External ID</th>
                         <th className="text-left p-2 text-xs font-medium text-muted-foreground">Date</th>
                         <th className="text-right p-2 text-xs font-medium text-muted-foreground">Amount</th>
                         <th className="text-left p-2 text-xs font-medium text-muted-foreground">Type</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Source</th>
                       </tr>
                     </thead>
                     <tbody>
                       {preview.slice(0, 10).map((txn, idx) => (
                         <tr key={idx} className="border-t border-border hover:bg-muted/30">
-                          <td className="p-2 font-mono text-xs">{txn.transaction_reference}</td>
+                          <td className="p-2 font-mono text-xs">{txn.external_id}</td>
                           <td className="p-2 text-xs">{txn.transaction_date}</td>
-                          <td className="p-2 text-right text-xs">NAD {txn.transaction_amount.toFixed(2)}</td>
+                          <td className="p-2 text-right text-xs">{formatNAD(txn.amount)}</td>
                           <td className="p-2 text-xs">
                             <span className={txn.transaction_type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                               {txn.transaction_type}
                             </span>
                           </td>
+                          <td className="p-2 text-xs">{txn.source || 'csv'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -245,7 +270,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
             <div className="text-sm text-yellow-800 dark:text-yellow-300">
               <p className="font-medium">Important:</p>
               <p className="mt-1">
-                Duplicate transactions (same reference) will be automatically skipped.
+                Duplicate transactions (same external ID and source) will be automatically skipped.
                 Review the preview before importing.
               </p>
             </div>

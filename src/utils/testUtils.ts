@@ -26,10 +26,40 @@ export interface TestLoanApplication {
   total_repayment: number;
 }
 
+// Test result interfaces
+interface TestResult {
+  test: string;
+  success: boolean;
+  error?: string;
+  user?: string;
+  userId?: string;
+  approvalRequestId?: string;
+  loanId?: string;
+}
+
+interface PerformanceTestResult extends TestResult {
+  duration?: number;
+  threshold?: number;
+}
+
+interface TestSummary {
+  success: boolean;
+  timestamp: string;
+  results: {
+    database: { success: boolean; results: TestResult[] };
+    authentication: { success: boolean; results: TestResult[] };
+    loanWorkflow: { success: boolean; results: TestResult[] };
+    performance: { success: boolean; results: PerformanceTestResult[] };
+  };
+  totalTests: number;
+  passedTests: number;
+  failedTests: number;
+}
+
 // Test environment setup
 export class TestEnvironment {
   private testUsers: TestUser[] = [];
-  private testData: any[] = [];
+  private testData: unknown[] = [];
 
   constructor() {
     this.setupTestData();
@@ -83,8 +113,8 @@ export class TestEnvironment {
   }
 
   // Authentication testing
-  async testAuthentication(): Promise<{ success: boolean; results: any[] }> {
-    const results: any[] = [];
+  async testAuthentication(): Promise<{ success: boolean; results: TestResult[] }> {
+    const results: TestResult[] = [];
     
     for (const testUser of this.testUsers) {
       try {
@@ -169,19 +199,20 @@ export class TestEnvironment {
           success: !roleError
         });
 
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
         results.push({
           test: 'auth_exception',
           user: testUser.email,
           success: false,
-          error: error.message
+          error: errMsg
         });
 
         errorLogger.logError({
           message: `Authentication test failed for ${testUser.email}`,
-          category: 'authentication' as any,
-          severity: 'high' as any,
-          context: { testUser: testUser.email, error }
+          category: 'authentication',
+          severity: 'high',
+          context: { testUser: testUser.email, error: errMsg }
         });
       }
     }
@@ -193,8 +224,8 @@ export class TestEnvironment {
   }
 
   // Loan workflow testing
-  async testLoanWorkflow(userEmail: string): Promise<{ success: boolean; results: any[] }> {
-    const results: any[] = [];
+  async testLoanWorkflow(userEmail: string): Promise<{ success: boolean; results: TestResult[] }> {
+    const results: TestResult[] = [];
     
     try {
       // Sign in as test client
@@ -284,18 +315,19 @@ export class TestEnvironment {
         success: results.every(r => r.success)
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'loan_workflow_exception',
         success: false,
-        error: error.message
+        error: errMsg
       });
 
       errorLogger.logError({
         message: `Loan workflow test failed for ${userEmail}`,
-        category: 'business_logic' as any,
-        severity: 'high' as any,
-        context: { userEmail, error }
+        category: 'business_logic',
+        severity: 'high',
+        context: { userEmail, error: errMsg }
       });
     }
 
@@ -306,8 +338,8 @@ export class TestEnvironment {
   }
 
   // Database connectivity testing
-  async testDatabaseConnectivity(): Promise<{ success: boolean; results: any[] }> {
-    const results: any[] = [];
+  async testDatabaseConnectivity(): Promise<{ success: boolean; results: TestResult[] }> {
+    const results: TestResult[] = [];
     
     try {
       trackUserAction('test_database_connectivity_start');
@@ -355,18 +387,19 @@ export class TestEnvironment {
         success: results.every(r => r.success)
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'database_connectivity_exception',
         success: false,
-        error: error.message
+        error: errMsg
       });
 
       errorLogger.logError({
         message: 'Database connectivity test failed',
-        category: 'database' as any,
-        severity: 'critical' as any,
-        context: { error }
+        category: 'database',
+        severity: 'critical',
+        context: { error: errMsg }
       });
     }
 
@@ -377,8 +410,8 @@ export class TestEnvironment {
   }
 
   // Performance testing
-  async testPerformance(): Promise<{ success: boolean; results: any[] }> {
-    const results: any[] = [];
+  async testPerformance(): Promise<{ success: boolean; results: PerformanceTestResult[] }> {
+    const results: PerformanceTestResult[] = [];
     
     try {
       trackUserAction('test_performance_start');
@@ -424,18 +457,19 @@ export class TestEnvironment {
         avgDuration: results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'performance_exception',
         success: false,
-        error: error.message
+        error: errMsg
       });
 
       errorLogger.logError({
         message: 'Performance test failed',
-        category: 'system' as any,
-        severity: 'medium' as any,
-        context: { error }
+        category: 'system',
+        severity: 'medium',
+        context: { error: errMsg }
       });
     }
 
@@ -469,18 +503,19 @@ export class TestEnvironment {
       }
 
       trackUserAction('test_cleanup_complete');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       errorLogger.logError({
         message: 'Test cleanup failed',
-        category: 'system' as any,
-        severity: 'low' as any,
-        context: { error }
+        category: 'system',
+        severity: 'low',
+        context: { error: errMsg }
       });
     }
   }
 
   // Run comprehensive test suite
-  async runComprehensiveTests(): Promise<{ success: boolean; summary: any }> {
+  async runComprehensiveTests(): Promise<{ success: boolean; summary: TestSummary }> {
     trackUserAction('comprehensive_test_suite_start');
 
     const testResults = {

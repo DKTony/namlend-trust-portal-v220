@@ -78,9 +78,9 @@ export function LoanStatusTimeline({
                 </div>
                 
                 {/* Label */}
-                <div className="mt-2 text-center">
+                <div className="mt-2 text-center px-1 min-w-0">
                   <div className={cn(
-                    "text-xs font-medium",
+                    "text-[10px] sm:text-xs font-medium truncate",
                     step.current && "text-[hsl(var(--status-pending))]",
                     step.complete && "text-[hsl(var(--status-approved))]",
                     step.rejected && "text-[hsl(var(--status-rejected))]"

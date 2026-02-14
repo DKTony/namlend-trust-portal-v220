@@ -127,25 +127,13 @@ export const testUseAuthSignOut = () => {
   return mockSignOut();
 };
 
-// Auto-run in development if enabled
-if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
-  console.log('🚀 Auto-running sign-out tests...');
-  testSignOutFlow().then(success => {
-    if (success) {
-      console.log('✅ Sign-out flow test completed!');
-    } else {
-      console.log('❌ Sign-out flow test failed!');
-    }
-  });
-  
-  testUseAuthSignOut().then(success => {
-    if (success) {
-      console.log('✅ useAuth sign-out test completed!');
-    } else {
-      console.log('❌ useAuth sign-out test failed!');
-    }
-  });
-}
+// DISABLED: Auto-run sign-out tests interfere with auth state during app initialization.
+// Run manually via console: window.__TEST_SIGN_OUT__.testSignOutFlow()
+//
+// if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
+//   testSignOutFlow();
+//   testUseAuthSignOut();
+// }
 
 // Make available globally for debugging
 if (typeof window !== 'undefined') {

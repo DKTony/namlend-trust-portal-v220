@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedInput } from '@/components/ui/ThemedInput';
+import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, 
@@ -25,6 +29,8 @@ import {
 import Header from '@/components/Header';
 import { formatNAD } from '@/utils/currency';
 import { IPSPaymentModal } from '@/components/ips';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 
 interface Loan {
   id: string;
@@ -36,6 +42,7 @@ interface Loan {
 
 export default function Payment() {
   const { user } = useAuth();
+  const { styles } = useTheme();
   const navigate = useNavigate();
   const [activeLoans, setActiveLoans] = useState<Loan[]>([]);
   const [selectedLoan, setSelectedLoan] = useState<string>('');
@@ -43,7 +50,21 @@ export default function Payment() {
   const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [processingFee] = useState(25); // NAD 25 processing fee
+
+  // Processing fee varies by payment method - IPS has no fee
+  const getProcessingFee = (method: string): number => {
+    switch (method) {
+      case 'ips':
+        return 0; // IPS has no additional fees
+      case 'bank':
+      case 'mobile':
+      case 'card':
+      case 'agent':
+      default:
+        return 25; // NAD 25 processing fee for other methods
+    }
+  };
+  const processingFee = getProcessingFee(paymentMethod);
 
   useEffect(() => {
     if (user) {
@@ -77,7 +98,17 @@ export default function Payment() {
   }
 
   const selectedLoanDetails = activeLoans.find(loan => loan.id === selectedLoan);
-  const totalAmount = parseFloat(paymentAmount) + processingFee;
+  const currentProcessingFee = getProcessingFee(paymentMethod);
+  const totalAmount = parseFloat(paymentAmount || '0') + currentProcessingFee;
+
+  // Map UI-friendly payment method names to RPC canonical enum values
+  const paymentMethodToRpc: Record<string, string> = {
+    'ips': 'ips',
+    'bank': 'bank_transfer',
+    'mobile': 'mobile_money',
+    'card': 'debit_order',
+    'agent': 'cash'
+  };
 
   const handlePayment = async () => {
     if (!selectedLoan || !paymentMethod || !paymentAmount) {
@@ -92,22 +123,40 @@ export default function Payment() {
     setLoading(true);
     
     try {
-      // Create payment record
-      const { error } = await supabase
-        .from('payments')
-        .insert([{
-          loan_id: selectedLoan,
-          amount: parseFloat(paymentAmount),
-          payment_method: paymentMethod,
-          status: 'pending',
-          reference_number: `PAY${Date.now()}`
-        }]);
+      // Generate deterministic idempotency key based on loan, amount, method, and date
+      // This ensures user retries/reloads with same inputs will dedupe properly
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const amountCents = Math.round(parseFloat(paymentAmount) * 100); // Normalize to cents
+      const rpcPaymentMethod = paymentMethodToRpc[paymentMethod] || paymentMethod;
+      const idempotencyKey = `pay-${selectedLoan}-${amountCents}-${rpcPaymentMethod}-${today}`;
+      
+      // Use create_payment RPC for proper audit trail, ledger event, and fee recording
+      const { data, error } = await supabase.rpc('create_payment', {
+        p_loan_id: selectedLoan,
+        p_amount: parseFloat(paymentAmount),
+        p_payment_method: rpcPaymentMethod,
+        p_processing_fee: processingFee,
+        p_idempotency_key: idempotencyKey,
+        p_payment_notes: null
+      });
 
       if (error) throw error;
 
+      const result = data as { 
+        success: boolean; 
+        payment_id: string; 
+        reference_number: string;
+        total_amount: number;
+        message: string;
+      };
+
+      if (!result.success) {
+        throw new Error(result.message || 'Payment creation failed');
+      }
+
       toast({
         title: "Payment Initiated",
-        description: "Your payment has been initiated. You will receive a confirmation shortly."
+        description: `Payment ${result.reference_number} initiated. Total: N$${result.total_amount.toFixed(2)}`
       });
 
       // In a real app, this would redirect to the payment processor
@@ -127,56 +176,52 @@ export default function Payment() {
     }
   };
 
-  
-
   if (activeLoans.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/5 to-background">
+      <div className={cn("min-h-screen transition-colors duration-500", styles.background)}>
         <Header />
         
-        <main className="container mx-auto px-4 py-8 max-w-2xl">
-          <Button
+        <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
+          <ThemedButton
             variant="ghost"
             onClick={() => navigate('/dashboard')}
-            className="mb-4"
+            className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
-          </Button>
+          </ThemedButton>
           
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No Active Loans</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                You don't have any active loans that require payment at this time.
-              </p>
-              <Button onClick={() => navigate('/dashboard')}>
-                Return to Dashboard
-              </Button>
-            </CardContent>
-          </Card>
+          <ThemedCard className="flex flex-col items-center justify-center py-12">
+            <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className={cn("text-lg font-medium mb-2", styles.textClass)}>No Active Loans</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              You don't have any active loans that require payment at this time.
+            </p>
+            <ThemedButton onClick={() => navigate('/dashboard')}>
+              Return to Dashboard
+            </ThemedButton>
+          </ThemedCard>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary-light/5 to-background">
+    <div className={cn("min-h-screen transition-colors duration-500", styles.background)}>
       <Header />
       
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
         <div className="mb-8">
-          <Button
+          <ThemedButton
             variant="ghost"
             onClick={() => navigate('/dashboard')}
-            className="mb-4"
+            className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
-          </Button>
+          </ThemedButton>
           
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className={cn("text-3xl font-bold mb-2", styles.textClass)}>
             Make a Payment
           </h1>
           <p className="text-muted-foreground">
@@ -186,25 +231,30 @@ export default function Payment() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Details</CardTitle>
-                <CardDescription>
-                  Select your loan and payment method
-                </CardDescription>
-              </CardHeader>
+            <ThemedCard>
+              <div className="mb-6">
+                <h2 className={cn("text-xl font-bold", styles.textClass)}>Payment Details</h2>
+                <p className="text-sm text-muted-foreground">Select your loan and payment method</p>
+              </div>
               
-              <CardContent className="space-y-6">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="loan">Select Loan</Label>
-                  <Select value={selectedLoan} onValueChange={setSelectedLoan}>
-                    <SelectTrigger className="bg-background border-input text-foreground">
-                      <SelectValue placeholder="Choose a loan" />
+                  <Select value={selectedLoan} onValueChange={(value) => {
+                    setSelectedLoan(value);
+                    const loan = activeLoans.find(l => l.id === value);
+                    if (loan) setPaymentAmount(loan.monthly_payment.toString());
+                  }}>
+                    <SelectTrigger 
+                      id="loan" 
+                      className={cn(styles.inputClass, styles.textClass)}
+                    >
+                      <SelectValue placeholder="Choose a loan to pay" />
                     </SelectTrigger>
                     <SelectContent>
                       {activeLoans.map((loan) => (
                         <SelectItem key={loan.id} value={loan.id}>
-                          {formatNAD(loan.amount)} Loan - Monthly: {formatNAD(loan.monthly_payment)}
+                          {formatNAD(loan.amount)} Loan - Due: {formatNAD(loan.monthly_payment)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -213,136 +263,73 @@ export default function Payment() {
 
                 <div className="space-y-2">
                   <Label htmlFor="amount">Payment Amount (NAD)</Label>
-                  <Input
+                  <ThemedInput
                     id="amount"
                     type="number"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="Enter amount"
-                    min="1"
-                    step="0.01"
-                    className="bg-background border-input text-foreground"
                   />
-                  {selectedLoanDetails && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPaymentAmount(selectedLoanDetails.monthly_payment.toString())}
-                      >
-                        Monthly Payment: {formatNAD(selectedLoanDetails.monthly_payment)}
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label>Payment Method</Label>
-                  <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
-                      <TabsTrigger value="ips" data-testid="payment-tab-ips">IPS Instant</TabsTrigger>
-                      <TabsTrigger value="bank" data-testid="payment-tab-bank">Bank EFT</TabsTrigger>
-                      <TabsTrigger value="mobile" data-testid="payment-tab-mobile">Mobile Money</TabsTrigger>
-                      <TabsTrigger value="card" data-testid="payment-tab-card">Debit Card</TabsTrigger>
-                      <TabsTrigger value="agent" data-testid="payment-tab-agent">Agent</TabsTrigger>
+                  <Tabs defaultValue="ips" className="w-full" onValueChange={setPaymentMethod}>
+                    <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 h-auto gap-1">
+                      <TabsTrigger value="ips" className="data-[state=active]:bg-background py-2">
+                        <Zap className="h-4 w-4 mr-2" /> IPS
+                      </TabsTrigger>
+                      <TabsTrigger value="card" className="data-[state=active]:bg-background py-2">
+                        <CreditCard className="h-4 w-4 mr-2" /> Card
+                      </TabsTrigger>
+                      <TabsTrigger value="mobile" className="data-[state=active]:bg-background py-2">
+                        <Smartphone className="h-4 w-4 mr-2" /> Mobile
+                      </TabsTrigger>
                     </TabsList>
                     
-                    <TabsContent value="ips" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg border-primary bg-primary/5 dark:bg-primary/10">
-                        <Zap className="h-8 w-8 text-primary" />
-                        <div className="flex-1">
-                          <h3 className="font-medium text-foreground">IPS Instant Payment</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Pay instantly using your bank's VPA (Virtual Payment Address)
-                          </p>
-                        </div>
-                        <Badge variant="default" className="bg-green-600 dark:bg-green-500">Instant</Badge>
-                      </div>
-                      <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <span>Real-time payment confirmation</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <span>No additional fees</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <span>Secure bank-to-bank transfer</span>
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={() => setShowIPSModal(true)}
-                        className="w-full gap-2"
-                        size="lg"
-                        disabled={!selectedLoan}
-                        data-testid="payment-ips-button"
-                      >
-                        <Wallet className="h-5 w-5" />
-                        Pay with IPS
-                      </Button>
-                    </TabsContent>
-                    
-                    <TabsContent value="bank" className="space-y-4">
-                      <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
-                        <Building2 className="h-8 w-8 text-primary" />
-                        <div>
-                          <h3 className="font-medium text-foreground">Bank EFT Transfer</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Direct transfer from your bank account via NamClear
-                          </p>
-                        </div>
-                        <Badge variant="default">Instant</Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Bank</Label>
-                        <Select>
-                          <SelectTrigger className="bg-background border-input text-foreground">
-                            <SelectValue placeholder="Select your bank" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fnb">FNB Namibia</SelectItem>
-                            <SelectItem value="bw">Bank Windhoek</SelectItem>
-                            <SelectItem value="standard">Standard Bank</SelectItem>
-                            <SelectItem value="nedbank">Nedbank</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="mobile" className="space-y-4">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
-                          <Smartphone className="h-8 w-8 text-primary" />
-                          <div>
-                            <h3 className="font-medium text-foreground">Mobile Money</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Pay using MTC Maris or bank mobile wallets
-                            </p>
+                    <div className="mt-4">
+                      <TabsContent value="ips">
+                        <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                          <div className="flex items-start gap-3">
+                            <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                            <div>
+                              <h4 className="font-medium text-blue-900 dark:text-blue-300">Instant Payment Solution</h4>
+                              <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                                Secure bank-to-bank transfer. Instant clearing and zero fees.
+                              </p>
+                            </div>
                           </div>
-                          <Badge variant="default">Instant</Badge>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Mobile Wallet</Label>
-                          <Select>
-                            <SelectTrigger className="bg-background border-input text-foreground">
-                              <SelectValue placeholder="Select mobile wallet" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="mtc">MTC Maris</SelectItem>
-                              <SelectItem value="fnb-mobile">FNB ewallet</SelectItem>
-                              <SelectItem value="bw-mobile">Bank Windhoek Mobile</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      </TabsContent>
+                      
+                      <TabsContent value="card">
+                        <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                          <div className="flex items-start gap-3">
+                            <CreditCard className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                              <h4 className="font-medium text-foreground">Debit/Credit Card</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Pay securely with your Visa or Mastercard. Small processing fee applies.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Mobile Number</Label>
-                          <Input placeholder="+264 81 123 4567" className="bg-background border-input text-foreground" />
+                      </TabsContent>
+                      
+                      <TabsContent value="mobile">
+                        <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                          <div className="flex items-start gap-3">
+                            <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
+                            <div>
+                              <h4 className="font-medium text-foreground">Mobile Money</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Pay using eWallet or BlueWallet. Standard network fees apply.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </TabsContent>
-                    
+                      </TabsContent>
+                    </div>
                     <TabsContent value="card" className="space-y-4">
                       <div className="flex items-center gap-3 p-4 border rounded-lg border-border bg-card">
                         <CreditCard className="h-8 w-8 text-primary" />
@@ -417,8 +404,8 @@ export default function Payment() {
                 >
                   {loading ? "Processing..." : `Pay ${formatNAD(totalAmount)}`}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </ThemedCard>
           </div>
 
           {/* IPS Payment Modal */}

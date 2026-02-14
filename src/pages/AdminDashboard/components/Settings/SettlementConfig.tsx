@@ -51,24 +51,44 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatNAD } from '@/utils/currency';
 
 // Types
+interface SettlementConfigGeneral { enabled: boolean; currency: string; scheme_version: string; auto_process_on_cutoff: boolean; require_manual_dispatch: boolean; }
+interface SettlementConfigNetting { bilateral_netting_enabled: boolean; include_interchange: boolean; separate_switching_fee_batch: boolean; minimum_net_amount: number; rounding_mode: string; rounding_precision: number; }
+interface SettlementConfigPacs009 { schema_version: string; message_id_prefix: string; end_to_end_id_prefix: string; local_instrument_code: string; settlement_method: string; validate_before_dispatch: boolean; }
+interface SettlementConfigTransport { sftp_enabled: boolean; sftp_host: string; sftp_port: number; sftp_username: string; sftp_outbound_path: string; sftp_inbound_path: string; file_naming_pattern: string; retry_dispatch_on_failure: boolean; max_dispatch_retries: number; }
+interface SettlementConfigReports { auto_generate_ntsl: boolean; auto_generate_raw_data: boolean; distribution_enabled: boolean; archive_reports: boolean; archive_retention_days: number; }
+interface SettlementConfigExposure { monitoring_enabled: boolean; alert_threshold_percent: number; notify_on_threshold_breach: boolean; }
+
 interface SettlementConfig {
-  general: { enabled: boolean; currency: string; scheme_version: string; auto_process_on_cutoff: boolean; require_manual_dispatch: boolean; };
-  netting: { bilateral_netting_enabled: boolean; include_interchange: boolean; separate_switching_fee_batch: boolean; minimum_net_amount: number; rounding_mode: string; rounding_precision: number; };
-  pacs009: { schema_version: string; message_id_prefix: string; end_to_end_id_prefix: string; local_instrument_code: string; settlement_method: string; validate_before_dispatch: boolean; };
-  transport: { sftp_enabled: boolean; sftp_host: string; sftp_port: number; sftp_username: string; sftp_outbound_path: string; sftp_inbound_path: string; file_naming_pattern: string; retry_dispatch_on_failure: boolean; max_dispatch_retries: number; };
-  reports: { auto_generate_ntsl: boolean; auto_generate_raw_data: boolean; distribution_enabled: boolean; archive_reports: boolean; archive_retention_days: number; };
-  exposure: { monitoring_enabled: boolean; alert_threshold_percent: number; notify_on_threshold_breach: boolean; };
+  general: SettlementConfigGeneral;
+  netting: SettlementConfigNetting;
+  pacs009: SettlementConfigPacs009;
+  transport: SettlementConfigTransport;
+  reports: SettlementConfigReports;
+  exposure: SettlementConfigExposure;
 }
+
+interface ConfigItem {
+  config_key: string;
+  category: string;
+  config_value: SettlementConfigGeneral | SettlementConfigNetting | SettlementConfigPacs009 | SettlementConfigTransport | SettlementConfigReports | SettlementConfigExposure | IPSConfigConnection | IPSConfigTransactions | IPSConfigVpa | ReconciliationConfigGeneral | ReconciliationConfigVariance;
+}
+
+interface IPSConfigConnection { enabled: boolean; mock_mode: boolean; api_base_url: string; org_id: string; merchant_vpa: string; connection_timeout_ms: number; }
+interface IPSConfigTransactions { auto_post_to_ledger: boolean; pending_timeout_seconds: number; auto_void_on_timeout: boolean; require_otp_above_amount: number; daily_limit_per_user: number; monthly_limit_per_user: number; }
+interface IPSConfigVpa { auto_create_for_clients: boolean; vpa_suffix: string; allow_multiple_vpa: boolean; }
 
 interface IPSConfig {
-  connection: { enabled: boolean; mock_mode: boolean; api_base_url: string; org_id: string; merchant_vpa: string; connection_timeout_ms: number; };
-  transactions: { auto_post_to_ledger: boolean; pending_timeout_seconds: number; auto_void_on_timeout: boolean; require_otp_above_amount: number; daily_limit_per_user: number; monthly_limit_per_user: number; };
-  vpa: { auto_create_for_clients: boolean; vpa_suffix: string; allow_multiple_vpa: boolean; };
+  connection: IPSConfigConnection;
+  transactions: IPSConfigTransactions;
+  vpa: IPSConfigVpa;
 }
 
+interface ReconciliationConfigGeneral { enabled: boolean; auto_match_enabled: boolean; match_tolerance_amount: number; match_tolerance_days: number; }
+interface ReconciliationConfigVariance { auto_investigate_threshold: number; escalate_after_days: number; write_off_threshold: number; require_approval_for_writeoff: boolean; }
+
 interface ReconciliationConfig {
-  general: { enabled: boolean; auto_match_enabled: boolean; match_tolerance_amount: number; match_tolerance_days: number; };
-  variance: { auto_investigate_threshold: number; escalate_after_days: number; write_off_threshold: number; require_approval_for_writeoff: boolean; };
+  general: ReconciliationConfigGeneral;
+  variance: ReconciliationConfigVariance;
 }
 
 const DEFAULT_SETTLEMENT: SettlementConfig = {
@@ -109,11 +129,17 @@ export function SettlementConfig() {
       if (error) throw error;
       if (data?.length) {
         const s = { ...DEFAULT_SETTLEMENT }, i = { ...DEFAULT_IPS }, r = { ...DEFAULT_RECON };
-        data.forEach((item: any) => {
-          const key = item.config_key.split('.')[1];
-          if (item.category === 'settlement' && key in s) (s as any)[key] = item.config_value;
-          if (item.category === 'ips' && key in i) (i as any)[key] = item.config_value;
-          if (item.category === 'reconciliation' && key in r) (r as any)[key] = item.config_value;
+        (data as ConfigItem[]).forEach((item) => {
+          const key = item.config_key.split('.')[1] as keyof SettlementConfig | keyof IPSConfig | keyof ReconciliationConfig;
+          if (item.category === 'settlement' && key in s) {
+            s[key as keyof SettlementConfig] = item.config_value as SettlementConfig[keyof SettlementConfig];
+          }
+          if (item.category === 'ips' && key in i) {
+            i[key as keyof IPSConfig] = item.config_value as IPSConfig[keyof IPSConfig];
+          }
+          if (item.category === 'reconciliation' && key in r) {
+            r[key as keyof ReconciliationConfig] = item.config_value as ReconciliationConfig[keyof ReconciliationConfig];
+          }
         });
         setSettlement(s); setIPS(i); setRecon(r);
       }
@@ -121,15 +147,15 @@ export function SettlementConfig() {
     setLoading(false);
   };
 
-  const updateS = (section: keyof SettlementConfig, key: string, value: any) => {
+  const updateS = (section: keyof SettlementConfig, key: string, value: string | number | boolean) => {
     setSettlement(p => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
-  const updateI = (section: keyof IPSConfig, key: string, value: any) => {
+  const updateI = (section: keyof IPSConfig, key: string, value: string | number | boolean) => {
     setIPS(p => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
-  const updateR = (section: keyof ReconciliationConfig, key: string, value: any) => {
+  const updateR = (section: keyof ReconciliationConfig, key: string, value: string | number | boolean) => {
     setRecon(p => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
@@ -142,7 +168,10 @@ export function SettlementConfig() {
       for (const [k, v] of Object.entries(recon)) await supabase.rpc('update_config', { p_config_key: `reconciliation.${k}`, p_config_value: v });
       toast({ title: 'Configuration Saved', description: 'Settings updated successfully.' });
       setHasChanges(false);
-    } catch (e: any) { toast({ title: 'Error', description: e.message, variant: 'destructive' }); }
+    } catch (e: unknown) { 
+      const errMsg = e instanceof Error ? e.message : 'Unknown error';
+      toast({ title: 'Error', description: errMsg, variant: 'destructive' }); 
+    }
     setSaving(false);
   };
 

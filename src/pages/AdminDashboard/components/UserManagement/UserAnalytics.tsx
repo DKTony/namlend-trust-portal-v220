@@ -151,12 +151,17 @@ const UserAnalytics: React.FC = () => {
   };
 
   // Simple bar chart component
-  const BarChart: React.FC<{ data: any[]; dataKey: string; height?: number }> = ({ 
+  interface BarChartDataItem {
+    month: string;
+    users: number;
+  }
+
+  const BarChart: React.FC<{ data: BarChartDataItem[]; dataKey: 'users'; height?: number }> = ({ 
     data, 
     dataKey, 
     height = 200 
   }) => {
-    const maxValue = Math.max(...data.map(item => item[dataKey]));
+    const maxValue = Math.max(...data.map(item => item[dataKey] as number));
     
     return (
       <div className="flex items-end justify-between h-48 px-4 py-2">

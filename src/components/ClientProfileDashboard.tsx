@@ -203,7 +203,7 @@ export default function ClientProfileDashboard() {
     }
   };
 
-  const handleInputChange = (field: keyof ExtendedProfile, value: any) => {
+  const handleInputChange = (field: keyof ExtendedProfile, value: ExtendedProfile[keyof ExtendedProfile]) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 

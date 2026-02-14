@@ -1,53 +1,41 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, measurePerformance } from '@/utils/errorHandler';
+import { PaymentWithLoan } from '@/types/services';
 
-export type MatchType = 'auto_exact' | 'auto_fuzzy' | 'manual' | 'exception';
-export type ReconciliationStatus = 'matched' | 'unmatched' | 'disputed' | 'resolved';
+export type ReconciliationStatus = 'matched' | 'unmatched' | 'disputed' | 'excluded' | 'duplicate';
 export type TransactionType = 'credit' | 'debit';
 
 export interface BankTransaction {
   id: string;
-  transaction_reference: string;
+  external_id: string;
+  amount: number;
   transaction_date: string;
-  transaction_amount: number;
   transaction_type: TransactionType;
-  bank_name?: string;
-  account_number?: string;
+  reference?: string;
   description?: string;
-  is_reconciled: boolean;
-  reconciliation_id?: string;
-  imported_by: string;
-  imported_at: string;
-  created_at: string;
-}
-
-export interface PaymentReconciliation {
-  id: string;
-  payment_id?: string;
-  transaction_reference: string;
-  transaction_date: string;
-  transaction_amount: number;
-  match_type: MatchType;
-  match_confidence?: number;
-  variance_amount: number;
-  variance_reason?: string;
-  reconciled_by: string;
-  reconciled_at: string;
+  source: string;
   status: ReconciliationStatus;
-  notes?: string;
+  reconciliation_run_id?: string | null;
+  matched_payment_id?: string | null;
+  matched_at?: string | null;
+  matched_by?: string | null;
+  match_notes?: string | null;
+  match_confidence?: number | null;
+  imported_by?: string | null;
+  imported_at: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface ImportTransactionInput {
-  transaction_reference: string;
+  external_id: string;
+  amount: number;
   transaction_date: string;
-  transaction_amount: number;
   transaction_type: TransactionType;
-  bank_name?: string;
-  account_number?: string;
+  reference?: string;
   description?: string;
+  source?: string;
 }
 
 /**
@@ -72,21 +60,21 @@ export async function importBankTransactions(
         const { error } = await supabase
           .from('bank_transactions')
           .insert({
-            transaction_reference: transaction.transaction_reference,
+            external_id: transaction.external_id,
+            amount: transaction.amount,
             transaction_date: transaction.transaction_date,
-            transaction_amount: transaction.transaction_amount,
             transaction_type: transaction.transaction_type,
-            bank_name: transaction.bank_name,
-            account_number: transaction.account_number,
+            reference: transaction.reference,
             description: transaction.description,
-            is_reconciled: false
+            source: transaction.source || 'csv',
+            status: 'unmatched'
           });
 
         if (error) {
           // Check if it's a duplicate (unique constraint violation)
           if (error.code === '23505') {
             duplicate_count++;
-            debugLog('⚠️ Duplicate transaction skipped', transaction.transaction_reference);
+            debugLog('⚠️ Duplicate transaction skipped', transaction.external_id);
           } else {
             debugLog('❌ Import transaction failed', error);
             return { success: false, error: error.message };
@@ -121,12 +109,12 @@ export async function autoMatchPayments(): Promise<{
     try {
       debugLog('🔄 Auto-matching payments to transactions');
 
-      // Get unreconciled bank transactions
+      // Get unmatched bank transactions (credits only)
       const { data: transactions, error: txError } = await supabase
         .from('bank_transactions')
         .select('*')
-        .eq('is_reconciled', false)
-        .eq('transaction_type', 'credit'); // Only match incoming payments
+        .eq('status', 'unmatched')
+        .eq('transaction_type', 'credit');
 
       if (txError) {
         debugLog('❌ Get unreconciled transactions failed', txError);
@@ -137,8 +125,8 @@ export async function autoMatchPayments(): Promise<{
       const { data: payments, error: payError } = await supabase
         .from('payments')
         .select('*')
-        .eq('status', 'completed')
-        .is('reference_number', null);
+        .in('status', ['pending', 'completed'])
+        .is('bank_transaction_id', null);
 
       if (payError) {
         debugLog('❌ Get unmatched payments failed', payError);
@@ -148,38 +136,42 @@ export async function autoMatchPayments(): Promise<{
       let matched_count = 0;
 
       // Exact matching: amount and date
+      const { data: { user } } = await supabase.auth.getUser();
+      const matchedBy = user?.id || null;
+
       for (const transaction of transactions || []) {
-        const matchingPayments = (payments || []).filter(p => 
-          Math.abs(p.amount - transaction.transaction_amount) < 0.01 && // Allow 1 cent variance
-          new Date(p.created_at).toDateString() === new Date(transaction.transaction_date).toDateString()
-        );
+        const txnRef = transaction.reference || transaction.external_id;
+        const matchingPayments = (payments || []).filter(p => {
+          const amountMatches = Math.abs(p.amount - transaction.amount) < 0.01;
+          const dateMatches =
+            new Date(p.created_at).toDateString() === new Date(transaction.transaction_date).toDateString();
+          const refMatches = txnRef ? p.reference_number === txnRef : false;
+          return amountMatches && (refMatches || dateMatches);
+        });
 
         if (matchingPayments.length === 1) {
-          // Exact match found
           const payment = matchingPayments[0];
-          
-          const { error: reconError } = await supabase
-            .from('payment_reconciliations')
-            .insert({
-              payment_id: payment.id,
-              transaction_reference: transaction.transaction_reference,
-              transaction_date: transaction.transaction_date,
-              transaction_amount: transaction.transaction_amount,
-              match_type: 'auto_exact',
-              match_confidence: 1.0,
-              variance_amount: 0,
-              status: 'matched'
-            });
+          const now = new Date().toISOString();
 
-          if (!reconError) {
-            // Mark transaction as reconciled
+          const { error: updateError } = await supabase
+            .from('bank_transactions')
+            .update({
+              status: 'matched',
+              matched_payment_id: payment.id,
+              matched_at: now,
+              matched_by: matchedBy,
+              match_confidence: 100
+            })
+            .eq('id', transaction.id);
+
+          if (!updateError) {
             await supabase
-              .from('bank_transactions')
-              .update({ is_reconciled: true })
-              .eq('id', transaction.id);
+              .from('payments')
+              .update({ bank_transaction_id: transaction.id })
+              .eq('id', payment.id);
 
             matched_count++;
-            debugLog('✅ Auto-matched payment', { payment_id: payment.id, transaction_ref: transaction.transaction_reference });
+            debugLog('✅ Auto-matched payment', { payment_id: payment.id, transaction_ref: txnRef });
           }
         }
       }
@@ -202,7 +194,7 @@ export async function manualMatchPayment(
   notes?: string
 ): Promise<{
   success: boolean;
-  reconciliation_id?: string;
+  transaction_id?: string;
   error?: string;
 }> {
   return measurePerformance('manual_match_payment', async () => {
@@ -233,43 +225,34 @@ export async function manualMatchPayment(
         return { success: false, error: payError.message };
       }
 
-      // Calculate variance
-      const variance = Math.abs(payment.amount - transaction.transaction_amount);
+      const variance = Math.abs(payment.amount - transaction.amount);
+      const { data: { user } } = await supabase.auth.getUser();
+      const now = new Date().toISOString();
 
-      // Create reconciliation
-      const { data: reconciliation, error: reconError } = await supabase
-        .from('payment_reconciliations')
-        .insert({
-          payment_id: paymentId,
-          transaction_reference: transaction.transaction_reference,
-          transaction_date: transaction.transaction_date,
-          transaction_amount: transaction.transaction_amount,
-          match_type: 'manual',
-          match_confidence: 0.8,
-          variance_amount: variance,
-          variance_reason: variance > 0 ? 'Amount mismatch' : null,
-          status: variance > 0 ? 'disputed' : 'matched',
-          notes: notes
-        })
-        .select()
-        .single();
-
-      if (reconError) {
-        debugLog('❌ Create reconciliation failed', reconError);
-        return { success: false, error: reconError.message };
-      }
-
-      // Mark transaction as reconciled
-      await supabase
+      const { error: updateError } = await supabase
         .from('bank_transactions')
-        .update({ 
-          is_reconciled: true,
-          reconciliation_id: reconciliation.id
+        .update({
+          status: variance > 0 ? 'disputed' : 'matched',
+          matched_payment_id: paymentId,
+          matched_at: now,
+          matched_by: user?.id || null,
+          match_notes: notes || null,
+          match_confidence: variance > 0 ? 80 : 100
         })
         .eq('id', transactionId);
 
-      debugLog('✅ Manual match completed', { reconciliation_id: reconciliation.id });
-      return { success: true, reconciliation_id: reconciliation.id };
+      if (updateError) {
+        debugLog('❌ Manual match update failed', updateError);
+        return { success: false, error: updateError.message };
+      }
+
+      await supabase
+        .from('payments')
+        .update({ bank_transaction_id: transactionId })
+        .eq('id', paymentId);
+
+      debugLog('✅ Manual match completed', { transaction_id: transactionId, payment_id: paymentId });
+      return { success: true, transaction_id: transactionId };
     } catch (error) {
       handleDatabaseError(error, 'manualMatchPayment', { paymentId, transactionId });
       return { success: false, error: 'Unexpected error occurred' };
@@ -291,7 +274,7 @@ export async function getUnmatchedTransactions(): Promise<{
     const { data, error } = await supabase
       .from('bank_transactions')
       .select('*')
-      .eq('is_reconciled', false)
+      .eq('status', 'unmatched')
       .order('transaction_date', { ascending: false });
 
     if (error) {
@@ -312,13 +295,13 @@ export async function getUnmatchedTransactions(): Promise<{
  */
 export async function getUnmatchedPayments(): Promise<{
   success: boolean;
-  payments?: any[];
+  payments?: PaymentWithLoan[];
   error?: string;
 }> {
   try {
     debugLog('📋 Fetching unmatched payments');
 
-    // Get payments that don't have a reconciliation
+    // Get payments that don't have a bank transaction match
     const { data, error } = await supabase
       .from('payments')
       .select(`
@@ -330,6 +313,7 @@ export async function getUnmatchedPayments(): Promise<{
         )
       `)
       .eq('status', 'completed')
+      .is('bank_transaction_id', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -337,16 +321,8 @@ export async function getUnmatchedPayments(): Promise<{
       return { success: false, error: error.message };
     }
 
-    // Filter out payments that have reconciliations
-    const { data: reconciliations } = await supabase
-      .from('payment_reconciliations')
-      .select('payment_id');
-
-    const reconciledIds = new Set((reconciliations || []).map(r => r.payment_id));
-    const unmatchedPayments = (data || []).filter(p => !reconciledIds.has(p.id));
-
-    debugLog('✅ Unmatched payments retrieved', { count: unmatchedPayments.length });
-    return { success: true, payments: unmatchedPayments };
+    debugLog('✅ Unmatched payments retrieved', { count: data?.length || 0 });
+    return { success: true, payments: data || [] };
   } catch (error) {
     handleDatabaseError(error, 'getUnmatchedPayments', {});
     return { success: false, error: 'Unexpected error occurred' };
@@ -393,18 +369,32 @@ export async function getReconciliationReport(
     }
 
     const total_transactions = transactions?.length || 0;
-    const reconciled_transactions = transactions?.filter(t => t.is_reconciled).length || 0;
+    const reconciled_transactions = transactions?.filter(t => t.status === 'matched').length || 0;
     const unreconciled_transactions = total_transactions - reconciled_transactions;
-    const total_amount = transactions?.reduce((sum, t) => sum + Number(t.transaction_amount), 0) || 0;
-    const reconciled_amount = transactions?.filter(t => t.is_reconciled)
-      .reduce((sum, t) => sum + Number(t.transaction_amount), 0) || 0;
+    const total_amount = transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+    const reconciled_amount = transactions?.filter(t => t.status === 'matched')
+      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-    // Get variance from reconciliations
-    const { data: reconciliations } = await supabase
-      .from('payment_reconciliations')
-      .select('variance_amount');
+    // Compute variance by comparing matched transactions to payment amounts
+    const matchedPaymentIds = (transactions || [])
+      .filter(t => t.matched_payment_id)
+      .map(t => t.matched_payment_id as string);
 
-    const variance_amount = reconciliations?.reduce((sum, r) => sum + Number(r.variance_amount), 0) || 0;
+    let variance_amount = 0;
+    if (matchedPaymentIds.length > 0) {
+      const { data: matchedPayments } = await supabase
+        .from('payments')
+        .select('id, amount')
+        .in('id', matchedPaymentIds);
+
+      const paymentMap = new Map((matchedPayments || []).map(p => [p.id, p.amount]));
+      variance_amount = (transactions || [])
+        .filter(t => t.matched_payment_id)
+        .reduce((sum, t) => {
+          const paymentAmount = paymentMap.get(t.matched_payment_id as string) || 0;
+          return sum + Math.abs(Number(t.amount) - Number(paymentAmount));
+        }, 0);
+    }
 
     const report = {
       total_transactions,

@@ -214,35 +214,45 @@ CREATE TRIGGER approval_status_change_history
     FOR EACH ROW
     EXECUTE FUNCTION create_approval_workflow_history();
 
--- Insert default workflow rules
-INSERT INTO public.approval_workflow_rules (request_type, rule_name, conditions, action, action_data, created_by) VALUES
--- Auto-approve small loans for verified users
-('loan_application', 'Auto-approve small loans', 
- '{"amount": {"$lte": 5000}, "user_verified": true, "credit_score": {"$gte": 600}}', 
- 'auto_approve', 
- '{"reason": "Small loan amount for verified user with good credit"}',
- (SELECT id FROM auth.users WHERE email = 'admin@example.com' LIMIT 1)),
-
--- Flag high-value loans for manual review
-('loan_application', 'Flag high-value loans', 
- '{"amount": {"$gte": 25000}}', 
- 'flag_review', 
- '{"priority": "high", "reason": "High-value loan requires manual review"}',
- (SELECT id FROM auth.users WHERE email = 'admin@example.com' LIMIT 1)),
-
--- Auto-approve KYC documents from trusted sources
-('kyc_document', 'Auto-approve standard KYC', 
- '{"document_type": {"$in": ["id_card", "proof_income"]}, "file_size": {"$lte": 5242880}}', 
- 'auto_approve', 
- '{"reason": "Standard KYC document within size limits"}',
- (SELECT id FROM auth.users WHERE email = 'admin@example.com' LIMIT 1)),
-
--- Flag suspicious payment requests
-('payment', 'Flag suspicious payments', 
- '{"amount": {"$gte": 10000}, "time_of_day": {"$between": ["22:00", "06:00"]}}', 
- 'flag_review', 
- '{"priority": "urgent", "reason": "Large payment outside business hours"}',
- (SELECT id FROM auth.users WHERE email = 'admin@example.com' LIMIT 1));
+-- Insert default workflow rules (only if admin user exists)
+-- This is conditional to support local dev where admin user may not exist
+DO $$
+DECLARE
+  v_admin_id UUID;
+BEGIN
+  -- Try to find an admin user
+  SELECT id INTO v_admin_id FROM auth.users WHERE email = 'admin@example.com' LIMIT 1;
+  
+  -- Only insert seed data if admin user exists
+  IF v_admin_id IS NOT NULL THEN
+    INSERT INTO public.approval_workflow_rules (request_type, rule_name, conditions, action, action_data, created_by) VALUES
+    -- Auto-approve small loans for verified users
+    ('loan_application', 'Auto-approve small loans', 
+     '{"amount": {"$lte": 5000}, "user_verified": true, "credit_score": {"$gte": 600}}', 
+     'auto_approve', 
+     '{"reason": "Small loan amount for verified user with good credit"}',
+     v_admin_id),
+    -- Flag high-value loans for manual review
+    ('loan_application', 'Flag high-value loans', 
+     '{"amount": {"$gte": 25000}}', 
+     'flag_review', 
+     '{"priority": "high", "reason": "High-value loan requires manual review"}',
+     v_admin_id),
+    -- Auto-approve KYC documents from trusted sources
+    ('kyc_document', 'Auto-approve standard KYC', 
+     '{"document_type": {"$in": ["id_card", "proof_income"]}, "file_size": {"$lte": 5242880}}', 
+     'auto_approve', 
+     '{"reason": "Standard KYC document within size limits"}',
+     v_admin_id),
+    -- Flag suspicious payment requests
+    ('payment', 'Flag suspicious payments', 
+     '{"amount": {"$gte": 10000}, "time_of_day": {"$between": ["22:00", "06:00"]}}', 
+     'flag_review', 
+     '{"priority": "urgent", "reason": "Large payment outside business hours"}',
+     v_admin_id)
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
 
 -- Create function to evaluate workflow rules
 CREATE OR REPLACE FUNCTION evaluate_approval_rules(

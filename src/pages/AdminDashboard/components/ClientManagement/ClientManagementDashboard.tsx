@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
@@ -52,18 +51,18 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
+          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <Filter className="mr-2 h-3.5 w-3.5" />
             Filters
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
+          </ThemedButton>
+          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <Download className="mr-2 h-3.5 w-3.5" />
             Export
-          </Button>
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
+          </ThemedButton>
+          <ThemedButton className="h-9 px-3 text-xs">
+            <Plus className="mr-2 h-3.5 w-3.5" />
             Add Client
-          </Button>
+          </ThemedButton>
         </div>
       </div>
 

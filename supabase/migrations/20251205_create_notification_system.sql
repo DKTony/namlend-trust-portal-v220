@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS notification_queue (
 );
 
 -- In-app notifications (user-visible)
+-- Note: notifications table may already exist from earlier migration
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -61,6 +62,39 @@ CREATE TABLE IF NOT EXISTS notifications (
   expires_at TIMESTAMPTZ, -- Auto-dismiss after this time
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Add missing columns to existing notifications table if needed
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'is_read') THEN
+    ALTER TABLE public.notifications ADD COLUMN is_read BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'read_at') THEN
+    ALTER TABLE public.notifications ADD COLUMN read_at TIMESTAMPTZ;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'title') THEN
+    ALTER TABLE public.notifications ADD COLUMN title TEXT;
+    UPDATE public.notifications SET title = COALESCE(type, 'Notification') WHERE title IS NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'category') THEN
+    ALTER TABLE public.notifications ADD COLUMN category TEXT NOT NULL DEFAULT 'general';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'priority') THEN
+    ALTER TABLE public.notifications ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'action_url') THEN
+    ALTER TABLE public.notifications ADD COLUMN action_url TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'action_label') THEN
+    ALTER TABLE public.notifications ADD COLUMN action_label TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'metadata') THEN
+    ALTER TABLE public.notifications ADD COLUMN metadata JSONB DEFAULT '{}';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'expires_at') THEN
+    ALTER TABLE public.notifications ADD COLUMN expires_at TIMESTAMPTZ;
+  END IF;
+END $$;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread 

@@ -6,10 +6,16 @@ export const createSampleApprovalRequests = async () => {
   debugLog('🔧 Creating sample approval requests...');
   
   try {
-    // Check if user is authenticated
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      debugLog('⚠️ No authenticated user found, skipping sample approval request creation');
+    // Check for valid session (not just cached user) - session is required for RLS
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session?.access_token) {
+      debugLog('⚠️ No valid session found (required for RLS), skipping sample approval request creation');
+      return;
+    }
+    
+    const user = session.user;
+    if (!user) {
+      debugLog('⚠️ No authenticated user in session, skipping sample approval request creation');
       return;
     }
     
@@ -92,12 +98,14 @@ export const createSampleApprovalRequests = async () => {
     
     console.log(`📋 Creating ${sampleRequests.length} sample approval requests...`);
     
-    // Submit each request
+    // Submit each request with proper ApprovalRequestInput signature
     for (const request of sampleRequests) {
-      const result = await submitApprovalRequest(
-        request.requestType,
-        request.requestData
-      );
+      const result = await submitApprovalRequest({
+        user_id: user.id,
+        request_type: request.requestType,
+        request_data: request.requestData,
+        priority: 'normal'
+      });
       
       if (result.success) {
         console.log(`✅ Created ${request.requestType} approval request: ${result.requestId}`);
@@ -118,12 +126,19 @@ export const createSampleApprovalRequests = async () => {
   }
 };
 
-// Auto-run in development when explicitly enabled
-if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
-  console.log('🚀 Auto-running sample approval request creation (VITE_RUN_DEV_SCRIPTS=true)...');
-  createSampleApprovalRequests().then(() => {
-    console.log('✅ Sample approval request creation completed!');
-  }).catch((error) => {
-    console.log('❌ Sample approval request creation failed:', error);
-  });
+// DISABLED: Auto-run causes RLS violations because it runs before auth is established.
+// These scripts should be run manually AFTER logging in via the browser console.
+// 
+// To run manually after logging in:
+//   window.createSampleApprovalRequests()
+//
+// if (import.meta.env.DEV && import.meta.env.VITE_RUN_DEV_SCRIPTS === 'true') {
+//   createSampleApprovalRequests();
+// }
+
+// Expose for manual invocation after auth is established
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).createSampleApprovalRequests = createSampleApprovalRequests;
+  console.log('🔧 Debug utility available at: window.createSampleApprovalRequests()');
 }

@@ -163,8 +163,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
       window.URL.revokeObjectURL(url);
 
       toast({ title: 'Export Complete', description: `Exported ${data?.length || 0} users` });
-    } catch (error: any) {
-      toast({ title: 'Export Failed', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Export failed';
+      toast({ title: 'Export Failed', description: errMsg, variant: 'destructive' });
     }
   };
 
@@ -186,8 +187,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
       setShowAddUserModal(false);
       setNewUserData({ email: '', firstName: '', lastName: '', role: 'client' });
       fetchStats();
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Failed to add user';
+      toast({ title: 'Error', description: errMsg, variant: 'destructive' });
     } finally {
       setAddingUser(false);
     }

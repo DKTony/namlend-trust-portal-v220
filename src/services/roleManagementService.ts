@@ -17,10 +17,10 @@ export interface UserRole {
 
 /**
  * Role Hierarchy Rules:
- * 0. Super Admin (anthnydklrk@gmail.com): Can have any role combination
  * 1. Client: Can only be a client (no multiple roles)
  * 2. Loan Officer: Can only be a loan officer (single role)
  * 3. Admin: Can be admin + loan_officer (but NOT client)
+ * Note: Super admin privileges should be managed via database flags, not hardcoded emails
  */
 
 /**
@@ -166,7 +166,7 @@ export async function validateRoleHierarchy(
 /**
  * Get allowed roles for a user based on current roles and hierarchy rules
  */
-export function getAllowedRoles(currentRoles: AppRole[], userEmail?: string): {
+export function getAllowedRoles(currentRoles: AppRole[]): {
   canAdd: AppRole[];
   canRemove: AppRole[];
   description: string;
@@ -174,15 +174,6 @@ export function getAllowedRoles(currentRoles: AppRole[], userEmail?: string): {
   const hasAdmin = currentRoles.includes('admin' as AppRole);
   const hasLoanOfficer = currentRoles.includes('loan_officer' as AppRole);
   const hasClient = currentRoles.includes('client' as AppRole);
-
-  // Super Admin can have any combination
-  if (userEmail === 'anthnydklrk@gmail.com') {
-    return {
-      canAdd: (['admin', 'loan_officer', 'client'] as AppRole[]).filter(role => !currentRoles.includes(role)),
-      canRemove: currentRoles, // Super admin can remove any role
-      description: 'Super Admin can have any role combination'
-    };
-  }
 
   // Client can only be client (no multiple roles)
   if (hasClient) {

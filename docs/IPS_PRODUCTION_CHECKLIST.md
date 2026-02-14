@@ -1,5 +1,8 @@
 # IPS Production Readiness Checklist
 
+**Doc Revision**: 2026-01-19  
+**Status**: Production checklist only. Current code runs IPS in mock adapter mode.
+
 ## Overview
 
 This checklist ensures the IPS (Instant Payment Solution) integration is ready for production deployment. Complete all items before going live.

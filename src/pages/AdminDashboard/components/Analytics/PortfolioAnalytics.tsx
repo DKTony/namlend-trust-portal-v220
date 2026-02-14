@@ -26,9 +26,9 @@ import {
   Target,
   Percent
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
+import { analyticsAPI } from '@/services/api-client';
 
 interface PortfolioAnalyticsProps {
   dateRange?: string;
@@ -70,79 +70,41 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
     else setLoading(true);
 
     try {
-      // Fetch all loans
-      const { data: loans } = await supabase
-        .from('loans')
-        .select('*');
+      // Fetch portfolio metrics via API Orchestration Layer
+      const result = await analyticsAPI.getPortfolio({ period: selectedPeriod as '7d' | '30d' | '90d' | '365d' | 'all' });
 
-      // Fetch all payments
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('status', 'completed');
-
-      // Fetch client count
-      const { count: clientCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-      if (loans) {
-        // Calculate metrics
-        const totalLoans = loans.length;
-        const totalDisbursed = loans
-          .filter(l => ['active', 'disbursed', 'completed'].includes(l.status))
-          .reduce((sum, l) => sum + (l.amount || 0), 0);
-        
-        const totalRepaid = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-        
-        const activeLoans = loans.filter(l => ['active', 'disbursed'].includes(l.status));
-        const totalOutstanding = activeLoans.reduce((sum, l) => sum + (l.total_repayment || 0), 0) - totalRepaid;
-
-        const averageLoanAmount = totalLoans > 0 
-          ? loans.reduce((sum, l) => sum + (l.amount || 0), 0) / totalLoans 
-          : 0;
-
-        const averageInterestRate = totalLoans > 0
-          ? loans.reduce((sum, l) => sum + (l.interest_rate || 0), 0) / totalLoans
-          : 0;
-
-        const averageTerm = totalLoans > 0
-          ? loans.reduce((sum, l) => sum + (l.term_months || 0), 0) / totalLoans
-          : 0;
-
-        // Group by status
-        const byStatus: Record<string, number> = {};
-        loans.forEach(l => {
-          byStatus[l.status] = (byStatus[l.status] || 0) + 1;
-        });
-
-        // Group by purpose
-        const byPurpose: Record<string, number> = {};
-        loans.forEach(l => {
-          const purpose = l.purpose || 'Other';
-          byPurpose[purpose] = (byPurpose[purpose] || 0) + 1;
-        });
-
-        // Calculate rates
-        const completedLoans = loans.filter(l => l.status === 'completed').length;
-        const defaultedLoans = loans.filter(l => l.status === 'defaulted').length;
-        const repaymentRate = totalLoans > 0 ? (completedLoans / totalLoans) * 100 : 0;
-        const defaultRate = totalLoans > 0 ? (defaultedLoans / totalLoans) * 100 : 0;
+      if (result.success && result.data) {
+        const data = result.data as {
+          totalLoans?: number;
+          totalDisbursed?: number;
+          totalOutstanding?: number;
+          totalRepaid?: number;
+          averageLoanAmount?: number;
+          averageInterestRate?: number;
+          averageTerm?: number;
+          byStatus?: Record<string, number>;
+          byPurpose?: Record<string, number>;
+          clientCount?: number;
+          repaymentRate?: number;
+          defaultRate?: number;
+        };
 
         setMetrics({
-          totalLoans,
-          totalDisbursed,
-          totalOutstanding,
-          totalRepaid,
-          averageLoanAmount,
-          averageInterestRate,
-          averageTerm,
-          byStatus,
-          byPurpose,
-          clientCount: clientCount || 0,
-          repaymentRate,
-          defaultRate
+          totalLoans: data.totalLoans || 0,
+          totalDisbursed: data.totalDisbursed || 0,
+          totalOutstanding: data.totalOutstanding || 0,
+          totalRepaid: data.totalRepaid || 0,
+          averageLoanAmount: data.averageLoanAmount || 0,
+          averageInterestRate: data.averageInterestRate || 0,
+          averageTerm: data.averageTerm || 0,
+          byStatus: data.byStatus || {},
+          byPurpose: data.byPurpose || {},
+          clientCount: data.clientCount || 0,
+          repaymentRate: data.repaymentRate || 0,
+          defaultRate: data.defaultRate || 0
         });
+      } else {
+        console.error('Failed to fetch portfolio metrics:', result.error);
       }
     } catch (error) {
       console.error('Error fetching portfolio metrics:', error);
@@ -150,7 +112,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedPeriod]);
 
   useEffect(() => {
     fetchMetrics();

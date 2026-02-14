@@ -4,7 +4,7 @@
  * Tests for IPS-related database RPC functions
  */
 
-import { test, expect } from '../fixtures';
+import { test, expect, TEST_USERS } from '../fixtures';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -128,27 +128,57 @@ test.describe('IPS RPC Functions', () => {
     });
 
     test('initiate_ips_disbursement - admin can initiate (with valid disbursement)', async ({ adminSupabase }) => {
-      // First, find an approved disbursement or create test data
-      const { data: disbursements } = await adminSupabase
-        .from('disbursements')
+      const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+      expect(adminUser).toBeTruthy();
+
+      const { data: loan, error: loanError } = await adminSupabase
+        .from('loans')
+        .insert({
+          user_id: TEST_USERS.client1.id,
+          amount: 1500,
+          term_months: 3,
+          interest_rate: 32,
+          monthly_payment: 550,
+          total_repayment: 1650,
+          total_paid: 0,
+          purpose: 'IPS RPC Disbursement',
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: adminUser!.id,
+        })
         .select('id')
-        .eq('status', 'approved')
-        .limit(1);
+        .single();
+      expect(loanError).toBeNull();
+      expect(loan?.id).toBeTruthy();
 
-      if (disbursements && disbursements.length > 0) {
-        const { data, error } = await adminSupabase.rpc('initiate_ips_disbursement', {
-          p_disbursement_id: disbursements[0].id,
-          p_payee_vpa: `${TEST_PREFIX.toLowerCase()}customer@bank`,
-        });
+      const reference = `${TEST_PREFIX}disb-${Date.now()}`;
+      const { data: disbursement, error: disbursementError } = await adminSupabase
+        .from('disbursements')
+        .insert({
+          loan_id: loan!.id,
+          amount: 1500,
+          status: 'approved',
+          reference,
+          created_by: adminUser!.id,
+        })
+        .select('id')
+        .single();
+      expect(disbursementError).toBeNull();
+      expect(disbursement?.id).toBeTruthy();
 
-        expect(error).toBeNull();
-        expect(data).toBeDefined();
-        // Either success or NOT_FOUND (if disbursement doesn't exist)
-        expect(['UNAUTHORIZED', 'NOT_FOUND', 'ALREADY_INITIATED'].includes(data.error) || data.success).toBe(true);
-      } else {
-        // Skip if no approved disbursements
-        test.skip();
-      }
+      const { data, error } = await adminSupabase.rpc('initiate_ips_disbursement', {
+        p_disbursement_id: disbursement!.id,
+        p_payee_vpa: `${TEST_PREFIX.toLowerCase()}customer@bank`,
+      });
+
+      expect(error).toBeNull();
+      expect(data).toBeDefined();
+      expect(data.success).toBe(true);
+
+      await adminSupabase.from('ips_transactions').delete().eq('disbursement_id', disbursement!.id);
+      await adminSupabase.from('state_transitions').delete().eq('entity_id', disbursement!.id);
+      await adminSupabase.from('disbursements').delete().eq('id', disbursement!.id);
+      await adminSupabase.from('loans').delete().eq('id', loan!.id);
     });
   });
 

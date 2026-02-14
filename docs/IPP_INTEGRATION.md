@@ -1,5 +1,14 @@
 # Instant Payment Platform (IPP) Integration Guide
 
+**Doc Revision**: 2026-01-19  
+**Status**: Reference specification. Current code uses the `ips-adapter` Edge Function in mock mode. Production IPS API integration is pending.
+
+## Implementation Notes (Current Code)
+
+- Adapter: `supabase/functions/ips-adapter` (mock responses by default).
+- Services: `src/services/ipsService.ts`, `src/services/ipsOnboardingService.ts`.
+- Data: `ips_transactions`, `ips_vpa_registry`, onboarding tables in `supabase/migrations/`.
+
 ## Overview
 
 The **Instant Payment Platform (IPP)** is Namibia's national real-time payment infrastructure, also known as **Instant Payment Namibia (IPN)**. It is based on India's Unified Payments Interface (UPI) architecture and is governed by the Bank of Namibia (BON).

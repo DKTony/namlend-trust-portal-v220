@@ -32,7 +32,7 @@ interface WorkflowDefinition {
   entity_type: string;
   version: number;
   is_active: boolean;
-  stages: any[];
+  stages: { stage: number; name: string; required_role: string; required_approvals: number; auto_assign: boolean; timeout_hours: number; conditions: { amount_min?: number | null; amount_max?: number | null } }[];
   created_at: string;
   updated_at: string;
 }

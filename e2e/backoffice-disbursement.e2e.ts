@@ -4,31 +4,25 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { login } from './helpers/auth';
+import { ensureAdminReady, openAdminTab } from './helpers/admin';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
 
 // Extend timeout for UI tests that need data to load
 test.setTimeout(90000);
-const ADMIN_EMAIL = 'admin@test.namlend.com';
-const ADMIN_PASSWORD = 'test123';
 
 test.describe('Backoffice Disbursement UI Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to login page
-    await page.goto(`${BASE_URL}/auth`);
-    
-    // Login as admin
-    await page.fill('input[type="email"]', ADMIN_EMAIL);
-    await page.fill('input[type="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
-    
-    // Wait for dashboard to load
-    await page.waitForURL('**/admin**');
+    const role = await login(page, true);
+    if (role !== 'admin') test.skip(true, 'Admin credentials not available; skipping disbursement UI tests');
+
+    await ensureAdminReady(page);
   });
 
   test('Disburse button visible for approved loans', async ({ page }) => {
-    // Navigate to Loan Management using data-testid
-    await page.click('[data-testid="nav-loans"]');
+    // Navigate to Loan Management
+    await openAdminTab(page, 'loans');
     
     // Wait for page to fully load
     await page.waitForTimeout(2000);
@@ -55,8 +49,8 @@ test.describe('Backoffice Disbursement UI Flow', () => {
   });
 
   test('Disbursement modal opens and displays loan details', async ({ page }) => {
-    // Navigate to Loan Management using data-testid
-    await page.click('[data-testid="nav-loans"]');
+    // Navigate to Loan Management
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');
@@ -77,7 +71,7 @@ test.describe('Backoffice Disbursement UI Flow', () => {
 
   test('Payment method selection works', async ({ page }) => {
     // Navigate and open disbursement modal
-    await page.click('[data-testid="nav-loans"]');
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');
@@ -109,7 +103,7 @@ test.describe('Backoffice Disbursement UI Flow', () => {
 
   test('Form validation requires payment reference', async ({ page }) => {
     // Navigate and open disbursement modal
-    await page.click('[data-testid="nav-loans"]');
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');
@@ -132,7 +126,7 @@ test.describe('Backoffice Disbursement UI Flow', () => {
 
   test('Complete disbursement flow', async ({ page }) => {
     // Navigate and open disbursement modal
-    await page.click('[data-testid="nav-loans"]');
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');
@@ -164,24 +158,67 @@ test.describe('Backoffice Disbursement UI Flow', () => {
     // Success! The disbursement was processed (modal closed means success)
   });
 
-  test.skip('Repayments visible after disbursement', async ({ page }) => {
-    // SKIPPED: Requires disbursed loans with payment schedules - complex test data setup
-    // This functionality is covered by API tests in disbursement.e2e.ts
+  test('Loan status updates after disbursement', async ({ page }) => {
+    await openAdminTab(page, 'loans');
+    await page.waitForTimeout(1000);
+    await page.click('button:has-text("Approved")');
+
+    const disburseButton = page.locator('[data-testid^="disburse-loan-"]').first();
+    await expect(disburseButton).toBeVisible({ timeout: 15000 });
+
+    const disburseTestId = await disburseButton.getAttribute('data-testid');
+    expect(disburseTestId).toBeTruthy();
+    const loanId = disburseTestId!.replace('disburse-loan-', '');
+
+    await disburseButton.click();
+    await page.waitForSelector('[data-testid="disbursement-modal"]');
+
+    await page.click('[data-testid="payment-method-mobile"]');
+    await page.fill('[data-testid="payment-reference-input"]', 'E2E-STATUS-REF-' + Date.now());
+
+    const submitButton = page.locator('[data-testid="complete-disbursement-button"]');
+    await submitButton.scrollIntoViewIfNeeded();
+    await submitButton.evaluate((el: HTMLElement) => el.click());
+
+    await expect(page.locator('[data-testid="disbursement-modal"]')).not.toBeVisible({ timeout: 20000 });
+
+    await page.click('button:has-text("All Loans")');
+    await page.waitForTimeout(1000);
+
+    const disbursedCard = page.locator(`[data-testid="loan-card-${loanId}"]`);
+    await expect(disbursedCard).toBeVisible({ timeout: 15000 });
+    await expect(disbursedCard).toContainText(/disbursed/i);
   });
 
   test('Cannot disburse same loan twice', async ({ page }) => {
     // Navigate to Disbursed loans
-    await page.click('[data-testid="nav-loans"]');
-    await page.selectOption('[data-testid="filter-status-select"]', 'disbursed');
-    
+    await openAdminTab(page, 'loans');
+    await page.click('button:has-text("All Loans")');
+
     // Wait for loans to load
-    await page.waitForSelector('[data-testid^="loan-card-"]', {
-      timeout: 5000
-    });
+    await page.waitForTimeout(1000);
+    const loanCards = page.locator('[data-testid^="loan-card-"]');
+    const cardCount = await loanCards.count();
     
+    if (cardCount === 0) {
+      // No loans at all - skip test
+      test.skip(true, 'No loan cards available to test.');
+      return;
+    }
+
+    // Look for disbursed loans - check both "disbursed" and "Disbursed" status text
+    const disbursedCard = loanCards.filter({ hasText: /disbursed/i }).first();
+    const disbursedCount = await disbursedCard.count();
+    
+    if (disbursedCount === 0) {
+      // No disbursed loans available - skip test gracefully
+      console.log('No disbursed loans found in the loan list. Skipping test.');
+      test.skip(true, 'No disbursed loans available to verify disbursement button state.');
+      return;
+    }
+
     // Disburse button should NOT be visible for disbursed loans
-    const disburseButton = page.locator('[data-testid^="disburse-loan-"]');
-    await expect(disburseButton).not.toBeVisible();
+    await expect(disbursedCard.locator('[data-testid^="disburse-loan-"]')).toHaveCount(0);
   });
 
   test('Audit trail recorded for disbursement', async ({ page }) => {
@@ -201,15 +238,14 @@ test.describe('Backoffice Disbursement UI Flow', () => {
 
 test.describe('Disbursement Error Handling', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/auth`);
-    await page.fill('input[type="email"]', ADMIN_EMAIL);
-    await page.fill('input[type="password"]', ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL('**/admin**');
+    const role = await login(page, true);
+    if (role !== 'admin') test.skip(true, 'Admin credentials not available; skipping disbursement error tests');
+
+    await ensureAdminReady(page);
   });
 
   test('Validates payment reference on submit', async ({ page }) => {
-    await page.click('[data-testid="nav-loans"]');
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');
@@ -229,7 +265,7 @@ test.describe('Disbursement Error Handling', () => {
   });
 
   test('Cancel closes modal without changes', async ({ page }) => {
-    await page.click('[data-testid="nav-loans"]');
+    await openAdminTab(page, 'loans');
     await page.waitForTimeout(1000);
     // Click on Approved tab
     await page.click('button:has-text("Approved")');

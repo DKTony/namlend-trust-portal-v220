@@ -1,464 +1,151 @@
 # NamLend Trust - Services Documentation
 
-**Version**: 3.3.0  
-**Last Updated**: December 27, 2025  
-**Status**: ✅ All Services Implemented (IPS Payment Method Active in Mock Mode; Reconciliation Dashboard Complete)
+**Doc Revision**: 2026-01-19  \
+**Status**: Service layer is implemented across lending, IPS/IPP, collections, reconciliation, and settlement.
 
 ---
 
-## Overview
+## Service Index (src/services)
 
-NamLend Trust includes a comprehensive suite of backend services for payment processing, communications, and intelligent credit decisions. The system is designed to integrate with Namibia's **Instant Payment Platform (IPP/IPN)** for real-time payment settlement.
+| Service | Purpose | Notes |
+| --- | --- | --- |
+| `api-client.ts` | API orchestration client | Edge Function API wrapper with retries/metrics |
+| `approvalWorkflow.ts` | Approval request workflow | Drives loan application approvals |
+| `loanService.ts` | Loan record helpers | Status updates + disbursement creation |
+| `disbursementService.ts` | Disbursement state machine | RPC-driven, posts to ledger outbox |
+| `paymentService.ts` | Payment processing | Schedules, overdue, fees, ledger posts |
+| `paymentGateway.ts` | Provider routing + instructions | Bank transfer, MoMo, TN Mobile, PayToday, cash |
+| `ipsService.ts` | IPS payment integration | Calls `ips-adapter` Edge Function |
+| `ipsOnboardingService.ts` | IPP onboarding | RPC + adapter endpoints |
+| `collectionsService.ts` | Collections workflow | Activities, promises, reschedules |
+| `reconciliationService.ts` | Bank transaction matching | Manual and auto matching |
+| `notificationService.ts` | In-app notifications | Queue, preferences, realtime |
+| `smsGateway.ts` | SMS templates + logging | Client-side logging; Edge function for delivery |
+| `whatsappGateway.ts` | WhatsApp templates + logging | Client-side logging; Edge function for delivery |
+| `auditService.ts` | Audit trail access | RPCs for logs/transitions |
+| `workflowEngine.ts` | Multi-stage workflows | RPC-driven engine |
+| `roleManagementService.ts` | Role assignment rules | Validated via RPC |
+| `adminService.ts` | Admin profile data | RPC for profiles with roles |
+| `ledgerService.ts` | TigerBeetle outbox | Simulated posting via Edge worker |
+| `settlementService.ts` | Settlement runs + reports | DNS settlement workflows |
+| `clientService.ts` | Client profile access | Profile read/update |
+| `financeService.ts` | Budget & finance tracking | Transactions, budgets, savings goals, CSV upload |
+| `creditScoring.ts` | AI credit risk assessment | Scoring, recommendations, affordability checks |
 
 ---
 
-## Payment Gateway Service
+## Approval Workflow
+
+**File**: `src/services/approvalWorkflow.ts`
+
+Key exports:
+
+- `submitApprovalRequest()`
+- `getUserApprovalRequests()`
+- `getAllApprovalRequests()`
+- `updateApprovalStatus()`
+- `getApprovalHistory()`
+- `getApprovalNotifications()`
+- `markNotificationAsRead()`
+- `getApprovalStatistics()`
+- `processApprovedLoanApplication()`
+- `processApprovedKYCDocument()`
+
+Notes:
+
+- Admin processing uses `process_approval_transaction` RPC and expects an approval request id.
+- Loan application UI submits approval requests; loans are created after approval.
+
+---
+
+## Disbursement Service
+
+**File**: `src/services/disbursementService.ts`
+
+Key exports:
+
+- `createDisbursementOnApproval()`
+- `approveDisbursement()`
+- `markDisbursementProcessing()`
+- `completeDisbursement()`
+- `failDisbursement()`
+- `getPendingDisbursements()`
+- `getDisbursementById()`
+- `getDisbursementsForLoan()`
+
+Notes:
+
+- `completeDisbursement()` posts a TigerBeetle outbox event (non-blocking).
+
+---
+
+## Payment Service
+
+**File**: `src/services/paymentService.ts`
+
+Key exports:
+
+- `processLoanPayment()` (RPC `process_loan_payment`)
+- `generatePaymentSchedule()`
+- `getPaymentSchedule()`
+- `applyPaymentToSchedule()`
+- `markOverduePayments()`
+- `calculateLateFee()` / `waiveLateFee()`
+- `getLoanPaymentDetails()`
+- `getLoanPortfolioSummary()`
+
+Notes:
+
+- Payment processing posts repayment events to the TigerBeetle outbox.
+- `create_payment` RPC is used for client-initiated payment creation (idempotent).
+
+---
+
+## Payment Gateway
 
 **File**: `src/services/paymentGateway.ts`
 
-### Supported Providers
+Supported providers (manual or webhook-driven):
 
-| Provider | Type | Processing Time | Integration Status |
-|----------|------|-----------------|-------------------|
-| **IPS/IPP** | Real-time | Instant (<5 sec) | ✅ **Active (Mock Mode)** |
-| Bank Transfer (EFT) | Manual | 1-2 business days | ✅ Implemented |
-| MTC MoMo | Mobile Money | Instant | ✅ Implemented |
-| TN Mobile Money | Mobile Money | Instant | ✅ Implemented |
-| PayToday | Online Gateway | Instant | ✅ Implemented |
-| Cash | In-person | Same day | ✅ Implemented |
+- `bank_transfer`
+- `mobile_money_mtc`
+- `mobile_money_tn`
+- `paytoday`
+- `cash`
 
-> **IPS Integration**: See [IPS_IMPLEMENTATION.md](./IPS_IMPLEMENTATION.md) for implementation details.
-> **IPP Technical Specs**: See [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) for BON technical specifications.
+Key exports:
 
-### Key Functions
+- `initiatePayment()`
+- `verifyPayment()`
+- `getPaymentInstructions()`
+- `handlePaymentWebhook()`
+- `getPaymentHistory()`
+- `getAvailablePaymentMethods()`
 
-```typescript
-// Initiate a payment
-initiatePayment(request: PaymentRequest): Promise<PaymentResponse>
+Notes:
 
-// Verify payment status
-verifyPayment(transactionId: string, provider: PaymentProvider): Promise<PaymentVerification>
-
-// Get payment instructions
-getPaymentInstructions(provider: PaymentProvider, reference: string): string
-
-// Handle incoming webhook
-handlePaymentWebhook(provider, reference, status, providerData): Promise<boolean>
-
-// Get payment history for a loan
-getPaymentHistory(loanId: string): Promise<PaymentVerification[]>
-```
-
-### Environment Variables
-
-```env
-VITE_PAYTODAY_API_URL=
-VITE_PAYTODAY_MERCHANT_ID=
-VITE_PAYTODAY_API_KEY=
-VITE_MTC_MOMO_API_URL=
-VITE_MTC_MOMO_MERCHANT=
-VITE_TN_MOBILE_API_URL=
-VITE_TN_MOBILE_MERCHANT=
-```
+- IPS/IPP payments are handled by `ipsService.ts`, not the gateway.
 
 ---
 
-## SMS Gateway Service
-
-**File**: `src/services/smsGateway.ts`
-
-### Provider: Africa's Talking
-
-### Key Functions
-
-```typescript
-// Send SMS
-sendSMS(request: SMSRequest): Promise<SMSResponse>
-
-// Send SMS using template
-sendTemplateSMS(templateCode, to, variables, options): Promise<SMSResponse>
-
-// Send bulk SMS
-sendBulkSMS(recipients, category, options): Promise<BulkSMSResult>
-
-// Send OTP
-sendOTP(phone, userId?): Promise<{ success: boolean; otp?: string }>
-```
-
-### Pre-defined Templates
-
-| Template Code | Category | Description |
-|--------------|----------|-------------|
-| `LOAN_SUBMITTED` | loan_notification | Application submitted |
-| `LOAN_APPROVED` | loan_notification | Loan approved |
-| `LOAN_REJECTED` | loan_notification | Application rejected |
-| `LOAN_DISBURSED` | loan_notification | Funds disbursed |
-| `PAYMENT_REMINDER_7_DAYS` | payment_reminder | 7 days before due |
-| `PAYMENT_REMINDER_3_DAYS` | payment_reminder | 3 days before due |
-| `PAYMENT_REMINDER_1_DAY` | payment_reminder | 1 day before due |
-| `PAYMENT_OVERDUE` | collections | Overdue notice |
-| `PAYMENT_RECEIVED` | payment_confirmation | Payment received |
-| `LOAN_COMPLETED` | loan_notification | Loan paid off |
-| `OTP_VERIFICATION` | otp | Verification code |
-| `PTP_REMINDER` | collections | Promise-to-pay reminder |
-
-### Environment Variables
-
-```env
-VITE_AFRICASTALKING_API_KEY=
-VITE_AFRICASTALKING_USERNAME=
-VITE_SMS_SENDER_ID=NAMLEND
-```
-
----
-
-## WhatsApp Gateway Service
-
-**File**: `src/services/whatsappGateway.ts`
-
-### Provider: Meta Cloud API (WhatsApp Business)
-
-### Key Functions
-
-```typescript
-// Send text message
-sendTextMessage(to, text, options?): Promise<WhatsAppResponse>
-
-// Send template message
-sendTemplateMessage(to, templateName, parameters, options?): Promise<WhatsAppResponse>
-
-// Send interactive buttons
-sendButtonMessage(to, body, buttons, options?): Promise<WhatsAppResponse>
-
-// Send list message
-sendListMessage(to, body, sections, options?): Promise<WhatsAppResponse>
-
-// Handle webhook
-handleWebhook(payload): Promise<{ type, data }>
-```
-
-### Quick Send Helpers
-
-```typescript
-// Loan approval notification
-quickSend.loanApproved(to, loanDetails, userId?)
-
-// Payment reminder
-quickSend.paymentReminder(to, paymentDetails, userId?)
-
-// Payment confirmation
-quickSend.paymentConfirmation(to, paymentDetails, userId?)
-
-// Payment options with buttons
-quickSend.paymentOptions(to, amount, userId?)
-```
-
-### Environment Variables
-
-```env
-VITE_WHATSAPP_PHONE_NUMBER_ID=
-VITE_WHATSAPP_ACCESS_TOKEN=
-VITE_WHATSAPP_BUSINESS_ACCOUNT_ID=
-VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN=
-```
-
----
-
-## Credit Scoring Service
-
-**File**: `src/services/creditScoring.ts`
-
-### AI-Powered Credit Assessment
-
-The credit scoring service calculates risk scores based on multiple factors:
-
-### Scoring Weights
-
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| Income | 25% | Monthly income level |
-| Debt-to-Income | 20% | Current debt burden |
-| Employment | 15% | Job stability |
-| Payment History | 20% | Past payment behavior |
-| Verification | 10% | ID/address/employment verified |
-| Loan History | 10% | Previous loans completed |
-
-### Score Ranges
-
-| Range | Score | Risk Level |
-|-------|-------|------------|
-| Excellent | 750-850 | Low |
-| Good | 670-749 | Medium |
-| Fair | 580-669 | High |
-| Poor | 300-579 | Very High |
-
-### Key Functions
-
-```typescript
-// Calculate credit score from factors
-calculateCreditScore(factors: CreditFactors): CreditScore
-
-// Get loan recommendation
-getLoanRecommendation(factors, creditScore): LoanRecommendation
-
-// Fetch factors from user profile
-getCreditFactorsForUser(userId: string): Promise<CreditFactors>
-
-// Save score to database
-saveCreditScore(userId, score, loanId?): Promise<string>
-
-// Calculate using database function
-calculateCreditScoreDB(userId, loanId?): Promise<string>
-
-// Get current score from database
-getCurrentCreditScore(userId?): Promise<CreditScore>
-```
-
-### Output
-
-```typescript
-interface CreditScore {
-  score: number;                    // 300-850
-  scoreRange: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
-  riskLevel: 'low' | 'medium' | 'high' | 'very_high';
-  maxApprovedAmount: number;        // Calculated max loan
-  suggestedInterestRate: number;    // Risk-based rate (max 32%)
-  debtToIncomeRatio: number;        // DTI percentage
-  factors: CreditScoreFactor[];     // Breakdown
-  recommendations: string[];        // Improvement tips
-}
-```
-
----
-
-## Notification Service
-
-**File**: `src/services/notificationService.ts`
-
-### Multi-Channel Notification System
-
-### Key Functions
-
-```typescript
-// Get user's notifications
-getNotifications(filters?): Promise<{ notifications, total, unreadCount }>
-
-// Get unread count
-getUnreadCount(): Promise<number>
-
-// Mark as read
-markAsRead(notificationId: string): Promise<boolean>
-
-// Mark all as read
-markAllAsRead(): Promise<number>
-
-// Get preferences
-getPreferences(): Promise<NotificationPreference[]>
-
-// Update preference
-updatePreference(channel, category, enabled): Promise<boolean>
-
-// Queue notification
-queueNotification(userId, templateCode, data, scheduledAt?): Promise<string[]>
-
-// Subscribe to real-time updates
-subscribeToNotifications(userId, onNotification): () => void
-```
-
-### Notification Categories
-
-- `loan` - Loan lifecycle events
-- `payment` - Payment related
-- `kyc` - Verification status
-- `account` - Account updates
-- `general` - General info
-- `marketing` - Promotions
-- `collections` - Overdue notices
-
----
-
-## Collections Service
-
-**File**: `src/services/collectionsService.ts`
-
-### Collections Management
-
-### Key Functions
-
-```typescript
-// Get collections queue
-getCollectionsQueue(filters?): Promise<CollectionsLoan[]>
-
-// Add collection interaction
-addInteraction(loanId, type, notes, outcome): Promise<string>
-
-// Record promise-to-pay
-recordPromiseToPay(loanId, promiseDate, promisedAmount, notes?): Promise<string>
-
-// Get promise-to-pay records
-getPromiseToPay(loanId): Promise<PromiseToPay[]>
-
-// Update PTP status
-updatePromiseToPayStatus(ptpId, status): Promise<void>
-
-// Get overdue loans
-getOverdueLoans(): Promise<Loan[]>
-
-// Get collections statistics
-getCollectionsStats(): Promise<CollectionsStats>
-```
-
----
-
-## Component Reference
-
-### UI Components
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| `NotificationCenter` | `src/components/NotificationCenter.tsx` | In-app notification popover |
-| `LoanStatusTimeline` | `src/components/LoanStatusTimeline.tsx` | Application status tracker |
-| `LoanCalculator` | `src/components/LoanCalculator.tsx` | Interactive loan calculator |
-| `CreditScoreDisplay` | `src/components/CreditScoreDisplay.tsx` | Visual credit score card |
-| `SelfServicePortal` | `src/components/SelfServicePortal.tsx` | Client self-service |
-| `CollectionsDashboard` | `src/pages/AdminDashboard/components/CollectionsManagement/CollectionsDashboard.tsx` | Collections queue |
-| `PromiseToPayDialog` | `src/pages/AdminDashboard/components/CollectionsManagement/PromiseToPayDialog.tsx` | PTP recording |
-| `Loan360View` | `src/pages/AdminDashboard/components/Loan360/Loan360View.tsx` | Unified loan view |
-| `PortfolioAnalytics` | `src/pages/AdminDashboard/components/Analytics/PortfolioAnalytics.tsx` | Portfolio metrics |
-| `CreditPolicyConfig` | `src/pages/AdminDashboard/components/Settings/CreditPolicyConfig.tsx` | Policy configuration |
-| `BatchOperations` | `src/pages/AdminDashboard/components/BatchOperations/BatchOperations.tsx` | Bulk actions |
-
----
-
-## Environment Variables Summary
-
-```env
-# Payment Gateway
-VITE_PAYTODAY_API_URL=
-VITE_PAYTODAY_MERCHANT_ID=
-VITE_PAYTODAY_API_KEY=
-VITE_MTC_MOMO_API_URL=
-VITE_MTC_MOMO_MERCHANT=
-VITE_TN_MOBILE_API_URL=
-VITE_TN_MOBILE_MERCHANT=
-
-# SMS Gateway (Africa's Talking)
-VITE_AFRICASTALKING_API_KEY=
-VITE_AFRICASTALKING_USERNAME=
-VITE_SMS_SENDER_ID=NAMLEND
-
-# WhatsApp Business API
-VITE_WHATSAPP_PHONE_NUMBER_ID=
-VITE_WHATSAPP_ACCESS_TOKEN=
-VITE_WHATSAPP_BUSINESS_ACCOUNT_ID=
-VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN=
-
-# Supabase
-VITE_SUPABASE_URL=https://puahejtaskncpazjyxqp.supabase.co
-VITE_SUPABASE_ANON_KEY=
-VITE_SUPABASE_SERVICE_ROLE_KEY=
-```
-
----
-
-## IPS (Instant Payment System) Service
+## IPS Service
 
 **File**: `src/services/ipsService.ts`
 
-### Overview
+Key exports:
 
-The IPS service handles real-time payments via Namibia's Instant Payment Platform (IPP/IPN).
+- `initiateIPSDisbursement()`
+- `initiateIPSRepayment()`
+- `completeIPSTransaction()`
+- `getIPSTransactionStatus()` / `checkIPSTransactionStatus()`
+- `validateVPA()`
+- `getUserVPAs()` / `upsertUserVPA()` / `deleteUserVPA()` / `setDefaultVPA()`
+- `getLoanIPSTransactions()`
+- `getPendingIPSTransactions()`
 
-### Key Functions
+Notes:
 
-```typescript
-// Initiate loan repayment via IPS
-initiateIPSRepayment(params: {
-  loanId: string;
-  amount: number;
-  payerVpa: string;
-}): Promise<InitiateIPSRepaymentResult>
-
-// Initiate loan disbursement via IPS
-initiateIPSDisbursement(params: {
-  loanId: string;
-  payeeVpa: string;
-}): Promise<InitiateIPSDisbursementResult>
-
-// Validate a VPA address
-validateVPA(vpa: string): Promise<ValidateVPAResult>
-
-// Get transaction status
-getTransactionStatus(transactionId: string): Promise<TransactionStatusResult>
-
-// Fetch user's saved VPAs
-getUserVPAs(userId: string): Promise<VPA[]>
-
-// Save/update a VPA
-upsertVPA(params: UpsertVPAParams): Promise<VPA>
-```
-
-### Edge Function: ips-adapter
-
-**Location**: `supabase/functions/ips-adapter/index.ts`
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/pay` | POST | Process IPS payment |
-| `/validate-vpa` | POST | Validate VPA address |
-| `/check-status` | POST | Check transaction status |
-| `/list-acc-pvd` | POST | List SoV providers |
-| `/list-account` | POST | List user accounts |
-| `/register-mobile` | POST | Register mobile device |
-| `/get-alias` | POST | Get alias directory |
-| `/reg-mapper` | POST | Register VPA alias |
-| `/set-cred` | POST | Set IPS PIN |
-| `/list-keys` | POST | List encryption keys |
-
-### Mock Mode
-
-The service operates in **Mock Mode** by default for development:
-- VPA validation always succeeds for valid format
-- Payments complete after simulated delay
-- Random transaction IDs generated
-
-Set `MOCK_MODE=false` for production IPS integration.
-
-### Environment Variables (Production)
-
-```env
-IPS_API_URL=https://ips.bon.na/api/v2
-IPS_API_KEY=<your-api-key>
-IPS_ORG_ID=NAMLEND
-IPS_MERCHANT_VPA=collections@namlend
-MOCK_MODE=false
-```
-
----
-
-## Database Tables (Phase 4 & IPS)
-
-The following tables support these services:
-
-| Table | Service | Purpose |
-|-------|---------|--------|
-| `notification_templates` | Notification | Reusable message templates |
-| `notification_preferences` | Notification | User channel preferences |
-| `notification_queue` | Notification | Async delivery queue |
-| `credit_scores` | Credit Scoring | Historical score records |
-| `credit_score_factors` | Credit Scoring | Score breakdown |
-| `payment_transactions` | Payment Gateway | Transaction logs |
-| `payment_webhooks` | Payment Gateway | Webhook logs |
-| `communication_logs` | SMS/WhatsApp | Message delivery logs |
-| `whatsapp_conversations` | WhatsApp | Conversation state |
-| `ips_transactions` | **IPS** | IPS payment transactions |
-| `ips_vpa_registry` | **IPS** | User VPA records |
-| `ips_api_logs` | **IPS** | API call logging |
-| `ips_onboarding` | **IPP Onboarding** | Customer onboarding state machine |
-| `ips_device_bindings` | **IPP Onboarding** | Device binding records |
-| `ips_alias_directory` | **IPP Onboarding** | VPA alias cache |
-| `ips_sov_providers` | **IPP Onboarding** | SoV providers (banks, mobile money) |
-| `ips_onboarding_history` | **IPP Onboarding** | Onboarding audit trail |
+- Calls the `ips-adapter` Edge Function (mock mode by default).
 
 ---
 
@@ -466,58 +153,262 @@ The following tables support these services:
 
 **File**: `src/services/ipsOnboardingService.ts`
 
-### Purpose
+Key exports:
 
-Manages customer enrollment into IPP (Instant Payment Platform) for real-time payments.
-
-### Onboarding States
-
-| State | Description |
-|-------|-------------|
-| `NOT_STARTED` | User has not begun enrollment |
-| `DEVICE_BINDING_REQUIRED` | Device binding needed |
-| `DEVICE_BOUND` | Device successfully bound |
-| `SOV_SELECTED` | Bank/provider selected |
-| `ACCOUNTS_LISTED` | Accounts fetched from bank |
-| `VERIFIED` | Account verified via OTP |
-| `IPS_PIN_SET` | 6-digit IPS PIN created |
-| `ALIAS_REGISTERED` | VPA created and active |
-| `READY_FOR_IPP_PAYMENTS` | Fully enrolled, can transact |
-
-### Key Functions
-
-```typescript
-// Get onboarding status
-getOnboardingStatus(userId?: string): Promise<OnboardingStatusResponse>
-
-// Advance onboarding step
-advanceOnboardingStep(stepName, stepData): Promise<StepResult>
-
-// Customer flow functions
-startDeviceBinding(mobileNumber): Promise<DeviceBindingResult>
-selectSovProvider(providerCode): Promise<SovSelectionResult>
-verifyWithOTP(otpCode): Promise<VerificationResult>
-setIPSPin(pin): Promise<PinSetResult>
-registerAlias(vpaUsername): Promise<AliasResult>
-```
-
-### Client-Side UI
-
-**Component**: `src/components/BankingSection.tsx`
-
-Provides self-service IPP enrollment in the client dashboard under the **Banking** tab.
-
-### Admin Dashboard UI
-
-**Component**: `src/pages/AdminDashboard/components/IPPOnboarding/IPPOnboardingDashboard.tsx`
-
-Allows admins to:
-- View enrollment statistics
-- Initiate onboarding for customers
-- Monitor onboarding progress
-- View detailed user status
+- `getOrCreateOnboarding()`
+- `advanceOnboardingStep()`
+- `isUserIPPReady()`
+- `getOnboardingSummary()`
+- `getUsersPendingOnboarding()`
+- `adminInitiateOnboarding()`
+- Adapter calls: list providers, list accounts, register mobile, map alias, set credentials
 
 ---
 
-*Document Version: 3.1.0*  
-*Last Updated: December 27, 2025*
+## Collections Service
+
+**File**: `src/services/collectionsService.ts`
+
+Key exports:
+
+- `generateCollectionQueue()`
+- `recordCollectionActivity()`
+- `assignToCollectionAgent()`
+- `recordPaymentPromise()` / `markPromiseFulfilled()`
+- `getCollectionActivities()` / `getOverdueLoans()`
+- `getCollectionsQueue()` / `getCollectionsStats()`
+- `createPromiseToPay()` / `resolvePromiseToPay()` / `getPromisesToPay()`
+- `logInteraction()` / `getInteractions()`
+- `requestReschedule()` / `getRescheduleRequests()` / `processRescheduleRequest()`
+
+---
+
+## Reconciliation Service
+
+**File**: `src/services/reconciliationService.ts`
+
+Key exports:
+
+- `importBankTransactions()`
+- `autoMatchPayments()`
+- `manualMatchPayment()`
+- `getUnmatchedTransactions()`
+- `getUnmatchedPayments()`
+- `getReconciliationReport()`
+
+Notes:
+
+- Uses legacy `bank_transactions` + `payment_reconciliations` tables.
+- `api-reconciliation` Edge Function and `reconciliation_runs` schema exist, but UI still uses this service directly (see `DATABASE_SCHEMA.md`).
+
+---
+
+## Notification Service
+
+**File**: `src/services/notificationService.ts`
+
+Key exports:
+
+- `getNotifications()`
+- `getUnreadCount()`
+- `markAsRead()` / `markAllAsRead()`
+- `getPreferences()` / `updatePreference()`
+- `queueNotification()`
+- `subscribeToNotifications()`
+
+Notes:
+
+- Functions are tolerant of missing tables (returns empty results).
+
+---
+
+## SMS and WhatsApp Gateways
+
+**Files**: `src/services/smsGateway.ts`, `src/services/whatsappGateway.ts`
+
+Notes:
+
+- Client-side services log to `communication_logs` and `notification_queue`.
+- Actual delivery is via Edge Functions (`send-sms`, `send-whatsapp`) with secrets.
+
+---
+
+## Audit Service
+
+**File**: `src/services/auditService.ts`
+
+Key exports:
+
+- `AuditService.logViewAccess()`
+- `AuditService.logStateTransition()`
+- `AuditService.getAuditLogs()` / `getViewLogs()` / `getStateTransitions()`
+
+---
+
+## Workflow Engine
+
+**File**: `src/services/workflowEngine.ts`
+
+Key exports:
+
+- `getActiveWorkflow()`
+- `startWorkflow()`
+- `getWorkflowInstance()`
+- `getCurrentStageExecution()` / `getStageExecutions()`
+- `getMyPendingStages()`
+- `approveStage()` / `rejectStage()` / `skipStage()`
+
+---
+
+## Role Management and Admin
+
+**Files**: `src/services/roleManagementService.ts`, `src/services/adminService.ts`
+
+Key exports:
+
+- `assignUserRole()` / `removeUserRole()` / `setUserRoles()`
+- `getUserRoles()` / `validateRoleHierarchy()`
+- `getProfilesWithRoles()` / `listUserRoles()`
+
+---
+
+## Ledger Service (TigerBeetle)
+
+**File**: `src/services/ledgerService.ts`
+
+Key exports:
+
+- `createLoanAccounts()` / `getAccountMapping()`
+- `postDisbursement()` / `postRepayment()` / `postLateFeeAccrual()`
+- `postIPSInitiate()` / `postIPSComplete()` / `postIPSVoid()`
+- Outbox processing helpers and reconciliation utilities
+
+Notes:
+
+- Browser uses outbox tables; Edge worker processes entries.
+- Direct TB client is Node-only and disabled in browser.
+
+---
+
+## Settlement Service
+
+**File**: `src/services/settlementService.ts`
+
+Key exports:
+
+- `getSettlementRuns()` / `getSettlementRunDetails()`
+- `getPacs009BatchDetails()` / `getPacs009Batches()`
+- `getSettlementReports()` / `getReportContent()`
+- `getSettlementAdjustments()` / `getAdjustment()` / `updateAdjustmentStatus()`
+- `getTimeoutTransactions()` / `getSettlementStatistics()`
+- `createSettlementRun()` / `processSettlementRun()` / `markSettlementSettled()`
+
+---
+
+## Finance Service
+
+**File**: `src/services/financeService.ts`
+
+Key exports:
+
+- `getTransactions()` - Fetch user transactions (mock data currently)
+- `getBudgetOverview()` - Get budget limits by category
+- `getSavingsGoals()` - Get user's savings goals with progress
+- `processCSVUpload()` - Parse bank statement CSV and categorize transactions
+- `createSavingsGoal()` - Create a new savings goal
+- `addFundsToSavingsGoal()` - Add funds to existing savings goal
+- `updateBudgetLimit()` - Update category budget limits
+
+Notes:
+
+- Currently uses mock data; will be integrated with Supabase tables.
+- Supports CSV upload from Standard Bank, FNB, Nedbank formats.
+- Powers the `/budget` page (Budget Tracker).
+
+---
+
+## Credit Scoring Service
+
+**File**: `src/services/creditScoring.ts`
+
+Key exports:
+
+- `calculateCreditScore()` - AI-powered credit risk assessment
+- `getLoanRecommendation()` - Get approval recommendation with terms
+- `getCreditFactors()` - Analyze credit factors (income, debt, history)
+- `getAffordabilityScore()` - Calculate debt-to-income affordability
+- `CREDIT_SCORE_RANGES` - Score range definitions (Excellent/Good/Fair/Poor)
+
+Notes:
+
+- Uses weighted scoring algorithm (income 25%, debt ratio 20%, employment 15%, etc.).
+- Enforces 32% APR regulatory limit from `constants/regulatory.ts`.
+- Returns `LoanRecommendation` with approved amount, suggested terms, and conditions.
+- Currently surfaced via `CreditScoreDisplay` only; not wired into `LoanApplication.tsx` or approval decisions.
+
+---
+
+## Environment Variables
+
+**Client (Vite)**
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_PAYTODAY_API_URL=
+VITE_PAYTODAY_MERCHANT_ID=
+VITE_PAYTODAY_API_KEY=
+VITE_MTC_MOMO_API_URL=
+VITE_MTC_MOMO_MERCHANT=
+VITE_TN_MOBILE_API_URL=
+VITE_TN_MOBILE_MERCHANT=
+VITE_AFRICASTALKING_API_KEY=
+VITE_AFRICASTALKING_USERNAME=
+VITE_SMS_SENDER_ID=NAMLEND
+VITE_WHATSAPP_PHONE_NUMBER_ID=
+VITE_WHATSAPP_ACCESS_TOKEN=
+VITE_WHATSAPP_BUSINESS_ACCOUNT_ID=
+VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN=
+VITE_PAYTODAY_WEBHOOK_SECRET=
+VITE_MTC_MOMO_WEBHOOK_SECRET=
+VITE_TN_MOBILE_WEBHOOK_SECRET=
+VITE_IPS_WEBHOOK_SECRET=
+VITE_DEBUG_TOOLS=false
+VITE_RUN_DEV_SCRIPTS=false
+VITE_ALLOW_LOCAL_ADMIN=false
+VITE_TEST_ADMIN_EMAIL=
+VITE_TEST_ADMIN_PASSWORD=
+VITE_E2E=false
+```
+
+**Edge Functions (Supabase secrets)**
+
+```env
+AFRICASTALKING_API_KEY=
+AFRICASTALKING_USERNAME=
+SMS_SENDER_ID=NAMLEND
+WHATSAPP_PHONE_NUMBER_ID=
+WHATSAPP_ACCESS_TOKEN=
+WHATSAPP_BUSINESS_ID=
+PAYTODAY_WEBHOOK_SECRET=
+MTC_MOMO_WEBHOOK_SECRET=
+TN_MOBILE_WEBHOOK_SECRET=
+IPS_ENABLED=true
+IPS_ENVIRONMENT=development
+IPS_ORG_ID=NAMLEND
+```
+
+Do not expose service role keys in the client. Local admin client is gated by `VITE_ALLOW_LOCAL_ADMIN` and is intended only for dev.
+If you must use `VITE_SUPABASE_SERVICE_ROLE_KEY` for local admin utilities, keep it out of production builds.
+
+---
+
+## See Also
+
+- [INDEX.md](./INDEX.md) - Documentation index
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture overview
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables used by services
+- [API_REFERENCE.md](./API_REFERENCE.md) - RPC function reference
+- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) - IPS/IPP integration details
+- [TIGERBEETLE_IMPLEMENTATION.md](./TIGERBEETLE_IMPLEMENTATION.md) - Ledger service details
+- [GLOSSARY.md](./GLOSSARY.md) - Terminology definitions

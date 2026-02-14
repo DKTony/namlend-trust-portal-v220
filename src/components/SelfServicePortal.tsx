@@ -4,8 +4,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -257,10 +258,11 @@ For queries, contact support@namlend.com
       } else {
         throw new Error(result.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to submit request';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to submit request',
+        description: message,
         variant: 'destructive'
       });
     } finally {
@@ -323,7 +325,7 @@ For queries, contact support@namlend.com
 
         {/* Statements Tab */}
         <TabsContent value="statements" className="space-y-4">
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle>Loan Statements</CardTitle>
               <CardDescription>
@@ -360,25 +362,25 @@ For queries, contact support@namlend.com
                           Created: {new Date(loan.created_at).toLocaleDateString('en-ZA')}
                         </p>
                       </div>
-                      <Button 
+                      <ThemedButton 
                         variant="outline" 
                         size="sm"
                         onClick={() => generateStatement(loan)}
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Download
-                      </Button>
+                      </ThemedButton>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
 
         {/* Receipts Tab */}
         <TabsContent value="receipts" className="space-y-4">
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle>Payment Receipts</CardTitle>
               <CardDescription>
@@ -415,25 +417,25 @@ For queries, contact support@namlend.com
                           {new Date(payment.paid_at).toLocaleDateString('en-ZA')} at {new Date(payment.paid_at).toLocaleTimeString('en-ZA')}
                         </p>
                       </div>
-                      <Button 
+                      <ThemedButton 
                         variant="outline" 
                         size="sm"
                         onClick={() => generateReceipt(payment)}
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Receipt
-                      </Button>
+                      </ThemedButton>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
 
         {/* Requests Tab */}
         <TabsContent value="requests" className="space-y-4">
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -442,13 +444,13 @@ For queries, contact support@namlend.com
                     Request payment reschedules and view request status
                   </CardDescription>
                 </div>
-                <Button 
+                <ThemedButton 
                   onClick={() => setShowRescheduleDialog(true)}
                   disabled={loans.filter(l => l.status === 'active' || l.status === 'disbursed').length === 0}
                 >
                   <Calendar className="h-4 w-4 mr-2" />
                   Request Reschedule
-                </Button>
+                </ThemedButton>
               </div>
             </CardHeader>
             <CardContent>
@@ -490,10 +492,10 @@ For queries, contact support@namlend.com
                 </div>
               )}
             </CardContent>
-          </Card>
+          </ThemedCard>
 
           {/* Help Card */}
-          <Card>
+          <ThemedCard>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5" />
@@ -515,7 +517,7 @@ For queries, contact support@namlend.com
                 </p>
               </div>
             </CardContent>
-          </Card>
+          </ThemedCard>
         </TabsContent>
       </Tabs>
 
@@ -583,16 +585,16 @@ For queries, contact support@namlend.com
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
+            <ThemedButton variant="outline" onClick={() => setShowRescheduleDialog(false)}>
               Cancel
-            </Button>
-            <Button 
+            </ThemedButton>
+            <ThemedButton 
               onClick={handleRescheduleSubmit}
               disabled={submitting || !selectedLoan || !originalDueDate || !requestedDate || !rescheduleReason}
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Submit Request
-            </Button>
+            </ThemedButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

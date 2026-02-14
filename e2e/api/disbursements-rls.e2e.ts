@@ -302,10 +302,50 @@ test.describe('Disbursements Table RLS', () => {
     }
   });
 
-  test.skip('Disbursement with invalid method is rejected', async () => {
-    // SKIPPED: No CHECK constraint exists on disbursements.method column
-    // Validation should be done at application/RPC level, not database level
-    // The complete_disbursement RPC validates payment methods
+  test('Disbursement with invalid method is rejected', async ({ adminSupabase, client1Supabase }) => {
+    const { data: { user: clientUser } } = await client1Supabase.auth.getUser();
+    expect(clientUser).toBeTruthy();
+
+    const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+    expect(adminUser).toBeTruthy();
+
+    const { data: loan, error: loanError } = await adminSupabase
+      .from('loans')
+      .insert({
+        user_id: clientUser!.id,
+        amount: 1200,
+        term_months: 3,
+        interest_rate: 32,
+        monthly_payment: 440,
+        total_repayment: 1320,
+        total_paid: 0,
+        purpose: 'E2E Invalid Method',
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: adminUser!.id,
+      })
+      .select('id')
+      .single();
+    expect(loanError).toBeNull();
+    expect(loan?.id).toBeTruthy();
+
+    const { data: disbursementData } = await adminSupabase.rpc('create_disbursement_on_approval', {
+      p_loan_id: loan!.id,
+    });
+    expect(disbursementData?.success).toBe(true);
+
+    const { data } = await adminSupabase.rpc('complete_disbursement', {
+      p_disbursement_id: disbursementData.disbursement_id,
+      p_payment_method: 'invalid_method',
+      p_payment_reference: 'TEST-INVALID-METHOD',
+      p_notes: 'Invalid method check',
+    });
+
+    expect(data).toBeTruthy();
+    expect(data.success).toBe(false);
+    expect(data.error).toContain('Invalid payment method');
+
+    await adminSupabase.from('loans').delete().eq('id', loan!.id);
   });
 
   test('Disbursement query includes loan details via join', async ({ adminSupabase }) => {

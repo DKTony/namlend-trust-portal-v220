@@ -5,10 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/context/ThemeContext';
 import {
   DollarSign,
   Calendar,
@@ -25,6 +26,15 @@ import {
   Wallet
 } from 'lucide-react';
 
+interface LoanRequestData {
+  employment_status?: string;
+  monthly_income?: number;
+  existing_debt?: number;
+  credit_score?: string | number;
+  user_verified?: boolean;
+  [key: string]: string | number | boolean | undefined;
+}
+
 interface LoanDetailsModalProps {
   open: boolean;
   onClose: () => void;
@@ -40,7 +50,7 @@ interface LoanDetailsModalProps {
     created_at: string;
     disbursed_at?: string;
     approved_at?: string;
-    request_data?: any;
+    request_data?: LoanRequestData;
   } | null;
 }
 
@@ -49,6 +59,8 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
   onClose,
   loan
 }) => {
+  const { styles } = useTheme();
+
   if (!loan) return null;
 
   const formatDate = (dateString?: string) => {
@@ -75,10 +87,10 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
     const variant = variants[status] || variants.pending;
 
     return (
-      <Badge variant="outline" className={cn("flex items-center space-x-1.5 px-3 py-1", variant.className)}>
+      <ThemedBadge className={cn("flex items-center space-x-1.5 px-3 py-1", variant.className)}>
         {variant.icon}
         <span className="capitalize font-medium">{status}</span>
-      </Badge>
+      </ThemedBadge>
     );
   };
 
@@ -92,7 +104,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-background border-border">
+      <DialogContent className={cn("max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 border-border", styles.cardClass)}>
         {/* Header */}
         <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl sticky top-0 z-10">
           <div className="flex items-center justify-between mb-2">
@@ -101,7 +113,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
                 <FileText className="h-5 w-5 text-blue-500" />
                </div>
                <div>
-                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">Loan Details</DialogTitle>
+                 <DialogTitle className={cn("text-xl font-bold tracking-tight", styles.textClass)}>Loan Details</DialogTitle>
                  <p className="text-sm text-muted-foreground font-mono mt-0.5">#{loan.id.slice(0, 8)}</p>
                </div>
             </div>
@@ -112,25 +124,25 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
         <div className="p-6 space-y-8">
           {/* Primary Stats - Hero Section */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-card rounded-2xl p-5 border border-border relative overflow-hidden group shadow-sm">
-               <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <ThemedCard className="p-5 relative overflow-hidden group shadow-sm hover:shadow-medium transition-shadow">
+               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                  <DollarSign className="h-4 w-4" />
                  <span className="text-xs font-medium uppercase tracking-wider">Principal</span>
                </div>
-               <p className="text-3xl font-bold text-foreground tracking-tight">{formatNAD(loan.amount)}</p>
-            </div>
+               <p className={cn("text-3xl font-bold tracking-tight", styles.textClass)}>{formatNAD(loan.amount)}</p>
+            </ThemedCard>
             
-            <div className="bg-card rounded-2xl p-5 border border-border relative overflow-hidden group shadow-sm">
-               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <ThemedCard className="p-5 relative overflow-hidden group shadow-sm hover:shadow-medium transition-shadow">
+               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                <div className="flex items-center gap-2 text-muted-foreground mb-2">
                  <CreditCard className="h-4 w-4" />
                  <span className="text-xs font-medium uppercase tracking-wider">Monthly</span>
                </div>
-               <p className="text-3xl font-bold text-blue-500 dark:text-blue-400 tracking-tight">
+               <p className="text-3xl font-bold text-primary tracking-tight">
                   {loan.monthly_payment ? formatNAD(loan.monthly_payment) : '...'}
                </p>
-            </div>
+            </ThemedCard>
           </div>
 
           {/* Terms Grid - The "Receipt" */}
@@ -151,7 +163,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
                     <item.icon className="h-3.5 w-3.5" />
                     <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
                   </div>
-                  <p className={cn("text-sm font-semibold text-foreground", item.capitalize && "capitalize")}>
+                  <p className={cn("text-sm font-semibold", styles.textClass, item.capitalize && "capitalize")}>
                     {item.value}
                   </p>
                 </div>
@@ -166,28 +178,28 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
                 <User className="h-4 w-4" />
                 Applicant Profile
               </h3>
-              <div className="bg-muted/30 rounded-2xl border border-border p-1 space-y-1">
-                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+              <ThemedCard className="p-1 space-y-1">
+                 <div className="flex justify-between items-center p-3 hover:bg-accent/50 rounded-xl transition-colors">
                     <span className="text-sm text-muted-foreground flex items-center gap-2">
                        <Briefcase className="h-3.5 w-3.5" /> Employment
                     </span>
-                    <span className="text-sm font-medium text-foreground capitalize">{employmentStatus}</span>
+                    <span className={cn("text-sm font-medium capitalize", styles.textClass)}>{employmentStatus}</span>
                  </div>
-                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+                 <div className="flex justify-between items-center p-3 hover:bg-accent/50 rounded-xl transition-colors">
                     <span className="text-sm text-muted-foreground flex items-center gap-2">
                        <Wallet className="h-3.5 w-3.5" /> Income
                     </span>
-                    <span className="text-sm font-medium text-foreground font-mono">{formatNAD(monthlyIncome)}</span>
+                    <span className={cn("text-sm font-medium font-mono", styles.textClass)}>{formatNAD(monthlyIncome)}</span>
                  </div>
-                 <div className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-xl transition-colors">
+                 <div className="flex justify-between items-center p-3 hover:bg-accent/50 rounded-xl transition-colors">
                     <span className="text-sm text-muted-foreground flex items-center gap-2">
                        <ShieldCheck className="h-3.5 w-3.5" /> Credit Score
                     </span>
-                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground border-border">
+                    <ThemedBadge variant="secondary">
                       {creditScore}
-                    </Badge>
+                    </ThemedBadge>
                  </div>
-              </div>
+              </ThemedCard>
             </div>
 
             {/* Timeline */}
@@ -213,7 +225,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
                         <step.icon className={cn("h-4 w-4 transition-colors", step.active ? step.color : "text-muted-foreground")} />
                       </div>
                       <div>
-                        <p className={cn("text-sm font-medium transition-colors", step.active ? "text-foreground" : "text-muted-foreground")}>
+                        <p className={cn("text-sm font-medium transition-colors", step.active ? styles.textClass : "text-muted-foreground")}>
                           {step.label}
                         </p>
                         <p className="text-xs text-muted-foreground font-mono mt-0.5">
@@ -228,14 +240,14 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
 
           {/* Metadata Footer */}
           {Object.keys(requestData).length > 0 && (
-            <div className="bg-muted/30 rounded-xl p-4 border border-border">
+            <ThemedCard className="p-4">
                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4">
                  {Object.entries(requestData)
                    .filter(([key]) => !['employment_status', 'monthly_income', 'existing_debt', 'credit_score', 'user_verified'].includes(key))
                    .map(([key, value]) => (
                      <div key={key} className="flex flex-col">
                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{key.replace(/_/g, ' ')}</span>
-                       <span className="text-sm text-foreground font-medium truncate">
+                       <span className={cn("text-sm font-medium truncate", styles.textClass)}>
                          {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : 
                           typeof value === 'number' ? value.toLocaleString() : 
                           String(value)}
@@ -243,7 +255,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
                      </div>
                    ))}
                </div>
-            </div>
+            </ThemedCard>
           )}
         </div>
       </DialogContent>

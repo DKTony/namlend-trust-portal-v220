@@ -4,8 +4,13 @@
  * End-to-end tests for IPS payment flows including UI interactions
  */
 
+import 'dotenv/config';
 import { test, expect, TEST_USERS } from './fixtures';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { baseURL } from './helpers/auth';
+
+// Storage key must match the app's Supabase client configuration
+const SUPABASE_STORAGE_KEY = 'namlend-auth';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -17,6 +22,200 @@ if (supabaseUrl && supabaseServiceKey) {
 
 // Test data
 const TEST_PREFIX = 'IPS-E2E-';
+
+async function createDisbursedLoan(adminSupabase: SupabaseClient) {
+  const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+  if (!adminUser) {
+    throw new Error('Admin user not available for IPS test setup');
+  }
+
+  const { data: loan, error } = await adminSupabase
+    .from('loans')
+    .insert({
+      user_id: TEST_USERS.client1.id,
+      amount: 1000,
+      term_months: 6,
+      interest_rate: 32,
+      monthly_payment: 200,
+      total_repayment: 1200,
+      total_paid: 0,
+      purpose: `${TEST_PREFIX} Loan`,
+      status: 'disbursed',
+      approved_at: new Date().toISOString(),
+      approved_by: adminUser.id,
+      disbursed_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+
+  if (error || !loan) {
+    throw new Error(`Failed to create IPS test loan: ${error?.message || 'unknown error'}`);
+  }
+
+  return loan;
+}
+
+async function cleanupIpsLoan(adminSupabase: SupabaseClient, loanId: string) {
+  await adminSupabase.from('ips_transactions').delete().eq('loan_id', loanId);
+  await adminSupabase.from('payments').delete().eq('loan_id', loanId);
+  await adminSupabase.from('loans').delete().eq('id', loanId);
+}
+
+async function createApprovedDisbursement(adminSupabase: SupabaseClient) {
+  const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+  if (!adminUser) {
+    throw new Error('Admin user not available for IPS disbursement setup');
+  }
+
+  const { data: loan, error: loanError } = await adminSupabase
+    .from('loans')
+    .insert({
+      user_id: TEST_USERS.client1.id,
+      amount: 2000,
+      term_months: 6,
+      interest_rate: 32,
+      monthly_payment: 400,
+      total_repayment: 2400,
+      total_paid: 0,
+      purpose: `${TEST_PREFIX} Disbursement`,
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: adminUser.id,
+    })
+    .select('id')
+    .single();
+
+  if (loanError || !loan) {
+    throw new Error(`Failed to create IPS disbursement loan: ${loanError?.message || 'unknown error'}`);
+  }
+
+  const reference = `${TEST_PREFIX}DISB-${Date.now()}`;
+  const { data: disbursement, error: disbursementError } = await adminSupabase
+    .from('disbursements')
+    .insert({
+      loan_id: loan.id,
+      amount: 2000,
+      status: 'approved',
+      reference,
+      created_by: adminUser.id,
+    })
+    .select('id')
+    .single();
+
+  if (disbursementError || !disbursement) {
+    throw new Error(`Failed to create IPS disbursement: ${disbursementError?.message || 'unknown error'}`);
+  }
+
+  return { loanId: loan.id, disbursementId: disbursement.id };
+}
+
+async function cleanupApprovedDisbursement(
+  adminSupabase: SupabaseClient,
+  disbursementId: string,
+  loanId: string,
+) {
+  await adminSupabase.from('ips_transactions').delete().eq('disbursement_id', disbursementId);
+  await adminSupabase.from('state_transitions').delete().eq('entity_id', disbursementId);
+  await adminSupabase.from('disbursements').delete().eq('id', disbursementId);
+  await adminSupabase.from('loans').delete().eq('id', loanId);
+}
+
+async function waitForClientShell(page: import('@playwright/test').Page) {
+  await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
+}
+
+async function waitForAdminShell(page: import('@playwright/test').Page) {
+  await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
+}
+
+/**
+ * Login and wait for session to be persisted to localStorage
+ */
+async function loginAsClient(page: import('@playwright/test').Page) {
+  await page.goto('/auth');
+  await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
+  await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
+  await page.click('[data-testid="login-button"]');
+  await page.waitForURL(/\/(dashboard|loans)/);
+  await waitForClientShell(page);
+  
+  // Wait for session persistence
+  await page.waitForFunction(
+    (key) => {
+      const stored = window.localStorage.getItem(key);
+      return stored && stored.includes('access_token');
+    },
+    SUPABASE_STORAGE_KEY,
+    { timeout: 5000 }
+  ).catch(() => {});
+}
+
+async function loginAsAdmin(page: import('@playwright/test').Page) {
+  await page.goto('/auth');
+  await page.fill('[data-testid="email-input"]', TEST_USERS.admin.email);
+  await page.fill('[data-testid="password-input"]', TEST_USERS.admin.password);
+  await page.click('[data-testid="login-button"]');
+  await page.waitForURL(/\/(admin|dashboard)/);
+  await waitForAdminShell(page);
+  
+  // Wait for session persistence
+  await page.waitForFunction(
+    (key) => {
+      const stored = window.localStorage.getItem(key);
+      return stored && stored.includes('access_token');
+    },
+    SUPABASE_STORAGE_KEY,
+    { timeout: 5000 }
+  ).catch(() => {});
+}
+
+/**
+ * Navigate to a protected route with re-login fallback if session is lost
+ */
+async function gotoWithAuth(page: import('@playwright/test').Page, path: string, userType: 'client' | 'admin' = 'client') {
+  await page.goto(path);
+  await page.waitForTimeout(2000);
+  
+  // If redirected to auth, re-login
+  if (page.url().includes('/auth')) {
+    console.log(`Session lost navigating to ${path}, re-logging in as ${userType}...`);
+    const creds = userType === 'admin' ? TEST_USERS.admin : TEST_USERS.client1;
+    await page.fill('[data-testid="email-input"]', creds.email);
+    await page.fill('[data-testid="password-input"]', creds.password);
+    await page.click('[data-testid="login-button"]');
+    await page.waitForURL(/\/(dashboard|admin|loans)/, { timeout: 20000 });
+    await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Navigate to target path via history to avoid another session loss
+    if (!page.url().includes(path.replace(/^\//, ''))) {
+      await page.evaluate((targetPath) => {
+        window.history.pushState({}, '', targetPath);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, path);
+      await page.waitForTimeout(1000);
+      
+      // If that didn't work, do a direct goto (may lose session again but we'll handle it)
+      if (!page.url().includes(path.replace(/^\//, ''))) {
+        await page.goto(path);
+        await page.waitForTimeout(2000);
+      }
+    }
+  }
+  
+  // Wait for sidebar to confirm we're authenticated
+  try {
+    await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 10000 });
+  } catch {
+    // One more re-login attempt if needed
+    if (page.url().includes('/auth')) {
+      const creds = userType === 'admin' ? TEST_USERS.admin : TEST_USERS.client1;
+      await page.fill('[data-testid="email-input"]', creds.email);
+      await page.fill('[data-testid="password-input"]', creds.password);
+      await page.click('[data-testid="login-button"]');
+      await page.waitForURL(/\/(dashboard|admin|loans)/, { timeout: 20000 });
+    }
+  }
+}
 
 test.describe('IPS Customer Payment Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -39,81 +238,33 @@ test.describe('IPS Customer Payment Flow', () => {
       .like('vpa_address', `${TEST_PREFIX.toLowerCase()}%`);
   });
 
-  test('Customer can view IPS payment option on loan details', async ({ page, client1Supabase }) => {
-    // Login as client
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    
-    // Wait for dashboard
-    await page.waitForURL(/\/(dashboard|loans)/);
+  test('Customer can view IPS payment option on loan details', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      // Login as client with session persistence
+      await loginAsClient(page);
 
-    // Find a loan with outstanding balance via API
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id, status, outstanding_balance')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 0)
-      .limit(1);
+      // Navigate to loan details with auth hydration wait
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
-
-    // Navigate to loan details
-    await page.goto(`/loans/${loans[0].id}`);
-    
-    // Wait for page to finish loading (wait for loading spinner to disappear or content to appear)
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for either the IPS button or the loan amount to appear (indicates page loaded)
-    const pageLoaded = await Promise.race([
-      page.locator('[data-testid="loan-amount"]').waitFor({ state: 'visible', timeout: 15000 }).then(() => true),
-      page.locator('text=/Loan Not Found/i').waitFor({ state: 'visible', timeout: 15000 }).then(() => false),
-    ]).catch(() => false);
-
-    if (!pageLoaded) {
-      // Loan not accessible to this user - skip test
-      test.skip();
-      return;
-    }
-
-    // Check for IPS payment button (only visible for active/disbursed loans with balance)
-    const ipsButton = page.locator('[data-testid="ips-payment-button"]').or(page.locator('button:has-text("Pay with IPS")'));
-    
-    // The button should be visible if loan is active/disbursed with outstanding balance
-    await expect(ipsButton).toBeVisible({ timeout: 5000 });
   });
 
-  test('Customer can open IPS payment modal', async ({ page, client1Supabase }) => {
-    // This test requires a loan with outstanding balance
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id, outstanding_balance')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 0)
-      .limit(1);
+  test('Customer can open IPS payment modal', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      await loginAsClient(page);
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
-    }
-
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
-
-    // Navigate to loan
-    await page.goto(`/loans/${loans[0].id}`);
-
-    // Click IPS payment button
-    const ipsButton = page.locator('[data-testid="ips-payment-button"], button:has-text("Pay with IPS")');
-    if (await ipsButton.isVisible()) {
+      // Click IPS payment button
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
       await ipsButton.click();
 
       // Modal should open
@@ -126,33 +277,21 @@ test.describe('IPS Customer Payment Flow', () => {
 
       // Should show outstanding balance
       await expect(modal.locator('text=/Outstanding Balance/i')).toBeVisible();
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
   });
 
-  test('Customer can enter and validate VPA', async ({ page, client1Supabase }) => {
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 0)
-      .limit(1);
+  test('Customer can enter and validate VPA', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      await loginAsClient(page);
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
-    }
-
-    // Login and navigate
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
-    await page.goto(`/loans/${loans[0].id}`);
-
-    // Open payment modal
-    const ipsButton = page.locator('[data-testid="ips-payment-button"], button:has-text("Pay with IPS")');
-    if (await ipsButton.isVisible()) {
+      // Open payment modal
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
       await ipsButton.click();
 
       const modal = page.locator('[role="dialog"]');
@@ -162,76 +301,65 @@ test.describe('IPS Customer Payment Flow', () => {
       await modal.locator('input[type="number"]').fill('100');
       await modal.locator('button:has-text("Continue")').click();
 
+      // Select 'Use a different address' to show VPA input
+      const newVpaOption = modal.locator('text="Use a different address"');
+      await expect(newVpaOption).toBeVisible({ timeout: 5000 });
+      await newVpaOption.click();
+
       // Should show VPA input
-      const vpaInput = modal.locator('input[placeholder*="@"]');
+      const vpaInput = modal.locator('[data-testid="vpa-input"]');
       await expect(vpaInput).toBeVisible({ timeout: 5000 });
 
       // Enter a VPA
       await vpaInput.fill('testuser@fnb');
 
       // Click verify button
-      const verifyButton = modal.locator('button:has-text("Verify")');
-      if (await verifyButton.isVisible()) {
-        await verifyButton.click();
+      const verifyButton = modal.locator('[data-testid="vpa-verify-button"]');
+      await expect(verifyButton).toBeVisible({ timeout: 5000 });
+      await verifyButton.click();
 
-        // Should show validation result (success in mock mode)
-        await expect(modal.locator('text=/FNB/i')).toBeVisible({ timeout: 5000 });
-      }
+      // Should show validation result (success in mock mode) - look for provider badge
+      // Wait for validation to complete and check for the FNB badge
+      await page.waitForTimeout(2000);
+      await expect(modal.getByText('FNB')).toBeVisible({ timeout: 10000 });
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
   });
 
-  test('Customer payment flow - full journey', async ({ page, client1Supabase }) => {
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id, outstanding_balance, monthly_payment')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 100)
-      .limit(1);
+  test('Customer payment flow - full journey', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      await loginAsClient(page);
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
-    }
+      // Open IPS payment
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
+      await ipsButton.click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
 
-    const loan = loans[0];
+      // Step 1: Enter amount
+      await modal.locator('input[type="number"]').fill('100');
+      await modal.locator('button:has-text("Continue")').click();
 
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
+      // Step 2: Enter VPA - select 'Use a different address' first
+      await page.waitForTimeout(500);
+      const newVpaOption = modal.locator('text="Use a different address"');
+      await expect(newVpaOption).toBeVisible({ timeout: 5000 });
+      await newVpaOption.click();
 
-    // Navigate to loan
-    await page.goto(`/loans/${loan.id}`);
-
-    // Open IPS payment
-    const ipsButton = page.locator('[data-testid="ips-payment-button"], button:has-text("Pay with IPS")');
-    if (!(await ipsButton.isVisible())) {
-      test.skip();
-      return;
-    }
-
-    await ipsButton.click();
-    const modal = page.locator('[role="dialog"]');
-    await expect(modal).toBeVisible();
-
-    // Step 1: Enter amount
-    await modal.locator('input[type="number"]').fill('100');
-    await modal.locator('button:has-text("Continue")').click();
-
-    // Step 2: Enter VPA
-    await page.waitForTimeout(500);
-    const vpaInput = modal.locator('input[placeholder*="@"]');
-    if (await vpaInput.isVisible()) {
+      const vpaInput = modal.locator('[data-testid="vpa-input"]');
+      await expect(vpaInput).toBeVisible({ timeout: 5000 });
       await vpaInput.fill('testuser@fnb');
       
       // Verify VPA
-      const verifyButton = modal.locator('button:has-text("Verify")');
-      if (await verifyButton.isVisible()) {
-        await verifyButton.click();
-        await page.waitForTimeout(1000);
-      }
+      const verifyButton = modal.locator('[data-testid="vpa-verify-button"]');
+      await expect(verifyButton).toBeVisible({ timeout: 5000 });
+      await verifyButton.click();
+      await page.waitForTimeout(1000);
 
       // Continue to confirmation
       await modal.locator('button:has-text("Continue")').click();
@@ -239,20 +367,22 @@ test.describe('IPS Customer Payment Flow', () => {
       // Step 3: Confirm payment
       await page.waitForTimeout(500);
       const confirmButton = modal.locator('button:has-text("Pay Now")');
-      if (await confirmButton.isVisible()) {
-        // Verify confirmation details
-        await expect(modal.locator('text=/NAD 100/i')).toBeVisible();
-        await expect(modal.locator('text=/testuser@fnb/i')).toBeVisible();
+      await expect(confirmButton).toBeVisible({ timeout: 5000 });
 
-        // Submit payment
-        await confirmButton.click();
+      // Verify confirmation details (currency format: NAD 100.00)
+      await expect(modal.locator('text=/100/i').first()).toBeVisible();
+      await expect(modal.locator('text=/testuser@fnb/i')).toBeVisible();
 
-        // Should show processing
-        await expect(modal.locator('text=/Processing/i')).toBeVisible({ timeout: 5000 });
+      // Submit payment
+      await confirmButton.click();
 
-        // Should show result (success in mock mode)
-        await expect(modal.locator('text=/(Successful|Success)/i')).toBeVisible({ timeout: 15000 });
-      }
+      // Should show processing
+      await expect(modal.locator('text=/Processing/i')).toBeVisible({ timeout: 5000 });
+
+      // Should show result (success in mock mode)
+      await expect(modal.locator('text=/(Successful|Success)/i')).toBeVisible({ timeout: 15000 });
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
   });
 });
@@ -267,6 +397,7 @@ test.describe('IPS Admin Disbursement Flow', () => {
     
     // Navigate to disbursements
     await page.waitForURL(/\/(admin|dashboard)/);
+    await waitForAdminShell(page);
     await page.goto('/admin/disbursements');
 
     // Look for IPS option
@@ -278,49 +409,23 @@ test.describe('IPS Admin Disbursement Flow', () => {
   });
 
   test('Admin can initiate IPS disbursement', async ({ page, adminSupabase }) => {
-    // Find an approved disbursement
-    const { data: disbursements } = await adminSupabase
-      .from('disbursements')
-      .select(`
-        id,
-        amount,
-        loan_id,
-        loans!inner(
-          user_id,
-          profiles!inner(first_name, last_name)
-        )
-      `)
-      .eq('status', 'approved')
-      .is('ips_transaction_id', null)
-      .limit(1);
+    const { loanId, disbursementId } = await createApprovedDisbursement(adminSupabase);
+    try {
+      await loginAsAdmin(page);
+      await gotoWithAuth(page, `/admin/disbursements/${disbursementId}`);
 
-    if (!disbursements || disbursements.length === 0) {
-      test.skip();
-      return;
-    }
+      // Look for IPS disbursement form or button
+      const ipsForm = page.locator('[data-testid="ips-disbursement-form"]');
+      const ipsButton = page.locator('button:has-text("Disburse via IPS")');
 
-    // Login as admin
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.admin.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.admin.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(admin|dashboard)/);
-
-    // Navigate to disbursement detail or processing page
-    await page.goto(`/admin/disbursements/${disbursements[0].id}`);
-
-    // Look for IPS disbursement form or button
-    const ipsForm = page.locator('[data-testid="ips-disbursement-form"]');
-    const ipsButton = page.locator('button:has-text("Disburse via IPS")');
-
-    if (await ipsForm.isVisible() || await ipsButton.isVisible()) {
-      // Enter customer VPA
-      const vpaInput = page.locator('input[placeholder*="@"]');
-      if (await vpaInput.isVisible()) {
+      if (await ipsForm.isVisible() || await ipsButton.isVisible()) {
+        // Enter customer VPA
+        const vpaInput = page.locator('[data-testid="vpa-input"]');
+        await expect(vpaInput).toBeVisible({ timeout: 10000 });
         await vpaInput.fill('customer@fnb');
         
         // Verify
-        const verifyButton = page.locator('button:has-text("Verify")');
+        const verifyButton = page.locator('[data-testid="vpa-verify-button"]');
         if (await verifyButton.isVisible()) {
           await verifyButton.click();
           await page.waitForTimeout(1000);
@@ -341,18 +446,15 @@ test.describe('IPS Admin Disbursement Flow', () => {
           await expect(page.locator('text=/(Processing|Successful|Success)/i')).toBeVisible({ timeout: 15000 });
         }
       }
+    } finally {
+      await cleanupApprovedDisbursement(adminSupabase, disbursementId, loanId);
     }
   });
 });
 
 test.describe('IPS Transaction History', () => {
   test('Customer can view IPS transaction history', async ({ page, client1Supabase }) => {
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
+    await loginAsClient(page);
 
     // Find a loan with IPS transactions
     const { data: loans } = await client1Supabase
@@ -361,7 +463,8 @@ test.describe('IPS Transaction History', () => {
       .limit(1);
 
     if (loans && loans.length > 0) {
-      await page.goto(`/loans/${loans[0].id}`);
+      await gotoWithAuth(page, `/loans/${loans[0].id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
       // Look for IPS history section
       const historySection = page.locator('[data-testid="ips-history"]').or(page.getByText(/IPS Transactions/i));
@@ -374,15 +477,8 @@ test.describe('IPS Transaction History', () => {
   });
 
   test('Admin can view all IPS transactions', async ({ page }) => {
-    // Login as admin
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.admin.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.admin.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(admin|dashboard)/);
-
-    // Navigate to IPS transactions or payments
-    await page.goto('/admin/payments');
+    await loginAsAdmin(page);
+    await gotoWithAuth(page, '/admin/payments');
 
     // Look for IPS filter or tab
     const ipsTab = page.locator('[data-testid="ips-tab"], button:has-text("IPS"), tab:has-text("IPS")');
@@ -398,15 +494,8 @@ test.describe('IPS Transaction History', () => {
 
 test.describe('IPS VPA Management', () => {
   test('Customer can manage saved VPAs', async ({ page }) => {
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
-
-    // Navigate to profile/settings
-    await page.goto('/profile');
+    await loginAsClient(page);
+    await gotoWithAuth(page, '/profile');
 
     // Look for VPA management section
     const vpaSection = page.locator('[data-testid="vpa-management"]').or(page.getByText(/Payment Address/i)).or(page.getByText(/VPA/i));
@@ -418,7 +507,7 @@ test.describe('IPS VPA Management', () => {
         await addButton.click();
 
         // Enter VPA
-        const vpaInput = page.locator('input[placeholder*="@"]');
+        const vpaInput = page.locator('[data-testid="vpa-input"]');
         if (await vpaInput.isVisible()) {
           await vpaInput.fill(`${TEST_PREFIX.toLowerCase()}newvpa@bank`);
           
@@ -437,122 +526,105 @@ test.describe('IPS VPA Management', () => {
 });
 
 test.describe('IPS Error Handling', () => {
-  test('Shows appropriate error for failed payment', async ({ page, client1Supabase }) => {
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 100)
-      .limit(1);
+  test('Shows appropriate error for failed payment', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      await loginAsClient(page);
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
-    }
+      // Open IPS payment
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
+      await ipsButton.click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
 
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
+      // Enter amount
+      await modal.locator('input[type="number"]').fill('100');
+      await modal.locator('button:has-text("Continue")').click();
 
-    await page.goto(`/loans/${loans[0].id}`);
+      // Enter VPA that triggers failure (contains 'fail')
+      await page.waitForTimeout(500);
+      const newVpaOption = modal.locator('text="Use a different address"');
+      await expect(newVpaOption).toBeVisible({ timeout: 5000 });
+      await newVpaOption.click();
 
-    // Open IPS payment
-    const ipsButton = page.locator('[data-testid="ips-payment-button"], button:has-text("Pay with IPS")');
-    if (!(await ipsButton.isVisible())) {
-      test.skip();
-      return;
-    }
-
-    await ipsButton.click();
-    const modal = page.locator('[role="dialog"]');
-    await expect(modal).toBeVisible();
-
-    // Enter amount
-    await modal.locator('input[type="number"]').fill('100');
-    await modal.locator('button:has-text("Continue")').click();
-
-    // Enter VPA that triggers failure (contains 'fail')
-    await page.waitForTimeout(500);
-    const vpaInput = modal.locator('input[placeholder*="@"]');
-    if (await vpaInput.isVisible()) {
+      const vpaInput = modal.locator('[data-testid="vpa-input"]');
+      await expect(vpaInput).toBeVisible({ timeout: 5000 });
       await vpaInput.fill('fail@testbank');
       
-      // Skip verification and continue
+      // Verify VPA (required before Continue is enabled)
+      const verifyButton = modal.locator('[data-testid="vpa-verify-button"]');
+      await expect(verifyButton).toBeVisible({ timeout: 5000 });
+      await verifyButton.click();
+      await page.waitForTimeout(1000);
+      
+      // Continue after verification
       const continueButton = modal.locator('button:has-text("Continue")');
-      if (await continueButton.isEnabled()) {
-        await continueButton.click();
-      }
+      await expect(continueButton).toBeEnabled({ timeout: 10000 });
+      await continueButton.click();
 
       // Confirm
       await page.waitForTimeout(500);
       const payButton = modal.locator('button:has-text("Pay Now")');
-      if (await payButton.isVisible()) {
-        await payButton.click();
+      await expect(payButton).toBeVisible({ timeout: 5000 });
+      await payButton.click();
 
-        // Should show failure
-        await expect(modal.locator('text=/(Failed|Error|Declined)/i')).toBeVisible({ timeout: 15000 });
-      }
+      // Should show failure (use .first() to handle multiple matches)
+      await expect(modal.locator('text=/(Failed|Error|Declined)/i').first()).toBeVisible({ timeout: 15000 });
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
   });
 
-  test('Shows retry option for retryable errors', async ({ page, client1Supabase }) => {
-    const { data: loans } = await client1Supabase
-      .from('loans')
-      .select('id')
-      .in('status', ['disbursed', 'active'])
-      .gt('outstanding_balance', 100)
-      .limit(1);
+  test('Shows retry option for retryable errors', async ({ page, adminSupabase }) => {
+    const loan = await createDisbursedLoan(adminSupabase);
+    try {
+      await loginAsClient(page);
+      await gotoWithAuth(page, `/loans/${loan.id}`);
+      await page.getByTestId('loan-amount').waitFor({ state: 'visible', timeout: 20000 });
 
-    if (!loans || loans.length === 0) {
-      test.skip();
-      return;
-    }
+      // Open IPS payment
+      const ipsButton = page.locator('[data-testid="ips-payment-button"]');
+      await expect(ipsButton).toBeVisible({ timeout: 15000 });
+      await ipsButton.click();
+      const modal = page.locator('[role="dialog"]');
 
-    // Login
-    await page.goto('/auth');
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|loans)/);
+      // Enter amount
+      await modal.locator('input[type="number"]').fill('100');
+      await modal.locator('button:has-text("Continue")').click();
 
-    await page.goto(`/loans/${loans[0].id}`);
+      // Enter VPA that triggers timeout (contains 'timeout')
+      await page.waitForTimeout(500);
+      const newVpaOption = modal.locator('text="Use a different address"');
+      await expect(newVpaOption).toBeVisible({ timeout: 5000 });
+      await newVpaOption.click();
 
-    // Open IPS payment
-    const ipsButton = page.locator('[data-testid="ips-payment-button"], button:has-text("Pay with IPS")');
-    if (!(await ipsButton.isVisible())) {
-      test.skip();
-      return;
-    }
-
-    await ipsButton.click();
-    const modal = page.locator('[role="dialog"]');
-
-    // Enter amount
-    await modal.locator('input[type="number"]').fill('100');
-    await modal.locator('button:has-text("Continue")').click();
-
-    // Enter VPA that triggers timeout (contains 'timeout')
-    await page.waitForTimeout(500);
-    const vpaInput = modal.locator('input[placeholder*="@"]');
-    if (await vpaInput.isVisible()) {
+      const vpaInput = modal.locator('[data-testid="vpa-input"]');
+      await expect(vpaInput).toBeVisible({ timeout: 5000 });
       await vpaInput.fill('timeout@testbank');
       
+      // Verify VPA (required before Continue is enabled)
+      const verifyButton = modal.locator('[data-testid="vpa-verify-button"]');
+      await expect(verifyButton).toBeVisible({ timeout: 5000 });
+      await verifyButton.click();
+      await page.waitForTimeout(1000);
+      
+      // Continue after verification
       const continueButton = modal.locator('button:has-text("Continue")');
-      if (await continueButton.isEnabled()) {
-        await continueButton.click();
-      }
+      await expect(continueButton).toBeEnabled({ timeout: 10000 });
+      await continueButton.click();
 
       await page.waitForTimeout(500);
       const payButton = modal.locator('button:has-text("Pay Now")');
-      if (await payButton.isVisible()) {
-        await payButton.click();
+      await expect(payButton).toBeVisible({ timeout: 5000 });
+      await payButton.click();
 
-        // Should show pending/processing status
-        await expect(modal.locator('text=/(Pending|Processing|Check Status)/i')).toBeVisible({ timeout: 15000 });
-      }
+      // Should show pending/processing status
+      await expect(modal.locator('text=/(Pending|Processing|Check Status)/i')).toBeVisible({ timeout: 15000 });
+    } finally {
+      await cleanupIpsLoan(adminSupabase, loan.id);
     }
   });
 });

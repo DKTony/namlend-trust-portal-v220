@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { 
@@ -20,22 +26,29 @@ import {
   FileText,
   DollarSign,
   User,
-  Check
+  Check,
+  Inbox,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useTheme } from '@/context/ThemeContext';
 
 interface ApprovalNotificationsProps {
   showUnreadOnly?: boolean;
   maxHeight?: string;
   onMarkedRead?: () => void;
+  embedded?: boolean;
 }
 
 export default function ApprovalNotifications({ 
   showUnreadOnly = false, 
   maxHeight = "400px",
   onMarkedRead,
+  embedded = false,
 }: ApprovalNotificationsProps) {
   const { toast } = useToast();
+  const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<ApprovalNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -108,17 +121,17 @@ export default function ApprovalNotifications({
   };
 
   const getNotificationColor = (type: string, isRead: boolean) => {
-    if (isRead) return 'text-muted-foreground';
+    if (isRead) return 'text-muted-foreground/50';
     
     switch (type) {
       case 'new_request':
         return 'text-blue-500 dark:text-blue-400';
       case 'status_update':
-        return 'text-green-500 dark:text-green-400';
+        return 'text-emerald-500 dark:text-emerald-400';
       case 'assignment':
         return 'text-purple-500 dark:text-purple-400';
       case 'reminder':
-        return 'text-orange-500 dark:text-orange-400';
+        return 'text-amber-500 dark:text-amber-400';
       default:
         return 'text-muted-foreground';
     }
@@ -126,53 +139,54 @@ export default function ApprovalNotifications({
 
   if (loading) {
     return (
-      <div className="bg-background border border-border rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-border bg-muted/50 flex items-center gap-2">
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Notifications</span>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <Clock className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+      <div className={cn("flex flex-col items-center justify-center py-12 gap-3", embedded ? "" : "bg-background border rounded-xl")}>
+        <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+        <p className="text-xs text-muted-foreground font-medium">Checking updates...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-background border border-border rounded-xl overflow-hidden shadow-2xl">
-      <div className="p-4 border-b border-border bg-muted/50 flex items-center justify-between backdrop-blur-xl">
-        <div className="flex items-center gap-2">
-          {unreadCount > 0 ? (
-            <BellRing className="h-4 w-4 text-blue-500" />
-          ) : (
-            <Bell className="h-4 w-4 text-muted-foreground" />
-          )}
-          <span className="text-sm font-medium text-foreground">Notifications</span>
-          {unreadCount > 0 && (
-            <Badge variant="default" className="ml-1 bg-blue-600 hover:bg-blue-700 text-white border-0 h-5 px-1.5 text-[10px]">
-              {unreadCount}
-            </Badge>
-          )}
+    <div className={cn(
+      "overflow-hidden",
+      !embedded && "bg-background border border-border rounded-xl shadow-2xl"
+    )}>
+      {!embedded && (
+        <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 ? (
+              <BellRing className="h-4 w-4 text-primary" />
+            ) : (
+              <Bell className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-sm font-semibold text-foreground">Approvals</span>
+            {unreadCount > 0 && (
+              <Badge variant="default" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+            {showUnreadOnly ? 'Unread Only' : 'All Updates'}
+          </span>
         </div>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-          {showUnreadOnly ? 'Unread Only' : 'All'}
-        </span>
-      </div>
+      )}
       
-      <ScrollArea style={{ height: maxHeight }} className="bg-background">
-        <div className="divide-y divide-border">
+      <ScrollArea style={{ height: maxHeight }} className={cn("bg-background/50", embedded && "scrollbar-none")}>
+        <div className="divide-y divide-border/40">
           {notifications.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <div className="h-12 w-12 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-3">
-                 <Bell className="h-5 w-5 opacity-50" />
+            <div className="flex flex-col items-center justify-center py-16 text-center px-8">
+              <div className="h-16 w-16 rounded-3xl bg-muted/50 flex items-center justify-center mb-4">
+                 <Inbox className="h-8 w-8 text-muted-foreground/40" />
               </div>
-              <p className="text-sm">No notifications found</p>
+              <p className="text-sm font-medium text-foreground">No updates found</p>
+              <p className="text-xs text-muted-foreground mt-1">You're all caught up on approvals.</p>
             </div>
           ) : (
             notifications.map((notification) => {
               const Icon = getNotificationIcon(
                 notification.notification_type,
-                notification.metadata?.request_type
+                notification.metadata?.request_type as string | undefined
               );
               const iconColor = getNotificationColor(
                 notification.notification_type,
@@ -183,30 +197,30 @@ export default function ApprovalNotifications({
                 <div
                   key={notification.id}
                   className={cn(
-                    "p-4 transition-all duration-200 hover:bg-muted/50 group relative",
-                    !notification.is_read && "bg-blue-500/5 dark:bg-blue-500/10"
+                    "p-4 transition-all duration-200 hover:bg-muted/40 group relative",
+                    !notification.is_read && "bg-primary/5 hover:bg-primary/10"
                   )}
                 >
-                  {/* Unread indicator dot */}
+                  {/* Unread indicator strip */}
                   {!notification.is_read && (
-                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-500" />
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
                   )}
                   
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <div className={cn(
-                      "h-8 w-8 rounded-lg flex items-center justify-center border shrink-0 mt-0.5",
+                      "h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105",
                       notification.is_read 
-                        ? "bg-muted border-border" 
-                        : "bg-background border-border shadow-sm"
+                        ? "bg-muted/50 border-border/50" 
+                        : isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-100"
                     )}>
                        <Icon className={cn("h-4 w-4", iconColor)} />
                     </div>
                     
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pt-0.5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <p className={cn(
-                            "text-sm leading-tight mb-1",
+                            "text-sm leading-tight mb-1 pr-2",
                             notification.is_read ? "text-muted-foreground font-medium" : "text-foreground font-semibold"
                           )}>
                             {notification.title}
@@ -217,20 +231,20 @@ export default function ApprovalNotifications({
                         </div>
                         
                         {!notification.is_read && (
-                          <Button
+                          <ThemedButton
                             variant="ghost"
                             size="icon"
                             onClick={() => handleMarkAsRead(notification.id)}
-                            className="h-6 w-6 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 rounded-full shrink-0 -mt-1 -mr-1"
+                            className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full shrink-0 -mt-1 -mr-1 transition-colors"
                             title="Mark as read"
                           >
-                            <Check className="h-3 w-3" />
-                          </Button>
+                            <Check className="h-3.5 w-3.5" />
+                          </ThemedButton>
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between mt-2.5">
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-[10px] text-muted-foreground font-medium">
                           {formatDistanceToNow(new Date(notification.sent_at), { 
                             addSuffix: true 
                           })}
@@ -238,8 +252,8 @@ export default function ApprovalNotifications({
                         
                         {notification.metadata?.request_type && (
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] px-1.5 h-5 bg-muted border-border text-muted-foreground capitalize font-normal">
-                              {notification.metadata.request_type?.replace('_', ' ')}
+                            <Badge variant="outline" className="text-[10px] px-1.5 h-5 bg-background border-border text-muted-foreground capitalize font-normal">
+                              {(notification.metadata.request_type as string)?.replace('_', ' ')}
                             </Badge>
                             {notification.metadata.priority && notification.metadata.priority !== 'normal' && (
                               <Badge 
@@ -251,7 +265,7 @@ export default function ApprovalNotifications({
                                   "bg-muted text-muted-foreground"
                                 )}
                               >
-                                {notification.metadata.priority}
+                                {notification.metadata.priority as string}
                               </Badge>
                             )}
                           </div>
@@ -272,8 +286,8 @@ export default function ApprovalNotifications({
 // Notification Bell Component for Header
 export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const loadUnreadCount = async () => {
@@ -293,62 +307,72 @@ export function NotificationBell() {
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown on outside click or Escape key
-  useEffect(() => {
-    if (!showDropdown) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (containerRef.current && target && !containerRef.current.contains(target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showDropdown]);
-
   return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setShowDropdown(!showDropdown)}
-        className={cn(
-          "relative h-9 w-9 rounded-full transition-colors",
-          showDropdown ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
-        )}
-      >
-        {unreadCount > 0 ? (
-          <BellRing className="h-4 w-4" />
-        ) : (
-          <Bell className="h-4 w-4" />
-        )}
-        {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-background" />
-        )}
-      </Button>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <ThemedButton
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "relative h-10 w-10 rounded-full transition-all duration-300",
+            "hover:bg-accent/50 hover:scale-105 active:scale-95",
+            open && "bg-accent/50"
+          )}
+        >
+          {unreadCount > 0 ? (
+            <BellRing className="h-5 w-5 text-primary animate-pulse" />
+          ) : (
+            <Bell className="h-5 w-5 text-muted-foreground" />
+          )}
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-background"></span>
+            </span>
+          )}
+        </ThemedButton>
+      </PopoverTrigger>
 
-      {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 w-[380px] z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-          <ApprovalNotifications 
-            showUnreadOnly={false} 
-            maxHeight="400px" 
-            onMarkedRead={() => setUnreadCount((c) => Math.max(0, c - 1))}
-          />
+      <PopoverContent 
+        className={cn(
+          "w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl",
+          isDark ? "bg-zinc-950/80 border-white/10" : "bg-white/80 border-black/5",
+          "rounded-3xl"
+        )}
+        align="end"
+        sideOffset={8}
+      >
+        <div className="p-5 pb-4 flex items-center justify-between">
+          <h3 className="font-bold text-lg tracking-tight">Admin Approvals</h3>
+          {unreadCount > 0 && (
+            <Badge variant="default" className="rounded-full px-2 h-5 bg-primary/90 text-[10px] font-bold">
+              {unreadCount} NEW
+            </Badge>
+          )}
         </div>
-      )}
-    </div>
+        
+        <ApprovalNotifications 
+          showUnreadOnly={false} 
+          maxHeight="400px" 
+          onMarkedRead={() => setUnreadCount((c) => Math.max(0, c - 1))}
+          embedded={true}
+        />
+        
+        <div className="p-3 border-t border-border/40 bg-muted/30 backdrop-blur-sm">
+          <ThemedButton
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs font-medium h-9 rounded-xl hover:bg-primary/5 hover:text-primary"
+            onClick={() => {
+              setOpen(false);
+              // Navigate to full approvals page if it exists
+            }}
+          >
+            View All Approvals
+            <ExternalLink className="h-3 w-3 ml-2 opacity-50" />
+          </ThemedButton>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { withRpcResult, withArrayResult, ServiceResult } from '@/utils/serviceUtils';
 
 // ============================================================================
 // TYPES
@@ -75,21 +76,17 @@ export class AuditService {
     entityId: string,
     fieldsViewed?: string[],
     viewDurationMs?: number
-  ): Promise<string> {
-    try {
-      const { data, error } = await supabase.rpc('log_view_access', {
+  ): Promise<ServiceResult<string>> {
+    return withRpcResult<ServiceResult<string>>(
+      () => supabase.rpc('log_view_access', {
         p_entity_type: entityType,
         p_entity_id: entityId,
         p_fields_viewed: fieldsViewed || null,
         p_view_duration_ms: viewDurationMs || null
-      });
-
-      if (error) throw error;
-      return data as string;
-    } catch (err) {
-      console.error('Error logging view access:', err);
-      throw err;
-    }
+      }),
+      'logViewAccess',
+      { entityType, entityId }
+    );
   }
 
   /**
@@ -102,23 +99,19 @@ export class AuditService {
     toState: string,
     reason?: string,
     workflowInstanceId?: string
-  ): Promise<string> {
-    try {
-      const { data, error } = await supabase.rpc('log_state_transition', {
+  ): Promise<ServiceResult<string>> {
+    return withRpcResult<ServiceResult<string>>(
+      () => supabase.rpc('log_state_transition', {
         p_entity_type: entityType,
         p_entity_id: entityId,
         p_from_state: fromState,
         p_to_state: toState,
         p_reason: reason || null,
         p_workflow_instance_id: workflowInstanceId || null
-      });
-
-      if (error) throw error;
-      return data as string;
-    } catch (err) {
-      console.error('Error logging state transition:', err);
-      throw err;
-    }
+      }),
+      'logStateTransition',
+      { entityType, entityId, fromState, toState }
+    );
   }
 
   /**
@@ -271,20 +264,16 @@ export class AuditService {
     reportType: 'monthly_approvals' | 'user_activity' | 'state_changes' | 'view_access' | 'security_audit',
     periodStart: string,
     periodEnd: string
-  ): Promise<string> {
-    try {
-      const { data, error } = await supabase.rpc('generate_compliance_report', {
+  ): Promise<ServiceResult<string>> {
+    return withRpcResult<ServiceResult<string>>(
+      () => supabase.rpc('generate_compliance_report', {
         p_report_type: reportType,
         p_period_start: periodStart,
         p_period_end: periodEnd
-      });
-
-      if (error) throw error;
-      return data as string;
-    } catch (err) {
-      console.error('Error generating compliance report:', err);
-      throw err;
-    }
+      }),
+      'generateComplianceReport',
+      { reportType, periodStart, periodEnd }
+    );
   }
 
   /**

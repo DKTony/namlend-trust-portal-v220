@@ -17,7 +17,7 @@ CREATE POLICY "Authenticated users can view all roles" ON public.user_roles
 
 -- Only allow inserts/updates through functions or by service role
 CREATE POLICY "Service role can insert roles" ON public.user_roles
-  FOR INSERT USING (auth.role() = 'service_role');
+  FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 CREATE POLICY "Service role can update roles" ON public.user_roles
   FOR UPDATE USING (auth.role() = 'service_role');

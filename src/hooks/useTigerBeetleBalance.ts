@@ -12,17 +12,16 @@ interface TigerBeetleBalance {
 interface AccountMapping {
   id: string;
   entity_type: string;
-  entity_id: string;
-  account_type: string;
-  tb_account_id_high: string;
-  tb_account_id_low: string;
-  status: string;
 }
 
+// Loan-related TigerBeetle account types (matches tigerbeetle_accounts.entity_type)
+const LOAN_ACCOUNT_TYPES = ['LOAN_PRINCIPAL', 'LOAN_INTEREST', 'LOAN_FEES'] as const;
+
 interface TransferRecord {
-  debit_amount: number;
-  credit_amount: number;
-  account_type: string;
+  amount: number;
+  debit_account_id: string;
+  credit_account_id: string;
+  is_posted: boolean;
 }
 
 /**
@@ -32,11 +31,11 @@ interface TransferRecord {
  * In Phase 2+, this will call an Edge Function to read directly from TigerBeetle
  */
 export async function getLoanBalance(loanId: string): Promise<TigerBeetleBalance> {
-  // Get account mappings for this loan
+  // Get account mappings for this loan - use LOAN_* entity types, not 'loan'
   const { data: accounts, error: accountError } = await supabase
     .from('tigerbeetle_accounts')
-    .select('*')
-    .eq('entity_type', 'loan')
+    .select('id, entity_type')
+    .in('entity_type', LOAN_ACCOUNT_TYPES)
     .eq('entity_id', loanId);
 
   if (accountError) {
@@ -49,14 +48,19 @@ export async function getLoanBalance(loanId: string): Promise<TigerBeetleBalance
     return getFallbackBalance(loanId);
   }
 
-  // Get transfers from shadow ledger for these accounts
+  // Build a map of account IDs to their entity_type for categorization
+  const accountIdToType = new Map<string, string>();
+  for (const account of accounts as AccountMapping[]) {
+    accountIdToType.set(account.id, account.entity_type);
+  }
   const accountIds = accounts.map((a: AccountMapping) => a.id);
   
+  // Get transfers from shadow ledger where these accounts are debited or credited
   const { data: transfers, error: transferError } = await supabase
     .from('tigerbeetle_transfers')
-    .select('debit_amount, credit_amount, account_type')
-    .in('account_id', accountIds)
-    .eq('status', 'posted');
+    .select('amount, debit_account_id, credit_account_id, is_posted')
+    .or(`debit_account_id.in.(${accountIds.join(',')}),credit_account_id.in.(${accountIds.join(',')})`)
+    .eq('is_posted', true);
 
   if (transferError) {
     console.warn('TigerBeetle transfer lookup failed:', transferError);
@@ -64,23 +68,44 @@ export async function getLoanBalance(loanId: string): Promise<TigerBeetleBalance
   }
 
   // Calculate balances from transfers
+  // Debits increase the balance (money owed), credits decrease it (payments received)
   let principal = 0;
   let interest = 0;
   let fees = 0;
 
   for (const transfer of (transfers || []) as TransferRecord[]) {
-    const netAmount = (transfer.debit_amount || 0) - (transfer.credit_amount || 0);
+    const amount = Number(transfer.amount) || 0;
     
-    switch (transfer.account_type) {
-      case 'principal':
-        principal += netAmount;
-        break;
-      case 'interest':
-        interest += netAmount;
-        break;
-      case 'fees':
-        fees += netAmount;
-        break;
+    // Check if this loan's accounts are debited (increases balance)
+    if (transfer.debit_account_id && accountIds.includes(transfer.debit_account_id)) {
+      const accountType = accountIdToType.get(transfer.debit_account_id);
+      switch (accountType) {
+        case 'LOAN_PRINCIPAL':
+          principal += amount;
+          break;
+        case 'LOAN_INTEREST':
+          interest += amount;
+          break;
+        case 'LOAN_FEES':
+          fees += amount;
+          break;
+      }
+    }
+    
+    // Check if this loan's accounts are credited (decreases balance - payment received)
+    if (transfer.credit_account_id && accountIds.includes(transfer.credit_account_id)) {
+      const accountType = accountIdToType.get(transfer.credit_account_id);
+      switch (accountType) {
+        case 'LOAN_PRINCIPAL':
+          principal -= amount;
+          break;
+        case 'LOAN_INTEREST':
+          interest -= amount;
+          break;
+        case 'LOAN_FEES':
+          fees -= amount;
+          break;
+      }
     }
   }
 

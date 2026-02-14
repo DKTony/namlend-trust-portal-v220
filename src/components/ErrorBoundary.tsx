@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { handleComponentError, getRecentUserActions } from '@/utils/errorHandler';
 
@@ -96,7 +97,7 @@ class ErrorBoundary extends Component<Props, State> {
       // Default error UI
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <Card className="w-full max-w-md">
+          <ThemedCard className="w-full max-w-md">
             <CardHeader className="text-center">
               <div className="mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -124,35 +125,35 @@ class ErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="flex flex-col space-y-2">
-                <Button 
+                <ThemedButton 
                   onClick={this.handleRetry}
                   className="w-full"
-                  variant="default"
+                  variant="primary"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
-                </Button>
+                </ThemedButton>
                 
-                <Button 
+                <ThemedButton 
                   onClick={this.handleGoHome}
                   className="w-full"
-                  variant="outline"
+                  variant="secondary"
                 >
                   <Home className="w-4 h-4 mr-2" />
                   Go Home
-                </Button>
+                </ThemedButton>
                 
-                <Button 
+                <ThemedButton 
                   onClick={this.handleReportError}
                   className="w-full"
                   variant="ghost"
                   size="sm"
                 >
                   Report Error
-                </Button>
+                </ThemedButton>
               </div>
             </CardContent>
-          </Card>
+          </ThemedCard>
         </div>
       );
     }

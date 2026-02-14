@@ -5,7 +5,8 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +106,7 @@ export function IPSDisbursementForm({
   };
 
   return (
-    <Card className={className}>
+    <ThemedCard className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />
@@ -273,7 +274,7 @@ export function IPSDisbursementForm({
           </div>
         )}
       </CardContent>
-    </Card>
+    </ThemedCard>
   );
 }
 

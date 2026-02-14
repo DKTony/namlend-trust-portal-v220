@@ -216,7 +216,7 @@ export const ReconciliationDashboard: React.FC = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Total Amount</p>
                 <p className="text-2xl font-bold">
-                  {formatNAD(transactions.reduce((sum, t) => sum + t.transaction_amount, 0))}
+                  {formatNAD(transactions.reduce((sum, t) => sum + t.amount, 0))}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -336,7 +336,7 @@ export const ReconciliationDashboard: React.FC = () => {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="font-mono text-sm font-medium">{txn.transaction_reference}</p>
+                        <p className="font-mono text-sm font-medium">{txn.reference || txn.external_id}</p>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(txn.transaction_date)}</span>
@@ -344,7 +344,7 @@ export const ReconciliationDashboard: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {formatNAD(txn.transaction_amount)}
+                          {formatNAD(txn.amount)}
                         </p>
                         <Badge variant="outline" className="text-xs mt-1">
                           {txn.transaction_type}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ import {
   Search,
   RefreshCw
 } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
 
 // Sub-components
 import LoanApplicationsList from './LoanApplicationsList';
@@ -46,6 +48,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewItems, setHasNewItems] = useState(false);
   const { toast } = useToast();
+  const { styles } = useTheme();
 
   const handleLoanSelection = (loanId: string, selected: boolean) => {
     if (selected) {
@@ -123,28 +126,27 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
         </div>
         <div className="flex space-x-2">
           {hasNewItems && (
-            <Button 
-              variant="default" 
-              size="sm"
+            <ThemedButton 
+              variant="primary" 
+              className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 animate-pulse"
               onClick={handleRefresh}
-              className="bg-blue-600 hover:bg-blue-700 animate-pulse"
             >
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
               New Items Available
-            </Button>
+            </ThemedButton>
           )}
-          <Button 
-            variant={showFilters ? "default" : "outline"} 
-            size="sm"
+          <ThemedButton 
+            variant={showFilters ? "primary" : "secondary"} 
+            className="h-9 px-3 text-xs"
             onClick={() => setShowFilters(!showFilters)}
           >
-            <Filter className="mr-2 h-4 w-4" />
+            <Filter className="mr-2 h-3.5 w-3.5" />
             Filters
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
+          </ThemedButton>
+          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <Download className="mr-2 h-3.5 w-3.5" />
             Export
-          </Button>
+          </ThemedButton>
         </div>
       </div>
 
@@ -153,11 +155,11 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
 
       {/* Enhanced Filters Panel */}
       {showFilters && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Filter Applications</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <ThemedCard>
+          <div className="mb-4">
+            <h3 className={cn("text-lg font-semibold", styles.textClass)}>Filter Applications</h3>
+          </div>
+          <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Date Range Filter */}
               <div className="space-y-2">
@@ -166,7 +168,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground"
+                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground", styles.inputClass)}
                 />
               </div>
               <div className="space-y-2">
@@ -175,7 +177,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground"
+                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground", styles.inputClass)}
                 />
               </div>
 
@@ -187,7 +189,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMin}
                   onChange={(e) => setAmountMin(e.target.value)}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
+                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
                 />
               </div>
               <div className="space-y-2">
@@ -197,7 +199,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMax}
                   onChange={(e) => setAmountMax(e.target.value)}
                   placeholder="100000"
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
+                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
                 />
               </div>
 
@@ -208,7 +210,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+                    className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
                   >
                     <option value="all">All Priorities</option>
                     <option value="urgent">Urgent</option>
@@ -221,9 +223,9 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
 
               {/* Clear Filters Button */}
               <div className="flex items-end">
-                <Button 
-                  variant="outline" 
-                  size="sm"
+                <ThemedButton 
+                  variant="secondary" 
+                  className="w-full h-[42px]"
                   onClick={() => {
                     setDateFrom('');
                     setDateTo('');
@@ -231,14 +233,13 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                     setAmountMax('');
                     setPriorityFilter('all');
                   }}
-                  className="w-full"
                 >
                   Clear Filters
-                </Button>
+                </ThemedButton>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </ThemedCard>
       )}
 
       {/* Bulk Actions Panel */}
@@ -280,13 +281,13 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
               placeholder="Search by applicant name, ID, or amount..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground"
+              className={cn("w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+            className={cn("px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
             data-testid="filter-status-select"
           >
             <option value="all" data-testid="filter-all">All Statuses</option>

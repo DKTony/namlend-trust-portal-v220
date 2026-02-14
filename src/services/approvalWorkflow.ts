@@ -1,12 +1,75 @@
 import { supabase } from '@/integrations/supabase/client';
 import { debugLog } from '@/utils/debug';
 import { handleDatabaseError, handleBusinessLogicError, measurePerformance } from '@/utils/errorHandler';
+import { withServiceResult, withArrayResult, type ServiceResult } from '@/utils/serviceUtils';
+
+// Type definitions for approval workflow data structures
+export interface LoanApplicationData {
+  amount: number;
+  term_months: number;
+  purpose?: string;
+  monthly_income?: number;
+  employment_status?: string;
+  employer_name?: string;
+  [key: string]: unknown;
+}
+
+export interface KYCDocumentData {
+  document_type: string;
+  document_url?: string;
+  expiry_date?: string;
+  [key: string]: unknown;
+}
+
+export interface ProfileUpdateData {
+  field_name: string;
+  old_value?: unknown;
+  new_value?: unknown;
+  [key: string]: unknown;
+}
+
+export type ApprovalRequestDataPayload = 
+  | LoanApplicationData 
+  | KYCDocumentData 
+  | ProfileUpdateData 
+  | Record<string, unknown>;
+
+export interface ComplianceFlag {
+  code: string;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  detected_at?: string;
+}
+
+export interface ApprovalMetadata {
+  source?: string;
+  ip_address?: string;
+  user_agent?: string;
+  processing_notes?: string;
+  [key: string]: unknown;
+}
+
+export interface WorkflowHistoryData {
+  previous_assigned_to?: string;
+  new_assigned_to?: string;
+  escalation_reason?: string;
+  [key: string]: unknown;
+}
+
+export interface ApprovalStatusUpdate {
+  status: ApprovalRequest['status'];
+  updated_at: string;
+  review_notes?: string;
+  assigned_to?: string;
+  reviewed_at?: string;
+  reviewer_id?: string;
+}
 
 export interface ApprovalRequest {
   id: string;
   user_id: string;
   request_type: 'loan_application' | 'kyc_document' | 'profile_update' | 'payment' | 'document_upload';
-  request_data: any;
+  request_data: ApprovalRequestDataPayload;
   status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_info';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   assigned_to?: string;
@@ -19,8 +82,8 @@ export interface ApprovalRequest {
   reference_table?: string;
   auto_approve_eligible: boolean;
   risk_score: number;
-  compliance_flags: any[];
-  metadata: any;
+  compliance_flags: ComplianceFlag[];
+  metadata: ApprovalMetadata;
   // Expanded view fields (approval_requests_expanded)
   user_first_name?: string;
   user_last_name?: string;
@@ -40,7 +103,7 @@ export interface ApprovalWorkflowHistory {
   changed_by: string;
   change_reason?: string;
   changed_at: string;
-  additional_data: any;
+  additional_data: WorkflowHistoryData;
 }
 
 export interface ApprovalNotification {
@@ -53,13 +116,13 @@ export interface ApprovalNotification {
   is_read: boolean;
   sent_at: string;
   read_at?: string;
-  metadata: any;
+  metadata: ApprovalMetadata;
 }
 
-export interface ApprovalRequestData {
+export interface ApprovalRequestInput {
   user_id: string;
   request_type: 'loan_application' | 'kyc_document' | 'profile_update' | 'payment' | 'document_upload';
-  request_data: any;
+  request_data: ApprovalRequestDataPayload;
   priority?: 'low' | 'normal' | 'high' | 'urgent';
 }
 
@@ -67,7 +130,7 @@ export interface ApprovalRequestData {
  * Submit a new approval request to the back office workflow
  */
 export async function submitApprovalRequest(
-  requestData: ApprovalRequestData
+  requestData: ApprovalRequestInput
 ): Promise<{ success: boolean; requestId?: string; error?: string }> {
   return await measurePerformance('submit_approval_request', async () => {
     try {
@@ -110,28 +173,21 @@ export async function submitApprovalRequest(
 export async function getUserApprovalRequests(
   status?: ApprovalRequest['status']
 ): Promise<{ success: boolean; requests?: ApprovalRequest[]; error?: string }> {
-  try {
-    let query = supabase
-      .from('approval_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      debugLog('❌ Error fetching user approval requests:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, requests: data };
-  } catch (error) {
-    debugLog('❌ Unexpected error fetching approval requests:', error);
-    return { success: false, error: 'Unexpected error occurred' };
-  }
+  const result = await withArrayResult<ApprovalRequest>(
+    () => {
+      let query = supabase
+        .from('approval_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (status) {
+        query = query.eq('status', status);
+      }
+      return query;
+    },
+    'getUserApprovalRequests',
+    { status }
+  );
+  return { success: result.success, requests: result.data, error: result.error };
 }
 
 /**
@@ -225,7 +281,7 @@ export async function updateApprovalStatus(
   try {
     debugLog('🔄 Updating approval status:', { requestId, status, reviewNotes });
 
-    const updateData: any = {
+    const updateData: ApprovalStatusUpdate = {
       status,
       updated_at: new Date().toISOString()
     };
@@ -441,7 +497,7 @@ export async function processApprovedLoanApplication(
       // Use the new transaction function for atomic processing
       const { data, error } = await supabase
         .rpc('process_approval_transaction', {
-          request_id: approvalRequestId
+          p_request_id: approvalRequestId
         });
 
       if (error) {

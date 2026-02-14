@@ -2,6 +2,9 @@
 
 # NamLend Trust – Market Research Gaps in Functionality, UI, and Overall UX
 
+**Doc Revision**: 2026-01-19  
+**Status Note**: Market research snapshot (reference only).
+
 **Main takeaway:** Technically, NamLend Trust is very strong for a first‑generation loan management platform (RLS, audit, workflows, APR cap, testing). The biggest gaps versus modern lending products in Africa and global best practice are not in the backend, but in:
 
 1) missing or shallow **functionalities around customer self‑service, underwriting intelligence, and collections**,
@@ -300,4 +303,3 @@ Addressing these will move NamLend Trust from “technically robust internal too
 [^10]: context.md
 
 [^11]: https://www.cliffsnotes.com/study-notes/19178821
-

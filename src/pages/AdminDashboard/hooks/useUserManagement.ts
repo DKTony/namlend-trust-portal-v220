@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ProfileWithRolesRow {
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone_number: string | null;
+  verified: boolean | null;
+  created_at: string;
+  updated_at: string | null;
+  last_login: string | null;
+  email: string | null;
+  role: string | null;
+}
+
 interface User {
   id: string;
   fullName: string;
@@ -289,7 +302,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
       if (error) throw error;
 
-      const mapped: User[] = (data || []).map((row: any) => ({
+      const mapped: User[] = (data || []).map((row: ProfileWithRolesRow) => ({
         id: row.user_id,
         fullName: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Unknown User',
         email: row.email || 'No email',

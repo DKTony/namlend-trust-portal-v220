@@ -1,10 +1,11 @@
+import 'dotenv/config';
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY as string | undefined;
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'anthnydklrk@gmail.com';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || '123abc';
+const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) as string | undefined;
+const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY) as string | undefined;
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'test123';
 
 // Minimal validation of disbursements ledger read access for admin
 // Does not require any existing data; only asserts successful query

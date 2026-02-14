@@ -69,7 +69,7 @@ export default function ApprovalManagementDashboard() {
     setLoading(true);
     try {
       // Load approval requests with filters
-      const requestFilters: any = {};
+      const requestFilters: Record<string, string> = {};
       if (filters.status !== 'all') requestFilters.status = filters.status;
       if (filters.type !== 'all') requestFilters.requestType = filters.type;
       if (filters.priority !== 'all') requestFilters.priority = filters.priority;
@@ -130,18 +130,39 @@ export default function ApprovalManagementDashboard() {
         throw new Error(result.error);
       }
 
-      // If approved, process the request
+      // If approved, process the request and verify loan creation
       if (newStatus === 'approved' && selectedRequest) {
         if (selectedRequest.request_type === 'loan_application') {
-          await processApprovedLoanApplication(requestId);
+          const loanResult = await processApprovedLoanApplication(requestId);
+          if (!loanResult.success) {
+            console.error('❌ Failed to create loan:', loanResult.error);
+            toast({
+              title: "Warning: Loan Creation Failed",
+              description: `Approval saved but loan was not created: ${loanResult.error}. Please retry or contact support.`,
+              variant: "destructive"
+            });
+            return;
+          }
+          console.log('✅ Loan created successfully:', loanResult.loanId);
         } else if (selectedRequest.request_type === 'kyc_document') {
-          await processApprovedKYCDocument(requestId);
+          const kycResult = await processApprovedKYCDocument(requestId);
+          if (!kycResult.success) {
+            console.error('❌ Failed to process KYC:', kycResult.error);
+            toast({
+              title: "Warning: KYC Processing Failed",
+              description: `Approval saved but KYC was not processed: ${kycResult.error}`,
+              variant: "destructive"
+            });
+            return;
+          }
         }
       }
 
       toast({
         title: "Status Updated",
-        description: `Request has been ${newStatus}`
+        description: newStatus === 'approved' 
+          ? `Request approved and ${selectedRequest?.request_type === 'loan_application' ? 'loan created' : 'processed'} successfully`
+          : `Request has been ${newStatus}`
       });
 
       setSelectedRequest(null);
@@ -486,6 +507,8 @@ export default function ApprovalManagementDashboard() {
                             purpose: selectedRequest.request_data?.purpose || 'Not specified',
                             status: selectedRequest.status,
                             created_at: selectedRequest.created_at,
+                            // Include approval timestamp for status history
+                            approved_at: selectedRequest.status === 'approved' ? selectedRequest.updated_at : undefined,
                             request_data: selectedRequest.request_data
                           });
                           setLoanDetailsModalOpen(true);
@@ -522,36 +545,44 @@ export default function ApprovalManagementDashboard() {
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
-                    disabled={processing}
-                    className="flex-1"
-                    data-testid="approvals-approve-btn"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
-                    disabled={processing}
-                    className="flex-1"
-                    data-testid="approvals-reject-btn"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleStatusUpdate(selectedRequest.id, 'requires_info')}
-                    disabled={processing}
-                    data-testid="approvals-requestinfo-btn"
-                  >
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Request Info
-                  </Button>
-                </div>
+                {/* Only show action buttons if request is not already approved/rejected */}
+                {selectedRequest.status !== 'approved' && selectedRequest.status !== 'rejected' ? (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
+                      disabled={processing}
+                      className="flex-1"
+                      data-testid="approvals-approve-btn"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
+                      disabled={processing}
+                      className="flex-1"
+                      data-testid="approvals-reject-btn"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleStatusUpdate(selectedRequest.id, 'requires_info')}
+                      disabled={processing}
+                      data-testid="approvals-requestinfo-btn"
+                    >
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Request Info
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground" data-testid="approvals-processed-state">
+                    <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
+                    This request has been {selectedRequest.status}. No further action required.
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

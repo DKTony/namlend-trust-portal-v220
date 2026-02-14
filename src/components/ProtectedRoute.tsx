@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
@@ -14,11 +14,22 @@ export const ProtectedRoute = ({
   requireAdmin = false, 
   requireLoanOfficer = false 
 }: ProtectedRouteProps) => {
-  const { user, loading, isAdmin, isLoanOfficer } = useAuth();
+  const { user, loading, roleLoading, isAdmin, isLoanOfficer, refreshUser } = useAuth();
   const location = useLocation();
+  const requiresRole = requireAdmin || requireLoanOfficer;
+  const [checkingSession, setCheckingSession] = useState(false);
+  const checkedSession = useRef(false);
+
+  useEffect(() => {
+    if (!user && !loading && !checkedSession.current) {
+      checkedSession.current = true;
+      setCheckingSession(true);
+      refreshUser().finally(() => setCheckingSession(false));
+    }
+  }, [user, loading, refreshUser]);
 
   // Show loading spinner while auth state is being determined
-  if (loading) {
+  if (loading || checkingSession || (requiresRole && roleLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -31,7 +42,14 @@ export const ProtectedRoute = ({
 
   // Redirect to auth if not authenticated
   if (!user) {
-    return <Navigate to={`/auth?next=${location.pathname}`} replace />;
+    // SECURITY: Validate redirect path to prevent open redirect vulnerabilities
+    // Only allow internal paths (starting with /) and not protocol-relative URLs (//)
+    const safePath = location.pathname;
+    const isValidRedirect = safePath.startsWith('/') &&
+                            !safePath.startsWith('//') &&
+                            !safePath.includes('://');
+    const redirectPath = isValidRedirect ? encodeURIComponent(safePath) : '/dashboard';
+    return <Navigate to={`/auth?next=${redirectPath}`} replace />;
   }
 
   // Check role-based access

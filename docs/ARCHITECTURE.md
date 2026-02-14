@@ -1,600 +1,444 @@
 # NamLend Trust - System Architecture
 
-**Version**: 3.2.0  
-**Last Updated**: December 27, 2025  
-**Status**: ✅ Production Architecture Complete (IPS/IPP Integration Active; Admin Config Panels Complete)
+**Doc Revision**: 2026-01-19  \
+**Status**: Core architecture implemented; API orchestration layer live; IPS adapter and TigerBeetle posting are mock/simulated.
+
+---
+
+## Table of Contents
+
+- [System Overview](#system-overview)
+- [Architecture Diagrams](#architecture-diagrams)
+- [Client Layer](#client-layer)
+- [Backend Layer](#backend-layer)
+- [Service Layer Pattern](#service-layer-pattern)
+- [Edge Functions](#edge-functions)
+- [Admin Architecture](#admin-architecture)
+- [Observability and Safety](#observability-and-safety)
+- [Known Architectural Gaps](#known-architectural-gaps)
 
 ---
 
 ## System Overview
 
-NamLend Trust follows a modern **client-server architecture** with a React SPA frontend and Supabase as the backend-as-a-service (BaaS) platform. The system integrates with Namibia's **Instant Payment Platform (IPP/IPN)** for real-time payment processing.
+NamLend Trust is a React SPA backed by Supabase (PostgreSQL + Auth + Edge Functions). The system integrates with multiple payment channels and exposes admin workflows for approvals, disbursements, collections, reconciliation, IPS, and settlement.
 
-### External Integrations
+---
+
+## Architecture Diagrams
+
+### High-Level System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["Client Layer"]
+        WebApp["React SPA<br/>(Vite + TypeScript)"]
+        MobileApp["React Native App<br/>(Optional)"]
+    end
+
+    subgraph Supabase["Supabase Platform"]
+        Auth["Auth (GoTrue)"]
+        PostgREST["PostgREST API"]
+        Realtime["Realtime<br/>(WebSocket)"]
+        EdgeFn["Edge Functions<br/>(Deno)"]
+        Storage["Storage Buckets"]
+
+        subgraph Database["PostgreSQL 15+"]
+            RLS["Row-Level Security"]
+            Tables["Core Tables"]
+            RPCs["RPC Functions"]
+        end
+    end
+
+    subgraph External["External Services"]
+        IPS["IPS/IPP<br/>(Bank of Namibia)"]
+        SMS["Africa's Talking<br/>(SMS)"]
+        WhatsApp["Meta Cloud API<br/>(WhatsApp)"]
+        PayProviders["Payment Providers<br/>(PayToday, MTC, TN)"]
+    end
+
+    subgraph Ledger["Financial Ledger"]
+        TigerBeetle["TigerBeetle<br/>(Shadow Mode)"]
+    end
+
+    WebApp <-->|HTTPS| Auth
+    WebApp <-->|HTTPS| PostgREST
+    WebApp <-->|WSS| Realtime
+    MobileApp <-->|HTTPS| Auth
+    MobileApp <-->|HTTPS| PostgREST
+
+    PostgREST <--> RLS
+    RLS <--> Tables
+    RPCs <--> Tables
+    EdgeFn <--> Database
+
+    EdgeFn -->|Mock| IPS
+    EdgeFn --> SMS
+    EdgeFn --> WhatsApp
+    PayProviders -->|Webhooks| EdgeFn
+
+    EdgeFn -->|Outbox| TigerBeetle
+```
+
+### Loan Lifecycle Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Application Submitted
+
+    pending --> under_review: Officer Reviews
+    under_review --> approved: Approval Granted
+    under_review --> rejected: Application Denied
+
+    approved --> disbursed: Funds Released
+    disbursed --> active: First Payment Due
+
+    active --> active: Payments Made
+    active --> completed: Final Payment
+    active --> defaulted: Missed Payments
+    active --> restructured: Terms Modified
+
+    rejected --> [*]
+    completed --> [*]
+    defaulted --> [*]
+
+    note right of approved
+        Creates disbursement record
+        Triggers IPS or manual transfer
+    end note
+
+    note right of active
+        Payment schedules tracked
+        Collections if overdue
+    end note
+```
+
+### Data Flow: Loan Application to Disbursement
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant UI as React SPA
+    participant API as Supabase API
+    participant RPC as RPC Functions
+    participant DB as PostgreSQL
+    participant EF as Edge Functions
+    participant IPS as IPS Adapter
+
+    C->>UI: Submit Loan Application
+    UI->>API: Insert approval_request
+    API->>DB: RLS validates, inserts
+    DB-->>UI: Request ID returned
+
+    Note over UI,DB: Loan Officer Reviews
+
+    UI->>API: Call process_approval_transaction
+    API->>RPC: Execute RPC
+    RPC->>DB: Create loan + disbursement
+    RPC->>DB: Update approval_request
+    RPC-->>UI: Loan created
+
+    UI->>EF: Initiate IPS disbursement
+    EF->>IPS: POST /disburse (mock)
+    IPS-->>EF: Transaction ID
+    EF->>DB: Update disbursement status
+    EF-->>UI: Disbursement initiated
+
+    Note over C,IPS: Funds transferred to borrower
+```
+
+### IPS/IPP Integration Flow
+
+```mermaid
+flowchart LR
+    subgraph NamLend["NamLend Trust"]
+        SPA["React SPA"]
+        Adapter["ips-adapter<br/>(Edge Function)"]
+        DB["ips_transactions<br/>ips_api_logs"]
+    end
+
+    subgraph IPS["IPS Switch (Bank of Namibia)"]
+        Switch["IPS Central<br/>Switch"]
+        Mapper["Central<br/>Mapper"]
+    end
+
+    subgraph Banks["Participating Banks"]
+        FNB["FNB"]
+        BWH["Bank Windhoek"]
+        Other["Other Banks"]
+    end
+
+    SPA -->|1. Initiate| Adapter
+    Adapter -->|2. Validate VPA| Mapper
+    Mapper -->|3. Resolve Account| Switch
+    Adapter -->|4. Submit pacs.008| Switch
+    Switch -->|5. Route| Banks
+    Banks -->|6. Confirm| Switch
+    Switch -->|7. pacs.002 Status| Adapter
+    Adapter -->|8. Update| DB
+    DB -->|9. Notify| SPA
+
+    style Adapter fill:#f9f,stroke:#333
+    style Switch fill:#bbf,stroke:#333
+```
+
+### Authentication & Authorization Flow
+
+```mermaid
+flowchart TB
+    subgraph Client["Client"]
+        Login["Login Page"]
+        Session["Local Session<br/>(localStorage)"]
+    end
+
+    subgraph Supabase["Supabase Auth"]
+        GoTrue["GoTrue Service"]
+        JWT["JWT Token"]
+    end
+
+    subgraph App["Application"]
+        AuthProvider["AuthProvider<br/>(React Context)"]
+        ProtectedRoute["ProtectedRoute<br/>Component"]
+        RoleGuard["Role Check<br/>(admin/loan_officer/client)"]
+    end
+
+    subgraph Database["PostgreSQL"]
+        UserRoles["user_roles Table"]
+        RLS["RLS Policies"]
+    end
+
+    Login -->|1. Credentials| GoTrue
+    GoTrue -->|2. Validate| GoTrue
+    GoTrue -->|3. Issue| JWT
+    JWT -->|4. Store| Session
+
+    Session -->|5. Restore| AuthProvider
+    AuthProvider -->|6. Check Auth| ProtectedRoute
+    ProtectedRoute -->|7. Verify Role| RoleGuard
+    RoleGuard -->|8. Query| UserRoles
+
+    JWT -->|Included in requests| RLS
+    RLS -->|Enforces access| Database
+```
+
+### TigerBeetle Shadow Ledger Pattern
+
+```mermaid
+flowchart LR
+    subgraph Application["Application Layer"]
+        Service["Payment Service"]
+    end
+
+    subgraph Primary["Primary Storage"]
+        Supabase["Supabase<br/>(Source of Truth)"]
+    end
+
+    subgraph Shadow["Shadow Ledger"]
+        Outbox["tigerbeetle_outbox<br/>(Queue Table)"]
+        Worker["Outbox Worker<br/>(Edge Function)"]
+        TB["TigerBeetle<br/>(Simulated)"]
+    end
+
+    Service -->|1. Write| Supabase
+    Service -->|2. Queue Event| Outbox
+    Worker -->|3. Poll| Outbox
+    Worker -->|4. Post| TB
+    Worker -->|5. Mark Synced| Outbox
+
+    style Supabase fill:#90EE90
+    style TB fill:#FFB6C1
+
+    note["TigerBeetle runs in shadow mode:<br/>Records transactions but doesn't<br/>control application flow"]
+```
+
+### External Integrations (Current Wiring)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    EXTERNAL PAYMENT SYSTEMS                          │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐  │
-│  │  IPP/IPN    │  │  MTC MoMo   │  │  TN Mobile  │  │  PayToday │  │
-│  │  (BON)      │  │  Money      │  │  Money      │  │  Gateway  │  │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └─────┬─────┘  │
-│         └────────────────┼────────────────┼───────────────┘        │
-│                          ▼                                          │
-│              ┌─────────────────────┐                                │
-│              │   Payment Webhooks  │                                │
-│              │  (Edge Functions)   │                                │
-│              └──────────┬──────────┘                                │
-└─────────────────────────┼───────────────────────────────────────────┘
-                          ▼
-                    NamLend Backend
-```
+PayToday / MTC MoMo / TN Mobile
+          | (webhooks)
+          v
+    payment-webhook (Edge Function)
+          |
+          v
+      payment_transactions -> payments -> schedules
 
-> **Note**: For detailed IPP integration, see [IPP_INTEGRATION.md](./IPP_INTEGRATION.md)
+IPS/IPP (mock adapter)
+          |
+          v
+       ips-adapter (Edge Function)
+          |
+          v
+       ips_transactions + ips_api_logs
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│  React 18 SPA (TypeScript)                                          │
-│  ├── TanStack Query (Server State)                                  │
-│  ├── React Context (Auth State)                                     │
-│  ├── React Router (Navigation)                                      │
-│  └── shadcn/ui + TailwindCSS (UI)                                   │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                │ HTTPS / WSS
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                       SUPABASE PLATFORM                              │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
-│  │  Auth API   │  │  REST API   │  │  Realtime   │                  │
-│  │  (GoTrue)   │  │  (PostgREST)│  │  (Phoenix)  │                  │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                  │
-│         │                │                │                          │
-│         └────────────────┼────────────────┘                          │
-│                          ▼                                           │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │                    PostgreSQL 15+                            │    │
-│  │  ├── Tables with RLS Policies                               │    │
-│  │  ├── Database Functions (RPCs)                              │    │
-│  │  ├── Triggers (Audit, Workflow)                             │    │
-│  │  └── Views (Materialized for Performance)                   │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                          │                                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
-│  │  Storage    │  │  Edge Funcs │  │  Cron Jobs  │                  │
-│  │  (S3-like)  │  │  (Deno)     │  │  (pg_cron)  │                  │
-│  └─────────────┘  └─────────────┘  └─────────────┘                  │
-└─────────────────────────────────────────────────────────────────────┘
+SMS / WhatsApp
+          |
+          v
+send-sms / send-whatsapp (Edge Functions)
+          |
+          v
+    communication_logs + notification_queue
 ```
 
 ---
 
-## Frontend Architecture
+## Client Layer
 
-### Component Hierarchy
+- React 18 SPA using TanStack Query for server state.
+- Supabase client with local session persistence (`storageKey: namlend-auth`).
+- Debug utilities gated by `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS`.
+- Optional mock Supabase client when missing credentials (dev only).
 
-```
-App.tsx
-├── ErrorBoundary
-├── QueryClientProvider (TanStack Query)
-├── AuthProvider (useAuth context)
-├── TooltipProvider (shadcn/ui)
-├── Router
-│   ├── / (Index - Landing Page)
-│   ├── /auth (Authentication - Split Screen Layout)
-│   ├── /dashboard (Client Dashboard - Sidebar Layout)
-│   │   ├── DashboardSidebar (Collapsible Navigation)
-│   │   ├── Mobile Header (Hamburger Menu)
-│   │   └── ProtectedRoute (requires auth)
-│   ├── /admin/* (Admin Dashboard - Sidebar Layout)
-│   │   └── ProtectedRoute (requires admin role)
-│   ├── /loan-application
-│   ├── /loans/:id (Loan Details with IPS)
-│   ├── /payment
-│   └── /kyc
-└── Toasters (Notifications)
-```
-
-### Layout Architecture
+### Routes (Actual)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    DESKTOP LAYOUT (lg: 1024px+)                      │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌─────────────────────────────────────────────┐  │
-│  │   Sidebar    │  │              Main Content                    │  │
-│  │   (w-72)     │  │                                              │  │
-│  │              │  │  ┌─────────────────────────────────────────┐ │  │
-│  │  - Logo      │  │  │  Page Header (Title + Actions)          │ │  │
-│  │  - Nav Items │  │  └─────────────────────────────────────────┘ │  │
-│  │  - User Info │  │  ┌─────────────────────────────────────────┐ │  │
-│  │              │  │  │  Content Area (Scrollable)              │ │  │
-│  └──────────────┘  │  └─────────────────────────────────────────┘ │  │
-│                    └─────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    MOBILE LAYOUT (< 1024px)                          │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │  Mobile Header  [Logo]                    [☰ Menu]              ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │                                                                  ││
-│  │              Main Content (Full Width)                          ││
-│  │                                                                  ││
-│  │  - Stacked cards (grid-cols-1)                                  ││
-│  │  - Reduced padding (p-4)                                        ││
-│  │                                                                  ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│                                                                      │
-│  ┌────────────────┐  (Slide-out overlay when menu open)             │
-│  │   Sidebar      │                                                  │
-│  │   (Overlay)    │                                                  │
-│  └────────────────┘                                                  │
-└─────────────────────────────────────────────────────────────────────┘
+/                  Landing (Index)
+/auth              Authentication
+/dashboard         Client dashboard
+/admin/*           Admin dashboard (admin-only route guard)
+/loan-application  Loan application
+/payment           Client payment
+/loans/:id         Loan details
+/kyc               KYC / Document verification
+/budget            Budget tracker & finance management
+*                  NotFound
 ```
 
-### State Management
+### Layouts
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Server State** | TanStack Query | API data, caching, refetching |
-| **Auth State** | React Context | User session, role, loading |
-| **Form State** | React Hook Form | Form values, validation |
-| **UI State** | Local State | Modals, tabs, toggles |
+- Client and admin dashboards share a sidebar-driven layout.
+- Mobile uses collapsible sidebar and stacked cards.
 
-### Service Layer Pattern
+---
 
-```typescript
-// services/disbursementService.ts
+## Backend Layer (Supabase)
+
+```
+React SPA
+  |
+  | HTTPS / WSS
+  v
+Supabase Platform
+  - Auth (GoTrue)
+  - PostgREST
+  - Realtime (optional)
+  - Edge Functions
+  - Storage
+  - PostgreSQL 15+ with RLS
+```
+
+### Data Model Highlights
+
+- `approval_requests` drives loan application workflow.
+- `loans`, `disbursements`, `payments`, `payment_schedules` are core lending records.
+- `collections_*` tables track delinquency workflow.
+- `notification_*` + `communication_logs` power in-app/SMS/WhatsApp.
+- `ips_*` tables track IPS/IPP activity (mock adapter).
+- `settlement_*` tables support DNS settlement and reconciliation.
+- `reconciliation_runs` and `bank_transactions` track bank reconciliation batches and imported statement lines.
+- `tigerbeetle_*` tables implement outbox + shadow ledger.
+
+---
+
+## Service Layer Pattern
+
+Services are thin RPC/data wrappers; heavy logic lives in SQL functions and Edge Functions.
+
+```ts
+// Example: disbursementService.ts
 export async function completeDisbursement(
   disbursementId: string,
   paymentMethod: 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order',
   paymentReference: string,
   notes?: string
-): Promise<DisbursementResult> {
-  return measurePerformance('complete_disbursement', async () => {
-    // Validation
-    if (!paymentReference?.trim()) {
-      return { success: false, error: 'Payment reference is required' };
-    }
-    
-    // RPC call
-    const { data, error } = await supabase.rpc('complete_disbursement', {
-      p_disbursement_id: disbursementId,
-      p_payment_method: paymentMethod,
-      p_payment_reference: paymentReference.trim(),
-      p_notes: notes || null
-    });
-    
-    // Error handling
-    if (error) {
-      handleDatabaseError(error, 'completeDisbursement', { disbursementId });
-      return { success: false, error: error.message };
-    }
-    
-    return data as DisbursementResult;
+) {
+  const { data, error } = await supabase.rpc('complete_disbursement', {
+    p_disbursement_id: disbursementId,
+    p_payment_method: paymentMethod,
+    p_payment_reference: paymentReference.trim(),
+    p_notes: notes || null,
   });
+  if (error) return { success: false, error: error.message };
+  return data;
 }
 ```
 
 ---
 
-## Backend Architecture (Supabase)
+## Edge Functions
 
-### Database Schema Design
+| Function | Purpose | Notes |
+| --- | --- | --- |
+| `ips-adapter` | IPS mock adapter | JWT required; mock responses |
+| `payment-webhook` | Payment provider webhooks | HMAC verification; updates payments |
+| `process-loan-application` | Server-side review update | Not invoked by SPA |
+| `scheduled-tasks` | Overdue, reminders, queue processing | Intended for pg_cron |
+| `send-notification` | Staff-triggered notifications | Staff role required |
+| `send-sms` | Africa's Talking delivery | Requires secrets |
+| `send-whatsapp` | WhatsApp Business API | Requires secrets |
+| `tigerbeetle-outbox-worker` | Outbox processing | Simulated TB posting |
+| **`api-admin`** | Admin dashboard API | ✅ Deployed - staff RBAC |
+| **`api-analytics`** | Portfolio analytics API | ✅ Deployed - staff RBAC |
+| **`api-audit`** | Audit log API | ✅ Deployed - admin only |
+| **`api-collections`** | Collections API | ✅ Deployed - staff RBAC |
+| **`api-disbursements`** | Disbursement API | ✅ Deployed - staff RBAC |
+| **`api-loans`** | Loan management API | ✅ Deployed - JWT + RBAC |
+| **`api-notifications`** | Notification API | ✅ Deployed - JWT + RBAC |
+| **`api-payments`** | Payment operations API | ✅ Deployed - JWT + RBAC |
+| **`api-reconciliation`** | Reconciliation API | ✅ Deployed - staff RBAC |
+| **`api-users`** | User management API | ✅ Deployed - JWT + RBAC |
 
-The schema follows the **LEDGER** framework for financial systems:
+### API Orchestration Layer
 
-- **L**edger Integrity: Immutable transaction records
-- **E**ntity Design: Soft deletes, temporal modeling
-- **D**ata Integrity: Check constraints, foreign keys
-- **G**overnance: Audit columns on all tables
-- **E**fficiency: Strategic indexing
-- **R**econciliation: Balance verification support
+The `api-*` functions form a centralized API layer providing:
+- **JWT Authentication** on all endpoints
+- **Role-Based Access Control** (client, loan_officer, admin)
+- **Input Validation** via Zod schemas
+- **Audit Logging** for all financial operations
+- **Standardized Responses** with CORS headers
 
-### Key Schema Patterns
-
-#### Audit Columns (All Tables)
-
-```sql
-created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-created_by UUID REFERENCES auth.users(id),
-```
-
-#### Status Transitions (Check Constraints)
-
-```sql
-status VARCHAR(20) CHECK (status IN (
-  'pending', 'under_review', 'approved', 'rejected', 'completed'
-))
-```
-
-#### Soft Deletes
-
-```sql
-deleted_at TIMESTAMP WITH TIME ZONE,
-is_deleted BOOLEAN DEFAULT FALSE,
-```
-
-### Row Level Security (RLS) Strategy
-
-```sql
--- Pattern 1: User owns record
-CREATE POLICY "Users can view own loans"
-  ON loans FOR SELECT
-  USING (auth.uid() = user_id);
-
--- Pattern 2: Admin access
-CREATE POLICY "Admins can view all loans"
-  ON loans FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid() AND role = 'admin'
-    )
-  );
-
--- Pattern 3: System insert (triggers, functions)
-CREATE POLICY "System can insert audit logs"
-  ON audit_logs FOR INSERT
-  WITH CHECK (true);
-```
+Frontend client: `src/services/api-client.ts` (hooks in `src/hooks/useApiQueries.ts`)
 
 ---
 
-## Data Flow Diagrams
+## Admin Architecture
 
-### Loan Application Flow
+Admin dashboard modules are organized by domain:
 
-```
-┌──────────┐    ┌──────────────────┐    ┌───────────────┐
-│  Client  │───►│ LoanApplication  │───►│ approval_     │
-│          │    │ Form Submission  │    │ requests      │
-└──────────┘    └──────────────────┘    └───────┬───────┘
-                                                │
-                         ┌──────────────────────┘
-                         ▼
-              ┌──────────────────┐
-              │  Admin Reviews   │
-              │  (Back Office)   │
-              └────────┬─────────┘
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-    ┌──────────┐ ┌──────────┐ ┌──────────┐
-    │ APPROVED │ │ REJECTED │ │ REQUIRES │
-    │          │ │          │ │   INFO   │
-    └────┬─────┘ └──────────┘ └──────────┘
-         │
-         ▼
-┌────────────────────┐    ┌────────────────┐
-│ Create Loan Record │───►│ Create         │
-│ (loans table)      │    │ Disbursement   │
-└────────────────────┘    └────────┬───────┘
-                                   │
-                                   ▼
-                          ┌────────────────┐
-                          │ Generate       │
-                          │ Payment        │
-                          │ Schedule       │
-                          └────────────────┘
-```
-
-### Disbursement Flow
-
-```
-┌─────────────────┐
-│ Pending         │  Status: 'pending'
-│ Disbursement    │
-└────────┬────────┘
-         │ approveDisbursement()
-         ▼
-┌─────────────────┐
-│ Approved        │  Status: 'approved'
-│ (Ready to       │
-│  Process)       │
-└────────┬────────┘
-         │ markDisbursementProcessing()
-         ▼
-┌─────────────────┐
-│ Processing      │  Status: 'processing'
-│ (Payment in     │
-│  Progress)      │
-└────────┬────────┘
-         │ completeDisbursement(method, reference)
-         ▼
-┌─────────────────┐
-│ Completed       │  Status: 'completed'
-│ (Funds          │  + payment_reference
-│  Transferred)   │  + processed_at
-└─────────────────┘
-```
-
-### Payment Reconciliation Flow
-
-```
-┌──────────────────┐    ┌──────────────────┐
-│ Bank Statement   │    │ System Payments  │
-│ (CSV/API Import) │    │ (payments table) │
-└────────┬─────────┘    └────────┬─────────┘
-         │                       │
-         ▼                       ▼
-┌────────────────────────────────────────┐
-│        Auto-Matching Engine            │
-│  (Match by amount + date ± 1 cent)     │
-└────────────────┬───────────────────────┘
-                 │
-    ┌────────────┼────────────┐
-    ▼            ▼            ▼
-┌────────┐  ┌────────┐  ┌────────────┐
-│ MATCHED│  │ PARTIAL│  │ UNMATCHED  │
-│ (auto) │  │ MATCH  │  │ (manual    │
-│        │  │        │  │  review)   │
-└────────┘  └────────┘  └─────┬──────┘
-                              │
-                              ▼
-                    ┌────────────────┐
-                    │ Admin Manual   │
-                    │ Reconciliation │
-                    └────────────────┘
-```
+- **Loans**: approval queue, loan review, bulk actions
+- **Payments**: disbursement manager, payment schedule viewer, reconciliation
+- **Collections**: queue, interactions, promises
+- **IPS/IPP**: onboarding dashboard, IPS health widget
+- **Settlement**: runs, pacs.009 viewer, reports, adjustments
+- **User Management**: roles, profiles, audits
+- **Settings**: credit policy, TigerBeetle config, settlement config
 
 ---
 
-## Security Architecture
+## Observability and Safety
 
-### Authentication Flow
-
-```
-┌──────────┐    ┌──────────────┐    ┌──────────────┐
-│  User    │───►│  Supabase    │───►│  auth.users  │
-│  Login   │    │  Auth API    │    │  (verified)  │
-└──────────┘    └──────────────┘    └──────┬───────┘
-                                           │
-                                           ▼
-┌──────────────────────────────────────────────────┐
-│                 JWT Token                         │
-│  ┌─────────────────────────────────────────┐     │
-│  │ {                                        │     │
-│  │   "sub": "user-uuid",                   │     │
-│  │   "email": "user@example.com",          │     │
-│  │   "role": "authenticated",              │     │
-│  │   "exp": 1234567890                     │     │
-│  │ }                                        │     │
-│  └─────────────────────────────────────────┘     │
-└──────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────┐
-│  Frontend: useAuth() context                      │
-│  ├── Stores user, session, userRole              │
-│  ├── Fetches role from user_roles table          │
-│  └── Provides isAdmin, isLoanOfficer flags       │
-└──────────────────────────────────────────────────┘
-```
-
-### Authorization Layers
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER 1: Frontend Route Guards (ProtectedRoute)                 │
-│   - Redirects unauthenticated users                             │
-│   - Checks role for admin routes                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER 2: API Validation (Service Layer)                         │
-│   - Validates inputs before database calls                      │
-│   - Business logic checks                                       │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER 3: Row Level Security (PostgreSQL)                        │
-│   - Enforced at database level                                  │
-│   - Cannot be bypassed by client                                │
-│   - Based on auth.uid() and user_roles                          │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER 4: Database Constraints                                    │
-│   - Check constraints for valid values                          │
-│   - Foreign key constraints for referential integrity           │
-│   - Triggers for audit logging                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+- Error monitoring is client-side via `errorMonitoring.ts` and `SystemHealthDashboard`.
+- Debug tooling is gated to prevent PII exposure in production.
+- Edge Functions validate JWT and enforce staff access for privileged operations.
 
 ---
 
-## Audit Trail Architecture
+## Known Architectural Gaps
 
-### Audit Logging Strategy
-
-```sql
--- Automatic triggers on key tables
-CREATE TRIGGER audit_loans
-  AFTER INSERT OR UPDATE OR DELETE ON loans
-  FOR EACH ROW EXECUTE FUNCTION audit_loans_changes();
-
--- Captures:
--- - user_id (who)
--- - timestamp (when)
--- - action (what: create/update/delete)
--- - old_state (before)
--- - new_state (after)
--- - ip_address, user_agent (context)
-```
-
-### Compliance Reporting
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    AUDIT DATA SOURCES                           │
-├────────────────────────────────────────────────────────────────┤
-│  audit_logs          State changes for all entities            │
-│  view_logs           Who viewed sensitive data                 │
-│  state_transitions   Status change history                     │
-│  approval_history    Workflow decision trail                   │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│               COMPLIANCE REPORTS                                │
-│  ├── monthly_approvals     Approval/rejection stats           │
-│  ├── user_activity         User action summary                │
-│  ├── state_changes         Entity status changes              │
-│  ├── view_access           Sensitive data access log          │
-│  └── security_audit        Security event analysis            │
-└────────────────────────────────────────────────────────────────┘
-```
+- IPS adapter is mock; production IPS API + mTLS not wired.
+- TigerBeetle outbox worker simulates posting; no live cluster integration.
+- `/admin/*` route guard is admin-only; loan_officer access requires router change.
+- Reconciliation schema drift exists between recent migrations and legacy client/types (needs consolidation).
+- Some flows still rely on manual refresh rather than realtime subscriptions.
 
 ---
 
-## Performance Considerations
+## See Also
 
-### Database Indexes
-
-```sql
--- Key performance indexes
-CREATE INDEX idx_loans_user_id ON loans(user_id);
-CREATE INDEX idx_loans_status ON loans(status);
-CREATE INDEX idx_payments_loan_id ON payments(loan_id);
-CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
-CREATE INDEX idx_approval_requests_status ON approval_requests(status);
-```
-
-### Query Optimization Views
-
-```sql
--- Pre-computed views for dashboard metrics
-CREATE VIEW financial_summary AS
-SELECT
-  COUNT(DISTINCT user_id) as total_clients,
-  COUNT(*) as total_loans,
-  SUM(amount) FILTER (WHERE status = 'funded') as total_disbursed,
-  ...
-```
-
-### Caching Strategy
-
-- **TanStack Query**: Client-side caching with configurable stale time
-- **Database Views**: Materialized views for expensive aggregations
-- **CDN**: Static assets served via Netlify edge network
-
----
-
-## Scalability Considerations
-
-### Current Architecture Limits
-
-| Component | Current Capacity | Scaling Path |
-|-----------|------------------|--------------|
-| Database | Supabase Pro tier | Read replicas, connection pooling |
-| API | PostgREST | Horizontal scaling via Supabase |
-| Storage | S3-compatible | Virtually unlimited |
-| Auth | GoTrue | Handles millions of users |
-
-### Future Scaling Options
-
-1. **Read Replicas**: For reporting and analytics queries
-2. **Table Partitioning**: For audit_logs by month
-3. **Edge Caching**: For frequently accessed data
-4. **Background Jobs**: Move heavy processing to edge functions
-
----
-
-## Deployment Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        NETLIFY                                   │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │  CDN Edge    │  │  Build       │  │  Functions   │          │
-│  │  Network     │  │  Pipeline    │  │  (SSR/API)   │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ HTTPS
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      SUPABASE CLOUD                              │
-├─────────────────────────────────────────────────────────────────┤
-│  Region: (configured per project)                               │
-│  Tier: Pro (recommended for production)                         │
-│  Backups: Point-in-time recovery enabled                        │
-│  Monitoring: Built-in metrics and logging                       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Technology Decisions (ADRs)
-
-### ADR-001: Payment Method Normalization
-
-**Decision**: Store payment methods as lowercase canonical values  
-**Rationale**: Consistent querying and display formatting  
-**Status**: Implemented
-
-### ADR-002: Disbursement RPC Audit Trail
-
-**Decision**: Use database RPCs for disbursement operations  
-**Rationale**: Atomic operations with built-in audit logging  
-**Status**: Implemented
-
-### ADR-003: E2E Test Coverage Strategy
-
-**Decision**: Use Playwright fixtures with testInfo.testId isolation  
-**Rationale**: Parallel execution without session conflicts  
-**Status**: Implemented (67% coverage achieved)
-
----
-
-### ADR-004: Phase 4 Database Migration Strategy
-
-**Decision**: Apply migrations via Supabase MCP server  
-**Rationale**: Bypass CLI migration history conflicts, direct SQL execution  
-**Status**: Implemented (December 2025)
-
-### ADR-005: Multi-Channel Notification Architecture
-
-**Decision**: Queue-based notification system with template support  
-**Rationale**: Decouple notification delivery from business logic, support multiple channels  
-**Status**: Implemented
-
-### ADR-006: Mobile-First Responsive Layout
-
-**Decision**: Implement mobile-first responsive design with collapsible sidebar navigation  
-**Rationale**: Majority of users in Namibian market access via mobile devices; improves UX across all screen sizes  
-**Implementation**:
-- Sidebar hidden by default on mobile, slide-out with backdrop overlay
-- Mobile header with hamburger menu toggle
-- Grid layouts stack to single column on mobile
-- Touch-friendly tap targets (min 44px)
-**Status**: Implemented (December 2025)
-
-### ADR-007: Neo-Fintech Design System
-
-**Decision**: Adopt "Black Card" aesthetic with Zinc/Black palette and Electric Blue accents  
-**Rationale**: Modern, premium feel aligned with digital banking leaders (Revolut, Monzo, Mercury)  
-**Implementation**:
-- Split-screen authentication layout
-- Rounded-3xl cards with soft shadows
-- Dark sidebar navigation
-- CSS-only charts (no external charting library dependency)
-**Status**: Implemented (December 2025)
-
----
-
-*Document Version: 2.4.0*  
-*Last Updated: December 6, 2025*
+- [INDEX.md](./INDEX.md) - Documentation index
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables and relationships
+- [SERVICES.md](./SERVICES.md) - Service layer implementation details
+- [FLOWS.md](./FLOWS.md) - User flow documentation
+- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) - IPS/IPP integration details
+- [TIGERBEETLE_IMPLEMENTATION.md](./TIGERBEETLE_IMPLEMENTATION.md) - Financial ledger setup
+- [SECURITY.md](./SECURITY.md) - Security implementation (RLS, auth)
+- [context.md](./context.md) - Complete technical handover

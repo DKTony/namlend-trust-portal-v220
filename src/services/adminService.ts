@@ -4,9 +4,26 @@ import { handleDatabaseError } from '@/utils/errorHandler';
 
 export type AppRole = 'client' | 'loan_officer' | 'admin';
 
+export interface ProfileWithRoles {
+  user_id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+  verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  roles?: AppRole[];
+  primary_role?: AppRole;
+}
+
+interface UserRoleRow {
+  role: AppRole;
+}
+
 export async function getProfilesWithRoles(
   params: { search?: string; role?: AppRole; limit?: number; offset?: number }
-): Promise<{ success: boolean; results?: any[]; error?: string }> {
+): Promise<{ success: boolean; results?: ProfileWithRoles[]; error?: string }> {
   try {
     const { data, error } = await supabase.rpc('get_profiles_with_roles_admin', {
       p_search_term: params.search ?? null,
@@ -42,7 +59,7 @@ export async function listUserRoles(
       return { success: false, error: error.message };
     }
 
-    const roles = (data || []).map((r: any) => r.role as AppRole);
+    const roles = (data || []).map((r: UserRoleRow) => r.role);
     return { success: true, roles };
   } catch (error) {
     handleDatabaseError(error, 'listUserRoles', { userId });

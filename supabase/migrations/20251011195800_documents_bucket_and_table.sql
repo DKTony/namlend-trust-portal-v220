@@ -61,13 +61,9 @@ END
 $$;
 
 -- Create Storage bucket 'documents' if missing
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'documents') THEN
-    PERFORM storage.create_bucket('documents', FALSE);
-  END IF;
-END
-$$;
+INSERT INTO storage.buckets (id, name, public)
+SELECT 'documents', 'documents', false
+WHERE NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'documents');
 
 -- Storage policies for 'documents' bucket (if not exists)
 DO $$

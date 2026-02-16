@@ -1,7 +1,7 @@
 # Flow Fix PR Tasks (2026-02-15)
 
-**Doc Revision**: 2026-02-15  
-**Status**: Active  
+**Doc Revision**: 2026-02-16
+**Status**: Completed
 **Scope**: Convert static flow gaps into executable PR tasks with owner and severity
 
 ---
@@ -14,6 +14,19 @@
 | `FLOW-FIX-BUDGET-001` | `+ Add Funds` button is no-op                        | `LF-09-S03` | `high`   | `Frontend - Budget`   | Implement `onClick` action in `src/pages/BudgetTracker.tsx` to launch goal-funding workflow (modal or routed action)                   | Clicking `+ Add Funds` triggers a visible workflow and updates UI state after submit/cancel                           | Add UI test covering click -> workflow open -> close/update                            |
 | `FLOW-FIX-BUDGET-002` | `add-savings-goal` button is no-op                   | `LF-09-S04` | `high`   | `Frontend - Budget`   | Implement new-goal creation entrypoint in `src/pages/BudgetTracker.tsx` and persist via budget service contract                        | Clicking `New Goal` opens goal form; successful submit adds goal card; validation errors are surfaced                 | Add UI test for create-goal happy path + invalid form path                             |
 | `FLOW-FIX-BUDGET-003` | Transactions `Filter` / `Export` controls are no-op  | `LF-09-S05` | `medium` | `Frontend - Budget`   | Wire filter controls to transaction query state and implement export action (CSV download or explicit placeholder with disabled state) | Filter modifies displayed transaction set; Export triggers deterministic file/action (or disabled with rationale)     | Add test for filter state effect and export action availability                        |
+
+---
+
+## Completion Summary
+
+All 4 tasks were implemented on branch `fix/responsive-ui-enhancements` (2026-02-16).
+
+| Task ID               | Implementation                                                                                    | Commit    |
+| --------------------- | ------------------------------------------------------------------------------------------------- | --------- |
+| `FLOW-FIX-IPS-001`    | IPS tab triggers `setShowIPSModal(true)` in `src/pages/Payment.tsx`                               | `c27e071` |
+| `FLOW-FIX-BUDGET-001` | `handleAddFunds` wired to `financeService.addToSavingsGoal()` in `src/pages/BudgetTracker.tsx`    | `c27e071` |
+| `FLOW-FIX-BUDGET-002` | `handleCreateGoal` wired to `financeService.createSavingsGoal()` in `src/pages/BudgetTracker.tsx` | `c27e071` |
+| `FLOW-FIX-BUDGET-003` | Filter state + `handleExportTransactions` CSV export in `src/pages/BudgetTracker.tsx`             | `c27e071` |
 
 ---
 

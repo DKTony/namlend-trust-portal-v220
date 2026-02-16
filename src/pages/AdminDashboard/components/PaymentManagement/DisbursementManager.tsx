@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  TrendingUp, 
-  User, 
-  Calendar, 
-  DollarSign, 
-  CheckCircle, 
+import {
+  TrendingUp,
+  User,
+  Calendar,
+  DollarSign,
+  CheckCircle,
   Clock,
   AlertTriangle,
-  Eye
+  Eye,
 } from 'lucide-react';
 import { useDisbursements } from '../../hooks/useDisbursements';
 import { formatNAD } from '@/utils/currency';
-import DisbursementDetailsModal from '@/components/DisbursementDetailsModal';
+import DisbursementDetailsModal from '@/components/modals/DisbursementDetailsModal';
 
 type DisbursementStatus = 'all' | 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
 
@@ -24,13 +24,9 @@ interface Props {
 }
 
 const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' }) => {
-  const { 
-    disbursements, 
-    loading, 
-    error
-  } = useDisbursements(status, searchTerm);
+  const { disbursements, loading, error } = useDisbursements(status, searchTerm);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  
+
   interface DisbursementDetails {
     id: string;
     loan_id: string;
@@ -44,7 +40,8 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     created_at: string;
   }
 
-  const [selectedDisbursementDetails, setSelectedDisbursementDetails] = useState<DisbursementDetails | null>(null);
+  const [selectedDisbursementDetails, setSelectedDisbursementDetails] =
+    useState<DisbursementDetails | null>(null);
 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
@@ -52,17 +49,22 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      approved: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      processing: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      completed: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      failed: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      approved:
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      processing:
+        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      completed:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      failed:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     const icons = {
@@ -70,7 +72,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
       approved: <CheckCircle className="h-3 w-3 mr-1" />,
       processing: <Clock className="h-3 w-3 mr-1" />,
       completed: <CheckCircle className="h-3 w-3 mr-1" />,
-      failed: <AlertTriangle className="h-3 w-3 mr-1" />
+      failed: <AlertTriangle className="h-3 w-3 mr-1" />,
     };
 
     return (
@@ -131,7 +133,9 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Pending Disbursements</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">{disbursements?.filter(d => d.status === 'pending').length || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+                  {disbursements?.filter((d) => d.status === 'pending').length || 0}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600 shrink-0" />
             </div>
@@ -142,7 +146,10 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Total Amount</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatCurrency(disbursements?.reduce((sum, d) => sum + d.amount, 0) || 0)}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={formatCurrency(disbursements?.reduce((sum, d) => sum + d.amount, 0) || 0)}
+                >
                   {formatCurrency(disbursements?.reduce((sum, d) => sum + d.amount, 0) || 0)}
                 </p>
               </div>
@@ -155,7 +162,9 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Processing Today</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">{disbursements?.filter(d => d.status === 'processing').length || 0}</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+                  {disbursements?.filter((d) => d.status === 'processing').length || 0}
+                </p>
               </div>
               <TrendingUp className="h-8 w-8 text-blue-600 shrink-0" />
             </div>
@@ -192,18 +201,28 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
               <div className="flex items-center space-x-4">
                 {/* Disbursement Icon */}
                 <div className="flex-shrink-0">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                    disbursement.status === 'completed' ? 'bg-green-100' :
-                    disbursement.status === 'failed' ? 'bg-red-100' :
-                    disbursement.status === 'processing' ? 'bg-orange-100' :
-                    'bg-blue-100'
-                  }`}>
-                    <TrendingUp className={`h-6 w-6 ${
-                      disbursement.status === 'completed' ? 'text-green-600' :
-                      disbursement.status === 'failed' ? 'text-red-600' :
-                      disbursement.status === 'processing' ? 'text-orange-600' :
-                      'text-blue-600'
-                    }`} />
+                  <div
+                    className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                      disbursement.status === 'completed'
+                        ? 'bg-green-100'
+                        : disbursement.status === 'failed'
+                          ? 'bg-red-100'
+                          : disbursement.status === 'processing'
+                            ? 'bg-orange-100'
+                            : 'bg-blue-100'
+                    }`}
+                  >
+                    <TrendingUp
+                      className={`h-6 w-6 ${
+                        disbursement.status === 'completed'
+                          ? 'text-green-600'
+                          : disbursement.status === 'failed'
+                            ? 'text-red-600'
+                            : disbursement.status === 'processing'
+                              ? 'text-orange-600'
+                              : 'text-blue-600'
+                      }`}
+                    />
                   </div>
                 </div>
 
@@ -248,8 +267,8 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                         Created: {formatDate(disbursement.created_at)}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => {
                             setSelectedDisbursementDetails({
@@ -260,9 +279,10 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                               status: disbursement.status,
                               method: disbursement.method,
                               reference: disbursement.reference,
-                              payment_reference: (disbursement as DisbursementRow).payment_reference ?? null,
+                              payment_reference:
+                                (disbursement as DisbursementRow).payment_reference ?? null,
                               scheduled_at: disbursement.scheduled_at,
-                              created_at: disbursement.created_at
+                              created_at: disbursement.created_at,
                             });
                             setDetailsModalOpen(true);
                           }}

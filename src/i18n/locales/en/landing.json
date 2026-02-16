@@ -1,0 +1,78 @@
+{
+  "navbar": {
+    "brand": "NamLend",
+    "features": "Features",
+    "calculator": "Calculator",
+    "about": "About",
+    "getStarted": "Get Started",
+    "signIn": "Sign In"
+  },
+  "hero": {
+    "badge": "Trusted by Namibians",
+    "title": "Smart Lending for a",
+    "titleHighlight": "Brighter Future",
+    "description": "Get instant access to fair, transparent loans powered by AI. From application to approval in minutes, not days.",
+    "applyButton": "Apply for a Loan",
+    "learnMore": "Learn More",
+    "stats": {
+      "approvalTime": "5 min",
+      "approvalLabel": "Avg. Approval",
+      "satisfied": "98%",
+      "satisfiedLabel": "Satisfaction",
+      "processed": "N$50M+",
+      "processedLabel": "Loans Processed"
+    }
+  },
+  "features": {
+    "sectionTitle": "Why NamLend?",
+    "sectionSubtitle": "Everything you need for a seamless lending experience",
+    "instantApproval": {
+      "title": "Instant AI Approval",
+      "description": "Our AI-powered credit scoring provides instant decisions, getting you funds faster than traditional lenders."
+    },
+    "fairRates": {
+      "title": "Fair & Transparent Rates",
+      "description": "Competitive rates capped at 32% APR as per Namibian regulations. No hidden fees, ever."
+    },
+    "securePlatform": {
+      "title": "Bank-Grade Security",
+      "description": "Your data is protected with enterprise-level encryption and compliant with data protection regulations."
+    },
+    "mobileFirst": {
+      "title": "Mobile-First Design",
+      "description": "Apply, track, and manage your loans from any device. Designed for the modern Namibian lifestyle."
+    },
+    "realTimeTracking": {
+      "title": "Real-Time Tracking",
+      "description": "Monitor your loan status, payments, and balance in real-time with our intuitive dashboard."
+    },
+    "multiChannel": {
+      "title": "Multi-Channel Support",
+      "description": "Get updates via SMS, WhatsApp, and in-app notifications. Stay informed your way."
+    }
+  },
+  "calculator": {
+    "title": "Loan Calculator",
+    "subtitle": "See what you could qualify for",
+    "amountLabel": "Loan Amount",
+    "termLabel": "Loan Term (months)",
+    "interestLabel": "Interest Rate",
+    "monthlyPayment": "Monthly Payment",
+    "totalInterest": "Total Interest",
+    "totalRepayment": "Total Repayment",
+    "applyNow": "Apply Now",
+    "disclaimer": "Rates shown are estimates. Actual rates depend on credit assessment."
+  },
+  "footer": {
+    "brand": "NamLend Trust",
+    "description": "Empowering Namibians with fair, transparent, and accessible lending solutions.",
+    "quickLinks": "Quick Links",
+    "legal": "Legal",
+    "contact": "Contact",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "regulatoryInfo": "Regulatory Information",
+    "copyright": "{{year}} NamLend Trust. All rights reserved.",
+    "regulated": "Regulated under Namibian Financial Institutions Supervisory Authority (NAMFISA)"
+  }
+}

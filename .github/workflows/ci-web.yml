@@ -55,7 +55,7 @@ jobs:
         run: npm ci
       
       - name: Run unit tests
-        run: npm test -- --run
+        run: npm run test:unit
         env:
           CI: true
 
@@ -91,6 +91,59 @@ jobs:
           name: playwright-report-api
           path: playwright-report/
           retention-days: 7
+
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run npm audit
+        run: npm audit --production --audit-level=high
+        continue-on-error: true
+
+  playwright-full-e2e:
+    name: Full E2E Test Suite
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Start dev server and run full E2E suite
+        run: npx playwright test --project=chromium
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_E2E: 'true'
+      
+      - name: Upload full E2E report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-full
+          path: playwright-report/
+          retention-days: 14
 
   schema-type-check:
     name: Schema & Type Alignment

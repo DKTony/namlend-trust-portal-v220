@@ -1,2 +1,2 @@
-export { CreditPolicyConfig } from './CreditPolicyConfig';
+export { CreditPolicyConfig } from './CreditPolicy';
 export { BrandingConfigComponent } from './BrandingConfig';

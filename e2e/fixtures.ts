@@ -1,6 +1,6 @@
 /**
  * Playwright Test Fixtures for E2E Tests
- * 
+ *
  * Provides reusable, isolated Supabase client instances with proper authentication
  * for parallel test execution without session conflicts.
  */
@@ -63,6 +63,10 @@ function createIsolatedClient(storageKey?: string): SupabaseClient {
   });
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
  * Authenticate a client with given credentials
  */
@@ -71,13 +75,26 @@ async function authenticateClient(
   email: string,
   password: string
 ): Promise<void> {
-  const { error } = await client.auth.signInWithPassword({
-    email,
-    password,
-  });
-  
-  if (error) {
-    throw new Error(`Authentication failed for ${email}: ${error.message}`);
+  const maxAttempts = 5;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const { error } = await client.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (!error) {
+      return;
+    }
+
+    const isRateLimited = /rate limit/i.test(error.message || '');
+    if (!isRateLimited || attempt === maxAttempts) {
+      throw new Error(`Authentication failed for ${email}: ${error.message}`);
+    }
+
+    // Exponential backoff for transient auth throttling in CI/e2e runs.
+    const backoffMs = Math.min(2000 * 2 ** (attempt - 1), 12000);
+    await sleep(backoffMs);
   }
 }
 
@@ -87,13 +104,13 @@ async function authenticateClient(
 type TestFixtures = {
   // Isolated, unauthenticated client
   supabaseClient: SupabaseClient;
-  
+
   // Pre-authenticated clients for each user type
   client1Supabase: SupabaseClient;
   client2Supabase: SupabaseClient;
   adminSupabase: SupabaseClient;
   loanOfficerSupabase: SupabaseClient;
-  
+
   // Anonymous client (no authentication)
   anonSupabase: SupabaseClient;
 };
@@ -167,23 +184,23 @@ export { expect } from '@playwright/test';
 
 /**
  * Usage Example:
- * 
+ *
  * import { test, expect } from './fixtures';
- * 
+ *
  * test('Admin can create disbursement', async ({ adminSupabase }) => {
  *   const { data, error } = await adminSupabase
  *     .from('disbursements')
  *     .insert({ ... });
- *   
+ *
  *   expect(error).toBeNull();
  *   expect(data).toBeTruthy();
  * });
- * 
+ *
  * test('Client cannot access admin data', async ({ client1Supabase }) => {
  *   const { data, error } = await client1Supabase
  *     .from('admin_only_table')
  *     .select('*');
- *   
+ *
  *   expect(data).toEqual([]);
  * });
  */

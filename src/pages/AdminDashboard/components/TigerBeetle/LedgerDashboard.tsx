@@ -3,16 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Database, 
-  RefreshCw, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Database,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
   Clock,
   TrendingUp,
   ArrowUpDown,
   FileCheck,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/utils';
@@ -41,8 +41,17 @@ interface ReconciliationRun {
 
 export function LedgerDashboard() {
   const [loading, setLoading] = useState(true);
-  const [outboxStats, setOutboxStats] = useState<OutboxStats>({ pending: 0, completed: 0, failed: 0, deadLetter: 0 });
-  const [accountStats, setAccountStats] = useState<AccountStats>({ total: 0, created: 0, pending: 0 });
+  const [outboxStats, setOutboxStats] = useState<OutboxStats>({
+    pending: 0,
+    completed: 0,
+    failed: 0,
+    deadLetter: 0,
+  });
+  const [accountStats, setAccountStats] = useState<AccountStats>({
+    total: 0,
+    created: 0,
+    pending: 0,
+  });
   const [recentReconciliations, setRecentReconciliations] = useState<ReconciliationRun[]>([]);
   const [processingOutbox, setProcessingOutbox] = useState(false);
   const [runningRecon, setRunningRecon] = useState(false);
@@ -55,29 +64,26 @@ export function LedgerDashboard() {
     setLoading(true);
     try {
       // Load outbox stats
-      const { data: outboxData } = await supabase
-        .from('tigerbeetle_outbox')
-        .select('status');
-      
+      const { data: outboxData } = await supabase.from('tigerbeetle_outbox').select('status');
+
       if (outboxData) {
         setOutboxStats({
-          pending: outboxData.filter(e => e.status === 'pending' || e.status === 'processing').length,
-          completed: outboxData.filter(e => e.status === 'completed').length,
-          failed: outboxData.filter(e => e.status === 'failed').length,
-          deadLetter: outboxData.filter(e => e.status === 'dead_letter').length,
+          pending: outboxData.filter((e) => e.status === 'pending' || e.status === 'processing')
+            .length,
+          completed: outboxData.filter((e) => e.status === 'completed').length,
+          failed: outboxData.filter((e) => e.status === 'failed').length,
+          deadLetter: outboxData.filter((e) => e.status === 'dead_letter').length,
         });
       }
 
       // Load account stats
-      const { data: accountData } = await supabase
-        .from('tigerbeetle_accounts')
-        .select('status');
-      
+      const { data: accountData } = await supabase.from('tigerbeetle_accounts').select('status');
+
       if (accountData) {
         setAccountStats({
           total: accountData.length,
-          created: accountData.filter(a => a.status === 'created').length,
-          pending: accountData.filter(a => a.status === 'pending').length,
+          created: accountData.filter((a) => a.status === 'created').length,
+          pending: accountData.filter((a) => a.status === 'pending').length,
         });
       }
 
@@ -87,7 +93,7 @@ export function LedgerDashboard() {
         .select('*')
         .order('started_at', { ascending: false })
         .limit(5);
-      
+
       if (reconData) {
         setRecentReconciliations(reconData as ReconciliationRun[]);
       }
@@ -106,13 +112,13 @@ export function LedgerDashboard() {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ batchSize: 50 }),
         }
       );
-      
+
       const result = await response.json();
       console.log('Outbox processing result:', result);
       await loadStats();
@@ -172,9 +178,7 @@ export function LedgerDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">TigerBeetle Ledger</h2>
-          <p className="text-muted-foreground">
-            Financial ledger status and reconciliation
-          </p>
+          <p className="text-muted-foreground">Financial ledger status and reconciliation</p>
         </div>
         <Button variant="outline" onClick={loadStats}>
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -191,9 +195,7 @@ export function LedgerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{outboxStats.pending}</div>
-            <p className="text-xs text-muted-foreground">
-              pending transfers
-            </p>
+            <p className="text-xs text-muted-foreground">pending transfers</p>
             <div className="mt-2 flex gap-2">
               <Badge variant="default">{outboxStats.completed} done</Badge>
               {outboxStats.failed > 0 && (
@@ -210,9 +212,7 @@ export function LedgerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{accountStats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              total accounts mapped
-            </p>
+            <p className="text-xs text-muted-foreground">total accounts mapped</p>
             <div className="mt-2 flex gap-2">
               <Badge variant="default">{accountStats.created} created</Badge>
               {accountStats.pending > 0 && (
@@ -233,15 +233,15 @@ export function LedgerDashboard() {
                 recentReconciliations[0].discrepancies_found === 0 ? (
                   <span className="text-green-600">✓ In Sync</span>
                 ) : (
-                  <span className="text-yellow-600">{recentReconciliations[0].discrepancies_found} issues</span>
+                  <span className="text-yellow-600">
+                    {recentReconciliations[0].discrepancies_found} issues
+                  </span>
                 )
               ) : (
                 <span className="text-muted-foreground">No runs</span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              last reconciliation status
-            </p>
+            <p className="text-xs text-muted-foreground">last reconciliation status</p>
           </CardContent>
         </Card>
 
@@ -255,9 +255,7 @@ export function LedgerDashboard() {
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               Online
             </div>
-            <p className="text-xs text-muted-foreground">
-              127.0.0.1:3001
-            </p>
+            <p className="text-xs text-muted-foreground">127.0.0.1:3001</p>
           </CardContent>
         </Card>
       </div>
@@ -292,7 +290,7 @@ export function LedgerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                     <div className="text-2xl font-bold text-yellow-600">{outboxStats.pending}</div>
                     <div className="text-sm text-muted-foreground">Pending</div>
@@ -383,32 +381,24 @@ export function LedgerDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Account Mappings</CardTitle>
-              <CardDescription>
-                NamLend entities mapped to TigerBeetle accounts
-              </CardDescription>
+              <CardDescription>NamLend entities mapped to TigerBeetle accounts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 rounded-lg border bg-card">
                   <div className="text-lg font-semibold">Global Accounts</div>
                   <div className="text-3xl font-bold mt-2">11</div>
-                  <div className="text-sm text-muted-foreground">
-                    Clearing, Settlement, Income
-                  </div>
+                  <div className="text-sm text-muted-foreground">Clearing, Settlement, Income</div>
                 </div>
                 <div className="p-4 rounded-lg border bg-card">
                   <div className="text-lg font-semibold">Loan Accounts</div>
                   <div className="text-3xl font-bold mt-2">{accountStats.total - 11}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Principal, Interest, Fees
-                  </div>
+                  <div className="text-sm text-muted-foreground">Principal, Interest, Fees</div>
                 </div>
                 <div className="p-4 rounded-lg border bg-card">
                   <div className="text-lg font-semibold">Total Mapped</div>
                   <div className="text-3xl font-bold mt-2">{accountStats.total}</div>
-                  <div className="text-sm text-muted-foreground">
-                    All account types
-                  </div>
+                  <div className="text-sm text-muted-foreground">All account types</div>
                 </div>
               </div>
             </CardContent>

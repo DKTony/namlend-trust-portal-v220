@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { ThemedButton } from "@/components/ui/ThemedButton";
-import { Menu, X, Shield, Phone, LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { NotificationCenter } from "./NotificationCenter";
-import SignOutButton from "./SignOutButton";
+import { useState } from 'react';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { Menu, X, Shield, Phone, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { NotificationCenter } from './shared/NotificationCenter';
+import SignOutButton from './shared/SignOutButton';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
-  
+
   const isAdmin = userRole === 'admin';
 
   const handleSignIn = () => {
@@ -63,7 +63,12 @@ const Header = () => {
             {user ? (
               <>
                 <NotificationCenter />
-                <ThemedButton variant="ghost" size="sm" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-header">
+                <ThemedButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/dashboard')}
+                  data-testid="dashboard-button-header"
+                >
                   Dashboard
                 </ThemedButton>
                 <SignOutButton variant="ghost" size="sm" data-testid="signout-button-header" />
@@ -73,7 +78,12 @@ const Header = () => {
                 <ThemedButton variant="ghost" size="sm" onClick={handleSignIn}>
                   Sign In
                 </ThemedButton>
-                <ThemedButton variant="primary" size="sm" onClick={handleApplyNow} data-testid="apply-now-button-header">
+                <ThemedButton
+                  variant="primary"
+                  size="sm"
+                  onClick={handleApplyNow}
+                  data-testid="apply-now-button-header"
+                >
                   Apply Now
                 </ThemedButton>
               </>
@@ -100,34 +110,72 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <nav id="mobile-menu" aria-label="Mobile navigation" className="md:hidden mt-4 py-4 border-t border-border">
+          <nav
+            id="mobile-menu"
+            aria-label="Mobile navigation"
+            className="md:hidden mt-4 py-4 border-t border-border"
+          >
             <div className="flex flex-col space-y-4">
-              <a href="#loans" className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation">
+              <a
+                href="#loans"
+                className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation"
+              >
                 Loans
               </a>
-              <a href="#how-it-works" className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation">
+              <a
+                href="#how-it-works"
+                className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation"
+              >
                 How It Works
               </a>
-              <a href="#about" className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation">
+              <a
+                href="#about"
+                className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation"
+              >
                 About
               </a>
-              <a href="#contact" className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation">
+              <a
+                href="#contact"
+                className="block py-3 text-base text-foreground hover:text-accent transition-smooth touch-manipulation"
+              >
                 Contact
               </a>
               <div className="flex flex-col space-y-2 pt-4">
                 {user ? (
                   <>
-                    <ThemedButton variant="ghost" size="lg" className="justify-start h-11" onClick={() => navigate('/dashboard')} data-testid="dashboard-button-mobile">
+                    <ThemedButton
+                      variant="ghost"
+                      size="lg"
+                      className="justify-start h-11"
+                      onClick={() => navigate('/dashboard')}
+                      data-testid="dashboard-button-mobile"
+                    >
                       Dashboard
                     </ThemedButton>
-                    <SignOutButton variant="ghost" size="lg" className="justify-start h-11" data-testid="signout-button-mobile" />
+                    <SignOutButton
+                      variant="ghost"
+                      size="lg"
+                      className="justify-start h-11"
+                      data-testid="signout-button-mobile"
+                    />
                   </>
                 ) : (
                   <>
-                    <ThemedButton variant="ghost" size="lg" className="justify-start h-11" onClick={handleSignIn}>
+                    <ThemedButton
+                      variant="ghost"
+                      size="lg"
+                      className="justify-start h-11"
+                      onClick={handleSignIn}
+                    >
                       Sign In
                     </ThemedButton>
-                    <ThemedButton variant="primary" size="lg" className="justify-start h-11" onClick={handleApplyNow} data-testid="apply-now-button-mobile">
+                    <ThemedButton
+                      variant="primary"
+                      size="lg"
+                      className="justify-start h-11"
+                      onClick={handleApplyNow}
+                      data-testid="apply-now-button-mobile"
+                    >
                       Apply Now
                     </ThemedButton>
                   </>

@@ -1,6 +1,6 @@
 /**
  * Global Setup for E2E Tests
- * 
+ *
  * Seeds necessary test data before UI tests run.
  * This ensures approved loans exist for disbursement testing.
  */
@@ -16,8 +16,7 @@ const SUPABASE_URL =
     ? `https://${process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`
     : `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`);
 
-const SUPABASE_ANON_KEY =
-  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 // Admin credentials for authentication
 const ADMIN_EMAIL = 'admin@test.namlend.com';
@@ -33,7 +32,7 @@ const TEST_USERS = {
 
 async function globalSetup() {
   console.log('🌱 Global Setup: Seeding UI test data...');
-  
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       autoRefreshToken: false,
@@ -47,11 +46,12 @@ async function globalSetup() {
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
   });
-  
+
   if (authError) {
     console.error('  ❌ Admin authentication failed:', authError.message);
-    console.log('  ⚠️ UI tests may fail due to missing test data');
-    return;
+    throw new Error(
+      `Global Setup: Admin auth failed — ${authError.message}. Check VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and that admin@test.namlend.com exists.`
+    );
   }
   console.log('  ✅ Admin authenticated');
 
@@ -63,7 +63,7 @@ async function globalSetup() {
 
     // Create approved loans for disbursement testing
     console.log('  Creating approved loans...');
-    
+
     const loansToCreate = [
       {
         id: 'a1a1a1a1-0001-0000-0000-000000000001',
@@ -198,7 +198,7 @@ async function globalSetup() {
 
     // Create pending disbursements for the approved loans
     console.log('  Creating pending disbursements...');
-    
+
     const disbursementsToCreate = [
       {
         id: 'd1d1d1d1-0001-0000-0000-000000000001',
@@ -243,7 +243,9 @@ async function globalSetup() {
     ];
 
     for (const disbursement of disbursementsToCreate) {
-      const { error } = await supabase.from('disbursements').upsert(disbursement, { onConflict: 'id' });
+      const { error } = await supabase
+        .from('disbursements')
+        .upsert(disbursement, { onConflict: 'id' });
       if (error) {
         console.error(`  ❌ Failed to create disbursement ${disbursement.id}:`, error.message);
       }
@@ -254,7 +256,7 @@ async function globalSetup() {
       .from('loans')
       .select('id, status, purpose')
       .like('purpose', 'UI Test%');
-    
+
     const { data: disbursements } = await supabase
       .from('disbursements')
       .select('id, status, reference')
@@ -263,7 +265,6 @@ async function globalSetup() {
     console.log(`  ✅ Created ${loans?.length || 0} test loans`);
     console.log(`  ✅ Created ${disbursements?.length || 0} test disbursements`);
     console.log('🌱 Global Setup: Complete');
-    
   } catch (error) {
     console.error('❌ Global Setup failed:', error);
     // Don't throw - allow tests to continue, they'll fail with meaningful errors

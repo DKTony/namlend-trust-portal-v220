@@ -1,0 +1,100 @@
+{
+  "title": "Budget & Finance",
+  "subtitle": "Upload statements, track spending, and manage savings goals.",
+  "upload": {
+    "processing": "Processing Statement...",
+    "title": "Upload Bank Statement",
+    "description": "Drag & drop your CSV file here, or click to browse. We support Standard Bank, FNB, and Nedbank formats.",
+    "ariaLabel": "Upload CSV file"
+  },
+  "savings": {
+    "target": "Target: {{deadline}}",
+    "of": "of N$ {{amount}}",
+    "addFunds": "+ Add Funds",
+    "newGoal": "New Goal"
+  },
+  "spending": {
+    "title": "Monthly Spending Breakdown"
+  },
+  "categories": {
+    "title": "Category Budgets",
+    "editBudgets": "Edit Budgets",
+    "spent": "N$ {{spent}}",
+    "limit": " / N$ {{limit}}"
+  },
+  "transactions": {
+    "title": "Unified Transactions",
+    "filter": "Filter",
+    "filterTitle": "Filter Transactions",
+    "export": "Export",
+    "category": "Category",
+    "allCategories": "All Categories",
+    "type": "Type",
+    "allTypes": "All Types",
+    "income": "Income",
+    "expense": "Expense",
+    "clearFilters": "Clear Filters",
+    "noMatchFilters": "No transactions match your filters.",
+    "noTransactions": "No transactions found. Upload a statement to get started.",
+    "columns": {
+      "date": "Date",
+      "description": "Description",
+      "category": "Category",
+      "source": "Source",
+      "amount": "Amount"
+    },
+    "sourceStatement": "Statement",
+    "sourceSystem": "System"
+  },
+  "addFundsDialog": {
+    "title": "Add Funds",
+    "description": "Add funds to \"{{name}}\"",
+    "amountLabel": "Amount (NAD)",
+    "amountPlaceholder": "Enter amount",
+    "cancel": "Cancel",
+    "confirm": "Add Funds",
+    "adding": "Adding..."
+  },
+  "createGoalDialog": {
+    "title": "Create Savings Goal",
+    "description": "Set up a new savings target to track your progress.",
+    "nameLabel": "Goal Name",
+    "namePlaceholder": "e.g., Holiday Fund",
+    "targetLabel": "Target Amount (NAD)",
+    "targetPlaceholder": "Enter target amount",
+    "deadlineLabel": "Deadline",
+    "deadlinePlaceholder": "e.g., Dec 2026 or Ongoing",
+    "iconLabel": "Icon",
+    "icons": {
+      "travel": "Travel",
+      "tech": "Tech",
+      "home": "Home",
+      "general": "General"
+    },
+    "cancel": "Cancel",
+    "confirm": "Create Goal",
+    "creating": "Creating..."
+  },
+  "toast": {
+    "invalidAmountTitle": "Invalid Amount",
+    "invalidAmountDescription": "Please enter a valid positive amount.",
+    "fundsAddedTitle": "Funds Added",
+    "fundsAddedDescription": "{{amount}} has been added to your savings goal.",
+    "fundsFailedTitle": "Failed",
+    "fundsFailedDescription": "Could not add funds. Please try again.",
+    "errorTitle": "Error",
+    "errorDescription": "An unexpected error occurred.",
+    "missingInfoTitle": "Missing Information",
+    "missingInfoDescription": "Please provide a name and target amount.",
+    "goalCreatedTitle": "Goal Created",
+    "goalCreatedDescription": "\"{{name}}\" savings goal has been created.",
+    "goalFailedTitle": "Failed",
+    "goalFailedDescription": "Could not create savings goal. Please try again.",
+    "noDataTitle": "No Data",
+    "noDataDescription": "There are no transactions to export.",
+    "exportCompleteTitle": "Export Complete",
+    "exportCompleteDescription": "Exported {{count}} transactions.",
+    "exportFailedTitle": "Export Failed",
+    "exportFailedDescription": "Could not export transactions."
+  }
+}

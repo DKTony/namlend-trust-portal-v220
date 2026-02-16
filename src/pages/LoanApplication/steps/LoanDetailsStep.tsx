@@ -1,0 +1,82 @@
+import { useTranslation } from 'react-i18next';
+import { ThemedInput } from '@/components/ui/ThemedInput';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import type { ThemeConfig } from '@/types/theme';
+import type { LoanFormData } from '@/hooks/useLoanForm';
+
+interface LoanDetailsStepProps {
+  formData: LoanFormData;
+  onFormChange: (field: string, value: string) => void;
+  styles: ThemeConfig;
+}
+
+export default function LoanDetailsStep({ formData, onFormChange, styles }: LoanDetailsStepProps) {
+  const { t } = useTranslation('loanApplication');
+
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="amount">{t('loanDetailsStep.amount')}</Label>
+          <ThemedInput
+            id="amount"
+            type="number"
+            placeholder={t('loanDetailsStep.amountPlaceholder')}
+            min="1000"
+            max="50000"
+            step="500"
+            value={formData.amount}
+            onChange={(e) => onFormChange('amount', e.target.value)}
+            data-testid="loan-amount-input"
+          />
+          <p className="text-xs text-muted-foreground">{t('loanDetailsStep.amountRange')}</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="term">{t('loanDetailsStep.term')}</Label>
+          <Select value={formData.term} onValueChange={(value) => onFormChange('term', value)}>
+            <SelectTrigger
+              data-testid="loan-term-select"
+              className={cn(styles.inputClass, styles.textClass)}
+            >
+              <SelectValue placeholder={t('loanDetailsStep.termPlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">{t('loanDetailsStep.termMonths', { count: 1 })}</SelectItem>
+              <SelectItem value="3">{t('loanDetailsStep.termMonths', { count: 3 })}</SelectItem>
+              <SelectItem value="5">{t('loanDetailsStep.termMonths', { count: 5 })}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="purpose">{t('loanDetailsStep.purpose')}</Label>
+        <Select value={formData.purpose} onValueChange={(value) => onFormChange('purpose', value)}>
+          <SelectTrigger
+            data-testid="loan-purpose-select"
+            className={cn(styles.inputClass, styles.textClass)}
+          >
+            <SelectValue placeholder={t('loanDetailsStep.purposePlaceholder')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="personal">{t('loanDetailsStep.purposes.personal')}</SelectItem>
+            <SelectItem value="business">{t('loanDetailsStep.purposes.business')}</SelectItem>
+            <SelectItem value="education">{t('loanDetailsStep.purposes.education')}</SelectItem>
+            <SelectItem value="medical">{t('loanDetailsStep.purposes.medical')}</SelectItem>
+            <SelectItem value="home">{t('loanDetailsStep.purposes.home')}</SelectItem>
+            <SelectItem value="other">{t('loanDetailsStep.purposes.other')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+}

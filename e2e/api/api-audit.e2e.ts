@@ -10,6 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-audit`;
 
 test.describe('API Audit Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let loanOfficerToken: string;
   let clientToken: string;
@@ -30,7 +31,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -48,7 +49,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -59,7 +60,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -78,7 +79,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs?action=LOAN_APPROVED`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -89,7 +90,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs?table_name=loans`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -100,7 +101,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs?startDate=2026-01-01&endDate=2026-01-31`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -111,7 +112,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs?page=1&limit=5`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -126,7 +127,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/logs/00000000-0000-0000-0000-000000000000`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -139,7 +140,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/financial`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -154,7 +155,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/financial`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -165,7 +166,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/financial`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -178,7 +179,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/user/00000000-0000-0000-0000-000000000001`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -193,7 +194,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/user/00000000-0000-0000-0000-000000000001`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -206,7 +207,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/table/loans`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -225,7 +226,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/summary`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -246,7 +247,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/summary`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -257,7 +258,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/summary`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -270,7 +271,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/actions`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -287,7 +288,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/actions`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -297,12 +298,15 @@ test.describe('API Audit Endpoints', () => {
 
   test.describe('GET /export', () => {
     test('admin can export audit logs as JSON', async () => {
-      const response = await fetch(`${API_URL}/export?startDate=2026-01-01&endDate=2026-01-31&format=json`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/export?startDate=2026-01-01&endDate=2026-01-31&format=json`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -314,12 +318,15 @@ test.describe('API Audit Endpoints', () => {
     });
 
     test('admin can export audit logs as CSV', async () => {
-      const response = await fetch(`${API_URL}/export?startDate=2026-01-01&endDate=2026-01-31&format=csv`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/export?startDate=2026-01-01&endDate=2026-01-31&format=csv`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
 
       expect(response.status).toBe(200);
       expect(response.headers.get('content-type')).toBe('text/csv');
@@ -329,7 +336,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/export`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -340,7 +347,7 @@ test.describe('API Audit Endpoints', () => {
       const response = await fetch(`${API_URL}/export?startDate=2026-01-01&endDate=2026-01-31`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 

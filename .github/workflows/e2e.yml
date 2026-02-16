@@ -41,12 +41,24 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Validate Supabase configuration
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Missing required secrets: VITE_SUPABASE_URL and/or VITE_SUPABASE_ANON_KEY must be set in repo Settings → Secrets → Actions"
+            exit 1
+          fi
+          echo "Checking Supabase connectivity..."
+          curl --silent --fail --max-time 10 "${VITE_SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${VITE_SUPABASE_ANON_KEY}" \
+            -o /dev/null && echo "Supabase reachable ✓" || echo "::warning::Supabase not reachable — API tests may fail"
+
       - name: Run Playwright tests
         env:
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           E2E_CLIENT_EMAIL: ${{ secrets.E2E_CLIENT_EMAIL }}
           E2E_CLIENT_PASSWORD: ${{ secrets.E2E_CLIENT_PASSWORD }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BASE_URL: http://localhost:8080
           CI: true
         run: |

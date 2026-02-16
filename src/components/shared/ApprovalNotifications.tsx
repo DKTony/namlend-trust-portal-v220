@@ -1,0 +1,401 @@
+import { useState, useEffect, useRef } from 'react';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import {
+  getApprovalNotifications,
+  markNotificationAsRead,
+  type ApprovalNotification,
+} from '@/services/approvalWorkflow';
+import {
+  Bell,
+  BellRing,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  FileText,
+  DollarSign,
+  User,
+  Check,
+  Inbox,
+  Loader2,
+  ExternalLink,
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { useTheme } from '@/context/ThemeContext';
+
+interface ApprovalNotificationsProps {
+  showUnreadOnly?: boolean;
+  maxHeight?: string;
+  onMarkedRead?: () => void;
+  embedded?: boolean;
+}
+
+export default function ApprovalNotifications({
+  showUnreadOnly = false,
+  maxHeight = '400px',
+  onMarkedRead,
+  embedded = false,
+}: ApprovalNotificationsProps) {
+  const { toast } = useToast();
+  const { isDark } = useTheme();
+  const [notifications, setNotifications] = useState<ApprovalNotification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    loadNotifications();
+
+    // Set up polling for new notifications
+    const interval = setInterval(loadNotifications, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [showUnreadOnly]);
+
+  const loadNotifications = async () => {
+    try {
+      const result = await getApprovalNotifications(showUnreadOnly);
+
+      if (result.success && result.notifications) {
+        setNotifications(result.notifications);
+        setUnreadCount(result.notifications.filter((n) => !n.is_read).length);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const result = await markNotificationAsRead(notificationId);
+
+      if (result.success) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        // notify parent (e.g., NotificationBell) so it can update badge immediately
+        if (onMarkedRead) onMarkedRead();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to mark notification as read',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getNotificationIcon = (type: string, requestType?: string) => {
+    switch (type) {
+      case 'new_request':
+        if (requestType === 'loan_application') return DollarSign;
+        if (requestType === 'kyc_document') return FileText;
+        if (requestType === 'profile_update') return User;
+        return Bell;
+      case 'status_update':
+        return CheckCircle;
+      case 'assignment':
+        return User;
+      case 'reminder':
+        return Clock;
+      default:
+        return Bell;
+    }
+  };
+
+  const getNotificationColor = (type: string, isRead: boolean) => {
+    if (isRead) return 'text-muted-foreground/50';
+
+    switch (type) {
+      case 'new_request':
+        return 'text-blue-500 dark:text-blue-400';
+      case 'status_update':
+        return 'text-emerald-500 dark:text-emerald-400';
+      case 'assignment':
+        return 'text-purple-500 dark:text-purple-400';
+      case 'reminder':
+        return 'text-amber-500 dark:text-amber-400';
+      default:
+        return 'text-muted-foreground';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center py-12 gap-3',
+          embedded ? '' : 'bg-background border rounded-xl'
+        )}
+      >
+        <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+        <p className="text-xs text-muted-foreground font-medium">Checking updates...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        'overflow-hidden',
+        !embedded && 'bg-background border border-border rounded-xl shadow-2xl'
+      )}
+    >
+      {!embedded && (
+        <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 ? (
+              <BellRing className="h-4 w-4 text-primary" />
+            ) : (
+              <Bell className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-sm font-semibold text-foreground">Approvals</span>
+            {unreadCount > 0 && (
+              <Badge variant="default" className="ml-1 h-5 px-1.5 text-[10px] rounded-full">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+            {showUnreadOnly ? 'Unread Only' : 'All Updates'}
+          </span>
+        </div>
+      )}
+
+      <ScrollArea
+        style={{ height: maxHeight }}
+        className={cn('bg-background/50', embedded && 'scrollbar-none')}
+      >
+        <div className="divide-y divide-border/40">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center px-8">
+              <div className="h-16 w-16 rounded-3xl bg-muted/50 flex items-center justify-center mb-4">
+                <Inbox className="h-8 w-8 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm font-medium text-foreground">No updates found</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                You're all caught up on approvals.
+              </p>
+            </div>
+          ) : (
+            notifications.map((notification) => {
+              const Icon = getNotificationIcon(
+                notification.notification_type,
+                notification.metadata?.request_type as string | undefined
+              );
+              const iconColor = getNotificationColor(
+                notification.notification_type,
+                notification.is_read
+              );
+
+              return (
+                <div
+                  key={notification.id}
+                  className={cn(
+                    'p-4 transition-all duration-200 hover:bg-muted/40 group relative',
+                    !notification.is_read && 'bg-primary/5 hover:bg-primary/10'
+                  )}
+                >
+                  {/* Unread indicator strip */}
+                  {!notification.is_read && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
+                  )}
+
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={cn(
+                        'h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105',
+                        notification.is_read
+                          ? 'bg-muted/50 border-border/50'
+                          : isDark
+                            ? 'bg-zinc-900 border-zinc-800'
+                            : 'bg-white border-zinc-100'
+                      )}
+                    >
+                      <Icon className={cn('h-4 w-4', iconColor)} />
+                    </div>
+
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <p
+                            className={cn(
+                              'text-sm leading-tight mb-1 pr-2',
+                              notification.is_read
+                                ? 'text-muted-foreground font-medium'
+                                : 'text-foreground font-semibold'
+                            )}
+                          >
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {notification.message}
+                          </p>
+                        </div>
+
+                        {!notification.is_read && (
+                          <ThemedButton
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleMarkAsRead(notification.id)}
+                            className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full shrink-0 -mt-1 -mr-1 transition-colors"
+                            title="Mark as read"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </ThemedButton>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          {formatDistanceToNow(new Date(notification.sent_at), {
+                            addSuffix: true,
+                          })}
+                        </span>
+
+                        {notification.metadata?.request_type && (
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 h-5 bg-background border-border text-muted-foreground capitalize font-normal"
+                            >
+                              {(notification.metadata.request_type as string)?.replace('_', ' ')}
+                            </Badge>
+                            {notification.metadata.priority &&
+                              notification.metadata.priority !== 'normal' && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'text-[10px] px-1.5 h-5 border-0 font-medium capitalize',
+                                    notification.metadata.priority === 'urgent'
+                                      ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+                                      : notification.metadata.priority === 'high'
+                                        ? 'bg-orange-500/10 text-orange-500 dark:text-orange-400'
+                                        : 'bg-muted text-muted-foreground'
+                                  )}
+                                >
+                                  {notification.metadata.priority as string}
+                                </Badge>
+                              )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// Notification Bell Component for Header
+export function NotificationBell() {
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [open, setOpen] = useState(false);
+  const { isDark } = useTheme();
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const result = await getApprovalNotifications(true);
+        if (result.success && result.notifications) {
+          setUnreadCount(result.notifications.length);
+        }
+      } catch (error) {
+        console.error('Error loading unread count:', error);
+      }
+    };
+
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <ThemedButton
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'relative h-10 w-10 rounded-full transition-all duration-300',
+            'hover:bg-accent/50 hover:scale-105 active:scale-95',
+            open && 'bg-accent/50'
+          )}
+        >
+          {unreadCount > 0 ? (
+            <BellRing className="h-5 w-5 text-primary animate-pulse" />
+          ) : (
+            <Bell className="h-5 w-5 text-muted-foreground" />
+          )}
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-background"></span>
+            </span>
+          )}
+        </ThemedButton>
+      </PopoverTrigger>
+
+      <PopoverContent
+        className={cn(
+          'w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl',
+          isDark ? 'bg-zinc-950/80 border-white/10' : 'bg-white/80 border-black/5',
+          'rounded-3xl'
+        )}
+        align="end"
+        sideOffset={8}
+      >
+        <div className="p-5 pb-4 flex items-center justify-between">
+          <h3 className="font-bold text-lg tracking-tight">Admin Approvals</h3>
+          {unreadCount > 0 && (
+            <Badge
+              variant="default"
+              className="rounded-full px-2 h-5 bg-primary/90 text-[10px] font-bold"
+            >
+              {unreadCount} NEW
+            </Badge>
+          )}
+        </div>
+
+        <ApprovalNotifications
+          showUnreadOnly={false}
+          maxHeight="400px"
+          onMarkedRead={() => setUnreadCount((c) => Math.max(0, c - 1))}
+          embedded={true}
+        />
+
+        <div className="p-3 border-t border-border/40 bg-muted/30 backdrop-blur-sm">
+          <ThemedButton
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs font-medium h-9 rounded-xl hover:bg-primary/5 hover:text-primary"
+            onClick={() => {
+              setOpen(false);
+              // Navigate to full approvals page if it exists
+            }}
+          >
+            View All Approvals
+            <ExternalLink className="h-3 w-3 ml-2 opacity-50" />
+          </ThemedButton>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

@@ -1,0 +1,60 @@
+{
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "cancel": "Cancel",
+  "save": "Save",
+  "saveChanges": "Save Changes",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "submit": "Submit",
+  "confirm": "Confirm",
+  "back": "Back",
+  "next": "Next",
+  "search": "Search",
+  "filter": "Filter",
+  "refresh": "Refresh",
+  "export": "Export",
+  "import": "Import",
+  "download": "Download",
+  "upload": "Upload",
+  "view": "View",
+  "required": "Required",
+  "optional": "Optional",
+  "notProvided": "Not provided",
+  "noResults": "No results found",
+  "yes": "Yes",
+  "no": "No",
+  "status": "Status",
+  "actions": "Actions",
+  "details": "Details",
+  "amount": "Amount",
+  "date": "Date",
+  "name": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "address": "Address",
+  "currency": {
+    "code": "NAD",
+    "symbol": "N$",
+    "name": "Namibian Dollar"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "showing": "Showing {{from}} to {{to}} of {{total}}"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Minimum {{min}} characters required",
+    "invalidPhone": "Please enter a valid phone number"
+  },
+  "toast": {
+    "savedSuccessfully": "Saved successfully",
+    "errorOccurred": "An unexpected error occurred",
+    "pleaseRetry": "Please try again"
+  }
+}

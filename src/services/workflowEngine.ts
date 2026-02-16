@@ -46,7 +46,7 @@ export interface WorkflowInstance {
   status: 'in_progress' | 'completed' | 'rejected' | 'cancelled';
   started_at: string;
   completed_at?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface WorkflowStageExecution {
@@ -80,7 +80,7 @@ export class WorkflowEngineService {
    */
   static async getActiveWorkflow(entityType: string): Promise<WorkflowDefinition | null> {
     const { data, error } = await supabase.rpc('get_active_workflow', {
-      p_entity_type: entityType
+      p_entity_type: entityType,
     });
 
     if (error) {
@@ -96,13 +96,13 @@ export class WorkflowEngineService {
       id: data[0].id,
       name: data[0].name,
       description: '',
-      entity_type: entityType as any,
+      entity_type: entityType as WorkflowDefinition['entity_type'],
       version: 1,
       is_active: true,
       stages: data[0].stages,
       created_at: '',
       updated_at: '',
-      created_by: ''
+      created_by: '',
     };
   }
 
@@ -112,12 +112,12 @@ export class WorkflowEngineService {
   static async startWorkflow(
     entityType: string,
     entityId: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<string> {
     const { data, error } = await supabase.rpc('start_workflow_instance', {
       p_entity_type: entityType,
       p_entity_id: entityId,
-      p_metadata: metadata
+      p_metadata: metadata,
     });
 
     if (error) {
@@ -131,7 +131,10 @@ export class WorkflowEngineService {
   /**
    * Get workflow instance for an entity
    */
-  static async getWorkflowInstance(entityType: string, entityId: string): Promise<WorkflowInstance | null> {
+  static async getWorkflowInstance(
+    entityType: string,
+    entityId: string
+  ): Promise<WorkflowInstance | null> {
     const { data, error } = await supabase
       .from('workflow_instances')
       .select('*')
@@ -155,7 +158,9 @@ export class WorkflowEngineService {
   /**
    * Get current stage execution for a workflow instance
    */
-  static async getCurrentStageExecution(workflowInstanceId: string): Promise<WorkflowStageExecution | null> {
+  static async getCurrentStageExecution(
+    workflowInstanceId: string
+  ): Promise<WorkflowStageExecution | null> {
     const { data, error } = await supabase
       .from('workflow_stage_executions')
       .select('*')
@@ -198,8 +203,10 @@ export class WorkflowEngineService {
    * Get pending stage executions assigned to current user
    */
   static async getMyPendingStages(): Promise<WorkflowStageExecution[]> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -229,7 +236,7 @@ export class WorkflowEngineService {
     const { data, error } = await supabase.rpc('decide_workflow_stage', {
       p_stage_execution_id: stageExecutionId,
       p_decision: 'approved',
-      p_notes: notes || null
+      p_notes: notes || null,
     });
 
     if (error) {
@@ -250,7 +257,7 @@ export class WorkflowEngineService {
     const { data, error } = await supabase.rpc('decide_workflow_stage', {
       p_stage_execution_id: stageExecutionId,
       p_decision: 'rejected',
-      p_notes: notes || null
+      p_notes: notes || null,
     });
 
     if (error) {
@@ -264,10 +271,7 @@ export class WorkflowEngineService {
   /**
    * Assign a stage to a specific user
    */
-  static async assignStageToUser(
-    stageExecutionId: string,
-    userId: string
-  ): Promise<void> {
+  static async assignStageToUser(stageExecutionId: string, userId: string): Promise<void> {
     const { error } = await supabase
       .from('workflow_stage_executions')
       .update({ assigned_to: userId })
@@ -302,15 +306,16 @@ export class WorkflowEngineService {
     }
 
     const stages = await this.getStageExecutions(workflowInstanceId);
-    const completedStages = stages.filter(s => s.status === 'approved').length;
-    const totalStages = (instance.workflow_definitions as any).stages.length;
+    const completedStages = stages.filter((s) => s.status === 'approved').length;
+    const totalStages = (instance.workflow_definitions as { stages: WorkflowStage[] }).stages
+      .length;
 
     return {
       total_stages: totalStages,
       completed_stages: completedStages,
       current_stage: instance.current_stage,
       status: instance.status,
-      stages
+      stages,
     };
   }
 
@@ -320,9 +325,9 @@ export class WorkflowEngineService {
   static async cancelWorkflow(workflowInstanceId: string): Promise<void> {
     const { error } = await supabase
       .from('workflow_instances')
-      .update({ 
+      .update({
         status: 'cancelled',
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
       })
       .eq('id', workflowInstanceId)
       .eq('status', 'in_progress');
@@ -342,8 +347,10 @@ export class WorkflowEngineService {
     completed_today: number;
     rejected_today: number;
   }> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -382,7 +389,7 @@ export class WorkflowEngineService {
       total_active: activeCount || 0,
       pending_my_action: pendingCount || 0,
       completed_today: completedCount || 0,
-      rejected_today: rejectedCount || 0
+      rejected_today: rejectedCount || 0,
     };
   }
 }

@@ -5,21 +5,27 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle, 
-  AlertTriangle, 
-  X, 
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  X,
   Download,
   Eye,
   Users,
   ArrowRight,
   ArrowLeft,
   Check,
-  Loader2
+  Loader2,
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface ImportStep {
@@ -61,26 +67,26 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       id: 1,
       title: 'Upload File',
       description: 'Select and upload your CSV file',
-      completed: currentStep > 1
+      completed: currentStep > 1,
     },
     {
       id: 2,
       title: 'Map Fields',
       description: 'Map CSV columns to user fields',
-      completed: currentStep > 2
+      completed: currentStep > 2,
     },
     {
       id: 3,
       title: 'Validate Data',
       description: 'Review and validate user data',
-      completed: currentStep > 3
+      completed: currentStep > 3,
     },
     {
       id: 4,
       title: 'Import Users',
       description: 'Complete the import process',
-      completed: currentStep > 4
-    }
+      completed: currentStep > 4,
+    },
   ];
 
   // Mock CSV data for demonstration
@@ -93,7 +99,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       department: 'N/A',
       status: 'valid',
       errors: [],
-      warnings: []
+      warnings: [],
     },
     {
       fullName: 'Jane Doe',
@@ -103,7 +109,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       department: 'Loan Operations',
       status: 'valid',
       errors: [],
-      warnings: []
+      warnings: [],
     },
     {
       fullName: 'Bob Johnson',
@@ -111,7 +117,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       role: 'client',
       status: 'error',
       errors: ['Invalid email format'],
-      warnings: []
+      warnings: [],
     },
     {
       fullName: 'Alice Wilson',
@@ -119,8 +125,8 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       role: 'unknown_role',
       status: 'warning',
       errors: [],
-      warnings: ['Unknown role, will default to client']
-    }
+      warnings: ['Unknown role, will default to client'],
+    },
   ];
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,9 +142,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       setProcessing(true);
       setTimeout(() => {
         setImportUsers(mockImportUsers);
-        const valid = mockImportUsers.filter(u => u.status === 'valid').length;
-        const warnings = mockImportUsers.filter(u => u.status === 'warning').length;
-        const errors = mockImportUsers.filter(u => u.status === 'error').length;
+        const valid = mockImportUsers.filter((u) => u.status === 'valid').length;
+        const warnings = mockImportUsers.filter((u) => u.status === 'warning').length;
+        const errors = mockImportUsers.filter((u) => u.status === 'error').length;
         setValidationResults({ valid, warnings, errors });
         setProcessing(false);
         setCurrentStep(2);
@@ -147,7 +153,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
       setCurrentStep(currentStep + 1);
     } else {
       // Complete import
-      onComplete(importUsers.filter(u => u.status !== 'error'));
+      onComplete(importUsers.filter((u) => u.status !== 'error'));
     }
   };
 
@@ -159,19 +165,28 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      valid: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      error: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      valid:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      warning:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      error:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     const icons = {
       valid: <CheckCircle className="h-3 w-3 mr-1" />,
       warning: <AlertTriangle className="h-3 w-3 mr-1" />,
-      error: <X className="h-3 w-3 mr-1" />
+      error: <X className="h-3 w-3 mr-1" />,
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -182,7 +197,13 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
     const csvContent = [
       ['full_name', 'email', 'phone', 'role', 'department'].join(','),
       ['John Doe', 'john.doe@example.com', '+264 81 123 4567', 'client', ''].join(','),
-      ['Jane Smith', 'jane.smith@namlend.com', '+264 81 234 5678', 'loan_officer', 'Loan Operations'].join(',')
+      [
+        'Jane Smith',
+        'jane.smith@namlend.com',
+        '+264 81 234 5678',
+        'loan_officer',
+        'Loan Operations',
+      ].join(','),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -213,15 +234,18 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
-                <div className={`
+                <div
+                  className={`
                   flex items-center justify-center w-8 h-8 rounded-full border-2 
-                  ${step.completed 
-                    ? 'bg-green-500 border-green-500 text-white' 
-                    : currentStep === step.id 
-                      ? 'bg-blue-500 border-blue-500 text-white'
-                      : 'bg-muted border-muted-foreground/30 text-muted-foreground'
+                  ${
+                    step.completed
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : currentStep === step.id
+                        ? 'bg-blue-500 border-blue-500 text-white'
+                        : 'bg-muted border-muted-foreground/30 text-muted-foreground'
                   }
-                `}>
+                `}
+                >
                   {step.completed ? (
                     <Check className="h-4 w-4" />
                   ) : (
@@ -229,9 +253,13 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                   )}
                 </div>
                 <div className="ml-3">
-                  <p className={`text-sm font-medium ${
-                    currentStep === step.id ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'
-                  }`}>
+                  <p
+                    className={`text-sm font-medium ${
+                      currentStep === step.id
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-foreground'
+                    }`}
+                  >
                     {step.title}
                   </p>
                   <p className="text-xs text-muted-foreground">{step.description}</p>
@@ -272,7 +300,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                   </div>
 
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">CSV Format Requirements:</h4>
+                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                      CSV Format Requirements:
+                    </h4>
                     <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
                       <li>• Required columns: full_name, email, role</li>
                       <li>• Optional columns: phone, department</li>
@@ -374,13 +404,15 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
           {/* Step 3: Validate Data */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Valid</p>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{validationResults.valid}</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {validationResults.valid}
+                        </p>
                       </div>
                       <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
@@ -391,7 +423,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Warnings</p>
-                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{validationResults.warnings}</p>
+                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                          {validationResults.warnings}
+                        </p>
                       </div>
                       <AlertTriangle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
                     </div>
@@ -402,7 +436,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Errors</p>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{validationResults.errors}</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                          {validationResults.errors}
+                        </p>
                       </div>
                       <X className="h-8 w-8 text-red-600 dark:text-red-400" />
                     </div>
@@ -426,10 +462,12 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                           </div>
                           <Badge variant="outline">{user.role}</Badge>
                         </div>
-                        
+
                         {user.errors.length > 0 && (
                           <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                            <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">Errors:</p>
+                            <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">
+                              Errors:
+                            </p>
                             <ul className="text-sm text-red-700 dark:text-red-400">
                               {user.errors.map((error, i) => (
                                 <li key={i}>• {error}</li>
@@ -437,10 +475,12 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                             </ul>
                           </div>
                         )}
-                        
+
                         {user.warnings.length > 0 && (
                           <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Warnings:</p>
+                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                              Warnings:
+                            </p>
                             <ul className="text-sm text-yellow-700 dark:text-yellow-400">
                               {user.warnings.map((warning, i) => (
                                 <li key={i}>• {warning}</li>
@@ -468,11 +508,15 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Total Users to Import</p>
-                        <p className="text-2xl font-bold text-foreground">{importUsers.filter(u => u.status !== 'error').length}</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {importUsers.filter((u) => u.status !== 'error').length}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Users with Errors (Skipped)</p>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{validationResults.errors}</p>
+                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                          {validationResults.errors}
+                        </p>
                       </div>
                     </div>
 
@@ -483,12 +527,15 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
 
                     <div className="flex items-center space-x-2">
                       <Checkbox id="force-password-reset" defaultChecked />
-                      <Label htmlFor="force-password-reset">Force password reset on first login</Label>
+                      <Label htmlFor="force-password-reset">
+                        Force password reset on first login
+                      </Label>
                     </div>
 
                     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <p className="text-sm text-blue-800 dark:text-blue-300">
-                        Users will be created with default passwords and will receive email invitations to set up their accounts.
+                        Users will be created with default passwords and will receive email
+                        invitations to set up their accounts.
                       </p>
                     </div>
                   </div>
@@ -500,20 +547,16 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
 
         {/* Footer */}
         <div className="border-t border-border px-6 py-4 flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={handlePreviousStep}
-            disabled={currentStep === 1}
-          >
+          <Button variant="outline" onClick={handlePreviousStep} disabled={currentStep === 1}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
-          
+
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleNextStep}
               disabled={(currentStep === 1 && !importFile) || processing}
             >

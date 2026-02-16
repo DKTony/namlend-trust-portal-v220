@@ -10,6 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-collections`;
 
 test.describe('API Collections Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let loanOfficerToken: string;
   let clientToken: string;
@@ -30,7 +31,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/queue`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -48,7 +49,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/queue`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -59,7 +60,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/queue`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -78,7 +79,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/queue?priority=high`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -91,7 +92,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/case/00000000-0000-0000-0000-000000000000`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -104,7 +105,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/interaction`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -119,7 +120,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/interaction`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -136,7 +137,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/interaction`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -155,7 +156,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/promise`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -170,7 +171,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/promise`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -189,7 +190,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/escalate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -206,7 +207,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/reminders`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -222,7 +223,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/reminders?status=pending`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -235,7 +236,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/reminder`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -250,7 +251,7 @@ test.describe('API Collections Endpoints', () => {
       const response = await fetch(`${API_URL}/reminder`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

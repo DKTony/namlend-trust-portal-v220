@@ -1,0 +1,94 @@
+{
+  "title": "Make a Payment",
+  "subtitle": "Pay your loan installment securely with multiple payment options",
+  "backToDashboard": "Back to Dashboard",
+  "noActiveLoans": {
+    "title": "No Active Loans",
+    "description": "You don't have any active loans that require payment at this time.",
+    "returnButton": "Return to Dashboard"
+  },
+  "form": {
+    "paymentDetails": "Payment Details",
+    "paymentDetailsSubtitle": "Select your loan and payment method",
+    "selectLoan": "Select Loan",
+    "selectLoanPlaceholder": "Choose a loan to pay",
+    "loanOption": "{{amount}} Loan - Due: {{monthly}}",
+    "paymentAmount": "Payment Amount (NAD)",
+    "enterAmount": "Enter amount",
+    "paymentMethod": "Payment Method"
+  },
+  "methods": {
+    "ips": {
+      "label": "IPS",
+      "title": "Instant Payment Solution",
+      "description": "Secure bank-to-bank transfer. Instant clearing and zero fees."
+    },
+    "card": {
+      "label": "Card",
+      "title": "Debit/Credit Card",
+      "description": "Pay securely with your Visa or Mastercard. Small processing fee applies.",
+      "debitCard": "Debit Card",
+      "debitCardDescription": "Pay using your Visa or Mastercard debit card",
+      "instant": "Instant",
+      "cardNumber": "Card Number",
+      "cardNumberPlaceholder": "1234 5678 9012 3456",
+      "expiryDate": "Expiry Date",
+      "expiryPlaceholder": "MM/YY",
+      "cvv": "CVV",
+      "cvvPlaceholder": "123"
+    },
+    "mobile": {
+      "label": "Mobile",
+      "title": "Mobile Money",
+      "description": "Pay using eWallet or BlueWallet. Standard network fees apply."
+    },
+    "agent": {
+      "title": "Agent Location",
+      "description": "Pay cash at any of our authorized agent locations",
+      "processingTime": "1-2 hours",
+      "selectLocation": "Select Nearest Location",
+      "locationPlaceholder": "Choose location",
+      "locations": {
+        "windhoekCbd": "Windhoek CBD - Independence Ave",
+        "katutura": "Katutura - Main Center",
+        "swakopmund": "Swakopmund - Sam Nujoma Ave",
+        "oshakati": "Oshakati - Main Street"
+      }
+    }
+  },
+  "security": {
+    "title": "Secure Payment",
+    "description": "All payments are encrypted and processed securely"
+  },
+  "processing": "Processing...",
+  "payButton": "Pay {{amount}}",
+  "summary": {
+    "title": "Payment Summary",
+    "paymentAmount": "Payment Amount",
+    "processingFee": "Processing Fee",
+    "totalAmount": "Total Amount"
+  },
+  "benefits": {
+    "title": "Benefits",
+    "instantConfirmation": "Instant payment confirmation",
+    "autoBalanceUpdate": "Automatic loan balance update",
+    "receipts": "SMS and email receipts",
+    "earlyDiscount": "Early payment discounts available"
+  },
+  "important": {
+    "title": "Important",
+    "afterHours": "Payments made after 6 PM may be processed the next business day",
+    "keepReference": "Keep your payment reference number for future correspondence",
+    "contactSupport": "Contact support if payment fails or you need assistance"
+  },
+  "toast": {
+    "missingInfoTitle": "Missing Information",
+    "missingInfoDescription": "Please fill in all required fields.",
+    "initiatedTitle": "Payment Initiated",
+    "initiatedDescription": "Payment {{reference}} initiated. Total: N${{total}}",
+    "failedTitle": "Payment Failed",
+    "failedDescription": "Failed to process your payment. Please try again.",
+    "successTitle": "Payment Successful",
+    "successDescription": "Your IPS payment has been processed successfully."
+  }
+}

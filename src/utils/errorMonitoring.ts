@@ -1,6 +1,8 @@
 // Error Monitoring and Alerting System
 // Prevents critical system failures by detecting and reporting issues early
 
+import { captureException } from '@/utils/sentry';
+
 export interface SystemError {
   id: string;
   message: string;
@@ -24,8 +26,8 @@ class ErrorMonitor {
     }
     // Fallback UUID generation
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   }
@@ -41,7 +43,7 @@ class ErrorMonitor {
       url: window.location.href,
       contextKeys: error.contextKeys || [],
       metadata: error.metadata || {},
-      ...error
+      ...error,
     };
 
     this.errors.unshift(systemError);
@@ -50,11 +52,19 @@ class ErrorMonitor {
     }
 
     // Console logging with severity indicators
-    const prefix = systemError.severity === 'critical' ? '🚨' : 
-                  systemError.severity === 'high' ? '⚠️' : 
-                  systemError.severity === 'medium' ? '📋' : 'ℹ️';
+    const prefix =
+      systemError.severity === 'critical'
+        ? '🚨'
+        : systemError.severity === 'high'
+          ? '⚠️'
+          : systemError.severity === 'medium'
+            ? '📋'
+            : 'ℹ️';
 
-    console.error(`${prefix} [${systemError.category.toUpperCase()}] ${systemError.message}`, systemError);
+    console.error(
+      `${prefix} [${systemError.category.toUpperCase()}] ${systemError.message}`,
+      systemError
+    );
 
     // Handle critical errors
     if (systemError.severity === 'critical') {
@@ -72,7 +82,7 @@ class ErrorMonitor {
         category: 'rpc',
         severity: 'high',
         contextKeys: ['rpc_failure', procedure],
-        metadata: { procedure, duration, success }
+        metadata: { procedure, duration, success },
       });
     }
 
@@ -82,7 +92,7 @@ class ErrorMonitor {
         category: 'performance',
         severity: duration > 5000 ? 'critical' : 'medium',
         contextKeys: ['slow_operation', procedure],
-        metadata: { procedure, duration }
+        metadata: { procedure, duration },
       });
     }
   }
@@ -111,14 +121,74 @@ class ErrorMonitor {
       category: 'database',
       severity,
       contextKeys: ['database_error', operation, error.code].filter(Boolean),
-      metadata: { operation, errorCode: error.code, errorMessage: error.message }
+      metadata: { operation, errorCode: error.code, errorMessage: error.message },
     });
   }
 
-  // Handle critical errors
+  // Throttle map: errorType -> last alert timestamp
+  private alertThrottle = new Map<string, number>();
+  private static ALERT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+  // Handle critical errors with admin alerting
   private handleCriticalError(error: SystemError): void {
-    if (error.category === 'database' && error.message.includes('document_verification_requirements')) {
-      console.error('🚨 CRITICAL: KYC system is down - document_verification_requirements table missing');
+    // Report to Sentry (no-op when DSN is absent)
+    captureException(new Error(error.message), {
+      category: error.category,
+      severity: error.severity,
+      contextKeys: error.contextKeys,
+      metadata: error.metadata,
+    });
+
+    if (
+      error.category === 'database' &&
+      error.message.includes('document_verification_requirements')
+    ) {
+      console.error(
+        '🚨 CRITICAL: KYC system is down - document_verification_requirements table missing'
+      );
+    }
+
+    // Throttle: max 1 alert per error type per 5 minutes
+    const throttleKey = `${error.category}:${error.message.slice(0, 100)}`;
+    const now = Date.now();
+    const lastAlert = this.alertThrottle.get(throttleKey);
+    if (lastAlert && now - lastAlert < ErrorMonitor.ALERT_COOLDOWN_MS) {
+      return;
+    }
+    this.alertThrottle.set(throttleKey, now);
+
+    // Notify admin users asynchronously — failures must never worsen the error
+    this.notifyAdmins(error).catch(() => {
+      // Swallow alerting failures silently
+    });
+  }
+
+  private async notifyAdmins(error: SystemError): Promise<void> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { queueNotification } = await import('@/services/notificationService');
+
+      // Fetch admin user IDs
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (!adminRoles?.length) return;
+
+      for (const { user_id } of adminRoles) {
+        await queueNotification({
+          userId: user_id,
+          channel: 'in_app',
+          subject: `🚨 Critical: ${error.category}`,
+          content: error.message,
+          priority: 'urgent',
+        }).catch(() => {
+          // Individual notification failure should not block others
+        });
+      }
+    } catch {
+      // Alerting must never worsen error conditions
     }
   }
 
@@ -133,20 +203,20 @@ class ErrorMonitor {
 
   // Get system health status
   getSystemHealth(): { status: 'healthy' | 'degraded' | 'critical'; issues: string[] } {
-    const criticalErrors = this.errors.filter(e => e.severity === 'critical').length;
-    const highErrors = this.errors.filter(e => e.severity === 'high').length;
+    const criticalErrors = this.errors.filter((e) => e.severity === 'critical').length;
+    const highErrors = this.errors.filter((e) => e.severity === 'high').length;
 
     if (criticalErrors > 0) {
-      return { 
-        status: 'critical', 
-        issues: [`${criticalErrors} critical errors detected`] 
+      return {
+        status: 'critical',
+        issues: [`${criticalErrors} critical errors detected`],
       };
     }
-    
+
     if (highErrors > 5) {
-      return { 
-        status: 'degraded', 
-        issues: [`${highErrors} high-priority errors detected`] 
+      return {
+        status: 'degraded',
+        issues: [`${highErrors} high-priority errors detected`],
       };
     }
 
@@ -163,7 +233,10 @@ export const monitorRpcCall = (procedure: string, duration: number, success: boo
 };
 
 // Integrate with database operations
-export const monitorDatabaseError = (operation: string, error: { code?: string; message?: string }) => {
+export const monitorDatabaseError = (
+  operation: string,
+  error: { code?: string; message?: string }
+) => {
   errorMonitor.monitorDatabaseError(operation, error);
 };
 
@@ -174,7 +247,7 @@ window.addEventListener('error', (event) => {
     category: 'system',
     severity: 'medium',
     contextKeys: ['javascript_error'],
-    metadata: { filename: event.filename, lineno: event.lineno, colno: event.colno }
+    metadata: { filename: event.filename, lineno: event.lineno, colno: event.colno },
   });
 });
 
@@ -185,6 +258,6 @@ window.addEventListener('unhandledrejection', (event) => {
     category: 'system',
     severity: 'high',
     contextKeys: ['promise_rejection'],
-    metadata: { reason: event.reason }
+    metadata: { reason: event.reason },
   });
 });

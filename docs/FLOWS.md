@@ -1,6 +1,6 @@
 # NamLend Trust - Transaction Flows
 
-**Doc Revision**: 2026-01-19
+**Doc Revision**: 2026-02-15
 
 ---
 
@@ -70,6 +70,10 @@ Client -> Payment page
   -> payment_webhook or manual update -> status completed
   -> apply_payment_to_schedule RPC (webhook path)
 ```
+
+Expected UI behavior:
+
+- Selecting IPS from payment method options must transition into the IPS repayment modal path (same repayment intent as section 4.3), not remain a no-op toggle.
 
 ### 4.2 Dashboard Payment Modal (Direct Processing)
 
@@ -150,6 +154,24 @@ Notes:
 - Currently uses mock data; Supabase tables pending.
 - Supports CSV upload from Standard Bank, FNB, Nedbank formats.
 - Spending breakdown pie chart (Recharts) and budget progress bars.
+- `+ Add Funds` must open a funding action for savings goals.
+- `New Goal` must open savings-goal creation flow.
+- Transactions `Filter` and `Export` controls must perform real operations or be explicitly disabled.
+
+---
+
+## 10. Flow Validation Process
+
+Workflow conformance is tracked through:
+
+- [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md) - step-by-step audit method
+- [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md) - action-level validation tracker
+
+Use this process to verify:
+
+- every button/card/action transitions to the correct next phase/screen
+- every action triggers the intended backend operation
+- function intent and compliance checks remain aligned with documented flows
 
 ---
 
@@ -160,3 +182,5 @@ Notes:
 - [SERVICES.md](./SERVICES.md) - Service layer details
 - [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md) - Feature to service mapping
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables used in flows
+- [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md) - End-to-end validation plan
+- [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md) - Flow conformance tracker

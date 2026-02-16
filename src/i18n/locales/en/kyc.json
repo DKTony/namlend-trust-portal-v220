@@ -1,0 +1,44 @@
+{
+  "title": "Upload KYC Documents",
+  "subtitle": "Complete your verification by uploading the required documents",
+  "backToDashboard": "Back to Dashboard",
+  "chooseFile": "Choose file",
+  "acceptedFormats": "Accepted formats: PDF, JPG, PNG (Max 5MB)",
+  "uploadInstructions": "Upload Instructions:",
+  "uploadedSuccess": "Document uploaded successfully",
+  "toast": {
+    "uploadedTitle": "Document Uploaded",
+    "uploadedDescription": "Your {{docType}} has been uploaded and submitted for verification.",
+    "failedTitle": "Upload Failed",
+    "failedDescription": "Failed to upload document. Please try again."
+  },
+  "requirements": {
+    "title": "Document Requirements:",
+    "clear": "Documents must be clear and readable",
+    "visible": "All information must be visible",
+    "recent": "Documents should be recent (within 3 months)",
+    "verification": "Verification typically takes 24-48 hours"
+  },
+  "documents": {
+    "idCard": {
+      "label": "National ID Card",
+      "description": "Upload a clear photo of your Namibian ID card. Both front and back sides must be visible and readable.",
+      "instructions": "Ensure all text is legible, corners are visible, and there is no glare or shadows."
+    },
+    "proofIncome": {
+      "label": "Proof of Income",
+      "description": "Upload your latest payslip (not older than 3 months) or employment contract.",
+      "instructions": "Document must show your full name, employer details, and current salary amount."
+    },
+    "bankStatement": {
+      "label": "Bank Statement",
+      "description": "Upload your most recent bank statement (last 3 months) from any Namibian bank.",
+      "instructions": "Statement must show your name, account details, and transaction history."
+    },
+    "employmentLetter": {
+      "label": "Employment Letter",
+      "description": "Upload an official letter from your employer confirming your employment status.",
+      "instructions": "Letter must be on company letterhead, signed, and dated within the last 30 days."
+    }
+  }
+}

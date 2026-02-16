@@ -1,0 +1,1587 @@
+openapi: 3.0.3
+info:
+  title: NamLend Trust API
+  description: |
+    API for the NamLend Trust digital lending platform.
+    All endpoints require Bearer JWT authentication unless otherwise noted.
+    Responses use a consistent envelope: `{ success, data?, error?, meta? }`.
+  version: 2.8.5
+  contact:
+    name: NamLend Trust Engineering
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://{project}.supabase.co/functions/v1
+    description: Supabase Edge Functions
+    variables:
+      project:
+        default: your-project-ref
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Loans
+    description: Loan application lifecycle (8 endpoints)
+  - name: Users
+    description: User profile and role management (6 endpoints)
+  - name: Payments
+    description: Payment recording and queries (6 endpoints)
+  - name: Admin
+    description: Admin dashboard and bulk operations (6 endpoints)
+  - name: Analytics
+    description: Portfolio and trend analytics (6 endpoints)
+  - name: Disbursements
+    description: Disbursement lifecycle management (7 endpoints)
+  - name: Collections
+    description: Debt recovery and collection actions (6 endpoints)
+  - name: Reconciliation
+    description: Bank statement reconciliation (6 endpoints)
+  - name: Notifications
+    description: User notification management (5 endpoints)
+  - name: Audit
+    description: Audit log queries and exports (8 endpoints)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase access token from `supabase.auth.getSession()`
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          example: Human-readable error message
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 142
+        hasMore:
+          type: boolean
+          example: true
+
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          description: Response payload (shape varies by endpoint)
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+    StartDateParam:
+      name: startDate
+      in: query
+      schema:
+        type: string
+        format: date
+    EndDateParam:
+      name: endDate
+      in: query
+      schema:
+        type: string
+        format: date
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  # ── Loans API (8 endpoints) ──────────────────────────────────────────
+  /api-loans/list:
+    get:
+      tags: [Loans]
+      summary: List loans with pagination and filters
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Paginated loan list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api-loans/{id}:
+    get:
+      tags: [Loans]
+      summary: Get loan details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Loan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api-loans/apply:
+    post:
+      tags: [Loans]
+      summary: Submit loan application
+      description: Requires `client` role. Interest rate must not exceed 32% APR (Namibian law).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, term_months, purpose, interest_rate, employment_status, monthly_income]
+              properties:
+                amount:
+                  type: number
+                term_months:
+                  type: integer
+                purpose:
+                  type: string
+                interest_rate:
+                  type: number
+                  maximum: 32
+                employment_status:
+                  type: string
+                  enum: [employed, self_employed, unemployed, retired]
+                monthly_income:
+                  type: number
+      responses:
+        '201':
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          $ref: '#/components/responses/BadRequest'
+
+  /api-loans/approve:
+    post:
+      tags: [Loans]
+      summary: Approve loan application
+      description: Requires `loan_officer` or `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, action]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                action:
+                  type: string
+                  enum: [approve]
+                notes:
+                  type: string
+                approved_amount:
+                  type: number
+                approved_rate:
+                  type: number
+      responses:
+        '200':
+          description: Loan approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api-loans/reject:
+    post:
+      tags: [Loans]
+      summary: Reject loan application
+      description: Requires `loan_officer` or `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, action]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                action:
+                  type: string
+                  enum: [reject]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Loan rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-loans/disburse:
+    post:
+      tags: [Loans]
+      summary: Initiate loan disbursement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, payment_method, payment_reference]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                payment_method:
+                  type: string
+                  enum: [bank_transfer, mobile_money, cash, debit_order]
+                payment_reference:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Disbursement initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-loans/approval-requests:
+    get:
+      tags: [Loans]
+      summary: List pending approval requests
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Pending approvals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-loans/schedules/{id}:
+    get:
+      tags: [Loans]
+      summary: Get payment schedule for a loan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Users API (6 endpoints) ──────────────────────────────────────────
+  /api-users/profile:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                id_number:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-users/list:
+    get:
+      tags: [Users]
+      summary: List all users
+      description: Requires `admin` role.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      description: Requires `admin` or `loan_officer` role.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: Update user role
+      description: Requires `admin` role.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [client, loan_officer, admin]
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-users/roles:
+    get:
+      tags: [Users]
+      summary: List available roles
+      responses:
+        '200':
+          description: Available roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Payments API (6 endpoints) ───────────────────────────────────────
+  /api-payments/list:
+    get:
+      tags: [Payments]
+      summary: List payments with filters
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: loan_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Paginated payment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Get payment details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-payments/record:
+    post:
+      tags: [Payments]
+      summary: Record a payment
+      description: Requires `loan_officer` or `admin` role. Uses `callAPIOnce` (no retry) for financial safety.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, amount, payment_method]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                payment_method:
+                  type: string
+                  enum: [bank_transfer, mobile_money, cash, debit_order]
+                reference:
+                  type: string
+                payment_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-payments/reverse:
+    post:
+      tags: [Payments]
+      summary: Reverse a payment
+      description: Requires `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payment_id, reason]
+              properties:
+                payment_id:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Payment reversed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-payments/loan/{loanId}:
+    get:
+      tags: [Payments]
+      summary: Get payments for a loan
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payments for loan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-payments/reconciliation:
+    get:
+      tags: [Payments]
+      summary: Get reconciliation data
+      description: Requires `admin` role.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Reconciliation data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Admin API (6 endpoints) ──────────────────────────────────────────
+  /api-admin/dashboard:
+    get:
+      tags: [Admin]
+      summary: Dashboard statistics
+      description: Requires `loan_officer` or `admin` role.
+      responses:
+        '200':
+          description: Dashboard KPIs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: View audit logs
+      description: Requires `admin` role.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: table_name
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-admin/system-health:
+    get:
+      tags: [Admin]
+      summary: System health check
+      description: Requires `admin` role.
+      responses:
+        '200':
+          description: System health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-admin/bulk-approve:
+    post:
+      tags: [Admin]
+      summary: Bulk approve loans
+      description: Requires `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_ids]
+              properties:
+                loan_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Loans approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-admin/compliance-report:
+    get:
+      tags: [Admin]
+      summary: Compliance report
+      description: Requires `admin` role.
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Compliance report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-admin/collections:
+    get:
+      tags: [Admin]
+      summary: Collections overview
+      description: Requires `loan_officer` or `admin` role.
+      responses:
+        '200':
+          description: Collections summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Audit API (8 endpoints) ──────────────────────────────────────────
+  /api-audit/logs:
+    get:
+      tags: [Audit]
+      summary: List audit logs with filters
+      description: Requires `admin` role.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: table_name
+          in: query
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Paginated audit logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/logs/{id}:
+    get:
+      tags: [Audit]
+      summary: Get audit log details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/financial:
+    get:
+      tags: [Audit]
+      summary: Financial operation logs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Financial audit logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/user/{userId}:
+    get:
+      tags: [Audit]
+      summary: Audit logs for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: User audit logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/table/{tableName}:
+    get:
+      tags: [Audit]
+      summary: Audit logs for a specific table
+      parameters:
+        - name: tableName
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Table audit logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/export:
+    get:
+      tags: [Audit]
+      summary: Export audit logs
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [csv, json]
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Exported audit data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/summary:
+    get:
+      tags: [Audit]
+      summary: Audit summary statistics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-audit/actions:
+    get:
+      tags: [Audit]
+      summary: List all audit action types
+      responses:
+        '200':
+          description: Available action types
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Analytics API (6 endpoints) ──────────────────────────────────────
+  /api-analytics/portfolio:
+    get:
+      tags: [Analytics]
+      summary: Portfolio summary statistics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ['7d', '30d', '90d', '365d', 'all']
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Portfolio metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-analytics/loan-performance:
+    get:
+      tags: [Analytics]
+      summary: Loan performance metrics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ['7d', '30d', '90d', '365d', 'all']
+      responses:
+        '200':
+          description: Loan performance data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-analytics/collections-stats:
+    get:
+      tags: [Analytics]
+      summary: Collections statistics
+      responses:
+        '200':
+          description: Collections stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-analytics/disbursement-stats:
+    get:
+      tags: [Analytics]
+      summary: Disbursement statistics
+      responses:
+        '200':
+          description: Disbursement stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-analytics/risk-analysis:
+    get:
+      tags: [Analytics]
+      summary: Risk analysis report
+      description: Requires `admin` role.
+      responses:
+        '200':
+          description: Risk analysis data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-analytics/trends:
+    get:
+      tags: [Analytics]
+      summary: Trend analysis over time
+      parameters:
+        - name: metric
+          in: query
+          schema:
+            type: string
+            enum: [loans, disbursements, payments, collections]
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ['7d', '30d', '90d', '365d', 'all']
+      responses:
+        '200':
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Disbursements API (7 endpoints) ──────────────────────────────────
+  /api-disbursements/list:
+    get:
+      tags: [Disbursements]
+      summary: List disbursements with filters
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: loan_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paginated disbursement list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/pending:
+    get:
+      tags: [Disbursements]
+      summary: List pending disbursements
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Pending disbursements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/{id}:
+    get:
+      tags: [Disbursements]
+      summary: Get disbursement details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Disbursement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/approve:
+    post:
+      tags: [Disbursements]
+      summary: Approve a disbursement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disbursement_id]
+              properties:
+                disbursement_id:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Disbursement approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/process:
+    post:
+      tags: [Disbursements]
+      summary: Mark disbursement as processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disbursement_id, payment_reference]
+              properties:
+                disbursement_id:
+                  type: string
+                  format: uuid
+                payment_reference:
+                  type: string
+      responses:
+        '200':
+          description: Disbursement processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/complete:
+    post:
+      tags: [Disbursements]
+      summary: Mark disbursement as completed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disbursement_id, confirmation_reference]
+              properties:
+                disbursement_id:
+                  type: string
+                  format: uuid
+                confirmation_reference:
+                  type: string
+      responses:
+        '200':
+          description: Disbursement completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-disbursements/fail:
+    post:
+      tags: [Disbursements]
+      summary: Mark disbursement as failed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [disbursement_id, reason]
+              properties:
+                disbursement_id:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Disbursement marked as failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Collections API (6 endpoints) ────────────────────────────────────
+  /api-collections/queue:
+    get:
+      tags: [Collections]
+      summary: Get collections work queue
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [high, medium, low]
+        - name: daysOverdue
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Collections queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-collections/case/{loanId}:
+    get:
+      tags: [Collections]
+      summary: Get collection case details
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Collection case
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-collections/interaction:
+    post:
+      tags: [Collections]
+      summary: Record borrower interaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, interaction_type, notes]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                interaction_type:
+                  type: string
+                notes:
+                  type: string
+                outcome:
+                  type: string
+                next_action_date:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Interaction recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-collections/promise:
+    post:
+      tags: [Collections]
+      summary: Create promise to pay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, promised_amount, promised_date]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                promised_amount:
+                  type: number
+                promised_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Promise created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-collections/promise/{id}:
+    patch:
+      tags: [Collections]
+      summary: Update promise status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [kept, broken]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Promise updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-collections/escalate:
+    post:
+      tags: [Collections]
+      summary: Escalate collection case
+      description: Requires `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loan_id, reason, escalation_level]
+              properties:
+                loan_id:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                escalation_level:
+                  type: string
+      responses:
+        '200':
+          description: Case escalated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Reconciliation API (6 endpoints) ─────────────────────────────────
+  /api-reconciliation/runs:
+    get:
+      tags: [Reconciliation]
+      summary: List reconciliation runs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Reconciliation runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+    post:
+      tags: [Reconciliation]
+      summary: Create new reconciliation run
+      description: Requires `admin` role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, start_date, end_date]
+              properties:
+                name:
+                  type: string
+                bank_account:
+                  type: string
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Run created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-reconciliation/runs/{id}:
+    get:
+      tags: [Reconciliation]
+      summary: Get reconciliation run details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Run details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-reconciliation/import:
+    post:
+      tags: [Reconciliation]
+      summary: Import bank transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source, transactions]
+              properties:
+                source:
+                  type: string
+                run_id:
+                  type: string
+                  format: uuid
+                transactions:
+                  type: array
+                  items:
+                    type: object
+                    required: [external_id, amount, date]
+                    properties:
+                      external_id:
+                        type: string
+                      amount:
+                        type: number
+                      date:
+                        type: string
+                        format: date
+                      reference:
+                        type: string
+                      description:
+                        type: string
+                      type:
+                        type: string
+                        enum: [credit, debit]
+      responses:
+        '200':
+          description: Transactions imported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-reconciliation/auto-match:
+    post:
+      tags: [Reconciliation]
+      summary: Auto-match unmatched transactions
+      responses:
+        '200':
+          description: Match results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-reconciliation/manual-match:
+    post:
+      tags: [Reconciliation]
+      summary: Manually match a transaction to a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transaction_id, payment_id]
+              properties:
+                transaction_id:
+                  type: string
+                  format: uuid
+                payment_id:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Transaction matched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ── Notifications API (5 endpoints) ──────────────────────────────────
+  /api-notifications/list:
+    get:
+      tags: [Notifications]
+      summary: List user notifications
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: is_read
+          in: query
+          schema:
+            type: boolean
+        - name: notification_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-notifications/{id}:
+    get:
+      tags: [Notifications]
+      summary: Get notification details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+    delete:
+      tags: [Notifications]
+      summary: Delete a notification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Notification deleted
+
+  /api-notifications/mark-read:
+    post:
+      tags: [Notifications]
+      summary: Mark notification as read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notification_id]
+              properties:
+                notification_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api-notifications/mark-all-read:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200':
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'

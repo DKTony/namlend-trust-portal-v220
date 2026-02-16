@@ -10,6 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-reconciliation`;
 
 test.describe('API Reconciliation Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let loanOfficerToken: string;
   let clientToken: string;
@@ -30,7 +31,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/runs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -48,7 +49,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/runs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -59,7 +60,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/runs`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -80,7 +81,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/runs`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -103,7 +104,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/runs`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -122,7 +123,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/unmatched`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -140,7 +141,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/summary`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -159,7 +160,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/summary`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -172,7 +173,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/auto-match`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -192,7 +193,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/import`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -221,7 +222,7 @@ test.describe('API Reconciliation Endpoints', () => {
       const response = await fetch(`${API_URL}/import`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

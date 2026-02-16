@@ -1,0 +1,67 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome back, {{name}}",
+  "overview": "Account Overview",
+  "greeting": "Hello, {{name}}",
+  "subtitle": "Your financial health is looking good today.",
+  "newApplication": "New Application",
+  "stats": {
+    "totalBalance": "Total Balance",
+    "creditScore": "Credit Score",
+    "excellent": "Excellent",
+    "nextPayment": "Next Payment"
+  },
+  "kyc": {
+    "completeVerification": "Complete Your Verification",
+    "docsVerified": "{{verified}} of {{required}} documents verified",
+    "uploadDocuments": "Upload required documents to apply for loans",
+    "uploadButton": "Upload Documents",
+    "verificationComplete": "Verification Complete",
+    "readyToApply": "You're ready to apply for loans",
+    "verified": "Verified"
+  },
+  "chart": {
+    "title": "Spending Overview",
+    "last6Months": "Last 6 months",
+    "thisYear": "This Year"
+  },
+  "needFunds": {
+    "title": "Need Funds?",
+    "description": "Get approved in minutes with our AI-powered risk assessment.",
+    "processing": "Processing",
+    "applyNow": "Apply Now"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "makePayment": "Make Payment",
+    "documents": "Documents"
+  },
+  "loans": {
+    "title": "Your Loans",
+    "paymentProgress": "Payment Progress",
+    "outstanding": "Outstanding:",
+    "term": "Term",
+    "termValue": "{{months}} months",
+    "rate": "Rate",
+    "rateValue": "{{rate}}%",
+    "monthly": "Monthly",
+    "totalPaid": "Total Paid",
+    "totalDue": "Total Due",
+    "makePayment": "Make Payment",
+    "settled": "Settled",
+    "settledOn": "Settled on {{date}}",
+    "noLoansTitle": "No loans yet",
+    "noLoansDescription": "You don't have any loans at the moment.",
+    "applyForLoan": "Apply for a Loan"
+  },
+  "applications": {
+    "title": "Applications",
+    "newApplication": "New Application",
+    "noPendingTitle": "No pending applications",
+    "startApplication": "Start Application"
+  },
+  "payments": {
+    "title": "Payment History",
+    "noPayments": "No payments found."
+  }
+}

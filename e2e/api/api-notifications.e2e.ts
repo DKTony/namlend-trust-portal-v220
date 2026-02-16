@@ -10,6 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-notifications`;
 
 test.describe('API Notifications Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let clientToken: string;
   let clientUserId: string;
@@ -28,7 +29,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/list`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -55,7 +56,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/list?type=system`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -66,7 +67,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/list?read=false`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -77,7 +78,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/list?page=1&limit=5`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -92,7 +93,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/preferences`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -111,7 +112,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/preferences`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -135,7 +136,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/mark-read`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -148,7 +149,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/mark-read`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -163,7 +164,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/mark-read`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/mark-all-read`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -203,7 +204,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/00000000-0000-0000-0000-000000000000`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -216,7 +217,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/send`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -240,7 +241,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/send`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -258,7 +259,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/send`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -278,7 +279,7 @@ test.describe('API Notifications Endpoints', () => {
       const response = await fetch(`${API_URL}/00000000-0000-0000-0000-000000000000`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 

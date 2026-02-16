@@ -1,6 +1,19 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
-import { User, Session, AuthError, PostgrestError } from '@supabase/supabase-js';
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+  useCallback,
+  useRef,
+} from 'react';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  restoreSession,
+  fetchUserRole as fetchRole,
+  clearPersistedAuth,
+} from '@/services/authSessionManager';
 
 interface UserMetadata {
   full_name?: string;
@@ -17,8 +30,15 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoanOfficer: boolean;
   refreshUser: () => Promise<User | null>;
-  signUp: (email: string, password: string, userData?: UserMetadata) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; data?: { session: Session | null; user: User | null } }>;
+  signUp: (
+    email: string,
+    password: string,
+    userData?: UserMetadata
+  ) => Promise<{ error: AuthError | null }>;
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: AuthError | null; data?: { session: Session | null; user: User | null } }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -40,54 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoanOfficer = userRole === 'loan_officer' || userRole === 'admin';
 
   const fetchUserRole = useCallback(async (userId: string) => {
-    const roleFetchTimeoutMs = 8000;
     setRoleLoading(true);
     try {
-      const timeout = new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), roleFetchTimeoutMs);
-      });
-
-      // Query user_roles table - get all roles for prioritization
-      // Use select() without .single() to handle multiple roles properly
-      const roleResult = await Promise.race([
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId),
-        timeout,
-      ]);
-
-      if (!roleResult) {
-        console.warn('Role fetch timed out, continuing without role');
-        setUserRole(null);
-        return null;
-      }
-
-      const { data, error } = roleResult as { data: { role: string }[] | null; error: PostgrestError | null };
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        setUserRole(null);
-        return null;
-      }
-      
-      // Handle roles with correct backoffice precedence: admin > loan_officer > client
-      let role = null;
-      if (data && data.length > 0) {
-        const roles = data.map(r => r.role);
-
-        // Backoffice priority: admin first, then loan_officer, then client
-        if (roles.includes('admin')) {
-          role = 'admin';
-        } else if (roles.includes('loan_officer')) {
-          role = 'loan_officer';
-        } else if (roles.includes('client')) {
-          role = 'client';
-        } else {
-          role = roles[0] ?? null; // Fallback to first role if unknown
-        }
-      }
-
+      const role = await fetchRole(userId);
       setUserRole(role);
       return role;
     } catch (error) {
@@ -100,78 +75,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Check for existing session FIRST before setting up listener
-    // This prevents race conditions where INITIAL_SESSION fires with null
-    // before the session is restored from storage
+    // Restore session using the extracted session manager.
+    // Uses multiple fallback strategies (getSession → localStorage → retry → getUser).
     const initAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-
-        let resolvedSession = session;
-        if (!resolvedSession) {
-          // Try to restore session from localStorage directly
-          // Supabase's internal hydration can be slow, so we manually restore if needed
-          let storedSession: Session | null = null;
-          try {
-            const raw = window.localStorage.getItem('namlend-auth');
-            if (raw) {
-              storedSession = JSON.parse(raw) as Session;
-            }
-          } catch (e) {
-            console.warn('Failed to parse stored session:', e);
-          }
-
-          if (storedSession?.access_token) {
-            // Manually set the session in Supabase to bypass slow hydration
-            try {
-              const { data, error } = await supabase.auth.setSession({
-                access_token: storedSession.access_token,
-                refresh_token: storedSession.refresh_token || '',
-              });
-              if (!error && data.session) {
-                resolvedSession = data.session;
-              }
-            } catch (e) {
-              console.warn('Failed to restore session:', e);
-            }
-          }
-
-          // Fallback: retry getSession with delays if direct restore didn't work
-          if (!resolvedSession) {
-            const retryDelays = [100, 300, 600];
-            for (const delay of retryDelays) {
-              await new Promise((resolve) => setTimeout(resolve, delay));
-              const retry = await supabase.auth.getSession();
-              if (retry.data.session) {
-                resolvedSession = retry.data.session;
-                break;
-              }
-            }
-          }
-        }
-
-        let resolvedUser = resolvedSession?.user ?? null;
-        if (!resolvedUser) {
-          const { data: { user: fallbackUser } } = await supabase.auth.getUser();
-          resolvedUser = fallbackUser ?? null;
-        }
-        if (!resolvedUser) {
-          try {
-            const raw = window.localStorage.getItem('namlend-auth');
-            if (raw) {
-              const parsed = JSON.parse(raw) as Session;
-              if (!resolvedSession && parsed?.user) {
-                resolvedSession = parsed;
-              }
-              if (parsed?.user) {
-                resolvedUser = parsed.user;
-              }
-            }
-          } catch {}
-        }
+        const { session: resolvedSession, user: resolvedUser } = await restoreSession();
 
         setSession(resolvedSession);
         setUser(resolvedUser);
@@ -182,9 +90,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserRole(null);
           setRoleLoading(false);
         }
-        
+
         if (resolvedUser) {
-          // Mark initial check as complete BEFORE setting loading to false
           initialCheckComplete.current = true;
           setLoading(false);
         } else if (!authResolveTimeout.current) {
@@ -206,37 +113,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
 
     // Set up auth state listener for subsequent changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Skip INITIAL_SESSION events - we handle initial state via getSession()
-        // This prevents the race condition where INITIAL_SESSION fires with null
-        // before the persisted session is restored
-        if (event === 'INITIAL_SESSION' && !session?.user) {
-          return;
-        }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          void fetchUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-          setRoleLoading(false);
-        }
-        
-        if (authResolveTimeout.current) {
-          clearTimeout(authResolveTimeout.current);
-          authResolveTimeout.current = null;
-        }
-
-        // Only set loading false if initial check hasn't happened yet
-        if (!initialCheckComplete.current) {
-          initialCheckComplete.current = true;
-          setLoading(false);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Skip INITIAL_SESSION events - we handle initial state via getSession()
+      // This prevents the race condition where INITIAL_SESSION fires with null
+      // before the persisted session is restored
+      if (event === 'INITIAL_SESSION' && !session?.user) {
+        return;
       }
-    );
+
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        void fetchUserRole(session.user.id);
+      } else {
+        setUserRole(null);
+        setRoleLoading(false);
+      }
+
+      if (authResolveTimeout.current) {
+        clearTimeout(authResolveTimeout.current);
+        authResolveTimeout.current = null;
+      }
+
+      // Only set loading false if initial check hasn't happened yet
+      if (!initialCheckComplete.current) {
+        initialCheckComplete.current = true;
+        setLoading(false);
+      }
+    });
 
     return () => {
       if (authResolveTimeout.current) {
@@ -249,14 +156,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, userData?: UserMetadata) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: userData
-      }
+        data: userData,
+      },
     });
     return { error };
   };
@@ -284,18 +191,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRoleLoading(false);
 
       // Best-effort clean-up of persisted session keys
-      try {
-        window.localStorage.removeItem('namlend-auth');
-        window.sessionStorage.removeItem('namlend-auth');
-      } catch (_) {
-        // ignore storage access issues (Safari private mode, etc.)
-      }
+      clearPersistedAuth();
     }
   };
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
       if (error) {
         console.error('Error refreshing session:', error);
         return null;
@@ -327,27 +232,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({
-      password: password
+      password: password,
     });
     return { error };
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      roleLoading,
-      userRole,
-      isAdmin,
-      isLoanOfficer,
-      refreshUser,
-      signUp,
-      signIn,
-      signOut,
-      resetPassword,
-      updatePassword
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        roleLoading,
+        userRole,
+        isAdmin,
+        isLoanOfficer,
+        refreshUser,
+        signUp,
+        signIn,
+        signOut,
+        resetPassword,
+        updatePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

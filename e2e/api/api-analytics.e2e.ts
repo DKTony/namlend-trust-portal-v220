@@ -10,6 +10,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-analytics`;
 
 test.describe('API Analytics Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let loanOfficerToken: string;
   let clientToken: string;
@@ -31,7 +32,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/portfolio`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -49,7 +50,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/portfolio`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -62,7 +63,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/portfolio`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -83,7 +84,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/loan-performance`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -102,7 +103,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/collections-stats`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -120,7 +121,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/disbursement-stats`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -139,7 +140,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/risk-analysis`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -152,7 +153,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/risk-analysis`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -165,7 +166,7 @@ test.describe('API Analytics Endpoints', () => {
       const response = await fetch(`${API_URL}/trends?period=30`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 

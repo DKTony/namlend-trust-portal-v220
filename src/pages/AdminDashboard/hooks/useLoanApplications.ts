@@ -45,7 +45,7 @@ export const useLoanApplications = ({
   amountMin,
   amountMax,
   priority,
-  refreshKey
+  refreshKey,
 }: UseLoanApplicationsParams) => {
   const [applications, setApplications] = useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,10 +57,14 @@ export const useLoanApplications = ({
       setError(null);
 
       // Fetch via API orchestration layer
+      const normalizedStartDate = dateFrom?.trim() ? dateFrom : undefined;
+      const normalizedEndDate = dateTo?.trim() ? dateTo : undefined;
+
       const result = await loansAPI.list({
-        status: status === 'pending' ? 'pending,under_review' : status !== 'all' ? status : undefined,
-        startDate: dateFrom,
-        endDate: dateTo,
+        status:
+          status === 'pending' ? 'pending,under_review' : status !== 'all' ? status : undefined,
+        startDate: normalizedStartDate,
+        endDate: normalizedEndDate,
       });
 
       if (!result.success) {
@@ -87,7 +91,7 @@ export const useLoanApplications = ({
         termMonths: row.term_months || undefined,
         interestRate: row.interest_rate || undefined,
         riskScore: Math.floor(Math.random() * 100),
-        creditScore: Math.floor(Math.random() * 300) + 500
+        creditScore: Math.floor(Math.random() * 300) + 500,
       }));
 
       // Apply client-side filters
@@ -104,40 +108,37 @@ export const useLoanApplications = ({
 
   const applyFilters = (applications: LoanApplication[]): LoanApplication[] => {
     let filtered = applications;
-    
+
     // Search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(app =>
-        app.applicantName.toLowerCase().includes(searchLower) ||
-        app.applicantEmail.toLowerCase().includes(searchLower) ||
-        app.purpose.toLowerCase().includes(searchLower) ||
-        app.id.toLowerCase().includes(searchLower) ||
-        app.amount.toString().includes(searchTerm)
+      filtered = filtered.filter(
+        (app) =>
+          app.applicantName.toLowerCase().includes(searchLower) ||
+          app.applicantEmail.toLowerCase().includes(searchLower) ||
+          app.purpose.toLowerCase().includes(searchLower) ||
+          app.id.toLowerCase().includes(searchLower) ||
+          app.amount.toString().includes(searchTerm)
       );
     }
 
     // Date range filter
     if (dateFrom) {
       const fromDate = new Date(dateFrom);
-      filtered = filtered.filter(app => 
-        new Date(app.submittedAt) >= fromDate
-      );
+      filtered = filtered.filter((app) => new Date(app.submittedAt) >= fromDate);
     }
     if (dateTo) {
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter(app => 
-        new Date(app.submittedAt) <= toDate
-      );
+      filtered = filtered.filter((app) => new Date(app.submittedAt) <= toDate);
     }
 
     // Amount range filter
     if (amountMin !== undefined) {
-      filtered = filtered.filter(app => app.amount >= amountMin);
+      filtered = filtered.filter((app) => app.amount >= amountMin);
     }
     if (amountMax !== undefined) {
-      filtered = filtered.filter(app => app.amount <= amountMax);
+      filtered = filtered.filter((app) => app.amount <= amountMax);
     }
 
     // Priority filter (only for pending)
@@ -161,6 +162,6 @@ export const useLoanApplications = ({
     applications,
     loading,
     error,
-    refetch
+    refetch,
   };
 };

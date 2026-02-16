@@ -4,16 +4,16 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertTriangle,
   Filter,
   Download,
   Search,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -28,14 +28,12 @@ interface LoanManagementDashboardProps {
   onLoanSelect?: (loanId: string) => void;
 }
 
-const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ 
-  onLoanSelect 
-}) => {
+const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoanSelect }) => {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedLoans, setSelectedLoans] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  
+
   // Enhanced filters
   const [showFilters, setShowFilters] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
@@ -43,7 +41,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
   const [amountMin, setAmountMin] = useState('');
   const [amountMax, setAmountMax] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('all');
-  
+
   // Realtime updates
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewItems, setHasNewItems] = useState(false);
@@ -52,9 +50,9 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
 
   const handleLoanSelection = (loanId: string, selected: boolean) => {
     if (selected) {
-      setSelectedLoans(prev => [...prev, loanId]);
+      setSelectedLoans((prev) => [...prev, loanId]);
     } else {
-      setSelectedLoans(prev => prev.filter(id => id !== loanId));
+      setSelectedLoans((prev) => prev.filter((id) => id !== loanId));
     }
   };
 
@@ -68,7 +66,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
   };
 
   const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
     setHasNewItems(false);
   };
 
@@ -83,11 +81,11 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
           event: '*',
           schema: 'public',
           table: 'approval_requests',
-          filter: 'request_type=eq.loan_application'
+          filter: 'request_type=eq.loan_application',
         },
         (payload) => {
           console.log('Approval request change detected:', payload);
-          
+
           // Show toast notification
           if (payload.eventType === 'INSERT') {
             setHasNewItems(true);
@@ -126,8 +124,8 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
         </div>
         <div className="flex space-x-2">
           {hasNewItems && (
-            <ThemedButton 
-              variant="primary" 
+            <ThemedButton
+              variant="primary"
               className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 animate-pulse"
               onClick={handleRefresh}
             >
@@ -135,8 +133,8 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
               New Items Available
             </ThemedButton>
           )}
-          <ThemedButton 
-            variant={showFilters ? "primary" : "secondary"} 
+          <ThemedButton
+            variant={showFilters ? 'primary' : 'secondary'}
             className="h-9 px-3 text-xs"
             onClick={() => setShowFilters(!showFilters)}
           >
@@ -157,7 +155,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
       {showFilters && (
         <ThemedCard>
           <div className="mb-4">
-            <h3 className={cn("text-lg font-semibold", styles.textClass)}>Filter Applications</h3>
+            <h3 className={cn('text-lg font-semibold', styles.textClass)}>Filter Applications</h3>
           </div>
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -168,7 +166,10 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground", styles.inputClass)}
+                  className={cn(
+                    'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground',
+                    styles.inputClass
+                  )}
                 />
               </div>
               <div className="space-y-2">
@@ -177,7 +178,10 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground", styles.inputClass)}
+                  className={cn(
+                    'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground',
+                    styles.inputClass
+                  )}
                 />
               </div>
 
@@ -189,7 +193,10 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMin}
                   onChange={(e) => setAmountMin(e.target.value)}
                   placeholder="0"
-                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
+                  className={cn(
+                    'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
+                    styles.inputClass
+                  )}
                 />
               </div>
               <div className="space-y-2">
@@ -199,7 +206,10 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   value={amountMax}
                   onChange={(e) => setAmountMax(e.target.value)}
                   placeholder="100000"
-                  className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
+                  className={cn(
+                    'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
+                    styles.inputClass
+                  )}
                 />
               </div>
 
@@ -210,7 +220,10 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
                   <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value)}
-                    className={cn("w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
+                    className={cn(
+                      'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+                      styles.inputClass
+                    )}
                   >
                     <option value="all">All Priorities</option>
                     <option value="urgent">Urgent</option>
@@ -223,8 +236,8 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
 
               {/* Clear Filters Button */}
               <div className="flex items-end">
-                <ThemedButton 
-                  variant="secondary" 
+                <ThemedButton
+                  variant="secondary"
                   className="w-full h-[42px]"
                   onClick={() => {
                     setDateFrom('');
@@ -253,7 +266,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending Review
@@ -281,20 +294,36 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({
               placeholder="Search by applicant name, ID, or amount..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={cn("w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground", styles.inputClass)}
+              className={cn(
+                'w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
+                styles.inputClass
+              )}
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className={cn("px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
+            className={cn(
+              'px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+              styles.inputClass
+            )}
             data-testid="filter-status-select"
           >
-            <option value="all" data-testid="filter-all">All Statuses</option>
-            <option value="pending" data-testid="filter-pending">Pending</option>
-            <option value="approved" data-testid="filter-approved">Approved</option>
-            <option value="rejected" data-testid="filter-rejected">Rejected</option>
-            <option value="disbursed" data-testid="filter-disbursed">Disbursed</option>
+            <option value="all" data-testid="filter-all">
+              All Statuses
+            </option>
+            <option value="pending" data-testid="filter-pending">
+              Pending
+            </option>
+            <option value="approved" data-testid="filter-approved">
+              Approved
+            </option>
+            <option value="rejected" data-testid="filter-rejected">
+              Rejected
+            </option>
+            <option value="disbursed" data-testid="filter-disbursed">
+              Disbursed
+            </option>
           </select>
         </div>
 

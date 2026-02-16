@@ -1,6 +1,6 @@
 /**
  * IPS Adapter Edge Function E2E Tests
- * 
+ *
  * Integration tests for the IPS adapter edge function endpoints
  */
 
@@ -24,10 +24,14 @@ if (supabaseUrl && supabaseServiceKey) {
 const TEST_PREFIX = 'IPS-ADAPTER-TEST-';
 
 test.describe('IPS Adapter Edge Function', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let authToken: string;
 
   test.beforeEach(async ({ adminSupabase }) => {
-    const { data: { session }, error } = await adminSupabase.auth.getSession();
+    const {
+      data: { session },
+      error,
+    } = await adminSupabase.auth.getSession();
     if (error) {
       throw new Error(`Failed to get admin session for IPS adapter tests: ${error.message}`);
     }
@@ -41,10 +45,7 @@ test.describe('IPS Adapter Edge Function', () => {
     if (!serviceClient) return;
 
     // Cleanup test transactions
-    await serviceClient
-      .from('ips_transactions')
-      .delete()
-      .like('msg_id', `${TEST_PREFIX}%`);
+    await serviceClient.from('ips_transactions').delete().like('msg_id', `${TEST_PREFIX}%`);
   });
 
   test.describe('POST /validate-vpa', () => {
@@ -53,7 +54,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           vpa: 'testuser@fnb',
@@ -62,7 +63,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.isValid).toBe(true);
       expect(data.accountHolderName).toBeDefined();
@@ -74,7 +75,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           vpa: 'invalid-no-at-sign',
@@ -83,7 +84,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(false);
       expect(data.isValid).toBe(false);
       expect(data.errorCode).toBe('XJ');
@@ -94,7 +95,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           vpa: 'user@invalid-provider',
@@ -103,7 +104,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(false);
       expect(data.isValid).toBe(false);
       expect(data.errorCode).toBe('XK');
@@ -115,7 +116,7 @@ test.describe('IPS Adapter Edge Function', () => {
       // First create a test IPS transaction record
       const msgId = `${TEST_PREFIX}MSG-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-${Date.now()}`;
-      
+
       const { data: txn, error: txnError } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -123,7 +124,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'collections@namlend',
@@ -139,13 +140,13 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
           msgId: msgId,
           txnId: txnId,
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payerVpa: 'testpayer@bank',
           payeeVpa: 'collections@namlend',
@@ -156,7 +157,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.ipsResult).toBe('SUCCESS');
       expect(data.ipsErrorCode).toBe('00');
@@ -167,7 +168,7 @@ test.describe('IPS Adapter Edge Function', () => {
     test('should handle payment failure (simulated)', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-FAIL-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-FAIL-${Date.now()}`;
-      
+
       const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -175,7 +176,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'fail@testbank', // VPA with 'fail' triggers mock failure
@@ -188,13 +189,13 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
           msgId: msgId,
           txnId: txnId,
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payerVpa: 'testpayer@bank',
           payeeVpa: 'fail@testbank',
@@ -204,7 +205,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(false);
       expect(data.ipsResult).toBe('FAILURE');
       expect(data.ipsErrorCode).toBe('51');
@@ -213,7 +214,7 @@ test.describe('IPS Adapter Edge Function', () => {
     test('should handle timeout scenario (simulated)', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-TIMEOUT-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-TIMEOUT-${Date.now()}`;
-      
+
       const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -221,7 +222,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'timeout@testbank', // VPA with 'timeout' triggers pending
@@ -234,13 +235,13 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
           msgId: msgId,
           txnId: txnId,
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payerVpa: 'testpayer@bank',
           payeeVpa: 'timeout@testbank',
@@ -250,7 +251,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.ipsResult).toBe('PENDING');
       expect(data.ipsErrorCode).toBe('XP');
@@ -259,7 +260,7 @@ test.describe('IPS Adapter Edge Function', () => {
     test('should reject amount exceeding limit', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-LIMIT-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-LIMIT-${Date.now()}`;
-      
+
       const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -267,7 +268,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 100000.00, // Exceeds 50000 limit in mock
+          amount: 100000.0, // Exceeds 50000 limit in mock
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'collections@namlend',
@@ -280,13 +281,13 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
           msgId: msgId,
           txnId: txnId,
-          amount: 100000.00,
+          amount: 100000.0,
           currency: 'NAD',
           payerVpa: 'testpayer@bank',
           payeeVpa: 'collections@namlend',
@@ -296,7 +297,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(false);
       expect(data.ipsResult).toBe('FAILURE');
       expect(data.ipsErrorCode).toBe('61'); // Exceeds limit
@@ -307,7 +308,7 @@ test.describe('IPS Adapter Edge Function', () => {
     test('should return status for a transaction', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-STATUS-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-STATUS-${Date.now()}`;
-      
+
       const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -315,7 +316,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 100.00,
+          amount: 100.0,
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'collections@namlend',
@@ -328,7 +329,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
@@ -339,7 +340,7 @@ test.describe('IPS Adapter Edge Function', () => {
 
       expect(response.ok).toBe(true);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.ipsResult).toBeDefined();
       // In mock mode, status check returns SUCCESS
@@ -353,7 +354,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({}),
       });
@@ -368,7 +369,7 @@ test.describe('IPS Adapter Edge Function', () => {
       const response = await fetch(`${IPS_ADAPTER_URL}/validate-vpa`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -380,7 +381,7 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: 'not valid json',
       });
@@ -395,7 +396,7 @@ test.describe('IPS Adapter Edge Function', () => {
     test('should log API calls to ips_api_logs', async ({ adminSupabase }) => {
       const msgId = `${TEST_PREFIX}MSG-LOG-${Date.now()}`;
       const txnId = `${TEST_PREFIX}TXN-LOG-${Date.now()}`;
-      
+
       const { data: txn } = await adminSupabase
         .from('ips_transactions')
         .insert({
@@ -403,7 +404,7 @@ test.describe('IPS Adapter Edge Function', () => {
           txn_id: txnId,
           transaction_type: 'REPAYMENT',
           ips_txn_type: 'PAY',
-          amount: 50.00,
+          amount: 50.0,
           currency: 'NAD',
           payer_vpa: 'testpayer@bank',
           payee_vpa: 'collections@namlend',
@@ -417,13 +418,13 @@ test.describe('IPS Adapter Edge Function', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           ipsTransactionId: txn!.id,
           msgId: msgId,
           txnId: txnId,
-          amount: 50.00,
+          amount: 50.0,
           currency: 'NAD',
           payerVpa: 'testpayer@bank',
           payeeVpa: 'collections@namlend',
@@ -432,7 +433,7 @@ test.describe('IPS Adapter Edge Function', () => {
       });
 
       // Wait a bit for async logging
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check that log was created
       const { data: logs } = await adminSupabase
@@ -450,11 +451,14 @@ test.describe('IPS Adapter Edge Function', () => {
 });
 
 test.describe('IPS Transaction State Machine', () => {
-  test('complete_ips_transaction - should update transaction and linked entities', async ({ adminSupabase }) => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
+  test('complete_ips_transaction - should update transaction and linked entities', async ({
+    adminSupabase,
+  }) => {
     // Create a test transaction
     const msgId = `${TEST_PREFIX}MSG-COMPLETE-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-COMPLETE-${Date.now()}`;
-    
+
     const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
@@ -462,7 +466,7 @@ test.describe('IPS Transaction State Machine', () => {
         txn_id: txnId,
         transaction_type: 'REPAYMENT',
         ips_txn_type: 'PAY',
-        amount: 100.00,
+        amount: 100.0,
         currency: 'NAD',
         payer_vpa: 'testpayer@bank',
         payee_vpa: 'collections@namlend',
@@ -499,10 +503,12 @@ test.describe('IPS Transaction State Machine', () => {
     expect(updatedTxn!.completed_at).toBeDefined();
   });
 
-  test('complete_ips_transaction - should not update already completed transaction', async ({ adminSupabase }) => {
+  test('complete_ips_transaction - should not update already completed transaction', async ({
+    adminSupabase,
+  }) => {
     const msgId = `${TEST_PREFIX}MSG-ALREADY-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-ALREADY-${Date.now()}`;
-    
+
     const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
@@ -510,7 +516,7 @@ test.describe('IPS Transaction State Machine', () => {
         txn_id: txnId,
         transaction_type: 'REPAYMENT',
         ips_txn_type: 'PAY',
-        amount: 100.00,
+        amount: 100.0,
         currency: 'NAD',
         payer_vpa: 'testpayer@bank',
         payee_vpa: 'collections@namlend',
@@ -536,7 +542,7 @@ test.describe('IPS Transaction State Machine', () => {
   test('complete_ips_transaction - should handle DEEMED status', async ({ adminSupabase }) => {
     const msgId = `${TEST_PREFIX}MSG-DEEMED-${Date.now()}`;
     const txnId = `${TEST_PREFIX}TXN-DEEMED-${Date.now()}`;
-    
+
     const { data: txn } = await adminSupabase
       .from('ips_transactions')
       .insert({
@@ -544,7 +550,7 @@ test.describe('IPS Transaction State Machine', () => {
         txn_id: txnId,
         transaction_type: 'REPAYMENT',
         ips_txn_type: 'PAY',
-        amount: 100.00,
+        amount: 100.0,
         currency: 'NAD',
         payer_vpa: 'testpayer@bank',
         payee_vpa: 'collections@namlend',

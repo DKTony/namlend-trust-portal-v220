@@ -5,15 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  X, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Shield, 
-  Settings, 
+import {
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Shield,
+  Settings,
   Edit,
   Save,
   AlertTriangle,
@@ -23,10 +23,16 @@ import {
   Key,
   UserX,
   UserCheck,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,7 +88,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
     address: '123 Independence Ave, Windhoek, Namibia',
     dateOfBirth: '1985-03-15',
     emergencyContact: '+264 81 987 6543',
-    notes: 'Senior loan officer with excellent performance record.'
+    notes: 'Senior loan officer with excellent performance record.',
   };
 
   const userData = user || mockUser;
@@ -91,7 +97,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -101,27 +107,37 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+      active:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      inactive:
+        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      suspended:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     };
 
     const icons = {
       active: <CheckCircle className="h-4 w-4 mr-1" />,
       inactive: <Clock className="h-4 w-4 mr-1" />,
       suspended: <AlertTriangle className="h-4 w-4 mr-1" />,
-      pending: <Clock className="h-4 w-4 mr-1" />
+      pending: <Clock className="h-4 w-4 mr-1" />,
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -130,28 +146,38 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const getRoleBadge = (role: string) => {
     const variants = {
-      admin: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      loan_officer: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      client: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      support: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800'
+      admin:
+        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      loan_officer:
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      client:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      support:
+        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
     };
 
     const icons = {
       admin: <Shield className="h-3 w-3 mr-1" />,
       loan_officer: <User className="h-3 w-3 mr-1" />,
       client: <User className="h-3 w-3 mr-1" />,
-      support: <Settings className="h-3 w-3 mr-1" />
+      support: <Settings className="h-3 w-3 mr-1" />,
     };
 
     const labels = {
       admin: 'Admin',
       loan_officer: 'Loan Officer',
       client: 'Client',
-      support: 'Support'
+      support: 'Support',
     };
 
     return (
-      <Badge variant="outline" className={variants[role as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[role as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[role as keyof typeof icons]}
         <span>{labels[role as keyof typeof labels] || role}</span>
       </Badge>
@@ -165,22 +191,26 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const handleSave = async () => {
     if (!editedUser) return;
-    
+
     setSaving(true);
     try {
       const success = await updateUser({
         fullName: editedUser.fullName,
         phone: editedUser.phone,
-        isVerified: editedUser.isVerified
+        isVerified: editedUser.isVerified,
       });
-      
+
       if (success) {
         toast({ title: 'Success', description: 'User profile updated successfully' });
         setIsEditing(false);
         refetch();
         onUserUpdated?.();
       } else {
-        toast({ title: 'Error', description: 'Failed to update user profile', variant: 'destructive' });
+        toast({
+          title: 'Error',
+          description: 'Failed to update user profile',
+          variant: 'destructive',
+        });
       }
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save';
@@ -192,11 +222,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const handleSuspend = async () => {
     if (!confirm('Are you sure you want to suspend this user?')) return;
-    
+
     setSaving(true);
     try {
       const success = await suspendUser();
-      
+
       if (success) {
         toast({ title: 'User Suspended', description: 'User has been suspended successfully' });
         refetch();
@@ -236,7 +266,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-muted rounded w-1/3"></div>
             <div className="h-4 bg-muted rounded w-1/2"></div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="h-20 bg-muted rounded"></div>
               ))}
@@ -275,7 +305,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-2xl font-bold flex items-center truncate text-foreground">
-                <span className="truncate" title={currentUser.fullName}>{currentUser.fullName}</span>
+                <span className="truncate" title={currentUser.fullName}>
+                  {currentUser.fullName}
+                </span>
                 {currentUser.isVerified && (
                   <CheckCircle className="h-5 w-5 text-green-500 ml-2 shrink-0" />
                 )}
@@ -283,7 +315,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
               <div className="flex items-center space-x-2 mt-1 overflow-x-auto no-scrollbar">
                 <div className="shrink-0">{getStatusBadge(currentUser.status)}</div>
                 <div className="shrink-0">{getRoleBadge(currentUser.role)}</div>
-                <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 shrink-0 tabular-nums">
+                <Badge
+                  variant="outline"
+                  className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 shrink-0 tabular-nums"
+                >
                   ID: {currentUser.id.slice(0, 8)}...
                 </Badge>
               </div>
@@ -296,7 +331,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                   Cancel
                 </Button>
                 <Button size="sm" onClick={handleSave} disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Save Changes
                 </Button>
               </>
@@ -307,7 +346,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                   Edit Profile
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleSuspend} disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserX className="h-4 w-4 mr-2" />}
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <UserX className="h-4 w-4 mr-2" />
+                  )}
                   Suspend
                 </Button>
               </>
@@ -327,7 +370,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 mr-2">
                     <p className="text-sm text-muted-foreground truncate">Login Count</p>
-                    <p className="text-2xl font-bold truncate tabular-nums text-foreground">{currentUser.loginCount}</p>
+                    <p className="text-2xl font-bold truncate tabular-nums text-foreground">
+                      {currentUser.loginCount}
+                    </p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
@@ -338,7 +383,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 mr-2">
                     <p className="text-sm text-muted-foreground truncate">Last Login</p>
-                    <p className="text-lg font-semibold truncate text-foreground">{formatDate(currentUser.lastLogin)}</p>
+                    <p className="text-lg font-semibold truncate text-foreground">
+                      {formatDate(currentUser.lastLogin)}
+                    </p>
                   </div>
                   <Clock className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
                 </div>
@@ -349,7 +396,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 mr-2">
                     <p className="text-sm text-muted-foreground truncate">Permissions</p>
-                    <p className="text-2xl font-bold truncate tabular-nums text-foreground">{currentUser.permissions.length}</p>
+                    <p className="text-2xl font-bold truncate tabular-nums text-foreground">
+                      {currentUser.permissions.length}
+                    </p>
                   </div>
                   <Key className="h-8 w-8 text-purple-600 dark:text-purple-400 shrink-0" />
                 </div>
@@ -360,7 +409,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 mr-2">
                     <p className="text-sm text-muted-foreground truncate">Member Since</p>
-                    <p className="text-lg font-semibold truncate text-foreground">{formatDate(currentUser.createdAt)}</p>
+                    <p className="text-lg font-semibold truncate text-foreground">
+                      {formatDate(currentUser.createdAt)}
+                    </p>
                   </div>
                   <Calendar className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />
                 </div>
@@ -370,7 +421,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
           {/* Detailed Information Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="permissions">Permissions</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -391,7 +442,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                         <Input
                           id="fullName"
                           value={currentUser.fullName}
-                          onChange={(e) => setEditedUser(prev => prev ? { ...prev, fullName: e.target.value } : null)}
+                          onChange={(e) =>
+                            setEditedUser((prev) =>
+                              prev ? { ...prev, fullName: e.target.value } : null
+                            )
+                          }
                           className="bg-background border-input text-foreground"
                         />
                       ) : (
@@ -405,7 +460,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                           id="email"
                           type="email"
                           value={currentUser.email}
-                          onChange={(e) => setEditedUser(prev => prev ? { ...prev, email: e.target.value } : null)}
+                          onChange={(e) =>
+                            setEditedUser((prev) =>
+                              prev ? { ...prev, email: e.target.value } : null
+                            )
+                          }
                           className="bg-background border-input text-foreground"
                         />
                       ) : (
@@ -419,7 +478,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                           <Input
                             id="phone"
                             value={currentUser.phone}
-                            onChange={(e) => setEditedUser(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                            onChange={(e) =>
+                              setEditedUser((prev) =>
+                                prev ? { ...prev, phone: e.target.value } : null
+                              )
+                            }
                             className="bg-background border-input text-foreground"
                           />
                         ) : (
@@ -434,7 +497,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                           <Input
                             id="department"
                             value={currentUser.department}
-                            onChange={(e) => setEditedUser(prev => prev ? { ...prev, department: e.target.value } : null)}
+                            onChange={(e) =>
+                              setEditedUser((prev) =>
+                                prev ? { ...prev, department: e.target.value } : null
+                              )
+                            }
                             className="bg-background border-input text-foreground"
                           />
                         ) : (
@@ -493,18 +560,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                         id="verified"
                         checked={currentUser.isVerified}
                         disabled={!isEditing}
-                        onCheckedChange={(checked) => 
-                          setEditedUser(prev => prev ? { ...prev, isVerified: checked } : null)
+                        onCheckedChange={(checked) =>
+                          setEditedUser((prev) => (prev ? { ...prev, isVerified: checked } : null))
                         }
                       />
                     </div>
                     <div>
                       <Label>Account Created</Label>
-                      <p className="text-sm text-muted-foreground">{formatDateTime(currentUser.createdAt)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDateTime(currentUser.createdAt)}
+                      </p>
                     </div>
                     <div>
                       <Label>Last Updated</Label>
-                      <p className="text-sm text-muted-foreground">{formatDateTime(currentUser.updatedAt)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDateTime(currentUser.updatedAt)}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -521,7 +592,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                       className="w-full p-3 border border-input rounded-md focus:ring-2 focus:ring-ring bg-background text-foreground"
                       rows={4}
                       value={currentUser.notes || ''}
-                      onChange={(e) => setEditedUser(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                      onChange={(e) =>
+                        setEditedUser((prev) => (prev ? { ...prev, notes: e.target.value } : null))
+                      }
                       placeholder="Add notes about this user..."
                     />
                   ) : (
@@ -540,9 +613,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentUser.permissions.map(permission => (
-                      <div key={permission} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
-                        <span className="font-medium capitalize text-foreground">{permission.replace('_', ' ')}</span>
+                    {currentUser.permissions.map((permission) => (
+                      <div
+                        key={permission}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border"
+                      >
+                        <span className="font-medium capitalize text-foreground">
+                          {permission.replace('_', ' ')}
+                        </span>
                         <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
                     ))}
@@ -574,8 +652,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                       <div>
-                        <span className="font-medium text-foreground">Two-Factor Authentication</span>
-                        <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
+                        <span className="font-medium text-foreground">
+                          Two-Factor Authentication
+                        </span>
+                        <p className="text-sm text-muted-foreground">
+                          Add an extra layer of security
+                        </p>
                       </div>
                       <Switch />
                     </div>

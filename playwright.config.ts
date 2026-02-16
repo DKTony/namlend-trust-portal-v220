@@ -14,16 +14,14 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   // Limit workers to avoid Supabase auth rate limiting
   // API tests with fixtures hit rate limits with parallel execution
-  workers: process.env.CI ? 2 : 1,
+  workers: process.env.CI ? 1 : 1,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,
     trace: 'on-first-retry',
     headless: true,
   },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-  ],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run dev:e2e',
     url: baseURL,

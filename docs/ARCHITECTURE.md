@@ -1,6 +1,6 @@
 # NamLend Trust - System Architecture
 
-**Doc Revision**: 2026-01-19  \
+**Doc Revision**: 2026-01-19 \
 **Status**: Core architecture implemented; API orchestration layer live; IPS adapter and TigerBeetle posting are mock/simulated.
 
 ---
@@ -12,6 +12,7 @@
 - [Client Layer](#client-layer)
 - [Backend Layer](#backend-layer)
 - [Service Layer Pattern](#service-layer-pattern)
+- [API Layer Architecture](#api-layer-architecture)
 - [Edge Functions](#edge-functions)
 - [Admin Architecture](#admin-architecture)
 - [Observability and Safety](#observability-and-safety)
@@ -364,32 +365,88 @@ export async function completeDisbursement(
 
 ---
 
+## API Layer Architecture
+
+NamLend uses a **dual-pattern** approach for data access from the browser:
+
+### 1. Direct Supabase Client (`supabase.from()`)
+
+The primary data access pattern. The React SPA calls Supabase PostgREST
+directly, protected by Row-Level Security (RLS) policies.
+
+```
+React Component → TanStack Query → supabase.from('table') → PostgREST → RLS → PostgreSQL
+```
+
+- **141+ call sites** across 23 service files (`src/services/`)
+- RLS policies enforce per-user data isolation and role-based access
+- Used for all standard CRUD operations on RLS-protected tables
+- RPC functions (`supabase.rpc()`) handle multi-table transactions with
+  server-side validation
+
+This is **intentional**, not technical debt. Direct PostgREST access gives:
+
+- Automatic RLS enforcement (no server-side auth code needed)
+- Real-time subscription support
+- Type-safe queries via generated Supabase types (when available)
+- Lower latency (one hop vs. two)
+
+### 2. API Client (`src/services/api-client.ts`)
+
+A thin HTTP client for Supabase Edge Function endpoints (`api-*` functions).
+Used when operations require server-side logic that cannot run in the browser.
+
+```
+React Component → useApiQueries hook → api-client.ts → Edge Function → PostgreSQL
+```
+
+Use cases for Edge Function endpoints:
+
+- **Aggregation queries** too expensive for client-side
+- **Cross-service orchestration** (e.g., disbursement + IPS + notification)
+- **External API calls** requiring secrets (SMS, WhatsApp, IPS)
+- **Webhook receivers** for payment providers
+- **Batch operations** with transactional guarantees
+
+### When to Use Which
+
+| Scenario                | Pattern              | Reason                                |
+| ----------------------- | -------------------- | ------------------------------------- |
+| Read user's own loans   | `supabase.from()`    | RLS handles access control            |
+| Create payment          | `supabase.rpc()`     | RPC ensures atomicity + audit log     |
+| Admin analytics summary | `api-client.ts`      | Server-side aggregation               |
+| Send SMS notification   | Edge Function        | Requires API secrets                  |
+| Real-time loan status   | `supabase.channel()` | Only PostgREST supports subscriptions |
+
+---
+
 ## Edge Functions
 
-| Function | Purpose | Notes |
-| --- | --- | --- |
-| `ips-adapter` | IPS mock adapter | JWT required; mock responses |
-| `payment-webhook` | Payment provider webhooks | HMAC verification; updates payments |
-| `process-loan-application` | Server-side review update | Not invoked by SPA |
-| `scheduled-tasks` | Overdue, reminders, queue processing | Intended for pg_cron |
-| `send-notification` | Staff-triggered notifications | Staff role required |
-| `send-sms` | Africa's Talking delivery | Requires secrets |
-| `send-whatsapp` | WhatsApp Business API | Requires secrets |
-| `tigerbeetle-outbox-worker` | Outbox processing | Simulated TB posting |
-| **`api-admin`** | Admin dashboard API | ✅ Deployed - staff RBAC |
-| **`api-analytics`** | Portfolio analytics API | ✅ Deployed - staff RBAC |
-| **`api-audit`** | Audit log API | ✅ Deployed - admin only |
-| **`api-collections`** | Collections API | ✅ Deployed - staff RBAC |
-| **`api-disbursements`** | Disbursement API | ✅ Deployed - staff RBAC |
-| **`api-loans`** | Loan management API | ✅ Deployed - JWT + RBAC |
-| **`api-notifications`** | Notification API | ✅ Deployed - JWT + RBAC |
-| **`api-payments`** | Payment operations API | ✅ Deployed - JWT + RBAC |
-| **`api-reconciliation`** | Reconciliation API | ✅ Deployed - staff RBAC |
-| **`api-users`** | User management API | ✅ Deployed - JWT + RBAC |
+| Function                    | Purpose                              | Notes                               |
+| --------------------------- | ------------------------------------ | ----------------------------------- |
+| `ips-adapter`               | IPS mock adapter                     | JWT required; mock responses        |
+| `payment-webhook`           | Payment provider webhooks            | HMAC verification; updates payments |
+| `process-loan-application`  | Server-side review update            | Not invoked by SPA                  |
+| `scheduled-tasks`           | Overdue, reminders, queue processing | Intended for pg_cron                |
+| `send-notification`         | Staff-triggered notifications        | Staff role required                 |
+| `send-sms`                  | Africa's Talking delivery            | Requires secrets                    |
+| `send-whatsapp`             | WhatsApp Business API                | Requires secrets                    |
+| `tigerbeetle-outbox-worker` | Outbox processing                    | Simulated TB posting                |
+| **`api-admin`**             | Admin dashboard API                  | ✅ Deployed - staff RBAC            |
+| **`api-analytics`**         | Portfolio analytics API              | ✅ Deployed - staff RBAC            |
+| **`api-audit`**             | Audit log API                        | ✅ Deployed - admin only            |
+| **`api-collections`**       | Collections API                      | ✅ Deployed - staff RBAC            |
+| **`api-disbursements`**     | Disbursement API                     | ✅ Deployed - staff RBAC            |
+| **`api-loans`**             | Loan management API                  | ✅ Deployed - JWT + RBAC            |
+| **`api-notifications`**     | Notification API                     | ✅ Deployed - JWT + RBAC            |
+| **`api-payments`**          | Payment operations API               | ✅ Deployed - JWT + RBAC            |
+| **`api-reconciliation`**    | Reconciliation API                   | ✅ Deployed - staff RBAC            |
+| **`api-users`**             | User management API                  | ✅ Deployed - JWT + RBAC            |
 
 ### API Orchestration Layer
 
 The `api-*` functions form a centralized API layer providing:
+
 - **JWT Authentication** on all endpoints
 - **Role-Based Access Control** (client, loan_officer, admin)
 - **Input Validation** via Zod schemas

@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { adminAPI } from '@/services/api-client';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import SystemHealthDashboard from '@/components/SystemHealthDashboard';
+import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
 import {
   TrendingUp,
   Users,
@@ -24,7 +24,7 @@ import {
   Settings,
   CheckSquare,
   Database,
-  Palette
+  Palette,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -40,7 +40,10 @@ import PaymentManagementDashboard from '@/pages/AdminDashboard/components/Paymen
 import ApprovalManagementDashboard from '@/pages/AdminDashboard/components/ApprovalManagement/ApprovalManagementDashboard';
 import UserManagementDashboard from '@/pages/AdminDashboard/components/UserManagement/UserManagementDashboard';
 import { CollectionsDashboard } from '@/pages/AdminDashboard/components/CollectionsManagement';
-import { CreditPolicyConfig, BrandingConfigComponent } from '@/pages/AdminDashboard/components/Settings';
+import {
+  CreditPolicyConfig,
+  BrandingConfigComponent,
+} from '@/pages/AdminDashboard/components/Settings';
 import { TigerBeetleConfig } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig';
 import { SettlementConfig } from '@/pages/AdminDashboard/components/Settings/SettlementConfig';
 import { BatchOperations } from '@/pages/AdminDashboard/components/BatchOperations';
@@ -48,12 +51,11 @@ import PortfolioAnalytics from '@/pages/AdminDashboard/components/Analytics/Port
 import { LedgerDashboard } from '@/pages/AdminDashboard/components/TigerBeetle';
 import { IPPOnboardingDashboard } from '@/pages/AdminDashboard/components/IPPOnboarding';
 
-
 const AdminDashboard: React.FC = () => {
   const { user, userRole, isAdmin, isLoanOfficer } = useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
-  
+
   const [activeTab, setActiveTab] = useState('financial');
   const [metrics, setMetrics] = useState<any>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -67,20 +69,13 @@ const AdminDashboard: React.FC = () => {
       setMetricsLoading(true);
       try {
         console.log('🔄 Fetching admin dashboard metrics...');
-        
-        const fetchClients = supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true });
-          
-        const fetchLoans = supabase
-          .from('loans')
-          .select('amount, status');
-          
-        const fetchPayments = supabase
-          .from('payments')
-          .select('amount')
-          .eq('status', 'completed');
-          
+
+        const fetchClients = supabase.from('profiles').select('id', { count: 'exact', head: true });
+
+        const fetchLoans = supabase.from('loans').select('amount, status');
+
+        const fetchPayments = supabase.from('payments').select('amount').eq('status', 'completed');
+
         // P1-001 FIX: Query payment_schedules for overdue (not payments table)
         // Using filter() instead of lt() to avoid TS inference issues with head: true
         const fetchOverdue = supabase
@@ -94,14 +89,14 @@ const AdminDashboard: React.FC = () => {
           fetchClients,
           fetchLoans,
           fetchPayments,
-          fetchOverdue
+          fetchOverdue,
         ]);
 
         console.log('📊 Query results:', {
           clients: clientsResult.count,
           loans: loansResult.data?.length,
           payments: paymentsResult.data?.length,
-          overdue: overdueResult.count
+          overdue: overdueResult.count,
         });
 
         // Calculate totals
@@ -109,12 +104,17 @@ const AdminDashboard: React.FC = () => {
         const loans = loansResult.data || [];
         const totalLoans = loans.length;
         const totalDisbursed = loans
-          .filter(l => l.status === 'approved' || l.status === 'active' || l.status === 'completed')
+          .filter(
+            (l) => l.status === 'approved' || l.status === 'active' || l.status === 'completed'
+          )
           .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0);
-        
+
         const payments = paymentsResult.data || [];
-        const totalRepayments = payments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
-        
+        const totalRepayments = payments.reduce(
+          (sum, payment) => sum + (Number(payment.amount) || 0),
+          0
+        );
+
         const overduePayments = overdueResult.count || 0;
 
         const calculatedMetrics = {
@@ -124,16 +124,15 @@ const AdminDashboard: React.FC = () => {
           overduePayments,
           totalLoans,
           pendingAmount: loans
-            .filter(l => l.status === 'pending')
+            .filter((l) => l.status === 'pending')
             .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0),
           rejectedAmount: loans
-            .filter(l => l.status === 'rejected')
-            .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0)
+            .filter((l) => l.status === 'rejected')
+            .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0),
         };
 
         console.log('✅ Calculated metrics:', calculatedMetrics);
         setMetrics(calculatedMetrics);
-
       } catch (error) {
         console.error('❌ Error fetching admin metrics:', error);
         // Set fallback zero values on error
@@ -144,7 +143,7 @@ const AdminDashboard: React.FC = () => {
           overduePayments: 0,
           totalLoans: 0,
           pendingAmount: 0,
-          rejectedAmount: 0
+          rejectedAmount: 0,
         });
       } finally {
         setMetricsLoading(false);
@@ -161,11 +160,11 @@ const AdminDashboard: React.FC = () => {
 
   if (!isAdmin && !isLoanOfficer) {
     return (
-      <div className={cn("flex items-center justify-center min-h-screen", styles.background)}>
+      <div className={cn('flex items-center justify-center min-h-screen', styles.background)}>
         <ThemedCard className="w-96">
           <div className="flex items-center mb-4">
             <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
-            <h3 className={cn("text-lg font-bold", styles.textClass)}>Access Denied</h3>
+            <h3 className={cn('text-lg font-bold', styles.textClass)}>Access Denied</h3>
           </div>
           <p className="text-muted-foreground mb-4">
             You don't have permission to access the admin dashboard.
@@ -192,14 +191,16 @@ const AdminDashboard: React.FC = () => {
     { id: 'ipp-onboarding', label: 'IPP Onboarding', icon: UserCheck },
     { id: 'batch', label: 'Batch Operations', icon: CheckSquare },
     { id: 'users', label: 'User Management', icon: Users },
-    ...(isAdmin ? [
-      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-      { id: 'ledger', label: 'TigerBeetle Ledger', icon: Database },
-      { id: 'settings', label: 'Credit Policy', icon: Settings },
-      { id: 'tigerbeetle-config', label: 'TB Config', icon: Database },
-      { id: 'settlement-config', label: 'Settlement', icon: DollarSign },
-      { id: 'branding', label: 'Branding', icon: Palette },
-    ] : []),
+    ...(isAdmin
+      ? [
+          { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+          { id: 'ledger', label: 'TigerBeetle Ledger', icon: Database },
+          { id: 'settings', label: 'Credit Policy', icon: Settings },
+          { id: 'tigerbeetle-config', label: 'TB Config', icon: Database },
+          { id: 'settlement-config', label: 'Settlement', icon: DollarSign },
+          { id: 'branding', label: 'Branding', icon: Palette },
+        ]
+      : []),
   ];
 
   const handleTabChange = (tabId: string) => {
@@ -233,16 +234,14 @@ const AdminDashboard: React.FC = () => {
 
       {activeTab === 'financial' && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <FinancialSummaryCards 
+          <FinancialSummaryCards
             key={`financial-${refreshKey}`}
-            metrics={metrics} 
-            loading={metricsLoading} 
+            metrics={metrics}
+            loading={metricsLoading}
           />
-          
+
           {/* Placeholder for future financial charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* ... */}
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{/* ... */}</div>
         </div>
       )}
 
@@ -301,18 +300,22 @@ const AdminDashboard: React.FC = () => {
           <PortfolioAnalytics key={`analytics-${refreshKey}`} />
         </div>
       )}
-      
+
       {/* Analytics Access Denied for Non-Admin */}
       {activeTab === 'analytics' && !isAdmin && (
         <div className="space-y-6">
           <ThemedCard>
             <div className="flex items-center mb-4">
-              <h3 className={cn("text-lg font-bold", styles.textClass)}>Analytics Dashboard</h3>
+              <h3 className={cn('text-lg font-bold', styles.textClass)}>Analytics Dashboard</h3>
             </div>
             <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
               <div className="text-center">
-                <div className="text-lg font-medium text-muted-foreground mb-2">Admin Access Required</div>
-                <div className="text-sm text-muted-foreground">Analytics dashboard is restricted to administrators only</div>
+                <div className="text-lg font-medium text-muted-foreground mb-2">
+                  Admin Access Required
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Analytics dashboard is restricted to administrators only
+                </div>
               </div>
             </div>
           </ThemedCard>

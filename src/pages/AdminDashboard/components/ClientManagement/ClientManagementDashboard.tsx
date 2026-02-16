@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Download, 
+import {
+  Users,
+  Search,
+  Filter,
+  Download,
   Plus,
   MessageSquare,
   AlertCircle,
-  UserCheck
+  UserCheck,
 } from 'lucide-react';
 
 // Sub-components
@@ -17,14 +17,14 @@ import ClientPortfolioOverview from './ClientPortfolioOverview';
 import ClientsList from './ClientsList';
 import CommunicationCenter from './CommunicationCenter';
 import SupportTickets from './SupportTickets';
-import ClientProfileModal from '@/components/ClientProfileModal';
+import ClientProfileModal from '@/components/modals/ClientProfileModal';
 
 interface ClientManagementDashboardProps {
   onClientSelect?: (clientId: string) => void;
 }
 
-const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({ 
-  onClientSelect 
+const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
+  onClientSelect,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -50,7 +50,7 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
             Manage client relationships, profiles, and communications
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
             <Filter className="mr-2 h-3.5 w-3.5" />
             Filters
@@ -71,7 +71,7 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             All Clients

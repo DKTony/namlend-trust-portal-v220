@@ -11,14 +11,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 This changelog contains two version tracks:
 
-| Track | Current | Description |
-|-------|---------|-------------|
-| **Web Platform** | v2.8.4 | Main React web application (this repo's primary focus) |
-| **Combined Platform** | v3.x | Web + Mobile app releases (includes `namlend-mobile/` changes) |
+| Track                 | Current | Description                                                    |
+| --------------------- | ------- | -------------------------------------------------------------- |
+| **Web Platform**      | v2.8.5  | Main React web application (this repo's primary focus)         |
+| **Combined Platform** | v3.x    | Web + Mobile app releases (includes `namlend-mobile/` changes) |
 
-**Current production web version: v2.8.4** (January 2026)
+**Current production web version: v2.8.5** (February 2026)
 
 The v3.x versions (Dec 2025) document combined releases that include mobile app optimizations. For web-only changes, refer to the v2.8.x entries.
+
+---
+
+## [2.8.5] - 2026-02-14 (Enhancement Batch: Cache, Testing, DX, Architecture)
+
+### Added
+
+#### Unit Tests for Critical Services (Enhancement 4.2)
+
+- `src/tests/regulatory.test.ts` — 13 tests covering APR validation, NAD formatting, max loan calculation
+- `src/tests/creditScoring.test.ts` — 20 tests covering credit score ranges, APR cap compliance, income/DTI/default impacts, loan recommendation approval and rejection paths
+
+#### Accessibility Testing (Enhancement 4.4)
+
+- Installed `@axe-core/playwright`
+- `e2e/accessibility.e2e.ts` — WCAG 2.1 Level A & AA scans for Landing Page and Auth Page; fails only on critical/serious violations
+
+#### Pre-Commit Hooks (Enhancement 5.2)
+
+- Installed `husky` and `lint-staged`
+- `.husky/pre-commit` runs `npx lint-staged` on every commit
+- Staged `.ts/.tsx` files are auto-linted (ESLint) and formatted (Prettier)
+- Staged `.md` files are auto-formatted (Prettier)
+
+#### Auth Session Manager (Enhancement 8.5)
+
+- `src/services/authSessionManager.ts` — extracted `restoreSession()`, `fetchUserRole()`, `clearPersistedAuth()` from the monolithic `useAuth` hook
+
+### Changed
+
+#### TanStack Query Cache Optimization (Enhancement 3.3)
+
+- Expanded `staleTimes` in `src/hooks/useApiQueries.ts` with new tiers: `paymentHistory` (1 min), `adminConfig` (10 min)
+- Increased `semiStatic` from 2 min to 5 min (user profiles rarely change within a session)
+- Applied `paymentHistory` to `usePaymentsForLoan`, `adminConfig` to `useComplianceReport`
+
+#### Auth Hook Refactor (Enhancement 8.5)
+
+- `src/hooks/useAuth.tsx` reduced from 363 to ~250 lines by delegating to `authSessionManager`
+
+**Files Created**: `src/services/authSessionManager.ts`, `src/tests/regulatory.test.ts`, `src/tests/creditScoring.test.ts`, `e2e/accessibility.e2e.ts`, `.husky/pre-commit`
+**Files Modified**: `src/hooks/useApiQueries.ts`, `src/hooks/useAuth.tsx`, `package.json`, `docs/ENHANCEMENTS.md`
 
 ---
 
@@ -27,6 +69,7 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 ### Fixed
 
 #### Client Dashboard Sidebar Navigation
+
 - **Problem**: Clicking Documents, Self Service, and Profile links in the client dashboard sidebar did not navigate to their respective pages
 - **Root Cause**: Navigation handlers were working correctly but explicit handling was added for clarity
 - **Fix**: Simplified `handleTabChange` function in `Dashboard.tsx` with clear routing logic
@@ -51,6 +94,7 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 ### Fixed
 
 #### E2E Tests for Approval Button Conditional Rendering
+
 - **Problem**: Tests assumed approve/reject buttons are always visible, but Issue 3 fix correctly hides them for processed requests
 - **Fix**: Updated tests to handle both pending (buttons visible) and processed (buttons hidden) states
 
@@ -62,6 +106,7 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 | `approval-rpc-race-condition.e2e.ts` | Uses service role key for setup, skips gracefully when unavailable |
 
 #### Component Enhancement
+
 - Added `data-testid="approvals-processed-state"` to `ApprovalManagementDashboard.tsx` for test detection of processed state
 
 ### Test Results
@@ -80,23 +125,27 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Fixed
 
 #### Critical: Disbursement Status Mismatch
+
 - **Root Cause**: `create_disbursement_on_approval` RPC created disbursements with `pending` status, but `initiate_ips_disbursement` expected `approved` status
 - **Fix**: Updated RPC to create disbursements with `approved` status
 - **Migration**: `20260110180000_fix_create_disbursement_on_approval_status.sql`
 - **Impact**: IPS disbursements now work immediately after loan approval
 
 #### LoanReviewPanel Mock Data
+
 - Replaced hardcoded mock data with real Supabase API calls
 - Added `status` prop for conditional button rendering
 - Approve/Reject buttons now only shown for pending loans
 - Added loading and error states
 
 #### Loan360View Interface
+
 - Added `approved_at` field to `LoanDetails` interface for accurate timeline display
 
 ### Added
 
 #### Canonical Type Definitions
+
 - Created `src/types/loan.ts` with unified loan type definitions:
   - `LoanStatus`, `DisbursementStatus`, `PaymentStatus` type unions
   - `LoanRecord`, `LoanApplication`, `LoanDetailsForReview`, `Loan360Details`
@@ -234,6 +283,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### Mobile Application v2.7.1 - Production Optimizations
+
 - **Query Optimization** - Replaced `select('*')` with specific column selections
   - Updated loanService.ts, paymentService.ts, approvalService.ts
   - Reduced network payload size significantly
@@ -262,12 +312,14 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Improved theme consistency in PaymentScreen and DocumentUploadScreen
 
 #### IPS Payment Method in Client Payment Modal
+
 - **PaymentModal.tsx** - Added "IPP Instant" as primary payment method option
   - Green-highlighted button for instant payments
   - Info panel showing benefits (no fees, real-time, secure)
   - 3-column grid layout for 5 payment methods
 
 #### IPS Transactions Reconciliation Dashboard
+
 - **IPSTransactionsViewer.tsx** - New admin reconciliation component
   - Transaction statistics (total, success, pending, failed, deemed)
   - Filter by status and transaction type
@@ -277,17 +329,20 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Fixed
 
 #### IPS Adapter Edge Function
+
 - Fixed 404 error for `/validate-vpa` endpoint
 - Updated URL path extraction to handle `/functions/v1/` prefix correctly
 - Fixed `ipsService.ts` to use absolute Supabase URL instead of relative path
 
 #### Database Constraints
+
 - Added `'ips'` to `payment_method_valid` check constraint on `payments` table
 - Allowed values now: `bank_transfer`, `mobile_money`, `cash`, `debit_order`, `ips`
 
 ### Documentation
 
 #### Mobile App Documentation Updates
+
 - **namlend-mobile/docs/context.md** - Updated to v2.7.1
   - Added P1/P2 improvements section
   - Updated architecture with new components
@@ -304,6 +359,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Updated metrics and achievements
 
 #### Main Project Documentation Updates
+
 - **docs/context.md** - Updated to v3.3.0
   - Added Phase 6: IPP Integration & Mobile Optimization
   - Updated project structure with mobile app
@@ -321,6 +377,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### IPP Onboarding System
+
 - **Database Schema** (migration: `20251227100000_ipp_onboarding_system`)
   - `ips_device_bindings` - Device binding records for mobile registration
   - `ips_onboarding` - Customer onboarding state machine (15 states)
@@ -380,6 +437,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Fixed
 
 #### Authentication
+
 - **Auth Race Condition Fix** (`src/hooks/useAuth.tsx`)
   - Fixed page refresh causing momentary sign-out/redirect flash
   - Added `initialCheckComplete` ref to track session initialization state
@@ -387,6 +445,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Rely on `getSession()` for initial state, `onAuthStateChange` for subsequent changes
 
 #### User Management Database Integration
+
 - **RPC Type Mismatch Fix** (`get_profiles_with_roles_admin`)
   - Fixed `varchar(255)` to `text` type casting for email field
   - Migration: `fix_get_profiles_with_roles_admin_type_cast`
@@ -404,12 +463,14 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Changed
 
 #### User Import Wizard (`UserImportWizard.tsx`)
+
 - Converted from modal overlay to inline tab content
 - Cancel/X buttons now navigate back to "All Users" tab
 - Added missing `Loader2` import
 - Fixed app freeze issue when closing wizard
 
 #### Role Management (`RoleManagement.tsx`)
+
 - **View Users Dialog** - Replaced `window.alert()` popup with proper card-based dialog
   - Card layout for each user with avatar initials
   - Displays name, email, phone, and account status
@@ -418,10 +479,12 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Consistent with app design system
 
 ### Database Migrations
+
 - `fix_get_profiles_with_roles_admin_type_cast` - Cast varchar to text in RPC
 - `fix_profiles_with_roles_view` - Add aggregated role columns to view
 
 ### Technical Notes
+
 - All User Management features now fully functional end-to-end
 - Auth flow stable on page refresh
 - TypeScript compiles without errors
@@ -434,6 +497,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### Admin Dashboard Configuration Panels
+
 - **TigerBeetleConfig** (`src/pages/AdminDashboard/components/Settings/TigerBeetleConfig.tsx`)
   - Connection settings (cluster ID, addresses, replica count)
   - Outbox processing configuration (batch size, intervals, retry policies)
@@ -455,6 +519,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Seeded default configurations for TigerBeetle, Settlement, Reconciliation, and IPS
 
 #### User Management Enhancements
+
 - **Real-time Stats Cards** - Dashboard stats now fetch live data from database
   - Total users from `profiles` table
   - Active users (verified) count
@@ -487,9 +552,11 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - **UserManagementDashboard** - Header buttons fully functional
 
 ### Database Migrations
+
 - `20251222050000_system_configuration.sql` - System configuration table with RLS and RPCs
 
 ### Technical Notes
+
 - All User Management components now use real database connections
 - Configuration panels support loading, saving, resetting, and testing
 - Toast notifications provide user feedback for all operations
@@ -502,6 +569,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### IPS/IPP Settlement Processing Pipeline
+
 - **Settlement Processing RPCs** - Complete pipeline for settlement runs:
   - `create_settlement_run()` - Creates settlement runs with auto-generated IDs
   - `ingest_ips_transactions_for_settlement()` - Ingests IPS disbursements into obligations
@@ -541,6 +609,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - NTSL and Raw Data reports with acknowledgements
 
 ### Database Migrations
+
 - `20251214060000_settlement_processing.sql` - Settlement processing RPCs
 - `20251214061000_seed_settlement_demo_data.sql` - Demo data seeding
 
@@ -551,6 +620,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### Dark Mode System
+
 - **ThemeProvider** (`src/components/ThemeProvider.tsx`) - Context-based theme management with system preference detection
 - **ModeToggle** (`src/components/ModeToggle.tsx`) - User-facing theme switcher component
 - Theme preference persistence in localStorage
@@ -558,6 +628,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Changed
 
 #### Comprehensive Dark Mode Refactoring
+
 - **124 files updated** for full dark mode compatibility
 - Replaced all hardcoded gray colors with semantic tokens (`bg-muted`, `text-muted-foreground`, `bg-background`)
 - Added `dark:` variants for all colored badges (success, warning, error, info)
@@ -570,10 +641,12 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - Updated core pages (Dashboard, Auth, NotFound, ErrorBoundary)
 
 ### Fixed
+
 - `SelfServicePortal.tsx` - Fixed corrupted JSX structure (missing Tabs/TabsList)
 - `DisbursementDetailsModal.tsx` - Removed duplicate closing parenthesis syntax error
 
 ### Documentation
+
 - Updated `DESIGN_SYSTEM.md` to v2.2.0 with Dark Mode Implementation section
 - Updated `UI_UX_AUDIT_REPORT.md` with completion status
 
@@ -584,6 +657,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### IPS (Instant Payment System) Integration
+
 - **IPSPaymentModal** - Multi-step payment modal (amount → VPA → confirm → process → result)
 - **VPAInput** - VPA input component with format validation and server-side verification
 - **IPSHistoryList** - Transaction history display for loans
@@ -592,27 +666,32 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - **LoanDetails** page (`/loans/:id`) - Detailed loan view with IPS payment option
 
 #### IPS Database Schema
+
 - `ips_transactions` table - Stores all IPS payment transactions
 - `ips_vpa_registry` table - User VPA (Virtual Payment Address) records
 - `ips_api_logs` table - IPS API call logging for debugging/audit
 
 #### IPS RPC Functions
+
 - `initiate_ips_repayment` - Initiate loan repayment via IPS
 - `initiate_ips_disbursement` - Initiate loan disbursement via IPS
 - `get_ips_transaction_status` - Check transaction status
 
 #### IPS Edge Function
+
 - `ips-adapter` - Mock IPS API adapter for development/testing
   - POST `/pay` - Process payments
   - POST `/validate-vpa` - Validate VPA addresses
   - POST `/check-status` - Check transaction status
 
 #### IPS React Query Hooks
+
 - `useIPSPayment` - Initiates IPS payments/disbursements
 - `useUserVPAs` - Manages user VPA records
 - `useIPSTransactionStatus` - Polls transaction status
 
 #### Settlement System (Admin)
+
 - 13 settlement tables for BON reconciliation
 - `ReconciliationDashboard` - Settlement run monitoring
 - `Pacs009Viewer` - MNSB pacs.009 file viewer
@@ -620,24 +699,28 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - `AdjustmentsViewer` - Dispute/chargeback management
 
 #### E2E Test Coverage
+
 - `ips-payment-flow.e2e.ts` - Full IPS payment flow tests
 - `ips-adapter.e2e.ts` - Edge function API tests
 - `ips-rpc.e2e.ts` - RPC function tests
 - Added `data-testid` attributes to all IPS components
 
 #### Documentation
+
 - `IPS_IMPLEMENTATION.md` - Complete implementation guide
 - `IPS_TESTING.md` - Testing guide
 - `IPS_PRODUCTION_CHECKLIST.md` - Production readiness checklist
 - Updated `IPP_INTEGRATION.md` with technical specifications
 
 ### Changed
+
 - Payment page now includes IPS as primary payment option
 - Updated FUNCTIONALITY_MAP with IPS status
 - Updated SERVICES.md with IPS service documentation
 - Updated ARCHITECTURE.md with IPS components
 
 ### Technical Notes
+
 - IPS operates in **Mock Mode** by default for development
 - Set `MOCK_MODE=false` for production IPS integration
 - Requires BON PSP registration and certificates for production
@@ -649,12 +732,14 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Added
 
 #### Payment System Enhancements
+
 - **Settled Loans Tab** in Payment Management Dashboard for admin visibility
 - **Settled Loans Card** in Payment Overview showing count and total collected
 - **SettledLoansList Component** with search, filtering, and client details
 - Settlement detection and automatic loan status transitions
 
 #### Schema Alignment & Constants
+
 - `/src/constants/loanStatuses.ts` - Centralized loan/payment status constants
   - `LOAN_STATUS`, `PAYMENT_STATUS`, `SCHEDULE_STATUS`, `DISBURSEMENT_STATUS`
   - `PAYABLE_STATUSES`, `ACTIVE_LOAN_STATUSES`, `CLOSED_LOAN_STATUSES`
@@ -666,6 +751,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - Common column name corrections mapping
 
 #### New Components
+
 - `NotificationCenter` - In-app notification bell with real-time updates
 - `CreditScoreDisplay` - Visual credit score indicator
 - `SelfServicePortal` - Client self-service features
@@ -674,6 +760,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - `LoanStatusTimeline` - Visual loan status progression
 
 #### New Services
+
 - `creditScoring.ts` - AI-powered credit scoring (300-850 scale)
 - `notificationService.ts` - Multi-channel notification delivery
 - `paymentGateway.ts` - Payment provider integrations (MTC MoMo, TN Mobile, PayToday)
@@ -681,12 +768,14 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - `whatsappGateway.ts` - Meta WhatsApp Business API integration
 
 #### Edge Functions
+
 - `payment-webhook` - Payment provider webhook handler
 - `scheduled-tasks` - Cron job for reminders and overdue processing
 - `send-sms` - Africa's Talking SMS delivery
 - `send-whatsapp` - WhatsApp message delivery
 
 #### Admin Dashboard Features
+
 - `BatchOperations` - Bulk loan operations
 - `CollectionsManagement` - Collections queue and activities
 - `Loan360View` - Comprehensive loan detail view
@@ -695,6 +784,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Fixed
 
 #### Database Schema Alignment
+
 - Fixed `process_loan_payment` RPC column references:
   - `performed_by` → `user_id` (audit_logs)
   - `reason` → `transition_reason` (state_transitions)
@@ -705,6 +795,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - Fixed `SettledLoansList.tsx` - FK join → separate queries
 
 #### Database Improvements
+
 - Added missing foreign key constraints:
   - `loans.user_id` → `auth.users.id`
   - `profiles.user_id` → `auth.users.id`
@@ -716,11 +807,13 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ### Changed
 
 #### Performance Optimizations
+
 - `Dashboard.tsx` - Parallel queries with `Promise.all()` (~60% faster)
 - `usePaymentMetrics.ts` - Parallel queries with `Promise.all()`
 - Dashboard load time reduced from 2300ms+ to ~800ms
 
 #### Documentation
+
 - Reorganized `/docs` with new structure
 - Moved legacy docs to `/docs_old`
 - Added comprehensive documentation files:
@@ -735,6 +828,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
   - `TESTING.md`
 
 ### Database Migrations
+
 - `20251205_create_notification_system.sql`
 - `20251206_create_collections_system.sql`
 - `20251206_front_office_integrations.sql`
@@ -745,6 +839,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ## [2.5.0] - 2025-12-09
 
 ### Added
+
 - Payment processing system with settlement detection
 - Real-time balance calculation via `loan_balance_summary` view
 - Payment progress tracking with percentages
@@ -752,6 +847,7 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 - Settlement celebration UI
 
 ### Fixed
+
 - Loan application submission flow
 - Approval workflow atomic transactions
 - Disbursement lifecycle management
@@ -761,11 +857,13 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 ## [2.4.2] - 2025-11-30
 
 ### Added
+
 - User management system
 - Role-based access control (RBAC)
 - Audit logging system
 
 ### Fixed
+
 - Authentication flow improvements
 - Dashboard data fetching
 
@@ -781,7 +879,8 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 
 ## Environment Variables
 
-### Client-side (VITE_)
+### Client-side (VITE\_)
+
 ```
 VITE_SUPABASE_URL=https://puahejtaskncpazjyxqp.supabase.co
 VITE_SUPABASE_ANON_KEY=<public_anon_key>
@@ -791,6 +890,7 @@ VITE_ALLOW_LOCAL_ADMIN=false
 ```
 
 ### Server-side (Edge Functions)
+
 ```
 AFRICASTALKING_API_KEY=<api_key>
 AFRICASTALKING_USERNAME=<username>

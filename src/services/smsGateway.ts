@@ -12,12 +12,12 @@ const SMS_CONFIG = {
   username: import.meta.env.VITE_AFRICASTALKING_USERNAME || 'sandbox',
   senderId: import.meta.env.VITE_SMS_SENDER_ID || 'NAMLEND',
   apiUrl: 'https://api.africastalking.com/version1/messaging',
-  sandboxUrl: 'https://api.sandbox.africastalking.com/version1/messaging'
+  sandboxUrl: 'https://api.sandbox.africastalking.com/version1/messaging',
 };
 
 export type SMSStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'rejected';
 
-export type SMSCategory = 
+export type SMSCategory =
   | 'loan_notification'
   | 'payment_reminder'
   | 'payment_confirmation'
@@ -60,75 +60,87 @@ const SMS_TEMPLATES: Record<string, SMSTemplate> = {
   LOAN_SUBMITTED: {
     code: 'LOAN_SUBMITTED',
     category: 'loan_notification',
-    template: 'Hi {firstName}, your loan application for {amount} has been submitted. Ref: {reference}. We\'ll review it within 24hrs. - NamLend',
-    variables: ['firstName', 'amount', 'reference']
+    template:
+      "Hi {firstName}, your loan application for {amount} has been submitted. Ref: {reference}. We'll review it within 24hrs. - NamLend",
+    variables: ['firstName', 'amount', 'reference'],
   },
   LOAN_APPROVED: {
     code: 'LOAN_APPROVED',
     category: 'loan_notification',
-    template: 'Great news {firstName}! Your loan of {amount} has been approved. Funds will be disbursed within 24hrs. Ref: {reference} - NamLend',
-    variables: ['firstName', 'amount', 'reference']
+    template:
+      'Great news {firstName}! Your loan of {amount} has been approved. Funds will be disbursed within 24hrs. Ref: {reference} - NamLend',
+    variables: ['firstName', 'amount', 'reference'],
   },
   LOAN_REJECTED: {
     code: 'LOAN_REJECTED',
     category: 'loan_notification',
-    template: 'Hi {firstName}, unfortunately your loan application was not approved. Please contact us for more info. Ref: {reference} - NamLend',
-    variables: ['firstName', 'reference']
+    template:
+      'Hi {firstName}, unfortunately your loan application was not approved. Please contact us for more info. Ref: {reference} - NamLend',
+    variables: ['firstName', 'reference'],
   },
   LOAN_DISBURSED: {
     code: 'LOAN_DISBURSED',
     category: 'loan_notification',
-    template: 'Hi {firstName}, {amount} has been disbursed to your account. First payment of {monthlyPayment} due on {dueDate}. - NamLend',
-    variables: ['firstName', 'amount', 'monthlyPayment', 'dueDate']
+    template:
+      'Hi {firstName}, {amount} has been disbursed to your account. First payment of {monthlyPayment} due on {dueDate}. - NamLend',
+    variables: ['firstName', 'amount', 'monthlyPayment', 'dueDate'],
   },
   PAYMENT_REMINDER_7_DAYS: {
     code: 'PAYMENT_REMINDER_7_DAYS',
     category: 'payment_reminder',
-    template: 'Reminder: Your loan payment of {amount} is due in 7 days ({dueDate}). Ref: {reference}. Pay via *140# or bank transfer. - NamLend',
-    variables: ['amount', 'dueDate', 'reference']
+    template:
+      'Reminder: Your loan payment of {amount} is due in 7 days ({dueDate}). Ref: {reference}. Pay via *140# or bank transfer. - NamLend',
+    variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_REMINDER_3_DAYS: {
     code: 'PAYMENT_REMINDER_3_DAYS',
     category: 'payment_reminder',
-    template: 'Reminder: Your loan payment of {amount} is due in 3 days ({dueDate}). Avoid late fees - pay now! Ref: {reference} - NamLend',
-    variables: ['amount', 'dueDate', 'reference']
+    template:
+      'Reminder: Your loan payment of {amount} is due in 3 days ({dueDate}). Avoid late fees - pay now! Ref: {reference} - NamLend',
+    variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_REMINDER_1_DAY: {
     code: 'PAYMENT_REMINDER_1_DAY',
     category: 'payment_reminder',
-    template: 'URGENT: Your loan payment of {amount} is due tomorrow ({dueDate}). Pay now to avoid late fees. Ref: {reference} - NamLend',
-    variables: ['amount', 'dueDate', 'reference']
+    template:
+      'URGENT: Your loan payment of {amount} is due tomorrow ({dueDate}). Pay now to avoid late fees. Ref: {reference} - NamLend',
+    variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_OVERDUE: {
     code: 'PAYMENT_OVERDUE',
     category: 'collections',
-    template: 'OVERDUE: Your payment of {amount} was due on {dueDate}. Please pay immediately to avoid additional charges. Call us: 061-123-4567 - NamLend',
-    variables: ['amount', 'dueDate']
+    template:
+      'OVERDUE: Your payment of {amount} was due on {dueDate}. Please pay immediately to avoid additional charges. Call us: 061-123-4567 - NamLend',
+    variables: ['amount', 'dueDate'],
   },
   PAYMENT_RECEIVED: {
     code: 'PAYMENT_RECEIVED',
     category: 'payment_confirmation',
-    template: 'Payment received! {amount} paid on {date}. Remaining balance: {balance}. Ref: {reference}. Thank you! - NamLend',
-    variables: ['amount', 'date', 'balance', 'reference']
+    template:
+      'Payment received! {amount} paid on {date}. Remaining balance: {balance}. Ref: {reference}. Thank you! - NamLend',
+    variables: ['amount', 'date', 'balance', 'reference'],
   },
   LOAN_COMPLETED: {
     code: 'LOAN_COMPLETED',
     category: 'loan_notification',
-    template: 'Congratulations {firstName}! Your loan has been fully repaid. Thank you for choosing NamLend. Apply again anytime! - NamLend',
-    variables: ['firstName']
+    template:
+      'Congratulations {firstName}! Your loan has been fully repaid. Thank you for choosing NamLend. Apply again anytime! - NamLend',
+    variables: ['firstName'],
   },
   OTP_VERIFICATION: {
     code: 'OTP_VERIFICATION',
     category: 'otp',
-    template: 'Your NamLend verification code is: {otp}. Valid for 10 minutes. Never share this code.',
-    variables: ['otp']
+    template:
+      'Your NamLend verification code is: {otp}. Valid for 10 minutes. Never share this code.',
+    variables: ['otp'],
   },
   PTP_REMINDER: {
     code: 'PTP_REMINDER',
     category: 'collections',
-    template: 'Hi {firstName}, reminder: You promised to pay {amount} today ({date}). Please fulfill your commitment. Ref: {reference} - NamLend',
-    variables: ['firstName', 'amount', 'date', 'reference']
-  }
+    template:
+      'Hi {firstName}, reminder: You promised to pay {amount} today ({date}). Please fulfill your commitment. Ref: {reference} - NamLend',
+    variables: ['firstName', 'amount', 'date', 'reference'],
+  },
 };
 
 /**
@@ -137,7 +149,7 @@ const SMS_TEMPLATES: Record<string, SMSTemplate> = {
 function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters
   let cleaned = phone.replace(/\D/g, '');
-  
+
   // Handle Namibian numbers
   if (cleaned.startsWith('0')) {
     cleaned = '264' + cleaned.substring(1);
@@ -147,7 +159,7 @@ function formatPhoneNumber(phone: string): string {
     // Assume missing country code
     cleaned = '264' + cleaned;
   }
-  
+
   return '+' + cleaned;
 }
 
@@ -180,11 +192,11 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
   try {
     // Normalize recipients
     const recipients = Array.isArray(request.to) ? request.to : [request.to];
-    
+
     // Validate all phone numbers
     const validRecipients: string[] = [];
     const invalidRecipients: string[] = [];
-    
+
     for (const phone of recipients) {
       if (isValidPhoneNumber(phone)) {
         validRecipients.push(formatPhoneNumber(phone));
@@ -192,21 +204,21 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
         invalidRecipients.push(phone);
       }
     }
-    
+
     if (validRecipients.length === 0) {
       return {
         success: false,
         status: 'failed',
-        message: 'No valid phone numbers provided'
+        message: 'No valid phone numbers provided',
       };
     }
-    
+
     // Check message length (SMS limit is 160 chars, or 153 for concatenated)
     const messageLength = request.message.length;
     const segments = Math.ceil(messageLength / 153);
-    
+
     // Log SMS to database (would be sent to API in production)
-    const smsRecords = validRecipients.map(phone => ({
+    const smsRecords = validRecipients.map((phone) => ({
       recipient: phone,
       message: request.message,
       category: request.category,
@@ -216,22 +228,21 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
       segments,
       metadata: {
         ...request.metadata,
-        invalid_numbers: invalidRecipients.length > 0 ? invalidRecipients : undefined
+        invalid_numbers: invalidRecipients.length > 0 ? invalidRecipients : undefined,
       },
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     }));
-    
+
     // In production: Call Africa's Talking API
     // const response = await fetch(SMS_CONFIG.apiUrl, { ... });
-    
+
     // Log to communication_logs for audit trail
-    const messageIds = validRecipients.map(() => 
-      `MSG-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const messageIds = validRecipients.map(
+      () => `MSG-${Date.now()}-${Math.random().toString(36).substring(7)}`
     );
-    
-    await supabase
-      .from('communication_logs')
-      .insert(validRecipients.map((phone, idx) => ({
+
+    await supabase.from('communication_logs').insert(
+      validRecipients.map((phone, idx) => ({
         user_id: request.userId,
         loan_id: request.loanId,
         channel: 'sms',
@@ -239,19 +250,21 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
         recipient: phone,
         sender: SMS_CONFIG.senderId,
         content: request.message,
-        template_code: (request.metadata as any)?.templateCode,
+        template_code: (request.metadata as Record<string, unknown> | undefined)?.templateCode as
+          | string
+          | undefined,
         status: 'sent',
         provider: 'africastalking',
         provider_message_id: messageIds[idx],
         segments,
         sent_at: new Date().toISOString(),
-        metadata: request.metadata
-      })));
-    
+        metadata: request.metadata,
+      }))
+    );
+
     // Also queue for async processing
-    await supabase
-      .from('notification_queue')
-      .insert(smsRecords.map(rec => ({
+    await supabase.from('notification_queue').insert(
+      smsRecords.map((rec) => ({
         user_id: rec.user_id,
         channel: 'sms',
         recipient: rec.recipient,
@@ -260,19 +273,20 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
         status: 'sent',
         scheduled_at: new Date().toISOString(),
         sent_at: new Date().toISOString(),
-        metadata: rec.metadata
-      })));
-    
+        metadata: rec.metadata,
+      }))
+    );
+
     return {
       success: true,
       messageId: `SMS-${Date.now()}`,
       status: 'queued',
       message: `SMS queued for ${validRecipients.length} recipient(s)`,
-      recipients: validRecipients.map(phone => ({
+      recipients: validRecipients.map((phone) => ({
         number: phone,
         status: 'queued',
-        messageId: `MSG-${Date.now()}-${Math.random().toString(36).substring(7)}`
-      }))
+        messageId: `MSG-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      })),
     };
   } catch (error: unknown) {
     console.error('SMS send error:', error);
@@ -280,7 +294,7 @@ export async function sendSMS(request: SMSRequest): Promise<SMSResponse> {
     return {
       success: false,
       status: 'failed',
-      message
+      message,
     };
   }
 }
@@ -299,27 +313,27 @@ export async function sendTemplateSMS(
   }
 ): Promise<SMSResponse> {
   const template = SMS_TEMPLATES[templateCode];
-  
+
   if (!template) {
     return {
       success: false,
       status: 'failed',
-      message: `Template not found: ${templateCode}`
+      message: `Template not found: ${templateCode}`,
     };
   }
-  
+
   // Check all required variables are provided
-  const missingVars = template.variables.filter(v => !variables[v]);
+  const missingVars = template.variables.filter((v) => !variables[v]);
   if (missingVars.length > 0) {
     return {
       success: false,
       status: 'failed',
-      message: `Missing template variables: ${missingVars.join(', ')}`
+      message: `Missing template variables: ${missingVars.join(', ')}`,
     };
   }
-  
+
   const message = renderTemplate(template.template, variables);
-  
+
   return sendSMS({
     to,
     message,
@@ -328,8 +342,8 @@ export async function sendTemplateSMS(
     loanId: options?.loanId,
     metadata: {
       ...options?.metadata,
-      templateCode
-    }
+      templateCode,
+    },
   });
 }
 
@@ -353,16 +367,16 @@ export async function sendBulkSMS(
   const results: SMSResponse[] = [];
   let sent = 0;
   let failed = 0;
-  
+
   for (const recipient of recipients) {
     const result = await sendSMS({
       to: recipient.phone,
       message: recipient.message,
       category,
       userId: options?.userId,
-      metadata: { batchId: options?.batchId }
+      metadata: { batchId: options?.batchId },
     });
-    
+
     results.push(result);
     if (result.success) {
       sent++;
@@ -370,13 +384,13 @@ export async function sendBulkSMS(
       failed++;
     }
   }
-  
+
   return {
     success: failed === 0,
     total: recipients.length,
     sent,
     failed,
-    results
+    results,
   };
 }
 
@@ -398,15 +412,16 @@ export async function sendOTP(
     // The OTP should be hashed before storage in production
     try {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
-      await supabase
-        .from('otp_verifications')
-        .upsert({
+      await supabase.from('otp_verifications').upsert(
+        {
           phone: phone,
           user_id: userId,
           otp_hash: otp, // In production: use bcrypt or similar to hash
           expires_at: expiresAt,
-          verified: false
-        }, { onConflict: 'phone' });
+          verified: false,
+        },
+        { onConflict: 'phone' }
+      );
     } catch (error) {
       // Log but don't fail - OTP was already sent
       console.error('Failed to store OTP:', error);
@@ -415,13 +430,13 @@ export async function sendOTP(
     return {
       success: true,
       // SECURITY: Never return OTP to client
-      message: 'OTP sent successfully'
+      message: 'OTP sent successfully',
     };
   }
 
   return {
     success: false,
-    message: result.message
+    message: result.message,
   };
 }
 
@@ -434,7 +449,7 @@ export async function getSMSStatus(messageId: string): Promise<{
 }> {
   // In production, query Africa's Talking API for delivery status
   return {
-    status: 'delivered'
+    status: 'delivered',
   };
 }
 
@@ -461,5 +476,5 @@ export default {
   getTemplates,
   getTemplate,
   formatPhoneNumber,
-  isValidPhoneNumber
+  isValidPhoneNumber,
 };

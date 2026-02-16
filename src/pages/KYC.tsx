@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +14,15 @@ import Header from '@/components/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 
+const documents = [
+  { type: 'id_card', translationKey: 'documents.idCard', required: true },
+  { type: 'proof_income', translationKey: 'documents.proofIncome', required: true },
+  { type: 'bank_statement', translationKey: 'documents.bankStatement', required: false },
+  { type: 'employment_letter', translationKey: 'documents.employmentLetter', required: false },
+] as const;
+
 export default function KYC() {
+  const { t } = useTranslation('kyc');
   const { user } = useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
@@ -59,12 +68,14 @@ export default function KYC() {
       // Create KYC document record
       const { data: kycDoc, error: dbError } = await supabase
         .from('kyc_documents')
-        .insert([{
-          user_id: user.id,
-          document_type: docType,
-          file_path: fileName,
-          status: 'pending'
-        }])
+        .insert([
+          {
+            user_id: user.id,
+            document_type: docType,
+            file_path: fileName,
+            status: 'pending',
+          },
+        ])
         .select()
         .single();
 
@@ -89,7 +100,7 @@ export default function KYC() {
           .update({
             is_submitted: true,
             submission_date: new Date().toISOString(),
-            file_path: fileName
+            file_path: fileName,
           })
           .eq('id', existingReq.id);
         if (reqUpdateError) {
@@ -98,15 +109,17 @@ export default function KYC() {
       } else {
         const { error: reqInsertError } = await supabase
           .from('document_verification_requirements')
-          .insert([{
-            user_id: user.id,
-            document_type: canonicalDocType,
-            is_required: false,
-            is_submitted: true,
-            is_verified: false,
-            submission_date: new Date().toISOString(),
-            file_path: fileName
-          }]);
+          .insert([
+            {
+              user_id: user.id,
+              document_type: canonicalDocType,
+              is_required: false,
+              is_submitted: true,
+              is_verified: false,
+              submission_date: new Date().toISOString(),
+              file_path: fileName,
+            },
+          ]);
         if (reqInsertError) {
           console.warn('Failed to insert document requirement row:', reqInsertError.message);
         }
@@ -118,7 +131,7 @@ export default function KYC() {
         file_path: fileName,
         file_size: file.size,
         file_name: file.name,
-        uploaded_at: new Date().toISOString()
+        uploaded_at: new Date().toISOString(),
       };
 
       const result = await submitApprovalRequest({
@@ -127,9 +140,9 @@ export default function KYC() {
         request_data: {
           ...kycDocumentData,
           reference_id: kycDoc.id,
-          reference_table: 'kyc_documents'
+          reference_table: 'kyc_documents',
         },
-        priority: 'normal'
+        priority: 'normal',
       });
 
       if (!result.success) {
@@ -139,55 +152,24 @@ export default function KYC() {
 
       setUploadedDocs([...uploadedDocs, docType]);
       toast({
-        title: "Document Uploaded",
-        description: `Your ${docType} has been uploaded and submitted for verification.`
+        title: t('toast.uploadedTitle'),
+        description: t('toast.uploadedDescription', { docType }),
       });
     } catch (error) {
       toast({
-        title: "Upload Failed",
-        description: "Failed to upload document. Please try again.",
-        variant: "destructive"
+        title: t('toast.failedTitle'),
+        description: t('toast.failedDescription'),
+        variant: 'destructive',
       });
     } finally {
       setUploading(false);
     }
   };
 
-  const documents = [
-    { 
-      type: 'id_card', 
-      label: 'National ID Card', 
-      required: true,
-      description: 'Upload a clear photo of your Namibian ID card. Both front and back sides must be visible and readable.',
-      instructions: 'Ensure all text is legible, corners are visible, and there is no glare or shadows.'
-    },
-    { 
-      type: 'proof_income', 
-      label: 'Proof of Income', 
-      required: true,
-      description: 'Upload your latest payslip (not older than 3 months) or employment contract.',
-      instructions: 'Document must show your full name, employer details, and current salary amount.'
-    },
-    { 
-      type: 'bank_statement', 
-      label: 'Bank Statement', 
-      required: false,
-      description: 'Upload your most recent bank statement (last 3 months) from any Namibian bank.',
-      instructions: 'Statement must show your name, account details, and transaction history.'
-    },
-    { 
-      type: 'employment_letter', 
-      label: 'Employment Letter', 
-      required: false,
-      description: 'Upload an official letter from your employer confirming your employment status.',
-      instructions: 'Letter must be on company letterhead, signed, and dated within the last 30 days.'
-    }
-  ];
-
   return (
-    <div className={cn("min-h-screen transition-colors duration-500", styles.background)}>
+    <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
         <ThemedButton
           variant="ghost"
@@ -195,48 +177,42 @@ export default function KYC() {
           className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          {t('backToDashboard')}
         </ThemedButton>
-        
+
         <div className="mb-8">
-          <h1 className={cn("text-3xl font-bold mb-2", styles.textClass)}>
-            Upload KYC Documents
-          </h1>
-          <p className="text-muted-foreground">
-            Complete your verification by uploading the required documents
-          </p>
+          <h1 className={cn('text-3xl font-bold mb-2', styles.textClass)}>{t('title')}</h1>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
 
         <div className="space-y-6">
           {documents.map((doc) => (
             <ThemedCard key={doc.type}>
               <div className="flex items-center justify-between mb-2">
-                <span className={cn("flex items-center gap-2 font-bold", styles.textClass)}>
+                <span className={cn('flex items-center gap-2 font-bold', styles.textClass)}>
                   <FileText className="h-5 w-5" />
-                  {doc.label}
+                  {t(`${doc.translationKey}.label`)}
                   {doc.required && <span className="text-red-500">*</span>}
                 </span>
-                {uploadedDocs.includes(doc.type) && (
-                  <Check className="h-5 w-5 text-green-600" />
-                )}
+                {uploadedDocs.includes(doc.type) && <Check className="h-5 w-5 text-green-600" />}
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                {doc.description}
+                {t(`${doc.translationKey}.description`)}
               </p>
-              
+
               <div className="space-y-4">
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-1">
-                    Upload Instructions:
+                    {t('uploadInstructions')}
                   </h4>
                   <p className="text-xs text-blue-600 dark:text-blue-400">
-                    {doc.instructions}
+                    {t(`${doc.translationKey}.instructions`)}
                   </p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor={doc.type}>
-                    Choose file {doc.required && <span className="text-red-500">*</span>}
+                    {t('chooseFile')} {doc.required && <span className="text-red-500">*</span>}
                   </Label>
                   <ThemedInput
                     id={doc.type}
@@ -245,16 +221,14 @@ export default function KYC() {
                     onChange={(e) => handleFileUpload(e, doc.type)}
                     disabled={uploading || uploadedDocs.includes(doc.type)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Accepted formats: PDF, JPG, PNG (Max 5MB)
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('acceptedFormats')}</p>
                 </div>
-                
+
                 {uploadedDocs.includes(doc.type) && (
                   <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
                     <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                     <span className="text-sm text-green-700 dark:text-green-300">
-                      Document uploaded successfully
+                      {t('uploadedSuccess')}
                     </span>
                   </div>
                 )}
@@ -264,12 +238,12 @@ export default function KYC() {
         </div>
 
         <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <h3 className="font-medium mb-2 text-foreground">Document Requirements:</h3>
+          <h3 className="font-medium mb-2 text-foreground">{t('requirements.title')}</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Documents must be clear and readable</li>
-            <li>• All information must be visible</li>
-            <li>• Documents should be recent (within 3 months)</li>
-            <li>• Verification typically takes 24-48 hours</li>
+            <li>• {t('requirements.clear')}</li>
+            <li>• {t('requirements.visible')}</li>
+            <li>• {t('requirements.recent')}</li>
+            <li>• {t('requirements.verification')}</li>
           </ul>
         </div>
       </main>

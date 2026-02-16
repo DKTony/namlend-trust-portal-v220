@@ -12,7 +12,7 @@ import { ensureAdminReady } from './helpers/admin';
 
 // Using shared helper login()
 
-async function assertSignedOut(page) {
+async function assertSignedOut(page: import('@playwright/test').Page) {
   // After sign out, we should be on /auth
   await page.waitForURL(/\/auth/, { timeout: 20000 });
   await page.waitForLoadState('domcontentloaded');
@@ -46,7 +46,8 @@ test.describe('Sign Out flows', () => {
 
   test('Admin sidebar sign out', async ({ page }) => {
     const role = await login(page, true);
-    if (role !== 'admin') test.skip(true, 'Admin credentials not available; skipping admin sign-out');
+    if (role !== 'admin')
+      test.skip(true, 'Admin credentials not available; skipping admin sign-out');
     await page.setViewportSize({ width: 1200, height: 800 });
     await ensureAdminReady(page);
     await page.getByTestId('sidebar-trigger').click();

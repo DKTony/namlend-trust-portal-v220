@@ -19,12 +19,12 @@ export interface AuditLog {
   action: string;
   entity_type: string;
   entity_id: string;
-  old_state?: Record<string, any> | null;
-  new_state?: Record<string, any> | null;
+  old_state?: Record<string, unknown> | null;
+  new_state?: Record<string, unknown> | null;
   ip_address?: string | null;
   user_agent?: string | null;
   session_id?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface ViewLog {
@@ -53,12 +53,17 @@ export interface StateTransition {
 
 export interface ComplianceReport {
   id: string;
-  report_type: 'monthly_approvals' | 'user_activity' | 'state_changes' | 'view_access' | 'security_audit';
+  report_type:
+    | 'monthly_approvals'
+    | 'user_activity'
+    | 'state_changes'
+    | 'view_access'
+    | 'security_audit';
   period_start: string;
   period_end: string;
   generated_at: string;
   generated_by: string;
-  report_data: Record<string, any>;
+  report_data: Record<string, unknown>;
   file_url?: string;
   status: 'pending' | 'completed' | 'failed';
 }
@@ -78,12 +83,13 @@ export class AuditService {
     viewDurationMs?: number
   ): Promise<ServiceResult<string>> {
     return withRpcResult<ServiceResult<string>>(
-      () => supabase.rpc('log_view_access', {
-        p_entity_type: entityType,
-        p_entity_id: entityId,
-        p_fields_viewed: fieldsViewed || null,
-        p_view_duration_ms: viewDurationMs || null
-      }),
+      () =>
+        supabase.rpc('log_view_access', {
+          p_entity_type: entityType,
+          p_entity_id: entityId,
+          p_fields_viewed: fieldsViewed || null,
+          p_view_duration_ms: viewDurationMs || null,
+        }),
       'logViewAccess',
       { entityType, entityId }
     );
@@ -101,14 +107,15 @@ export class AuditService {
     workflowInstanceId?: string
   ): Promise<ServiceResult<string>> {
     return withRpcResult<ServiceResult<string>>(
-      () => supabase.rpc('log_state_transition', {
-        p_entity_type: entityType,
-        p_entity_id: entityId,
-        p_from_state: fromState,
-        p_to_state: toState,
-        p_reason: reason || null,
-        p_workflow_instance_id: workflowInstanceId || null
-      }),
+      () =>
+        supabase.rpc('log_state_transition', {
+          p_entity_type: entityType,
+          p_entity_id: entityId,
+          p_from_state: fromState,
+          p_to_state: toState,
+          p_reason: reason || null,
+          p_workflow_instance_id: workflowInstanceId || null,
+        }),
       'logStateTransition',
       { entityType, entityId, fromState, toState }
     );
@@ -127,10 +134,7 @@ export class AuditService {
     limit?: number;
   }): Promise<AuditLog[]> {
     try {
-      let query = supabase
-        .from('audit_logs')
-        .select('*')
-        .order('timestamp', { ascending: false });
+      let query = supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
 
       if (filters?.userId) {
         query = query.eq('user_id', filters.userId);
@@ -175,10 +179,7 @@ export class AuditService {
     limit?: number;
   }): Promise<ViewLog[]> {
     try {
-      let query = supabase
-        .from('view_logs')
-        .select('*')
-        .order('timestamp', { ascending: false });
+      let query = supabase.from('view_logs').select('*').order('timestamp', { ascending: false });
 
       if (filters?.userId) {
         query = query.eq('user_id', filters.userId);
@@ -261,16 +262,22 @@ export class AuditService {
    * Generate compliance report
    */
   static async generateComplianceReport(
-    reportType: 'monthly_approvals' | 'user_activity' | 'state_changes' | 'view_access' | 'security_audit',
+    reportType:
+      | 'monthly_approvals'
+      | 'user_activity'
+      | 'state_changes'
+      | 'view_access'
+      | 'security_audit',
     periodStart: string,
     periodEnd: string
   ): Promise<ServiceResult<string>> {
     return withRpcResult<ServiceResult<string>>(
-      () => supabase.rpc('generate_compliance_report', {
-        p_report_type: reportType,
-        p_period_start: periodStart,
-        p_period_end: periodEnd
-      }),
+      () =>
+        supabase.rpc('generate_compliance_report', {
+          p_report_type: reportType,
+          p_period_start: periodStart,
+          p_period_end: periodEnd,
+        }),
       'generateComplianceReport',
       { reportType, periodStart, periodEnd }
     );
@@ -316,7 +323,10 @@ export class AuditService {
   /**
    * Get audit statistics
    */
-  static async getAuditStats(startDate?: string, endDate?: string): Promise<{
+  static async getAuditStats(
+    startDate?: string,
+    endDate?: string
+  ): Promise<{
     total_actions: number;
     total_views: number;
     total_transitions: number;
@@ -355,7 +365,7 @@ export class AuditService {
         .gte('timestamp', start)
         .lte('timestamp', end);
 
-      const uniqueUsers = new Set(auditLogs?.map(log => log.user_id) || []).size;
+      const uniqueUsers = new Set(auditLogs?.map((log) => log.user_id) || []).size;
 
       // Get actions by type
       const { data: actionData } = await supabase
@@ -365,7 +375,7 @@ export class AuditService {
         .lte('timestamp', end);
 
       const actionsByType: Record<string, number> = {};
-      actionData?.forEach(log => {
+      actionData?.forEach((log) => {
         actionsByType[log.action] = (actionsByType[log.action] || 0) + 1;
       });
 
@@ -374,7 +384,7 @@ export class AuditService {
         total_views: viewCount || 0,
         total_transitions: transitionCount || 0,
         unique_users: uniqueUsers,
-        actions_by_type: actionsByType
+        actions_by_type: actionsByType,
       };
     } catch (err) {
       console.error('Error fetching audit stats:', err);

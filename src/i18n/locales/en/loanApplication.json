@@ -1,0 +1,115 @@
+{
+  "title": "Apply for a Loan",
+  "subtitle": "Get quick access to the funds you need with transparent terms",
+  "backToDashboard": "Back to Dashboard",
+  "checkingEligibility": "Checking eligibility...",
+  "steps": {
+    "label": "Step {{step}} of 3",
+    "complete": "{{progress}}% complete",
+    "loanDetails": "Loan Details",
+    "loanDetailsSubtitle": "Choose your loan amount and repayment term",
+    "financialInfo": "Financial Information",
+    "financialInfoSubtitle": "Tell us about your financial situation",
+    "reviewSubmit": "Review & Submit",
+    "reviewSubmitSubtitle": "Review your application details"
+  },
+  "navigation": {
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit Application",
+    "submitting": "Submitting..."
+  },
+  "loanDetailsStep": {
+    "amount": "Loan Amount (NAD)",
+    "amountPlaceholder": "5000",
+    "amountRange": "Minimum: NAD 1,000 \u2022 Maximum: NAD 50,000",
+    "term": "Repayment Term",
+    "termPlaceholder": "Select term",
+    "termMonths": "{{count}} month",
+    "termMonths_other": "{{count}} months",
+    "purpose": "Purpose of Loan",
+    "purposePlaceholder": "Select purpose",
+    "purposes": {
+      "personal": "Personal Expenses",
+      "business": "Business Investment",
+      "education": "Education",
+      "medical": "Medical Expenses",
+      "home": "Home Improvement",
+      "other": "Other"
+    }
+  },
+  "financialStep": {
+    "employmentStatus": "Employment Status",
+    "employmentPlaceholder": "Select employment status",
+    "employmentOptions": {
+      "employed": "Employed (Full-time)",
+      "selfEmployed": "Self-employed",
+      "partTime": "Part-time",
+      "contract": "Contract Worker",
+      "student": "Student",
+      "unemployed": "Unemployed"
+    },
+    "monthlyIncome": "Monthly Income (NAD)",
+    "incomePlaceholder": "5000",
+    "fromProfile": "(from profile)",
+    "monthlyExpenses": "Monthly Expenses (NAD)",
+    "expensesPlaceholder": "3000",
+    "existingDebt": "Existing Debt (NAD)",
+    "debtPlaceholder": "0",
+    "debtHelp": "Include all existing loans, credit cards, and monthly debt payments"
+  },
+  "reviewStep": {
+    "loanDetails": "Loan Details",
+    "amount": "Amount:",
+    "term": "Term:",
+    "termValue": "{{months}} months",
+    "interestRate": "Interest Rate:",
+    "interestRateValue": "{{rate}}% APR",
+    "financialSummary": "Financial Summary",
+    "monthlyIncome": "Monthly Income:",
+    "monthlyExpenses": "Monthly Expenses:",
+    "employment": "Employment:",
+    "termsNotice": "By submitting this application, you agree to our Terms of Service and authorize us to verify the information provided."
+  },
+  "summary": {
+    "title": "Loan Summary",
+    "loanAmount": "Loan Amount",
+    "monthlyPayment": "Monthly Payment",
+    "totalRepayment": "Total Repayment",
+    "interestRate": "Interest Rate",
+    "interestRateValue": "{{rate}}% APR",
+    "emptyState": "Enter loan amount and term to see calculation"
+  },
+  "processingTime": {
+    "title": "Processing Time",
+    "preApproval": "Instant pre-approval check",
+    "finalDecision": "Final decision within 24 hours",
+    "disbursement": "Funds disbursed next business day"
+  },
+  "kyc": {
+    "title": "Document Verification Required",
+    "description": "To protect you and ensure compliance with Namibian regulations, we require document verification before loan applications can be submitted.",
+    "verificationProgress": "Verification Progress",
+    "docsVerified": "{{verified}}/{{required}} documents verified",
+    "missingDocuments": "Missing Documents:",
+    "completeVerification": "Complete Verification"
+  },
+  "toast": {
+    "authRequiredTitle": "Authentication Required",
+    "authRequiredDescription": "Please sign in to submit a loan application.",
+    "authErrorTitle": "Authentication Error",
+    "authErrorDescription": "User session is invalid. Please sign out and sign in again.",
+    "invalidRateTitle": "Invalid Interest Rate",
+    "invalidRateDescription": "Interest rate must be between 0% and {{limit}}% APR as per Namibian regulations.",
+    "submittedTitle": "Application Submitted!",
+    "submittedDescription": "Your loan application has been submitted for review. You'll be notified once it's processed.",
+    "failedTitle": "Application Failed",
+    "failedDescription": "Failed to submit your loan application. Please try again.",
+    "sessionExpiredTitle": "Authentication Required",
+    "sessionExpiredDescription": "Your session has expired. Please sign out and sign in again to submit your application.",
+    "systemErrorTitle": "System Error",
+    "systemErrorDescription": "There's a temporary system issue. Please try again in a few moments or contact support.",
+    "connectionErrorTitle": "Connection Error",
+    "connectionErrorDescription": "Please check your internet connection and try again."
+  }
+}

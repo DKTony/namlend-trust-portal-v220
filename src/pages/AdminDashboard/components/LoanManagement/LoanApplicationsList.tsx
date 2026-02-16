@@ -4,22 +4,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  DollarSign, 
-  User, 
+import {
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  DollarSign,
+  User,
   Calendar,
   TrendingUp,
   AlertTriangle,
   Briefcase,
-  FileText
+  FileText,
 } from 'lucide-react';
 import { useLoanApplications, LoanApplication } from '../../hooks/useLoanApplications';
 import { useLoanActions } from '../../hooks/useLoanActions';
-import LoanDetailsModal from '@/components/LoanDetailsModal';
+import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,18 +51,18 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   amountMin,
   amountMax,
   priority,
-  refreshKey
+  refreshKey,
 }) => {
   const navigate = useNavigate();
-  const { applications, loading, error, refetch } = useLoanApplications({ 
-    status, 
+  const { applications, loading, error, refetch } = useLoanApplications({
+    status,
     searchTerm,
     dateFrom,
     dateTo,
     amountMin,
     amountMax,
     priority,
-    refreshKey
+    refreshKey,
   });
   const { approveLoan, rejectLoan, loading: actionLoading } = useLoanActions();
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
@@ -113,7 +113,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
           toast({
             title: 'Error',
             description: newDisbursement?.error || 'Failed to create disbursement',
-            variant: 'destructive'
+            variant: 'destructive',
           });
           return;
         }
@@ -125,7 +125,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
         id: disbursementId, // Actual disbursement ID
         amount: application.amount,
         clientName: application.applicantName,
-        loanId: application.id
+        loanId: application.id,
       });
       setDisbursementModalOpen(true);
     } catch (error) {
@@ -133,7 +133,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
       toast({
         title: 'Error',
         description: 'Failed to prepare disbursement. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -147,7 +147,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   // Transform LoanApplication to format expected by LoanDetailsModal
   const getSelectedLoanForModal = () => {
     if (!selectedLoanId) return null;
-    const application = applications.find(app => app.id === selectedLoanId);
+    const application = applications.find((app) => app.id === selectedLoanId);
     if (!application) return null;
 
     // Use actual term/rate from data if available, otherwise defaults
@@ -157,10 +157,11 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     const principal = application.amount;
 
     // Amortization formula: P * (r * (1+r)^n) / ((1+r)^n - 1)
-    const monthlyPayment = monthlyRate > 0
-      ? (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
-        (Math.pow(1 + monthlyRate, termMonths) - 1)
-      : principal / termMonths;
+    const monthlyPayment =
+      monthlyRate > 0
+        ? (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+          (Math.pow(1 + monthlyRate, termMonths) - 1)
+        : principal / termMonths;
     const totalRepayment = monthlyPayment * termMonths;
 
     return {
@@ -182,8 +183,8 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
         monthly_income: application.monthlyIncome,
         employment_status: application.employmentStatus,
         credit_score: application.creditScore,
-        risk_score: application.riskScore
-      }
+        risk_score: application.riskScore,
+      },
     };
   };
 
@@ -195,7 +196,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -216,14 +217,24 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      approved: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      rejected: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      disbursed: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800'
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      approved:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      rejected:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      disbursed:
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {getStatusIcon(status)}
         <span className="ml-1 capitalize">{status}</span>
       </Badge>
@@ -235,20 +246,29 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
 
     if (riskScore >= 80) {
       return (
-        <Badge variant="outline" className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">
+        <Badge
+          variant="outline"
+          className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
+        >
           <AlertTriangle className="h-3 w-3 mr-1" />
           High Risk
         </Badge>
       );
     } else if (riskScore >= 60) {
       return (
-        <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+        <Badge
+          variant="outline"
+          className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+        >
           Medium Risk
         </Badge>
       );
     } else {
       return (
-        <Badge variant="outline" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800">
+        <Badge
+          variant="outline"
+          className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
+        >
           Low Risk
         </Badge>
       );
@@ -302,10 +322,9 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No applications found</h3>
             <p className="text-muted-foreground">
-              {searchTerm 
+              {searchTerm
                 ? `No applications match "${searchTerm}"`
-                : `No ${status === 'all' ? '' : status} applications at this time`
-              }
+                : `No ${status === 'all' ? '' : status} applications at this time`}
             </p>
           </div>
         </CardContent>
@@ -316,11 +335,13 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   return (
     <div className="space-y-4">
       {applications.map((application) => (
-        <Card 
-          key={application.id} 
+        <Card
+          key={application.id}
           data-testid={`loan-card-${application.id}`}
           className={`hover:shadow-md transition-shadow duration-200 bg-card border-border ${
-            selectedLoans.includes(application.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
+            selectedLoans.includes(application.id)
+              ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : ''
           }`}
         >
           <CardContent className="p-6">
@@ -342,22 +363,22 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     {getRiskBadge(application.riskScore)}
                   </div>
                   <div className="text-right shrink-0">
-                    <div 
+                    <div
                       className="text-xl sm:text-2xl font-bold text-foreground truncate tabular-nums"
                       title={formatCurrency(application.amount)}
                     >
                       {formatCurrency(application.amount)}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Requested Amount
-                    </div>
+                    <div className="text-sm text-muted-foreground">Requested Amount</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-2 min-w-0">
                     <User className="h-4 w-4 shrink-0" />
-                    <span className="truncate" title={application.applicantEmail}>{application.applicantEmail}</span>
+                    <span className="truncate" title={application.applicantEmail}>
+                      {application.applicantEmail}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2 shrink-0">
                     <Calendar className="h-4 w-4 shrink-0" />
@@ -365,30 +386,40 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                   </div>
                   <div className="flex items-center space-x-2 min-w-0">
                     <FileText className="h-4 w-4 shrink-0" />
-                    <span className="truncate" title={application.purpose}>{application.purpose}</span>
+                    <span className="truncate" title={application.purpose}>
+                      {application.purpose}
+                    </span>
                   </div>
                 </div>
 
                 {/* Additional Details */}
-                {(application.monthlyIncome || application.employmentStatus || application.creditScore) && (
+                {(application.monthlyIncome ||
+                  application.employmentStatus ||
+                  application.creditScore) && (
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       {application.monthlyIncome && (
                         <div>
                           <span className="text-muted-foreground">Monthly Income:</span>
-                          <span className="ml-2 font-medium text-foreground">{formatCurrency(application.monthlyIncome)}</span>
+                          <span className="ml-2 font-medium text-foreground">
+                            {formatCurrency(application.monthlyIncome)}
+                          </span>
                         </div>
                       )}
                       {application.employmentStatus && (
                         <div>
                           <span className="text-muted-foreground">Employment:</span>
-                          <span className="ml-2 font-medium capitalize text-foreground">{application.employmentStatus}</span>
+                          <span className="ml-2 font-medium capitalize text-foreground">
+                            {application.employmentStatus}
+                          </span>
                         </div>
                       )}
                       {application.creditScore && (
                         <div>
                           <span className="text-muted-foreground">Credit Score:</span>
-                          <span className="ml-2 font-medium text-foreground">{application.creditScore}</span>
+                          <span className="ml-2 font-medium text-foreground">
+                            {application.creditScore}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -398,11 +429,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
 
               {/* Actions */}
               <div className="flex flex-col space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleReview(application.id)}
-                >
+                <Button variant="outline" size="sm" onClick={() => handleReview(application.id)}>
                   <Eye className="h-4 w-4 mr-2" />
                   Review
                 </Button>

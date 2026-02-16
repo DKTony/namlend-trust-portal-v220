@@ -11,6 +11,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const API_URL = `${supabaseUrl}/functions/v1/api-disbursements`;
 
 test.describe('API Disbursements Orchestration Endpoints', () => {
+  test.skip(!supabaseUrl, 'VITE_SUPABASE_URL must be set — skipping Edge Function tests');
   let adminToken: string;
   let loanOfficerToken: string;
   let clientToken: string;
@@ -31,7 +32,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/list`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -49,7 +50,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/list`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -60,7 +61,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/list`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clientToken}`,
+          Authorization: `Bearer ${clientToken}`,
         },
       });
 
@@ -79,7 +80,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/list?status=pending`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -92,7 +93,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/list?page=1&limit=5`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -107,7 +108,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/pending`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -126,7 +127,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/pending`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${loanOfficerToken}`,
+          Authorization: `Bearer ${loanOfficerToken}`,
         },
       });
 
@@ -139,7 +140,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/queue`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 
@@ -160,7 +161,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/approve`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -173,7 +174,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/approve`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -190,7 +191,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/fail`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -208,7 +209,7 @@ test.describe('API Disbursements Orchestration Endpoints', () => {
       const response = await fetch(`${API_URL}/00000000-0000-0000-0000-000000000000`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
       });
 

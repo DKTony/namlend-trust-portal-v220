@@ -19,6 +19,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 test.describe('TigerBeetle Balance Fixes', () => {
+  test.skip(!SUPABASE_ANON_KEY, 'VITE_SUPABASE_ANON_KEY must be set — skipping TigerBeetle tests');
   let testLoanId: string;
   let testUserId: string;
 
@@ -33,7 +34,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
 
     // Create test user and loan for balance testing
     testUserId = '11111111-0000-0000-0000-000000000001'; // Test client1
-    
+
     // Create a test loan
     const { data: loan, error } = await supabase
       .from('loans')
@@ -86,7 +87,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
       .eq('entity_id', testLoanId);
 
     expect(error).toBeNull();
-    
+
     if (accounts && accounts.length > 0) {
       // If accounts exist, verify they use correct entity types
       const validTypes = ['LOAN_PRINCIPAL', 'LOAN_INTEREST', 'LOAN_FEES'];
@@ -118,7 +119,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
   test('useTigerBeetleBalance hook can query with correct entity_type filter', async () => {
     // Test the query pattern used by useTigerBeetleBalance
     const LOAN_ACCOUNT_TYPES = ['LOAN_PRINCIPAL', 'LOAN_INTEREST', 'LOAN_FEES'];
-    
+
     const { data: accounts, error } = await supabase
       .from('tigerbeetle_accounts')
       .select('id, entity_type')
@@ -140,7 +141,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
 
     expect(viewError).toBeNull();
     expect(viewData).toBeDefined();
-    
+
     // View should return valid balance data from loans table
     expect(viewData?.total_balance).toBeGreaterThanOrEqual(0);
   });

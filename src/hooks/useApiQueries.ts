@@ -1,11 +1,17 @@
 /**
  * TanStack Query Hooks for API Orchestration Layer
- * 
+ *
  * Provides caching, automatic refetching, and optimistic updates
  * for all API endpoints.
  */
 
-import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseQueryOptions,
+  UseMutationOptions,
+} from '@tanstack/react-query';
 import {
   loansAPI,
   usersAPI,
@@ -49,7 +55,7 @@ export const queryKeys = {
     list: (params?: LoanListParams) => [...queryKeys.loans.lists(), params] as const,
     details: () => [...queryKeys.loans.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.loans.details(), id] as const,
-    approvalRequests: (params?: { page?: number; limit?: number }) => 
+    approvalRequests: (params?: { page?: number; limit?: number }) =>
       [...queryKeys.loans.all, 'approval-requests', params] as const,
     schedule: (id: string) => [...queryKeys.loans.all, 'schedule', id] as const,
   },
@@ -73,7 +79,7 @@ export const queryKeys = {
     details: () => [...queryKeys.payments.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.payments.details(), id] as const,
     forLoan: (loanId: string) => [...queryKeys.payments.all, 'loan', loanId] as const,
-    reconciliation: (params?: { startDate?: string; endDate?: string }) => 
+    reconciliation: (params?: { startDate?: string; endDate?: string }) =>
       [...queryKeys.payments.all, 'reconciliation', params] as const,
   },
 
@@ -83,7 +89,7 @@ export const queryKeys = {
     dashboard: () => [...queryKeys.admin.all, 'dashboard'] as const,
     auditLogs: (params?: AuditLogParams) => [...queryKeys.admin.all, 'audit-logs', params] as const,
     systemHealth: () => [...queryKeys.admin.all, 'system-health'] as const,
-    complianceReport: (params?: { startDate?: string; endDate?: string }) => 
+    complianceReport: (params?: { startDate?: string; endDate?: string }) =>
       [...queryKeys.admin.all, 'compliance-report', params] as const,
     collections: () => [...queryKeys.admin.all, 'collections'] as const,
   },
@@ -91,11 +97,16 @@ export const queryKeys = {
   // Analytics
   analytics: {
     all: ['analytics'] as const,
-    portfolio: (params?: AnalyticsParams) => [...queryKeys.analytics.all, 'portfolio', params] as const,
-    loanPerformance: (params?: AnalyticsParams) => [...queryKeys.analytics.all, 'loan-performance', params] as const,
-    collectionsStats: (params?: AnalyticsParams) => [...queryKeys.analytics.all, 'collections-stats', params] as const,
-    disbursementStats: (params?: AnalyticsParams) => [...queryKeys.analytics.all, 'disbursement-stats', params] as const,
-    riskAnalysis: (params?: AnalyticsParams) => [...queryKeys.analytics.all, 'risk-analysis', params] as const,
+    portfolio: (params?: AnalyticsParams) =>
+      [...queryKeys.analytics.all, 'portfolio', params] as const,
+    loanPerformance: (params?: AnalyticsParams) =>
+      [...queryKeys.analytics.all, 'loan-performance', params] as const,
+    collectionsStats: (params?: AnalyticsParams) =>
+      [...queryKeys.analytics.all, 'collections-stats', params] as const,
+    disbursementStats: (params?: AnalyticsParams) =>
+      [...queryKeys.analytics.all, 'disbursement-stats', params] as const,
+    riskAnalysis: (params?: AnalyticsParams) =>
+      [...queryKeys.analytics.all, 'risk-analysis', params] as const,
     trends: (params?: TrendParams) => [...queryKeys.analytics.all, 'trends', params] as const,
   },
 
@@ -103,8 +114,9 @@ export const queryKeys = {
   disbursements: {
     all: ['disbursements'] as const,
     lists: () => [...queryKeys.disbursements.all, 'list'] as const,
-    list: (params?: DisbursementListParams) => [...queryKeys.disbursements.lists(), params] as const,
-    pending: (params?: { page?: number; limit?: number }) => 
+    list: (params?: DisbursementListParams) =>
+      [...queryKeys.disbursements.lists(), params] as const,
+    pending: (params?: { page?: number; limit?: number }) =>
       [...queryKeys.disbursements.all, 'pending', params] as const,
     details: () => [...queryKeys.disbursements.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.disbursements.details(), id] as const,
@@ -113,14 +125,16 @@ export const queryKeys = {
   // Collections
   collections: {
     all: ['collections'] as const,
-    queue: (params?: CollectionsQueueParams) => [...queryKeys.collections.all, 'queue', params] as const,
+    queue: (params?: CollectionsQueueParams) =>
+      [...queryKeys.collections.all, 'queue', params] as const,
     case: (loanId: string) => [...queryKeys.collections.all, 'case', loanId] as const,
   },
 
   // Reconciliation
   reconciliation: {
     all: ['reconciliation'] as const,
-    runs: (params?: ReconciliationRunParams) => [...queryKeys.reconciliation.all, 'runs', params] as const,
+    runs: (params?: ReconciliationRunParams) =>
+      [...queryKeys.reconciliation.all, 'runs', params] as const,
     run: (id: string) => [...queryKeys.reconciliation.all, 'run', id] as const,
   },
 
@@ -128,7 +142,8 @@ export const queryKeys = {
   notifications: {
     all: ['notifications'] as const,
     lists: () => [...queryKeys.notifications.all, 'list'] as const,
-    list: (params?: NotificationListParams) => [...queryKeys.notifications.lists(), params] as const,
+    list: (params?: NotificationListParams) =>
+      [...queryKeys.notifications.lists(), params] as const,
     detail: (id: string) => [...queryKeys.notifications.all, id] as const,
   },
 
@@ -137,11 +152,11 @@ export const queryKeys = {
     all: ['audit'] as const,
     logs: (params?: AuditLogParams) => [...queryKeys.audit.all, 'logs', params] as const,
     log: (id: string) => [...queryKeys.audit.all, 'log', id] as const,
-    financial: (params?: { startDate?: string; endDate?: string }) => 
+    financial: (params?: { startDate?: string; endDate?: string }) =>
       [...queryKeys.audit.all, 'financial', params] as const,
-    byUser: (userId: string, params?: { page?: number; limit?: number }) => 
+    byUser: (userId: string, params?: { page?: number; limit?: number }) =>
       [...queryKeys.audit.all, 'user', userId, params] as const,
-    byTable: (tableName: string, params?: { page?: number; limit?: number }) => 
+    byTable: (tableName: string, params?: { page?: number; limit?: number }) =>
       [...queryKeys.audit.all, 'table', tableName, params] as const,
     summary: (params?: { period?: string }) => [...queryKeys.audit.all, 'summary', params] as const,
     actions: () => [...queryKeys.audit.all, 'actions'] as const,
@@ -155,17 +170,23 @@ export const queryKeys = {
 export const staleTimes = {
   // Real-time data - refetch frequently
   realtime: 10 * 1000, // 10 seconds
-  
+
   // Dynamic data - moderate freshness
   dynamic: 30 * 1000, // 30 seconds
-  
-  // Semi-static data - less frequent updates
-  semiStatic: 2 * 60 * 1000, // 2 minutes
-  
+
+  // Payment history - may update via webhook
+  paymentHistory: 60 * 1000, // 1 minute
+
+  // Semi-static data - user profile, loan details
+  semiStatic: 5 * 60 * 1000, // 5 minutes (profile rarely changes within a session)
+
   // Analytics/reports - can be stale longer
   analytics: 5 * 60 * 1000, // 5 minutes
-  
-  // Static reference data
+
+  // Admin configuration - changed infrequently
+  adminConfig: 10 * 60 * 1000, // 10 minutes
+
+  // Static reference data - roles, branding, actions
   static: 30 * 60 * 1000, // 30 minutes
 };
 
@@ -173,7 +194,10 @@ export const staleTimes = {
 // LOANS HOOKS
 // =============================================================================
 
-export function useLoans(params?: LoanListParams, options?: Omit<UseQueryOptions, 'queryKey' | 'queryFn'>) {
+export function useLoans(
+  params?: LoanListParams,
+  options?: Omit<UseQueryOptions, 'queryKey' | 'queryFn'>
+) {
   return useQuery({
     queryKey: queryKeys.loans.list(params),
     queryFn: () => loansAPI.list(params),
@@ -211,7 +235,7 @@ export function useLoanSchedule(loanId: string) {
 
 export function useApplyForLoan() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: LoanApplication) => loansAPI.apply(data),
     onSuccess: () => {
@@ -222,7 +246,7 @@ export function useApplyForLoan() {
 
 export function useApproveLoan() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: LoanApproval) => loansAPI.approve(data),
     onSuccess: () => {
@@ -234,7 +258,7 @@ export function useApproveLoan() {
 
 export function useRejectLoan() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: LoanApproval) => loansAPI.reject(data),
     onSuccess: () => {
@@ -245,7 +269,7 @@ export function useRejectLoan() {
 
 export function useDisburseLoan() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: Disbursement) => loansAPI.disburse(data),
     onSuccess: () => {
@@ -294,7 +318,7 @@ export function useUserRoles() {
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: UserUpdateData) => usersAPI.updateProfile(data),
     onSuccess: () => {
@@ -305,7 +329,7 @@ export function useUpdateProfile() {
 
 export function useUpdateUserRole() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, role }: { id: string; role: string }) => usersAPI.updateRole(id, role),
     onSuccess: () => {
@@ -339,7 +363,7 @@ export function usePaymentsForLoan(loanId: string) {
   return useQuery({
     queryKey: queryKeys.payments.forLoan(loanId),
     queryFn: () => paymentsAPI.getForLoan(loanId),
-    staleTime: staleTimes.dynamic,
+    staleTime: staleTimes.paymentHistory,
     enabled: !!loanId,
   });
 }
@@ -354,7 +378,7 @@ export function usePaymentReconciliation(params?: { startDate?: string; endDate?
 
 export function useRecordPayment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: PaymentRecord) => paymentsAPI.record(data),
     onSuccess: () => {
@@ -366,7 +390,7 @@ export function useRecordPayment() {
 
 export function useReversePayment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: PaymentReversal) => paymentsAPI.reverse(data),
     onSuccess: () => {
@@ -401,7 +425,7 @@ export function useComplianceReport(params?: { startDate?: string; endDate?: str
   return useQuery({
     queryKey: queryKeys.admin.complianceReport(params),
     queryFn: () => adminAPI.getComplianceReport(params),
-    staleTime: staleTimes.analytics,
+    staleTime: staleTimes.adminConfig,
   });
 }
 
@@ -415,7 +439,7 @@ export function useAdminCollections() {
 
 export function useBulkApprove() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: BulkApproval) => adminAPI.bulkApprove(data),
     onSuccess: () => {
@@ -508,9 +532,9 @@ export function useDisbursement(id: string) {
 
 export function useApproveDisbursement() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { disbursement_id: string; notes?: string }) => 
+    mutationFn: (data: { disbursement_id: string; notes?: string }) =>
       disbursementsAPI.approve(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.disbursements.all });
@@ -520,9 +544,9 @@ export function useApproveDisbursement() {
 
 export function useProcessDisbursement() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { disbursement_id: string; payment_reference: string }) => 
+    mutationFn: (data: { disbursement_id: string; payment_reference: string }) =>
       disbursementsAPI.process(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.disbursements.all });
@@ -532,9 +556,9 @@ export function useProcessDisbursement() {
 
 export function useCompleteDisbursement() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { disbursement_id: string; confirmation_reference: string }) => 
+    mutationFn: (data: { disbursement_id: string; confirmation_reference: string }) =>
       disbursementsAPI.complete(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.disbursements.all });
@@ -545,10 +569,9 @@ export function useCompleteDisbursement() {
 
 export function useFailDisbursement() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { disbursement_id: string; reason: string }) => 
-      disbursementsAPI.fail(data),
+    mutationFn: (data: { disbursement_id: string; reason: string }) => disbursementsAPI.fail(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.disbursements.all });
     },
@@ -578,7 +601,7 @@ export function useCollectionCase(loanId: string) {
 
 export function useRecordInteraction() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: {
       loan_id: string;
@@ -596,7 +619,7 @@ export function useRecordInteraction() {
 
 export function useCreatePromise() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: {
       loan_id: string;
@@ -612,10 +635,15 @@ export function useCreatePromise() {
 
 export function useUpdatePromise() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: 'kept' | 'broken'; notes?: string } }) => 
-      collectionsAPI.updatePromise(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: 'kept' | 'broken'; notes?: string };
+    }) => collectionsAPI.updatePromise(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.collections.all });
     },
@@ -624,9 +652,9 @@ export function useUpdatePromise() {
 
 export function useEscalateCollection() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { loan_id: string; reason: string; escalation_level: string }) => 
+    mutationFn: (data: { loan_id: string; reason: string; escalation_level: string }) =>
       collectionsAPI.escalate(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.collections.case(variables.loan_id) });
@@ -658,10 +686,15 @@ export function useReconciliationRun(id: string) {
 
 export function useCreateReconciliationRun() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { name: string; bank_account?: string; start_date: string; end_date: string; notes?: string }) => 
-      reconciliationAPI.createRun(data),
+    mutationFn: (data: {
+      name: string;
+      bank_account?: string;
+      start_date: string;
+      end_date: string;
+      notes?: string;
+    }) => reconciliationAPI.createRun(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.reconciliation.all });
     },
@@ -670,17 +703,20 @@ export function useCreateReconciliationRun() {
 
 export function useImportTransactions() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { source: string; transactions: Array<{
-      external_id: string;
-      amount: number;
-      date: string;
-      reference?: string;
-      description?: string;
-      type?: 'credit' | 'debit';
-    }>; run_id?: string }) => 
-      reconciliationAPI.importTransactions(data),
+    mutationFn: (data: {
+      source: string;
+      transactions: Array<{
+        external_id: string;
+        amount: number;
+        date: string;
+        reference?: string;
+        description?: string;
+        type?: 'credit' | 'debit';
+      }>;
+      run_id?: string;
+    }) => reconciliationAPI.importTransactions(data),
     onSuccess: (_, variables) => {
       if (variables.run_id) {
         queryClient.invalidateQueries({ queryKey: queryKeys.reconciliation.run(variables.run_id) });
@@ -692,7 +728,7 @@ export function useImportTransactions() {
 
 export function useAutoMatch() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => reconciliationAPI.autoMatch(),
     onSuccess: () => {
@@ -703,9 +739,9 @@ export function useAutoMatch() {
 
 export function useManualMatch() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: { transaction_id: string; payment_id: string; notes?: string }) => 
+    mutationFn: (data: { transaction_id: string; payment_id: string; notes?: string }) =>
       reconciliationAPI.manualMatch(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.reconciliation.all });
@@ -736,7 +772,7 @@ export function useNotification(id: string) {
 
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: { notification_id: string }) => notificationsAPI.markRead(data),
     onSuccess: () => {
@@ -747,7 +783,7 @@ export function useMarkNotificationRead() {
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => notificationsAPI.markAllRead(),
     onSuccess: () => {
@@ -758,7 +794,7 @@ export function useMarkAllNotificationsRead() {
 
 export function useDeleteNotification() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (id: string) => notificationsAPI.delete(id),
     onSuccess: () => {
@@ -788,7 +824,12 @@ export function useAuditLog(id: string) {
   });
 }
 
-export function useFinancialAuditLogs(params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) {
+export function useFinancialAuditLogs(params?: {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}) {
   return useQuery({
     queryKey: queryKeys.audit.financial(params),
     queryFn: () => auditAPI.getFinancial(params),

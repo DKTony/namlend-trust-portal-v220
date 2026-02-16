@@ -6,32 +6,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  getAllApprovalRequests, 
-  updateApprovalStatus, 
+import {
+  getAllApprovalRequests,
+  updateApprovalStatus,
   getApprovalStatistics,
   processApprovedLoanApplication,
   processApprovedKYCDocument,
-  type ApprovalRequest 
+  type ApprovalRequest,
 } from '@/services/approvalWorkflow';
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Eye, 
-  User, 
-  FileText, 
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Eye,
+  User,
+  FileText,
   DollarSign,
   Calendar,
   Filter,
-  Search
+  Search,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { formatNAD } from '@/utils/currency';
-import LoanDetailsModal from '@/components/LoanDetailsModal';
+import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 
 interface ApprovalStats {
   total: number;
@@ -58,7 +64,7 @@ export default function ApprovalManagementDashboard() {
     status: 'all',
     type: 'all',
     priority: 'all',
-    search: ''
+    search: '',
   });
 
   useEffect(() => {
@@ -76,19 +82,20 @@ export default function ApprovalManagementDashboard() {
 
       const [requestsResult, statsResult] = await Promise.all([
         getAllApprovalRequests(requestFilters),
-        getApprovalStatistics()
+        getApprovalStatistics(),
       ]);
 
       if (requestsResult.success && requestsResult.requests) {
         let filteredRequests = requestsResult.requests;
-        
+
         // Apply search filter
         if (filters.search) {
           const searchLower = filters.search.toLowerCase();
-          filteredRequests = filteredRequests.filter(request => {
+          filteredRequests = filteredRequests.filter((request) => {
             const reqAny = request as any;
             const name = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-            const email = reqAny.user_email || (reqAny.request_data?.user_email) || (reqAny.user?.email);
+            const email =
+              reqAny.user_email || reqAny.request_data?.user_email || reqAny.user?.email;
             return (
               request.request_type.toLowerCase().includes(searchLower) ||
               request.status.toLowerCase().includes(searchLower) ||
@@ -106,9 +113,9 @@ export default function ApprovalManagementDashboard() {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to load approval data",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to load approval data',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -121,11 +128,11 @@ export default function ApprovalManagementDashboard() {
       console.warn('⚠️ Update already in progress, ignoring duplicate request');
       return;
     }
-    
+
     setProcessing(true);
     try {
       const result = await updateApprovalStatus(requestId, newStatus, reviewNotes);
-      
+
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -137,9 +144,9 @@ export default function ApprovalManagementDashboard() {
           if (!loanResult.success) {
             console.error('❌ Failed to create loan:', loanResult.error);
             toast({
-              title: "Warning: Loan Creation Failed",
+              title: 'Warning: Loan Creation Failed',
               description: `Approval saved but loan was not created: ${loanResult.error}. Please retry or contact support.`,
-              variant: "destructive"
+              variant: 'destructive',
             });
             return;
           }
@@ -149,9 +156,9 @@ export default function ApprovalManagementDashboard() {
           if (!kycResult.success) {
             console.error('❌ Failed to process KYC:', kycResult.error);
             toast({
-              title: "Warning: KYC Processing Failed",
+              title: 'Warning: KYC Processing Failed',
               description: `Approval saved but KYC was not processed: ${kycResult.error}`,
-              variant: "destructive"
+              variant: 'destructive',
             });
             return;
           }
@@ -159,10 +166,11 @@ export default function ApprovalManagementDashboard() {
       }
 
       toast({
-        title: "Status Updated",
-        description: newStatus === 'approved' 
-          ? `Request approved and ${selectedRequest?.request_type === 'loan_application' ? 'loan created' : 'processed'} successfully`
-          : `Request has been ${newStatus}`
+        title: 'Status Updated',
+        description:
+          newStatus === 'approved'
+            ? `Request approved and ${selectedRequest?.request_type === 'loan_application' ? 'loan created' : 'processed'} successfully`
+            : `Request has been ${newStatus}`,
       });
 
       setSelectedRequest(null);
@@ -170,9 +178,9 @@ export default function ApprovalManagementDashboard() {
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update request status",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update request status',
+        variant: 'destructive',
       });
     } finally {
       setProcessing(false);
@@ -181,11 +189,41 @@ export default function ApprovalManagementDashboard() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      pending: { variant: 'secondary', icon: Clock, color: 'text-yellow-600 dark:text-yellow-400', badgeClass: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800' },
-      under_review: { variant: 'default', icon: Eye, color: 'text-blue-600 dark:text-blue-400', badgeClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-      approved: { variant: 'default', icon: CheckCircle, color: 'text-green-600 dark:text-green-400', badgeClass: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' },
-      rejected: { variant: 'destructive', icon: XCircle, color: 'text-red-600 dark:text-red-400', badgeClass: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800' },
-      requires_info: { variant: 'outline', icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400', badgeClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800' }
+      pending: {
+        variant: 'secondary',
+        icon: Clock,
+        color: 'text-yellow-600 dark:text-yellow-400',
+        badgeClass:
+          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      },
+      under_review: {
+        variant: 'default',
+        icon: Eye,
+        color: 'text-blue-600 dark:text-blue-400',
+        badgeClass:
+          'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      },
+      approved: {
+        variant: 'default',
+        icon: CheckCircle,
+        color: 'text-green-600 dark:text-green-400',
+        badgeClass:
+          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      },
+      rejected: {
+        variant: 'destructive',
+        icon: XCircle,
+        color: 'text-red-600 dark:text-red-400',
+        badgeClass:
+          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      },
+      requires_info: {
+        variant: 'outline',
+        icon: AlertTriangle,
+        color: 'text-orange-600 dark:text-orange-400',
+        badgeClass:
+          'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      },
     };
 
     const config = variants[status] || variants.pending;
@@ -202,9 +240,11 @@ export default function ApprovalManagementDashboard() {
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
       low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      normal: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      normal:
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
       high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      urgent: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      urgent:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     return (
@@ -220,14 +260,12 @@ export default function ApprovalManagementDashboard() {
       kyc_document: FileText,
       profile_update: User,
       payment: DollarSign,
-      document_upload: FileText
+      document_upload: FileText,
     };
 
     const Icon = icons[type] || FileText;
     return <Icon className="h-4 w-4" />;
   };
-
-  
 
   if (loading) {
     return (
@@ -251,7 +289,9 @@ export default function ApprovalManagementDashboard() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">{stats.total}</div>
+              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+                {stats.total}
+              </div>
             </CardContent>
           </Card>
 
@@ -261,7 +301,9 @@ export default function ApprovalManagementDashboard() {
               <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">{stats.pending}</div>
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">
+                {stats.pending}
+              </div>
             </CardContent>
           </Card>
 
@@ -271,7 +313,9 @@ export default function ApprovalManagementDashboard() {
               <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">{stats.underReview}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
+                {stats.underReview}
+              </div>
             </CardContent>
           </Card>
 
@@ -281,7 +325,9 @@ export default function ApprovalManagementDashboard() {
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">{stats.approved}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">
+                {stats.approved}
+              </div>
             </CardContent>
           </Card>
 
@@ -291,7 +337,9 @@ export default function ApprovalManagementDashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">{Math.round(stats.avgProcessingTime)}h</div>
+              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+                {Math.round(stats.avgProcessingTime)}h
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -309,7 +357,10 @@ export default function ApprovalManagementDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => setFilters({ ...filters, status: value })}
+              >
                 <SelectTrigger data-testid="approvals-filter-status">
                   <SelectValue />
                 </SelectTrigger>
@@ -326,7 +377,10 @@ export default function ApprovalManagementDashboard() {
 
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select value={filters.type} onValueChange={(value) => setFilters({...filters, type: value})}>
+              <Select
+                value={filters.type}
+                onValueChange={(value) => setFilters({ ...filters, type: value })}
+              >
                 <SelectTrigger data-testid="approvals-filter-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -343,7 +397,10 @@ export default function ApprovalManagementDashboard() {
 
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={filters.priority} onValueChange={(value) => setFilters({...filters, priority: value})}>
+              <Select
+                value={filters.priority}
+                onValueChange={(value) => setFilters({ ...filters, priority: value })}
+              >
                 <SelectTrigger data-testid="approvals-filter-priority">
                   <SelectValue />
                 </SelectTrigger>
@@ -364,7 +421,7 @@ export default function ApprovalManagementDashboard() {
                 <Input
                   placeholder="Search requests..."
                   value={filters.search}
-                  onChange={(e) => setFilters({...filters, search: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="pl-8"
                   data-testid="approvals-search-input"
                 />
@@ -379,9 +436,7 @@ export default function ApprovalManagementDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Approval Requests</CardTitle>
-            <CardDescription>
-              {requests.length} requests found
-            </CardDescription>
+            <CardDescription>{requests.length} requests found</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -398,19 +453,33 @@ export default function ApprovalManagementDashboard() {
                     <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                       <div className="shrink-0">{getRequestTypeIcon(request.request_type)}</div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate" title={request.request_type.replace('_', ' ').toUpperCase()}>
+                        <p
+                          className="font-medium truncate"
+                          title={request.request_type.replace('_', ' ').toUpperCase()}
+                        >
                           {request.request_type.replace('_', ' ').toUpperCase()}
                         </p>
-                        <p className="text-sm text-muted-foreground truncate" title={(() => {
+                        <p
+                          className="text-sm text-muted-foreground truncate"
+                          title={(() => {
                             const reqAny = request as any;
-                            const fullName = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-                            const fallbackEmail = reqAny.user_email || (reqAny.request_data?.user_email) || (reqAny.user as any)?.email;
+                            const fullName =
+                              `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
+                            const fallbackEmail =
+                              reqAny.user_email ||
+                              reqAny.request_data?.user_email ||
+                              (reqAny.user as any)?.email;
                             return fullName || fallbackEmail || 'Unknown user';
-                          })()}>
+                          })()}
+                        >
                           {(() => {
                             const reqAny = request as any;
-                            const fullName = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-                            const fallbackEmail = reqAny.user_email || (reqAny.request_data?.user_email) || (reqAny.user as any)?.email;
+                            const fullName =
+                              `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
+                            const fallbackEmail =
+                              reqAny.user_email ||
+                              reqAny.request_data?.user_email ||
+                              (reqAny.user as any)?.email;
                             return fullName || fallbackEmail || 'Unknown user';
                           })()}
                         </p>
@@ -421,7 +490,7 @@ export default function ApprovalManagementDashboard() {
                       {getPriorityBadge(request.priority)}
                     </div>
                   </div>
-                  
+
                   <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                     <span className="truncate tabular-nums">
                       {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
@@ -472,7 +541,9 @@ export default function ApprovalManagementDashboard() {
                   <div>
                     <Label className="text-xs text-muted-foreground">SUBMITTED</Label>
                     <p className="text-sm">
-                      {formatDistanceToNow(new Date(selectedRequest.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(selectedRequest.created_at), {
+                        addSuffix: true,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -482,8 +553,9 @@ export default function ApprovalManagementDashboard() {
                   <p className="font-medium">
                     {(() => {
                       const srAny = selectedRequest as any;
-                      const fullName = `${srAny.user_first_name || ''} ${srAny.user_last_name || ''}`.trim();
-                      const fallbackEmail = srAny.user_email || (srAny.request_data?.user_email);
+                      const fullName =
+                        `${srAny.user_first_name || ''} ${srAny.user_last_name || ''}`.trim();
+                      const fallbackEmail = srAny.user_email || srAny.request_data?.user_email;
                       return fullName || fallbackEmail || 'Unknown user';
                     })()}
                   </p>
@@ -500,7 +572,10 @@ export default function ApprovalManagementDashboard() {
                           setSelectedLoanForModal({
                             id: selectedRequest.id,
                             amount: selectedRequest.request_data?.amount || 0,
-                            term_months: selectedRequest.request_data?.term_months || selectedRequest.request_data?.term || 0,
+                            term_months:
+                              selectedRequest.request_data?.term_months ||
+                              selectedRequest.request_data?.term ||
+                              0,
                             interest_rate: selectedRequest.request_data?.interest_rate || 32,
                             monthly_payment: selectedRequest.request_data?.monthly_payment || 0,
                             total_repayment: selectedRequest.request_data?.total_repayment || 0,
@@ -508,8 +583,11 @@ export default function ApprovalManagementDashboard() {
                             status: selectedRequest.status,
                             created_at: selectedRequest.created_at,
                             // Include approval timestamp for status history
-                            approved_at: selectedRequest.status === 'approved' ? selectedRequest.updated_at : undefined,
-                            request_data: selectedRequest.request_data
+                            approved_at:
+                              selectedRequest.status === 'approved'
+                                ? selectedRequest.updated_at
+                                : undefined,
+                            request_data: selectedRequest.request_data,
                           });
                           setLoanDetailsModalOpen(true);
                         }}
@@ -578,7 +656,10 @@ export default function ApprovalManagementDashboard() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground" data-testid="approvals-processed-state">
+                  <div
+                    className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground"
+                    data-testid="approvals-processed-state"
+                  >
                     <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
                     This request has been {selectedRequest.status}. No further action required.
                   </div>

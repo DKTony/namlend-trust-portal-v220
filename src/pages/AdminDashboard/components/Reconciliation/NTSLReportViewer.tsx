@@ -2,14 +2,8 @@
  * NTSL (Net Settlement Report) Viewer Component
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -20,19 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Download, FileSpreadsheet } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
 import { formatCurrency } from '@/lib/utils';
@@ -41,7 +23,12 @@ import { parseNTSLReport } from '@/services/settlementService';
 export function NTSLReportViewer() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  const { data: reports, isLoading } = useSettlementReports({
+  const {
+    data: reports,
+    isLoading,
+    isError,
+    refetch,
+  } = useSettlementReports({
     reportType: 'ntsl',
   });
 
@@ -49,9 +36,7 @@ export function NTSLReportViewer() {
     selectedReportId || undefined
   );
 
-  const ntslData = reportContent?.report_data
-    ? parseNTSLReport(reportContent.report_data)
-    : null;
+  const ntslData = reportContent?.report_data ? parseNTSLReport(reportContent.report_data) : null;
 
   return (
     <>
@@ -86,6 +71,18 @@ export function NTSLReportViewer() {
                       Loading NTSL reports...
                     </TableCell>
                   </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="text-destructive">Failed to load NTSL reports.</div>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-2 text-sm text-primary underline"
+                      >
+                        Retry
+                      </button>
+                    </TableCell>
+                  </TableRow>
                 ) : reports?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
@@ -99,20 +96,30 @@ export function NTSLReportViewer() {
                         {new Date(report.run_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{report.window_id}</TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={report.participant_name || 'All'}>{report.participant_name || 'All'}</TableCell>
-                      <TableCell className="font-mono text-sm max-w-[200px] truncate" title={report.file_name}>
+                      <TableCell
+                        className="max-w-[150px] truncate"
+                        title={report.participant_name || 'All'}
+                      >
+                        {report.participant_name || 'All'}
+                      </TableCell>
+                      <TableCell
+                        className="font-mono text-sm max-w-[200px] truncate"
+                        title={report.file_name}
+                      >
                         {report.file_name}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {report.file_size
-                          ? `${(report.file_size / 1024).toFixed(1)} KB`
-                          : '-'}
+                        {report.file_size ? `${(report.file_size / 1024).toFixed(1)} KB` : '-'}
                       </TableCell>
                       <TableCell>
                         {report.distributed_at ? (
-                          <Badge variant="default" className="shrink-0">Distributed</Badge>
+                          <Badge variant="default" className="shrink-0">
+                            Distributed
+                          </Badge>
                         ) : (
-                          <Badge variant="secondary" className="shrink-0">Pending</Badge>
+                          <Badge variant="secondary" className="shrink-0">
+                            Pending
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -166,7 +173,9 @@ export function NTSLReportViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Net Position</p>
-                  <p className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <p
+                    className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                  >
                     {formatCurrency(ntslData.netPosition)}
                   </p>
                 </div>
@@ -193,9 +202,7 @@ export function NTSLReportViewer() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Switching Fee</p>
-                      <p className="text-lg font-medium">
-                        {formatCurrency(ntslData.switchingFee)}
-                      </p>
+                      <p className="text-lg font-medium">{formatCurrency(ntslData.switchingFee)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Owed</p>
@@ -236,21 +243,19 @@ export function NTSLReportViewer() {
                         <TableBody>
                           {ntslData.transactions.map((txn, idx) => (
                             <TableRow key={idx}>
-                              <TableCell className="font-mono text-xs">
-                                {txn.txId}
-                              </TableCell>
+                              <TableCell className="font-mono text-xs">{txn.txId}</TableCell>
                               <TableCell>{txn.counterparty}</TableCell>
                               <TableCell>
-                                <Badge
-                                  variant={txn.type === 'credit' ? 'default' : 'secondary'}
-                                >
+                                <Badge variant={txn.type === 'credit' ? 'default' : 'secondary'}>
                                   {txn.type}
                                 </Badge>
                               </TableCell>
                               <TableCell>{txn.category}</TableCell>
                               <TableCell
                                 className={`text-right ${
-                                  txn.type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                  txn.type === 'credit'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-red-600 dark:text-red-400'
                                 }`}
                               >
                                 {formatCurrency(txn.amount)}
@@ -265,9 +270,7 @@ export function NTSLReportViewer() {
               )}
             </div>
           ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No report data available
-            </div>
+            <div className="py-8 text-center text-muted-foreground">No report data available</div>
           )}
         </DialogContent>
       </Dialog>

@@ -3,14 +3,7 @@
  * Items awaiting participant response/confirmation on adjustments
  */
 
-import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -23,16 +16,23 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FileClock, AlertTriangle } from 'lucide-react';
 import { useSettlementReports } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
 
 export function PendingAdjustmentResponse() {
-  const { data: reports, isLoading } = useSettlementReports({
+  const {
+    data: reports,
+    isLoading,
+    isError,
+    refetch,
+  } = useSettlementReports({
     reportType: 'pending_adjustment_response',
   });
 
-  const overdueCount = reports?.filter(
-    (r) => r.distributed_at && new Date(r.distributed_at) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  ).length || 0;
+  const overdueCount =
+    reports?.filter(
+      (r) =>
+        r.distributed_at &&
+        new Date(r.distributed_at) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    ).length || 0;
 
   return (
     <Card>
@@ -76,9 +76,24 @@ export function PendingAdjustmentResponse() {
                     Loading pending responses...
                   </TableCell>
                 </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="text-destructive">Failed to load pending responses.</div>
+                    <button
+                      onClick={() => refetch()}
+                      className="mt-2 text-sm text-primary underline"
+                    >
+                      Retry
+                    </button>
+                  </TableCell>
+                </TableRow>
               ) : reports?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-green-600 dark:text-green-400">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-green-600 dark:text-green-400"
+                  >
                     ✓ No pending adjustment responses
                   </TableCell>
                 </TableRow>
@@ -93,25 +108,41 @@ export function PendingAdjustmentResponse() {
                   const isOverdue = ageInDays > 7;
 
                   return (
-                    <TableRow key={report.id} className={isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''}>
+                    <TableRow
+                      key={report.id}
+                      className={isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''}
+                    >
                       <TableCell className="tabular-nums">
                         {new Date(report.run_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{report.window_id}</TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={report.participant_name || 'All'}>{report.participant_name || 'All'}</TableCell>
-                      <TableCell className="font-mono text-sm max-w-[200px] truncate" title={report.file_name}>
+                      <TableCell
+                        className="max-w-[150px] truncate"
+                        title={report.participant_name || 'All'}
+                      >
+                        {report.participant_name || 'All'}
+                      </TableCell>
+                      <TableCell
+                        className="font-mono text-sm max-w-[200px] truncate"
+                        title={report.file_name}
+                      >
                         {report.file_name}
                       </TableCell>
                       <TableCell className="tabular-nums">
                         {distributedDate?.toLocaleDateString() || '-'}
                       </TableCell>
                       <TableCell>
-                        <span className={`${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''} tabular-nums`}>
+                        <span
+                          className={`${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''} tabular-nums`}
+                        >
                           {ageInDays} days
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={isOverdue ? 'destructive' : 'secondary'} className="shrink-0">
+                        <Badge
+                          variant={isOverdue ? 'destructive' : 'secondary'}
+                          className="shrink-0"
+                        >
                           {isOverdue ? 'Overdue' : 'Pending'}
                         </Badge>
                       </TableCell>

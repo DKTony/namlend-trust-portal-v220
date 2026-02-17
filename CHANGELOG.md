@@ -5,6 +5,33 @@ All notable changes to the NamLend Trust Platform will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.6] - 2026-02-17 (Reconciliation Tab Crash Fix)
+
+### Fixed
+
+- **Reconciliation Tab Blank Screen** (HIGH - UI Crash)
+  - Root cause 1: `ErrorBoundary` fallback used `ThemedCard`/`ThemedButton` which call `useTheme()`, but ErrorBoundary wraps outside all providers — fallback itself crashed
+  - Root cause 2: Settlement hooks returned `ServiceResult<T>` wrappers; UI components called `.map()` on the wrapper object instead of the inner array, throwing `TypeError`
+  - Replaced ErrorBoundary fallback with plain HTML + Tailwind CSS variables (no React context dependency)
+  - Added TanStack Query `select` to 5 hooks in `useSettlement.ts` to unwrap `ServiceResult` to raw domain data
+  - **Impact**: Reconciliation tab now loads correctly; ErrorBoundary displays proper error UI on any future crash
+
+- **Missing Error States in Reconciliation UI** (MEDIUM - UX)
+  - Added `isError` / retry handling to all 8 Reconciliation consumer components
+  - Failed queries now show error message with retry button instead of silent blank
+  - Statistics cards show "Unable to load" fallback on API failure
+
+### Changed
+
+- Removed dead `reconciliationAPI` import from `ReconciliationDashboard.tsx`
+- Cleaned up unused `React` default imports across 9 Reconciliation components
+- Removed unused `ACK_TYPE_LABELS`, `CheckCircle2`, `formatCurrency`, and `Select` imports
+
+### Technical
+
+- **Files modified**: `ErrorBoundary.tsx`, `useSettlement.ts`, `ReconciliationDashboard.tsx`, `SettlementRunsList.tsx`, `Pacs009Viewer.tsx`, `NTSLReportViewer.tsx`, `RawDataReportViewer.tsx`, `AdjustmentsViewer.tsx`, `PendingAdjustmentResponse.tsx`, `PendingStatusReport.tsx`, `TimeoutReportViewer.tsx`, `AcknowledgementsViewer.tsx`
+- **Build**: `tsc --noEmit` passes clean with zero errors
+
 ## [2.8.4] - 2026-01-08 (Data Consistency & Access Control)
 
 ### Fixed
@@ -271,14 +298,12 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Complete React Native + Expo project initialized
   - Full TypeScript implementation with strict type safety
   - Production-ready mobile application for iOS and Android
-  
 - **Mobile App Documentation**
   - Complete setup guide (`MOBILE_APP_SETUP.md`)
   - Comprehensive architecture document (`MOBILE_APP_ARCHITECTURE.md`)
   - Mobile app README with deployment checklist
   - React Native + Expo implementation plan
   - Client and approver feature specifications
-  
 - **Authentication & Security**
   - Supabase Auth integration with AsyncStorage persistence
   - Biometric authentication (Face ID, Touch ID, Fingerprint)
@@ -332,7 +357,6 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Zustand for client state
   - React Native Paper for UI components
   - Lucide React Native for icons
-  
 - **Dependencies Installed**
   - @supabase/supabase-js (backend integration)
   - @react-navigation/native, @react-navigation/native-stack, @react-navigation/bottom-tabs
@@ -351,7 +375,6 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom hooks for data fetching
   - Reusable components architecture
   - Type-safe navigation with TypeScript
-  
 - **Build Configuration**
   - app.json configured with v2.4.2
   - iOS bundle identifier: com.namlend.mobile
@@ -644,21 +667,18 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Applicant information with automatic debt-to-income ratio calculation
   - Timeline visualization (application → approval → disbursement)
   - Replaces ugly JSON displays in approval workflow
-  
 - **DisbursementDetailsModal** - Complete disbursement information
   - Disbursement amount with payment method display
   - Client and loan information cards
   - Payment reference highlighting in purple cards
   - Processing notes section
   - Timeline visualization (created → scheduled → processed)
-  
 - **PaymentDetailsModal** - Payment transaction details
   - Payment amount with method and status badges
   - Transaction reference number highlighting
   - Notes section for additional context
   - Timeline visualization (initiated → completed)
   - Summary cards with formatted dates
-  
 - **ClientProfileModal** - Comprehensive client profile with 4 interactive tabs
   - Profile header with employment, income, and credit score
   - **Loans Tab:** All client loans with status, amounts, and terms
@@ -726,6 +746,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2025-09-07
 
 ### Added - Back Office Approval Integration System - Production Testing Complete
+
 - **Comprehensive Approval Workflow Database Schema**
   - Created `approval_requests` table for centralized request management
   - Added `approval_workflow_history` table for complete audit trails
@@ -769,18 +790,21 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - **REAL-TIME NOTIFICATIONS**: Validated 4 unread admin notifications operational
 
 ### Changed
+
 - **User Request Processing**: All loan applications and KYC documents now route through mandatory approval workflow
 - **Admin Dashboard**: Enhanced with dedicated approval management capabilities and real-time notifications
 - **Database Architecture**: Extended with comprehensive approval workflow tables and relationships
 - **Security Model**: Strengthened with approval-based access control for sensitive operations
 
 ### Security
+
 - **Mandatory Approval System**: All user-initiated requests now require explicit admin approval
 - **Audit Trail Compliance**: Complete workflow history tracking for regulatory requirements
 - **Role-Based Access Control**: Admin-only access to approval management functions
 - **Secure Request Processing**: Validated approval workflow with comprehensive error handling
 
 ### Documentation
+
 - Updated architecture documentation with approval workflow system details
 - Enhanced technical specifications with new database schema and service layer
 - Added comprehensive approval workflow user guide and operational procedures
@@ -789,6 +813,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Security Hardening] - 2025-09-06
 
 ### 🔒 Security Fixes
+
 - **Authentication Flow Hardening**
   - Removed all hard reloads (`window.location.reload()`) from authentication flows
   - Implemented reactive state management for SPA-friendly auth experience
@@ -807,6 +832,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Added environment variable validation with secure defaults
 
 ### 🚀 Features Added
+
 - **Regulatory Compliance Module** (`src/constants/regulatory.ts`)
   - Added `APR_LIMIT` constant set to 32% (Namibian regulatory compliance)
   - Created `isValidAPR()` validation helper function
@@ -826,6 +852,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced development utilities with proper error handling
 
 ### 🐛 Bug Fixes
+
 - **Console Errors Eliminated**
   - Fixed authentication errors in development utilities
   - Cleaned up syntax errors in `manualPasswordReset.ts`
@@ -844,6 +871,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved environment variable documentation and defaults
 
 ### 🔧 Technical Improvements
+
 - **Authentication State Management**
   - Replaced hard reloads with reactive state updates in `useAuth` hook
   - Enhanced session establishment timing for reliable navigation
@@ -857,6 +885,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive security test coverage
 
 ### 📚 Documentation Updates
+
 - **Security Analysis** (`docs/security-analysis.md`)
   - Updated with latest security hardening measures
   - Documented all resolved vulnerabilities
@@ -870,6 +899,7 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Included regulatory compliance measures
 
 ### 🧪 Testing
+
 - **Security Test Suite** (`src/tests/security.test.ts`)
   - Added comprehensive security tests covering dev tool gating
   - Implemented APR validation test coverage
@@ -877,30 +907,33 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
   - Created auth flow security verification tests
 
 ### 🌍 Environment Variables
+
 - **New Variables**
   - `VITE_DEBUG_TOOLS`: Unified flag for all development utilities (default: false)
-  
 - **Updated Variables**
   - `VITE_SUPABASE_URL`: Now uses demo URL for development fallback
   - `VITE_SUPABASE_ANON_KEY`: Demo key for mock client operations
-  
 - **Deprecated Variables**
   - `VITE_ALLOW_LOCAL_ADMIN`: Replaced by `VITE_DEBUG_TOOLS` (backward compatible)
 
 ### 🔄 Migration Notes
+
 - No database migrations required for this release
 - Environment variables should be updated to use new `VITE_DEBUG_TOOLS` flag
 - Legacy `VITE_ALLOW_LOCAL_ADMIN` flag still supported but deprecated
 - Development servers should be restarted to apply authentication fixes
 
 ### 📋 Files Modified
+
 **Core Authentication & Security:**
+
 - `src/integrations/supabase/client.ts` - Enhanced with mock client fallback
 - `src/integrations/supabase/mockClient.ts` - New comprehensive mock implementation
 - `src/hooks/useAuth.tsx` - Removed hard reloads, added reactive state management
 - `src/pages/Auth.tsx` - Enhanced login flow with proper navigation timing
 
 **Development Tools:**
+
 - `src/utils/devToolsHelper.ts` - New secure development utilities
 - `src/utils/supabaseDebug.ts` - Refactored with secure gating
 - `src/utils/testLoanApproval.ts` - Fixed console errors and mock client handling
@@ -910,21 +943,25 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/utils/setupUserRole.ts` - Replaced console errors with debug logging
 
 **Regulatory & Business Logic:**
+
 - `src/constants/regulatory.ts` - New regulatory compliance module
 - `src/pages/LoanApplication.tsx` - Added APR validation integration
 
 **Configuration & Environment:**
+
 - `src/main.tsx` - Unified debug tool gating with backward compatibility
 - `.env` - Updated with demo keys and debug flags
 - `.env.example` - Added new environment variable documentation
 
 **Documentation & Testing:**
+
 - `docs/security-analysis.md` - Comprehensive security audit update
 - `docs/architecture/README.md` - Updated security architecture section
 - `src/tests/security.test.ts` - New comprehensive security test suite
 - `CHANGELOG.md` - This comprehensive changelog
 
 ### 🎯 Next Steps
+
 - [ ] Complete production environment setup with real Supabase credentials
 - [ ] Run comprehensive security audit in production environment
 - [ ] Implement additional unit tests for business logic components
@@ -936,6 +973,6 @@ and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0
 **Total Files Modified**: 15 files  
 **Security Issues Resolved**: 8 critical issues  
 **New Features Added**: 4 major features  
-**Test Coverage Added**: Comprehensive security test suite  
+**Test Coverage Added**: Comprehensive security test suite
 
 This release represents a major security hardening effort ensuring the NamLend platform meets enterprise security standards while maintaining excellent developer experience.

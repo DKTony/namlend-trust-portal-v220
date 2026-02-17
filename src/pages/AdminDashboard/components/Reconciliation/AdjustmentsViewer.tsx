@@ -3,14 +3,8 @@
  * Settlement adjustments from disputes/chargebacks/corrections
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -46,7 +40,12 @@ export function AdjustmentsViewer() {
   const [selectedAdjustment, setSelectedAdjustment] = useState<string | null>(null);
   const [responseNotes, setResponseNotes] = useState('');
 
-  const { data: adjustments, isLoading } = useSettlementAdjustments({
+  const {
+    data: adjustments,
+    isLoading,
+    isError,
+    refetch,
+  } = useSettlementAdjustments({
     status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
@@ -86,9 +85,7 @@ export function AdjustmentsViewer() {
             <FileWarning className="h-5 w-5" />
             Settlement Adjustments
           </CardTitle>
-          <CardDescription>
-            Disputes, chargebacks, and operational corrections
-          </CardDescription>
+          <CardDescription>Disputes, chargebacks, and operational corrections</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filter */}
@@ -129,6 +126,18 @@ export function AdjustmentsViewer() {
                       Loading adjustments...
                     </TableCell>
                   </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      <div className="text-destructive">Failed to load adjustments.</div>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-2 text-sm text-primary underline"
+                      >
+                        Retry
+                      </button>
+                    </TableCell>
+                  </TableRow>
                 ) : adjustments?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
@@ -142,10 +151,16 @@ export function AdjustmentsViewer() {
                         {new Date(adj.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="shrink-0">{adj.adjustment_type}</Badge>
+                        <Badge variant="outline" className="shrink-0">
+                          {adj.adjustment_type}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[120px] truncate" title={adj.source_participant}>{adj.source_participant}</TableCell>
-                      <TableCell className="max-w-[120px] truncate" title={adj.target_participant}>{adj.target_participant}</TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={adj.source_participant}>
+                        {adj.source_participant}
+                      </TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={adj.target_participant}>
+                        {adj.target_participant}
+                      </TableCell>
                       <TableCell className="max-w-[200px]">
                         <div className="flex items-center truncate" title={adj.reason_description}>
                           {adj.reason_code && (
@@ -153,9 +168,7 @@ export function AdjustmentsViewer() {
                               {adj.reason_code}
                             </Badge>
                           )}
-                          <span className="truncate text-sm">
-                            {adj.reason_description}
-                          </span>
+                          <span className="truncate text-sm">{adj.reason_description}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
@@ -167,10 +180,10 @@ export function AdjustmentsViewer() {
                             adj.status === 'approved'
                               ? 'default'
                               : adj.status === 'rejected'
-                              ? 'destructive'
-                              : adj.status === 'settled'
-                              ? 'default'
-                              : 'secondary'
+                                ? 'destructive'
+                                : adj.status === 'settled'
+                                  ? 'default'
+                                  : 'secondary'
                           }
                           className="shrink-0"
                         >
@@ -230,11 +243,7 @@ export function AdjustmentsViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge
-                    variant={
-                      selectedItem.status === 'approved' ? 'default' : 'secondary'
-                    }
-                  >
+                  <Badge variant={selectedItem.status === 'approved' ? 'default' : 'secondary'}>
                     {selectedItem.status}
                   </Badge>
                 </div>
@@ -248,9 +257,7 @@ export function AdjustmentsViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-medium text-lg">
-                    {formatCurrency(selectedItem.amount)}
-                  </p>
+                  <p className="font-medium text-lg">{formatCurrency(selectedItem.amount)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Response Due</p>
@@ -290,11 +297,7 @@ export function AdjustmentsViewer() {
 
           {selectedItem?.status === 'pending' && (
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={handleReject}
-                disabled={updateStatus.isPending}
-              >
+              <Button variant="outline" onClick={handleReject} disabled={updateStatus.isPending}>
                 <XCircle className="h-4 w-4 mr-2" />
                 Reject
               </Button>

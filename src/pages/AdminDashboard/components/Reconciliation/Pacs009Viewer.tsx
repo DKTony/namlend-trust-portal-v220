@@ -3,14 +3,8 @@
  * Displays and parses ISO 20022 pacs.009 settlement batch files
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -28,16 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, FileCode, Download, Copy, Check } from 'lucide-react';
-import { useSettlementRuns, usePacs009Batches, usePacs009BatchDetails } from '@/hooks/useSettlement';
+import {
+  useSettlementRuns,
+  usePacs009Batches,
+  usePacs009BatchDetails,
+} from '@/hooks/useSettlement';
 import { formatCurrency } from '@/lib/utils';
 import { parsePacs009Xml, formatXmlForDisplay } from '@/services/settlementService';
 import { BATCH_TYPE_LABELS } from '@/types/settlement';
@@ -47,10 +40,13 @@ export function Pacs009Viewer() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const { data: runs } = useSettlementRuns({ limit: 20 });
-  const { data: batches, isLoading: batchesLoading } = usePacs009Batches(
-    selectedRunId || undefined
-  );
+  const { data: runs, isError: runsError } = useSettlementRuns({ limit: 20 });
+  const {
+    data: batches,
+    isLoading: batchesLoading,
+    isError: batchesError,
+    refetch: refetchBatches,
+  } = usePacs009Batches(selectedRunId || undefined);
   const { data: batchDetails, isLoading: detailsLoading } = usePacs009BatchDetails(
     selectedBatchId || undefined
   );
@@ -84,11 +80,17 @@ export function Pacs009Viewer() {
                 <SelectValue placeholder="Select a settlement run" />
               </SelectTrigger>
               <SelectContent>
-                {runs?.map((run) => (
-                  <SelectItem key={run.id} value={run.id}>
-                    {run.run_id} - {new Date(run.settlement_date).toLocaleDateString()}
+                {runsError ? (
+                  <SelectItem value="__error" disabled>
+                    Failed to load runs
                   </SelectItem>
-                ))}
+                ) : (
+                  runs?.map((run) => (
+                    <SelectItem key={run.id} value={run.id}>
+                      {run.run_id} - {new Date(run.settlement_date).toLocaleDateString()}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -116,6 +118,20 @@ export function Pacs009Viewer() {
                         Loading batches...
                       </TableCell>
                     </TableRow>
+                  ) : batchesError ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <div className="text-destructive">Failed to load batches.</div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => refetchBatches()}
+                        >
+                          Retry
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ) : batches?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8">
@@ -130,18 +146,23 @@ export function Pacs009Viewer() {
                             {BATCH_TYPE_LABELS[batch.batch_type]}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-sm max-w-[150px] truncate" title={batch.msg_id}>
+                        <TableCell
+                          className="font-mono text-sm max-w-[150px] truncate"
+                          title={batch.msg_id}
+                        >
                           {batch.msg_id}
                         </TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={batch.file_name}>{batch.file_name}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={batch.file_name}>
+                          {batch.file_name}
+                        </TableCell>
                         <TableCell>
                           <Badge
                             variant={
                               batch.status === 'accepted'
                                 ? 'default'
                                 : batch.status === 'failed'
-                                ? 'destructive'
-                                : 'secondary'
+                                  ? 'destructive'
+                                  : 'secondary'
                             }
                             className="shrink-0"
                           >
@@ -155,9 +176,7 @@ export function Pacs009Viewer() {
                           {formatCurrency(batch.total_amount)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {batch.file_size
-                            ? `${(batch.file_size / 1024).toFixed(1)} KB`
-                            : '-'}
+                          {batch.file_size ? `${(batch.file_size / 1024).toFixed(1)} KB` : '-'}
                         </TableCell>
                         <TableCell>
                           <Button
@@ -272,18 +291,12 @@ export function Pacs009Viewer() {
                             <TableBody>
                               {parsedXml.transactions.map((txn, idx) => (
                                 <TableRow key={idx}>
-                                  <TableCell className="font-mono text-xs">
-                                    {txn.instrId}
-                                  </TableCell>
+                                  <TableCell className="font-mono text-xs">{txn.instrId}</TableCell>
                                   <TableCell className="font-mono text-xs">
                                     {txn.endToEndId}
                                   </TableCell>
-                                  <TableCell className="font-mono">
-                                    {txn.dbtrBic}
-                                  </TableCell>
-                                  <TableCell className="font-mono">
-                                    {txn.cdtrBic}
-                                  </TableCell>
+                                  <TableCell className="font-mono">{txn.dbtrBic}</TableCell>
+                                  <TableCell className="font-mono">{txn.cdtrBic}</TableCell>
                                   <TableCell className="text-right">
                                     {formatCurrency(txn.amount)} {txn.currency}
                                   </TableCell>
@@ -333,17 +346,13 @@ export function Pacs009Viewer() {
                           <TableCell>
                             <div>
                               <p className="font-medium">{instr.source}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {instr.source_bic}
-                              </p>
+                              <p className="text-xs text-muted-foreground">{instr.source_bic}</p>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
                               <p className="font-medium">{instr.target}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {instr.target_bic}
-                              </p>
+                              <p className="text-xs text-muted-foreground">{instr.target_bic}</p>
                             </div>
                           </TableCell>
                           <TableCell>

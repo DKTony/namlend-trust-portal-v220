@@ -3,14 +3,8 @@
  * NISS/SWIFT acknowledgements (xsys.001, xsys.002, xsys.003)
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -28,16 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useSettlementRuns, useAcknowledgements } from '@/hooks/useSettlement';
-import { ACK_TYPE_LABELS, ACK_TYPE_COLORS, type AckType } from '@/types/settlement';
+import { ACK_TYPE_COLORS, type AckType } from '@/types/settlement';
 
 export function AcknowledgementsViewer() {
   const [selectedRunId, setSelectedRunId] = useState<string>('');
@@ -46,8 +35,13 @@ export function AcknowledgementsViewer() {
     raw_payload: string | null;
   } | null>(null);
 
-  const { data: runs } = useSettlementRuns({ limit: 20 });
-  const { data: acks, isLoading } = useAcknowledgements(selectedRunId || undefined);
+  const { data: runs, isError: runsError } = useSettlementRuns({ limit: 20 });
+  const {
+    data: acks,
+    isLoading,
+    isError: acksError,
+    refetch: refetchAcks,
+  } = useAcknowledgements(selectedRunId || undefined);
 
   const getAckIcon = (ackType: AckType) => {
     switch (ackType) {
@@ -82,11 +76,17 @@ export function AcknowledgementsViewer() {
                 <SelectValue placeholder="Select a settlement run" />
               </SelectTrigger>
               <SelectContent>
-                {runs?.map((run) => (
-                  <SelectItem key={run.id} value={run.id}>
-                    {run.run_id} - {new Date(run.settlement_date).toLocaleDateString()}
+                {runsError ? (
+                  <SelectItem value="__error" disabled>
+                    Failed to load runs
                   </SelectItem>
-                ))}
+                ) : (
+                  runs?.map((run) => (
+                    <SelectItem key={run.id} value={run.id}>
+                      {run.run_id} - {new Date(run.settlement_date).toLocaleDateString()}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -113,6 +113,18 @@ export function AcknowledgementsViewer() {
                         Loading acknowledgements...
                       </TableCell>
                     </TableRow>
+                  ) : acksError ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="text-destructive">Failed to load acknowledgements.</div>
+                        <button
+                          onClick={() => refetchAcks()}
+                          className="mt-2 text-sm text-primary underline"
+                        >
+                          Retry
+                        </button>
+                      </TableCell>
+                    </TableRow>
                   ) : acks?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
@@ -130,7 +142,10 @@ export function AcknowledgementsViewer() {
                             </Badge>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-sm max-w-[150px] truncate" title={ack.msg_id}>
+                        <TableCell
+                          className="font-mono text-sm max-w-[150px] truncate"
+                          title={ack.msg_id}
+                        >
                           {ack.msg_id}
                         </TableCell>
                         <TableCell className="tabular-nums">
@@ -138,21 +153,30 @@ export function AcknowledgementsViewer() {
                         </TableCell>
                         <TableCell>
                           {ack.error_code ? (
-                            <Badge variant="destructive" className="shrink-0">{ack.error_code}</Badge>
+                            <Badge variant="destructive" className="shrink-0">
+                              {ack.error_code}
+                            </Badge>
                           ) : (
                             '-'
                           )}
                         </TableCell>
                         <TableCell className="max-w-[200px]">
-                          <span className="text-sm truncate block" title={ack.error_description || ''}>
+                          <span
+                            className="text-sm truncate block"
+                            title={ack.error_description || ''}
+                          >
                             {ack.error_description || ''}
                           </span>
                         </TableCell>
                         <TableCell>
                           {ack.processed_at ? (
-                            <Badge variant="default" className="shrink-0">Processed</Badge>
+                            <Badge variant="default" className="shrink-0">
+                              Processed
+                            </Badge>
                           ) : (
-                            <Badge variant="secondary" className="shrink-0">Pending</Badge>
+                            <Badge variant="secondary" className="shrink-0">
+                              Pending
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>

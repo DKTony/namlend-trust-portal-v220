@@ -3,14 +3,8 @@
  * Transactions with timeout/uncertain outcome requiring follow-up
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -46,9 +40,12 @@ export function TimeoutReportViewer() {
   const [selectedTimeout, setSelectedTimeout] = useState<string | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
 
-  const { data: timeouts, isLoading } = useTimeoutTransactions(
-    statusFilter !== 'all' ? statusFilter : undefined
-  );
+  const {
+    data: timeouts,
+    isLoading,
+    isError,
+    refetch,
+  } = useTimeoutTransactions(statusFilter !== 'all' ? statusFilter : undefined);
 
   const resolveTimeout = useResolveTimeout();
 
@@ -114,9 +111,24 @@ export function TimeoutReportViewer() {
                       Loading timeout transactions...
                     </TableCell>
                   </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="text-destructive">Failed to load timeout transactions.</div>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-2 text-sm text-primary underline"
+                      >
+                        Retry
+                      </button>
+                    </TableCell>
+                  </TableRow>
                 ) : timeouts?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-green-600 dark:text-green-400">
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-green-600 dark:text-green-400"
+                    >
                       ✓ No timeout transactions
                     </TableCell>
                   </TableRow>
@@ -126,10 +138,17 @@ export function TimeoutReportViewer() {
                       <TableCell className="tabular-nums">
                         {new Date(timeout.created_at).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="max-w-[120px] truncate" title={timeout.participant}>{timeout.participant}</TableCell>
-                      <TableCell className="max-w-[120px] truncate" title={timeout.counterparty}>{timeout.counterparty}</TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={timeout.participant}>
+                        {timeout.participant}
+                      </TableCell>
+                      <TableCell className="max-w-[120px] truncate" title={timeout.counterparty}>
+                        {timeout.counterparty}
+                      </TableCell>
                       <TableCell className="max-w-[150px]">
-                        <span className="text-sm truncate block" title={timeout.timeout_reason || 'Unknown'}>
+                        <span
+                          className="text-sm truncate block"
+                          title={timeout.timeout_reason || 'Unknown'}
+                        >
                           {timeout.timeout_reason || 'Unknown'}
                         </span>
                       </TableCell>
@@ -142,8 +161,8 @@ export function TimeoutReportViewer() {
                             timeout.status === 'resolved'
                               ? 'default'
                               : timeout.status === 'written_off'
-                              ? 'secondary'
-                              : 'destructive'
+                                ? 'secondary'
+                                : 'destructive'
                           }
                           className="shrink-0"
                         >

@@ -7,59 +7,60 @@
 
 ### Implementation Progress (35 of 42 completed)
 
-| #                                    | Enhancement                                 | Status                                                                                  |
-| ------------------------------------ | ------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **Priority 1: Production Readiness** |                                             |                                                                                         |
-| 1.1                                  | Deploy Production IPS Adapter               | ⬜ Blocked (needs BON credentials)                                                      |
-| 1.2                                  | Deploy TigerBeetle Cluster                  | ⬜ Blocked (needs infrastructure)                                                       |
-| 1.3                                  | Configure External API Keys                 | ⬜ Blocked (needs credentials)                                                          |
-| 1.4                                  | Wire Credit Scoring to Loan Decisions       | ✅ Completed                                                                            |
-| **Priority 2: Type Safety**          |                                             |                                                                                         |
-| 2.1                                  | Enable TypeScript Strict Mode               | 🔶 Step 2 done (`noFallthroughCasesInSwitch` + `noUnusedLocals` + `noUnusedParameters`) |
-| 2.2                                  | Generate Proper Supabase Types              | ⬜ Pending (needs local Supabase)                                                       |
-| 2.3                                  | Eliminate Remaining `any` Usage             | ✅ Completed (9 instances fixed)                                                        |
-| **Priority 3: Performance**          |                                             |                                                                                         |
-| 3.1                                  | Route-Level Code Splitting                  | ✅ Completed                                                                            |
-| 3.2                                  | Vite Bundle Optimization                    | ✅ Completed                                                                            |
-| 3.3                                  | Optimize TanStack Query Cache               | ✅ Completed                                                                            |
-| **Priority 4: Testing**              |                                             |                                                                                         |
-| 4.1                                  | Configure Vitest for Unit Testing           | ✅ Completed                                                                            |
-| 4.2                                  | Expand Unit Test Coverage                   | ✅ Expanded (regulatory + creditScoring + financeService + scoringRules + rpc)          |
-| 4.3                                  | Run Full E2E Suite in CI                    | ✅ Completed                                                                            |
-| 4.4                                  | Add Accessibility Testing                   | ✅ Completed                                                                            |
-| **Priority 5: Developer Experience** |                                             |                                                                                         |
-| 5.1                                  | Add Code Formatter (Prettier)               | ✅ Completed                                                                            |
-| 5.2                                  | Add Pre-Commit Hooks                        | ✅ Completed                                                                            |
-| 5.3                                  | Add .editorconfig                           | ✅ Completed                                                                            |
-| 5.4                                  | Create CONTRIBUTING.md                      | ✅ Completed                                                                            |
-| **Priority 6: Security**             |                                             |                                                                                         |
-| 6.1                                  | Add Content-Security-Policy Header          | ✅ Completed                                                                            |
-| 6.2                                  | Use Placeholder Credentials in .env.example | ✅ Completed                                                                            |
-| 6.3                                  | Add Dependency Security Scanning            | ✅ Completed                                                                            |
-| **Priority 7: Monitoring**           |                                             |                                                                                         |
-| 7.1                                  | Integrate External Error Tracking           | ✅ Completed (Sentry scaffold, conditional on DSN)                                      |
-| 7.2                                  | Add Health Check Endpoint                   | ✅ Completed                                                                            |
-| 7.3                                  | Structured Logging                          | ✅ Completed                                                                            |
-| 7.4                                  | Critical Error Alerting                     | ✅ Completed                                                                            |
-| **Priority 8: Architecture**         |                                             |                                                                                         |
-| 8.1                                  | Split Oversized Components                  | ✅ Completed (8 components split)                                                       |
-| 8.2                                  | Standardize API Layer Usage                 | ✅ Completed (documented as intentional dual-pattern)                                   |
-| 8.3                                  | Reorganize Component Directory              | ✅ Completed (26 files reorganized)                                                     |
-| 8.4                                  | Fix Context Barrel Export                   | ✅ Completed                                                                            |
-| 8.5                                  | Extract Auth Session Manager                | ✅ Completed                                                                            |
-| **Priority 9: Internationalization** |                                             |                                                                                         |
-| 9.1                                  | i18n Framework Setup                        | ✅ Completed (react-i18next + en locale)                                                |
-| 9.2                                  | Extract Remaining Strings                   | ✅ Completed (all 5 client pages converted)                                             |
-| 9.3                                  | Add Translations (af/de)                    | ⬜ Pending (needs certified translators)                                                |
-| **Priority 10: Mobile**              |                                             |                                                                                         |
-| 10.1                                 | Adopt useIsMobile Hook                      | ✅ Completed (Dashboard, Payment, BudgetTracker)                                        |
-| 10.2                                 | Mobile-Specific Admin Layouts               | ✅ Completed (14 responsive grid fixes)                                                 |
-| 10.3                                 | Touch Target Compliance                     | ✅ Completed (switch, sidebar, documents)                                               |
-| **Priority 11: Documentation**       |                                             |                                                                                         |
-| 11.1                                 | Component Documentation                     | ✅ Completed (5 themed components)                                                      |
-| 11.2                                 | API Reference Alignment                     | ✅ Completed                                                                            |
-| 11.3                                 | Generate OpenAPI Spec                       | ✅ Completed                                                                            |
-| 11.4                                 | Architecture Decision Records               | ✅ Completed (4 ADRs created)                                                           |
+| #                                    | Enhancement                                            | Status                                                                                  |
+| ------------------------------------ | ------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **Priority 1: Production Readiness** |                                                        |                                                                                         |
+| 1.1                                  | Deploy Production IPS Adapter                          | ⬜ Blocked (needs BON credentials)                                                      |
+| 1.2                                  | Deploy TigerBeetle Cluster                             | ⬜ Blocked (needs infrastructure)                                                       |
+| 1.3                                  | Configure External API Keys                            | ⬜ Blocked (needs credentials)                                                          |
+| 1.4                                  | Wire Credit Scoring to Loan Decisions                  | ✅ Completed                                                                            |
+| **Priority 2: Type Safety**          |                                                        |                                                                                         |
+| 2.1                                  | Enable TypeScript Strict Mode                          | 🔶 Step 2 done (`noFallthroughCasesInSwitch` + `noUnusedLocals` + `noUnusedParameters`) |
+| 2.2                                  | Generate Proper Supabase Types                         | ⬜ Pending (needs local Supabase)                                                       |
+| 2.3                                  | Eliminate Remaining `any` Usage                        | ✅ Completed (9 instances fixed)                                                        |
+| **Priority 3: Performance**          |                                                        |                                                                                         |
+| 3.1                                  | Route-Level Code Splitting                             | ✅ Completed                                                                            |
+| 3.2                                  | Vite Bundle Optimization                               | ✅ Completed                                                                            |
+| 3.3                                  | Optimize TanStack Query Cache                          | ✅ Completed                                                                            |
+| **Priority 4: Testing**              |                                                        |                                                                                         |
+| 4.1                                  | Configure Vitest for Unit Testing                      | ✅ Completed                                                                            |
+| 4.2                                  | Expand Unit Test Coverage                              | ✅ Expanded (regulatory + creditScoring + financeService + scoringRules + rpc)          |
+| 4.3                                  | Run Full E2E Suite in CI                               | ✅ Completed                                                                            |
+| 4.4                                  | Add Accessibility Testing                              | ✅ Completed                                                                            |
+| **Priority 5: Developer Experience** |                                                        |                                                                                         |
+| 5.1                                  | Add Code Formatter (Prettier)                          | ✅ Completed                                                                            |
+| 5.2                                  | Add Pre-Commit Hooks                                   | ✅ Completed                                                                            |
+| 5.3                                  | Add .editorconfig                                      | ✅ Completed                                                                            |
+| 5.4                                  | Create CONTRIBUTING.md                                 | ✅ Completed                                                                            |
+| **Priority 6: Security**             |                                                        |                                                                                         |
+| 6.1                                  | Add Content-Security-Policy Header                     | ✅ Completed                                                                            |
+| 6.2                                  | Use Placeholder Credentials in .env.example            | ✅ Completed                                                                            |
+| 6.3                                  | Add Dependency Security Scanning                       | ✅ Completed                                                                            |
+| **Priority 7: Monitoring**           |                                                        |                                                                                         |
+| 7.1                                  | Integrate External Error Tracking                      | ✅ Completed (Sentry scaffold, conditional on DSN)                                      |
+| 7.2                                  | Add Health Check Endpoint                              | ✅ Completed                                                                            |
+| 7.3                                  | Structured Logging                                     | ✅ Completed                                                                            |
+| 7.4                                  | Critical Error Alerting                                | ✅ Completed                                                                            |
+| **Priority 8: Architecture**         |                                                        |                                                                                         |
+| 8.1                                  | Split Oversized Components                             | ✅ Completed (8 components split)                                                       |
+| 8.2                                  | Standardize API Layer Usage                            | ✅ Completed (documented as intentional dual-pattern)                                   |
+| 8.3                                  | Reorganize Component Directory                         | ✅ Completed (26 files reorganized)                                                     |
+| 8.4                                  | Fix Context Barrel Export                              | ✅ Completed                                                                            |
+| 8.5                                  | Extract Auth Session Manager                           | ✅ Completed                                                                            |
+| 8.6                                  | Fix Reconciliation Tab Crash + ErrorBoundary Hardening | ✅ Completed (ServiceResult unwrap, error states, context-free fallback)                |
+| **Priority 9: Internationalization** |                                                        |                                                                                         |
+| 9.1                                  | i18n Framework Setup                                   | ✅ Completed (react-i18next + en locale)                                                |
+| 9.2                                  | Extract Remaining Strings                              | ✅ Completed (all 5 client pages converted)                                             |
+| 9.3                                  | Add Translations (af/de)                               | ⬜ Pending (needs certified translators)                                                |
+| **Priority 10: Mobile**              |                                                        |                                                                                         |
+| 10.1                                 | Adopt useIsMobile Hook                                 | ✅ Completed (Dashboard, Payment, BudgetTracker)                                        |
+| 10.2                                 | Mobile-Specific Admin Layouts                          | ✅ Completed (14 responsive grid fixes)                                                 |
+| 10.3                                 | Touch Target Compliance                                | ✅ Completed (switch, sidebar, documents)                                               |
+| **Priority 11: Documentation**       |                                                        |                                                                                         |
+| 11.1                                 | Component Documentation                                | ✅ Completed (5 themed components)                                                      |
+| 11.2                                 | API Reference Alignment                                | ✅ Completed                                                                            |
+| 11.3                                 | Generate OpenAPI Spec                                  | ✅ Completed                                                                            |
+| 11.4                                 | Architecture Decision Records                          | ✅ Completed (4 ADRs created)                                                           |
 
 ## Executive Summary
 

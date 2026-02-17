@@ -3,14 +3,8 @@
  * Transaction-level data for settlement windows
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -22,12 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Download, FileText, Search } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
@@ -38,7 +27,12 @@ export function RawDataReportViewer() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: reports, isLoading } = useSettlementReports({
+  const {
+    data: reports,
+    isLoading,
+    isError,
+    refetch,
+  } = useSettlementReports({
     reportType: 'raw_data',
   });
 
@@ -46,9 +40,7 @@ export function RawDataReportViewer() {
     selectedReportId || undefined
   );
 
-  const rawData = reportContent?.report_data
-    ? parseRawDataReport(reportContent.report_data)
-    : [];
+  const rawData = reportContent?.report_data ? parseRawDataReport(reportContent.report_data) : [];
 
   const filteredData = rawData.filter(
     (entry) =>
@@ -66,7 +58,8 @@ export function RawDataReportViewer() {
             Raw Data Reports
           </CardTitle>
           <CardDescription>
-            Transaction-level data for settlement windows (participants see only their own transactions)
+            Transaction-level data for settlement windows (participants see only their own
+            transactions)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,6 +83,18 @@ export function RawDataReportViewer() {
                       Loading raw data reports...
                     </TableCell>
                   </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="text-destructive">Failed to load raw data reports.</div>
+                      <button
+                        onClick={() => refetch()}
+                        className="mt-2 text-sm text-primary underline"
+                      >
+                        Retry
+                      </button>
+                    </TableCell>
+                  </TableRow>
                 ) : reports?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
@@ -99,18 +104,12 @@ export function RawDataReportViewer() {
                 ) : (
                   reports?.map((report) => (
                     <TableRow key={report.id}>
-                      <TableCell>
-                        {new Date(report.run_date).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{new Date(report.run_date).toLocaleDateString()}</TableCell>
                       <TableCell>{report.window_id}</TableCell>
                       <TableCell>{report.participant_name || 'All'}</TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {report.file_name}
-                      </TableCell>
+                      <TableCell className="font-mono text-sm">{report.file_name}</TableCell>
                       <TableCell className="text-right">
-                        {report.file_size
-                          ? `${(report.file_size / 1024).toFixed(1)} KB`
-                          : '-'}
+                        {report.file_size ? `${(report.file_size / 1024).toFixed(1)} KB` : '-'}
                       </TableCell>
                       <TableCell>
                         {report.distributed_at ? (
@@ -193,22 +192,35 @@ export function RawDataReportViewer() {
                     ) : (
                       filteredData.map((entry, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-mono text-xs max-w-[150px] truncate" title={entry.txId}>
+                          <TableCell
+                            className="font-mono text-xs max-w-[150px] truncate"
+                            title={entry.txId}
+                          >
                             {entry.txId}
                           </TableCell>
                           <TableCell className="text-sm tabular-nums">
                             {new Date(entry.timestamp).toLocaleString()}
                           </TableCell>
-                          <TableCell className="max-w-[150px] truncate" title={entry.remitterParticipant}>{entry.remitterParticipant}</TableCell>
-                          <TableCell className="max-w-[150px] truncate" title={entry.beneficiaryParticipant}>{entry.beneficiaryParticipant}</TableCell>
+                          <TableCell
+                            className="max-w-[150px] truncate"
+                            title={entry.remitterParticipant}
+                          >
+                            {entry.remitterParticipant}
+                          </TableCell>
+                          <TableCell
+                            className="max-w-[150px] truncate"
+                            title={entry.beneficiaryParticipant}
+                          >
+                            {entry.beneficiaryParticipant}
+                          </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="shrink-0">{entry.productType}</Badge>
+                            <Badge variant="outline" className="shrink-0">
+                              {entry.productType}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={
-                                entry.status === 'SUCCESS' ? 'default' : 'secondary'
-                              }
+                              variant={entry.status === 'SUCCESS' ? 'default' : 'secondary'}
                               className="shrink-0"
                             >
                               {entry.status}

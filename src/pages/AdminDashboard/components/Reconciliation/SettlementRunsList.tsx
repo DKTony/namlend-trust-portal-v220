@@ -3,14 +3,8 @@
  * Displays all settlement runs with filtering and details view
  */
 
-import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -29,14 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Eye, Calendar, RefreshCw, Plus, Play, CheckCircle2, Loader2 } from 'lucide-react';
+import { Eye, Calendar, RefreshCw, Plus, Play, Loader2 } from 'lucide-react';
 import {
   useSettlementRuns,
   useSettlementRunDetails,
@@ -67,7 +56,12 @@ export function SettlementRunsList() {
   const processRunMutation = useProcessSettlementRun();
   const settleRunMutation = useMarkSettlementSettled();
 
-  const { data: runs, isLoading, refetch } = useSettlementRuns({
+  const {
+    data: runs,
+    isLoading,
+    isError,
+    refetch,
+  } = useSettlementRuns({
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     state: stateFilter !== 'all' ? (stateFilter as SettlementRunState) : undefined,
@@ -121,9 +115,7 @@ export function SettlementRunsList() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Settlement Runs</CardTitle>
-              <CardDescription>
-                View and manage settlement runs across all windows
-              </CardDescription>
+              <CardDescription>View and manage settlement runs across all windows</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
@@ -204,6 +196,21 @@ export function SettlementRunsList() {
                       Loading settlement runs...
                     </TableCell>
                   </TableRow>
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      <div className="text-destructive">Failed to load settlement runs.</div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => refetch()}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Retry
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ) : runs?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
@@ -213,9 +220,7 @@ export function SettlementRunsList() {
                 ) : (
                   runs?.map((run) => (
                     <TableRow key={run.id}>
-                      <TableCell className="font-mono text-sm tabular-nums">
-                        {run.run_id}
-                      </TableCell>
+                      <TableCell className="font-mono text-sm tabular-nums">{run.run_id}</TableCell>
                       <TableCell>{run.window_id}</TableCell>
                       <TableCell className="tabular-nums">
                         {new Date(run.settlement_date).toLocaleDateString()}
@@ -229,10 +234,7 @@ export function SettlementRunsList() {
                         </Badge>
                       </TableCell>
                       <TableCell className="w-32">
-                        <Progress
-                          value={getSettlementProgress(run.state)}
-                          className="h-2"
-                        />
+                        <Progress value={getSettlementProgress(run.state)} className="h-2" />
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {run.transaction_count.toLocaleString()}
@@ -270,9 +272,7 @@ export function SettlementRunsList() {
       <Dialog open={!!selectedRunId} onOpenChange={() => setSelectedRunId(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Settlement Run Details: {runDetails?.run?.run_id}
-            </DialogTitle>
+            <DialogTitle>Settlement Run Details: {runDetails?.run?.run_id}</DialogTitle>
           </DialogHeader>
 
           {detailsLoading ? (
@@ -284,10 +284,7 @@ export function SettlementRunsList() {
                 <div>
                   <p className="text-sm text-muted-foreground">Window</p>
                   <p className="font-medium">
-                    {formatWindowId(
-                      runDetails.run.window_id,
-                      runDetails.run.settlement_date
-                    )}
+                    {formatWindowId(runDetails.run.window_id, runDetails.run.settlement_date)}
                   </p>
                 </div>
                 <div>
@@ -301,15 +298,11 @@ export function SettlementRunsList() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Transactions</p>
-                  <p className="font-medium">
-                    {runDetails.run.transaction_count.toLocaleString()}
-                  </p>
+                  <p className="font-medium">{runDetails.run.transaction_count.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Principal</p>
-                  <p className="font-medium">
-                    {formatCurrency(runDetails.run.total_principal)}
-                  </p>
+                  <p className="font-medium">{formatCurrency(runDetails.run.total_principal)}</p>
                 </div>
               </div>
 
@@ -332,19 +325,13 @@ export function SettlementRunsList() {
                         {runDetails.batches.map((batch) => (
                           <TableRow key={batch.id}>
                             <TableCell>
-                              {batch.batch_type === 'main'
-                                ? 'MNSB Settlement'
-                                : 'Switching Fee'}
+                              {batch.batch_type === 'main' ? 'MNSB Settlement' : 'Switching Fee'}
                             </TableCell>
-                            <TableCell className="font-mono text-sm">
-                              {batch.msg_id}
-                            </TableCell>
+                            <TableCell className="font-mono text-sm">{batch.msg_id}</TableCell>
                             <TableCell>
                               <Badge variant="outline">{batch.status}</Badge>
                             </TableCell>
-                            <TableCell className="text-right">
-                              {batch.instruction_count}
-                            </TableCell>
+                            <TableCell className="text-right">{batch.instruction_count}</TableCell>
                             <TableCell className="text-right">
                               {formatCurrency(batch.total_amount)}
                             </TableCell>
@@ -376,17 +363,13 @@ export function SettlementRunsList() {
                             <TableCell>
                               <div>
                                 <p className="font-medium">{instr.source}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {instr.source_bic}
-                                </p>
+                                <p className="text-xs text-muted-foreground">{instr.source_bic}</p>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div>
                                 <p className="font-medium">{instr.target}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {instr.target_bic}
-                                </p>
+                                <p className="text-xs text-muted-foreground">{instr.target_bic}</p>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -421,9 +404,7 @@ export function SettlementRunsList() {
                       <TableBody>
                         {runDetails.exposures.map((exp, idx) => (
                           <TableRow key={idx}>
-                            <TableCell className="font-medium">
-                              {exp.participant}
-                            </TableCell>
+                            <TableCell className="font-medium">{exp.participant}</TableCell>
                             <TableCell className="text-right text-red-600 dark:text-red-400">
                               {formatCurrency(exp.gross_payables)}
                             </TableCell>
@@ -494,10 +475,7 @@ export function SettlementRunsList() {
               </ul>
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateDialog(false)}
-              >
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
               </Button>
               <Button

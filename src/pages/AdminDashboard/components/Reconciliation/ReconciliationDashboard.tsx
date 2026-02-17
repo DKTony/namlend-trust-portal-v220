@@ -3,9 +3,7 @@
  * Main component for the IRCS Back Office reconciliation and settlement management
  */
 
-import React, { useState } from 'react';
-// New API Orchestration Layer - available for future migration
-import { reconciliationAPI } from '@/services/api-client';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -42,7 +40,11 @@ export function ReconciliationDashboard() {
   // Get 30-day statistics
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const { data: stats, isLoading: statsLoading } = useSettlementStatistics(
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+  } = useSettlementStatistics(
     thirtyDaysAgo.toISOString().split('T')[0],
     new Date().toISOString().split('T')[0]
   );
@@ -51,12 +53,9 @@ export function ReconciliationDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          Settlement & Reconciliation
-        </h2>
+        <h2 className="text-2xl font-bold tracking-tight">Settlement & Reconciliation</h2>
         <p className="text-muted-foreground">
-          IRCS Back Office - Manage settlement runs, reports, and
-          reconciliation
+          IRCS Back Office - Manage settlement runs, reports, and reconciliation
         </p>
       </div>
 
@@ -71,47 +70,54 @@ export function ReconciliationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
-              {statsLoading ? '...' : stats?.runs?.settled || 0}
+              {statsLoading ? '...' : statsError ? '–' : stats?.runs?.settled || 0}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {stats?.runs?.total || 0} total,{' '}
-              {stats?.runs?.failed || 0} failed
+              {statsError
+                ? 'Unable to load'
+                : `${stats?.runs?.total || 0} total, ${stats?.runs?.failed || 0} failed`}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium truncate mr-2">
-              Total Settled
-            </CardTitle>
+            <CardTitle className="text-sm font-medium truncate mr-2">Total Settled</CardTitle>
             <FileSpreadsheet className="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={statsLoading ? '...' : formatCurrency(stats?.totals?.principal || 0)}>
+            <div
+              className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+              title={statsLoading ? '...' : formatCurrency(stats?.totals?.principal || 0)}
+            >
               {statsLoading
                 ? '...'
-                : formatCurrency(stats?.totals?.principal || 0)}
+                : statsError
+                  ? '–'
+                  : formatCurrency(stats?.totals?.principal || 0)}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {stats?.totals?.transactions || 0} transactions
+              {statsError ? 'Unable to load' : `${stats?.totals?.transactions || 0} transactions`}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium truncate mr-2">
-              Pending Adjustments
-            </CardTitle>
+            <CardTitle className="text-sm font-medium truncate mr-2">Pending Adjustments</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400 shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
-              {statsLoading ? '...' : stats?.adjustments?.pending || 0}
+              {statsLoading ? '...' : statsError ? '–' : stats?.adjustments?.pending || 0}
             </div>
-            <p className="text-xs text-muted-foreground truncate" title={formatCurrency(stats?.adjustments?.total_amount || 0) + ' total'}>
-              {formatCurrency(stats?.adjustments?.total_amount || 0)} total
+            <p
+              className="text-xs text-muted-foreground truncate"
+              title={formatCurrency(stats?.adjustments?.total_amount || 0) + ' total'}
+            >
+              {statsError
+                ? 'Unable to load'
+                : `${formatCurrency(stats?.adjustments?.total_amount || 0)} total`}
             </p>
           </CardContent>
         </Card>
@@ -125,10 +131,10 @@ export function ReconciliationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
-              {statsLoading ? '...' : stats?.timeouts?.pending || 0}
+              {statsLoading ? '...' : statsError ? '–' : stats?.timeouts?.pending || 0}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              {stats?.timeouts?.resolved || 0} resolved
+              {statsError ? 'Unable to load' : `${stats?.timeouts?.resolved || 0} resolved`}
             </p>
           </CardContent>
         </Card>

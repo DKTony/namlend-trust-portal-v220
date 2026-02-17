@@ -1,7 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { handleComponentError, getRecentUserActions } from '@/utils/errorHandler';
 import { captureException } from '@/utils/sentry';
@@ -99,17 +96,19 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default error UI
+      // Default error UI — uses only plain HTML + Tailwind CSS variables.
+      // MUST NOT call any React context hooks (useTheme, etc.) because
+      // this fallback renders OUTSIDE all providers.
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <ThemedCard className="w-full max-w-md">
-            <CardHeader className="text-center">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="text-center">
               <div className="mx-auto w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
-              <CardTitle className="text-xl text-foreground">Something went wrong</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">Something went wrong</h2>
+            </div>
+            <div className="mt-4 space-y-4">
               <p className="text-muted-foreground text-center">
                 We're sorry, but something unexpected happened. Our team has been notified.
               </p>
@@ -128,27 +127,31 @@ class ErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="flex flex-col space-y-2">
-                <ThemedButton onClick={this.handleRetry} className="w-full" variant="primary">
+                <button
+                  onClick={this.handleRetry}
+                  className="w-full inline-flex items-center justify-center h-10 px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
-                </ThemedButton>
+                </button>
 
-                <ThemedButton onClick={this.handleGoHome} className="w-full" variant="secondary">
+                <button
+                  onClick={this.handleGoHome}
+                  className="w-full inline-flex items-center justify-center h-10 px-4 py-2 rounded-md text-sm font-medium border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
                   <Home className="w-4 h-4 mr-2" />
                   Go Home
-                </ThemedButton>
+                </button>
 
-                <ThemedButton
+                <button
                   onClick={this.handleReportError}
-                  className="w-full"
-                  variant="ghost"
-                  size="sm"
+                  className="w-full inline-flex items-center justify-center h-9 px-3 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   Report Error
-                </ThemedButton>
+                </button>
               </div>
-            </CardContent>
-          </ThemedCard>
+            </div>
+          </div>
         </div>
       );
     }

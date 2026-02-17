@@ -5,10 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import * as settlementService from '@/services/settlementService';
-import type {
-  SettlementRunState,
-  SettlementReportType,
-} from '@/types/settlement';
+import type { SettlementRunState, SettlementReportType } from '@/types/settlement';
 
 // ============================================================================
 // QUERY KEYS
@@ -17,8 +14,7 @@ import type {
 export const settlementKeys = {
   all: ['settlement'] as const,
   runs: () => [...settlementKeys.all, 'runs'] as const,
-  runsList: (filters: Record<string, unknown>) =>
-    [...settlementKeys.runs(), filters] as const,
+  runsList: (filters: Record<string, unknown>) => [...settlementKeys.runs(), filters] as const,
   runDetails: (id: string) => [...settlementKeys.runs(), id] as const,
   batches: () => [...settlementKeys.all, 'batches'] as const,
   batchDetails: (id: string) => [...settlementKeys.batches(), id] as const,
@@ -30,13 +26,11 @@ export const settlementKeys = {
   adjustmentsList: (filters: Record<string, unknown>) =>
     [...settlementKeys.adjustments(), filters] as const,
   timeouts: () => [...settlementKeys.all, 'timeouts'] as const,
-  timeoutsList: (status?: string) =>
-    [...settlementKeys.timeouts(), status] as const,
+  timeoutsList: (status?: string) => [...settlementKeys.timeouts(), status] as const,
   statistics: (from?: string, to?: string) =>
     [...settlementKeys.all, 'statistics', from, to] as const,
   participants: () => [...settlementKeys.all, 'participants'] as const,
-  acknowledgements: (runId: string) =>
-    [...settlementKeys.all, 'acks', runId] as const,
+  acknowledgements: (runId: string) => [...settlementKeys.all, 'acks', runId] as const,
 };
 
 // ============================================================================
@@ -52,6 +46,7 @@ export function useSettlementRuns(params?: {
   return useQuery({
     queryKey: settlementKeys.runsList(params || {}),
     queryFn: () => settlementService.getSettlementRuns(params),
+    select: (result) => result.data ?? [],
   });
 }
 
@@ -60,6 +55,7 @@ export function useSettlementRunDetails(runId: string | undefined) {
     queryKey: settlementKeys.runDetails(runId || ''),
     queryFn: () => settlementService.getSettlementRunDetails(runId!),
     enabled: !!runId,
+    select: (result) => result.data ?? null,
   });
 }
 
@@ -72,6 +68,7 @@ export function usePacs009BatchDetails(batchId: string | undefined) {
     queryKey: settlementKeys.batchDetails(batchId || ''),
     queryFn: () => settlementService.getPacs009BatchDetails(batchId!),
     enabled: !!batchId,
+    select: (result) => result.data ?? null,
   });
 }
 
@@ -80,6 +77,7 @@ export function usePacs009Batches(runId: string | undefined) {
     queryKey: [...settlementKeys.batches(), 'run', runId],
     queryFn: () => settlementService.getPacs009Batches(runId!),
     enabled: !!runId,
+    select: (result) => result.data ?? [],
   });
 }
 
@@ -95,6 +93,7 @@ export function useSettlementReports(params?: {
   return useQuery({
     queryKey: settlementKeys.reportsList(params || {}),
     queryFn: () => settlementService.getSettlementReports(params),
+    select: (result) => result.data ?? [],
   });
 }
 
@@ -110,10 +109,7 @@ export function useReportContent(reportId: string | undefined) {
 // ADJUSTMENTS
 // ============================================================================
 
-export function useSettlementAdjustments(params?: {
-  status?: string;
-  runId?: string;
-}) {
+export function useSettlementAdjustments(params?: { status?: string; runId?: string }) {
   return useQuery({
     queryKey: settlementKeys.adjustmentsList(params || {}),
     queryFn: () => settlementService.getSettlementAdjustments(params),

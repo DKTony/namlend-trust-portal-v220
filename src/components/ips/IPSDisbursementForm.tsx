@@ -1,6 +1,6 @@
 /**
  * IPS Disbursement Form Component
- * 
+ *
  * Admin form for initiating loan disbursements via IPS
  */
 
@@ -25,7 +25,7 @@ import { VPAInput } from './VPAInput';
 import { IPSTransactionStatus } from './IPSTransactionStatus';
 import { useIPSDisbursement } from '@/hooks/useIPSPayment';
 import type { IPSAdapterValidateVPAResponse, InitiateIPSDisbursementResult } from '@/types/ips';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { cn } from '@/lib/utils';
 
 interface IPSDisbursementFormProps {
@@ -55,7 +55,7 @@ export function IPSDisbursementForm({
   const [payeeVpa, setPayeeVpa] = useState(initialVpa);
   const [vpaValidation, setVpaValidation] = useState<IPSAdapterValidateVPAResponse | null>(null);
   const [result, setResult] = useState<InitiateIPSDisbursementResult | null>(null);
-  
+
   const disbursementMutation = useIPSDisbursement();
 
   const canProceed = payeeVpa && (vpaValidation?.isValid || initialVpa === payeeVpa);
@@ -72,17 +72,17 @@ export function IPSDisbursementForm({
 
   const handleSubmit = async () => {
     setStep('processing');
-    
+
     try {
       const disbursementResult = await disbursementMutation.mutateAsync({
         disbursementId,
         payeeVpa,
         note: `Loan disbursement for ${customerName}`,
       });
-      
+
       setResult(disbursementResult);
       setStep('result');
-      
+
       if (disbursementResult.success) {
         onSuccess?.(disbursementResult);
       } else {
@@ -112,9 +112,7 @@ export function IPSDisbursementForm({
           <Wallet className="h-5 w-5" />
           IPS Disbursement
         </CardTitle>
-        <CardDescription>
-          Disburse loan funds via Instant Payment Solution
-        </CardDescription>
+        <CardDescription>Disburse loan funds via Instant Payment Solution</CardDescription>
       </CardHeader>
       <CardContent>
         {/* Step: Input VPA */}
@@ -130,7 +128,7 @@ export function IPSDisbursementForm({
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Amount</span>
-                <span className="font-semibold text-lg ml-auto">{formatCurrency(amount)}</span>
+                <span className="font-semibold text-lg ml-auto">{formatNAD(amount)}</span>
               </div>
             </div>
 
@@ -146,11 +144,7 @@ export function IPSDisbursementForm({
             />
 
             {/* Action Button */}
-            <Button
-              onClick={handleConfirm}
-              disabled={!canProceed}
-              className="w-full"
-            >
+            <Button onClick={handleConfirm} disabled={!canProceed} className="w-full">
               Continue to Confirm
             </Button>
           </div>
@@ -162,15 +156,15 @@ export function IPSDisbursementForm({
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Please verify the disbursement details before proceeding.
-                This action cannot be undone.
+                Please verify the disbursement details before proceeding. This action cannot be
+                undone.
               </AlertDescription>
             </Alert>
 
             <div className="rounded-lg border p-4 space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Amount</span>
-                <span className="font-semibold text-lg">{formatCurrency(amount)}</span>
+                <span className="font-semibold text-lg">{formatNAD(amount)}</span>
               </div>
               <Separator />
               <div className="flex justify-between">
@@ -217,7 +211,7 @@ export function IPSDisbursementForm({
             <div>
               <p className="font-medium">Processing Disbursement</p>
               <p className="text-sm text-muted-foreground">
-                Sending {formatCurrency(amount)} to {payeeVpa}...
+                Sending {formatNAD(amount)} to {payeeVpa}...
               </p>
             </div>
           </div>
@@ -234,15 +228,13 @@ export function IPSDisbursementForm({
                     Disbursement Successful!
                   </p>
                   <p className="text-muted-foreground mt-1">
-                    {formatCurrency(amount)} has been sent to {payeeVpa}
+                    {formatNAD(amount)} has been sent to {payeeVpa}
                   </p>
                 </>
               ) : (
                 <>
                   <XCircle className="h-16 w-16 text-red-500 mx-auto" />
-                  <p className="text-xl font-semibold text-red-600 mt-2">
-                    Disbursement Failed
-                  </p>
+                  <p className="text-xl font-semibold text-red-600 mt-2">Disbursement Failed</p>
                   <p className="text-muted-foreground mt-1">
                     {result.message || 'The disbursement could not be processed.'}
                   </p>
@@ -251,10 +243,7 @@ export function IPSDisbursementForm({
             </div>
 
             {result.ips_transaction_id && (
-              <IPSTransactionStatus
-                transactionId={result.ips_transaction_id}
-                showDetails={true}
-              />
+              <IPSTransactionStatus transactionId={result.ips_transaction_id} showDetails={true} />
             )}
 
             <div className="flex gap-2">

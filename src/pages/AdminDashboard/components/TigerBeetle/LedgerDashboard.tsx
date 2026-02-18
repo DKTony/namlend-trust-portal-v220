@@ -15,7 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 
 interface OutboxStats {
   pending: number;

@@ -1,6 +1,6 @@
 /**
  * IPS History List Component
- * 
+ *
  * Displays a list of IPS transactions for a loan or user
  */
 
@@ -20,13 +20,9 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useLoanIPSTransactions } from '@/hooks/useIPSTransactionStatus';
-import {
-  IPS_STATUS_LABELS,
-  IPS_STATUS_COLORS,
-  isIPSStatusSuccess,
-} from '@/types/ips';
+import { IPS_STATUS_LABELS, IPS_STATUS_COLORS, isIPSStatusSuccess } from '@/types/ips';
 import type { IPSTransactionStatus, IPSTransactionType } from '@/types/ips';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { cn } from '@/lib/utils';
 
 interface IPSHistoryListProps {
@@ -83,9 +79,7 @@ export function IPSHistoryList({
           </CardHeader>
         )}
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Failed to load transaction history
-          </p>
+          <p className="text-sm text-muted-foreground">Failed to load transaction history</p>
         </CardContent>
       </ThemedCard>
     );
@@ -105,9 +99,7 @@ export function IPSHistoryList({
           </CardHeader>
         )}
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No IPS transactions yet
-          </p>
+          <p className="text-sm text-muted-foreground text-center py-4">No IPS transactions yet</p>
         </CardContent>
       </ThemedCard>
     );
@@ -216,15 +208,15 @@ function TransactionRow({ transaction }: TransactionRowProps) {
         <div
           className={cn(
             'font-semibold',
-            isDisbursement ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
+            isDisbursement
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-green-600 dark:text-green-400'
           )}
         >
-          {isDisbursement ? '-' : '+'}{formatCurrency(transaction.amount)}
+          {isDisbursement ? '-' : '+'}
+          {formatNAD(transaction.amount)}
         </div>
-        <Badge
-          variant="secondary"
-          className={cn('text-xs', IPS_STATUS_COLORS[transaction.status])}
-        >
+        <Badge variant="secondary" className={cn('text-xs', IPS_STATUS_COLORS[transaction.status])}>
           {IPS_STATUS_LABELS[transaction.status]}
         </Badge>
       </div>

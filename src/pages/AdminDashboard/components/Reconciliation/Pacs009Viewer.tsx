@@ -31,7 +31,7 @@ import {
   usePacs009Batches,
   usePacs009BatchDetails,
 } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { parsePacs009Xml, formatXmlForDisplay } from '@/services/settlementService';
 import { BATCH_TYPE_LABELS } from '@/types/settlement';
 

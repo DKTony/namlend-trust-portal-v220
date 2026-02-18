@@ -1,6 +1,6 @@
 /**
  * IPS Transaction Status Component
- * 
+ *
  * Displays real-time status of an IPS transaction with polling
  */
 
@@ -28,7 +28,7 @@ import {
   isIPSStatusSuccess,
 } from '@/types/ips';
 import type { IPSTransactionStatus as IPSStatus } from '@/types/ips';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { cn } from '@/lib/utils';
 
 interface IPSTransactionStatusProps {
@@ -46,17 +46,13 @@ export function IPSTransactionStatus({
   showDetails = true,
   className,
 }: IPSTransactionStatusProps) {
-  const {
-    data,
-    isLoading,
-    isError,
-    isPolling,
-    checkStatus,
-    refresh,
-  } = useIPSTransactionStatus(transactionId, {
-    enablePolling: true,
-    onComplete,
-  });
+  const { data, isLoading, isError, isPolling, checkStatus, refresh } = useIPSTransactionStatus(
+    transactionId,
+    {
+      enablePolling: true,
+      onComplete,
+    }
+  );
 
   if (isLoading) {
     return (
@@ -113,12 +109,8 @@ export function IPSTransactionStatus({
     return (
       <div className={cn('flex items-center gap-2', className)}>
         <StatusIcon />
-        <Badge className={IPS_STATUS_COLORS[status]}>
-          {IPS_STATUS_LABELS[status]}
-        </Badge>
-        {isPolling && (
-          <span className="text-xs text-muted-foreground">Checking...</span>
-        )}
+        <Badge className={IPS_STATUS_COLORS[status]}>{IPS_STATUS_LABELS[status]}</Badge>
+        {isPolling && <span className="text-xs text-muted-foreground">Checking...</span>}
         {!isFinal && (
           <Button variant="ghost" size="sm" onClick={() => checkStatus()}>
             <RefreshCw className="h-3 w-3" />
@@ -134,22 +126,16 @@ export function IPSTransactionStatus({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
             <TransactionIcon />
-            <span>
-              {data.transaction_type === 'DISBURSEMENT' ? 'Disbursement' : 'Payment'}
-            </span>
+            <span>{data.transaction_type === 'DISBURSEMENT' ? 'Disbursement' : 'Payment'}</span>
           </div>
-          <Badge className={IPS_STATUS_COLORS[status]}>
-            {IPS_STATUS_LABELS[status]}
-          </Badge>
+          <Badge className={IPS_STATUS_COLORS[status]}>{IPS_STATUS_LABELS[status]}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Amount */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Amount</span>
-          <span className="font-semibold">
-            {formatCurrency(data.amount || 0, data.currency || 'NAD')}
-          </span>
+          <span className="font-semibold">{formatNAD(data.amount || 0)}</span>
         </div>
 
         {/* Status with icon */}
@@ -211,12 +197,7 @@ export function IPSTransactionStatus({
         {/* Actions */}
         {!isFinal && (
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => checkStatus()}
-              disabled={isPolling}
-            >
+            <Button variant="outline" size="sm" onClick={() => checkStatus()} disabled={isPolling}>
               {isPolling ? (
                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
               ) : (

@@ -1,36 +1,36 @@
 # NamLend Trust - Services Documentation
 
-**Doc Revision**: 2026-01-19  \
-**Status**: Service layer is implemented across lending, IPS/IPP, collections, reconciliation, and settlement.
+**Doc Revision**: 2026-02-18 \
+**Status**: Service layer is implemented across lending, IPS/IPP, collections, reconciliation, and settlement. Settlement service hardened with audit logging, callRpc resilience, and TigerBeetle column fixes (Feb 2026).
 
 ---
 
 ## Service Index (src/services)
 
-| Service | Purpose | Notes |
-| --- | --- | --- |
-| `api-client.ts` | API orchestration client | Edge Function API wrapper with retries/metrics |
-| `approvalWorkflow.ts` | Approval request workflow | Drives loan application approvals |
-| `loanService.ts` | Loan record helpers | Status updates + disbursement creation |
-| `disbursementService.ts` | Disbursement state machine | RPC-driven, posts to ledger outbox |
-| `paymentService.ts` | Payment processing | Schedules, overdue, fees, ledger posts |
-| `paymentGateway.ts` | Provider routing + instructions | Bank transfer, MoMo, TN Mobile, PayToday, cash |
-| `ipsService.ts` | IPS payment integration | Calls `ips-adapter` Edge Function |
-| `ipsOnboardingService.ts` | IPP onboarding | RPC + adapter endpoints |
-| `collectionsService.ts` | Collections workflow | Activities, promises, reschedules |
-| `reconciliationService.ts` | Bank transaction matching | Manual and auto matching |
-| `notificationService.ts` | In-app notifications | Queue, preferences, realtime |
-| `smsGateway.ts` | SMS templates + logging | Client-side logging; Edge function for delivery |
-| `whatsappGateway.ts` | WhatsApp templates + logging | Client-side logging; Edge function for delivery |
-| `auditService.ts` | Audit trail access | RPCs for logs/transitions |
-| `workflowEngine.ts` | Multi-stage workflows | RPC-driven engine |
-| `roleManagementService.ts` | Role assignment rules | Validated via RPC |
-| `adminService.ts` | Admin profile data | RPC for profiles with roles |
-| `ledgerService.ts` | TigerBeetle outbox | Simulated posting via Edge worker |
-| `settlementService.ts` | Settlement runs + reports | DNS settlement workflows |
-| `clientService.ts` | Client profile access | Profile read/update |
-| `financeService.ts` | Budget & finance tracking | Transactions, budgets, savings goals, CSV upload |
-| `creditScoring.ts` | AI credit risk assessment | Scoring, recommendations, affordability checks |
+| Service                    | Purpose                         | Notes                                                                  |
+| -------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `api-client.ts`            | API orchestration client        | Edge Function API wrapper with retries/metrics                         |
+| `approvalWorkflow.ts`      | Approval request workflow       | Drives loan application approvals                                      |
+| `loanService.ts`           | Loan record helpers             | Status updates + disbursement creation                                 |
+| `disbursementService.ts`   | Disbursement state machine      | RPC-driven, posts to ledger outbox                                     |
+| `paymentService.ts`        | Payment processing              | Schedules, overdue, fees, ledger posts                                 |
+| `paymentGateway.ts`        | Provider routing + instructions | Bank transfer, MoMo, TN Mobile, PayToday, cash                         |
+| `ipsService.ts`            | IPS payment integration         | Calls `ips-adapter` Edge Function                                      |
+| `ipsOnboardingService.ts`  | IPP onboarding                  | RPC + adapter endpoints                                                |
+| `collectionsService.ts`    | Collections workflow            | Activities, promises, reschedules                                      |
+| `reconciliationService.ts` | Bank transaction matching       | Manual and auto matching                                               |
+| `notificationService.ts`   | In-app notifications            | Queue, preferences, realtime                                           |
+| `smsGateway.ts`            | SMS templates + logging         | Client-side logging; Edge function for delivery                        |
+| `whatsappGateway.ts`       | WhatsApp templates + logging    | Client-side logging; Edge function for delivery                        |
+| `auditService.ts`          | Audit trail access              | RPCs for logs/transitions                                              |
+| `workflowEngine.ts`        | Multi-stage workflows           | RPC-driven engine                                                      |
+| `roleManagementService.ts` | Role assignment rules           | Validated via RPC                                                      |
+| `adminService.ts`          | Admin profile data              | RPC for profiles with roles                                            |
+| `ledgerService.ts`         | TigerBeetle outbox              | Simulated posting via Edge worker                                      |
+| `settlementService.ts`     | Settlement runs + reports       | DNS settlement workflows; audit logging, callRpc resilience (Feb 2026) |
+| `clientService.ts`         | Client profile access           | Profile read/update                                                    |
+| `financeService.ts`        | Budget & finance tracking       | Transactions, budgets, savings goals, CSV upload                       |
+| `creditScoring.ts`         | AI credit risk assessment       | Scoring, recommendations, affordability checks                         |
 
 ---
 
@@ -302,6 +302,12 @@ Key exports:
 - `getSettlementAdjustments()` / `getAdjustment()` / `updateAdjustmentStatus()`
 - `getTimeoutTransactions()` / `getSettlementStatistics()`
 - `createSettlementRun()` / `processSettlementRun()` / `markSettlementSettled()`
+
+Notes:
+
+- All mutations use `callRpc()` from `@/utils/rpc` (circuit breaker + timeout + jitter); financial mutations use `retries: 0`.
+- State-changing operations log via `AuditService.logStateTransition()` for CLAUDE.md compliance.
+- `postSettlementRunToTigerBeetle()` posts net instructions to TigerBeetle outbox.
 
 ---
 

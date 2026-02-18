@@ -1,7 +1,7 @@
 # NamLend Trust - Technical Debt & Outstanding Work
 
-**Doc Revision**: 2026-01-19
-**Status**: Active - Tracking technical debt items with remediation steps.
+**Doc Revision**: 2026-02-18
+**Status**: Active - Tracking technical debt items with remediation steps. Settlement-specific debt added Feb 2026.
 
 ---
 
@@ -22,11 +22,12 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 
 ### Quick Stats
 
-| Priority | Count | Status |
-|----------|-------|--------|
-| High | 4 | Blocking production features |
-| Medium | 4 | Quality/maintainability issues |
-| Low | 2 | Nice-to-have improvements |
+| Priority   | Count | Status                               |
+| ---------- | ----- | ------------------------------------ |
+| High       | 4     | Blocking production features         |
+| Medium     | 4     | Quality/maintainability issues       |
+| Low        | 2     | Nice-to-have improvements            |
+| Settlement | 4     | Settlement-specific gaps (see below) |
 
 ---
 
@@ -38,6 +39,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Cannot process real IPS payments
 
 **Problem**:
+
 - `supabase/functions/ips-adapter` returns mock responses
 - Production IPS API endpoints not configured
 - mTLS certificates not set up
@@ -63,6 +65,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 6. Test with IPS sandbox environment first
 
 **Files**:
+
 - `supabase/functions/ips-adapter/index.ts`
 - `src/services/ipsService.ts`
 
@@ -74,6 +77,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Financial ledger not recording actual transactions
 
 **Problem**:
+
 - `tigerbeetle-outbox-worker` does not connect to a live cluster
 - Direct TB client is Node-only and not used by the worker
 - Shadow mode records to Supabase but not TigerBeetle
@@ -99,10 +103,12 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 5. Test with shadow mode comparison before switching
 
 **Files**:
+
 - `supabase/functions/tigerbeetle-outbox-worker/index.ts`
 - `src/services/tigerBeetleService.ts`
 
 **Documentation**:
+
 - [TIGERBEETLE_IMPLEMENTATION.md](./TIGERBEETLE_IMPLEMENTATION.md)
 - [TIGERBEETLE_PRODUCTION.md](./TIGERBEETLE_PRODUCTION.md)
 
@@ -114,6 +120,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Loan officers cannot access admin dashboard
 
 **Problem**:
+
 - `/admin/*` routes use `requireAdmin` in `ProtectedRoute`
 - UI components allow loan_officer inside AdminDashboard
 - Router blocks loan_officer role at route level
@@ -121,16 +128,23 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Remediation Steps**:
 
 1. Update `src/components/ProtectedRoute.tsx`:
+
    ```typescript
    // Change from:
-   if (requireAdmin && !isAdmin) { redirect('/dashboard'); }
+   if (requireAdmin && !isAdmin) {
+     redirect('/dashboard');
+   }
 
    // To:
-   if (requireAdmin && !isStaff) { redirect('/dashboard'); }
+   if (requireAdmin && !isStaff) {
+     redirect('/dashboard');
+   }
 
    // Where isStaff = isAdmin || isLoanOfficer
    ```
+
 2. Add role-based component visibility within admin pages:
+
    ```typescript
    // Only show certain features to admins
    {isAdmin && <UserManagementPanel />}
@@ -138,10 +152,12 @@ Core lending and backoffice workflows are implemented. This document tracks tech
    // Show to all staff
    <ApprovalQueue />
    ```
+
 3. Update navigation to show appropriate menu items per role
 4. Add E2E tests for loan officer admin access
 
 **Files**:
+
 - `src/components/ProtectedRoute.tsx`
 - `src/pages/AdminDashboard/index.tsx`
 - `src/components/Layout/AdminSidebar.tsx`
@@ -154,6 +170,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: TypeScript errors, runtime mismatches
 
 **Problem**:
+
 - `src/integrations/supabase/types.ts` does not fully match migrations
 - New columns/tables added without type regeneration
 - Reconciliation tables differ between recent migrations (`reconciliation_runs`, new `bank_transactions`) and legacy services/types (`payment_reconciliations`, legacy `bank_transactions`)
@@ -181,6 +198,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 5. Create pre-commit hook to check type freshness
 
 **Files**:
+
 - `src/integrations/supabase/types.ts` (generated types)
 
 ---
@@ -193,6 +211,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: No automated unit test coverage
 
 **Problem**:
+
 - Vitest-style tests exist in `tests/` and `src/tests/`
 - `vitest` is not defined in `package.json` scripts
 - Only Playwright E2E tests are runnable
@@ -227,6 +246,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 5. Add coverage threshold requirements
 
 **Files**:
+
 - `package.json`
 - `vitest.config.ts` (create)
 - `tests/setup.ts` (create)
@@ -239,6 +259,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Unused code, potential confusion
 
 **Problem**:
+
 - `src/services/paymentGateway.ts` exists but unused
 - Payment flows use RPCs directly
 - Gateway provides abstraction but not utilized
@@ -262,6 +283,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 4. Add gateway tests
 
 **Files**:
+
 - `src/services/paymentGateway.ts`
 - `src/pages/Payment.tsx`
 - `src/components/ips/PaymentModal.tsx`
@@ -274,6 +296,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Credit scoring exists but not used in loan decisions
 
 **Problem**:
+
 - `creditScoring.ts` has AI scoring logic
 - `CreditScoreDisplay` component exists
 - Neither integrated into loan submission/approval flow
@@ -291,6 +314,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 5. Store score with loan record for audit
 
 **Files**:
+
 - `src/services/creditScoring.ts`
 - `src/components/CreditScoreDisplay.tsx`
 - `src/pages/LoanApplication.tsx`
@@ -304,6 +328,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Users must manually refresh for updates
 
 **Problem**:
+
 - Only notifications subscribe to Supabase Realtime
 - Loan status changes require manual refresh
 - Admin dashboards don't auto-update
@@ -311,26 +336,35 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Remediation Steps**:
 
 1. Add realtime subscription to loan status:
+
    ```typescript
    useEffect(() => {
      const channel = supabase
        .channel('loan-changes')
-       .on('postgres_changes', {
-         event: 'UPDATE',
-         schema: 'public',
-         table: 'loans',
-         filter: `user_id=eq.${userId}`,
-       }, handleLoanUpdate)
+       .on(
+         'postgres_changes',
+         {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'loans',
+           filter: `user_id=eq.${userId}`,
+         },
+         handleLoanUpdate
+       )
        .subscribe();
 
-     return () => { supabase.removeChannel(channel); };
+     return () => {
+       supabase.removeChannel(channel);
+     };
    }, [userId]);
    ```
+
 2. Add to dashboard metrics
 3. Add to approval queue
 4. Consider throttling for high-volume tables
 
 **Files**:
+
 - `src/hooks/useLoanApplications.ts`
 - `src/pages/AdminDashboard/index.tsx`
 - `src/components/admin/ApprovalQueue.tsx`
@@ -345,10 +379,12 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Historical docs could cause confusion
 
 **Problem**:
+
 - Several docs are historical (release notes, audits, deployment checklists)
 - Need clear labeling as snapshots
 
 **Remediation**:
+
 - Added status notes to historical docs (2026-01-15)
 - Created `docs/INDEX.md` with clear categorization
 - See [INDEX.md](./INDEX.md) for document status
@@ -361,6 +397,7 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 **Impact**: Minor visual inconsistency
 
 **Problem**:
+
 - Design system doc references Inter font
 - Font not currently imported in project
 - Using Tailwind default sans stack
@@ -370,19 +407,103 @@ Core lending and backoffice workflows are implemented. This document tracks tech
 1. Option A - Import Inter font:
    ```html
    <!-- In index.html -->
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+   <link
+     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+     rel="stylesheet"
+   />
    ```
    ```css
    /* In tailwind.config.ts */
-   fontFamily: { sans: ['Inter', ...defaultTheme.fontFamily.sans] }
+   fontFamily: {
+     sans:
+       [ 'Inter',
+       ...defaultTheme.fontFamily.sans];
+   }
    ```
 2. Option B - Update documentation to reflect actual font stack
 3. Audit other design system discrepancies
 
 **Files**:
+
 - `index.html`
 - `tailwind.config.ts`
 - `docs/DESIGN_SYSTEM.md`
+
+---
+
+## Settlement-Specific Debt (Added 2026-02-18)
+
+Items identified during the IPP/IPS settlement compliance review against `docs/settlement.md`.
+
+### S1. Hardcoded Interchange/Switching Fees
+
+**Status**: Open (SET-004)
+**Impact**: Fee computation not rule-driven
+
+**Problem**:
+
+- `compute_settlement_netting` SQL function uses hardcoded fee values
+- Fees should be driven by `settlement_fee_rules` configuration with effective dates and product/MCC context
+
+**Files**:
+
+- `supabase/migrations/20251214060000_settlement_processing.sql` (netting function)
+- `settlement_fee_rules` table exists but not consumed by netting logic
+
+---
+
+### S2. Generic Participant Auto-Insertion
+
+**Status**: Open (SET-005)
+**Impact**: Pollutes participant master, no sponsored mapping
+
+**Problem**:
+
+- `ingest_ips_transactions_for_settlement` auto-inserts unknown participants with generic BICs
+- No sponsor resolution for indirect participants
+- No validation against authoritative participant master
+
+**Files**:
+
+- `supabase/migrations/20251214060000_settlement_processing.sql` (ingestion function)
+- `settlement_participants` table
+
+---
+
+### S3. Settlement UI Download Stubs
+
+**Status**: Open
+**Impact**: Report downloads non-functional
+
+**Problem**:
+
+- Pacs009Viewer, NTSLReportViewer, RawDataReportViewer have "Download" buttons that only call `toast.info('Download...')`
+- No actual file generation or download logic implemented
+
+**Files**:
+
+- `src/pages/AdminDashboard/components/Reconciliation/Pacs009Viewer.tsx`
+- `src/pages/AdminDashboard/components/Reconciliation/NTSLReportViewer.tsx`
+- `src/pages/AdminDashboard/components/Reconciliation/RawDataReportViewer.tsx`
+
+---
+
+### S4. Settlement Lifecycle Simulation
+
+**Status**: Open (SET-002)
+**Impact**: No real transport/ack-driven state progression
+
+**Problem**:
+
+- UI runs create → process → settle in one action
+- `mark_settlement_settled` simulates NISS acceptance without real SWIFT/NISS integration
+- No inbound ack parsing (xsys.001/002/003)
+- Full spec conformance tracked in `docs/settlement.md` gap register (SET-001 through SET-012)
+
+**Files**:
+
+- `src/services/settlementService.ts`
+- `supabase/migrations/20251214060000_settlement_processing.sql`
 
 ---
 
@@ -392,6 +513,7 @@ Use this checklist to track progress:
 
 ```markdown
 ## High Priority
+
 - [ ] IPS Adapter: Obtain credentials
 - [ ] IPS Adapter: Configure mTLS
 - [ ] IPS Adapter: Replace mock responses
@@ -407,6 +529,7 @@ Use this checklist to track progress:
 - [ ] Supabase Types: Add to CI
 
 ## Medium Priority
+
 - [ ] Vitest: Install and configure
 - [ ] Vitest: Fix existing tests
 - [ ] PaymentGateway: Decide keep/remove
@@ -417,6 +540,7 @@ Use this checklist to track progress:
 - [ ] Realtime: Add dashboard updates
 
 ## Low Priority
+
 - [ ] Documentation: Complete (done 2026-01-15)
 - [ ] Design System: Font decision
 ```

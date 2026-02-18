@@ -6,6 +6,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { amountToTBUnits, uuidToTBId } from './ledgerService';
 import { withArrayResult, withSingleResult, type ServiceResult } from '@/utils/serviceUtils';
+import { callRpc } from '@/utils/rpc';
+import { AuditService } from './auditService';
 import type {
   SettlementRunSummary,
   SettlementRunDetails,
@@ -37,12 +39,13 @@ export async function getSettlementRuns(params?: {
   limit?: number;
 }): Promise<ServiceResult<SettlementRunSummary[]>> {
   return withArrayResult<SettlementRunSummary>(
-    () => supabase.rpc('get_settlement_runs', {
-      p_date_from: params?.dateFrom || null,
-      p_date_to: params?.dateTo || null,
-      p_state: params?.state || null,
-      p_limit: params?.limit || 50,
-    }),
+    () =>
+      supabase.rpc('get_settlement_runs', {
+        p_date_from: params?.dateFrom || null,
+        p_date_to: params?.dateTo || null,
+        p_state: params?.state || null,
+        p_limit: params?.limit || 50,
+      }),
     'getSettlementRuns',
     params
   );
@@ -87,7 +90,12 @@ export async function getPacs009Batches(
   runId: string
 ): Promise<ServiceResult<SettlementPacs009Batch[]>> {
   return withArrayResult<SettlementPacs009Batch>(
-    () => supabase.from('settlement_pacs009_batches').select('*').eq('run_id', runId).order('created_at', { ascending: true }),
+    () =>
+      supabase
+        .from('settlement_pacs009_batches')
+        .select('*')
+        .eq('run_id', runId)
+        .order('created_at', { ascending: true }),
     'getPacs009Batches',
     { runId }
   );
@@ -106,11 +114,12 @@ export async function getSettlementReports(params?: {
   participantId?: string;
 }): Promise<ServiceResult<ReportListItem[]>> {
   return withArrayResult<ReportListItem>(
-    () => supabase.rpc('get_settlement_reports', {
-      p_run_id: params?.runId || null,
-      p_report_type: params?.reportType || null,
-      p_participant_id: params?.participantId || null,
-    }),
+    () =>
+      supabase.rpc('get_settlement_reports', {
+        p_run_id: params?.runId || null,
+        p_report_type: params?.reportType || null,
+        p_participant_id: params?.participantId || null,
+      }),
     'getSettlementReports',
     params
   );
@@ -119,9 +128,7 @@ export async function getSettlementReports(params?: {
 /**
  * Get a specific report's content
  */
-export async function getReportContent(
-  reportId: string
-): Promise<SettlementReport | null> {
+export async function getReportContent(reportId: string): Promise<SettlementReport | null> {
   const { data, error } = await supabase
     .from('settlement_reports')
     .select('*')
@@ -163,9 +170,7 @@ export async function getSettlementAdjustments(params?: {
 /**
  * Get a specific adjustment
  */
-export async function getAdjustment(
-  adjustmentId: string
-): Promise<SettlementAdjustment | null> {
+export async function getAdjustment(adjustmentId: string): Promise<SettlementAdjustment | null> {
   const { data, error } = await supabase
     .from('settlement_adjustments')
     .select('*')
@@ -202,6 +207,15 @@ export async function updateAdjustmentStatus(
     console.error('Error updating adjustment:', error);
     throw error;
   }
+
+  // Audit log: adjustment status changed
+  AuditService.logStateTransition(
+    'settlement_adjustment',
+    adjustmentId,
+    'pending',
+    status,
+    notes || 'Adjustment status updated'
+  ).catch((err) => console.error('Audit log failed:', err));
 }
 
 // ============================================================================
@@ -211,9 +225,7 @@ export async function updateAdjustmentStatus(
 /**
  * Get timeout transactions
  */
-export async function getTimeoutTransactions(
-  status?: string
-): Promise<TimeoutListItem[]> {
+export async function getTimeoutTransactions(status?: string): Promise<TimeoutListItem[]> {
   const { data, error } = await supabase.rpc('get_timeout_transactions', {
     p_status: status || 'pending',
   });
@@ -271,6 +283,15 @@ export async function resolveTimeoutTransaction(
     console.error('Error resolving timeout transaction:', error);
     throw error;
   }
+
+  // Audit log: timeout transaction resolved
+  AuditService.logStateTransition(
+    'settlement_timeout',
+    timeoutId,
+    'pending',
+    status,
+    notes || 'Timeout transaction resolved'
+  ).catch((err) => console.error('Audit log failed:', err));
 }
 
 // ============================================================================
@@ -304,9 +325,7 @@ export async function getSettlementStatistics(
 /**
  * Get all settlement participants
  */
-export async function getSettlementParticipants(): Promise<
-  SettlementParticipant[]
-> {
+export async function getSettlementParticipants(): Promise<SettlementParticipant[]> {
   const { data, error } = await supabase
     .from('settlement_participants')
     .select('*')
@@ -323,9 +342,7 @@ export async function getSettlementParticipants(): Promise<
 /**
  * Get a specific participant
  */
-export async function getParticipant(
-  participantId: string
-): Promise<SettlementParticipant | null> {
+export async function getParticipant(participantId: string): Promise<SettlementParticipant | null> {
   const { data, error } = await supabase
     .from('settlement_participants')
     .select('*')
@@ -415,15 +432,10 @@ export function parsePacs009Xml(xmlContent: string): {
     const transactions = Array.from(txnElements).map((txn) => ({
       instrId: txn.querySelector('PmtId InstrId')?.textContent || '',
       endToEndId: txn.querySelector('PmtId EndToEndId')?.textContent || '',
-      amount: parseFloat(
-        txn.querySelector('IntrBkSttlmAmt')?.textContent || '0'
-      ),
-      currency:
-        txn.querySelector('IntrBkSttlmAmt')?.getAttribute('Ccy') || 'NAD',
-      dbtrBic:
-        txn.querySelector('DbtrAgt FinInstnId BICFI')?.textContent || '',
-      cdtrBic:
-        txn.querySelector('CdtrAgt FinInstnId BICFI')?.textContent || '',
+      amount: parseFloat(txn.querySelector('IntrBkSttlmAmt')?.textContent || '0'),
+      currency: txn.querySelector('IntrBkSttlmAmt')?.getAttribute('Ccy') || 'NAD',
+      dbtrBic: txn.querySelector('DbtrAgt FinInstnId BICFI')?.textContent || '',
+      cdtrBic: txn.querySelector('CdtrAgt FinInstnId BICFI')?.textContent || '',
     }));
 
     return { groupHeader, transactions };
@@ -474,14 +486,42 @@ export async function createSettlementRun(params?: {
   window_id?: string;
   state?: string;
 }> {
-  const { data, error } = await supabase.rpc('create_settlement_run', {
-    p_settlement_date: params?.settlementDate || new Date().toISOString().split('T')[0],
-    p_window_id: params?.windowId || 'SW1',
-  });
+  const result = await callRpc<{
+    success: boolean;
+    error?: string;
+    run_id?: string;
+    run_code?: string;
+    settlement_date?: string;
+    window_id?: string;
+    state?: string;
+  }>(
+    'create_settlement_run',
+    {
+      p_settlement_date: params?.settlementDate || new Date().toISOString().split('T')[0],
+      p_window_id: params?.windowId || 'SW1',
+    },
+    { timeoutMs: 5000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error creating settlement run:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error creating settlement run:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
+  }
+
+  const data = result.data;
+
+  // Audit log: settlement run created
+  if (data?.success && data?.run_id) {
+    AuditService.logStateTransition(
+      'settlement_run',
+      data.run_id,
+      'none',
+      'collecting',
+      `Settlement run created: ${data.run_code} for ${data.settlement_date} ${data.window_id}`
+    ).catch((err) => console.error('Audit log failed:', err));
   }
 
   return data;
@@ -503,15 +543,43 @@ export async function processSettlementRun(
   batches?: { batches_created: number };
   reports?: { reports_generated: number };
 }> {
-  const { data, error } = await supabase.rpc('process_settlement_run', {
-    p_run_id: runId,
-    p_date_from: dateFrom || null,
-    p_date_to: dateTo || null,
-  });
+  const result = await callRpc<{
+    success: boolean;
+    error?: string;
+    run_id?: string;
+    ingest?: { transactions_processed: number; total_principal: number };
+    netting?: { net_instructions_created: number };
+    batches?: { batches_created: number };
+    reports?: { reports_generated: number };
+  }>(
+    'process_settlement_run',
+    {
+      p_run_id: runId,
+      p_date_from: dateFrom || null,
+      p_date_to: dateTo || null,
+    },
+    { timeoutMs: 30000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error processing settlement run:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error processing settlement run:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
+  }
+
+  const data = result.data;
+
+  // Audit log: settlement run processed
+  if (data?.success) {
+    AuditService.logStateTransition(
+      'settlement_run',
+      runId,
+      'collecting',
+      'generated',
+      `Processed: ${data.ingest?.transactions_processed ?? 0} txns, ${data.batches?.batches_created ?? 0} batches, ${data.reports?.reports_generated ?? 0} reports`
+    ).catch((err) => console.error('Audit log failed:', err));
   }
 
   return data;
@@ -532,18 +600,31 @@ export async function ingestIPSTransactions(
   total_interchange?: number;
   total_switching_fee?: number;
 }> {
-  const { data, error } = await supabase.rpc('ingest_ips_transactions_for_settlement', {
-    p_run_id: runId,
-    p_date_from: dateFrom || null,
-    p_date_to: dateTo || null,
-  });
+  const result = await callRpc(
+    'ingest_ips_transactions_for_settlement',
+    {
+      p_run_id: runId,
+      p_date_from: dateFrom || null,
+      p_date_to: dateTo || null,
+    },
+    { timeoutMs: 15000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error ingesting IPS transactions:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error ingesting IPS transactions:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
   }
 
-  return data;
+  return result.data as {
+    success: boolean;
+    transactions_processed?: number;
+    total_principal?: number;
+    total_interchange?: number;
+    total_switching_fee?: number;
+  };
 }
 
 /**
@@ -554,16 +635,26 @@ export async function computeNetting(runId: string): Promise<{
   error?: string;
   net_instructions_created?: number;
 }> {
-  const { data, error } = await supabase.rpc('compute_settlement_netting', {
-    p_run_id: runId,
-  });
+  const result = await callRpc(
+    'compute_settlement_netting',
+    {
+      p_run_id: runId,
+    },
+    { timeoutMs: 15000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error computing netting:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error computing netting:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
   }
 
-  return data;
+  return result.data as {
+    success: boolean;
+    net_instructions_created?: number;
+  };
 }
 
 /**
@@ -574,16 +665,26 @@ export async function generatePacs009Batches(runId: string): Promise<{
   error?: string;
   batches_created?: number;
 }> {
-  const { data, error } = await supabase.rpc('generate_pacs009_batches', {
-    p_run_id: runId,
-  });
+  const result = await callRpc(
+    'generate_pacs009_batches',
+    {
+      p_run_id: runId,
+    },
+    { timeoutMs: 15000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error generating pacs.009 batches:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error generating pacs.009 batches:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
   }
 
-  return data;
+  return result.data as {
+    success: boolean;
+    batches_created?: number;
+  };
 }
 
 /**
@@ -594,16 +695,26 @@ export async function generateSettlementReports(runId: string): Promise<{
   error?: string;
   reports_generated?: number;
 }> {
-  const { data, error } = await supabase.rpc('generate_settlement_reports', {
-    p_run_id: runId,
-  });
+  const result = await callRpc(
+    'generate_settlement_reports',
+    {
+      p_run_id: runId,
+    },
+    { timeoutMs: 15000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error generating reports:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error generating reports:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
   }
 
-  return data;
+  return result.data as {
+    success: boolean;
+    reports_generated?: number;
+  };
 }
 
 /**
@@ -616,13 +727,39 @@ export async function markSettlementSettled(runId: string): Promise<{
   state?: string;
   settled_at?: string;
 }> {
-  const { data, error } = await supabase.rpc('mark_settlement_settled', {
-    p_run_id: runId,
-  });
+  const result = await callRpc<{
+    success: boolean;
+    error?: string;
+    run_id?: string;
+    state?: string;
+    settled_at?: string;
+  }>(
+    'mark_settlement_settled',
+    {
+      p_run_id: runId,
+    },
+    { timeoutMs: 10000, retries: 0 }
+  );
 
-  if (error) {
-    console.error('Error marking settlement as settled:', error);
-    return { success: false, error: error.message };
+  if (!result.ok) {
+    console.error('Error marking settlement as settled:', result.error);
+    return {
+      success: false,
+      error: result.error instanceof Error ? result.error.message : 'RPC failed',
+    };
+  }
+
+  const data = result.data;
+
+  // Audit log: settlement marked as settled (irrevocable)
+  if (data?.success) {
+    AuditService.logStateTransition(
+      'settlement_run',
+      runId,
+      'generated',
+      'settled',
+      `Settlement finalized at ${data.settled_at}`
+    ).catch((err) => console.error('Audit log failed:', err));
   }
 
   return data;
@@ -634,11 +771,13 @@ export async function markSettlementSettled(runId: string): Promise<{
 export async function getSettlementObligations(runId: string) {
   const { data, error } = await supabase
     .from('settlement_obligations')
-    .select(`
+    .select(
+      `
       *,
       source_participant:settlement_participants!source_participant_id(name, swift_bic),
       target_participant:settlement_participants!target_participant_id(name, swift_bic)
-    `)
+    `
+    )
     .eq('run_id', runId)
     .order('created_at', { ascending: true });
 
@@ -656,11 +795,13 @@ export async function getSettlementObligations(runId: string) {
 export async function getNetInstructions(runId: string) {
   const { data, error } = await supabase
     .from('settlement_net_instructions')
-    .select(`
+    .select(
+      `
       *,
       source_participant:settlement_participants!source_participant_id(name, swift_bic),
       target_participant:settlement_participants!target_participant_id(name, swift_bic)
-    `)
+    `
+    )
     .eq('run_id', runId)
     .order('instruction_id', { ascending: true });
 
@@ -718,9 +859,7 @@ export interface NTSLReportData {
   }>;
 }
 
-export function parseNTSLReport(
-  reportData: Record<string, unknown>
-): NTSLReportData | null {
+export function parseNTSLReport(reportData: Record<string, unknown>): NTSLReportData | null {
   try {
     return reportData as unknown as NTSLReportData;
   } catch {
@@ -744,9 +883,7 @@ export interface RawDataReportEntry {
   switchingFee: number;
 }
 
-export function parseRawDataReport(
-  reportData: Record<string, unknown>
-): RawDataReportEntry[] {
+export function parseRawDataReport(reportData: Record<string, unknown>): RawDataReportEntry[] {
   try {
     if (Array.isArray(reportData.transactions)) {
       return reportData.transactions as RawDataReportEntry[];
@@ -804,9 +941,9 @@ export async function postSettlementToTigerBeetle(
     return { success: true, outboxId: data.id };
   } catch (error) {
     console.error('Failed to post settlement to TigerBeetle:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -832,9 +969,9 @@ export async function postSettlementRunToTigerBeetle(
     for (const instruction of instructions || []) {
       const result = await postSettlementToTigerBeetle(
         runId,
-        instruction.participant_id,
-        instruction.net_amount,
-        instruction.currency || 'NAD'
+        instruction.source_participant_id,
+        instruction.amount,
+        'NAD'
       );
 
       if (result.success) {

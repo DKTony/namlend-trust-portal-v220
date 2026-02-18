@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Download, FileText, Search } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { parseRawDataReport } from '@/services/settlementService';
 
 export function RawDataReportViewer() {
@@ -227,13 +227,13 @@ export function RawDataReportViewer() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {formatCurrency(entry.amount)} {entry.currency}
+                            {formatNAD(entry.amount)} {entry.currency}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {formatCurrency(entry.interchangeAmount)}
+                            {formatNAD(entry.interchangeAmount)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {formatCurrency(entry.switchingFee)}
+                            {formatNAD(entry.switchingFee)}
                           </TableCell>
                         </TableRow>
                       ))

@@ -1,7 +1,7 @@
 # NamLend Trust - Security Documentation
 
-**Doc Revision**: 2026-01-19  \
-**Status**: Core auth and RLS implemented; Edge Functions enforce JWT and staff role checks.
+**Doc Revision**: 2026-02-18 \
+**Status**: Core auth and RLS implemented; Edge Functions enforce JWT and staff role checks. Settlement layer hardened (Feb 2026).
 
 ---
 
@@ -81,6 +81,13 @@ Review RLS policies in `supabase/migrations/` before adding new tables.
 - Financial operations log to `audit_logs` via RPCs/triggers.
 - Sensitive access is tracked in `view_logs`.
 - Do not log PII, financial details, or credentials in client errors.
+- Settlement operations (`createSettlementRun`, `processSettlementRun`, `markSettlementSettled`, `updateAdjustmentStatus`, `resolveTimeoutTransaction`) log state transitions via `AuditService.logStateTransition()` (added 2026-02-18).
+
+## Settlement Security (2026-02-18)
+
+- **XML injection prevention**: `xml_escape()` SQL function applied to all user-sourced values in `generate_pacs009_xml` (ISO 20022 pacs.009 generation). Escapes `&`, `<`, `>`, `"`, `'` entities.
+- **Mutation retry prevention**: All settlement mutation hooks use `retry: false` to prevent TanStack Query from auto-retrying failed financial operations.
+- **RPC resilience**: Settlement RPCs use `callRpc()` wrapper with circuit breaker, timeout, and jitter. Financial mutations use `retries: 0`.
 
 ---
 

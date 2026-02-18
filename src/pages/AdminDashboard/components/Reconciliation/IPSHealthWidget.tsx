@@ -22,14 +22,9 @@ import {
   CheckCheck,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { toast } from 'sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface IPSHealthData {
   summary: {
@@ -68,7 +63,12 @@ export function IPSHealthWidget() {
   const queryClient = useQueryClient();
 
   // Fetch IPS health data
-  const { data: healthData, isLoading, refetch, isRefetching } = useQuery<IPSHealthData>({
+  const {
+    data: healthData,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery<IPSHealthData>({
     queryKey: ['ips-health'],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_ips_transaction_health');
@@ -148,7 +148,9 @@ export function IPSHealthWidget() {
       if (data && data[0]) {
         const result = data[0];
         if (result.alerts_created > 0) {
-          toast.warning(`Created ${result.alerts_created} new alerts (${result.critical_count} critical)`);
+          toast.warning(
+            `Created ${result.alerts_created} new alerts (${result.critical_count} critical)`
+          );
         } else {
           toast.success('Check complete - no new issues found');
         }
@@ -161,9 +163,9 @@ export function IPSHealthWidget() {
 
   const getHealthStatus = () => {
     if (!healthData) return { status: 'unknown', color: 'bg-gray-500' };
-    
+
     const { stuck_transactions, unresolved_alerts } = healthData;
-    
+
     if (unresolved_alerts.critical > 0 || stuck_transactions.count > 5) {
       return { status: 'critical', color: 'bg-red-500', icon: XCircle };
     }
@@ -179,11 +181,26 @@ export function IPSHealthWidget() {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <Badge variant="destructive" className="text-xs">Critical</Badge>;
+        return (
+          <Badge variant="destructive" className="text-xs">
+            Critical
+          </Badge>
+        );
       case 'warning':
-        return <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600 dark:text-yellow-400">Warning</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs border-yellow-500 text-yellow-600 dark:text-yellow-400"
+          >
+            Warning
+          </Badge>
+        );
       default:
-        return <Badge variant="secondary" className="text-xs">Info</Badge>;
+        return (
+          <Badge variant="secondary" className="text-xs">
+            Info
+          </Badge>
+        );
     }
   };
 
@@ -196,8 +213,9 @@ export function IPSHealthWidget() {
             IPS Transaction Health
           </CardTitle>
           <CardDescription className="text-xs">
-            Real-time monitoring • Last check: {healthData?.last_check 
-              ? new Date(healthData.last_check).toLocaleTimeString() 
+            Real-time monitoring • Last check:{' '}
+            {healthData?.last_check
+              ? new Date(healthData.last_check).toLocaleTimeString()
               : 'Never'}
           </CardDescription>
         </div>
@@ -212,7 +230,9 @@ export function IPSHealthWidget() {
                   onClick={() => runCheckMutation.mutate()}
                   disabled={runCheckMutation.isPending}
                 >
-                  <RefreshCw className={`h-4 w-4 ${runCheckMutation.isPending ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 ${runCheckMutation.isPending ? 'animate-spin' : ''}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Run manual check</TooltipContent>
@@ -258,8 +278,8 @@ export function IPSHealthWidget() {
             </div>
             <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
               {healthData.stuck_transactions.count} transaction(s) totaling{' '}
-              <strong>{formatCurrency(healthData.stuck_transactions.total_amount)}</strong>{' '}
-              stuck for up to <strong>{healthData.stuck_transactions.oldest_hours.toFixed(1)}h</strong>
+              <strong>{formatNAD(healthData.stuck_transactions.total_amount)}</strong> stuck for up
+              to <strong>{healthData.stuck_transactions.oldest_hours.toFixed(1)}h</strong>
             </div>
           </div>
         )}
@@ -282,8 +302,8 @@ export function IPSHealthWidget() {
                       alert.severity === 'critical'
                         ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
                         : alert.severity === 'warning'
-                        ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
-                        : 'border-border bg-muted/30'
+                          ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
+                          : 'border-border bg-muted/30'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -294,9 +314,7 @@ export function IPSHealthWidget() {
                             {new Date(alert.created_at).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground line-clamp-2">
-                          {alert.message}
-                        </p>
+                        <p className="text-sm text-foreground line-clamp-2">{alert.message}</p>
                         {alert.acknowledged_at && (
                           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                             <Eye className="h-3 w-3" />
@@ -352,9 +370,7 @@ export function IPSHealthWidget() {
         {(!alerts || alerts.length === 0) && healthData?.stuck_transactions.count === 0 && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
             <CheckCircle className="h-8 w-8 mx-auto text-green-600 dark:text-green-400 mb-2" />
-            <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              All Clear
-            </p>
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">All Clear</p>
             <p className="text-xs text-green-600 dark:text-green-400">
               No stuck transactions or unresolved alerts
             </p>

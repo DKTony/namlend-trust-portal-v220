@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Eye, FileWarning, CheckCircle, XCircle } from 'lucide-react';
 import { useSettlementAdjustments, useUpdateAdjustmentStatus } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 
 export function AdjustmentsViewer() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -172,7 +172,7 @@ export function AdjustmentsViewer() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
-                        {formatCurrency(adj.amount)}
+                        {formatNAD(adj.amount)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -257,7 +257,7 @@ export function AdjustmentsViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-medium text-lg">{formatCurrency(selectedItem.amount)}</p>
+                  <p className="font-medium text-lg">{formatNAD(selectedItem.amount)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Response Due</p>

@@ -6,13 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -41,7 +35,7 @@ import {
   Clock,
   AlertTriangle,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 
 interface IPSTransaction {
   id: string;
@@ -64,7 +58,10 @@ interface IPSTransaction {
   payment_id: string | null;
 }
 
-const STATUS_BADGES: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
+const STATUS_BADGES: Record<
+  string,
+  { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }
+> = {
   success: { variant: 'default', icon: <CheckCircle className="h-3 w-3" /> },
   completed: { variant: 'default', icon: <CheckCircle className="h-3 w-3" /> },
   pending: { variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
@@ -79,7 +76,12 @@ export function IPSTransactionsViewer() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: transactions, isLoading, refetch, isRefetching } = useQuery({
+  const {
+    data: transactions,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ['ips-transactions', statusFilter, typeFilter],
     queryFn: async () => {
       let query = supabase
@@ -115,8 +117,10 @@ export function IPSTransactionsViewer() {
 
   const stats = {
     total: transactions?.length || 0,
-    success: transactions?.filter((t) => t.status === 'success' || t.status === 'completed').length || 0,
-    pending: transactions?.filter((t) => ['pending', 'initiated', 'sent'].includes(t.status)).length || 0,
+    success:
+      transactions?.filter((t) => t.status === 'success' || t.status === 'completed').length || 0,
+    pending:
+      transactions?.filter((t) => ['pending', 'initiated', 'sent'].includes(t.status)).length || 0,
     failed: transactions?.filter((t) => t.status === 'failed').length || 0,
     deemed: transactions?.filter((t) => t.status === 'deemed').length || 0,
   };
@@ -133,13 +137,17 @@ export function IPSTransactionsViewer() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.success}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {stats.success}
+            </div>
             <p className="text-xs text-muted-foreground">Successful</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+              {stats.pending}
+            </div>
             <p className="text-xs text-muted-foreground">Pending</p>
           </CardContent>
         </Card>
@@ -151,7 +159,9 @@ export function IPSTransactionsViewer() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.deemed}</div>
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {stats.deemed}
+            </div>
             <p className="text-xs text-muted-foreground">Deemed</p>
           </CardContent>
         </Card>
@@ -164,9 +174,7 @@ export function IPSTransactionsViewer() {
             <Zap className="h-5 w-5" />
             IPS Transactions
           </CardTitle>
-          <CardDescription>
-            View and reconcile IPS/IPP payment transactions
-          </CardDescription>
+          <CardDescription>View and reconcile IPS/IPP payment transactions</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 mb-4">
@@ -204,12 +212,7 @@ export function IPSTransactionsViewer() {
                 <SelectItem value="REPAYMENT">Repayment</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              disabled={isRefetching}
-            >
+            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isRefetching}>
               <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>
@@ -242,9 +245,7 @@ export function IPSTransactionsViewer() {
                     return (
                       <TableRow key={txn.id}>
                         <TableCell>
-                          <Badge variant="outline">
-                            {txn.transaction_type}
-                          </Badge>
+                          <Badge variant="outline">{txn.transaction_type}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusInfo.variant} className="gap-1">
@@ -252,9 +253,7 @@ export function IPSTransactionsViewer() {
                             {txn.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono">
-                          {formatCurrency(txn.amount)}
-                        </TableCell>
+                        <TableCell className="font-mono">{formatNAD(txn.amount)}</TableCell>
                         <TableCell className="text-sm">
                           <div className="max-w-[200px] truncate">
                             {txn.payer_vpa || '-'} → {txn.payee_vpa || '-'}

@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Download, FileSpreadsheet } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import { parseNTSLReport } from '@/services/settlementService';
 
 export function NTSLReportViewer() {
@@ -176,7 +176,7 @@ export function NTSLReportViewer() {
                   <p
                     className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
                   >
-                    {formatCurrency(ntslData.netPosition)}
+                    {formatNAD(ntslData.netPosition)}
                   </p>
                 </div>
               </div>
@@ -191,29 +191,29 @@ export function NTSLReportViewer() {
                     <div>
                       <p className="text-sm text-muted-foreground">Total Credits</p>
                       <p className="text-lg font-medium text-green-600 dark:text-green-400">
-                        {formatCurrency(ntslData.credits)}
+                        {formatNAD(ntslData.credits)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total Debits</p>
                       <p className="text-lg font-medium text-red-600 dark:text-red-400">
-                        {formatCurrency(ntslData.debits)}
+                        {formatNAD(ntslData.debits)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Switching Fee</p>
-                      <p className="text-lg font-medium">{formatCurrency(ntslData.switchingFee)}</p>
+                      <p className="text-lg font-medium">{formatNAD(ntslData.switchingFee)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Owed</p>
                       <p className="font-medium text-green-600 dark:text-green-400">
-                        {formatCurrency(ntslData.interchangeOwed)}
+                        {formatNAD(ntslData.interchangeOwed)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Paid</p>
                       <p className="font-medium text-red-600 dark:text-red-400">
-                        {formatCurrency(ntslData.interchangePaid)}
+                        {formatNAD(ntslData.interchangePaid)}
                       </p>
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export function NTSLReportViewer() {
                                     : 'text-red-600 dark:text-red-400'
                                 }`}
                               >
-                                {formatCurrency(txn.amount)}
+                                {formatNAD(txn.amount)}
                               </TableCell>
                             </TableRow>
                           ))}

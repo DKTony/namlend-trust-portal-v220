@@ -16,9 +16,54 @@ This changelog contains two version tracks:
 | **Web Platform**      | v2.8.5  | Main React web application (this repo's primary focus)         |
 | **Combined Platform** | v3.x    | Web + Mobile app releases (includes `namlend-mobile/` changes) |
 
-**Current production web version: v2.8.5** (February 2026)
+**Current production web version: v2.8.6** (February 2026)
 
 The v3.x versions (Dec 2025) document combined releases that include mobile app optimizations. For web-only changes, refer to the v2.8.x entries.
+
+---
+
+## [2.8.6] - 2026-02-18 (Settlement Compliance Hardening)
+
+### Fixed
+
+#### Settlement XML Injection Prevention (P0 Security)
+
+- **Problem**: `generate_pacs009_xml` SQL function built ISO 20022 XML via string concatenation without entity escaping
+- **Fix**: Created `xml_escape()` SQL helper function and applied it to all user-sourced values in pacs.009 generation
+- **Migration**: `20260218100000_fix_pacs009_xml_injection.sql`
+
+#### TigerBeetle Settlement Column References (P0 Data Integrity)
+
+- **Problem**: `postSettlementRunToTigerBeetle` referenced non-existent columns `participant_id` and `net_amount`
+- **Fix**: Corrected to `source_participant_id` and `amount` matching `settlement_net_instructions` schema
+
+#### Currency Formatting Across Settlement UI (P1 Compliance)
+
+- **Problem**: 9 Reconciliation UI components used `formatCurrency` which rendered `R` prefix (South African Rand) instead of `N$` (Namibian Dollar)
+- **Fix**: Replaced all `formatCurrency` imports with `formatNAD` from `@/constants/regulatory`
+- **Components**: SettlementRunsList, ReconciliationDashboard, Pacs009Viewer, RawDataReportViewer, NTSLReportViewer, IPSHealthWidget, TimeoutReportViewer, AdjustmentsViewer, IPSTransactionsViewer
+
+### Changed
+
+#### Settlement Mutation Retry Safety (P0 Financial Safety)
+
+- Added `retry: false` to all 5 settlement mutation hooks in `useSettlement.ts`
+- Prevents TanStack Query from auto-retrying failed financial operations (which could cause double-processing)
+- Affected hooks: `useUpdateAdjustmentStatus`, `useResolveTimeout`, `useCreateSettlementRun`, `useProcessSettlementRun`, `useMarkSettlementSettled`
+
+#### Settlement Audit Logging (P1 CLAUDE.md Compliance)
+
+- Added `AuditService.logStateTransition()` calls to 5 critical settlement functions in `settlementService.ts`
+- Functions: `createSettlementRun`, `processSettlementRun`, `markSettlementSettled`, `updateAdjustmentStatus`, `resolveTimeoutTransaction`
+
+#### RPC Resilience for Settlement Operations (P1 Reliability)
+
+- Replaced 7 direct `supabase.rpc()` calls in `settlementService.ts` with `callRpc()` wrapper
+- Provides circuit breaker, timeout, and exponential backoff with jitter
+- Financial mutations use `retries: 0` to prevent double-processing
+
+**Files Created**: `supabase/migrations/20260218100000_fix_pacs009_xml_injection.sql`
+**Files Modified**: `src/services/settlementService.ts`, `src/hooks/useSettlement.ts`, 9 Reconciliation UI components
 
 ---
 

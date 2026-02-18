@@ -33,7 +33,7 @@ import {
   useProcessSettlementRun,
   useMarkSettlementSettled,
 } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 import {
   SETTLEMENT_STATE_LABELS,
   SETTLEMENT_STATE_COLORS,
@@ -240,7 +240,7 @@ export function SettlementRunsList() {
                         {run.transaction_count.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {formatCurrency(run.total_principal)}
+                        {formatNAD(run.total_principal)}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {run.net_instruction_count}
@@ -302,7 +302,7 @@ export function SettlementRunsList() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Principal</p>
-                  <p className="font-medium">{formatCurrency(runDetails.run.total_principal)}</p>
+                  <p className="font-medium">{formatNAD(runDetails.run.total_principal)}</p>
                 </div>
               </div>
 
@@ -333,7 +333,7 @@ export function SettlementRunsList() {
                             </TableCell>
                             <TableCell className="text-right">{batch.instruction_count}</TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(batch.total_amount)}
+                              {formatNAD(batch.total_amount)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -376,7 +376,7 @@ export function SettlementRunsList() {
                               <Badge variant="outline">{instr.category_group}</Badge>
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              {formatCurrency(instr.amount)}
+                              {formatNAD(instr.amount)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -406,10 +406,10 @@ export function SettlementRunsList() {
                           <TableRow key={idx}>
                             <TableCell className="font-medium">{exp.participant}</TableCell>
                             <TableCell className="text-right text-red-600 dark:text-red-400">
-                              {formatCurrency(exp.gross_payables)}
+                              {formatNAD(exp.gross_payables)}
                             </TableCell>
                             <TableCell className="text-right text-green-600 dark:text-green-400">
-                              {formatCurrency(exp.gross_receivables)}
+                              {formatNAD(exp.gross_receivables)}
                             </TableCell>
                             <TableCell
                               className={`text-right font-medium ${
@@ -418,10 +418,10 @@ export function SettlementRunsList() {
                                   : 'text-red-600 dark:text-red-400'
                               }`}
                             >
-                              {formatCurrency(exp.net_position)}
+                              {formatNAD(exp.net_position)}
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(exp.switching_fee_payable)}
+                              {formatNAD(exp.switching_fee_payable)}
                             </TableCell>
                           </TableRow>
                         ))}

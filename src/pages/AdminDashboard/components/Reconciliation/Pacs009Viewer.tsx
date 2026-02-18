@@ -173,7 +173,7 @@ export function Pacs009Viewer() {
                           {batch.instruction_count}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {formatCurrency(batch.total_amount)}
+                          {formatNAD(batch.total_amount)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {batch.file_size ? `${(batch.file_size / 1024).toFixed(1)} KB` : '-'}
@@ -263,7 +263,7 @@ export function Pacs009Viewer() {
                           </div>
                           <div>
                             <p className="text-muted-foreground">Control Sum</p>
-                            <p>{formatCurrency(parsedXml.groupHeader.ctrlSum)}</p>
+                            <p>{formatNAD(parsedXml.groupHeader.ctrlSum)}</p>
                           </div>
                         </div>
                       </CardContent>
@@ -298,7 +298,7 @@ export function Pacs009Viewer() {
                                   <TableCell className="font-mono">{txn.dbtrBic}</TableCell>
                                   <TableCell className="font-mono">{txn.cdtrBic}</TableCell>
                                   <TableCell className="text-right">
-                                    {formatCurrency(txn.amount)} {txn.currency}
+                                    {formatNAD(txn.amount)} {txn.currency}
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -359,7 +359,7 @@ export function Pacs009Viewer() {
                             <Badge variant="outline">{instr.category_group}</Badge>
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            {formatCurrency(instr.amount)}
+                            {formatNAD(instr.amount)}
                           </TableCell>
                         </TableRow>
                       ))}

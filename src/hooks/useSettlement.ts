@@ -130,6 +130,7 @@ export function useUpdateAdjustmentStatus() {
       status: string;
       notes?: string;
     }) => settlementService.updateAdjustmentStatus(adjustmentId, status, notes),
+    retry: false,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settlementKeys.adjustments() });
       toast({
@@ -172,6 +173,7 @@ export function useResolveTimeout() {
       status: 'resolved' | 'written_off';
       notes: string;
     }) => settlementService.resolveTimeoutTransaction(timeoutId, status, notes),
+    retry: false,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: settlementKeys.timeouts() });
       toast({
@@ -234,6 +236,7 @@ export function useCreateSettlementRun() {
   return useMutation({
     mutationFn: (params?: { settlementDate?: string; windowId?: string }) =>
       settlementService.createSettlementRun(params),
+    retry: false,
     onSuccess: (data) => {
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: settlementKeys.runs() });
@@ -273,6 +276,7 @@ export function useProcessSettlementRun() {
       dateFrom?: string;
       dateTo?: string;
     }) => settlementService.processSettlementRun(runId, dateFrom, dateTo),
+    retry: false,
     onSuccess: (data) => {
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: settlementKeys.all });
@@ -304,6 +308,7 @@ export function useMarkSettlementSettled() {
 
   return useMutation({
     mutationFn: (runId: string) => settlementService.markSettlementSettled(runId),
+    retry: false,
     onSuccess: (data) => {
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: settlementKeys.all });

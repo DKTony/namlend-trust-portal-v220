@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { FileX, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useTimeoutTransactions, useResolveTimeout } from '@/hooks/useSettlement';
-import { formatCurrency } from '@/lib/utils';
+import { formatNAD } from '@/constants/regulatory';
 
 export function TimeoutReportViewer() {
   const [statusFilter, setStatusFilter] = useState<string>('pending');
@@ -153,7 +153,7 @@ export function TimeoutReportViewer() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
-                        {formatCurrency(timeout.amount)}
+                        {formatNAD(timeout.amount)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -216,7 +216,7 @@ export function TimeoutReportViewer() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-medium">{formatCurrency(selectedItem.amount)}</p>
+                  <p className="font-medium">{formatNAD(selectedItem.amount)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Timeout Reason</p>

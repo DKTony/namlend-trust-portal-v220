@@ -88,13 +88,9 @@ export function ReconciliationDashboard() {
           <CardContent>
             <div
               className="text-xl sm:text-2xl font-bold truncate tabular-nums"
-              title={statsLoading ? '...' : formatCurrency(stats?.totals?.principal || 0)}
+              title={statsLoading ? '...' : formatNAD(stats?.totals?.principal || 0)}
             >
-              {statsLoading
-                ? '...'
-                : statsError
-                  ? '–'
-                  : formatCurrency(stats?.totals?.principal || 0)}
+              {statsLoading ? '...' : statsError ? '–' : formatNAD(stats?.totals?.principal || 0)}
             </div>
             <p className="text-xs text-muted-foreground truncate">
               {statsError ? 'Unable to load' : `${stats?.totals?.transactions || 0} transactions`}
@@ -113,11 +109,11 @@ export function ReconciliationDashboard() {
             </div>
             <p
               className="text-xs text-muted-foreground truncate"
-              title={formatCurrency(stats?.adjustments?.total_amount || 0) + ' total'}
+              title={formatNAD(stats?.adjustments?.total_amount || 0) + ' total'}
             >
               {statsError
                 ? 'Unable to load'
-                : `${formatCurrency(stats?.adjustments?.total_amount || 0)} total`}
+                : `${formatNAD(stats?.adjustments?.total_amount || 0)} total`}
             </p>
           </CardContent>
         </Card>

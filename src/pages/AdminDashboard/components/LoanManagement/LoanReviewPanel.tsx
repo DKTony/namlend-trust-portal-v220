@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id, QueryItem } from '@/types/convex';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +22,9 @@ import {
   XCircle,
   Download,
   Eye,
+  TrendingUp,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LoanReviewPanelProps {
   loanId: string;
@@ -29,97 +34,37 @@ interface LoanReviewPanelProps {
   onReject: (loanId: string, reason: string) => void;
 }
 
-// Type definitions for Supabase query responses
-interface LoanRow {
-  id: string;
-  user_id: string;
-  amount: number;
-  purpose?: string;
-  term_months?: number;
-  interest_rate?: number;
-  status: string;
-  created_at: string;
-  approved_at?: string;
-  disbursed_at?: string;
+/** Canonical recommendation badge config */
+const RECOMMENDATION_CONFIG = {
+  approve: {
+    label: 'Approve',
+    className:
+      'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+  },
+  review: {
+    label: 'Manual Review',
+    className:
+      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+  },
+  reject: {
+    label: 'Reject',
+    className:
+      'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+  },
+} as const;
+
+function getCreditScoreLabel(score: number): string {
+  if (score >= 750) return 'Excellent';
+  if (score >= 670) return 'Good';
+  if (score >= 580) return 'Fair';
+  return 'Poor';
 }
 
-interface ProfileRow {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  phone_number?: string;
-  address?: string;
-  monthly_income?: number;
-  employment_status?: string;
-  employer_name?: string;
-}
-
-interface DocumentRow {
-  id: string;
-  file_name?: string;
-  document_type?: string;
-  status?: string;
-  created_at: string;
-}
-
-interface CreditScoringData {
-  credit_score?: number;
-  credit_score_range?: string;
-  risk_level?: string;
-  debt_to_income_ratio?: number;
-  affordability_score?: number;
-  max_approved_amount?: number;
-  suggested_interest_rate?: number;
-  scoring_factors?: Array<{
-    category: string;
-    factor: string;
-    impact: string;
-    weight: number;
-    description: string;
-  }>;
-  scoring_recommendations?: string[];
-  loan_recommendation?: {
-    approved: boolean;
-    approved_amount: number;
-    suggested_term: number;
-    reasons: string[];
-    conditions?: string[];
-  };
-}
-
-interface LoanDetails {
-  id: string;
-  applicantName: string;
-  applicantEmail: string;
-  phone: string;
-  address: string;
-  amount: number;
-  purpose: string;
-  term: number;
-  interestRate: number;
-  monthlyIncome: number;
-  employmentStatus: string;
-  employer: string;
-  creditScore: number;
-  riskScore: number;
-  submittedAt: string;
-  status: string;
-  approvedAt?: string;
-  disbursedAt?: string;
-  scoringData?: CreditScoringData;
-  documents: Array<{
-    id: string;
-    name: string;
-    type: string;
-    status: 'verified' | 'pending' | 'rejected';
-    uploadedAt: string;
-  }>;
-  creditHistory: Array<{
-    type: string;
-    amount: number;
-    status: string;
-    date: string;
-  }>;
+function getCreditScoreClass(score: number): string {
+  if (score >= 750) return 'text-green-600 dark:text-green-400';
+  if (score >= 670) return 'text-blue-600 dark:text-blue-400';
+  if (score >= 580) return 'text-yellow-600 dark:text-yellow-400';
+  return 'text-red-600 dark:text-red-400';
 }
 
 const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
@@ -133,113 +78,75 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
   const [comments, setComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [loanDetails, setLoanDetails] = useState<LoanDetails | null>(null);
 
-  // Fetch real loan data
-  useEffect(() => {
-    const fetchLoanDetails = async () => {
-      setDataLoading(true);
-      try {
-        // Import supabase dynamically to avoid circular deps
-        const { supabase } = await import('@/integrations/supabase/client');
+  // Convex reactive queries
+  const rawLoan = useQuery(api.loans.getLoan, loanId ? { loanId: loanId as Id<'loans'> } : 'skip');
+  const rawClient = useQuery(
+    api.users.getUserProfile,
+    rawLoan?.userId ? { userId: rawLoan.userId } : 'skip'
+  );
+  const rawDocuments = useQuery(
+    api.loanDocuments.getLoanDocuments,
+    loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-        // Fetch loan data - use select('*') to avoid complex type inference
-        const loanResult = await supabase.from('loans').select('*').eq('id', loanId).single();
+  const dataLoading = rawLoan === undefined;
 
-        if (loanResult.error || !loanResult.data) {
-          console.error('Error fetching loan:', loanResult.error);
-          return;
-        }
+  // Derive loan details from Convex data
+  const loanDetails = useMemo(() => {
+    if (!rawLoan) return null;
 
-        // Cast through unknown to bypass strict type checking
-        const loanData = loanResult.data as unknown as LoanRow;
+    const amount = rawLoan.amount ?? rawLoan.principal ?? 0;
+    const termMonths = rawLoan.termMonths ?? 12;
+    const interestRate = rawLoan.interestRate ?? 18;
 
-        // Fetch profile data
-        const profileResult = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', loanData.user_id)
-          .single();
+    // Canonical scoring fields (N1) — preferred over legacy approval_requests.request_data
+    const creditScore = rawLoan.creditScore ?? null;
+    const debtToIncomeRatio = rawLoan.debtToIncomeRatio ?? null;
+    const recommendation = rawLoan.recommendation ?? null;
 
-        const profileData = (profileResult.data as unknown as ProfileRow) || null;
+    const applicantName = rawClient?.fullName?.trim() || 'Unknown';
+    const applicantEmail = rawClient?.email || '';
+    const phone = rawClient?.phone || '+264 XX XXX XXXX';
 
-        // Fetch credit scoring data from approval_requests
-        const approvalResult = await supabase
-          .from('approval_requests')
-          .select('request_data')
-          .eq('reference_id', loanId)
-          .eq('request_type', 'loan_application')
-          .order('created_at', { ascending: false })
-          .limit(1);
+    type RawDoc = QueryItem<typeof api.loanDocuments.getLoanDocuments>;
+    const documents = (rawDocuments ?? []).map((doc: RawDoc) => ({
+      id: String(doc._id),
+      name: doc.fileName || 'Document',
+      type: doc.documentType || 'other',
+      status: (doc.status as 'verified' | 'pending' | 'rejected') || 'pending',
+      uploadedAt: doc._creationTime
+        ? new Date(doc._creationTime).toISOString()
+        : new Date().toISOString(),
+    }));
 
-        const approvalData = approvalResult.data?.[0]?.request_data as
-          | CreditScoringData
-          | undefined;
-
-        // Fetch documents
-        const docsResult = await supabase
-          .from('documents')
-          .select('*')
-          .eq('user_id', loanData.user_id)
-          .order('created_at', { ascending: false });
-
-        const docsData = (docsResult.data || []) as unknown as DocumentRow[];
-
-        // Transform to LoanDetails format
-        const details: LoanDetails = {
-          id: loanData.id,
-          applicantName: profileData
-            ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Unknown'
-            : 'Unknown',
-          applicantEmail: profileData?.email || `user-${loanData.user_id?.slice(0, 8)}@namlend.com`,
-          phone: profileData?.phone_number || '+264 XX XXX XXXX',
-          address: profileData?.address || 'Address not provided',
-          amount: loanData.amount || 0,
-          purpose: loanData.purpose || 'Not specified',
-          term: loanData.term_months || 12,
-          interestRate: loanData.interest_rate || 18,
-          monthlyIncome: profileData?.monthly_income || 0,
-          employmentStatus: profileData?.employment_status || 'Not specified',
-          employer: profileData?.employer_name || 'Not specified',
-          creditScore: approvalData?.credit_score || 0,
-          riskScore:
-            approvalData?.risk_level === 'very_high'
-              ? 85
-              : approvalData?.risk_level === 'high'
-                ? 65
-                : approvalData?.risk_level === 'medium'
-                  ? 40
-                  : approvalData?.risk_level === 'low'
-                    ? 15
-                    : 0,
-          submittedAt: loanData.created_at,
-          status: loanData.status || propStatus || 'pending',
-          approvedAt: loanData.approved_at,
-          disbursedAt: loanData.disbursed_at,
-          documents: docsData.map((doc) => ({
-            id: doc.id,
-            name: doc.file_name || 'Document',
-            type: doc.document_type || 'other',
-            status: (doc.status as 'verified' | 'pending' | 'rejected') || 'pending',
-            uploadedAt: doc.created_at,
-          })),
-          creditHistory: [],
-          scoringData: approvalData || undefined,
-        };
-
-        setLoanDetails(details);
-      } catch (error) {
-        console.error('Error fetching loan details:', error);
-      } finally {
-        setDataLoading(false);
-      }
+    return {
+      id: loanId,
+      applicantName,
+      applicantEmail,
+      phone,
+      address: 'Address not provided',
+      amount,
+      purpose: rawLoan.purpose || 'Not specified',
+      term: termMonths,
+      interestRate,
+      monthlyIncome: 0,
+      employmentStatus: 'Not specified',
+      employer: 'Not specified',
+      // Canonical scoring (N1) — null means not yet computed
+      creditScore,
+      debtToIncomeRatio,
+      recommendation,
+      submittedAt: rawLoan._creationTime
+        ? new Date(rawLoan._creationTime).toISOString()
+        : new Date().toISOString(),
+      status: rawLoan.status || propStatus || 'pending',
+      approvedAt: rawLoan.approvedAt ? new Date(rawLoan.approvedAt).toISOString() : undefined,
+      disbursedAt: rawLoan.disbursedAt ? new Date(rawLoan.disbursedAt).toISOString() : undefined,
+      documents,
+      creditHistory: [] as Array<{ type: string; amount: number; status: string; date: string }>,
     };
-
-    if (loanId) {
-      fetchLoanDetails();
-    }
-  }, [loanId, propStatus]);
+  }, [rawLoan, rawClient, rawDocuments, loanId, propStatus]);
 
   const formatCurrency = (amount: number) => {
     return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2 })}`;
@@ -251,26 +158,6 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
       month: 'long',
       day: 'numeric',
     });
-  };
-
-  const getRiskLevel = (score: number) => {
-    if (score >= 70)
-      return {
-        label: 'High',
-        color:
-          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      };
-    if (score >= 40)
-      return {
-        label: 'Medium',
-        color:
-          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      };
-    return {
-      label: 'Low',
-      color:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-    };
   };
 
   const getDocumentStatusIcon = (status: string) => {
@@ -342,7 +229,6 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
     );
   }
 
-  const riskLevel = getRiskLevel(loanDetails.riskScore);
   const monthlyPayment =
     (loanDetails.amount * (loanDetails.interestRate / 100 / 12)) /
     (1 - Math.pow(1 + loanDetails.interestRate / 100 / 12, -loanDetails.term));
@@ -452,13 +338,29 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                         </div>
                         <div className="min-w-0">
                           <label className="text-sm font-medium text-muted-foreground">
-                            Risk Assessment
+                            Credit Score
                           </label>
-                          <div className="flex">
-                            {loanDetails.riskScore > 0 ? (
-                              <Badge variant="outline" className={`${riskLevel.color} shrink-0`}>
-                                {riskLevel.label} Risk ({loanDetails.riskScore}%)
-                              </Badge>
+                          <div className="flex items-center gap-2">
+                            {loanDetails.creditScore != null ? (
+                              <>
+                                <span
+                                  className={cn(
+                                    'font-semibold tabular-nums',
+                                    getCreditScoreClass(loanDetails.creditScore)
+                                  )}
+                                >
+                                  {loanDetails.creditScore}
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'shrink-0',
+                                    getCreditScoreClass(loanDetails.creditScore)
+                                  )}
+                                >
+                                  {getCreditScoreLabel(loanDetails.creditScore)}
+                                </Badge>
+                              </>
                             ) : (
                               <span className="text-sm text-muted-foreground">Not Available</span>
                             )}
@@ -545,8 +447,13 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                             Credit Score
                           </label>
                           <p className="text-xl font-semibold tabular-nums text-foreground">
-                            {loanDetails.creditScore > 0 ? (
-                              loanDetails.creditScore
+                            {loanDetails.creditScore != null ? (
+                              <span className={getCreditScoreClass(loanDetails.creditScore)}>
+                                {loanDetails.creditScore}{' '}
+                                <span className="text-sm font-normal">
+                                  ({getCreditScoreLabel(loanDetails.creditScore)})
+                                </span>
+                              </span>
                             ) : (
                               <span className="text-muted-foreground text-base">Not Available</span>
                             )}
@@ -557,7 +464,9 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                             Debt-to-Income Ratio
                           </label>
                           <p className="text-lg tabular-nums text-foreground">
-                            {((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%
+                            {loanDetails.debtToIncomeRatio != null
+                              ? `${(loanDetails.debtToIncomeRatio * 100).toFixed(1)}%`
+                              : 'Not Available'}
                           </p>
                         </div>
                         <div className="min-w-0">
@@ -676,111 +585,70 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
             <div>
               <h3 className="text-lg font-semibold mb-4 text-foreground">Decision Panel</h3>
 
-              {/* Quick Stats */}
+              {/* Credit Scoring Quick Stats (N1 — canonical fields from Convex loans table) */}
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Risk Score:</span>
-                  {loanDetails.riskScore > 0 ? (
-                    <Badge variant="outline" className={riskLevel.color}>
-                      {loanDetails.riskScore}%
-                    </Badge>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Credit Score:</span>
+                  {loanDetails.creditScore != null ? (
+                    <span
+                      className={cn(
+                        'font-semibold tabular-nums',
+                        getCreditScoreClass(loanDetails.creditScore)
+                      )}
+                    >
+                      {loanDetails.creditScore}
+                      <span className="text-xs font-normal ml-1 text-muted-foreground">
+                        ({getCreditScoreLabel(loanDetails.creditScore)})
+                      </span>
+                    </span>
                   ) : (
                     <span className="text-sm text-muted-foreground">N/A</span>
                   )}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Credit Score:</span>
-                  <span className="font-medium text-foreground">
-                    {loanDetails.creditScore > 0 ? loanDetails.creditScore : 'N/A'}
-                  </span>
-                </div>
-                {loanDetails.scoringData?.credit_score_range && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Score Range:</span>
-                    <Badge
-                      variant="outline"
-                      className={
-                        loanDetails.scoringData.credit_score_range === 'EXCELLENT'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
-                          : loanDetails.scoringData.credit_score_range === 'GOOD'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                            : loanDetails.scoringData.credit_score_range === 'FAIR'
-                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
-                      }
-                    >
-                      {loanDetails.scoringData.credit_score_range}
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">DTI Ratio:</span>
-                  <span className="font-medium text-foreground">
-                    {loanDetails.scoringData?.debt_to_income_ratio != null
-                      ? `${loanDetails.scoringData.debt_to_income_ratio.toFixed(1)}%`
-                      : `${((monthlyPayment / loanDetails.monthlyIncome) * 100).toFixed(1)}%`}
+                  {loanDetails.debtToIncomeRatio != null ? (
+                    <span
+                      className={cn(
+                        'font-semibold tabular-nums',
+                        loanDetails.debtToIncomeRatio > 0.43
+                          ? 'text-red-600 dark:text-red-400'
+                          : loanDetails.debtToIncomeRatio > 0.36
+                            ? 'text-yellow-600 dark:text-yellow-400'
+                            : 'text-green-600 dark:text-green-400'
+                      )}
+                    >
+                      {(loanDetails.debtToIncomeRatio * 100).toFixed(1)}%
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">N/A</span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Monthly Payment:</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    {formatCurrency(monthlyPayment)}
                   </span>
                 </div>
-                {loanDetails.scoringData?.max_approved_amount != null && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Max Approved:</span>
-                    <span className="font-medium text-foreground">
-                      {formatCurrency(loanDetails.scoringData.max_approved_amount)}
-                    </span>
-                  </div>
-                )}
-                {loanDetails.scoringData?.suggested_interest_rate != null && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Suggested Rate:</span>
-                    <span className="font-medium text-foreground">
-                      {loanDetails.scoringData.suggested_interest_rate}%
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* AI Recommendation */}
-              {loanDetails.scoringData?.loan_recommendation && (
-                <div className="mb-6 p-3 rounded-lg border border-border bg-card">
-                  <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                    <CreditCard className="h-4 w-4" />
-                    AI Recommendation
-                  </h4>
+              {/* AI Recommendation (canonical — from Convex loans.recommendation) */}
+              <div className="mb-6 p-3 rounded-lg border border-border bg-card">
+                <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                  <TrendingUp className="h-4 w-4" />
+                  AI Recommendation
+                </h4>
+                {loanDetails.recommendation != null ? (
                   <Badge
                     variant="outline"
-                    className={
-                      loanDetails.scoringData.loan_recommendation.approved
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800 mb-2'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800 mb-2'
-                    }
+                    className={RECOMMENDATION_CONFIG[loanDetails.recommendation].className}
                   >
-                    {loanDetails.scoringData.loan_recommendation.approved
-                      ? 'Recommend Approve'
-                      : 'Recommend Reject'}
+                    {RECOMMENDATION_CONFIG[loanDetails.recommendation].label}
                   </Badge>
-                  {loanDetails.scoringData.loan_recommendation.reasons?.length > 0 && (
-                    <ul className="text-xs text-muted-foreground space-y-1 mt-1">
-                      {loanDetails.scoringData.loan_recommendation.reasons
-                        .slice(0, 3)
-                        .map((r, i) => (
-                          <li key={i}>• {r}</li>
-                        ))}
-                    </ul>
-                  )}
-                  {loanDetails.scoringData.loan_recommendation.conditions?.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-border">
-                      <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">
-                        Conditions:
-                      </p>
-                      <ul className="text-xs text-muted-foreground space-y-1">
-                        {loanDetails.scoringData.loan_recommendation.conditions.map((c, i) => (
-                          <li key={i}>⚠ {c}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-muted-foreground">Not yet computed</p>
+                )}
+              </div>
 
               {/* Comments */}
               <div className="space-y-3">

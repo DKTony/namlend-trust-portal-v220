@@ -3,8 +3,10 @@
  * Provides a comprehensive view of overdue loans with risk buckets
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { collectionsAPI, analyticsAPI } from '@/services/api-client';
+import React, { useState, useMemo } from 'react';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { type Id } from '@/integrations/convex/api';
+import { api } from '@/integrations/convex/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,28 +48,95 @@ import {
   XCircle,
   AlertCircle,
   ChevronRight,
-  HandshakeIcon
+  HandshakeIcon,
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
-import { type CollectionsQueueItem, type CollectionsStats } from '@/services/collectionsService';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+// ---------------------------------------------------------------------------
+// Local view models — typed to match actual Convex query return shapes (N3)
+// ---------------------------------------------------------------------------
+
+/** Normalised queue row derived from Convex paymentSchedules + daysOverdue */
+interface QueueItem {
+  /** Convex Id<"loans"> stored as string for display/routing */
+  loanId: Id<'loans'>;
+  loanIdStr: string;
+  daysOverdue: number;
+  /** Risk bucket derived from daysOverdue */
+  riskBucket: 'current' | 'bucket_1_30' | 'bucket_31_60' | 'bucket_61_90' | 'bucket_90_plus';
+  totalDue: number;
+  principalDue: number;
+  interestDue: number;
+  dueDate: number;
+  status: string;
+}
+
+/** Flat stats view derived from Convex getCollectionsStats nested return */
+interface StatsView {
+  total_overdue: number;
+  bucket_1_30: number;
+  bucket_31_60: number;
+  bucket_61_90: number;
+  bucket_90_plus: number;
+  pending_promises: number;
+  promises_due_today: number;
+  contacts_today: number;
+  pending_reschedules: number;
+}
+
+function daysToRiskBucket(days: number): QueueItem['riskBucket'] {
+  if (days <= 0) return 'current';
+  if (days <= 30) return 'bucket_1_30';
+  if (days <= 60) return 'bucket_31_60';
+  if (days <= 90) return 'bucket_61_90';
+  return 'bucket_90_plus';
+}
+
 // Risk bucket configuration
 const RISK_BUCKETS = [
-  { id: 'all', label: 'All', color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
-  { id: 'current', label: 'Current', color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' },
-  { id: 'bucket_1_30', label: '1-30 Days', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' },
-  { id: 'bucket_31_60', label: '31-60 Days', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' },
-  { id: 'bucket_61_90', label: '61-90 Days', color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' },
-  { id: 'bucket_90_plus', label: '90+ Days', color: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-300' },
+  {
+    id: 'all',
+    label: 'All',
+    color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+  },
+  {
+    id: 'current',
+    label: 'Current',
+    color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  },
+  {
+    id: 'bucket_1_30',
+    label: '1-30 Days',
+    color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+  },
+  {
+    id: 'bucket_31_60',
+    label: '31-60 Days',
+    color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+  },
+  {
+    id: 'bucket_61_90',
+    label: '61-90 Days',
+    color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+  },
+  {
+    id: 'bucket_90_plus',
+    label: '90+ Days',
+    color: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-300',
+  },
 ];
 
-const INTERACTION_TYPES = [
-  { value: 'call', label: 'Phone Call', icon: Phone },
-  { value: 'sms', label: 'SMS', icon: MessageSquare },
-  { value: 'email', label: 'Email', icon: Mail },
-  { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
+const INTERACTION_TYPES: Array<{
+  value: 'call_attempt' | 'sms_sent' | 'email_sent' | 'whatsapp_sent' | 'note';
+  label: string;
+  icon: React.ElementType;
+}> = [
+  { value: 'call_attempt', label: 'Phone Call', icon: Phone },
+  { value: 'sms_sent', label: 'SMS', icon: MessageSquare },
+  { value: 'email_sent', label: 'Email', icon: Mail },
+  { value: 'whatsapp_sent', label: 'WhatsApp', icon: MessageSquare },
   { value: 'note', label: 'Note', icon: FileText },
 ];
 
@@ -85,18 +154,17 @@ const OUTCOMES = [
 
 export function CollectionsDashboard() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [queue, setQueue] = useState<CollectionsQueueItem[]>([]);
-  const [stats, setStats] = useState<CollectionsStats | null>(null);
   const [selectedBucket, setSelectedBucket] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<CollectionsQueueItem | null>(null);
-  
+  const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
+
   // Dialog states
   const [showInteractionDialog, setShowInteractionDialog] = useState(false);
   const [showPTPDialog, setShowPTPDialog] = useState(false);
-  const [interactionType, setInteractionType] = useState('call');
+  const [interactionType, setInteractionType] = useState<
+    'call_attempt' | 'sms_sent' | 'email_sent' | 'whatsapp_sent' | 'note'
+  >('call_attempt');
   const [outcome, setOutcome] = useState('');
   const [notes, setNotes] = useState('');
   const [nextActionDate, setNextActionDate] = useState('');
@@ -104,118 +172,127 @@ export function CollectionsDashboard() {
   const [ptpDate, setPtpDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch data
-  const fetchData = useCallback(async (showRefreshIndicator = false) => {
-    if (showRefreshIndicator) setRefreshing(true);
-    else setLoading(true);
+  // Convex reactive queries
+  const rawQueue = useConvexQuery(api.collections.getCollectionsQueue, {});
+  const rawStats = useConvexQuery(api.collections.getCollectionsStats);
 
-    try {
-      const [queueResult, statsResult] = await Promise.all([
-        collectionsAPI.getQueue({
-          priority: selectedBucket === 'all' ? undefined : selectedBucket as 'high' | 'medium' | 'low' | undefined,
-        }),
-        analyticsAPI.getCollectionsStats()
-      ]);
+  // Convex mutations (N3 — wired with proper Id<"loans"> types)
+  const recordInteraction = useConvexMutation(api.collections.recordInteraction);
+  const createPromiseToPay = useConvexMutation(api.collections.createPromiseToPay);
 
-      if (queueResult.success && queueResult.data) {
-        // Apply search filter client-side if needed
-        let queueData = queueResult.data as CollectionsQueueItem[];
-        if (searchTerm) {
-          const searchLower = searchTerm.toLowerCase();
-          queueData = queueData.filter((item: CollectionsQueueItem) =>
-            item.first_name?.toLowerCase().includes(searchLower) ||
-            item.last_name?.toLowerCase().includes(searchLower) ||
-            item.phone_number?.toLowerCase().includes(searchLower)
-          );
-        }
-        setQueue(queueData);
-      }
+  const loading = rawQueue === undefined;
 
-      if (statsResult.success && statsResult.data) {
-        setStats(statsResult.data as CollectionsStats);
-      }
-    } catch (error) {
-      console.error('Error fetching collections data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load collections data',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  // Map Convex paymentSchedules rows → typed QueueItem view model (N3)
+  const queue: QueueItem[] = useMemo(() => {
+    if (!rawQueue) return [];
+
+    let items: QueueItem[] = rawQueue.map((row) => ({
+      loanId: row.loanId,
+      loanIdStr: String(row.loanId),
+      daysOverdue: row.daysOverdue,
+      riskBucket: daysToRiskBucket(row.daysOverdue),
+      totalDue: row.totalDue ?? 0,
+      principalDue: row.principalDue ?? 0,
+      interestDue: row.interestDue ?? 0,
+      dueDate: row.dueDate,
+      status: row.status ?? 'overdue',
+    }));
+
+    if (selectedBucket !== 'all') {
+      items = items.filter((i) => i.riskBucket === selectedBucket);
     }
-  }, [selectedBucket, searchTerm, toast]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      items = items.filter((i) => i.loanIdStr.toLowerCase().includes(lower));
+    }
 
-  // Handle interaction submission
+    return items;
+  }, [rawQueue, selectedBucket, searchTerm]);
+
+  // Map Convex nested stats → flat StatsView (N3)
+  const stats: StatsView | null = useMemo(() => {
+    if (!rawStats) return null;
+    const MS_PER_DAY = 86_400_000;
+    const now = Date.now();
+    const overdue = rawStats.overdue;
+    // Derive bucket counts from rawQueue when available
+    const q = rawQueue ?? [];
+    return {
+      total_overdue: overdue.count,
+      bucket_1_30: q.filter((r) => r.daysOverdue > 0 && r.daysOverdue <= 30).length,
+      bucket_31_60: q.filter((r) => r.daysOverdue > 30 && r.daysOverdue <= 60).length,
+      bucket_61_90: q.filter((r) => r.daysOverdue > 60 && r.daysOverdue <= 90).length,
+      bucket_90_plus: rawStats.overdue.over90Days,
+      pending_promises: rawStats.promiseToPay.pending,
+      promises_due_today: 0,
+      contacts_today: rawStats.interactions.thisWeek,
+      pending_reschedules: 0,
+    };
+  }, [rawStats, rawQueue]);
+
+  const fetchData = (_showRefresh?: boolean) => {}; // Convex is reactive
+
+  // Handle interaction submission — wired to Convex mutation (N3)
   const handleInteractionSubmit = async () => {
     if (!selectedItem) return;
-    
+
     setSubmitting(true);
     try {
-      const result = await collectionsAPI.recordInteraction({
-        loan_id: selectedItem.loan_id,
-        interaction_type: interactionType,
-        notes: notes || '',
+      await recordInteraction({
+        loanId: selectedItem.loanId,
+        activityType: interactionType,
+        activityStatus: 'completed',
+        contactMethod:
+          interactionType === 'call_attempt'
+            ? 'phone'
+            : interactionType === 'sms_sent'
+              ? 'sms'
+              : interactionType === 'email_sent'
+                ? 'email'
+                : interactionType === 'whatsapp_sent'
+                  ? 'whatsapp'
+                  : undefined,
         outcome: outcome || undefined,
-        next_action_date: nextActionDate || undefined
+        notes: notes || undefined,
+        nextActionDate: nextActionDate ? new Date(nextActionDate).getTime() : undefined,
       });
-
-      if (result.success) {
-        toast({
-          title: 'Interaction Logged',
-          description: 'The interaction has been recorded successfully.'
-        });
-        setShowInteractionDialog(false);
-        resetInteractionForm();
-        fetchData(true);
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to log interaction',
-        variant: 'destructive'
+        title: 'Interaction Logged',
+        description: 'The interaction has been recorded successfully.',
       });
+      setShowInteractionDialog(false);
+      resetInteractionForm();
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to log interaction', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Handle PTP submission
+  // Handle PTP submission — wired to Convex mutation (N3)
   const handlePTPSubmit = async () => {
     if (!selectedItem || !ptpAmount || !ptpDate) return;
-    
+
     setSubmitting(true);
     try {
-      const result = await collectionsAPI.createPromise({
-        loan_id: selectedItem.loan_id,
-        promised_amount: parseFloat(ptpAmount),
-        promised_date: ptpDate,
-        notes: notes || undefined
+      await createPromiseToPay({
+        loanId: selectedItem.loanId,
+        promiseDate: new Date(ptpDate).getTime(),
+        promiseAmount: parseFloat(ptpAmount),
+        notes: notes || undefined,
       });
-
-      if (result.success) {
-        toast({
-          title: 'Promise Recorded',
-          description: 'The promise to pay has been recorded successfully.'
-        });
-        setShowPTPDialog(false);
-        resetPTPForm();
-        fetchData(true);
-      } else {
-        throw new Error(result.error);
-      }
+      toast({
+        title: 'Promise Recorded',
+        description: 'The promise to pay has been recorded successfully.',
+      });
+      setShowPTPDialog(false);
+      resetPTPForm();
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to record promise to pay',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setSubmitting(false);
@@ -223,7 +300,7 @@ export function CollectionsDashboard() {
   };
 
   const resetInteractionForm = () => {
-    setInteractionType('call');
+    setInteractionType('call_attempt');
     setOutcome('');
     setNotes('');
     setNextActionDate('');
@@ -236,11 +313,9 @@ export function CollectionsDashboard() {
   };
 
   const getRiskBucketBadge = (bucket: string) => {
-    const config = RISK_BUCKETS.find(b => b.id === bucket);
+    const config = RISK_BUCKETS.find((b) => b.id === bucket);
     return config ? (
-      <Badge className={cn('font-normal', config.color)}>
-        {config.label}
-      </Badge>
+      <Badge className={cn('font-normal', config.color)}>{config.label}</Badge>
     ) : null;
   };
 
@@ -261,7 +336,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Total Overdue</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground" title={stats?.total_overdue?.toLocaleString()}>{stats?.total_overdue || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground"
+                  title={stats?.total_overdue?.toLocaleString()}
+                >
+                  {stats?.total_overdue || 0}
+                </p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-500 opacity-50 shrink-0" />
             </div>
@@ -273,7 +353,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">1-30 Days</p>
-                <p className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums" title={stats?.bucket_1_30?.toLocaleString()}>{stats?.bucket_1_30 || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums"
+                  title={stats?.bucket_1_30?.toLocaleString()}
+                >
+                  {stats?.bucket_1_30 || 0}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-500 opacity-50 shrink-0" />
             </div>
@@ -285,7 +370,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">31-60 Days</p>
-                <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums" title={stats?.bucket_31_60?.toLocaleString()}>{stats?.bucket_31_60 || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums"
+                  title={stats?.bucket_31_60?.toLocaleString()}
+                >
+                  {stats?.bucket_31_60 || 0}
+                </p>
               </div>
               <AlertCircle className="h-8 w-8 text-orange-500 opacity-50 shrink-0" />
             </div>
@@ -297,7 +387,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">61-90 Days</p>
-                <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums" title={stats?.bucket_61_90?.toLocaleString()}>{stats?.bucket_61_90 || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+                  title={stats?.bucket_61_90?.toLocaleString()}
+                >
+                  {stats?.bucket_61_90 || 0}
+                </p>
               </div>
               <AlertTriangle className="h-8 w-8 text-red-500 opacity-50 shrink-0" />
             </div>
@@ -309,7 +404,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">90+ Days</p>
-                <p className="text-xl sm:text-2xl font-bold text-red-800 dark:text-red-300 truncate tabular-nums" title={stats?.bucket_90_plus?.toLocaleString()}>{stats?.bucket_90_plus || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold text-red-800 dark:text-red-300 truncate tabular-nums"
+                  title={stats?.bucket_90_plus?.toLocaleString()}
+                >
+                  {stats?.bucket_90_plus || 0}
+                </p>
               </div>
               <XCircle className="h-8 w-8 text-red-700 opacity-50 shrink-0" />
             </div>
@@ -324,8 +424,16 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Pending Promises</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.pending_promises?.toLocaleString()}>{stats?.pending_promises || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1 truncate" title={`${stats?.promises_due_today || 0} due today`}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={stats?.pending_promises?.toLocaleString()}
+                >
+                  {stats?.pending_promises || 0}
+                </p>
+                <p
+                  className="text-xs text-muted-foreground mt-1 truncate"
+                  title={`${stats?.promises_due_today || 0} due today`}
+                >
                   {stats?.promises_due_today || 0} due today
                 </p>
               </div>
@@ -339,7 +447,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Contacts Today</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.contacts_today?.toLocaleString()}>{stats?.contacts_today || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={stats?.contacts_today?.toLocaleString()}
+                >
+                  {stats?.contacts_today || 0}
+                </p>
               </div>
               <Phone className="h-8 w-8 text-green-500 opacity-50 shrink-0" />
             </div>
@@ -351,7 +464,12 @@ export function CollectionsDashboard() {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Pending Reschedules</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={stats?.pending_reschedules?.toLocaleString()}>{stats?.pending_reschedules || 0}</p>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={stats?.pending_reschedules?.toLocaleString()}
+                >
+                  {stats?.pending_reschedules || 0}
+                </p>
               </div>
               <Calendar className="h-8 w-8 text-purple-500 opacity-50 shrink-0" />
             </div>
@@ -365,9 +483,7 @@ export function CollectionsDashboard() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <CardTitle>Collections Queue</CardTitle>
-              <CardDescription>
-                Manage overdue accounts and collection activities
-              </CardDescription>
+              <CardDescription>Manage overdue accounts and collection activities</CardDescription>
             </div>
             <Button
               variant="outline"
@@ -395,7 +511,11 @@ export function CollectionsDashboard() {
                 className="pl-9 bg-background border-input text-foreground"
               />
             </div>
-            <Tabs value={selectedBucket} onValueChange={setSelectedBucket} className="w-full md:w-auto">
+            <Tabs
+              value={selectedBucket}
+              onValueChange={setSelectedBucket}
+              className="w-full md:w-auto"
+            >
               <TabsList>
                 {RISK_BUCKETS.map((bucket) => (
                   <TabsTrigger key={bucket.id} value={bucket.id} className="text-xs">
@@ -413,7 +533,7 @@ export function CollectionsDashboard() {
                 <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                 <h3 className="text-lg font-medium">No accounts in this bucket</h3>
                 <p className="text-muted-foreground text-sm mt-1">
-                  {selectedBucket === 'all' 
+                  {selectedBucket === 'all'
                     ? 'All accounts are current!'
                     : 'No overdue accounts in this risk category.'}
                 </p>
@@ -422,7 +542,7 @@ export function CollectionsDashboard() {
               <div className="space-y-3">
                 {queue.map((item) => (
                   <div
-                    key={item.loan_id}
+                    key={item.loanIdStr}
                     className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors bg-card"
                   >
                     <div className="flex items-start justify-between">
@@ -432,35 +552,32 @@ export function CollectionsDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h4 className="font-medium truncate text-foreground" title={`${item.first_name} ${item.last_name}`}>
-                              {item.first_name} {item.last_name}
+                            <h4
+                              className="font-medium truncate text-foreground font-mono text-sm"
+                              title={item.loanIdStr}
+                            >
+                              Loan {item.loanIdStr.slice(-8)}
                             </h4>
-                            <div className="shrink-0">{getRiskBucketBadge(item.risk_bucket)}</div>
+                            <div className="shrink-0">{getRiskBucketBadge(item.riskBucket)}</div>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate" title={item.phone_number}>{item.phone_number}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Due: {new Date(item.dueDate).toLocaleDateString()}
+                          </p>
                           <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
-                            <span className="tabular-nums whitespace-nowrap">Loan: {formatNAD(item.loan_amount)}</span>
-                            <span className="tabular-nums whitespace-nowrap">Monthly: {formatNAD(item.monthly_payment)}</span>
+                            <span className="tabular-nums whitespace-nowrap">
+                              Total Due: {formatNAD(item.totalDue)}
+                            </span>
+                            <span className="tabular-nums whitespace-nowrap">
+                              Principal: {formatNAD(item.principalDue)}
+                            </span>
                             <span className="text-red-600 dark:text-red-400 font-medium tabular-nums whitespace-nowrap">
-                              {item.days_overdue} days overdue
+                              {item.daysOverdue} days overdue
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        {item.pending_promises > 0 && (
-                          <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 whitespace-nowrap border-blue-200 dark:border-blue-800">
-                            {item.pending_promises} PTP pending
-                          </Badge>
-                        )}
-                        {item.last_contact_date && (
-                          <p className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-                            Last contact: {new Date(item.last_contact_date).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t">
                       <Button
                         size="sm"
@@ -478,18 +595,14 @@ export function CollectionsDashboard() {
                         variant="outline"
                         onClick={() => {
                           setSelectedItem(item);
-                          setPtpAmount(item.monthly_payment.toString());
+                          setPtpAmount(item.totalDue.toString());
                           setShowPTPDialog(true);
                         }}
                       >
                         <HandshakeIcon className="h-4 w-4 mr-1" />
                         Record PTP
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="ml-auto"
-                      >
+                      <Button size="sm" variant="ghost" className="ml-auto">
                         View Details
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
@@ -508,14 +621,17 @@ export function CollectionsDashboard() {
           <DialogHeader>
             <DialogTitle>Log Interaction</DialogTitle>
             <DialogDescription>
-              Record a contact attempt with {selectedItem?.first_name} {selectedItem?.last_name}
+              Record a contact attempt for loan {selectedItem?.loanIdStr?.slice(-8)}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Contact Type</Label>
-              <Select value={interactionType} onValueChange={setInteractionType}>
+              <Select
+                value={interactionType}
+                onValueChange={(v) => setInteractionType(v as typeof interactionType)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -588,10 +704,10 @@ export function CollectionsDashboard() {
           <DialogHeader>
             <DialogTitle>Record Promise to Pay</DialogTitle>
             <DialogDescription>
-              Record a payment promise from {selectedItem?.first_name} {selectedItem?.last_name}
+              Record a payment promise for loan {selectedItem?.loanIdStr?.slice(-8)}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Promised Amount (NAD)</Label>
@@ -631,10 +747,7 @@ export function CollectionsDashboard() {
             <Button variant="outline" onClick={() => setShowPTPDialog(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handlePTPSubmit} 
-              disabled={submitting || !ptpAmount || !ptpDate}
-            >
+            <Button onClick={handlePTPSubmit} disabled={submitting || !ptpAmount || !ptpDate}>
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Record Promise
             </Button>

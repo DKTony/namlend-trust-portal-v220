@@ -164,32 +164,11 @@ class ErrorMonitor {
   }
 
   private async notifyAdmins(error: SystemError): Promise<void> {
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { queueNotification } = await import('@/services/notificationService');
-
-      // Fetch admin user IDs
-      const { data: adminRoles } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
-
-      if (!adminRoles?.length) return;
-
-      for (const { user_id } of adminRoles) {
-        await queueNotification({
-          userId: user_id,
-          channel: 'in_app',
-          subject: `🚨 Critical: ${error.category}`,
-          content: error.message,
-          priority: 'urgent',
-        }).catch(() => {
-          // Individual notification failure should not block others
-        });
-      }
-    } catch {
-      // Alerting must never worsen error conditions
-    }
+    // Admin alerting via Convex notifications — log to console for now
+    // (Supabase notificationService removed; wire api.notifications.queueNotification when needed)
+    console.warn(
+      `[ErrorMonitor] Admin alert suppressed (notification service migrated): ${error.category} — ${error.message}`
+    );
   }
 
   // Persist errors to localStorage

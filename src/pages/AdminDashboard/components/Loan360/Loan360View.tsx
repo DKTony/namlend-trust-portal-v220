@@ -4,12 +4,14 @@
  * Refactored into tab sub-components for maintainability.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id, QueryItem } from '@/types/convex';
 import { useToast } from '@/hooks/use-toast';
 import { LoanSummaryCards } from './components/LoanSummaryCards';
 import { OverviewTab } from './tabs/OverviewTab';
@@ -27,71 +29,95 @@ interface Loan360Props {
 
 export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [loan, setLoan] = useState<any>(null);
-  const [client, setClient] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [interactions, setInteractions] = useState<any[]>([]);
-  const [promises, setPromises] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (isOpen && loanId) fetchAllData();
-  }, [isOpen, loanId]);
+  // Convex reactive queries — skip when dialog is closed
+  const rawLoan = useQuery(
+    api.loans.getLoan,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    try {
-      const { data: loanData, error: loanError } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('id', loanId)
-        .single();
-      if (loanError) throw loanError;
-      setLoan(loanData);
+  const rawClient = useQuery(
+    api.users.getUserProfile,
+    isOpen && rawLoan?.userId ? { userId: rawLoan.userId } : 'skip'
+  );
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', loanData.user_id)
-        .single();
-      setClient(profileData);
+  // Reactive queries for all loan sub-resources
+  const rawPayments = useQuery(
+    api.payments.getPaymentsByLoan,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('loan_id', loanId)
-        .order('paid_at', { ascending: false });
-      setPayments(paymentsData || []);
+  const rawDisbursements = useQuery(
+    api.disbursements.getDisbursementsByLoan,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-      const { data: docsData } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('user_id', loanData.user_id)
-        .order('created_at', { ascending: false });
-      setDocuments(docsData || []);
+  const rawDocuments = useQuery(
+    api.loanDocuments.getLoanDocuments,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-      const { data: interactionsData } = await supabase
-        .from('collections_interactions')
-        .select('*')
-        .eq('loan_id', loanId)
-        .order('created_at', { ascending: false });
-      setInteractions(interactionsData || []);
+  const rawInteractions = useQuery(
+    api.collections.listInteractionsByLoan,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
 
-      const { data: promisesData } = await supabase
-        .from('promise_to_pay')
-        .select('*')
-        .eq('loan_id', loanId)
-        .order('promised_date', { ascending: false });
-      setPromises(promisesData || []);
-    } catch (error) {
-      console.error('Error fetching loan 360 data:', error);
-      toast({ title: 'Error', description: 'Failed to load loan details', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const rawPromises = useQuery(
+    api.collections.listPromisesToPay,
+    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
+
+  const loading = isOpen && loanId ? rawLoan === undefined : false;
+
+  // Transform Convex data to legacy shapes expected by sub-components
+  const loan = useMemo(() => {
+    if (!rawLoan) return null;
+    return {
+      id: String(rawLoan._id),
+      user_id: String(rawLoan.userId ?? ''),
+      amount: rawLoan.amount ?? rawLoan.principal ?? 0,
+      total_repayment: rawLoan.totalRepayment ?? rawLoan.principal ?? 0,
+      monthly_payment: rawLoan.monthlyPayment ?? 0,
+      term_months: rawLoan.termMonths ?? 0,
+      interest_rate: rawLoan.interestRate ?? 0,
+      purpose: rawLoan.purpose ?? '',
+      status: rawLoan.status ?? 'pending',
+      created_at: rawLoan._creationTime ? new Date(rawLoan._creationTime).toISOString() : '',
+      disbursed_at: rawLoan.disbursedAt ? new Date(rawLoan.disbursedAt).toISOString() : null,
+      // Canonical credit scoring fields (N1)
+      creditScore: rawLoan.creditScore ?? null,
+      debtToIncomeRatio: rawLoan.debtToIncomeRatio ?? null,
+      recommendation: rawLoan.recommendation ?? null,
+    };
+  }, [rawLoan]);
+
+  const client = useMemo(() => {
+    if (!rawClient) return null;
+    return {
+      first_name: rawClient.fullName?.split(' ')[0] ?? '',
+      last_name: rawClient.fullName?.split(' ').slice(1).join(' ') ?? '',
+      email: rawClient.email ?? '',
+      phone_number: rawClient.phone ?? '',
+    };
+  }, [rawClient]);
+
+  const payments = useMemo(() => {
+    if (!rawPayments) return [];
+    type RawPayment = QueryItem<typeof api.payments.getPaymentsByLoan>;
+    return rawPayments.map((p: RawPayment) => ({
+      id: String(p._id),
+      amount: p.amount ?? 0,
+      status: p.status ?? 'pending',
+      paid_at: p.paidAt ? new Date(p.paidAt).toISOString() : '',
+      created_at: p.createdAt ? new Date(p.createdAt).toISOString() : '',
+    }));
+  }, [rawPayments]);
+
+  // Wire Convex queries — fall back to empty array while loading
+  const documents = rawDocuments ?? [];
+  const interactions = rawInteractions ?? [];
+  const promises = rawPromises ?? [];
 
   const totalPaid = payments.reduce(
     (sum, p) => (p.status === 'completed' ? sum + p.amount : sum),
@@ -166,6 +192,9 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
                     progressPercent={progressPercent}
                     paymentsMade={paymentsMade}
                     monthlyPayment={loan.monthly_payment}
+                    creditScore={loan.creditScore}
+                    debtToIncomeRatio={loan.debtToIncomeRatio}
+                    recommendation={loan.recommendation}
                   />
                 </TabsContent>
                 <TabsContent value="payments" className="mt-0">

@@ -16,12 +16,41 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Download, FileText, Search } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
-import { parseRawDataReport } from '@/services/settlementService';
+
+interface RawDataReportEntry {
+  txId: string;
+  timestamp: string;
+  remitterParticipant: string;
+  beneficiaryParticipant: string;
+  amount: number;
+  currency: string;
+  productType: string;
+  status: string;
+  interchangeAmount: number;
+  switchingFee: number;
+}
+
+function parseRawDataReport(reportData: Record<string, unknown>): RawDataReportEntry[] {
+  try {
+    if (Array.isArray(reportData.transactions)) {
+      return reportData.transactions as RawDataReportEntry[];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 export function RawDataReportViewer() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -146,6 +175,9 @@ export function RawDataReportViewer() {
         <DialogContent className="max-w-6xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>Raw Data Report</DialogTitle>
+            <DialogDescription className="sr-only">
+              View transaction-level raw data report with search and export
+            </DialogDescription>
           </DialogHeader>
 
           {contentLoading ? (

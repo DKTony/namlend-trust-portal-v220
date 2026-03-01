@@ -1,5 +1,11 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { formatNAD } from '@/utils/currency';
@@ -136,6 +142,9 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                 <DialogTitle className={cn('text-xl font-bold tracking-tight', styles.textClass)}>
                   Loan Details
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  View loan amount, terms, repayment schedule, and status
+                </DialogDescription>
                 <p className="text-sm text-muted-foreground font-mono mt-0.5">
                   #{loan.id.slice(0, 8)}
                 </p>

@@ -1,7 +1,7 @@
 /**
  * API Loans - Orchestration Layer
  * Centralized API for loan operations
- * 
+ *
  * Endpoints:
  * - GET    /list              - List loans with filters
  * - GET    /:id               - Get loan details
@@ -14,17 +14,22 @@
  */
 
 import { createRouter } from '../_shared/router.ts';
-import { verifyAuth, verifyAuthWithRole, getServiceClient, type AuthUser } from '../_shared/auth.ts';
-import { 
-  validateBody, 
+import {
+  verifyAuth,
+  verifyAuthWithRole,
+  getServiceClient,
+  type AuthUser,
+} from '../_shared/auth.ts';
+import {
+  validateBody,
   validateQuery,
-  loanListSchema, 
+  loanListSchema,
   loanApplicationSchema,
   loanApprovalSchema,
   disbursementSchema,
   paginationSchema,
   MAX_APR_NAMIBIA,
-  validateAPR
+  validateAPR,
 } from '../_shared/validation.ts';
 import { createAuditLog, logFinancialOperation } from '../_shared/audit.ts';
 import * as response from '../_shared/responses.ts';
@@ -48,9 +53,7 @@ router.get('/list', async (req: Request) => {
   const supabase = getServiceClient();
 
   // Query loans without profile join - profiles are fetched separately if needed
-  let query = supabase
-    .from('loans')
-    .select('*', { count: 'exact' });
+  let query = supabase.from('loans').select('*', { count: 'exact' });
 
   // Role-based filtering
   if (auth.user.role === 'client') {
@@ -59,7 +62,13 @@ router.get('/list', async (req: Request) => {
     query = query.eq('user_id', user_id);
   }
 
-  if (status) query = query.eq('status', status);
+  if (status) {
+    if (status.length === 1) {
+      query = query.eq('status', status[0]);
+    } else {
+      query = query.in('status', status);
+    }
+  }
   if (assigned_officer_id) query = query.eq('assigned_officer_id', assigned_officer_id);
   if (startDate) query = query.gte('created_at', startDate);
   if (endDate) query = query.lte('created_at', endDate);
@@ -77,7 +86,7 @@ router.get('/list', async (req: Request) => {
     page,
     limit,
     total: count || 0,
-    hasMore: (count || 0) > offset + limit
+    hasMore: (count || 0) > offset + limit,
   });
 });
 
@@ -89,15 +98,17 @@ router.get('/:id', async (req: Request, params: Record<string, string>) => {
   }
 
   const supabase = getServiceClient();
-  
+
   // Get loan with related data
   const { data: loan, error } = await supabase
     .from('loans')
-    .select(`
+    .select(
+      `
       *,
       disbursements(*),
       payment_schedules(*)
-    `)
+    `
+    )
     .eq('id', params.id)
     .single();
 
@@ -133,7 +144,8 @@ router.post('/apply', async (req: Request) => {
     return response.badRequest(validation.error);
   }
 
-  const { amount, term_months, purpose, interest_rate, employment_status, monthly_income } = validation.data;
+  const { amount, term_months, purpose, interest_rate, employment_status, monthly_income } =
+    validation.data;
 
   // Validate APR against regulatory limit
   const aprCheck = validateAPR(interest_rate);
@@ -156,8 +168,8 @@ router.post('/apply', async (req: Request) => {
         purpose,
         interest_rate,
         employment_status,
-        monthly_income
-      }
+        monthly_income,
+      },
     })
     .select()
     .single();
@@ -175,9 +187,9 @@ router.post('/apply', async (req: Request) => {
     new_data: { amount, term_months, interest_rate },
   });
 
-  return response.created({ 
+  return response.created({
     approval_request_id: approvalRequest.id,
-    message: 'Loan application submitted successfully'
+    message: 'Loan application submitted successfully',
   });
 });
 
@@ -219,7 +231,7 @@ router.post('/approve', async (req: Request) => {
     p_action: 'approve',
     p_notes: notes || null,
     p_approved_amount: approved_amount || null,
-    p_approved_rate: approved_rate || null
+    p_approved_rate: approved_rate || null,
   });
 
   if (error) {
@@ -237,9 +249,9 @@ router.post('/approve', async (req: Request) => {
     req
   );
 
-  return response.success({ 
+  return response.success({
     message: 'Loan approved successfully',
-    loan_id: data?.loan_id || loan_id
+    loan_id: data?.loan_id || loan_id,
   });
 });
 
@@ -271,7 +283,7 @@ router.post('/reject', async (req: Request) => {
     p_approval_id: loan_id,
     p_officer_id: auth.user.id,
     p_action: 'reject',
-    p_notes: notes || 'Application rejected'
+    p_notes: notes || 'Application rejected',
   });
 
   if (error) {
@@ -316,7 +328,7 @@ router.post('/disburse', async (req: Request) => {
     p_disbursement_id: loan_id,
     p_payment_method: payment_method,
     p_payment_reference: payment_reference,
-    p_notes: notes || null
+    p_notes: notes || null,
   });
 
   if (error) {
@@ -334,9 +346,9 @@ router.post('/disburse', async (req: Request) => {
     req
   );
 
-  return response.success({ 
+  return response.success({
     message: 'Disbursement initiated successfully',
-    ...data
+    ...data,
   });
 });
 
@@ -375,7 +387,7 @@ router.get('/approval-requests', async (req: Request) => {
     page,
     limit,
     total: count || 0,
-    hasMore: (count || 0) > offset + limit
+    hasMore: (count || 0) > offset + limit,
   });
 });
 

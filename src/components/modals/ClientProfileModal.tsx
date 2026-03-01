@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useMemo } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { formatNAD } from '@/utils/currency';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import { type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import {
   User,
@@ -37,67 +45,70 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
   onClose,
   userId,
 }) => {
-  const [profile, setProfile] = useState<any>(null);
-  const [loans, setLoans] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Convex reactive queries — skip when dialog is closed (N2 — no as any)
+  const rawProfile = useConvexQuery(
+    api.users.getUserProfile,
+    open && userId ? { userId: userId as Id<'users'> } : 'skip'
+  );
 
-  useEffect(() => {
-    if (userId && open) {
-      loadClientData();
-    }
-  }, [userId, open]);
+  const rawLoans = useConvexQuery(api.loans.adminListLoans, open && userId ? {} : 'skip');
 
-  const loadClientData = async () => {
-    if (!userId) return;
+  const rawApprovals = useConvexQuery(
+    api.approvalWorkflow.adminListApprovals,
+    open && userId ? {} : 'skip'
+  );
 
-    setLoading(true);
-    try {
-      // Load profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+  const loading = open && userId ? rawProfile === undefined : false;
 
-      setProfile(profileData);
+  const profile = useMemo(() => {
+    if (!rawProfile) return null;
+    return {
+      first_name: rawProfile.fullName?.split(' ')[0] ?? '',
+      last_name: rawProfile.fullName?.split(' ').slice(1).join(' ') ?? '',
+      phone_number: rawProfile.phone ?? '',
+      id_number: rawProfile.idNumber ?? '',
+      email: rawProfile.email ?? '',
+      employment_status: rawProfile.employmentStatus ?? '',
+      monthly_income: rawProfile.monthlyIncome ?? 0,
+      credit_score: rawProfile.creditScore ?? null,
+      verified: rawProfile.kycStatus === 'verified',
+      employer_name: rawProfile.employerName ?? '',
+    };
+  }, [rawProfile]);
 
-      // Load loans
-      const { data: loansData } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+  const loans = useMemo(() => {
+    if (!rawLoans || !userId) return [];
+    return rawLoans
+      .filter((l) => String(l.userId) === String(userId))
+      .map((l) => ({
+        id: String(l._id),
+        amount: l.principal ?? 0,
+        term_months: l.termMonths ?? 0,
+        interest_rate: l.interestRate ?? 0,
+        monthly_payment: l.monthlyPayment ?? 0,
+        total_repayment: 0,
+        purpose: l.purpose ?? '',
+        status: l.status ?? 'pending',
+        created_at: new Date(l._creationTime).toISOString(),
+      }));
+  }, [rawLoans, userId]);
 
-      setLoans(loansData || []);
+  const payments: { id: string; amount: number; status: string; created_at: string }[] = [];
+  const documents: { id: string; name: string; status: string }[] = [];
 
-      // Load payments
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*, loans!inner(user_id)')
-        .eq('loans.user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      setPayments(paymentsData || []);
-
-      // Load recent activities (approval requests, etc.)
-      const { data: activitiesData } = await supabase
-        .from('approval_requests')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      setActivities(activitiesData || []);
-    } catch (error) {
-      console.error('Error loading client data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const activities = useMemo(() => {
+    if (!rawApprovals || !userId) return [];
+    return rawApprovals
+      .filter((a) => String(a.requestedBy) === String(userId))
+      .slice(0, 10)
+      .map((a) => ({
+        id: String(a._id),
+        request_type: a.entityType ?? '',
+        status: a.status ?? 'pending',
+        priority: a.priority ?? 'normal',
+        created_at: new Date(a.createdAt).toISOString(),
+      }));
+  }, [rawApprovals, userId]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -161,6 +172,9 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
               <User className="h-5 w-5 text-muted-foreground" />
               Client Profile
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              View client profile details, loan history, and KYC information
+            </DialogDescription>
           </div>
         </DialogHeader>
 

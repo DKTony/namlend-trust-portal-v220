@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, FileCode, Download, Copy, Check } from 'lucide-react';
@@ -32,8 +38,67 @@ import {
   usePacs009BatchDetails,
 } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
-import { parsePacs009Xml, formatXmlForDisplay } from '@/services/settlementService';
 import { BATCH_TYPE_LABELS } from '@/types/settlement';
+
+function parsePacs009Xml(xmlContent: string): {
+  groupHeader: {
+    msgId: string;
+    creDtTm: string;
+    nbOfTxs: number;
+    ctrlSum: number;
+    sttlmDt: string;
+  };
+  transactions: Array<{
+    instrId: string;
+    endToEndId: string;
+    amount: number;
+    currency: string;
+    dbtrBic: string;
+    cdtrBic: string;
+  }>;
+} | null {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlContent, 'text/xml');
+    if (doc.querySelector('parsererror')) return null;
+    const grpHdr = doc.querySelector('GrpHdr');
+    const groupHeader = {
+      msgId: grpHdr?.querySelector('MsgId')?.textContent || '',
+      creDtTm: grpHdr?.querySelector('CreDtTm')?.textContent || '',
+      nbOfTxs: parseInt(grpHdr?.querySelector('NbOfTxs')?.textContent || '0'),
+      ctrlSum: parseFloat(grpHdr?.querySelector('CtrlSum')?.textContent || '0'),
+      sttlmDt:
+        grpHdr?.querySelector('SttlmInf SttlmDt')?.textContent ||
+        grpHdr?.querySelector('IntrBkSttlmDt')?.textContent ||
+        '',
+    };
+    const transactions = Array.from(doc.querySelectorAll('CdtTrfTxInf')).map((txn) => ({
+      instrId: txn.querySelector('PmtId InstrId')?.textContent || '',
+      endToEndId: txn.querySelector('PmtId EndToEndId')?.textContent || '',
+      amount: parseFloat(txn.querySelector('IntrBkSttlmAmt')?.textContent || '0'),
+      currency: txn.querySelector('IntrBkSttlmAmt')?.getAttribute('Ccy') || 'NAD',
+      dbtrBic: txn.querySelector('DbtrAgt FinInstnId BICFI')?.textContent || '',
+      cdtrBic: txn.querySelector('CdtrAgt FinInstnId BICFI')?.textContent || '',
+    }));
+    return { groupHeader, transactions };
+  } catch {
+    return null;
+  }
+}
+
+function formatXmlForDisplay(xmlContent: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlContent, 'text/xml');
+    const serializer = new XMLSerializer();
+    return serializer
+      .serializeToString(doc)
+      .replace(/></g, '>\n<')
+      .replace(/(<[^/][^>]*>)([^<]+)(<\/)/g, '$1\n  $2\n$3');
+  } catch {
+    return xmlContent;
+  }
+}
 
 export function Pacs009Viewer() {
   const [selectedRunId, setSelectedRunId] = useState<string>('');
@@ -211,6 +276,9 @@ export function Pacs009Viewer() {
               <FileCode className="h-5 w-5" />
               pacs.009 Batch: {batchDetails?.batch?.msg_id}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              View pacs.009 batch details, XML content, and transaction entries
+            </DialogDescription>
           </DialogHeader>
 
           {detailsLoading ? (

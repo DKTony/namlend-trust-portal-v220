@@ -22,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useSettlementRuns, useAcknowledgements } from '@/hooks/useSettlement';
@@ -232,6 +238,9 @@ export function AcknowledgementsViewer() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Raw Acknowledgement Payload</DialogTitle>
+            <DialogDescription className="sr-only">
+              View raw JSON payload of the settlement acknowledgement
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-96 rounded-md border bg-slate-950 p-4">
             <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">

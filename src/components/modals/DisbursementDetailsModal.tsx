@@ -1,5 +1,11 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
@@ -107,6 +113,9 @@ export const DisbursementDetailsModal: React.FC<DisbursementDetailsModalProps> =
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Disbursement Details
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  View disbursement amount, status, and processing details
+                </DialogDescription>
                 <p className="text-muted-foreground text-xs mt-0.5 font-mono">
                   Ref: {disbursement.reference}
                 </p>

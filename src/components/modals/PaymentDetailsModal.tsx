@@ -1,5 +1,11 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
@@ -95,6 +101,9 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
                   Payment Receipt
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  View payment amount, method, status, and transaction details
+                </DialogDescription>
                 <p className="text-muted-foreground text-xs mt-0.5 font-mono">
                   ID: {payment.id.slice(0, 8)}
                 </p>

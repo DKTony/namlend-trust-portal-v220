@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -232,6 +233,9 @@ export function AdjustmentsViewer() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Adjustment Details</DialogTitle>
+            <DialogDescription className="sr-only">
+              View and respond to settlement adjustment details
+            </DialogDescription>
           </DialogHeader>
 
           {selectedItem && (

@@ -14,11 +14,44 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Eye, Download, FileSpreadsheet } from 'lucide-react';
 import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
-import { parseNTSLReport } from '@/services/settlementService';
+
+interface NTSLReportData {
+  participant: string;
+  participantBic: string;
+  settlementDate: string;
+  windowId: string;
+  credits: number;
+  debits: number;
+  netPosition: number;
+  interchangeOwed: number;
+  interchangePaid: number;
+  switchingFee: number;
+  transactions: Array<{
+    txId: string;
+    counterparty: string;
+    amount: number;
+    type: 'credit' | 'debit';
+    category: string;
+  }>;
+}
+
+function parseNTSLReport(reportData: Record<string, unknown>): NTSLReportData | null {
+  try {
+    return reportData as unknown as NTSLReportData;
+  } catch {
+    return null;
+  }
+}
 
 export function NTSLReportViewer() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -150,6 +183,9 @@ export function NTSLReportViewer() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Net Settlement Report (NTSL)</DialogTitle>
+            <DialogDescription className="sr-only">
+              View net settlement totals and participant obligations
+            </DialogDescription>
           </DialogHeader>
 
           {contentLoading ? (

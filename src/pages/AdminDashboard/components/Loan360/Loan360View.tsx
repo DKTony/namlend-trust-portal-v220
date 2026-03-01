@@ -7,7 +7,13 @@
 import { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Eye, Loader2 } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
@@ -154,6 +160,9 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
             <Eye className="h-5 w-5" />
             Loan 360° View
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Comprehensive loan overview with financials, schedule, and history
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (

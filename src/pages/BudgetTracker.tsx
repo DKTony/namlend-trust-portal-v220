@@ -4,13 +4,12 @@
  * Client-side budget management with CSV upload, spending tracking, and savings goals
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { financeService } from '@/services/financeService';
 import type { UnifiedTransaction, BudgetLimit, SavingsGoal } from '@/types/theme';
 import {
   UploadCloud,
@@ -58,14 +57,133 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from '@/hooks/use-toast';
 import { formatNAD } from '@/utils/currency';
 
+const INITIAL_TRANSACTIONS: UnifiedTransaction[] = [
+  {
+    id: '1',
+    date: '2026-01-13',
+    description: 'Salary Deposit',
+    category: 'Income',
+    source: 'System',
+    type: 'in',
+    amount: 25000.0,
+  },
+  {
+    id: '2',
+    date: '2026-01-12',
+    description: 'Pick n Pay Groceries',
+    category: 'Groceries',
+    source: 'Statement Upload',
+    type: 'out',
+    amount: 1250.5,
+  },
+  {
+    id: '3',
+    date: '2026-01-11',
+    description: 'Shell Fuel Station',
+    category: 'Transport',
+    source: 'Statement Upload',
+    type: 'out',
+    amount: 850.0,
+  },
+  {
+    id: '4',
+    date: '2026-01-10',
+    description: 'Telecom Namibia',
+    category: 'Utilities',
+    source: 'System',
+    type: 'out',
+    amount: 450.0,
+  },
+  {
+    id: '5',
+    date: '2026-01-09',
+    description: 'NamLend Loan Repayment',
+    category: 'Loan',
+    source: 'System',
+    type: 'out',
+    amount: 2500.0,
+  },
+];
+
+const INITIAL_BUDGETS: BudgetLimit[] = [
+  { id: '1', category: 'Groceries', limit: 4000, spent: 2850, color: '#10b981' },
+  { id: '2', category: 'Transport', limit: 2000, spent: 1650, color: '#3b82f6' },
+  { id: '3', category: 'Utilities', limit: 1500, spent: 980, color: '#8b5cf6' },
+  { id: '4', category: 'Entertainment', limit: 1000, spent: 1250, color: '#f59e0b' },
+  { id: '5', category: 'Loan', limit: 3000, spent: 2500, color: '#ef4444' },
+];
+
+const INITIAL_SAVINGS: SavingsGoal[] = [
+  {
+    id: '1',
+    name: 'Holiday Fund',
+    targetAmount: 15000,
+    currentAmount: 8500,
+    deadline: 'Dec 2026',
+    icon: 'plane',
+  },
+  {
+    id: '2',
+    name: 'New Laptop',
+    targetAmount: 12000,
+    currentAmount: 4200,
+    deadline: 'Jun 2026',
+    icon: 'laptop',
+  },
+  {
+    id: '3',
+    name: 'Emergency Fund',
+    targetAmount: 50000,
+    currentAmount: 32000,
+    deadline: 'Ongoing',
+    icon: 'home',
+  },
+];
+
+function categorizeTransaction(description: string): string {
+  const desc = description.toLowerCase();
+  if (
+    desc.includes('pick n pay') ||
+    desc.includes('checkers') ||
+    desc.includes('shoprite') ||
+    desc.includes('spar')
+  )
+    return 'Groceries';
+  if (
+    desc.includes('shell') ||
+    desc.includes('engen') ||
+    desc.includes('caltex') ||
+    desc.includes('fuel')
+  )
+    return 'Transport';
+  if (
+    desc.includes('telecom') ||
+    desc.includes('nampower') ||
+    desc.includes('water') ||
+    desc.includes('electric')
+  )
+    return 'Utilities';
+  if (desc.includes('namlend') || desc.includes('loan') || desc.includes('credit')) return 'Loan';
+  if (desc.includes('salary') || desc.includes('deposit') || desc.includes('transfer in'))
+    return 'Income';
+  if (
+    desc.includes('restaurant') ||
+    desc.includes('cafe') ||
+    desc.includes('movie') ||
+    desc.includes('entertainment')
+  )
+    return 'Entertainment';
+  return 'Other';
+}
+
 export const BudgetTracker: React.FC = () => {
   const { styles } = useTheme();
   const isMobile = useIsMobile();
   const { t } = useTranslation('budget');
 
-  const [transactions, setTransactions] = useState<UnifiedTransaction[]>([]);
-  const [budgets, setBudgets] = useState<BudgetLimit[]>([]);
-  const [savings, setSavings] = useState<SavingsGoal[]>([]);
+  const [transactions, setTransactions] = useState<UnifiedTransaction[]>(INITIAL_TRANSACTIONS);
+  const [budgets, setBudgets] = useState<BudgetLimit[]>(INITIAL_BUDGETS);
+  const [savings, setSavings] = useState<SavingsGoal[]>(INITIAL_SAVINGS);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('budget');
@@ -86,19 +204,6 @@ export const BudgetTracker: React.FC = () => {
   // Filter state
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState<'all' | 'in' | 'out'>('all');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const tx = await financeService.getTransactions();
-    setTransactions(tx);
-    const bg = await financeService.getBudgetOverview();
-    setBudgets(bg);
-    const sv = await financeService.getSavingsGoals();
-    setSavings(sv);
-  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -130,8 +235,25 @@ export const BudgetTracker: React.FC = () => {
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 1000));
-      await financeService.processCSVUpload(file);
-      await loadData();
+      const text = await file.text();
+      const lines = text.split('\n').filter((line) => line.trim());
+      if (lines.length >= 2) {
+        const parsed: UnifiedTransaction[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map((c) => c.trim().replace(/"/g, ''));
+          if (cols.length < 3) continue;
+          parsed.push({
+            id: `upload-${Date.now()}-${i}`,
+            date: cols[0] || new Date().toISOString().split('T')[0],
+            description: cols[1] || 'Unknown',
+            category: categorizeTransaction(cols[1] || ''),
+            source: 'Statement Upload',
+            type: parseFloat(cols[2]) < 0 ? 'out' : 'in',
+            amount: Math.abs(parseFloat(cols[2]) || 0),
+          });
+        }
+        setTransactions((prev) => [...parsed, ...prev]);
+      }
     } catch (err) {
       console.error('Error parsing CSV:', err);
     } finally {
@@ -176,13 +298,17 @@ export const BudgetTracker: React.FC = () => {
 
     setAddFundsLoading(true);
     try {
-      const success = await financeService.addToSavingsGoal(addFundsGoalId, amount);
-      if (success) {
+      const goalExists = savings.some((g) => g.id === addFundsGoalId);
+      if (goalExists) {
+        setSavings((prev) =>
+          prev.map((g) =>
+            g.id === addFundsGoalId ? { ...g, currentAmount: g.currentAmount + amount } : g
+          )
+        );
         toast({
           title: t('toast.fundsAddedTitle'),
           description: t('toast.fundsAddedDescription', { amount: formatNAD(amount) }),
         });
-        await loadData();
         setAddFundsGoalId(null);
         setAddFundsAmount('');
       } else {
@@ -226,32 +352,24 @@ export const BudgetTracker: React.FC = () => {
 
     setCreateGoalLoading(true);
     try {
-      const result = await financeService.createSavingsGoal({
+      const newGoal: SavingsGoal = {
+        id: `goal-${Date.now()}`,
         name: newGoalName,
         targetAmount,
         currentAmount: 0,
         deadline: newGoalDeadline || 'Ongoing',
         icon: newGoalIcon,
+      };
+      setSavings((prev) => [...prev, newGoal]);
+      toast({
+        title: t('toast.goalCreatedTitle'),
+        description: t('toast.goalCreatedDescription', { name: newGoal.name }),
       });
-
-      if (result) {
-        toast({
-          title: t('toast.goalCreatedTitle'),
-          description: t('toast.goalCreatedDescription', { name: result.name }),
-        });
-        await loadData();
-        setShowCreateGoalDialog(false);
-        setNewGoalName('');
-        setNewGoalTarget('');
-        setNewGoalDeadline('');
-        setNewGoalIcon('target');
-      } else {
-        toast({
-          title: t('toast.goalFailedTitle'),
-          description: t('toast.goalFailedDescription'),
-          variant: 'destructive',
-        });
-      }
+      setShowCreateGoalDialog(false);
+      setNewGoalName('');
+      setNewGoalTarget('');
+      setNewGoalDeadline('');
+      setNewGoalIcon('target');
     } catch (error) {
       console.error('Error creating goal:', error);
       toast({
@@ -433,7 +551,7 @@ export const BudgetTracker: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
                     <Pie
                       data={budgets}

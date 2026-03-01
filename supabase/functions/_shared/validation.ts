@@ -34,7 +34,7 @@ export const loanStatusSchema = z.enum([
   'active',
   'completed',
   'defaulted',
-  'restructured'
+  'restructured',
 ]);
 
 export const loanApplicationSchema = z.object({
@@ -60,17 +60,15 @@ export const userRoleSchema = z.enum(['admin', 'loan_officer', 'client', 'approv
 export const userUpdateSchema = z.object({
   first_name: z.string().min(1).max(100).optional(),
   last_name: z.string().min(1).max(100).optional(),
-  phone: z.string().regex(/^\+264[0-9]{9}$/, 'Invalid Namibian phone number').optional(),
+  phone: z
+    .string()
+    .regex(/^\+264[0-9]{9}$/, 'Invalid Namibian phone number')
+    .optional(),
   id_number: z.string().optional(),
 });
 
 // Payment schemas
-export const paymentMethodSchema = z.enum([
-  'bank_transfer',
-  'mobile_money',
-  'cash',
-  'debit_order'
-]);
+export const paymentMethodSchema = z.enum(['bank_transfer', 'mobile_money', 'cash', 'debit_order']);
 
 export const paymentSchema = z.object({
   loan_id: uuidSchema,
@@ -86,9 +84,15 @@ export const disbursementSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+// Accept a single status OR a comma-separated list of statuses (e.g. "pending,under_review")
+export const loanStatusFilterSchema = z
+  .string()
+  .transform((val) => val.split(',').map((s) => s.trim()))
+  .pipe(z.array(loanStatusSchema).min(1));
+
 // List/filter schemas
 export const loanListSchema = z.object({
-  status: loanStatusSchema.optional(),
+  status: loanStatusFilterSchema.optional(),
   user_id: uuidSchema.optional(),
   assigned_officer_id: uuidSchema.optional(),
   ...paginationSchema.shape,
@@ -112,12 +116,12 @@ export async function validateBody<T>(
   try {
     const body = await req.json();
     const result = schema.safeParse(body);
-    
+
     if (!result.success) {
-      const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+      const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
       return { success: false, error: errors.join('; ') };
     }
-    
+
     return { success: true, data: result.data };
   } catch (err) {
     return { success: false, error: 'Invalid JSON body' };
@@ -132,7 +136,7 @@ export function validateQuery<T>(
   schema: z.ZodSchema<T>
 ): { success: true; data: T } | { success: false; error: string } {
   const params: Record<string, unknown> = {};
-  
+
   url.searchParams.forEach((value, key) => {
     // Try to parse numbers
     const num = Number(value);
@@ -148,12 +152,12 @@ export function validateQuery<T>(
   });
 
   const result = schema.safeParse(params);
-  
+
   if (!result.success) {
-    const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+    const errors = result.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
     return { success: false, error: errors.join('; ') };
   }
-  
+
   return { success: true, data: result.data };
 }
 
@@ -164,7 +168,7 @@ export function validateAPR(rate: number): { valid: boolean; error?: string } {
   if (rate > MAX_APR_NAMIBIA) {
     return {
       valid: false,
-      error: `APR ${(rate * 100).toFixed(2)}% exceeds Namibian legal limit of ${MAX_APR_NAMIBIA * 100}%`
+      error: `APR ${(rate * 100).toFixed(2)}% exceeds Namibian legal limit of ${MAX_APR_NAMIBIA * 100}%`,
     };
   }
   return { valid: true };

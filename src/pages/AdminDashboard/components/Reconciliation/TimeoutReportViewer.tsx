@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -201,6 +202,9 @@ export function TimeoutReportViewer() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Resolve Timeout Transaction</DialogTitle>
+            <DialogDescription className="sr-only">
+              Resolve a timed-out transaction with notes and status update
+            </DialogDescription>
           </DialogHeader>
 
           {selectedItem && (

@@ -23,7 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Eye, Calendar, RefreshCw, Plus, Play, Loader2 } from 'lucide-react';
 import {
@@ -273,6 +279,9 @@ export function SettlementRunsList() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Settlement Run Details: {runDetails?.run?.run_id}</DialogTitle>
+            <DialogDescription className="sr-only">
+              View settlement run obligations, netting results, and status
+            </DialogDescription>
           </DialogHeader>
 
           {detailsLoading ? (
@@ -440,6 +449,9 @@ export function SettlementRunsList() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Settlement Run</DialogTitle>
+            <DialogDescription className="sr-only">
+              Configure and initiate a new settlement run
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

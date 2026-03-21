@@ -3,9 +3,9 @@
  * View and reconcile IPS/IPP transactions
  */
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useMemo } from 'react';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -76,32 +76,47 @@ export function IPSTransactionsViewer() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const {
-    data: transactions,
-    isLoading,
-    refetch,
-    isRefetching,
-  } = useQuery({
-    queryKey: ['ips-transactions', statusFilter, typeFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from('ips_transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-      if (typeFilter !== 'all') {
-        query = query.eq('transaction_type', typeFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as IPSTransaction[];
-    },
+  // Convex reactive query
+  const rawTransactions = useConvexQuery(api.ips.ipsTransactions.adminListIpsTransactions, {
+    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+    limit: 100,
   });
+
+  const isLoading = rawTransactions === undefined;
+  const isRefetching = false; // Convex is always reactive
+
+  // Transform Convex data to expected shape and apply type filter client-side
+  const transactions: IPSTransaction[] | undefined = useMemo(() => {
+    if (!rawTransactions) return undefined;
+    let filtered = rawTransactions;
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(
+        (t: any) => t.txType === typeFilter || t.transactionType === typeFilter
+      );
+    }
+    return filtered.map((t: any) => ({
+      id: String(t._id),
+      transaction_type: t.txType ?? t.transactionType ?? '',
+      status: t.status ?? 'pending',
+      ips_result: t.ipsResult ?? null,
+      amount: t.amount ?? 0,
+      currency: t.currency ?? 'NAD',
+      payer_vpa: t.payerVpa ?? null,
+      payee_vpa: t.payeeVpa ?? null,
+      msg_id: t.msgId ?? '',
+      txn_id: t.txnId ?? String(t._id),
+      ips_txn_id: t.ipsTxnId ?? null,
+      ips_rrn: t.ipsRrn ?? null,
+      ips_error_code: t.ipsErrorCode ?? null,
+      created_at: t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString(),
+      completed_at: t.completedAt ? new Date(t.completedAt).toISOString() : null,
+      loan_id: t.loanId ? String(t.loanId) : null,
+      disbursement_id: t.disbursementId ? String(t.disbursementId) : null,
+      payment_id: t.paymentId ? String(t.paymentId) : null,
+    }));
+  }, [rawTransactions, typeFilter]);
+
+  const refetch = () => {}; // Convex is reactive, no manual refetch needed
 
   const filteredTransactions = transactions?.filter((txn) => {
     if (!searchTerm) return true;
@@ -212,7 +227,7 @@ export function IPSTransactionsViewer() {
                 <SelectItem value="REPAYMENT">Repayment</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isRefetching}>
+            <Button variant="outline" size="icon" onClick={refetch} disabled={isRefetching}>
               <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>

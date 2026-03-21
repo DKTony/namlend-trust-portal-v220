@@ -95,6 +95,7 @@ if (!resolvedSession) {
 ```
 
 **Benefits**:
+
 - Proactive restoration instead of passive waiting
 - Exponential backoff for resilience
 - Works in both test and production environments
@@ -123,12 +124,15 @@ export async function gotoAuthenticated(page: Page, path: string) {
   const sessionData = await page.evaluate((key) => {
     return window.localStorage.getItem(key);
   }, SUPABASE_STORAGE_KEY);
-  
+
   // Inject before navigation
-  await page.addInitScript((args) => {
-    window.localStorage.setItem(args.key, args.data);
-  }, { key: SUPABASE_STORAGE_KEY, data: sessionData });
-  
+  await page.addInitScript(
+    (args) => {
+      window.localStorage.setItem(args.key, args.data);
+    },
+    { key: SUPABASE_STORAGE_KEY, data: sessionData }
+  );
+
   await page.goto(`${baseURL}${path}`);
   // ... wait for auth to stabilize
 }
@@ -148,7 +152,7 @@ if (page.url().includes('/auth')) {
   await page.fill('[data-testid="password-input"]', 'test123');
   await page.click('[data-testid="login-button"]');
   await page.waitForURL(/\/(dashboard|loans)/);
-  
+
   // Navigate via history API (SPA navigation preserves session)
   await page.evaluate((targetPath) => {
     window.history.pushState({}, '', targetPath);
@@ -158,6 +162,7 @@ if (page.url().includes('/auth')) {
 ```
 
 **Why SPA Navigation Works**:
+
 - No full page reload
 - Existing React app context preserved
 - Session already loaded in memory
@@ -184,10 +189,10 @@ Fixed `data-testid` placement for test reliability:
 
 ### Test Status After Fix
 
-| Test File | Before | After |
-|-----------|--------|-------|
-| `loan-application.e2e.ts` | ❌ 0/1 | ✅ 1/1 |
-| `role-routing.e2e.ts` | ❌ 0/2 | ✅ 2/2 |
+| Test File                 | Before           | After         |
+| ------------------------- | ---------------- | ------------- |
+| `loan-application.e2e.ts` | ❌ 0/1           | ✅ 1/1        |
+| `role-routing.e2e.ts`     | ❌ 0/2           | ✅ 2/2        |
 | `ips-payment-flow.e2e.ts` | ❌ Auth failures | ✅ Auth works |
 
 ### Overall Impact
@@ -201,15 +206,18 @@ Fixed `data-testid` placement for test reliability:
 ## Files Modified
 
 ### Core Application
+
 - `src/hooks/useAuth.tsx` - Session restoration logic
 - `src/pages/LoanApplication.tsx` - Fixed SelectTrigger testids
 
 ### E2E Test Infrastructure
+
 - `e2e/helpers/auth.ts` - Session persistence wait, gotoAuthenticated helper
 - `e2e/loan-application.e2e.ts` - Re-login fallback pattern
 - `e2e/ips-payment-flow.e2e.ts` - Updated gotoWithAuth with re-login
 
 ### Documentation
+
 - `docs/TESTING.md` - Updated with fix details and test results
 - `docs/CHANGELOG.md` - Added v2.8.1 entry with auth persistence fix
 - `docs/ARCHITECTURE.md` - Updated auth flow diagram
@@ -229,6 +237,7 @@ E2E tests run faster than human interaction, exposing race conditions that might
 ### 3. Layered Resilience
 
 Multiple fallback strategies ensure reliability:
+
 - Proactive restoration (best case)
 - Exponential backoff (good case)
 - Re-login fallback (worst case)
@@ -275,9 +284,9 @@ await page.evaluate(() => {
 
 ```typescript
 // Wait for app shell to confirm auth
-await page.getByTestId('sidebar-trigger').waitFor({ 
-  state: 'visible', 
-  timeout: 10000 
+await page.getByTestId('sidebar-trigger').waitFor({
+  state: 'visible',
+  timeout: 10000,
 });
 ```
 
@@ -285,14 +294,15 @@ await page.getByTestId('sidebar-trigger').waitFor({
 
 ## Related Issues
 
-- **Supabase Auth Hydration**: https://github.com/supabase/supabase-js/issues/...
-- **Playwright Session State**: https://playwright.dev/docs/auth
+- **Supabase Auth Hydration**: <https://github.com/supabase/supabase-js/issues/>...
+- **Playwright Session State**: <https://playwright.dev/docs/auth>
 
 ---
 
 ## Conclusion
 
 The E2E auth persistence issue is **fully resolved**. The solution combines:
+
 - Proactive session restoration in the app
 - Robust test helpers with session injection
 - Graceful fallback patterns in tests
@@ -301,5 +311,5 @@ All core E2E tests now pass reliably, providing confidence in the authentication
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: January 7, 2026*
+_Document Version: 1.0_  
+_Last Updated: January 7, 2026_

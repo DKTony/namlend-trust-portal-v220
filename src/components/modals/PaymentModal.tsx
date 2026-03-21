@@ -29,7 +29,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  PartyPopper,
   Wallet,
   ArrowRight,
   Receipt,
@@ -38,8 +37,23 @@ import {
   Zap,
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
-import { processLoanPayment, type ProcessPaymentResult } from '@/services/paymentService';
+// Inline type (previously from paymentService)
+interface ProcessPaymentResult {
+  success: boolean;
+  error?: string;
+  amount_applied?: number;
+  amount_paid?: number;
+  loan_settled?: boolean;
+  new_balance?: number;
+  new_outstanding?: number;
+  payment_id?: string;
+  reference_number?: string;
+  overpayment?: number;
+}
 import { useFetchActiveLoans, type LoanWithDetails } from '@/hooks/useFetchActiveLoans';
+import { useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '@/integrations/convex/api';
 
 // Payment method validation rules - replaces sequential if-statements
 const PAYMENT_VALIDATION_RULES: Record<string, (details: Record<string, string>) => boolean> = {
@@ -78,6 +92,8 @@ export default function PaymentModal({
     setSelectedLoanId,
     refetch: fetchActiveLoans,
   } = useFetchActiveLoans({ userId, enabled: isOpen });
+
+  const recordPaymentMutation = useConvexMutation(api.payments.recordPayment);
 
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -153,32 +169,33 @@ export default function PaymentModal({
     };
 
     try {
-      const result = await processLoanPayment({
-        loanId: selectedLoan,
-        amount: parseFloat(paymentAmount),
-        payment_method: normalizeMethod(paymentMethod),
-        notes: `Payment via ${paymentMethod}`,
+      const amount = parseFloat(paymentAmount);
+      const normalizedMethod = normalizeMethod(paymentMethod);
+
+      await recordPaymentMutation({
+        loanId: selectedLoan as Id<'loans'>,
+        amount,
+        method: normalizedMethod,
+        referenceNumber: `PAY-${Date.now()}`,
       });
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to process payment');
-      }
+      const outstandingAfter = (selectedLoanDetails?.outstanding_balance ?? 0) - amount;
+      const result: ProcessPaymentResult = {
+        success: true,
+        amount_applied: amount,
+        amount_paid: amount,
+        loan_settled: false,
+        new_balance: Math.max(0, outstandingAfter),
+        new_outstanding: Math.max(0, outstandingAfter),
+        reference_number: `PAY-${Date.now()}`,
+      };
 
       setPaymentResult(result);
-
-      if (result.loan_settled) {
-        setShowSuccessScreen(true);
-        toast({
-          title: '🎉 Loan Fully Paid!',
-          description: 'Congratulations! Your loan has been completely settled.',
-        });
-      } else {
-        setShowSuccessScreen(true);
-        toast({
-          title: 'Payment Successful',
-          description: `Processed ${formatNAD(result.amount_applied || 0)}`,
-        });
-      }
+      setShowSuccessScreen(true);
+      toast({
+        title: 'Payment Submitted',
+        description: `${formatNAD(amount)} submitted — your balance will update once confirmed.`,
+      });
 
       onPaymentSuccess();
     } catch (error) {
@@ -216,22 +233,14 @@ export default function PaymentModal({
       <div className="relative">
         <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full" />
         <div className="h-24 w-24 rounded-full bg-zinc-900 border-2 border-green-500/30 flex items-center justify-center relative z-10 shadow-lg shadow-green-500/10">
-          {paymentResult?.loan_settled ? (
-            <PartyPopper className="h-10 w-10 text-green-500" />
-          ) : (
-            <CheckCircle2 className="h-10 w-10 text-green-500" />
-          )}
+          <CheckCircle2 className="h-10 w-10 text-green-500" />
         </div>
       </div>
 
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-bold text-foreground tracking-tight">
-          {paymentResult?.loan_settled ? 'Loan Settled!' : 'Payment Successful'}
-        </h3>
+        <h3 className="text-2xl font-bold text-foreground tracking-tight">Payment Submitted</h3>
         <p className="text-muted-foreground max-w-xs mx-auto text-sm">
-          {paymentResult?.loan_settled
-            ? 'You have successfully paid off this loan. A settlement letter has been emailed to you.'
-            : `Transaction ID: ${paymentResult?.reference_number}`}
+          Your payment is being processed. Your balance will update once confirmed by our team.
         </p>
       </div>
 
@@ -474,13 +483,15 @@ export default function PaymentModal({
                   Payment Method
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'ips', icon: Zap, label: 'IPP Instant', highlight: true },
-                    { id: 'bank', icon: Building2, label: 'Bank EFT' },
-                    { id: 'mobile', icon: Smartphone, label: 'Mobile' },
-                    { id: 'card', icon: CreditCard, label: 'Card' },
-                    { id: 'agent', icon: MapPin, label: 'Agent' },
-                  ].map((method) => (
+                  {(
+                    [
+                      { id: 'ips', icon: Zap, label: 'IPP Instant', highlight: true },
+                      { id: 'bank', icon: Building2, label: 'Bank EFT', highlight: false },
+                      { id: 'mobile', icon: Smartphone, label: 'Mobile', highlight: false },
+                      { id: 'card', icon: CreditCard, label: 'Card', highlight: false },
+                      { id: 'agent', icon: MapPin, label: 'Agent', highlight: false },
+                    ] as const
+                  ).map((method) => (
                     <button
                       key={method.id}
                       onClick={() => setPaymentMethod(method.id)}
@@ -488,7 +499,7 @@ export default function PaymentModal({
                         'flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative',
                         paymentMethod === method.id
                           ? 'bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400'
-                          : (method as any).highlight
+                          : method.highlight
                             ? 'bg-green-500/5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10'
                             : 'bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground'
                       )}

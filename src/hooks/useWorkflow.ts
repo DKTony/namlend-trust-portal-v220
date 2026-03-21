@@ -1,46 +1,47 @@
 /**
- * React Hooks for Workflow Engine
- * Version: v2.4.0
+ * React Hooks for Workflow Engine — Convex-native.
+ * Replaces legacy Supabase RPC/table calls with Convex queries/mutations.
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import WorkflowEngineService, {
-  WorkflowInstance,
-  WorkflowStageExecution,
-  WorkflowDefinition
-} from '@/services/workflowEngine';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../convex/_generated/dataModel';
 
 // ============================================================================
 // useWorkflowInstance - Get workflow instance for an entity
 // ============================================================================
 
 export const useWorkflowInstance = (entityType: string, entityId: string) => {
-  const [instance, setInstance] = useState<WorkflowInstance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchInstance = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await WorkflowEngineService.getWorkflowInstance(entityType, entityId);
-      setInstance(data);
-    } catch (err) {
-      console.error('Error fetching workflow instance:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
+  const instances = useConvexQuery(
+    api.approvalWorkflow.getApprovalsByEntity,
+    entityId ? { entityId } : 'skip'
+  );
+  const instance = instances?.[0] ?? null;
+  return {
+    instance: instance
+      ? {
+          id: String(instance._id),
+          workflow_definition_id: '',
+          entity_type: instance.entityType,
+          entity_id: instance.entityId,
+          status:
+            instance.status === 'approved'
+              ? ('completed' as const)
+              : instance.status === 'rejected'
+                ? ('rejected' as const)
+                : ('in_progress' as const),
+          current_stage: 1,
+          started_by: String(instance.requestedBy),
+          metadata: {},
+          created_at: new Date(instance.createdAt).toISOString(),
+        }
+      : null,
+    loading: instances === undefined,
+    error: null,
+    refetch: () => {},
   };
-
-  useEffect(() => {
-    if (entityType && entityId) {
-      fetchInstance();
-    }
-  }, [entityType, entityId]);
-
-  return { instance, loading, error, refetch: fetchInstance };
 };
 
 // ============================================================================
@@ -48,40 +49,41 @@ export const useWorkflowInstance = (entityType: string, entityId: string) => {
 // ============================================================================
 
 export const useWorkflowProgress = (workflowInstanceId: string | null) => {
-  const [progress, setProgress] = useState<{
-    total_stages: number;
-    completed_stages: number;
-    current_stage: number;
-    status: string;
-    stages: WorkflowStageExecution[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const history = useConvexQuery(
+    api.approvalWorkflow.getApprovalHistory,
+    workflowInstanceId ? { requestId: workflowInstanceId as Id<'approvalRequests'> } : 'skip'
+  );
 
-  const fetchProgress = async () => {
-    if (!workflowInstanceId) {
-      setLoading(false);
-      return;
-    }
+  const progress = useMemo(() => {
+    if (!history) return null;
+    const completedStages = history.filter((h) => h.toStatus === 'approved').length;
+    return {
+      total_stages: Math.max(history.length, 1),
+      completed_stages: completedStages,
+      current_stage: history.length,
+      status: completedStages > 0 ? 'completed' : 'in_progress',
+      stages: history.map((h, i) => ({
+        id: String(h._id),
+        workflow_instance_id: workflowInstanceId || '',
+        stage_number: i + 1,
+        stage_name: h.action,
+        assigned_role: 'staff',
+        status:
+          h.toStatus === 'approved'
+            ? ('approved' as const)
+            : h.toStatus === 'rejected'
+              ? ('rejected' as const)
+              : ('pending' as const),
+        decision: h.action,
+        decision_notes: h.notes,
+        decided_by: String(h.actorId),
+        decided_at: new Date(h.createdAt).toISOString(),
+        created_at: new Date(h.createdAt).toISOString(),
+      })),
+    };
+  }, [history, workflowInstanceId]);
 
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await WorkflowEngineService.getWorkflowProgress(workflowInstanceId);
-      setProgress(data);
-    } catch (err) {
-      console.error('Error fetching workflow progress:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProgress();
-  }, [workflowInstanceId]);
-
-  return { progress, loading, error, refetch: fetchProgress };
+  return { progress, loading: history === undefined, error: null, refetch: () => {} };
 };
 
 // ============================================================================
@@ -89,29 +91,23 @@ export const useWorkflowProgress = (workflowInstanceId: string | null) => {
 // ============================================================================
 
 export const useMyPendingStages = () => {
-  const [stages, setStages] = useState<WorkflowStageExecution[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const pendingRequests = useConvexQuery(api.approvalWorkflow.adminListApprovals, {
+    status: 'pending',
+  });
+  const stages = useMemo(() => {
+    if (!pendingRequests) return [];
+    return pendingRequests.map((r) => ({
+      id: String(r._id),
+      workflow_instance_id: String(r._id),
+      stage_number: 1,
+      stage_name: r.requestType,
+      assigned_role: 'staff',
+      status: 'pending' as const,
+      created_at: new Date(r.createdAt).toISOString(),
+    }));
+  }, [pendingRequests]);
 
-  const fetchStages = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await WorkflowEngineService.getMyPendingStages();
-      setStages(data);
-    } catch (err) {
-      console.error('Error fetching pending stages:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStages();
-  }, []);
-
-  return { stages, loading, error, refetch: fetchStages };
+  return { stages, loading: pendingRequests === undefined, error: null, refetch: () => {} };
 };
 
 // ============================================================================
@@ -121,115 +117,109 @@ export const useMyPendingStages = () => {
 export const useWorkflowActions = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const processRequest = useMutation(api.approvalWorkflow.processApprovalRequest);
 
-  const approveStage = async (stageExecutionId: string, notes?: string) => {
-    try {
-      setLoading(true);
-      const result = await WorkflowEngineService.approveStage(stageExecutionId, notes);
-      
-      toast({
-        title: 'Stage Approved',
-        description: result.message,
-        duration: 5000,
-      });
+  const approveStage = useCallback(
+    async (stageExecutionId: string, notes?: string) => {
+      try {
+        setLoading(true);
+        await processRequest({
+          requestId: stageExecutionId as Id<'approvalRequests'>,
+          action: 'approve',
+          notes,
+        });
+        toast({
+          title: 'Stage Approved',
+          description: 'The approval has been processed.',
+          duration: 5000,
+        });
+        return { workflow_status: 'completed' as const, message: 'Approved' };
+      } catch (err) {
+        toast({
+          title: 'Approval Failed',
+          description: err instanceof Error ? err.message : 'Unknown error',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [processRequest, toast]
+  );
 
-      return result;
-    } catch (err) {
-      console.error('Error approving stage:', err);
-      toast({
-        title: 'Approval Failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-        duration: 5000,
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const rejectStage = useCallback(
+    async (stageExecutionId: string, notes?: string) => {
+      try {
+        setLoading(true);
+        await processRequest({
+          requestId: stageExecutionId as Id<'approvalRequests'>,
+          action: 'reject',
+          notes,
+        });
+        toast({
+          title: 'Stage Rejected',
+          description: 'The rejection has been processed.',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        return { workflow_status: 'rejected' as const, message: 'Rejected' };
+      } catch (err) {
+        toast({
+          title: 'Rejection Failed',
+          description: err instanceof Error ? err.message : 'Unknown error',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [processRequest, toast]
+  );
 
-  const rejectStage = async (stageExecutionId: string, notes?: string) => {
-    try {
-      setLoading(true);
-      const result = await WorkflowEngineService.rejectStage(stageExecutionId, notes);
-      
+  const assignStage = useCallback(
+    async (_stageExecutionId: string, _userId: string) => {
       toast({
-        title: 'Stage Rejected',
-        description: result.message,
-        variant: 'destructive',
-        duration: 5000,
-      });
-
-      return result;
-    } catch (err) {
-      console.error('Error rejecting stage:', err);
-      toast({
-        title: 'Rejection Failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-        duration: 5000,
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const assignStage = async (stageExecutionId: string, userId: string) => {
-    try {
-      setLoading(true);
-      await WorkflowEngineService.assignStageToUser(stageExecutionId, userId);
-      
-      toast({
-        title: 'Stage Assigned',
-        description: 'Stage has been assigned successfully',
+        title: 'Assignment',
+        description: 'Stage assignment is handled by the approval workflow.',
         duration: 3000,
       });
-    } catch (err) {
-      console.error('Error assigning stage:', err);
-      toast({
-        title: 'Assignment Failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-        duration: 5000,
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [toast]
+  );
 
-  const cancelWorkflow = async (workflowInstanceId: string) => {
-    try {
-      setLoading(true);
-      await WorkflowEngineService.cancelWorkflow(workflowInstanceId);
-      
-      toast({
-        title: 'Workflow Cancelled',
-        description: 'The workflow has been cancelled',
-        duration: 3000,
-      });
-    } catch (err) {
-      console.error('Error cancelling workflow:', err);
-      toast({
-        title: 'Cancellation Failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-        duration: 5000,
-      });
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const cancelWorkflow = useCallback(
+    async (workflowInstanceId: string) => {
+      try {
+        setLoading(true);
+        await processRequest({
+          requestId: workflowInstanceId as Id<'approvalRequests'>,
+          action: 'withdraw',
+        });
+        toast({
+          title: 'Workflow Cancelled',
+          description: 'The workflow has been cancelled',
+          duration: 3000,
+        });
+      } catch (err) {
+        toast({
+          title: 'Cancellation Failed',
+          description: err instanceof Error ? err.message : 'Unknown error',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [processRequest, toast]
+  );
 
-  return {
-    approveStage,
-    rejectStage,
-    assignStage,
-    cancelWorkflow,
-    loading
-  };
+  return { approveStage, rejectStage, assignStage, cancelWorkflow, loading };
 };
 
 // ============================================================================
@@ -237,34 +227,31 @@ export const useWorkflowActions = () => {
 // ============================================================================
 
 export const useWorkflowStats = () => {
-  const [stats, setStats] = useState<{
-    total_active: number;
-    pending_my_action: number;
-    completed_today: number;
-    rejected_today: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const pendingApprovals = useConvexQuery(api.approvalWorkflow.adminListApprovals, {
+    status: 'pending',
+  });
+  const allApprovals = useConvexQuery(api.approvalWorkflow.adminListApprovals, {});
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await WorkflowEngineService.getWorkflowStats();
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching workflow stats:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const stats = useMemo(() => {
+    if (pendingApprovals === undefined || allApprovals === undefined) return null;
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayMs = todayStart.getTime();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+    return {
+      total_active: pendingApprovals.length,
+      pending_my_action: pendingApprovals.length,
+      completed_today: (allApprovals ?? []).filter(
+        (a) => a.status === 'approved' && a.updatedAt >= todayMs
+      ).length,
+      rejected_today: (allApprovals ?? []).filter(
+        (a) => a.status === 'rejected' && a.updatedAt >= todayMs
+      ).length,
+    };
+  }, [pendingApprovals, allApprovals]);
 
-  return { stats, loading, error, refetch: fetchStats };
+  return { stats, loading: stats === null, error: null, refetch: () => {} };
 };
 
 // ============================================================================
@@ -272,29 +259,38 @@ export const useWorkflowStats = () => {
 // ============================================================================
 
 export const useActiveWorkflow = (entityType: string) => {
-  const [workflow, setWorkflow] = useState<WorkflowDefinition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const definitions = useConvexQuery(api.approvalWorkflow.listWorkflowDefinitions);
+  const workflow = useMemo(() => {
+    if (!definitions) return null;
+    return definitions.find((d) => d.entityType === entityType && d.isActive) ?? null;
+  }, [definitions, entityType]);
 
-  const fetchWorkflow = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await WorkflowEngineService.getActiveWorkflow(entityType);
-      setWorkflow(data);
-    } catch (err) {
-      console.error('Error fetching active workflow:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
+  return {
+    workflow: workflow
+      ? {
+          id: String(workflow._id),
+          name: workflow.name,
+          description: '',
+          entity_type: workflow.entityType as
+            | 'loan_application'
+            | 'disbursement'
+            | 'kyc'
+            | 'settlement',
+          version: 1,
+          is_active: workflow.isActive,
+          stages: workflow.stages.map((s) => ({
+            stage_number: s.order,
+            name: s.name,
+            assigned_role: s.requiredRole,
+            is_optional: false,
+          })),
+          created_at: new Date(workflow.createdAt).toISOString(),
+          updated_at: new Date(workflow.updatedAt).toISOString(),
+          created_by: '',
+        }
+      : null,
+    loading: definitions === undefined,
+    error: null,
+    refetch: () => {},
   };
-
-  useEffect(() => {
-    if (entityType) {
-      fetchWorkflow();
-    }
-  }, [entityType]);
-
-  return { workflow, loading, error, refetch: fetchWorkflow };
 };

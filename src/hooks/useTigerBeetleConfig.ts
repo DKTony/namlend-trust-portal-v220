@@ -6,7 +6,8 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
 // Configuration interfaces
 export interface TigerBeetleConnectionConfig {
@@ -93,7 +94,6 @@ export const DEFAULT_CONFIG: TigerBeetleConfig = {
 
 export default function useTigerBeetleConfig() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<TigerBeetleConfig>(DEFAULT_CONFIG);
   const [hasChanges, setHasChanges] = useState(false);
@@ -102,46 +102,25 @@ export default function useTigerBeetleConfig() {
   >('unknown');
   const [testingConnection, setTestingConnection] = useState(false);
 
-  // Load configuration from database
+  // Convex reactive query for TigerBeetle config entries
+  const rawConfigs = useQuery(api.systemConfig.getAllConfig, { category: 'tigerbeetle' });
+  const setConfigMutation = useMutation(api.systemConfig.setConfig);
+
+  const loading = rawConfigs === undefined;
+
+  // Sync Convex data into local config state
   useEffect(() => {
-    loadConfig();
-  }, []);
+    if (!rawConfigs || rawConfigs.length === 0) return;
 
-  const loadConfig = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_config_by_category', {
-        p_category: 'tigerbeetle',
-      });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const loadedConfig = { ...DEFAULT_CONFIG };
-        data.forEach(
-          (item: {
-            config_key: string;
-            config_value:
-              | TigerBeetleConnectionConfig
-              | TigerBeetleOutboxConfig
-              | TigerBeetleReconciliationConfig
-              | TigerBeetleAccountsConfig;
-          }) => {
-            const key = item.config_key.replace('tigerbeetle.', '') as keyof TigerBeetleConfig;
-            if (key in loadedConfig) {
-              loadedConfig[key] = item.config_value as TigerBeetleConfig[typeof key];
-            }
-          }
-        );
-        setConfig(loadedConfig);
+    const loadedConfig = { ...DEFAULT_CONFIG };
+    for (const item of rawConfigs) {
+      const key = (item.key as string).replace('tigerbeetle.', '') as keyof TigerBeetleConfig;
+      if (key in loadedConfig && item.value) {
+        (loadedConfig[key] as typeof item.value) = item.value;
       }
-    } catch (error) {
-      console.error('Error loading TigerBeetle config:', error);
-      // Use defaults if loading fails
-    } finally {
-      setLoading(false);
     }
-  };
+    setConfig(loadedConfig);
+  }, [rawConfigs]);
 
   const updateConfig = <K extends keyof TigerBeetleConfig>(
     section: K,
@@ -161,7 +140,7 @@ export default function useTigerBeetleConfig() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Save each section
+      // Save each section via Convex mutation
       const sections: (keyof TigerBeetleConfig)[] = [
         'connection',
         'outbox',
@@ -170,13 +149,12 @@ export default function useTigerBeetleConfig() {
       ];
 
       for (const section of sections) {
-        const { data, error } = await supabase.rpc('update_config', {
-          p_config_key: `tigerbeetle.${section}`,
-          p_config_value: config[section],
+        await setConfigMutation({
+          key: `tigerbeetle.${section}`,
+          value: config[section],
+          category: 'tigerbeetle',
+          description: `TigerBeetle ${section} configuration`,
         });
-
-        if (error) throw error;
-        if (data && !data.success) throw new Error(data.error);
       }
 
       toast({

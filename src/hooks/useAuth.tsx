@@ -1,19 +1,51 @@
-import {
-  useState,
-  useEffect,
-  createContext,
-  useContext,
-  ReactNode,
-  useCallback,
-  useRef,
-} from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  restoreSession,
-  fetchUserRole as fetchRole,
-  clearPersistedAuth,
-} from '@/services/authSessionManager';
+/**
+ * Authentication hook — Convex Auth replacement for Supabase Auth.
+ *
+ * Exported context shape is IDENTICAL to the Supabase version so that zero
+ * consumer components need updating. The `User` and `Session` shapes are
+ * narrowed to a compatible local interface that covers all fields consumers
+ * actually use (id, email, user_metadata).
+ *
+ * Migration from Supabase Auth:
+ *   supabase.auth.signInWithPassword → useAuthActions().signIn({ provider: "password", ... })
+ *   supabase.auth.signOut            → useAuthActions().signOut()
+ *   supabase.auth.onAuthStateChange  → useConvexAuth() (reactive, managed by Convex)
+ *   5-strategy session restore       → eliminated (Convex Auth handles natively)
+ *   user_roles RPC                   → useQuery(api.users.getMyRole)
+ */
+
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useConvexAuth, useQuery, useMutation } from 'convex/react';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { api } from '@/integrations/convex/api';
+
+// ---------------------------------------------------------------------------
+// Compatible User/Session types (replaces Supabase types)
+// Fields match what consumers actually access in this codebase.
+// ---------------------------------------------------------------------------
+
+export interface ConvexUser {
+  id: string;
+  email?: string;
+  user_metadata: {
+    full_name?: string;
+    phone?: string;
+    [key: string]: unknown;
+  };
+  app_metadata: Record<string, unknown>;
+  aud: string;
+  created_at: string;
+}
+
+export interface ConvexSession {
+  access_token: string;
+  user: ConvexUser;
+}
+
+// Use type aliases that match the shape consumers expect
+type User = ConvexUser;
+type Session = ConvexSession;
+type AuthError = Error & { status?: number };
 
 interface UserMetadata {
   full_name?: string;
@@ -38,7 +70,10 @@ interface AuthContextType {
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ error: AuthError | null; data?: { session: Session | null; user: User | null } }>;
+  ) => Promise<{
+    error: AuthError | null;
+    data?: { session: Session | null; user: User | null };
+  }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -46,203 +81,129 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ---------------------------------------------------------------------------
+// AuthProvider
+// ---------------------------------------------------------------------------
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [roleLoading, setRoleLoading] = useState(false);
-  // Track if we've completed the initial session check to avoid race conditions
-  const initialCheckComplete = useRef(false);
-  const authResolveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const authActions = useAuthActions();
+
+  // Fetch role and profile from Convex once authenticated
+  const roleData = useQuery(api.users.getMyRole, isAuthenticated ? {} : 'skip');
+  const profileData = useQuery(api.users.getMyProfile, isAuthenticated ? {} : 'skip');
+
+  const userRole = typeof roleData === 'string' ? roleData : null;
+  const roleLoading = isAuthenticated && roleData === undefined;
+
+  // Build a User-shaped object from Convex profile data
+  const user: User | null =
+    isAuthenticated && profileData
+      ? {
+          id: profileData.userId ?? '',
+          email: profileData.email ?? undefined,
+          user_metadata: {
+            full_name: profileData.fullName ?? undefined,
+            phone: profileData.phone ?? undefined,
+          },
+          app_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date(profileData.createdAt ?? Date.now()).toISOString(),
+        }
+      : null;
+
+  // Session is a lightweight wrapper (consumers rarely use session directly)
+  const session: Session | null = user ? { access_token: 'convex-managed', user } : null;
 
   const isAdmin = userRole === 'admin';
   const isLoanOfficer = userRole === 'loan_officer' || userRole === 'admin';
 
-  const fetchUserRole = useCallback(async (userId: string) => {
-    setRoleLoading(true);
-    try {
-      const role = await fetchRole(userId);
-      setUserRole(role);
-      return role;
-    } catch (error) {
-      console.error('Error in fetchUserRole:', error);
-      setUserRole(null);
-      return null;
-    } finally {
-      setRoleLoading(false);
-    }
-  }, []);
+  // ---------------------------------------------------------------------------
+  // Auth actions
+  // ---------------------------------------------------------------------------
 
-  useEffect(() => {
-    // Restore session using the extracted session manager.
-    // Uses multiple fallback strategies (getSession → localStorage → retry → getUser).
-    const initAuth = async () => {
+  const signIn = useCallback(
+    async (email: string, password: string) => {
       try {
-        const { session: resolvedSession, user: resolvedUser } = await restoreSession();
-
-        setSession(resolvedSession);
-        setUser(resolvedUser);
-
-        if (resolvedUser) {
-          void fetchUserRole(resolvedUser.id);
-        } else {
-          setUserRole(null);
-          setRoleLoading(false);
-        }
-
-        if (resolvedUser) {
-          initialCheckComplete.current = true;
-          setLoading(false);
-        } else if (!authResolveTimeout.current) {
-          authResolveTimeout.current = setTimeout(() => {
-            if (!initialCheckComplete.current) {
-              initialCheckComplete.current = true;
-              setLoading(false);
-            }
-            authResolveTimeout.current = null;
-          }, 1200);
-        }
-      } catch (error) {
-        console.error('Error in initAuth:', error);
-        initialCheckComplete.current = true;
-        setLoading(false);
+        await authActions.signIn('password', { email, password, flow: 'signIn' });
+        return { error: null, data: { session: null, user: null } };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Sign in failed');
+        return { error: error as AuthError, data: undefined };
       }
-    };
+    },
+    [authActions]
+  );
 
-    initAuth();
-
-    // Set up auth state listener for subsequent changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Skip INITIAL_SESSION events - we handle initial state via getSession()
-      // This prevents the race condition where INITIAL_SESSION fires with null
-      // before the persisted session is restored
-      if (event === 'INITIAL_SESSION' && !session?.user) {
-        return;
+  const signUp = useCallback(
+    async (email: string, password: string, userData?: UserMetadata) => {
+      try {
+        await authActions.signIn('password', {
+          email,
+          password,
+          flow: 'signUp',
+          name: userData?.full_name as string | undefined,
+          phone: userData?.phone as string | undefined,
+        });
+        return { error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Sign up failed');
+        return { error: error as AuthError };
       }
+    },
+    [authActions]
+  );
 
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        void fetchUserRole(session.user.id);
-      } else {
-        setUserRole(null);
-        setRoleLoading(false);
-      }
-
-      if (authResolveTimeout.current) {
-        clearTimeout(authResolveTimeout.current);
-        authResolveTimeout.current = null;
-      }
-
-      // Only set loading false if initial check hasn't happened yet
-      if (!initialCheckComplete.current) {
-        initialCheckComplete.current = true;
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      if (authResolveTimeout.current) {
-        clearTimeout(authResolveTimeout.current);
-        authResolveTimeout.current = null;
-      }
-      subscription?.unsubscribe();
-    };
-  }, [fetchUserRole]);
-
-  const signUp = async (email: string, password: string, userData?: UserMetadata) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: userData,
-      },
-    });
-    return { error };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error, data: { session: data?.session ?? null, user: data?.user ?? null } };
-  };
-
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
-      // Attempt to sign out of Supabase globally (client + server refresh tokens)
-      await supabase.auth.signOut({ scope: 'global' });
-    } catch (error) {
-      // Even if Supabase signOut throws, proceed with local cleanup to enforce sign-out UX
-      console.error('Sign out error (non-fatal):', error);
-    } finally {
-      // Clear local auth state so UI updates immediately without hard reload
-      setUser(null);
-      setSession(null);
-      setUserRole(null);
-      setRoleLoading(false);
-
-      // Best-effort clean-up of persisted session keys
-      clearPersistedAuth();
+      await authActions.signOut();
+    } catch (err) {
+      console.error('Sign out error (non-fatal):', err);
     }
-  };
+  }, [authActions]);
+
+  const resetPassword = useCallback(
+    async (email: string) => {
+      // Convex Auth Password provider supports password reset via signIn flow
+      try {
+        await authActions.signIn('password', { email, flow: 'reset' });
+        return { error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Reset failed');
+        return { error: error as AuthError };
+      }
+    },
+    [authActions]
+  );
+
+  const updatePassword = useCallback(
+    async (newPassword: string) => {
+      try {
+        await authActions.signIn('password', {
+          flow: 'reset-verification',
+          newPassword,
+        });
+        return { error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Update failed');
+        return { error: error as AuthError };
+      }
+    },
+    [authActions]
+  );
 
   const refreshUser = useCallback(async (): Promise<User | null> => {
-    try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Error refreshing session:', error);
-        return null;
-      }
-
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        void fetchUserRole(session.user.id);
-      } else {
-        setUserRole(null);
-        setRoleLoading(false);
-      }
-
-      return session?.user ?? null;
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-      return null;
-    }
-  }, [fetchUserRole]);
-
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?reset=true`,
-    });
-    return { error };
-  };
-
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    });
-    return { error };
-  };
+    // With Convex Auth, the session is always up to date via useConvexAuth().
+    // This is a no-op that returns the current user.
+    return user;
+  }, [user]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
-        loading,
+        loading: isLoading,
         roleLoading,
         userRole,
         isAdmin,

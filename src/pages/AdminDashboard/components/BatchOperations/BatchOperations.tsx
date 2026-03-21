@@ -4,7 +4,7 @@
  * Refactored: dialogs and job history extracted to sub-components.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CheckSquare, Square, Bell, RefreshCw, Download, Loader2, Filter } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
 import { NotificationDialog } from './NotificationDialog';
@@ -55,8 +57,7 @@ interface BatchJob {
 
 export function BatchOperations() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [loans, setLoans] = useState<Loan[]>([]);
+  const batchUpdateMutation = useMutation(api.loans.batchUpdateLoanStatus);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,54 +71,48 @@ export function BatchOperations() {
   const [showBulkStatusDialog, setShowBulkStatusDialog] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationChannel, setNotificationChannel] = useState('in_app');
-  const [newStatus, setNewStatus] = useState('');
+  type LoanStatus =
+    | 'draft'
+    | 'submitted'
+    | 'under_review'
+    | 'approved'
+    | 'rejected'
+    | 'funded'
+    | 'active'
+    | 'paid_off'
+    | 'defaulted'
+    | 'written_off';
+  const [newStatus, setNewStatus] = useState<LoanStatus | ''>('');
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchLoans();
-  }, [filter]);
+  // Convex reactive queries
+  const rawLoans = useQuery(api.loans.adminListLoans, filter !== 'all' ? { status: filter } : {});
+  const rawUsers = useQuery(api.users.listUsers, {});
 
-  const fetchLoans = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('loans')
-        .select('id, user_id, amount, status, created_at')
-        .order('created_at', { ascending: false });
+  const loading = rawLoans === undefined;
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter);
-      }
-
-      const { data: loansData, error: loansError } = await query;
-      if (loansError) throw loansError;
-
-      if (!loansData || loansData.length === 0) {
-        setLoans([]);
-        return;
-      }
-
-      const userIds = [...new Set(loansData.map((l) => l.user_id))];
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name, email, phone_number')
-        .in('user_id', userIds);
-
-      const profileMap = new Map((profilesData || []).map((p) => [p.user_id, p]));
-
-      setLoans(
-        loansData.map((l) => ({
-          ...l,
-          profile: profileMap.get(l.user_id) || null,
-        }))
-      );
-    } catch (error) {
-      console.error('Error fetching loans:', error);
-      toast({ title: 'Error', description: 'Failed to load loans', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loans: Loan[] = useMemo(() => {
+    if (!rawLoans) return [];
+    const userMap = new Map((rawUsers ?? []).map((u) => [String(u._id), u]));
+    return rawLoans.map((l) => {
+      const user = userMap.get(String(l.userId));
+      return {
+        id: String(l._id),
+        user_id: String(l.userId ?? ''),
+        amount: l.amount ?? 0,
+        status: l.status ?? 'pending',
+        created_at: l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString(),
+        profile: user
+          ? {
+              first_name: user.fullName?.split(' ')[0] ?? '',
+              last_name: user.fullName?.split(' ').slice(1).join(' ') ?? '',
+              email: user.email ?? '',
+              phone_number: user.phone ?? '',
+            }
+          : undefined,
+      };
+    });
+  }, [rawLoans, rawUsers]);
 
   const filteredLoans = loans.filter((loan) => {
     if (!searchTerm) return true;
@@ -222,12 +217,10 @@ export function BatchOperations() {
     setActiveJob(job);
 
     try {
-      const { error } = await supabase
-        .from('loans')
-        .update({ status: newStatus })
-        .in('id', Array.from(selectedIds));
-
-      if (error) throw error;
+      const result = await batchUpdateMutation({
+        loanIds: Array.from(selectedIds) as Id<'loans'>[],
+        newStatus: newStatus as LoanStatus,
+      });
 
       const completedJob: BatchJob = {
         ...job,
@@ -245,7 +238,6 @@ export function BatchOperations() {
       setShowBulkStatusDialog(false);
       setNewStatus('');
       setSelectedIds(new Set());
-      fetchLoans();
     } catch (error) {
       toast({
         title: 'Error',
@@ -356,7 +348,12 @@ export function BatchOperations() {
                     <SelectItem value="rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={fetchLoans}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    /* Convex queries are reactive */
+                  }}
+                >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>

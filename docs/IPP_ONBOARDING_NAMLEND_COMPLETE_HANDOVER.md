@@ -1,4 +1,5 @@
 # NamLend ↔ IPP (BoN IPS) Onboarding + Payments Handover
+
 **Doc Revision**: 2026-01-19  
 **Status**: Reference specification. Current implementation uses `ipsOnboardingService` and the mock `ips-adapter` Edge Function.
 **Version**: 1.0 (consolidated, XSD-aligned)  
@@ -38,20 +39,22 @@ All XML shapes below are **validated against your XSDs** (namespace: `http://npc
 
 ### 1.1 Ecosystem roles (recommended mapping)
 
-| IPP/IPS role (docs) | Meaning | In the NamLend solution |
-|---|---|---|
-| **IPS Switch / IPP Operator** | Central routing + alias directory + scheme services | BoN/NamClear IPS |
-| **IPS Participant / PSP / SoV Provider** | Bank / wallet provider connected to switch | Your **Sponsor PSP** (e.g., NamPost/Bank partner) |
-| **Enabler** | Third-party app acting on behalf of a participant (with a relationship) | **NamLend** (front-end + orchestration) |
-| **Customer (Payer/Payee PERSON)** | Retail user, receives loan / pays repayments | NamLend client |
-| **Merchant (ENTITY)** | Merchant accepting IPP payments | NamLend merchant (BNPL merchants, business borrowers, etc.) |
+| IPP/IPS role (docs)                      | Meaning                                                                 | In the NamLend solution                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **IPS Switch / IPP Operator**            | Central routing + alias directory + scheme services                     | BoN/NamClear IPS                                            |
+| **IPS Participant / PSP / SoV Provider** | Bank / wallet provider connected to switch                              | Your **Sponsor PSP** (e.g., NamPost/Bank partner)           |
+| **Enabler**                              | Third-party app acting on behalf of a participant (with a relationship) | **NamLend** (front-end + orchestration)                     |
+| **Customer (Payer/Payee PERSON)**        | Retail user, receives loan / pays repayments                            | NamLend client                                              |
+| **Merchant (ENTITY)**                    | Merchant accepting IPP payments                                         | NamLend merchant (BNPL merchants, business borrowers, etc.) |
 
 **Key implication:**  
 NamLend should not be a “standalone IPS Participant” unless you have direct scheme participation, settlement sponsorship, and regulatory clearance. The cleanest design is:
+
 - NamLend = **Enabler + Orchestrator**
 - Sponsor PSP = **Participant** that signs/sends messages to IPS switch
 
 NamLend still owns:
+
 - onboarding UX,
 - consent capture,
 - state management,
@@ -111,6 +114,7 @@ Required to even start:
 - NamLend has the sponsor PSP routing metadata (participant codes, IFSC-equivalent routing key if applicable, etc.).
 
 Store at minimum:
+
 - `user.mobile_e164`
 - `user.national_id` (if you support the national-ID onboarding branch)
 - `user.preferred_sov_provider` (once selected)
@@ -123,12 +127,14 @@ Store at minimum:
 Device binding is a **PSP-side control**, but NamLend must drive the UX and persist the result.
 
 **Business rules (from FSD user registration):**
+
 - one mobile number ↔ one device ↔ one app binding at a time,
 - mobile number must be prepopulated (SIM present),
 - if SIM removed/reinserted, binding must be repeated,
 - participant integrates with SMS gateway/MNO for binding flow.
 
 **NamLend implementation:**
+
 - UI: “Bind device” step before onboarding.
 - Backend: store a `device_binding_token` (registration token) and `bound_device_fingerprint`.
 
@@ -152,19 +158,23 @@ Once the user selects a provider, you request the list of accounts/wallets linke
 - `Payer/Ac` may carry `Detail` such as routing key (`IFSC`) depending on sponsor PSP expectations.
 
 **Response:** `RespListAccount` contains `AccountList/Account` with:
+
 - `accType`, `accRefNumber`, `maskedAccnumber`, `ifsc`, `mmid`, `name`, plus allowed credentials.
 
 **NamLend UX:**
+
 - show list of accounts/wallets,
 - user selects preferred SoV to link to their alias.
 
 ### 3.6 Step 4 — verification + registration (ReqRegMob)
 
 This is the step where:
+
 - the user is verified (debit card path OR wallet pin path OR national-ID + MNO path),
 - an **IPS PIN** is registered.
 
 In the FSD flows this happens via:
+
 - `ReqOTP` (not provided in your XSD batch) and then
 - **`ReqRegMob`** to submit OTP + IPS PIN (and debit-card digits/expiry or wallet PIN).
 
@@ -175,6 +185,7 @@ In the FSD flows this happens via:
 `RegDetails/Creds` is `credsType` where each `Cred` contains encrypted `Data` plus (optional) `Otp` etc.
 
 **Implementation note (security):**
+
 - The “Common Library (CL)” described in the FSD is what should capture PIN/OTP/card details and produce encrypted `Creds`.
 - NamLend should never store raw PIN/OTP. Only store masked/metadata and the final onboarding status.
 
@@ -183,17 +194,20 @@ In the FSD flows this happens via:
 After PIN setup, the user is prompted to create/register their **User ID** (mobile number and/or numeric ID) in the alias directory (FSD Alias Directory section).
 
 **Flow:**
+
 1. User chooses an ID (mobile is default; numeric optional) and consents.
 2. `ReqGetAdd` checks availability/status.
 3. `ReqRegMapper` performs the operation (ADD / MODIFY / status changes).
 
 **Rules to implement (from FSD):**
+
 - Mobile numbers stored with country/operator prefix logic.
 - Mobile number reuse only after 6 months.
 - Only one full-form alias can be Active for a given mobile/numeric ID at a time.
 - Mobile IDs can be blocked/unblocked; merchant ID transfer between participants is not allowed.
 
 **XSD mapping:**
+
 - Both `ReqGetAdd` and `ReqRegMapper` carry `Head + Txn + Payer`.
 - Alias directory info is carried inside `Payer/RegIdDetails` (`regIdDetailsType`) with:
   - `@addr` = full-form alias (`jane123@SOV1`)
@@ -204,6 +218,7 @@ After PIN setup, the user is prompted to create/register their **User ID** (mobi
     - `expiryTs` required, and optional `setStatus`
 
 **NamLend storage:**
+
 - store directory state + lastUpdatedTs, status, expiryTs.
 - store `cmId` (numeric ID / mobile ID) if returned in `Resp/RegIdDetails`.
 
@@ -258,6 +273,7 @@ NamLend should implement this **at least for NamLend itself** (as a merchant) an
 
 **Practical recommendation:**  
 Use VAE for all merchants where:
+
 - the brand is known,
 - phishing risk exists,
 - QR payments will be widely used.
@@ -265,6 +281,7 @@ Use VAE for all merchants where:
 ### 4.5 QR readiness (initiation modes)
 
 From the FSD initiation mode table:
+
 - Static QR (offline/online) and dynamic QR modes exist.
 - Your merchant QR payload must embed at minimum:
   - merchant alias (addr),
@@ -273,6 +290,7 @@ From the FSD initiation mode table:
   - and any scheme-required purpose/initiation tags.
 
 **NamLend implementation:**
+
 - `merchant_qr_profiles` table storing static payload,
 - dynamic QR generator endpoint that signs/encodes per sponsor PSP format.
 
@@ -285,6 +303,7 @@ From the FSD initiation mode table:
 This is the critical flow for lending: pay out the loan to the customer’s alias.
 
 **Recommended steps:**
+
 1. Ensure customer is `READY_FOR_IPP_PAYMENTS`
 2. Validate payee alias (`ReqValAdd`) — ensures the alias resolves and returns a verified name/provider
 3. Execute payment (`ReqPay`)
@@ -293,6 +312,7 @@ This is the critical flow for lending: pay out the loan to the customer’s alia
 6. Finalize internal disbursement record + TigerBeetle posting
 
 **NamLend implementation mapping (from your repo):**
+
 - `DisbursementManager.tsx` → admin initiates
 - `ipsService.ts` → `initiateIPSDisbursement()` calls Edge Function
 - `ips-adapter` (Edge Function) → constructs XML and calls IPS switch
@@ -304,15 +324,18 @@ This is the critical flow for lending: pay out the loan to the customer’s alia
 You have two viable models:
 
 **Model A: PAY to merchant alias (simpler, widely supported)**
+
 - Customer initiates a PAY to NamLend’s merchant full-form alias.
 - NamLend reconciles incoming payment and applies to loan.
 
 **Model B: COLLECT (request-to-pay)**
+
 - NamLend issues a collect request to the customer.
 - Requires collect support, mandates, and extra UX/consent.
 - Keep as Phase 2 unless sponsor PSP already supports it.
 
 For Model A, the same primitives apply:
+
 - Validate merchant alias (`ValAdd`)
 - Execute `ReqPay` with:
   - `Payer = customer (PERSON)`
@@ -325,24 +348,25 @@ For Model A, the same primitives apply:
 ### 6.1 Edge Function (`ips-adapter`) — expand API surface
 
 Today you have:
+
 - `POST /validate-vpa`
 - `POST /pay`
 - `POST /check-status`
 
 To support onboarding you must add:
 
-| Route | UPI XSD message | Purpose |
-|---|---|---|
-| `POST /list-acc-pvd` | `ReqListAccPvd` | list SoV providers |
-| `POST /list-account` | `ReqListAccount` | list customer accounts/wallets |
-| `POST /register-mobile` | `ReqRegMob` | verify user + set IPS PIN |
-| `POST /get-alias` | `ReqGetAdd` | check alias directory status |
-| `POST /reg-mapper` | `ReqRegMapper` | register/modify alias directory mapping |
-| `POST /set-cred` | `ReqSetCre` | reset/change IPS PIN |
-| `POST /list-keys` | `ReqListKeys` | retrieve public keys for encryption/CL |
-| `POST /list-vae` | `ReqListVae` | retrieve verified entries |
-| `POST /manage-vae` | `ReqManageVae` | create/update/delete VAE entries |
-| `POST /list-psp` | `ReqListPsp` | participant list sync (optional but recommended) |
+| Route                   | UPI XSD message  | Purpose                                          |
+| ----------------------- | ---------------- | ------------------------------------------------ |
+| `POST /list-acc-pvd`    | `ReqListAccPvd`  | list SoV providers                               |
+| `POST /list-account`    | `ReqListAccount` | list customer accounts/wallets                   |
+| `POST /register-mobile` | `ReqRegMob`      | verify user + set IPS PIN                        |
+| `POST /get-alias`       | `ReqGetAdd`      | check alias directory status                     |
+| `POST /reg-mapper`      | `ReqRegMapper`   | register/modify alias directory mapping          |
+| `POST /set-cred`        | `ReqSetCre`      | reset/change IPS PIN                             |
+| `POST /list-keys`       | `ReqListKeys`    | retrieve public keys for encryption/CL           |
+| `POST /list-vae`        | `ReqListVae`     | retrieve verified entries                        |
+| `POST /manage-vae`      | `ReqManageVae`   | create/update/delete VAE entries                 |
+| `POST /list-psp`        | `ReqListPsp`     | participant list sync (optional but recommended) |
 
 ### 6.2 Database additions (Supabase)
 
@@ -362,6 +386,7 @@ Add these tables (names can be adapted, but the entities are required):
   - `org_id`, `key_id/ki`, `public_key`, `valid_from/to`, `fetched_at`
 
 Keep your existing:
+
 - `ips_transactions`
 - `ips_api_logs`
 - `disbursements`
@@ -383,16 +408,19 @@ These should be the “single source of truth” and keep your RLS + audit patte
 ### 7.1 Idempotency
 
 For all switch-facing calls:
+
 - set `Head/@msgId` as an idempotency key (unique per request),
 - set `Txn/@id` as your business transaction ID (e.g., `NL-{UUID}`),
 - persist both before sending.
 
 If you retry:
+
 - reuse the same `Txn/@id` and **new** `msgId` only if scheme allows; otherwise keep both stable and rely on `ChkTxn`.
 
 ### 7.2 Timeouts
 
 If `ReqPay` times out:
+
 - mark as `PENDING_SWITCH_CONFIRMATION`
 - wait the scheme-prescribed timeout
 - call `ReqChkTxn`
@@ -401,6 +429,7 @@ If `ReqPay` times out:
 ### 7.3 What “success” means
 
 A payment is only “final” in NamLend when:
+
 - switch confirms success (sync or async),
 - you have persisted the final status,
 - and TigerBeetle posting has been queued (or posted) exactly once.

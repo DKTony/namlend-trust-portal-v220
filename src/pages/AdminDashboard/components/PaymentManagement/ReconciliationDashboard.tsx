@@ -1,26 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatNAD } from '@/utils/currency';
-import { 
-  getUnmatchedTransactions,
-  getUnmatchedPayments,
-  autoMatchPayments,
-  manualMatchPayment,
-  BankTransaction
-} from '@/services/reconciliationService';
-import { 
-  Upload, 
-  CheckCircle, 
-  AlertTriangle, 
-  DollarSign, 
+// Inline type (previously from reconciliationService)
+interface BankTransaction {
+  id: string;
+  external_id: string;
+  transaction_date: string;
+  amount: number;
+  transaction_type: string;
+  reference: string;
+  description?: string;
+  source: string;
+  matched_payment_id?: string;
+  status: string;
+}
+import {
+  Upload,
+  CheckCircle,
+  AlertTriangle,
+  DollarSign,
   Calendar,
   RefreshCw,
   Link2,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 import ImportTransactionsModal from './ImportTransactionsModal';
 
 interface UnmatchedPayment {
@@ -43,61 +52,80 @@ export const ReconciliationDashboard: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
   const { toast } = useToast();
+  const matchTransactionMutation = useMutation(api.reconciliation.matchTransaction);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Reactive queries for reconciliation data
+  const rawTransactions = useConvexQuery(api.reconciliation.listBankTransactions, {});
+  const rawPayments = useConvexQuery(api.payments.adminListPayments, { status: 'pending' });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const [txnResult, payResult] = await Promise.all([
-        getUnmatchedTransactions(),
-        getUnmatchedPayments()
-      ]);
-
-      if (txnResult.success) {
-        setTransactions(txnResult.transactions || []);
-      } else {
-        setError(txnResult.error || 'Failed to load transactions');
-      }
-
-      if (payResult.success) {
-        setPayments(payResult.payments || []);
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error('Error loading reconciliation data:', err);
-    } finally {
+  // Sync reactive data into local state
+  React.useEffect(() => {
+    if (rawTransactions !== undefined) {
+      setTransactions(
+        rawTransactions
+          .filter((t: any) => !t.matchedPaymentId)
+          .map((t: any) => ({
+            id: String(t._id),
+            external_id: t.externalId ?? '',
+            transaction_date: t.transactionDate ?? '',
+            amount: t.amount ?? 0,
+            transaction_type: t.transactionType ?? 'credit',
+            reference: t.reference ?? '',
+            description: t.description,
+            source: t.source ?? 'manual',
+            matched_payment_id: t.matchedPaymentId ? String(t.matchedPaymentId) : undefined,
+            status: t.status ?? 'unmatched',
+          }))
+      );
       setLoading(false);
     }
-  };
+  }, [rawTransactions]);
+
+  React.useEffect(() => {
+    if (rawPayments !== undefined) {
+      setPayments(
+        rawPayments.map((p: any) => ({
+          id: String(p._id),
+          loan_id: String(p.loanId ?? ''),
+          amount: p.amount ?? 0,
+          payment_method: p.method ?? '',
+          reference_number: p.referenceNumber,
+          created_at: p.createdAt ? new Date(p.createdAt).toISOString() : '',
+          status: p.status ?? 'pending',
+        }))
+      );
+    }
+  }, [rawPayments]);
 
   const handleAutoMatch = async () => {
     setMatchingLoading(true);
     try {
-      const result = await autoMatchPayments();
-      
-      if (result.success) {
-        toast({
-          title: 'Auto-Match Complete',
-          description: `Matched ${result.matched_count || 0} payment(s)`
-        });
-        loadData();
-      } else {
-        toast({
-          title: 'Auto-Match Failed',
-          description: result.error || 'Failed to auto-match payments',
-          variant: 'destructive'
-        });
+      // Auto-match: find transactions and payments with matching references/amounts
+      let matchedCount = 0;
+      for (const txn of transactions) {
+        if (txn.status === 'matched') continue;
+        const matchingPayment = payments.find(
+          (p) => p.amount === txn.amount && p.reference_number === txn.reference
+        );
+        if (matchingPayment) {
+          await matchTransactionMutation({
+            transactionId: txn.id as Id<'bankTransactions'>,
+            paymentId: matchingPayment.id as Id<'paymentTransactions'>,
+            matchConfidence: 1.0,
+            matchNotes: 'Auto-matched by reference and amount',
+          });
+          matchedCount++;
+        }
       }
+      toast({
+        title: 'Auto-Match Complete',
+        description: `Matched ${matchedCount} payment(s)`,
+      });
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive'
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setMatchingLoading(false);
@@ -109,35 +137,30 @@ export const ReconciliationDashboard: React.FC = () => {
       toast({
         title: 'Selection Required',
         description: 'Please select both a payment and a transaction to match',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
 
     setMatchingLoading(true);
     try {
-      const result = await manualMatchPayment(selectedPayment, selectedTransaction);
-      
-      if (result.success) {
-        toast({
-          title: 'Manual Match Complete',
-          description: 'Payment matched successfully'
-        });
-        setSelectedPayment(null);
-        setSelectedTransaction(null);
-        loadData();
-      } else {
-        toast({
-          title: 'Match Failed',
-          description: result.error || 'Failed to match payment',
-          variant: 'destructive'
-        });
-      }
+      await matchTransactionMutation({
+        transactionId: selectedTransaction as Id<'bankTransactions'>,
+        paymentId: selectedPayment as Id<'paymentTransactions'>,
+        matchConfidence: 1.0,
+        matchNotes: 'Manually matched by staff',
+      });
+      toast({
+        title: 'Manual Match Complete',
+        description: 'Payment matched successfully',
+      });
+      setSelectedPayment(null);
+      setSelectedTransaction(null);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive'
+        title: 'Match Failed',
+        description: error instanceof Error ? error.message : 'Failed to match payment',
+        variant: 'destructive',
       });
     } finally {
       setMatchingLoading(false);
@@ -148,7 +171,7 @@ export const ReconciliationDashboard: React.FC = () => {
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -228,9 +251,7 @@ export const ReconciliationDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Match Rate</p>
-                <p className="text-2xl font-bold">
-                  {transactions.length > 0 ? '0%' : '100%'}
-                </p>
+                <p className="text-2xl font-bold">{transactions.length > 0 ? '0%' : '100%'}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             </div>
@@ -257,20 +278,11 @@ export const ReconciliationDashboard: React.FC = () => {
               )}
             </div>
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadData}
-                disabled={matchingLoading}
-              >
+              <Button variant="outline" size="sm" onClick={loadData} disabled={matchingLoading}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setImportModalOpen(true)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setImportModalOpen(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Import Transactions
               </Button>
@@ -325,9 +337,9 @@ export const ReconciliationDashboard: React.FC = () => {
                 {transactions.map((txn) => (
                   <div
                     key={txn.id}
-                    onClick={() => setSelectedTransaction(
-                      selectedTransaction === txn.id ? null : txn.id
-                    )}
+                    onClick={() =>
+                      setSelectedTransaction(selectedTransaction === txn.id ? null : txn.id)
+                    }
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedTransaction === txn.id
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
@@ -336,7 +348,9 @@ export const ReconciliationDashboard: React.FC = () => {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="font-mono text-sm font-medium">{txn.reference || txn.external_id}</p>
+                        <p className="font-mono text-sm font-medium">
+                          {txn.reference || txn.external_id}
+                        </p>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(txn.transaction_date)}</span>
@@ -377,9 +391,9 @@ export const ReconciliationDashboard: React.FC = () => {
                 {payments.map((payment) => (
                   <div
                     key={payment.id}
-                    onClick={() => setSelectedPayment(
-                      selectedPayment === payment.id ? null : payment.id
-                    )}
+                    onClick={() =>
+                      setSelectedPayment(selectedPayment === payment.id ? null : payment.id)
+                    }
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedPayment === payment.id
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
@@ -405,7 +419,9 @@ export const ReconciliationDashboard: React.FC = () => {
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Loan: {payment.loan_id.slice(-8)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Loan: {payment.loan_id.slice(-8)}
+                    </p>
                   </div>
                 ))}
               </div>

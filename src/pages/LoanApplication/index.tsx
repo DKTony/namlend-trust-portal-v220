@@ -6,12 +6,14 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useToast } from '@/hooks/use-toast';
 import { APR_LIMIT, isValidAPR } from '@/constants/regulatory';
-import { submitApprovalRequest } from '@/services/approvalWorkflow';
+import { useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '@/integrations/convex/api';
 import {
   calculateCreditScore,
   getLoanRecommendation,
   type CreditFactors,
-} from '@/services/creditScoring';
+} from '@/utils/creditScoring';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { Calculator, FileText, DollarSign, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
@@ -33,6 +35,9 @@ export default function LoanApplication() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const createLoanMutation = useConvexMutation(api.loans.createLoan);
+  const submitLoanMutation = useConvexMutation(api.loans.submitLoan);
+  const submitForApprovalMutation = useConvexMutation(api.approvalWorkflow.submitForApproval);
 
   // KYC eligibility check - gates loan application
   const {
@@ -158,17 +163,26 @@ export default function LoanApplication() {
         submitted_at: new Date().toISOString(),
       };
 
-      // Submit to approval workflow instead of directly creating loan
-      const result = await submitApprovalRequest({
-        user_id: user.id,
-        request_type: 'loan_application',
-        request_data: loanApplicationData,
-        priority: 'normal',
-      });
+      // Step 1: Create the canonical loan record in the loans table
+      const loanId = (await createLoanMutation({
+        principal: loanDetails.amount,
+        interestRate: loanDetails.interestRate,
+        termMonths: loanDetails.term,
+        purpose: formData.purpose,
+        monthlyPayment: loanDetails.monthlyPayment,
+      })) as Id<'loans'>;
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to submit approval request');
-      }
+      // Step 2: Transition loan from draft → submitted
+      await submitLoanMutation({ loanId });
+
+      // Step 3: Create approval request linked to the real loan ID
+      await submitForApprovalMutation({
+        entityType: 'loan',
+        entityId: loanId as string,
+        requestType: 'loan_application',
+        metadata: loanApplicationData,
+        priority: 'medium' as const,
+      });
 
       toast({
         title: t('toast.submittedTitle'),

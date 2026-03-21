@@ -60,13 +60,13 @@ This document outlines the complete implementation plan for integrating the **In
 
 ### 2.2 Component Responsibilities
 
-| Component | Responsibility |
-|-----------|----------------|
-| **React Frontend** | User-facing IPP payment flows, VPA input, status display |
-| **Supabase Database** | IPP transaction records, VPA storage, audit logs |
-| **IPS Adapter (Edge Function)** | Construct/send IPP messages, handle responses |
-| **Payment Webhook** | Receive IPS callbacks, update transaction states |
-| **Reconciliation Service** | Match IPS settlements with internal records |
+| Component                       | Responsibility                                           |
+| ------------------------------- | -------------------------------------------------------- |
+| **React Frontend**              | User-facing IPP payment flows, VPA input, status display |
+| **Supabase Database**           | IPP transaction records, VPA storage, audit logs         |
+| **IPS Adapter (Edge Function)** | Construct/send IPP messages, handle responses            |
+| **Payment Webhook**             | Receive IPS callbacks, update transaction states         |
+| **Reconciliation Service**      | Match IPS settlements with internal records              |
 
 ---
 
@@ -81,25 +81,25 @@ Stores all IPS/IPP transaction records.
 ```sql
 CREATE TABLE ips_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Link to NamLend entities
   loan_id UUID REFERENCES loans(id),
   disbursement_id UUID REFERENCES disbursements(id),
   payment_id UUID REFERENCES payments(id),
-  
+
   -- IPS identifiers
   msg_id VARCHAR(50) NOT NULL UNIQUE,        -- Our message ID
   txn_id VARCHAR(50) NOT NULL,               -- Our transaction ID
   ips_txn_id VARCHAR(50),                    -- IPS-assigned transaction ID
   ips_rrn VARCHAR(20),                       -- IPS retrieval reference number
   org_txn_id VARCHAR(50),                    -- Original txn for reversals/queries
-  
+
   -- Transaction details
   transaction_type VARCHAR(20) NOT NULL,      -- DISBURSEMENT | REPAYMENT | REFUND | REVERSAL
   ips_txn_type VARCHAR(20) NOT NULL,         -- PAY | COLLECT | REVERSAL | AUTOREVERSAL
   amount DECIMAL(15,2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'NAD',
-  
+
   -- Parties
   payer_vpa VARCHAR(100) NOT NULL,
   payer_name VARCHAR(255),
@@ -107,7 +107,7 @@ CREATE TABLE ips_transactions (
   payee_vpa VARCHAR(100) NOT NULL,
   payee_name VARCHAR(255),
   payee_account_masked VARCHAR(50),
-  
+
   -- Status tracking
   status VARCHAR(20) NOT NULL DEFAULT 'initiated',
   -- initiated | pending | success | failed | timeout | reversed | deemed
@@ -115,24 +115,24 @@ CREATE TABLE ips_transactions (
   ips_error_code VARCHAR(10),
   ips_error_message TEXT,
   internal_error_code VARCHAR(50),
-  
+
   -- Metadata
   purpose_code VARCHAR(10),                  -- PERS | BUSN | G2P | B2P
   initiation_mode VARCHAR(20),               -- MOBILE_APP | USSD | BACKOFFICE
   channel VARCHAR(20),
   device_fingerprint JSONB,
-  
+
   -- Timing
   initiated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   sent_at TIMESTAMPTZ,
   response_received_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
-  
+
   -- Audit
   created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
   CONSTRAINT valid_status CHECK (status IN ('initiated', 'pending', 'success', 'failed', 'timeout', 'reversed', 'deemed'))
 );
 
@@ -153,29 +153,29 @@ Stores customer VPA (Virtual Payment Address) registrations.
 CREATE TABLE ips_vpa_registry (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id),
-  
+
   -- VPA details
   vpa_address VARCHAR(100) NOT NULL,         -- e.g., john.doe@fnb
   vpa_type VARCHAR(20) NOT NULL,             -- MOBILE_NUMBER | HANDLE | ACCOUNT
   provider_code VARCHAR(20),                 -- Bank/PSP identifier
-  
+
   -- Linked account (optional, for display)
   account_masked VARCHAR(50),
   account_holder_name VARCHAR(255),
-  
+
   -- Validation
   is_validated BOOLEAN DEFAULT FALSE,
   validated_at TIMESTAMPTZ,
   validation_reference VARCHAR(50),
-  
+
   -- Status
   is_default BOOLEAN DEFAULT FALSE,
   is_active BOOLEAN DEFAULT TRUE,
-  
+
   -- Audit
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
   UNIQUE(user_id, vpa_address)
 );
 
@@ -190,29 +190,29 @@ Detailed API call logs for debugging and audit.
 ```sql
 CREATE TABLE ips_api_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Correlation
   correlation_id UUID NOT NULL,
   ips_transaction_id UUID REFERENCES ips_transactions(id),
-  
+
   -- API details
   api_name VARCHAR(50) NOT NULL,             -- ReqPay, RespPay, ReqChkTxn, etc.
   direction VARCHAR(10) NOT NULL,            -- OUTBOUND | INBOUND
-  
+
   -- Payload (encrypted/redacted for PII)
   request_summary JSONB,                     -- Key fields only, no PII
   response_summary JSONB,
-  
+
   -- Status
   http_status INTEGER,
   ips_result VARCHAR(20),
   error_code VARCHAR(20),
-  
+
   -- Timing
   sent_at TIMESTAMPTZ,
   received_at TIMESTAMPTZ,
   duration_ms INTEGER,
-  
+
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -258,7 +258,7 @@ INSERT INTO ips_error_codes (code, internal_code, description, http_status, is_r
 #### `disbursements` - Add IPP fields
 
 ```sql
-ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS 
+ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS
   ips_transaction_id UUID REFERENCES ips_transactions(id);
 
 ALTER TABLE disbursements ADD COLUMN IF NOT EXISTS
@@ -299,36 +299,36 @@ Main IPS integration service.
 
 **Endpoints**:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/pay` | Initiate payment (disbursement or repayment) |
-| POST | `/validate-vpa` | Validate a VPA address |
-| POST | `/check-status` | Check transaction status |
-| POST | `/balance` | Check account balance |
+| Method | Path            | Description                                  |
+| ------ | --------------- | -------------------------------------------- |
+| POST   | `/pay`          | Initiate payment (disbursement or repayment) |
+| POST   | `/validate-vpa` | Validate a VPA address                       |
+| POST   | `/check-status` | Check transaction status                     |
+| POST   | `/balance`      | Check account balance                        |
 
 **Key Functions**:
 
 ```typescript
 // Core IPS operations
-async function initiatePayment(params: IPSPaymentParams): Promise<IPSPaymentResult>
-async function validateVPA(vpa: string): Promise<VPAValidationResult>
-async function checkTransactionStatus(txnId: string): Promise<TransactionStatusResult>
-async function checkBalance(vpa: string, credentials: EncryptedCredentials): Promise<BalanceResult>
+async function initiatePayment(params: IPSPaymentParams): Promise<IPSPaymentResult>;
+async function validateVPA(vpa: string): Promise<VPAValidationResult>;
+async function checkTransactionStatus(txnId: string): Promise<TransactionStatusResult>;
+async function checkBalance(vpa: string, credentials: EncryptedCredentials): Promise<BalanceResult>;
 
 // Message building
-function buildReqPay(params: PaymentParams): XMLDocument
-function buildReqValAdd(vpa: string): XMLDocument
-function buildReqChkTxn(orgTxnId: string): XMLDocument
+function buildReqPay(params: PaymentParams): XMLDocument;
+function buildReqValAdd(vpa: string): XMLDocument;
+function buildReqChkTxn(orgTxnId: string): XMLDocument;
 
 // Response parsing
-function parseRespPay(xml: string): PaymentResponse
-function parseRespValAdd(xml: string): VPAValidationResponse
-function parseRespChkTxn(xml: string): TransactionStatusResponse
+function parseRespPay(xml: string): PaymentResponse;
+function parseRespValAdd(xml: string): VPAValidationResponse;
+function parseRespChkTxn(xml: string): TransactionStatusResponse;
 
 // Security
-function signMessage(xml: string): string
-function verifySignature(xml: string, signature: string): boolean
-function encryptCredentials(pin: string, keyIndex: string): string
+function signMessage(xml: string): string;
+function verifySignature(xml: string, signature: string): boolean;
+function encryptCredentials(pin: string, keyIndex: string): string;
 ```
 
 #### 4.1.2 `payment-webhook` (Update)
@@ -367,18 +367,18 @@ DECLARE
   v_txn_id VARCHAR(50);
 BEGIN
   -- 1. Validate disbursement exists and is approved
-  SELECT * INTO v_disbursement 
-  FROM disbursements 
+  SELECT * INTO v_disbursement
+  FROM disbursements
   WHERE id = p_disbursement_id AND status = 'approved';
-  
+
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'Disbursement not found or not approved');
   END IF;
-  
+
   -- 2. Generate IPS identifiers
   v_msg_id := 'NL' || to_char(NOW(), 'YYYYMMDDHH24MISS') || substr(gen_random_uuid()::text, 1, 8);
   v_txn_id := 'TXN' || to_char(NOW(), 'YYYYMMDDHH24MISS') || substr(gen_random_uuid()::text, 1, 6);
-  
+
   -- 3. Create IPS transaction record
   INSERT INTO ips_transactions (
     loan_id, disbursement_id, msg_id, txn_id,
@@ -391,14 +391,14 @@ BEGIN
     'collections@namlend', p_payee_vpa, 'initiated', 'BUSN',
     'BACKOFFICE', auth.uid()
   ) RETURNING id INTO v_ips_txn_id;
-  
+
   -- 4. Update disbursement with VPA
-  UPDATE disbursements 
-  SET payee_vpa = p_payee_vpa, 
+  UPDATE disbursements
+  SET payee_vpa = p_payee_vpa,
       ips_transaction_id = v_ips_txn_id,
       method = 'ips'
   WHERE id = p_disbursement_id;
-  
+
   -- 5. Return data for edge function to process
   RETURN jsonb_build_object(
     'success', true,
@@ -428,30 +428,30 @@ DECLARE
   v_txn_id VARCHAR(50);
 BEGIN
   -- 1. Validate loan exists and has outstanding balance
-  SELECT * INTO v_loan 
-  FROM loans 
+  SELECT * INTO v_loan
+  FROM loans
   WHERE id = p_loan_id AND status IN ('disbursed', 'active');
-  
+
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'Loan not found or not active');
   END IF;
-  
+
   -- 2. Validate amount
   IF p_amount <= 0 OR p_amount > v_loan.outstanding_balance THEN
     RETURN jsonb_build_object('success', false, 'error', 'Invalid payment amount');
   END IF;
-  
+
   -- 3. Generate IPS identifiers
   v_msg_id := 'NL' || to_char(NOW(), 'YYYYMMDDHH24MISS') || substr(gen_random_uuid()::text, 1, 8);
   v_txn_id := 'TXN' || to_char(NOW(), 'YYYYMMDDHH24MISS') || substr(gen_random_uuid()::text, 1, 6);
-  
+
   -- 4. Create payment record (pending)
   INSERT INTO payments (
     loan_id, amount, payment_method, status, reference_number
   ) VALUES (
     p_loan_id, p_amount, 'ips', 'pending', v_txn_id
   ) RETURNING id INTO v_payment_id;
-  
+
   -- 5. Create IPS transaction record
   INSERT INTO ips_transactions (
     loan_id, payment_id, msg_id, txn_id,
@@ -464,10 +464,10 @@ BEGIN
     p_payer_vpa, 'collections@namlend', 'initiated', 'PERS',
     'MOBILE_APP', auth.uid()
   ) RETURNING id INTO v_ips_txn_id;
-  
+
   -- 6. Link payment to IPS transaction
   UPDATE payments SET ips_transaction_id = v_ips_txn_id WHERE id = v_payment_id;
-  
+
   -- 7. Return data for edge function
   RETURN jsonb_build_object(
     'success', true,
@@ -499,11 +499,11 @@ DECLARE
 BEGIN
   -- 1. Get transaction
   SELECT * INTO v_txn FROM ips_transactions WHERE id = p_ips_txn_id;
-  
+
   IF NOT FOUND THEN
     RETURN jsonb_build_object('success', false, 'error', 'Transaction not found');
   END IF;
-  
+
   -- 2. Map IPS result to internal status
   v_new_status := CASE p_ips_result
     WHEN 'SUCCESS' THEN 'success'
@@ -512,11 +512,11 @@ BEGIN
     WHEN 'PENDING' THEN 'pending'
     ELSE 'failed'
   END;
-  
+
   -- 3. Get internal error code
-  SELECT internal_code INTO v_internal_error 
+  SELECT internal_code INTO v_internal_error
   FROM ips_error_codes WHERE code = p_ips_error_code;
-  
+
   -- 4. Update IPS transaction
   UPDATE ips_transactions SET
     status = v_new_status,
@@ -529,42 +529,42 @@ BEGIN
     completed_at = CASE WHEN v_new_status IN ('success', 'failed') THEN NOW() ELSE NULL END,
     updated_at = NOW()
   WHERE id = p_ips_txn_id;
-  
+
   -- 5. Update linked entity based on transaction type
   IF v_txn.transaction_type = 'DISBURSEMENT' AND v_txn.disbursement_id IS NOT NULL THEN
     IF v_new_status = 'success' THEN
       -- Mark disbursement completed
-      UPDATE disbursements SET 
+      UPDATE disbursements SET
         status = 'completed',
         processed_at = NOW(),
         payment_reference = p_ips_rrn
       WHERE id = v_txn.disbursement_id;
-      
+
       -- Update loan status
-      UPDATE loans SET 
+      UPDATE loans SET
         status = 'disbursed',
         disbursed_at = NOW()
       WHERE id = v_txn.loan_id AND status = 'approved';
     ELSIF v_new_status = 'failed' THEN
       UPDATE disbursements SET status = 'failed' WHERE id = v_txn.disbursement_id;
     END IF;
-    
+
   ELSIF v_txn.transaction_type = 'REPAYMENT' AND v_txn.payment_id IS NOT NULL THEN
     IF v_new_status = 'success' THEN
       -- Complete payment and apply to schedule
-      UPDATE payments SET 
+      UPDATE payments SET
         status = 'completed',
         paid_at = NOW(),
         reference_number = p_ips_rrn
       WHERE id = v_txn.payment_id;
-      
+
       -- Apply payment to loan (trigger existing logic)
       PERFORM apply_payment_to_schedule(v_txn.payment_id);
     ELSIF v_new_status = 'failed' THEN
       UPDATE payments SET status = 'failed' WHERE id = v_txn.payment_id;
     END IF;
   END IF;
-  
+
   -- 6. Log state transition
   INSERT INTO state_transitions (
     entity_type, entity_id, from_state, to_state,
@@ -574,7 +574,7 @@ BEGIN
     'IPS response: ' || COALESCE(p_ips_result, 'unknown'),
     'system'
   );
-  
+
   RETURN jsonb_build_object(
     'success', true,
     'status', v_new_status,
@@ -593,18 +593,22 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 export interface IPSService {
   // Disbursement
   initiateDisbursement(disbursementId: string, payeeVpa: string): Promise<IPSTransactionResult>;
-  
+
   // Repayment
-  initiateRepayment(loanId: string, amount: number, payerVpa: string): Promise<IPSTransactionResult>;
-  
+  initiateRepayment(
+    loanId: string,
+    amount: number,
+    payerVpa: string
+  ): Promise<IPSTransactionResult>;
+
   // VPA
   validateVPA(vpa: string): Promise<VPAValidationResult>;
   getUserVPAs(userId: string): Promise<VPARecord[]>;
   addUserVPA(userId: string, vpa: string): Promise<VPARecord>;
-  
+
   // Status
   checkTransactionStatus(ipsTransactionId: string): Promise<TransactionStatus>;
-  
+
   // Balance (optional, for risk checks)
   checkBalance(vpa: string): Promise<BalanceResult>;
 }
@@ -695,7 +699,7 @@ export function useIPSPayment() {
       // 1. Call RPC to initiate
       // 2. Call edge function to send to IPS
       // 3. Return transaction ID for status polling
-    }
+    },
   });
 }
 ```
@@ -708,7 +712,7 @@ export function useIPSTransactionStatus(txnId: string) {
   return useQuery({
     queryKey: ['ips-status', txnId],
     queryFn: () => fetchTransactionStatus(txnId),
-    refetchInterval: (data) => data?.status === 'pending' ? 3000 : false
+    refetchInterval: (data) => (data?.status === 'pending' ? 3000 : false),
   });
 }
 ```
@@ -844,7 +848,7 @@ export const IPS_FEATURE_FLAGS = {
   enableRepayments: true,
   enableBalanceEnquiry: false,
   enableVPAValidation: true,
-  maxTransactionAmount: 50000,  // NAD
+  maxTransactionAmount: 50000, // NAD
   allowedPurposeCodes: ['PERS', 'BUSN'],
 };
 ```
@@ -870,6 +874,7 @@ const MOCK_SCENARIOS = {
 ### 8.2 Test Cases
 
 **Disbursement Flow**:
+
 1. ✅ Successful disbursement via IPS
 2. ✅ Failed disbursement (insufficient funds at NamLend)
 3. ✅ Failed disbursement (invalid customer VPA)
@@ -877,6 +882,7 @@ const MOCK_SCENARIOS = {
 5. ✅ Timeout → status check → failure
 
 **Repayment Flow**:
+
 1. ✅ Successful repayment via IPS
 2. ✅ Failed repayment (insufficient funds)
 3. ✅ Partial repayment
@@ -922,12 +928,12 @@ If issues arise post-deployment:
 
 ## 11. Success Metrics
 
-| Metric | Target |
-|--------|--------|
-| Disbursement success rate | ≥ 98% |
-| Repayment success rate | ≥ 98% |
-| Average disbursement time | < 30 seconds |
-| Average repayment time | < 15 seconds |
+| Metric                      | Target        |
+| --------------------------- | ------------- |
+| Disbursement success rate   | ≥ 98%         |
+| Repayment success rate      | ≥ 98%         |
+| Average disbursement time   | < 30 seconds  |
+| Average repayment time      | < 15 seconds  |
 | IPS-related support tickets | < 5% of total |
 
 ---

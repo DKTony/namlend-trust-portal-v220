@@ -1,60 +1,59 @@
 # NamLend Trust - Services Documentation
 
-**Doc Revision**: 2026-02-18 \
-**Status**: Service layer is implemented across lending, IPS/IPP, collections, reconciliation, and settlement. Settlement service hardened with audit logging, callRpc resilience, and TigerBeetle column fixes (Feb 2026).
+**Doc Revision**: 2026-02-23 (updated post-Batch 2)  
+**Status**: Service layer implemented across all domains. Settlement service hardened (Feb 2026). **Milestone C Batch 1 (2026-02-23)**: loans + approvals domain fully migrated to Convex. **Milestone C Batch 2 (2026-02-23)**: `notificationService` and `financeService` — last active UI consumers migrated; both services now have zero active UI imports. Batch 3 (IPS/Settlement/Audit/Workflow/Credit) pending.
 
 ---
 
 ## Service Index (src/services)
 
-| Service                    | Purpose                         | Notes                                                                  |
-| -------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
-| `api-client.ts`            | API orchestration client        | Edge Function API wrapper with retries/metrics                         |
-| `approvalWorkflow.ts`      | Approval request workflow       | Drives loan application approvals                                      |
-| `loanService.ts`           | Loan record helpers             | Status updates + disbursement creation                                 |
-| `disbursementService.ts`   | Disbursement state machine      | RPC-driven, posts to ledger outbox                                     |
-| `paymentService.ts`        | Payment processing              | Schedules, overdue, fees, ledger posts                                 |
-| `paymentGateway.ts`        | Provider routing + instructions | Bank transfer, MoMo, TN Mobile, PayToday, cash                         |
-| `ipsService.ts`            | IPS payment integration         | Calls `ips-adapter` Edge Function                                      |
-| `ipsOnboardingService.ts`  | IPP onboarding                  | RPC + adapter endpoints                                                |
-| `collectionsService.ts`    | Collections workflow            | Activities, promises, reschedules                                      |
-| `reconciliationService.ts` | Bank transaction matching       | Manual and auto matching                                               |
-| `notificationService.ts`   | In-app notifications            | Queue, preferences, realtime                                           |
-| `smsGateway.ts`            | SMS templates + logging         | Client-side logging; Edge function for delivery                        |
-| `whatsappGateway.ts`       | WhatsApp templates + logging    | Client-side logging; Edge function for delivery                        |
-| `auditService.ts`          | Audit trail access              | RPCs for logs/transitions                                              |
-| `workflowEngine.ts`        | Multi-stage workflows           | RPC-driven engine                                                      |
-| `roleManagementService.ts` | Role assignment rules           | Validated via RPC                                                      |
-| `adminService.ts`          | Admin profile data              | RPC for profiles with roles                                            |
-| `ledgerService.ts`         | TigerBeetle outbox              | Simulated posting via Edge worker                                      |
-| `settlementService.ts`     | Settlement runs + reports       | DNS settlement workflows; audit logging, callRpc resilience (Feb 2026) |
-| `clientService.ts`         | Client profile access           | Profile read/update                                                    |
-| `financeService.ts`        | Budget & finance tracking       | Transactions, budgets, savings goals, CSV upload                       |
-| `creditScoring.ts`         | AI credit risk assessment       | Scoring, recommendations, affordability checks                         |
+Legend: ✅ Migrated / deprecated (zero active UI consumers) | 🔜 Batch 3 pending | ⚠️ Legacy (Supabase, active consumers remain)
+
+| Service                    | Purpose                          | Migration Status | Notes                                                                                                                       |
+| -------------------------- | -------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `api-client.ts`            | API orchestration client         | ⚠️ Legacy        | Edge Function API wrapper with retries/metrics                                                                              |
+| `approvalWorkflow.ts`      | Approval request workflow        | ✅ Batch 1       | **Deprecated** — zero UI imports remain. All consumers use `api.approvalWorkflow.*` directly. Safe to delete after Batch 3. |
+| `loanService.ts`           | Loan record helpers              | ✅ Batch 1       | **Deprecated** — `useLoanApplications` now uses `useQuery(api.loans.adminListLoans)` directly.                              |
+| `convex/loanService.ts`    | Convex loan helpers (imperative) | ✅ Batch 1       | No active UI consumers remain after Batch 1.                                                                                |
+| `disbursementService.ts`   | Disbursement state machine       | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
+| `paymentService.ts`        | Payment processing               | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
+| `paymentGateway.ts`        | Provider routing + instructions  | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
+| `ipsService.ts`            | IPS payment integration          | 🔜 Batch 3       | Calls `ips-adapter` Edge Function                                                                                           |
+| `ipsOnboardingService.ts`  | IPP onboarding                   | 🔜 Batch 3       | RPC + adapter endpoints                                                                                                     |
+| `collectionsService.ts`    | Collections workflow             | ✅ Batch 2       | **Zero active UI consumers** — `CollectionsDashboard` uses Convex directly (N3). Safe to delete after Batch 3 verification  |
+| `reconciliationService.ts` | Bank transaction matching        | 🔜 Batch 3       | Manual and auto matching                                                                                                    |
+| `notificationService.ts`   | In-app notifications             | ✅ Batch 2       | **Deprecated** — `NotificationCenter` inlined type + helper; zero UI imports remain                                         |
+| `smsGateway.ts`            | SMS templates + logging          | 🔜 Batch 3       | Client-side logging; Edge function for delivery                                                                             |
+| `whatsappGateway.ts`       | WhatsApp templates + logging     | 🔜 Batch 3       | Client-side logging; Edge function for delivery                                                                             |
+| `auditService.ts`          | Audit trail access               | ⚠️ Legacy        | RPCs for logs/transitions                                                                                                   |
+| `workflowEngine.ts`        | Multi-stage workflows            | ✅ Batch 1       | `WorkflowManagementDashboard` uses `api.approvalWorkflow.listWorkflowDefinitions` directly                                  |
+| `roleManagementService.ts` | Role assignment rules            | 🔜 Batch 3       | Validated via RPC                                                                                                           |
+| `adminService.ts`          | Admin profile data               | 🔜 Batch 3       | RPC for profiles with roles                                                                                                 |
+| `ledgerService.ts`         | TigerBeetle outbox               | ⚠️ Legacy        | Simulated posting via Edge worker                                                                                           |
+| `settlementService.ts`     | Settlement runs + reports        | 🔜 Batch 3       | DNS settlement workflows; audit logging, callRpc resilience (Feb 2026)                                                      |
+| `clientService.ts`         | Client profile access            | ✅ Batch 1       | `ClientProfileModal` uses `api.users.getUserProfile` directly                                                               |
+| `financeService.ts`        | Budget & finance tracking        | ✅ Batch 2       | **Deprecated** — `BudgetTracker` inlined mock data + helpers; zero UI imports remain                                        |
+| `creditScoring.ts`         | AI credit risk assessment        | ⚠️ Legacy        | Scoring, recommendations, affordability checks                                                                              |
 
 ---
 
 ## Approval Workflow
 
-**File**: `src/services/approvalWorkflow.ts`
+**File**: `src/services/approvalWorkflow.ts`  
+**Migration Status**: ✅ **DEPRECATED — Batch 1 complete (2026-02-23)**
 
-Key exports:
+All UI consumers now use Convex directly:
 
-- `submitApprovalRequest()`
-- `getUserApprovalRequests()`
-- `getAllApprovalRequests()`
-- `updateApprovalStatus()`
-- `getApprovalHistory()`
-- `getApprovalNotifications()`
-- `markNotificationAsRead()`
-- `getApprovalStatistics()`
-- `processApprovedLoanApplication()`
-- `processApprovedKYCDocument()`
+| Legacy export               | Convex replacement                                         |
+| --------------------------- | ---------------------------------------------------------- |
+| `submitApprovalRequest()`   | `useMutation(api.approvalWorkflow.submitForApproval)`      |
+| `getAllApprovalRequests()`  | `useQuery(api.approvalWorkflow.adminListApprovals)`        |
+| `getUserApprovalRequests()` | `useQuery(api.approvalWorkflow.getMyApprovalRequests)`     |
+| `updateApprovalStatus()`    | `useMutation(api.approvalWorkflow.processApprovalRequest)` |
+| `getApprovalHistory()`      | `useQuery(api.approvalWorkflow.getApprovalHistory)`        |
+| Workflow definitions        | `useQuery(api.approvalWorkflow.listWorkflowDefinitions)`   |
 
-Notes:
-
-- Admin processing uses `process_approval_transaction` RPC and expects an approval request id.
-- Loan application UI submits approval requests; loans are created after approval.
+This file is safe to delete after Batch 3 verification.
 
 ---
 
@@ -356,29 +355,10 @@ Notes:
 
 ## Environment Variables
 
-**Client (Vite)**
+**Client (Vite) — only `VITE_*` vars here, NO secrets**
 
 ```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_PAYTODAY_API_URL=
-VITE_PAYTODAY_MERCHANT_ID=
-VITE_PAYTODAY_API_KEY=
-VITE_MTC_MOMO_API_URL=
-VITE_MTC_MOMO_MERCHANT=
-VITE_TN_MOBILE_API_URL=
-VITE_TN_MOBILE_MERCHANT=
-VITE_AFRICASTALKING_API_KEY=
-VITE_AFRICASTALKING_USERNAME=
-VITE_SMS_SENDER_ID=NAMLEND
-VITE_WHATSAPP_PHONE_NUMBER_ID=
-VITE_WHATSAPP_ACCESS_TOKEN=
-VITE_WHATSAPP_BUSINESS_ACCOUNT_ID=
-VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN=
-VITE_PAYTODAY_WEBHOOK_SECRET=
-VITE_MTC_MOMO_WEBHOOK_SECRET=
-VITE_TN_MOBILE_WEBHOOK_SECRET=
-VITE_IPS_WEBHOOK_SECRET=
+VITE_CONVEX_URL=https://<your-deployment>.convex.cloud
 VITE_DEBUG_TOOLS=false
 VITE_RUN_DEV_SCRIPTS=false
 VITE_ALLOW_LOCAL_ADMIN=false
@@ -387,25 +367,37 @@ VITE_TEST_ADMIN_PASSWORD=
 VITE_E2E=false
 ```
 
-**Edge Functions (Supabase secrets)**
+**Convex Environment Variables (server-side secrets — set via `npx convex env set`)**
 
-```env
-AFRICASTALKING_API_KEY=
-AFRICASTALKING_USERNAME=
-SMS_SENDER_ID=NAMLEND
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_ACCESS_TOKEN=
-WHATSAPP_BUSINESS_ID=
-PAYTODAY_WEBHOOK_SECRET=
-MTC_MOMO_WEBHOOK_SECRET=
-TN_MOBILE_WEBHOOK_SECRET=
-IPS_ENABLED=true
-IPS_ENVIRONMENT=development
-IPS_ORG_ID=NAMLEND
+```bash
+# SMS (Africa's Talking)
+npx convex env set AFRICASTALKING_API_KEY=<value>
+npx convex env set AFRICASTALKING_USERNAME=<value>
+npx convex env set SMS_SENDER_ID=NAMLEND
+
+# WhatsApp (Meta Cloud API)
+npx convex env set WHATSAPP_PHONE_NUMBER_ID=<value>
+npx convex env set WHATSAPP_ACCESS_TOKEN=<value>
+npx convex env set WHATSAPP_BUSINESS_ID=<value>
+npx convex env set WHATSAPP_WEBHOOK_VERIFY_TOKEN=<value>
+
+# Payment Webhook Secrets
+npx convex env set PAYTODAY_WEBHOOK_SECRET=<value>
+npx convex env set MTC_MOMO_WEBHOOK_SECRET=<value>
+npx convex env set TN_MOBILE_WEBHOOK_SECRET=<value>
+npx convex env set IPS_WEBHOOK_SECRET=<value>
+
+# IPS (Bank of Namibia)
+npx convex env set IPS_ENABLED=true
+npx convex env set IPS_ENVIRONMENT=development
+npx convex env set IPS_ORG_ID=NAMLEND
+
+# TigerBeetle
+npx convex env set TIGERBEETLE_ADDRESS=tigerbeetle.namlend.com:3001
+npx convex env set TIGERBEETLE_CLUSTER_ID=0
 ```
 
-Do not expose service role keys in the client. Local admin client is gated by `VITE_ALLOW_LOCAL_ADMIN` and is intended only for dev.
-If you must use `VITE_SUPABASE_SERVICE_ROLE_KEY` for local admin utilities, keep it out of production builds.
+Do not expose secrets in `VITE_*` client environment variables. Only `VITE_CONVEX_URL` is safe to expose.
 
 ---
 

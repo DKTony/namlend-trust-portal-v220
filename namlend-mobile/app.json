@@ -5,7 +5,7 @@
     "version": "2.7.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "namlend",
     "splash": {
@@ -19,8 +19,11 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "We use Face ID to securely authenticate you.",
         "NSCameraUsageDescription": "We need camera access to capture documents for KYC verification.",
-        "NSPhotoLibraryUsageDescription": "We need photo library access to upload documents."
-      }
+        "NSPhotoLibraryUsageDescription": "We need photo library access to upload documents.",
+        "NSPhotoLibraryAddUsageDescription": "We need permission to save documents to your photo library.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,16 +31,14 @@
         "backgroundColor": "#2563eb"
       },
       "package": "com.namlend.mobile",
+      "versionCode": 1,
       "permissions": [
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT",
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "NOTIFICATIONS"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

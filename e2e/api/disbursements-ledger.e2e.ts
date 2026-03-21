@@ -33,14 +33,14 @@ async function signInWithRetry(
   return { data: null, error: new Error('Max auth retries exceeded') as any };
 }
 
-// Minimal validation of disbursements ledger read access for admin
-// Does not require any existing data; only asserts successful query
-// Skips automatically if env is not configured.
-
+// QUARANTINE: Legacy Supabase direct table access — reads from Supabase `disbursements` table.
+// Convex equivalent: api.disbursements.listDisbursements (not yet wired in this test).
+// Status: fail (legacy Supabase dependency) — tracked in plan N4 triage.
+// Self-skips when SUPABASE_URL / SUPABASE_ANON_KEY are absent.
 test.describe('Disbursements Ledger - Admin Read', () => {
   test.skip(
     !SUPABASE_URL || !SUPABASE_ANON_KEY,
-    'SUPABASE_URL and SUPABASE_ANON_KEY must be provided'
+    'QUARANTINE [legacy-supabase]: SUPABASE_URL and SUPABASE_ANON_KEY must be provided. Migrate to Convex api.disbursements in N2 batch.'
   );
 
   test('admin can query disbursements table (may be empty)', async () => {

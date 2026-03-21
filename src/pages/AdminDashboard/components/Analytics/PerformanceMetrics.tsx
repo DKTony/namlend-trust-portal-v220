@@ -1,8 +1,11 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, Target, Award, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
 
 interface MetricCard {
   title: string;
@@ -18,57 +21,91 @@ interface PerformanceMetricsProps {
 }
 
 const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) => {
-  // Mock performance metrics data
-  const performanceMetrics: MetricCard[] = [
-    {
-      title: 'Loan Approval Rate',
-      value: '78.5%',
-      change: '+2.3%',
-      trend: 'up',
-      target: '80%',
-      status: 'good'
-    },
-    {
-      title: 'Average Processing Time',
-      value: '2.4 days',
-      change: '-0.6 days',
-      trend: 'up',
-      target: '2 days',
-      status: 'warning'
-    },
-    {
-      title: 'Customer Satisfaction',
-      value: '4.6/5',
-      change: '+0.2',
-      trend: 'up',
-      target: '4.5/5',
-      status: 'excellent'
-    },
-    {
-      title: 'Default Rate',
-      value: '3.2%',
-      change: '-0.8%',
-      trend: 'up',
-      target: '<5%',
-      status: 'excellent'
-    },
-    {
-      title: 'Revenue Growth',
-      value: '15.7%',
-      change: '+3.2%',
-      trend: 'up',
-      target: '12%',
-      status: 'excellent'
-    },
-    {
-      title: 'Cost per Acquisition',
-      value: 'NAD 245',
-      change: '+NAD 15',
-      trend: 'down',
-      target: 'NAD 200',
-      status: 'warning'
-    }
-  ];
+  const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
+  const risk = useQuery(api.analytics.getRiskMetrics);
+  const revenue = useQuery(api.analytics.getRevenueMetrics, {});
+  const clients = useQuery(api.analytics.getClientMetrics);
+
+  const performanceMetrics: MetricCard[] = useMemo(() => {
+    const totalLoans = portfolio?.loans?.total ?? 0;
+    const approved = portfolio?.loans?.approved ?? 0;
+    const rejected = portfolio?.loans?.rejected ?? 0;
+    const decided = approved + rejected;
+    const approvalRate = decided > 0 ? ((approved / decided) * 100).toFixed(1) : '0';
+    const nplRatio = risk?.nplRatio ?? 0;
+    const totalCollected = revenue?.totalCollected ?? 0;
+    const totalClients = clients?.totalClients ?? 0;
+    const repeatRate =
+      totalClients > 0 ? (((clients?.repeatBorrowers ?? 0) / totalClients) * 100).toFixed(1) : '0';
+
+    return [
+      {
+        title: 'Loan Approval Rate',
+        value: `${approvalRate}%`,
+        change: `${totalLoans} total applications`,
+        trend: Number(approvalRate) >= 70 ? ('up' as const) : ('stable' as const),
+        target: '80%',
+        status:
+          Number(approvalRate) >= 80
+            ? ('excellent' as const)
+            : Number(approvalRate) >= 60
+              ? ('good' as const)
+              : ('warning' as const),
+      },
+      {
+        title: 'Total Collections',
+        value: formatNAD(totalCollected),
+        change: `${revenue?.paymentCount ?? 0} payments`,
+        trend: 'up' as const,
+        target: 'N/A',
+        status: totalCollected > 0 ? ('excellent' as const) : ('warning' as const),
+      },
+      {
+        title: 'Active Clients',
+        value: `${clients?.withActiveLoans ?? 0}`,
+        change: `${clients?.newThisMonth ?? 0} new this month`,
+        trend: (clients?.newThisMonth ?? 0) > 0 ? ('up' as const) : ('stable' as const),
+        target: 'Growing',
+        status: 'good' as const,
+      },
+      {
+        title: 'Default Rate (NPL)',
+        value: `${(nplRatio * 100).toFixed(1)}%`,
+        change: `${risk?.nonPerformingLoans ?? 0} overdue schedules`,
+        trend: nplRatio < 0.05 ? ('up' as const) : ('down' as const),
+        target: '<5%',
+        status:
+          nplRatio < 0.03
+            ? ('excellent' as const)
+            : nplRatio < 0.05
+              ? ('good' as const)
+              : nplRatio < 0.1
+                ? ('warning' as const)
+                : ('poor' as const),
+      },
+      {
+        title: 'Repeat Borrowers',
+        value: `${repeatRate}%`,
+        change: `${clients?.repeatBorrowers ?? 0} repeat clients`,
+        trend: Number(repeatRate) > 10 ? ('up' as const) : ('stable' as const),
+        target: '>15%',
+        status:
+          Number(repeatRate) >= 15
+            ? ('excellent' as const)
+            : Number(repeatRate) >= 10
+              ? ('good' as const)
+              : ('warning' as const),
+      },
+      {
+        title: 'KYC Verified',
+        value: `${clients?.kycApproved ?? 0}`,
+        change: `${clients?.kycPending ?? 0} pending`,
+        trend: (clients?.kycApproved ?? 0) > 0 ? ('up' as const) : ('stable' as const),
+        target: '100%',
+        status: (clients?.kycPending ?? 0) === 0 ? ('excellent' as const) : ('good' as const),
+      },
+    ];
+  }, [portfolio, risk, revenue, clients]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -123,9 +160,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Performance Metrics</h2>
-          <p className="text-muted-foreground">
-            Key performance indicators and business metrics
-          </p>
+          <p className="text-muted-foreground">Key performance indicators and business metrics</p>
         </div>
         <Badge variant="outline" className="text-sm">
           Updated 5 minutes ago
@@ -136,43 +171,51 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
         {performanceMetrics.map((metric, index) => (
           <Card key={index} className="relative">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {metric.title}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">{metric.title}</CardTitle>
               {getStatusIcon(metric.status)}
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1 mr-2">
-                    <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={metric.value}>
+                    <div
+                      className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                      title={metric.value}
+                    >
                       {metric.value}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 shrink-0">
                     {getTrendIcon(metric.trend)}
-                    <span className={`text-sm tabular-nums ${
-                      metric.trend === 'up' ? 'text-green-600' : 
-                      metric.trend === 'down' ? 'text-red-600' : 'text-gray-600'
-                    }`}>
+                    <span
+                      className={`text-sm tabular-nums ${
+                        metric.trend === 'up'
+                          ? 'text-green-600'
+                          : metric.trend === 'down'
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                      }`}
+                    >
                       {metric.change}
                     </span>
                   </div>
                 </div>
-                
+
                 {metric.target && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground truncate mr-2">Target: {metric.target}</span>
-                      <Badge 
-                        variant="secondary" 
+                      <span className="text-muted-foreground truncate mr-2">
+                        Target: {metric.target}
+                      </span>
+                      <Badge
+                        variant="secondary"
                         className={`${getStatusColor(metric.status)} shrink-0`}
                       >
                         {metric.status}
                       </Badge>
                     </div>
-                    <Progress 
-                      value={getProgressValue(metric.value, metric.target)} 
+                    <Progress
+                      value={getProgressValue(metric.value, metric.target)}
                       className="h-2"
                     />
                   </div>
@@ -187,9 +230,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
       <Card>
         <CardHeader>
           <CardTitle>Performance Summary</CardTitle>
-          <CardDescription>
-            Overall performance assessment and recommendations
-          </CardDescription>
+          <CardDescription>Overall performance assessment and recommendations</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">

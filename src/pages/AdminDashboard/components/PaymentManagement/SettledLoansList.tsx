@@ -1,18 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
-import { 
-  BadgeCheck, 
-  User, 
-  Calendar, 
-  DollarSign,
-  FileText,
-  RefreshCw,
-  Search
-} from 'lucide-react';
+import { BadgeCheck, User, Calendar, DollarSign, FileText, RefreshCw, Search } from 'lucide-react';
 
 interface SettledLoan {
   id: string;
@@ -35,72 +28,51 @@ interface SettledLoan {
 }
 
 const SettledLoansList: React.FC = () => {
-  const [loans, setLoans] = useState<SettledLoan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchSettledLoans = async () => {
-    setLoading(true);
-    try {
-      // Fetch settled loans
-      const { data: loansData, error: loansError } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('status', 'settled')
-        .order('settled_at', { ascending: false });
+  // Convex reactive queries
+  const rawLoans = useQuery(api.loans.adminListLoans, { status: 'paid_off' });
+  const rawUsers = useQuery(api.users.listUsers, {});
 
-      if (loansError) {
-        console.error('Error fetching settled loans:', loansError);
-        return;
-      }
+  const loading = rawLoans === undefined;
 
-      if (!loansData || loansData.length === 0) {
-        setLoans([]);
-        return;
-      }
-
-      // Get unique user IDs
-      const userIds = [...new Set(loansData.map(l => l.user_id))];
-
-      // Fetch profiles for these users
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name, email')
-        .in('user_id', userIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      }
-
-      // Create a map of user_id to profile
-      const profileMap = new Map(
-        (profilesData || []).map(p => [p.user_id, p])
-      );
-
-      // Combine loans with profiles
-      const loansWithProfiles = loansData.map(loan => ({
-        ...loan,
-        profile: profileMap.get(loan.user_id) || undefined
-      }));
-
-      setLoans(loansWithProfiles);
-    } catch (err) {
-      console.error('Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSettledLoans();
-  }, []);
+  const loans: SettledLoan[] = useMemo(() => {
+    if (!rawLoans) return [];
+    const userMap = new Map((rawUsers ?? []).map((u: any) => [String(u._id), u]));
+    return rawLoans.map((l: any) => {
+      const user = userMap.get(String(l.userId)) as
+        | { fullName?: string; email?: string }
+        | undefined;
+      return {
+        id: String(l._id),
+        user_id: String(l.userId ?? ''),
+        amount: l.principal ?? 0,
+        total_repayment: l.totalPaid ?? l.principal ?? 0,
+        total_paid: l.totalPaid ?? 0,
+        term_months: l.termMonths ?? 0,
+        interest_rate: l.interestRate ?? 0,
+        purpose: l.purpose ?? '',
+        status: l.status ?? 'paid_off',
+        disbursed_at: l.disbursedAt ? new Date(l.disbursedAt).toISOString() : '',
+        settled_at: l.completedAt ? new Date(l.completedAt).toISOString() : '',
+        created_at: l.createdAt ? new Date(l.createdAt).toISOString() : '',
+        profile: user
+          ? {
+              first_name: user.fullName?.split(' ')[0] ?? '',
+              last_name: user.fullName?.split(' ').slice(1).join(' ') ?? '',
+              email: user.email ?? '',
+            }
+          : undefined,
+      };
+    });
+  }, [rawLoans, rawUsers]);
 
   const getFullName = (profile?: { first_name: string; last_name: string }) => {
     if (!profile) return 'Unknown Client';
     return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown Client';
   };
 
-  const filteredLoans = loans.filter(loan => {
+  const filteredLoans = loans.filter((loan) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     const fullName = getFullName(loan.profile);
@@ -117,7 +89,7 @@ const SettledLoansList: React.FC = () => {
     return new Date(dateString).toLocaleDateString('en-ZA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -158,14 +130,17 @@ const SettledLoansList: React.FC = () => {
                   {filteredLoans.length} Settled Loan{filteredLoans.length !== 1 ? 's' : ''}
                 </h3>
                 <p className="text-sm text-teal-700 dark:text-teal-400">
-                  Total collected: {formatNAD(filteredLoans.reduce((sum, l) => sum + (l.total_paid || l.total_repayment || 0), 0))}
+                  Total collected:{' '}
+                  {formatNAD(
+                    filteredLoans.reduce(
+                      (sum, l) => sum + (l.total_paid || l.total_repayment || 0),
+                      0
+                    )
+                  )}
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={fetchSettledLoans}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            {/* Convex queries are reactive — data auto-refreshes */}
           </div>
         </CardContent>
       </Card>
@@ -178,7 +153,9 @@ const SettledLoansList: React.FC = () => {
               <BadgeCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No Settled Loans</h3>
               <p className="text-muted-foreground">
-                {searchTerm ? 'No loans match your search criteria' : 'No loans have been fully settled yet'}
+                {searchTerm
+                  ? 'No loans match your search criteria'
+                  : 'No loans have been fully settled yet'}
               </p>
             </div>
           </CardContent>
@@ -199,36 +176,62 @@ const SettledLoansList: React.FC = () => {
                         ID: {loan.id.slice(0, 8)}...
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 mb-3 min-w-0">
                       <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium truncate text-foreground" title={getFullName(loan.profile)}>{getFullName(loan.profile)}</span>
-                      <span className="text-sm text-muted-foreground truncate" title={loan.profile?.email || 'No email'}>({loan.profile?.email || 'No email'})</span>
+                      <span
+                        className="font-medium truncate text-foreground"
+                        title={getFullName(loan.profile)}
+                      >
+                        {getFullName(loan.profile)}
+                      </span>
+                      <span
+                        className="text-sm text-muted-foreground truncate"
+                        title={loan.profile?.email || 'No email'}
+                      >
+                        ({loan.profile?.email || 'No email'})
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Principal</p>
-                        <p className="font-semibold truncate tabular-nums text-foreground" title={formatNAD(loan.amount)}>{formatNAD(loan.amount)}</p>
+                        <p
+                          className="font-semibold truncate tabular-nums text-foreground"
+                          title={formatNAD(loan.amount)}
+                        >
+                          {formatNAD(loan.amount)}
+                        </p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Total Paid</p>
-                        <p className="font-semibold text-teal-600 dark:text-teal-400 truncate tabular-nums" title={formatNAD(loan.total_paid || loan.total_repayment)}>{formatNAD(loan.total_paid || loan.total_repayment)}</p>
+                        <p
+                          className="font-semibold text-teal-600 dark:text-teal-400 truncate tabular-nums"
+                          title={formatNAD(loan.total_paid || loan.total_repayment)}
+                        >
+                          {formatNAD(loan.total_paid || loan.total_repayment)}
+                        </p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Disbursed</p>
-                        <p className="font-medium truncate tabular-nums text-foreground">{formatDate(loan.disbursed_at)}</p>
+                        <p className="font-medium truncate tabular-nums text-foreground">
+                          {formatDate(loan.disbursed_at)}
+                        </p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Settled</p>
-                        <p className="font-medium text-teal-600 dark:text-teal-400 truncate tabular-nums">{formatDate(loan.settled_at)}</p>
+                        <p className="font-medium text-teal-600 dark:text-teal-400 truncate tabular-nums">
+                          {formatDate(loan.settled_at)}
+                        </p>
                       </div>
                     </div>
 
                     {loan.purpose && (
                       <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground min-w-0">
                         <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate" title={loan.purpose}>{loan.purpose}</span>
+                        <span className="truncate" title={loan.purpose}>
+                          {loan.purpose}
+                        </span>
                       </div>
                     )}
                   </div>

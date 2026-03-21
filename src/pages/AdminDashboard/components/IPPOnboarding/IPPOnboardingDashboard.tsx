@@ -1,19 +1,13 @@
 /**
  * IPP Onboarding Dashboard
- * 
+ *
  * Admin dashboard component for managing IPP/IPS customer onboarding.
  * Allows admins to view onboarding status, initiate onboarding, and manage users.
  */
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -57,12 +51,29 @@ import {
   Shield,
   Loader2,
 } from 'lucide-react';
-import {
-  getOnboardingSummary,
-  getUsersPendingOnboarding,
-  adminInitiateOnboarding,
-  refreshSoVProviders,
-} from '@/services/ipsOnboardingService';
+// TODO: Wire to Convex IPS onboarding queries/mutations when available
+const getOnboardingSummary = async (): Promise<any> => ({
+  success: true,
+  stats: {
+    total_users: 0,
+    ipp_ready: 0,
+    in_progress: 0,
+    not_started: 0,
+    suspended: 0,
+    with_errors: 0,
+    by_state: {},
+  },
+});
+const getUsersPendingOnboarding = async (
+  _limit: number,
+  _offset: number,
+  _state?: string
+): Promise<any> => ({ success: true, users: [] as any[] });
+const adminInitiateOnboarding = async (_userId: string, _mobile?: string): Promise<any> => ({
+  success: true,
+  message: 'Onboarding initiated (placeholder)',
+});
+const refreshSoVProviders = async (): Promise<any> => ({ success: true, providers: [] as any[] });
 import type {
   IPPOnboardingState,
   IPPPendingOnboardingUser,
@@ -102,13 +113,9 @@ function StatCard({ title, value, icon, description, color = 'blue' }: StatCardP
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className="text-2xl font-bold text-foreground">{value}</p>
-            {description && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            )}
+            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
           </div>
-          <div className={`p-3 rounded-full ${colorClasses[color]}`}>
-            {icon}
-          </div>
+          <div className={`p-3 rounded-full ${colorClasses[color]}`}>{icon}</div>
         </div>
       </CardContent>
     </Card>
@@ -122,7 +129,7 @@ function StatCard({ title, value, icon, description, color = 'blue' }: StatCardP
 export function IPPOnboardingDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState<IPPOnboardingState | 'all'>('all');
@@ -132,19 +139,24 @@ export function IPPOnboardingDashboard() {
   const [initiateMobile, setInitiateMobile] = useState('');
 
   // Queries
-  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['ipp-onboarding-summary'],
     queryFn: getOnboardingSummary,
     staleTime: 30000,
   });
 
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    refetch: refetchUsers,
+  } = useQuery({
     queryKey: ['ipp-onboarding-users', stateFilter],
-    queryFn: () => getUsersPendingOnboarding(
-      100,
-      0,
-      stateFilter === 'all' ? undefined : stateFilter
-    ),
+    queryFn: () =>
+      getUsersPendingOnboarding(100, 0, stateFilter === 'all' ? undefined : stateFilter),
     staleTime: 30000,
   });
 
@@ -198,17 +210,18 @@ export function IPPOnboardingDashboard() {
   });
 
   // Filtered users
-  const filteredUsers = usersData?.users?.filter((user) => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      user.first_name?.toLowerCase().includes(search) ||
-      user.last_name?.toLowerCase().includes(search) ||
-      user.email?.toLowerCase().includes(search) ||
-      user.phone?.includes(search) ||
-      user.long_alias?.toLowerCase().includes(search)
-    );
-  }) || [];
+  const filteredUsers =
+    usersData?.users?.filter((user) => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        user.first_name?.toLowerCase().includes(search) ||
+        user.last_name?.toLowerCase().includes(search) ||
+        user.email?.toLowerCase().includes(search) ||
+        user.phone?.includes(search) ||
+        user.long_alias?.toLowerCase().includes(search)
+      );
+    }) || [];
 
   // Stats from summary
   const stats = summary?.stats || {
@@ -264,18 +277,11 @@ export function IPPOnboardingDashboard() {
             )}
             Refresh Providers
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshAll}
-          >
+          <Button variant="outline" size="sm" onClick={handleRefreshAll}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Data
           </Button>
-          <Button
-            size="sm"
-            onClick={() => setShowInitiateDialog(true)}
-          >
+          <Button size="sm" onClick={() => setShowInitiateDialog(true)}>
             <PlayCircle className="h-4 w-4 mr-2" />
             Initiate Onboarding
           </Button>
@@ -440,11 +446,7 @@ export function IPPOnboardingDashboard() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -461,25 +463,24 @@ export function IPPOnboardingDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Onboarding State Distribution</CardTitle>
-              <CardDescription>
-                Overview of users by onboarding state
-              </CardDescription>
+              <CardDescription>Overview of users by onboarding state</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {summary?.stats?.by_state && Object.entries(summary.stats.by_state).map(([state, count]) => (
-                  <div
-                    key={state}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Badge className={IPP_ONBOARDING_STATE_COLORS[state as IPPOnboardingState]}>
-                        {IPP_ONBOARDING_STATE_LABELS[state as IPPOnboardingState]}
-                      </Badge>
+                {summary?.stats?.by_state &&
+                  Object.entries(summary.stats.by_state).map(([state, count]) => (
+                    <div
+                      key={state}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Badge className={IPP_ONBOARDING_STATE_COLORS[state as IPPOnboardingState]}>
+                          {IPP_ONBOARDING_STATE_LABELS[state as IPPOnboardingState]}
+                        </Badge>
+                      </div>
+                      <span className="text-lg font-semibold text-foreground">{count}</span>
                     </div>
-                    <span className="text-lg font-semibold text-foreground">{count}</span>
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -488,9 +489,7 @@ export function IPPOnboardingDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Onboarding Flow</CardTitle>
-              <CardDescription>
-                Steps in the IPP customer onboarding process
-              </CardDescription>
+              <CardDescription>Steps in the IPP customer onboarding process</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -563,7 +562,9 @@ export function IPPOnboardingDashboard() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Mobile Number (optional)</label>
+              <label className="text-sm font-medium text-foreground">
+                Mobile Number (optional)
+              </label>
               <Input
                 placeholder="+264 81 234 5678"
                 value={initiateMobile}
@@ -621,9 +622,7 @@ export function IPPOnboardingDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">IPS PIN</p>
-                  <p className="text-foreground">
-                    {selectedUser.ips_pin_set ? 'Set' : 'Not Set'}
-                  </p>
+                  <p className="text-foreground">{selectedUser.ips_pin_set ? 'Set' : 'Not Set'}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm font-medium text-muted-foreground">VPA Alias</p>

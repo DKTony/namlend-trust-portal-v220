@@ -11,12 +11,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  recordCollectionActivity, 
-  ActivityType, 
-  ContactMethod,
-  RecordActivityInput 
-} from '@/services/collectionsService';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+// Inline types (previously from collectionsService)
+type ActivityType =
+  | 'call_attempt'
+  | 'sms_sent'
+  | 'email_sent'
+  | 'whatsapp_sent'
+  | 'promise_to_pay'
+  | 'payment_received'
+  | 'field_visit'
+  | 'letter_sent'
+  | 'escalation'
+  | 'legal_notice'
+  | 'note';
+type ContactMethod = 'phone' | 'sms' | 'email' | 'whatsapp' | 'in_person' | 'letter';
+interface RecordActivityInput {
+  loan_id: string;
+  activity_type: ActivityType;
+  contact_method: ContactMethod;
+  outcome: string;
+  notes?: string;
+  promise_date?: string;
+  promise_amount?: number;
+  next_action_date?: string;
+  next_action_type?: string;
+}
 import { Loader2, CheckCircle, Phone, Mail, MessageSquare } from 'lucide-react';
 
 interface Props {
@@ -38,7 +60,7 @@ const activityTypes: { value: ActivityType; label: string }[] = [
   { value: 'letter_sent', label: 'Letter Sent' },
   { value: 'escalation', label: 'Escalation' },
   { value: 'legal_notice', label: 'Legal Notice' },
-  { value: 'note', label: 'General Note' }
+  { value: 'note', label: 'General Note' },
 ];
 
 const contactMethods: { value: ContactMethod; label: string }[] = [
@@ -47,7 +69,7 @@ const contactMethods: { value: ContactMethod; label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'whatsapp', label: 'WhatsApp' },
   { value: 'in_person', label: 'In Person' },
-  { value: 'letter', label: 'Letter' }
+  { value: 'letter', label: 'Letter' },
 ];
 
 export const RecordActivityModal: React.FC<Props> = ({
@@ -55,7 +77,7 @@ export const RecordActivityModal: React.FC<Props> = ({
   onClose,
   onSuccess,
   loanId,
-  clientName
+  clientName,
 }) => {
   const [activityType, setActivityType] = useState<ActivityType>('call_attempt');
   const [contactMethod, setContactMethod] = useState<ContactMethod>('phone');
@@ -67,6 +89,7 @@ export const RecordActivityModal: React.FC<Props> = ({
   const [nextActionType, setNextActionType] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const recordInteraction = useMutation(api.collections.recordInteraction);
 
   const handleClose = () => {
     if (!loading) {
@@ -92,7 +115,7 @@ export const RecordActivityModal: React.FC<Props> = ({
       toast({
         title: 'Validation Error',
         description: 'Outcome is required',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -101,7 +124,7 @@ export const RecordActivityModal: React.FC<Props> = ({
       toast({
         title: 'Validation Error',
         description: 'Promise date and amount are required for payment promises',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -117,32 +140,36 @@ export const RecordActivityModal: React.FC<Props> = ({
         promise_date: promiseDate || undefined,
         promise_amount: promiseAmount ? parseFloat(promiseAmount) : undefined,
         next_action_date: nextActionDate || undefined,
-        next_action_type: nextActionType.trim() || undefined
+        next_action_type: nextActionType.trim() || undefined,
       };
 
-      const result = await recordCollectionActivity(input);
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Collection activity recorded successfully'
-        });
-        resetForm();
-        onSuccess();
-        onClose();
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to record activity',
-          variant: 'destructive'
-        });
-      }
+      await recordInteraction({
+        loanId: loanId as Id<'loans'>,
+        activityType: input.activity_type,
+        activityStatus: 'completed' as const,
+        contactMethod: input.contact_method,
+        outcome: input.outcome,
+        notes: input.notes,
+        promiseDate: input.promise_date ? new Date(input.promise_date).getTime() : undefined,
+        promiseAmount: input.promise_amount,
+        nextActionDate: input.next_action_date
+          ? new Date(input.next_action_date).getTime()
+          : undefined,
+        nextActionType: input.next_action_type,
+      });
+      toast({
+        title: 'Success',
+        description: 'Collection activity recorded successfully',
+      });
+      resetForm();
+      onSuccess();
+      onClose();
     } catch (error) {
       console.error('Record activity error:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -159,9 +186,7 @@ export const RecordActivityModal: React.FC<Props> = ({
             <MessageSquare className="h-5 w-5 text-blue-600" />
             <span>Record Collection Activity</span>
           </DialogTitle>
-          <DialogDescription>
-            Record contact attempt or activity for {clientName}
-          </DialogDescription>
+          <DialogDescription>Record contact attempt or activity for {clientName}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -220,9 +245,7 @@ export const RecordActivityModal: React.FC<Props> = ({
               maxLength={500}
               required
             />
-            <p className="text-xs text-gray-500 text-right">
-              {outcome.length}/500 characters
-            </p>
+            <p className="text-xs text-gray-500 text-right">{outcome.length}/500 characters</p>
           </div>
 
           {/* Notes */}
@@ -239,16 +262,14 @@ export const RecordActivityModal: React.FC<Props> = ({
               disabled={loading}
               maxLength={1000}
             />
-            <p className="text-xs text-gray-500 text-right">
-              {notes.length}/1000 characters
-            </p>
+            <p className="text-xs text-gray-500 text-right">{notes.length}/1000 characters</p>
           </div>
 
           {/* Promise Fields (conditional) */}
           {showPromiseFields && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
               <h4 className="font-medium text-blue-900">Payment Promise Details</h4>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="promise-date" className="text-sm font-medium">
@@ -286,7 +307,7 @@ export const RecordActivityModal: React.FC<Props> = ({
           {/* Next Action */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
             <h4 className="font-medium text-gray-900">Schedule Next Action</h4>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="next-action-date" className="text-sm font-medium">
@@ -320,17 +341,10 @@ export const RecordActivityModal: React.FC<Props> = ({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleClose} 
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !outcome.trim()}
-          >
+          <Button onClick={handleSubmit} disabled={loading || !outcome.trim()}>
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

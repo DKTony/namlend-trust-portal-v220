@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, ShieldCheck, Mail, Lock, ArrowRight, User, Phone, FileText, Key } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, ShieldCheck, Mail, Lock, ArrowRight, User, Phone, FileText } from 'lucide-react';
 import { z } from 'zod';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -11,17 +10,21 @@ import { ThemedInput } from '@/components/ui/ThemedInput';
 import { cn } from '@/lib/utils';
 
 // Email validation schema
-const emailSchema = z.string().email('Please enter a valid email address').min(1, 'Email is required');
+const emailSchema = z
+  .string()
+  .email('Please enter a valid email address')
+  .min(1, 'Email is required');
 
 type AuthMode = 'login' | 'signup' | 'forgot_password';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading, resetPassword, updatePassword, userRole, isAdmin } = useAuth();
+  const { user, signIn, signUp, loading, resetPassword, updatePassword, userRole, isAdmin } =
+    useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextParam = searchParams.get('next');
-  
+
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +32,7 @@ export default function Auth() {
   // Form States
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Signup State
   const [signupData, setSignupData] = useState({
     firstName: '',
@@ -38,7 +41,7 @@ export default function Auth() {
     password: '',
     confirmPassword: '',
     phone: '',
-    idNumber: ''
+    idNumber: '',
   });
 
   // Password Reset State
@@ -72,86 +75,42 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const emailValidation = emailSchema.safeParse(email.trim());
       if (!emailValidation.success) {
         toast({
-          title: "Invalid Email",
+          title: 'Invalid Email',
           description: emailValidation.error.errors[0].message,
-          variant: "destructive"
+          variant: 'destructive',
         });
         setIsLoading(false);
         return;
       }
 
       const normalizedLoginEmail = email.trim().toLowerCase();
-      
-      const { error, data } = await signIn(normalizedLoginEmail, password);
+
+      const { error } = await signIn(normalizedLoginEmail, password);
       if (error) {
         toast({
-          title: "Login Failed",
+          title: 'Login Failed',
           description: error.message,
-          variant: "destructive"
+          variant: 'destructive',
         });
         setIsLoading(false);
         return;
       }
-      if (data?.session) {
-        try {
-          window.localStorage.setItem('namlend-auth', JSON.stringify(data.session));
-        } catch {}
-      }
 
-      // Wait for auth state to settle and role to be determined
-      // Poll for userRole to be set in auth context (max 3 seconds)
-      let attempts = 0;
-      const maxAttempts = 30;
-      
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-        
-        // Check if we have a session
-        const { data: { user: sessionUser } } = await supabase.auth.getUser();
-        if (!sessionUser) continue;
-
-        if (!data?.session) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            try {
-              window.localStorage.setItem('namlend-auth', JSON.stringify(session));
-            } catch {}
-          }
-        }
-        
-        // Query role directly for navigation decision
-        const { data: rolesData } = await supabase.from('user_roles').select('role').eq('user_id', sessionUser.id);
-        const roles = rolesData?.map(r => r.role) ?? [];
-        
-        let resolvedRole = 'client';
-        if (roles.includes('admin')) resolvedRole = 'admin';
-        else if (roles.includes('loan_officer')) resolvedRole = 'loan_officer';
-        
-        // Role is determined by database - no email-based fallbacks for security
-        
-        // Navigate based on role
-        if (resolvedRole === 'admin' || resolvedRole === 'loan_officer') {
-          toast({ title: "Welcome back!", description: `Logged in as ${resolvedRole}.` });
-          navigate('/admin', { replace: true });
-        } else {
-          toast({ title: "Welcome back!", description: `You have been successfully logged in.` });
-          navigate('/dashboard', { replace: true });
-        }
-        return;
-      }
-      
-      // Fallback if polling times out
-      toast({ title: "Login Error", description: "Session timeout. Please try again.", variant: "destructive" });
-      
+      // Convex Auth handles session natively. The useEffect redirect (line ~58)
+      // will fire once `user` and `userRole` populate from reactive queries.
+      toast({ title: 'Welcome back!', description: 'You have been successfully logged in.' });
     } catch (error) {
       console.error('Login error:', error);
-      toast({ title: "Login Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast({
+        title: 'Login Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +119,11 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (signupData.password !== signupData.confirmPassword) {
-      toast({ title: "Password Mismatch", description: "Passwords do not match.", variant: "destructive" });
+      toast({
+        title: 'Password Mismatch',
+        description: 'Passwords do not match.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -168,32 +131,34 @@ export default function Auth() {
     try {
       const emailCheck = emailSchema.safeParse(signupData.email.trim());
       if (!emailCheck.success) {
-        toast({ title: "Invalid Email", description: emailCheck.error.errors[0].message, variant: "destructive" });
+        toast({
+          title: 'Invalid Email',
+          description: emailCheck.error.errors[0].message,
+          variant: 'destructive',
+        });
         setIsLoading(false);
         return;
       }
 
       const normalizedSignupEmail = emailCheck.data.toLowerCase();
       const { error } = await signUp(normalizedSignupEmail, signupData.password, {
-        first_name: signupData.firstName,
-        last_name: signupData.lastName,
+        full_name: `${signupData.firstName} ${signupData.lastName}`.trim(),
         phone: signupData.phone,
-        id_number: signupData.idNumber
       });
-      
+
       if (error) {
-        toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+        toast({ title: 'Registration Failed', description: error.message, variant: 'destructive' });
       } else {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('user_roles').insert({ user_id: user.id, role: 'client' });
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-        toast({ title: "Account Created", description: `Welcome! Your account has been created.` });
+        // Profile + role are created by convex/auth.ts afterUserCreatedOrUpdated callback.
+        // The useEffect redirect will fire once auth state settles.
+        toast({ title: 'Account Created', description: 'Welcome! Your account has been created.' });
       }
     } catch (error) {
-      toast({ title: "Registration Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast({
+        title: 'Registration Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -205,20 +170,28 @@ export default function Auth() {
     try {
       const emailValidation = emailSchema.safeParse(forgotPasswordEmail.trim());
       if (!emailValidation.success) {
-        toast({ title: "Invalid Email", description: emailValidation.error.errors[0].message, variant: "destructive" });
+        toast({
+          title: 'Invalid Email',
+          description: emailValidation.error.errors[0].message,
+          variant: 'destructive',
+        });
         setIsLoading(false);
         return;
       }
 
       const { error } = await resetPassword(forgotPasswordEmail.trim().toLowerCase());
       if (error) {
-        toast({ title: "Reset Failed", description: error.message, variant: "destructive" });
+        toast({ title: 'Reset Failed', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: "Email Sent", description: "Check your email for reset instructions." });
+        toast({ title: 'Email Sent', description: 'Check your email for reset instructions.' });
         setAuthMode('login');
       }
     } catch (error) {
-      toast({ title: "Reset Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast({
+        title: 'Reset Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -227,11 +200,19 @@ export default function Auth() {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast({ title: "Password Mismatch", description: "Passwords do not match.", variant: "destructive" });
+      toast({
+        title: 'Password Mismatch',
+        description: 'Passwords do not match.',
+        variant: 'destructive',
+      });
       return;
     }
     if (newPassword.length < 6) {
-      toast({ title: "Password Too Short", description: "Minimum 6 characters required.", variant: "destructive" });
+      toast({
+        title: 'Password Too Short',
+        description: 'Minimum 6 characters required.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -239,15 +220,19 @@ export default function Auth() {
     try {
       const { error } = await updatePassword(newPassword);
       if (error) {
-        toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+        toast({ title: 'Update Failed', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: "Success", description: "Password updated. Please sign in." });
+        toast({ title: 'Success', description: 'Password updated. Please sign in.' });
         setIsPasswordReset(false);
         setAuthMode('login');
         navigate('/dashboard');
       }
     } catch (error) {
-      toast({ title: "Update Error", description: "An unexpected error occurred.", variant: "destructive" });
+      toast({
+        title: 'Update Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -255,20 +240,26 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center", styles.background)}>
-        <Loader2 className={cn("h-8 w-8 animate-spin", styles.textClass)} />
+      <div className={cn('min-h-screen flex items-center justify-center', styles.background)}>
+        <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
       </div>
     );
   }
 
   return (
-    <div className={cn("min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500", styles.background)}>
-      <div className={cn(
-        "max-w-5xl w-full overflow-hidden flex md:min-h-[650px]",
-        styles.cardClass,
-        styles.radius
-      )}>
-        
+    <div
+      className={cn(
+        'min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500',
+        styles.background
+      )}
+    >
+      <div
+        className={cn(
+          'max-w-5xl w-full overflow-hidden flex md:min-h-[650px]',
+          styles.cardClass,
+          styles.radius
+        )}
+      >
         {/* Left Side: Brand & Visual */}
         <div className="w-1/2 bg-zinc-950 text-white p-12 hidden md:flex flex-col justify-between relative overflow-hidden">
           {/* Abstract Background Elements */}
@@ -277,17 +268,20 @@ export default function Auth() {
 
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-primary-foreground text-xl shadow-glow">N</div>
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-primary-foreground text-xl shadow-glow">
+                N
+              </div>
               <span className="text-xl font-bold tracking-tight text-white">NamLend Trust</span>
             </div>
           </div>
 
           <div className="relative z-10 max-w-md">
             <h2 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight text-white">
-              Financial freedom <br/> <span className="text-zinc-400">starts here.</span>
+              Financial freedom <br /> <span className="text-zinc-400">starts here.</span>
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed">
-              Access fair, regulated loans with AI-powered instant approval. Designed for the modern Namibian economy.
+              Access fair, regulated loans with AI-powered instant approval. Designed for the modern
+              Namibian economy.
             </p>
           </div>
 
@@ -298,29 +292,39 @@ export default function Auth() {
         </div>
 
         {/* Right Side: Form */}
-        <div className={cn("w-full md:w-1/2 p-5 sm:p-8 lg:p-12 flex flex-col justify-center relative", styles.variant === 'glass' ? "bg-white/5 backdrop-blur-sm" : "bg-card")}>
+        <div
+          className={cn(
+            'w-full md:w-1/2 p-5 sm:p-8 lg:p-12 flex flex-col justify-center relative',
+            styles.variant === 'glass' ? 'bg-white/5 backdrop-blur-sm' : 'bg-card'
+          )}
+        >
           <div className="max-w-md mx-auto w-full">
-            
             {/* Header Section */}
             <div className="mb-8">
               {isPasswordReset ? (
                 <>
-                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Reset Password</h3>
+                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                    Reset Password
+                  </h3>
                   <p className="text-muted-foreground">Create a new secure password.</p>
                 </>
               ) : authMode === 'login' ? (
                 <>
-                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Welcome back</h3>
+                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>Welcome back</h3>
                   <p className="text-muted-foreground">Please enter your details to sign in.</p>
                 </>
               ) : authMode === 'signup' ? (
                 <>
-                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Create Account</h3>
+                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                    Create Account
+                  </h3>
                   <p className="text-muted-foreground">Join NamLend for instant loan access.</p>
                 </>
               ) : (
                 <>
-                  <h3 className={cn("text-2xl font-bold mb-2", styles.textClass)}>Forgot Password?</h3>
+                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                    Forgot Password?
+                  </h3>
                   <p className="text-muted-foreground">We'll send you a reset link.</p>
                 </>
               )}
@@ -331,7 +335,9 @@ export default function Auth() {
               // PASSWORD RESET FORM
               <form onSubmit={handlePasswordReset} className="space-y-5">
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>New Password</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>
+                    New Password
+                  </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
                     <ThemedInput
@@ -344,9 +350,11 @@ export default function Auth() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Confirm Password</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>
+                    Confirm Password
+                  </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
                     <ThemedInput
@@ -360,11 +368,7 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <ThemedButton
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4"
-                >
+                <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
                   {isLoading ? <Loader2 className="animate-spin" /> : 'Update Password'}
                 </ThemedButton>
               </form>
@@ -372,7 +376,7 @@ export default function Auth() {
               // LOGIN FORM
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
                     <ThemedInput
@@ -389,7 +393,9 @@ export default function Auth() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className={cn("text-sm font-semibold", styles.textClass)}>Password</label>
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      Password
+                    </label>
                     <button
                       type="button"
                       onClick={() => setAuthMode('forgot_password')}
@@ -418,7 +424,13 @@ export default function Auth() {
                   className="w-full mt-4"
                   data-testid="login-button"
                 >
-                  {isLoading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <>
+                      Sign In <ArrowRight size={20} />
+                    </>
+                  )}
                 </ThemedButton>
               </form>
             ) : authMode === 'signup' ? (
@@ -426,12 +438,19 @@ export default function Auth() {
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className={cn("text-sm font-semibold", styles.textClass)}>First Name</label>
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      First Name
+                    </label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <User
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
                       <ThemedInput
                         value={signupData.firstName}
-                        onChange={(e) => setSignupData({...signupData, firstName: e.target.value})}
+                        onChange={(e) =>
+                          setSignupData({ ...signupData, firstName: e.target.value })
+                        }
                         className="pl-10"
                         placeholder="John"
                         required
@@ -439,12 +458,17 @@ export default function Auth() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className={cn("text-sm font-semibold", styles.textClass)}>Last Name</label>
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      Last Name
+                    </label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <User
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
                       <ThemedInput
                         value={signupData.lastName}
-                        onChange={(e) => setSignupData({...signupData, lastName: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
                         className="pl-10"
                         placeholder="Doe"
                         required
@@ -454,13 +478,13 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
                     <ThemedInput
                       type="email"
                       value={signupData.email}
-                      onChange={(e) => setSignupData({...signupData, email: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       className="pl-10"
                       placeholder="name@example.com"
                       required
@@ -469,13 +493,16 @@ export default function Auth() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                    <label className={cn("text-sm font-semibold", styles.textClass)}>Phone</label>
+                  <div className="space-y-2">
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>Phone</label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <Phone
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
                       <ThemedInput
                         value={signupData.phone}
-                        onChange={(e) => setSignupData({...signupData, phone: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
                         className="pl-10"
                         placeholder="+264 81..."
                         required
@@ -483,12 +510,17 @@ export default function Auth() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className={cn("text-sm font-semibold", styles.textClass)}>ID Number</label>
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      ID Number
+                    </label>
                     <div className="relative">
-                      <FileText className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
+                      <FileText
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
                       <ThemedInput
                         value={signupData.idNumber}
-                        onChange={(e) => setSignupData({...signupData, idNumber: e.target.value})}
+                        onChange={(e) => setSignupData({ ...signupData, idNumber: e.target.value })}
                         className="pl-10"
                         placeholder="ID Number"
                         required
@@ -498,28 +530,32 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Password</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>Password</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
                     <ThemedInput
                       type="password"
                       value={signupData.password}
-                      onChange={(e) => setSignupData({...signupData, password: e.target.value})}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
                       className="pl-10"
                       placeholder="Create password"
                       required
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Confirm Password</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>
+                    Confirm Password
+                  </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
                     <ThemedInput
                       type="password"
                       value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData({...signupData, confirmPassword: e.target.value})}
+                      onChange={(e) =>
+                        setSignupData({ ...signupData, confirmPassword: e.target.value })
+                      }
                       className="pl-10"
                       placeholder="Confirm password"
                       required
@@ -527,19 +563,21 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <ThemedButton
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" /> : <>Create Account <ArrowRight size={20} /></>}
+                <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <>
+                      Create Account <ArrowRight size={20} />
+                    </>
+                  )}
                 </ThemedButton>
               </form>
             ) : (
               // FORGOT PASSWORD FORM
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <div className="space-y-2">
-                  <label className={cn("text-sm font-semibold", styles.textClass)}>Email</label>
+                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
                     <ThemedInput
@@ -553,16 +591,12 @@ export default function Auth() {
                   </div>
                 </div>
 
-                <ThemedButton
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4"
-                >
+                <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
                   {isLoading ? <Loader2 className="animate-spin" /> : 'Send Reset Link'}
                 </ThemedButton>
-                
+
                 <div className="text-center">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setAuthMode('login')}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
@@ -572,21 +606,27 @@ export default function Auth() {
                 </div>
               </form>
             )}
-            
+
             {/* Footer Links */}
             {!isPasswordReset && authMode !== 'forgot_password' && (
               <div className="mt-8 text-center">
                 {authMode === 'login' ? (
                   <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
-                    <button onClick={() => setAuthMode('signup')} className="text-foreground font-semibold hover:underline">
+                    <button
+                      onClick={() => setAuthMode('signup')}
+                      className="text-foreground font-semibold hover:underline"
+                    >
                       Create one
                     </button>
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <button onClick={() => setAuthMode('login')} className="text-foreground font-semibold hover:underline">
+                    <button
+                      onClick={() => setAuthMode('login')}
+                      className="text-foreground font-semibold hover:underline"
+                    >
                       Sign in
                     </button>
                   </p>

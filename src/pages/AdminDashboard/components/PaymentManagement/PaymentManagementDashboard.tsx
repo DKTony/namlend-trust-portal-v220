@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  CreditCard, 
-  Search, 
-  Filter, 
-  Download, 
+import {
+  CreditCard,
+  Search,
+  Filter,
+  Download,
   Plus,
   AlertTriangle,
   CheckCircle,
@@ -17,7 +16,7 @@ import {
   TrendingUp,
   Users,
   RefreshCw,
-  BadgeCheck
+  BadgeCheck,
 } from 'lucide-react';
 
 // Sub-components
@@ -33,74 +32,38 @@ interface PaymentManagementDashboardProps {
   onPaymentSelect?: (paymentId: string) => void;
 }
 
-const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({ 
-  onPaymentSelect 
+const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
+  onPaymentSelect,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'pending' | 'approved' | 'processing' | 'completed' | 'failed'
+  >('all');
+
   // Realtime updates
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewPayments, setHasNewPayments] = useState(false);
   const { toast } = useToast();
 
   const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
     setHasNewPayments(false);
   };
 
-  // Realtime subscription for payments
-  useEffect(() => {
-    const channel = supabase
-      .channel('payments-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'payments'
-        },
-        (payload) => {
-          console.log('Payment change detected:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setHasNewPayments(true);
-            toast({
-              title: 'New Payment',
-              description: 'A new payment has been initiated.',
-              duration: 5000,
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setHasNewPayments(true);
-            toast({
-              title: 'Payment Updated',
-              description: 'A payment status has changed.',
-              duration: 5000,
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [toast]);
+  // Note: Convex provides automatic reactivity — no manual subscription needed
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <p className="text-muted-foreground">
-            Manage payments, disbursements, and collections
-          </p>
+          <p className="text-muted-foreground">Manage payments, disbursements, and collections</p>
         </div>
         <div className="flex space-x-2">
           {hasNewPayments && (
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               size="sm"
               onClick={handleRefresh}
               className="bg-blue-600 hover:bg-blue-700 animate-pulse"
@@ -179,15 +142,11 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
 
         {/* Tab Content */}
         <TabsContent value="overview" className="space-y-4">
-          <PaymentsList
-            status="all"
-            searchTerm={searchTerm}
-            onPaymentSelect={onPaymentSelect}
-          />
+          <PaymentsList status="all" searchTerm={searchTerm} onPaymentSelect={onPaymentSelect} />
         </TabsContent>
 
         <TabsContent value="disbursements" className="space-y-4">
-          <DisbursementManager status={filterStatus as any} searchTerm={searchTerm} />
+          <DisbursementManager status={filterStatus} searchTerm={searchTerm} />
         </TabsContent>
 
         <TabsContent value="settled" className="space-y-4">

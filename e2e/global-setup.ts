@@ -1,28 +1,28 @@
 /**
  * Global Setup for E2E Tests
  *
- * Seeds necessary test data before UI tests run.
- * This ensures approved loans exist for disbursement testing.
+ * Architecture: Convex backend (active) + Supabase (legacy, retained for reference).
+ *
+ * UI tests authenticate via the Convex Auth login form (signInViaUI in fixtures.ts).
+ * Legacy Supabase RLS/RPC tests are quarantined and skipped when Supabase creds are absent.
+ *
+ * Supabase seeding is OPTIONAL — if creds are missing the setup completes without error
+ * and legacy Supabase tests self-skip via their own `test.skip(!supabaseUrl, ...)` guards.
  */
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-const DEFAULT_SUPABASE_PROJECT_ID = 'puahejtaskncpazjyxqp';
-
-const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL ||
-  (process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID
-    ? `https://${process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`
-    : `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`);
-
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-// Admin credentials for authentication
-const ADMIN_EMAIL = 'admin@test.namlend.com';
-const ADMIN_PASSWORD = 'test123';
+const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.convex.cloud';
 
-// Test user IDs
+// Admin credentials for authentication
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'test123';
+
+// Test user IDs (Supabase legacy — Convex uses opaque _id strings)
 const TEST_USERS = {
   admin: 'fbf720fd-7de2-4142-974f-6d6809f4f8c6',
   client1: '11111111-0000-0000-0000-000000000001',
@@ -31,7 +31,28 @@ const TEST_USERS = {
 };
 
 async function globalSetup() {
-  console.log('🌱 Global Setup: Seeding UI test data...');
+  console.log('🌱 Global Setup: Starting E2E environment check...');
+  console.log(`  Convex URL: ${CONVEX_URL}`);
+
+  // -------------------------------------------------------------------------
+  // Convex-first: UI tests use signInViaUI() from fixtures.ts.
+  // No seeding required for Convex — test users are created via Convex Auth.
+  // -------------------------------------------------------------------------
+  console.log('  ✅ Convex backend configured — UI tests will authenticate via login form');
+
+  // -------------------------------------------------------------------------
+  // Legacy Supabase seeding (OPTIONAL — skipped gracefully when creds absent)
+  // Required only for: disbursements-rls, documents-rls, disbursement,
+  //   admin-rpc, disbursements-ledger*, tigerbeetle-balance, approval-rpc-race-condition
+  // -------------------------------------------------------------------------
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.log('  ⚠️  VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY not set.');
+    console.log('      Legacy Supabase tests will self-skip via their own guards.');
+    console.log('🌱 Global Setup: Complete (Convex-only mode)');
+    return;
+  }
+
+  console.log('  Supabase creds found — seeding legacy test data...');
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -41,19 +62,19 @@ async function globalSetup() {
   });
 
   // Authenticate as admin to bypass RLS for data creation
-  console.log('  Authenticating as admin...');
+  console.log('  Authenticating as admin (Supabase)...');
   const { error: authError } = await supabase.auth.signInWithPassword({
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
   });
 
   if (authError) {
-    console.error('  ❌ Admin authentication failed:', authError.message);
-    throw new Error(
-      `Global Setup: Admin auth failed — ${authError.message}. Check VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and that admin@test.namlend.com exists.`
-    );
+    console.warn('  ⚠️  Supabase admin auth failed:', authError.message);
+    console.warn('      Legacy Supabase tests may fail. UI tests are unaffected.');
+    console.log('🌱 Global Setup: Complete (Supabase seeding skipped — auth failed)');
+    return;
   }
-  console.log('  ✅ Admin authenticated');
+  console.log('  ✅ Supabase admin authenticated');
 
   try {
     // Clean up existing UI test data

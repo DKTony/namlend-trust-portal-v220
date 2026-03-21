@@ -1,13 +1,14 @@
 /**
- * useBrandingConfig Hook
- * Manages branding configuration state, handlers, and persistence
+ * useBrandingConfig Hook — Convex-native.
+ * Manages branding configuration state, handlers, and persistence via Convex systemConfig.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { BrandingService } from '@/services/brandingService';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { useBranding } from '@/context/BrandingContext';
-import { BrandingConfig, DEFAULT_BRANDING } from '@/types/branding';
+import { BrandingConfig, DEFAULT_BRANDING, BRANDING_CONFIG_KEYS } from '@/types/branding';
 
 export interface UseBrandingConfigReturn {
   loading: boolean;
@@ -36,49 +37,47 @@ export interface UseBrandingConfigReturn {
 export default function useBrandingConfig(): UseBrandingConfigReturn {
   const { toast } = useToast();
   const { refreshBranding } = useBranding();
+  const setConfigMutation = useMutation(api.systemConfig.setConfig);
+
+  // Load branding config from Convex (reactive)
+  const brandingConfigs = useConvexQuery(api.systemConfig.getAllConfig, { category: 'branding' });
 
   // State
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<BrandingConfig>(DEFAULT_BRANDING);
   const [originalConfig, setOriginalConfig] = useState<BrandingConfig>(DEFAULT_BRANDING);
   const [hasChanges, setHasChanges] = useState(false);
   const [uploading, setUploading] = useState<'logo' | 'favicon' | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  const loading = brandingConfigs === undefined;
 
   // File input refs
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
 
-  // Load config on mount
+  // Parse Convex config items into BrandingConfig when data loads
   useEffect(() => {
-    loadConfig();
-  }, []);
+    if (brandingConfigs && !initialized) {
+      const parsed = { ...DEFAULT_BRANDING };
+      for (const item of brandingConfigs) {
+        const section = item.key.replace('branding.', '') as keyof BrandingConfig;
+        if (section in parsed && item.value) {
+          (parsed as Record<string, unknown>)[section] = item.value;
+        }
+      }
+      setConfig(parsed);
+      setOriginalConfig(parsed);
+      setInitialized(true);
+    }
+  }, [brandingConfigs, initialized]);
 
   // Track changes
   useEffect(() => {
     const changed = JSON.stringify(config) !== JSON.stringify(originalConfig);
     setHasChanges(changed);
   }, [config, originalConfig]);
-
-  const loadConfig = async () => {
-    setLoading(true);
-    try {
-      const result = await BrandingService.getAdminBranding();
-      if (result.success && result.data) {
-        setConfig(result.data);
-        setOriginalConfig(result.data);
-      }
-    } catch (error) {
-      console.error('Load config error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load branding configuration',
-        variant: 'destructive',
-      });
-    }
-    setLoading(false);
-  };
 
   // Update handlers for each section
   const updateGeneral = (key: keyof typeof config.general, value: string) => {
@@ -112,83 +111,72 @@ export default function useBrandingConfig(): UseBrandingConfigReturn {
     }));
   };
 
-  // File upload handler
+  // File upload handler — stores as data URL in config (Convex storage integration is a future enhancement)
   const handleFileUpload = async (file: File, type: 'logo' | 'favicon') => {
-    setUploading(type);
-    try {
-      const result = await BrandingService.uploadAsset(file, type);
-      if (result.success && result.url) {
-        updateAssets(type === 'logo' ? 'logo_url' : 'favicon_url', result.url);
-        toast({
-          title: 'Success',
-          description: `${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully`,
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Upload failed',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
+    const validTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml', 'image/x-icon'];
+    if (!validTypes.includes(file.type)) {
       toast({
         title: 'Error',
-        description: 'Failed to upload file',
+        description: 'Invalid file type. Allowed: PNG, JPEG, GIF, SVG, ICO',
         variant: 'destructive',
       });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'File too large. Maximum size is 5MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setUploading(type);
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      updateAssets(type === 'logo' ? 'logo_url' : 'favicon_url', dataUrl);
+      toast({
+        title: 'Success',
+        description: `${type === 'logo' ? 'Logo' : 'Favicon'} loaded. Save to persist.`,
+      });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to read file', variant: 'destructive' });
     }
     setUploading(null);
   };
 
   // File delete handler
   const handleDeleteAsset = async (type: 'logo' | 'favicon') => {
-    const url = type === 'logo' ? config.assets.logo_url : config.assets.favicon_url;
-    if (!url) return;
-
-    try {
-      const result = await BrandingService.deleteAsset(url);
-      if (result.success) {
-        updateAssets(type === 'logo' ? 'logo_url' : 'favicon_url', null);
-        toast({
-          title: 'Success',
-          description: `${type === 'logo' ? 'Logo' : 'Favicon'} removed`,
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to delete asset',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete asset',
-        variant: 'destructive',
-      });
-    }
+    updateAssets(type === 'logo' ? 'logo_url' : 'favicon_url', null);
+    toast({
+      title: 'Success',
+      description: `${type === 'logo' ? 'Logo' : 'Favicon'} removed. Save to persist.`,
+    });
   };
 
-  // Save handler
+  // Save handler — writes each branding section to Convex systemConfig
   const handleSave = async () => {
     setSaving(true);
     try {
-      const result = await BrandingService.saveBranding(config);
-
-      if (result.success) {
-        setOriginalConfig(config);
-        await refreshBranding();
-        toast({
-          title: 'Configuration Saved',
-          description: 'Branding settings updated successfully.',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save configuration',
-          variant: 'destructive',
+      const sections: (keyof BrandingConfig)[] = ['general', 'colors', 'assets', 'meta'];
+      for (const section of sections) {
+        await setConfigMutation({
+          key: BRANDING_CONFIG_KEYS[section],
+          value: config[section],
+          category: 'branding',
+          description: `Branding ${section} configuration`,
         });
       }
+      setOriginalConfig(config);
+      await refreshBranding();
+      toast({
+        title: 'Configuration Saved',
+        description: 'Branding settings updated successfully.',
+      });
     } catch (error) {
       toast({
         title: 'Error',

@@ -4,7 +4,7 @@
  * Displays in-app notifications with real-time updates and glassmorphism UI
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Bell, Check, CheckCheck, ExternalLink, Loader2, BellRing, Inbox } from 'lucide-react';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,13 +14,39 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
-import {
-  subscribeToNotifications,
-  formatNotificationTime,
-  type Notification,
-} from '@/services/notificationService';
 import { useNavigate } from 'react-router-dom';
-import { notificationsAPI } from '@/services/api-client';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import { type Id } from '@/integrations/convex/api';
+
+interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  category: string;
+  priority?: string;
+  action_url?: string | null;
+  action_label?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+function formatNotificationTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+}
 
 interface NotificationCenterProps {
   className?: string;
@@ -42,62 +68,44 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
   const { styles, isDark } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Fetch notifications via API Orchestration Layer
-  const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+  // Convex reactive queries — always subscribed, auto-update on changes
+  const rawNotifications = useConvexQuery(
+    api.notifications.getMyNotifications,
+    user ? { isRead: activeTab === 'unread' ? false : undefined } : 'skip'
+  );
 
-    setLoading(true);
-    try {
-      const result = await notificationsAPI.list({
-        limit: 50,
-        is_read: activeTab === 'unread' ? false : undefined,
-      });
+  const rawUnreadCount = useConvexQuery(api.notifications.getUnreadCount, user ? {} : 'skip');
 
-      if (result.success && result.data) {
-        const data = result.data as { notifications: Notification[]; unreadCount: number };
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, activeTab]);
+  const markReadMutation = useConvexMutation(api.notifications.markNotificationRead);
+  const markAllReadMutation = useConvexMutation(api.notifications.markAllNotificationsRead);
 
-  // Initial fetch and tab change
-  useEffect(() => {
-    if (open) {
-      fetchNotifications();
-    }
-  }, [open, fetchNotifications]);
+  const loading = open && rawNotifications === undefined;
+  const unreadCount = rawUnreadCount ?? 0;
 
-  // Real-time subscription
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const unsubscribe = subscribeToNotifications(user.id, (newNotification) => {
-      setNotifications((prev) => [newNotification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-    });
-
-    return unsubscribe;
-  }, [user?.id]);
+  const notifications: Notification[] = useMemo(() => {
+    if (!rawNotifications) return [];
+    return (rawNotifications as Array<Record<string, unknown>>).map((n) => ({
+      id: String(n._id),
+      user_id: String(n.userId ?? ''),
+      title: n.title ?? '',
+      message: n.message ?? n.body ?? '',
+      category: n.category ?? 'general',
+      is_read: n.isRead ?? false,
+      action_url: n.actionUrl ?? null,
+      action_label: String(n.actionLabel ?? ''),
+      created_at: n.createdAt ? new Date(n.createdAt).toISOString() : new Date().toISOString(),
+    }));
+  }, [rawNotifications]);
 
   // Handle notification click
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
-      const result = await notificationsAPI.markRead({ notification_id: notification.id });
-      if (result.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+      try {
+        await markReadMutation({ notificationId: notification.id as Id<'notifications'> });
+      } catch (err) {
+        console.error('Error marking notification read:', err);
       }
     }
 
@@ -109,10 +117,10 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
 
   // Mark all as read
   const handleMarkAllRead = async () => {
-    const result = await notificationsAPI.markAllRead();
-    if (result.success) {
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
+    try {
+      await markAllReadMutation();
+    } catch (err) {
+      console.error('Error marking all notifications read:', err);
     }
   };
 
@@ -249,7 +257,8 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
             className="w-full text-xs font-medium h-9 rounded-xl hover:bg-primary/5 hover:text-primary"
             onClick={() => {
               setOpen(false);
-              navigate('/notifications');
+              // Navigate to dashboard notifications tab for clients, admin for staff
+              navigate('/dashboard');
             }}
           >
             View Full History

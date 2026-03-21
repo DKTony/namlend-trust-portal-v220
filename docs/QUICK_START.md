@@ -1,8 +1,10 @@
 # NamLend Trust - Quick Start Guide
 
-**Doc Revision**: 2026-01-19
+**Doc Revision**: 2026-03-03
 **Status**: Active
 **Purpose**: Developer cheatsheet for common tasks
+
+> ⚠️ **Backend is Convex (migrated Feb 2026).** Use `npx convex dev` for backend changes — NOT Supabase CLI commands. See [ARCHITECTURE.md](./ARCHITECTURE.md) for full context.
 
 ---
 
@@ -42,8 +44,7 @@ npm run dev
 Required for local development:
 
 ```env
-VITE_SUPABASE_URL=https://puahejtaskncpazjyxqp.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-anon-key>
+VITE_CONVEX_URL=https://<your-deployment>.convex.cloud
 ```
 
 Optional for debugging:
@@ -51,7 +52,15 @@ Optional for debugging:
 ```env
 VITE_DEBUG_TOOLS=true
 VITE_RUN_DEV_SCRIPTS=true
-VITE_ALLOW_LOCAL_ADMIN=true # deprecated; prefer VITE_DEBUG_TOOLS
+```
+
+All API secrets (SMS, WhatsApp, IPS, TigerBeetle) are set as **Convex environment variables** (server-side only):
+
+```bash
+# Set secrets via Convex CLI (NOT in .env)
+npx convex env set AFRICASTALKING_API_KEY=xxx
+npx convex env set WHATSAPP_ACCESS_TOKEN=xxx
+npx convex env set IPS_API_KEY=xxx
 ```
 
 ---
@@ -66,12 +75,12 @@ npm run dev          # Starts on http://localhost:8080
 
 ### Test Credentials (E2E defaults)
 
-These map to the Playwright defaults in `e2e/helpers/auth.ts` and should exist in Supabase Auth.
+These map to the Playwright defaults in `e2e/helpers/auth.ts` and should exist in Convex Auth.
 
-| Role | Email | Password | Dashboard |
-|------|-------|----------|-----------|
-| Client | client1@test.namlend.com | test123 | /dashboard |
-| Admin | admin@test.namlend.com | test123 | /admin |
+| Role   | Email                      | Password | Dashboard  |
+| ------ | -------------------------- | -------- | ---------- |
+| Client | <client1@test.namlend.com> | test123  | /dashboard |
+| Admin  | <admin@test.namlend.com>   | test123  | /admin     |
 
 Override with env vars in CI or local runs:
 
@@ -121,82 +130,74 @@ npx playwright test --debug e2e/loan-application.e2e.ts
 
 ### Unit Tests (Vitest)
 
-```bash
-# Note: Vitest not currently in package.json
-# Install first if needed:
-npm install -D vitest
+Vitest is configured and ready. Test files live in `src/tests/`.
 
-# Then run:
-npx vitest
-npx vitest --ui
-npx vitest --coverage
+```bash
+# Run all unit tests
+npm run test:unit
+
+# Run with Vitest UI
+npm run test:unit -- --ui
+
+# Run with coverage
+npm run test:unit -- --coverage
 ```
 
 ---
 
-## Database
+## Database (Convex)
 
-### Regenerate TypeScript Types
-
-```bash
-# After schema changes, regenerate types
-npx supabase gen types typescript \
-  --project-id puahejtaskncpazjyxqp \
-  > src/integrations/supabase/types.ts
-```
-
-### Run Migrations Locally
+### Start Convex Dev Server
 
 ```bash
-# Start local Supabase
-npx supabase start
+# Start Convex dev server (auto-syncs schema + functions, watches for changes)
+npx convex dev
 
-# Apply migrations
-npx supabase db push
-
-# Reset database
-npx supabase db reset
+# TypeScript types auto-generate in convex/_generated/ on every sync
+# No manual type generation needed
 ```
 
-### Useful SQL Queries
+### Deploy to Production
 
-```sql
--- Check loan approval state
-SELECT id, status, request_type, created_at
-FROM approval_requests
-WHERE request_data->>'loan_id' = 'LOAN_ID_HERE'
-ORDER BY created_at DESC;
+```bash
+# Deploy schema + all functions to Convex Cloud
+npx convex deploy
 
--- View audit trail for a loan
-SELECT * FROM audit_logs
-WHERE table_name = 'loans'
-  AND record_id = 'LOAN_ID_HERE'
-ORDER BY created_at DESC;
-
--- Check pending disbursements
-SELECT d.*, l.amount as loan_amount
-FROM disbursements d
-JOIN loans l ON d.loan_id = l.id
-WHERE d.status = 'pending';
-
--- TigerBeetle sync status
-SELECT status, COUNT(*)
-FROM tigerbeetle_outbox
-GROUP BY status;
-
--- Overdue payments
-SELECT ps.*, l.id as loan_id
-FROM payment_schedules ps
-JOIN loans l ON ps.loan_id = l.id
-WHERE ps.due_date < NOW()
-  AND ps.status != 'paid';
+# Open Convex dashboard (logs, data browser, functions)
+npx convex dashboard
 ```
+
+### Schema Changes
+
+```bash
+# 1. Edit convex/schema.ts
+# 2. Run dev server — types auto-regenerate
+npx convex dev
+
+# 3. No migration files needed — Convex handles schema evolution
+```
+
+### Query Data via Convex Dashboard
+
+Open the Convex dashboard data browser to inspect tables:
+
+```bash
+npx convex dashboard  # → Data tab → select table
+```
+
+Useful checks:
+
+- **`loans`** table: filter by `status` to see pending/active loans
+- **`approvalRequests`** table: filter by `status: "pending"` to see approval queue
+- **`tigerBeetleOutbox`** table: filter by `status: "pending"` for unprocessed outbox entries
+- **`auditLogs`** table: filter by `entityType: "loans"` for loan audit trail
+- **`paymentSchedules`** table: filter by `status: "overdue"` for missed payments
 
 ---
 
 ## Deployment
 
-### Deploy to Netlify
+### Deploy Frontend to Netlify
 
 ```bash
 # Build for production
@@ -204,19 +205,22 @@ npm run build
 
 # Deploy (if Netlify CLI installed)
 netlify deploy --prod
+
+# Auto-deploys on push to main branch
 ```
 
-### Deploy Edge Functions
+### Deploy Convex Backend
 
 ```bash
-# Deploy single function
-npx supabase functions deploy ips-adapter
+# Deploy schema + all Convex functions to production
+npx convex deploy
 
-# Deploy all functions
-npx supabase functions deploy
-
-# Set secrets
-npx supabase secrets set IPS_API_KEY=xxx
+# Set Convex environment secrets (server-side only)
+npx convex env set AFRICASTALKING_API_KEY=xxx
+npx convex env set AFRICASTALKING_USERNAME=xxx
+npx convex env set WHATSAPP_ACCESS_TOKEN=xxx
+npx convex env set IPS_API_KEY=xxx
+npx convex env set TIGERBEETLE_ADDRESS=tigerbeetle.namlend.com:3001
 ```
 
 ---
@@ -248,58 +252,47 @@ export function MyComponent() {
 }
 ```
 
-### Adding a New Service
+### Adding a New Backend Query or Mutation
 
-1. Create file in `src/services/`
-2. Use Supabase client for data operations
-3. Add audit logging for financial operations
+1. Add to existing or new file in `convex/`
+2. Call auth guard at top of handler
+3. Schedule audit log for financial operations
 
 ```typescript
-// src/services/myService.ts
-import { supabase } from '@/integrations/supabase/client';
-import { createAuditLog } from '@/services/auditService';
+// convex/myModule.ts
+import { query, mutation } from './_generated/server';
+import { assertAuthenticated, assertStaff } from './lib/auth';
+import { scheduleAuditLog } from './lib/audit';
 
-export async function myOperation(params: MyParams) {
-  const { data, error } = await supabase
-    .rpc('my_rpc_function', params);
+export const myQuery = query({
+  handler: async (ctx) => {
+    const userId = await assertAuthenticated(ctx);
+    return ctx.db
+      .query('myTable')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .collect();
+  },
+});
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  // Audit financial operations
-  await createAuditLog({
-    table_name: 'my_table',
-    action: 'INSERT',
-    new_data: data,
-  });
-
-  return data;
-}
+export const myMutation = mutation({
+  args: {
+    /* define args with Convex validators */
+  },
+  handler: async (ctx, args) => {
+    await assertStaff(ctx);
+    const id = await ctx.db.insert('myTable', args);
+    await scheduleAuditLog(ctx, { action: 'INSERT', entityType: 'myTable', entityId: id });
+    return id;
+  },
+});
 ```
 
-### Adding a New RPC Function
+### Adding a Schema Table
 
-1. Create migration in `supabase/migrations/`
-2. Add RLS policies if needed
-3. Regenerate TypeScript types
-
-```sql
--- supabase/migrations/YYYYMMDDHHMMSS_add_my_function.sql
-CREATE OR REPLACE FUNCTION my_function(
-  p_param1 TEXT,
-  p_param2 INTEGER
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  -- Implementation
-  RETURN jsonb_build_object('success', true);
-END;
-$$;
-```
+1. Edit `convex/schema.ts` — add `defineTable()` with validators and indexes
+2. Run `npx convex dev` — types auto-regenerate in `convex/_generated/`
+3. Add auth guard checks in the corresponding query/mutation file
+4. No migration files needed
 
 ### Adding a New E2E Test
 
@@ -327,19 +320,20 @@ test.describe('My Feature', () => {
 
 ### Auth Issues
 
-**Session lost after navigation**
+**User not redirected after login**
 
 ```typescript
-// Ensure session is restored in useAuth hook
-// Check localStorage for 'namlend-auth' key
-localStorage.getItem('namlend-auth');
+// Convex Auth session is reactive — check ConvexAuthProvider is wrapping the app in src/App.tsx
+// Inspect src/hooks/useAuth.tsx for role-based redirect logic
+// Check userRoles table in Convex dashboard for role assignment
 ```
 
-**Admin redirect to dashboard**
+**Admin redirect to dashboard (wrong role)**
 
-```
-Check user_roles table for admin role assignment
-SELECT * FROM user_roles WHERE user_id = 'USER_ID';
+```bash
+# Check userRoles table in Convex dashboard data browser
+# Ensure userId has role: "admin" in the userRoles table
+npx convex dashboard  # → Data → userRoles → filter by userId
 ```
 
 ### Build Errors
@@ -350,8 +344,18 @@ SELECT * FROM user_roles WHERE user_id = 'USER_ID';
 # Check for type issues
 npx tsc --noEmit
 
-# Regenerate Supabase types
-npx supabase gen types typescript --project-id puahejtaskncpazjyxqp > src/integrations/supabase/types/database.types.ts
+# If Convex types are stale, restart Convex dev server
+npx convex dev  # Types regenerate in convex/_generated/
+```
+
+**Convex function errors**
+
+```bash
+# Check Convex function logs
+npx convex dashboard  # → Logs tab
+
+# Run Convex dev to catch schema + function errors
+npx convex dev
 ```
 
 **Module not found**
@@ -387,30 +391,21 @@ npx playwright test --debug e2e/my-test.e2e.ts
 npx playwright test --screenshot=on
 ```
 
-### Database Issues
+### Convex Issues
 
-**RLS blocking queries**
+**Auth guard throwing unexpectedly**
 
-```sql
--- Check if RLS is enabled
-SELECT tablename, rowsecurity
-FROM pg_tables
-WHERE schemaname = 'public';
-
--- Test as specific user
-SET ROLE authenticated;
-SET request.jwt.claim.sub = 'USER_UUID_HERE';
-SELECT * FROM my_table;
+```typescript
+// Ensure ConvexAuthProvider is in the provider stack (src/App.tsx)
+// Check the auth guard in convex/lib/auth.ts — verify role is set in userRoles table
 ```
 
-**Migration failures**
+**Outbox entries stuck as pending**
 
 ```bash
-# Check migration status
-npx supabase migration list
-
-# Repair migrations
-npx supabase db reset
+# Check tigerBeetleOutbox table in Convex dashboard
+# Verify tb-outbox-worker cron is running (convex/crons.ts)
+npx convex dashboard  # → Functions → Cron Jobs
 ```
 
 ---
@@ -419,38 +414,42 @@ npx supabase db reset
 
 ### File Locations
 
-| What | Where |
-|------|-------|
-| Components | `src/components/` |
-| Pages | `src/pages/` |
-| Services | `src/services/` |
-| Types | `src/types/` |
-| Constants | `src/constants/` |
-| E2E Tests | `e2e/` |
-| Migrations | `supabase/migrations/` |
-| Edge Functions | `supabase/functions/` |
-| Documentation | `docs/` |
+| What                 | Where                                |
+| -------------------- | ------------------------------------ |
+| **Backend (ACTIVE)** | `convex/`                            |
+| Components           | `src/components/`                    |
+| Pages                | `src/pages/`                         |
+| Hooks                | `src/hooks/`                         |
+| Types                | `src/types/`                         |
+| Constants            | `src/constants/`                     |
+| E2E Tests            | `e2e/`                               |
+| Documentation        | `docs/`                              |
+| Legacy services      | `src/services/` ⚠️ (dead code)       |
+| Legacy migrations    | `supabase/migrations/` ⚠️ (INACTIVE) |
+| Legacy edge fns      | `supabase/functions/` ⚠️ (INACTIVE)  |
 
 ### Key Constants
 
 ```typescript
 // src/constants/regulatory.ts
-APR_LIMIT = 32  // 32% max APR (percentage value)
-CURRENCY_CODE = 'NAD'
-CURRENCY_SYMBOL = 'N$'
-DATA_RETENTION_YEARS = 7
+APR_LIMIT = 32; // 32% max APR (percentage value)
+CURRENCY_CODE = 'NAD';
+CURRENCY_SYMBOL = 'N$';
+DATA_RETENTION_YEARS = 7;
 ```
 
 ### Useful Commands Summary
 
-| Task | Command |
-|------|---------|
-| Start dev server | `npm run dev` |
-| Run E2E tests | `npm run test:e2e` |
-| Build for production | `npm run build` |
-| Lint code | `npm run lint` |
-| Deploy function | `npx supabase functions deploy <name>` |
-| Regenerate types | `npx supabase gen types typescript --project-id puahejtaskncpazjyxqp` |
+| Task                      | Command                |
+| ------------------------- | ---------------------- |
+| Start frontend dev server | `npm run dev`          |
+| Start Convex dev server   | `npx convex dev`       |
+| Run E2E tests             | `npm run test:e2e`     |
+| Build for production      | `npm run build`        |
+| Deploy Convex backend     | `npx convex deploy`    |
+| Open Convex dashboard     | `npx convex dashboard` |
+| Lint code                 | `npm run lint`         |
+| TypeScript check          | `npx tsc --noEmit`     |
 
 ---
 

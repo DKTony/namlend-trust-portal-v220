@@ -19,11 +19,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 ## Critical Fixes Deployed (P0)
 
 ### P0-001: IPS Adapter Authorization Bypass
+
 **Severity**: Critical Security  
 **Impact**: Unauthorized access to financial operations  
 **Fix**: Added JWT verification and role-based authorization
 
 **Changes**:
+
 - Implemented `verifyAuthorization()` helper function
 - Staff-only endpoints require admin/loan_officer role:
   - `/pay` - Process payments
@@ -37,11 +39,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 **Deployment**: ✅ Deployed via Supabase CLI
 
 ### P0-002: TigerBeetle Schema Missing
+
 **Severity**: Critical Data  
 **Impact**: Ledger integration non-functional  
 **Fix**: Created complete TigerBeetle schema
 
 **Changes**:
+
 - Migration: `20260106_create_tigerbeetle_schema.sql`
 - Tables created:
   - `tigerbeetle_accounts` - Ledger accounts
@@ -56,11 +60,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 **Migration**: ✅ Applied to production database
 
 ### P0-003: Payment Webhook Wrong Payment ID
+
 **Severity**: Critical Data  
 **Impact**: Payment schedules not updated correctly  
 **Fix**: Use correct payment ID for schedule application
 
 **Changes**:
+
 - Fixed `payment-webhook` to capture `payments.id` before RPC call
 - Now passes correct payment ID to `apply_payment_to_schedule`
 - Ensures payment schedules reference correct payment record
@@ -69,11 +75,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 **Deployment**: ✅ Deployed via MCP Supabase
 
 ### P0-004: process-loan-application Notification Column
+
 **Severity**: Critical Data  
 **Impact**: Notifications not stored correctly  
 **Fix**: Use correct column name
 
 **Changes**:
+
 - Fixed notification insert to use `category` column
 - Mapped notification type to valid category value
 
@@ -81,11 +89,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 **Deployment**: ✅ Deployed via MCP Supabase
 
 ### P0-005: send-notification Column Mismatch
+
 **Severity**: Critical Data  
 **Impact**: Notifications not stored correctly  
 **Fix**: Map parameter to correct column
 
 **Changes**:
+
 - Fixed notification insert to map `type` parameter to `category` column
 - Ensures notifications are properly stored and displayed
 
@@ -97,11 +107,13 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 ## High Priority Fixes Deployed (P1)
 
 ### P1-001: Admin Dashboard Overdue Metrics
+
 **Severity**: High  
 **Impact**: Incorrect overdue payment counts  
 **Fix**: Query correct table for overdue schedules
 
 **Changes**:
+
 - Fixed overdue count to query `payment_schedules` table
 - Query: `due_date < now() AND status != 'paid'`
 - Provides accurate overdue payment metrics
@@ -110,16 +122,19 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 **Status**: ✅ Already in codebase
 
 ### P1-003: Multi-Role Staff Authorization
+
 **Severity**: High  
 **Impact**: Staff with multiple roles denied access  
 **Fix**: Handle multi-role users correctly
 
 **Changes**:
+
 - Changed from `.maybeSingle()` to `.in('role', ['admin', 'loan_officer'])`
 - Checks if ANY role matches required roles
 - Prevents authorization failures for multi-role staff
 
-**Edge Functions**: 
+**Edge Functions**:
+
 - `send-sms` (v2) - ✅ Deployed via MCP Supabase
 - `send-notification` (v4) - ✅ Deployed via MCP Supabase
 
@@ -129,18 +144,18 @@ This deployment addresses all P0 (Critical) and P1 (High Priority) security and 
 
 ### Edge Functions Deployed
 
-| Function | Version | Method | Status | Fix |
-|----------|---------|--------|--------|-----|
-| `ips-adapter` | v4 | Supabase CLI | ✅ Active | P0-001 |
-| `payment-webhook` | v2 | MCP Supabase | ✅ Active | P0-003 |
-| `process-loan-application` | v4 | MCP Supabase | ✅ Active | P0-004 |
-| `send-notification` | v4 | MCP Supabase | ✅ Active | P0-005 + P1-003 |
-| `send-sms` | v2 | MCP Supabase | ✅ Active | P1-003 |
+| Function                   | Version | Method       | Status    | Fix             |
+| -------------------------- | ------- | ------------ | --------- | --------------- |
+| `ips-adapter`              | v4      | Supabase CLI | ✅ Active | P0-001          |
+| `payment-webhook`          | v2      | MCP Supabase | ✅ Active | P0-003          |
+| `process-loan-application` | v4      | MCP Supabase | ✅ Active | P0-004          |
+| `send-notification`        | v4      | MCP Supabase | ✅ Active | P0-005 + P1-003 |
+| `send-sms`                 | v2      | MCP Supabase | ✅ Active | P1-003          |
 
 ### Database Migrations
 
-| Migration | Status | Description |
-|-----------|--------|-------------|
+| Migration                                | Status     | Description                           |
+| ---------------------------------------- | ---------- | ------------------------------------- |
 | `20260106_create_tigerbeetle_schema.sql` | ✅ Applied | TigerBeetle ledger integration schema |
 
 ### E2E Test Results
@@ -156,6 +171,7 @@ Status: ✅ All critical paths verified
 ```
 
 **Test Coverage**:
+
 - Documents RLS policies
 - IPS adapter endpoints
 - IPS transaction state machine
@@ -171,17 +187,20 @@ Status: ✅ All critical paths verified
 ## Security Improvements
 
 ### Authentication & Authorization
+
 - ✅ JWT verification on all IPS endpoints
 - ✅ Role-based access control for financial operations
 - ✅ Multi-role user support across all edge functions
 - ✅ Staff-only endpoints protected
 
 ### Data Integrity
+
 - ✅ Correct payment ID references in schedules
 - ✅ Proper notification column mapping
 - ✅ TigerBeetle ledger schema in place
 
 ### Audit Trail
+
 - ✅ IPS API call logging maintained
 - ✅ Authorization failures logged
 - ✅ All financial operations audited
@@ -191,6 +210,7 @@ Status: ✅ All critical paths verified
 ## Documentation Updates
 
 ### Updated Files
+
 - ✅ `CHANGELOG.md` - Added v2.8.0 entry with all fixes
 - ✅ `docs/CHANGELOG.md` - Comprehensive deployment notes
 - ✅ `docs/SECURITY.md` - Updated with P0-001 resolution
@@ -205,12 +225,14 @@ Status: ✅ All critical paths verified
 If issues arise, rollback can be performed:
 
 ### Edge Functions
+
 ```bash
 # Rollback individual function to previous version
 npx supabase functions deploy <function-name> --project-ref puahejtaskncpazjyxqp --version <previous-version>
 ```
 
 ### Database Migration
+
 ```sql
 -- Rollback TigerBeetle schema (if needed)
 DROP TABLE IF EXISTS tigerbeetle_reconciliation CASCADE;
@@ -226,6 +248,7 @@ DROP FUNCTION IF EXISTS get_tigerbeetle_balance CASCADE;
 ## Post-Deployment Verification
 
 ### ✅ Completed Checks
+
 - [x] All edge functions deployed successfully
 - [x] Database migration applied
 - [x] E2E tests passing (21/21 critical paths)
@@ -236,6 +259,7 @@ DROP FUNCTION IF EXISTS get_tigerbeetle_balance CASCADE;
 - [x] TigerBeetle tables exist and accessible
 
 ### Monitoring Points
+
 - [ ] Monitor IPS adapter authorization failures
 - [ ] Verify payment schedule updates in production
 - [ ] Check notification delivery rates
@@ -247,6 +271,7 @@ DROP FUNCTION IF EXISTS get_tigerbeetle_balance CASCADE;
 ## Known Limitations
 
 ### IPS Integration
+
 - Currently in **Mock Mode** for development
 - Production IPS integration requires:
   - Bank of Namibia IPP credentials
@@ -255,6 +280,7 @@ DROP FUNCTION IF EXISTS get_tigerbeetle_balance CASCADE;
   - See `docs/IPS_PRODUCTION_CHECKLIST.md`
 
 ### TigerBeetle Integration
+
 - Schema deployed, outbox worker functional
 - Requires TigerBeetle cluster for production
 - Currently using shadow ledger for reconciliation
@@ -280,4 +306,4 @@ DROP FUNCTION IF EXISTS get_tigerbeetle_balance CASCADE;
 
 ---
 
-*This deployment successfully resolves all P0 and P1 security and data integrity issues identified in the production audit.*
+_This deployment successfully resolves all P0 and P1 security and data integrity issues identified in the production audit._

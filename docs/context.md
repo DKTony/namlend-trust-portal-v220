@@ -1,35 +1,35 @@
 # NamLend Trust - Technical Context & Handover
 
-**Doc Revision**: 2026-01-19  \
-**Status**: Core lending + backoffice flows implemented; external integrations are wired but depend on secrets; IPS adapter runs in mock mode; TigerBeetle uses outbox worker with simulated client.  \
-**Supabase Project ID**: `puahejtaskncpazjyxqp`  \
-**Database Region**: `eu-north-1`
+**Doc Revision**: 2026-03-19
+**Status**: Backend migrated to Convex (Feb 2026). All milestone A–D work complete. Frontend service rewiring complete (Batch 1–3 + Milestone D). IPS adapter runs in mock mode. TigerBeetle uses Convex outbox worker with simulated posting.
+**Live URL**: <https://namlend-trust-portal-v220.netlify.app>
+**Convex Deployment**: Convex Cloud (auto-deploy via `npx convex deploy`)
 
 ---
 
 ## Executive Summary
 
-NamLend Trust is a React SPA backed by Supabase (PostgreSQL + Auth + Edge Functions) that delivers a full loan lifecycle: application intake, approval workflow, disbursement, repayment scheduling, collections, notifications, and admin operations. The codebase also includes IPS/IPP integration scaffolding (mock adapter), settlement/backoffice workflows, and a TigerBeetle outbox ledger bridge.
+NamLend Trust is a React SPA backed by **Convex** (reactive document-relational database, migrated from Supabase in Feb 2026) that delivers a full loan lifecycle: application intake, approval workflow, disbursement, repayment scheduling, collections, notifications, and admin operations. The codebase also includes IPS/IPP integration scaffolding (Convex mock adapter), settlement/backoffice workflows, and a TigerBeetle shadow ledger via Convex outbox pattern.
 
 **What is implemented in code**
 
-- Loan application flow submits approval requests and enforces APR limit in UI validation.
-- Admin approval workflow with queue, review, and atomic loan creation via RPC.
-- Disbursement workflow with manual completion and IPS initiation options.
-- Payment processing with schedules, overdue marking, and reconciliation tools.
-- Collections workflow including activity logging, promise-to-pay, and reschedule requests.
-- Notification, SMS, and WhatsApp pipelines (queued + Edge Functions for delivery).
-- IPS/IPP onboarding wizard, VPA registry, and transaction status monitoring (mock adapter).
-- Settlement schema + processing RPCs + admin reconciliation UI (transport not implemented).
-- TigerBeetle outbox schema + worker; browser uses outbox, direct client only in Node.
+- Loan application flow: `createLoan` → `submitLoan` → approval review → `approveLoan`/`rejectLoan` via Convex mutations.
+- Admin approval workflow with Convex-backed queue, reactive updates, and atomic state transitions.
+- Disbursement workflow: `initiateDisbursement` → `processDisbursement` → `completeDisbursement` (Convex state machine).
+- Payment processing with schedules, overdue marking, settlement detection, and reconciliation tools.
+- Collections workflow including activity logging, promise-to-pay (`createPromiseToPay`), and reschedule requests.
+- Notification pipeline: in-app (Convex), SMS/WhatsApp queued via `notificationQueue` + Convex actions.
+- IPS/IPP onboarding wizard, VPA registry, and transaction status monitoring (mock adapter via Convex action).
+- Settlement schema (13 tables) + processing + admin reconciliation UI (NISS/SWIFT transport not implemented).
+- TigerBeetle outbox in Convex DB; cron worker posts to TB every 30s (simulated cluster connection).
+- All `src/services/` files are legacy dead code — 23 deleted in Milestone D, 4 remain with active consumers.
 
-**Key gaps (handover risks)**
+**Key gaps (production blockers)**
 
-- IPS adapter is mock; production API, mTLS, and switch connectivity are not wired.
-- TigerBeetle Edge worker simulates TB posting; real cluster connectivity is pending.
-- Admin route guard is admin-only; loan_officer access is blocked at router level.
-- Reconciliation schema drift exists between newer migrations and legacy client/types.
-- Several docs still reference historical snapshots; see Documentation Map below.
+- IPS adapter is mock; production IPS API, mTLS, and switch connectivity are not wired.
+- TigerBeetle cron worker simulates TB posting; real cluster connectivity is pending.
+- ~~Admin route guard is admin-only~~ — **RESOLVED (2026-03-04)**: `/admin/*` uses `requireLoanOfficer` guard; both `loan_officer` and `admin` roles can access.
+- ~~Credit scoring UI not shown~~ — **RESOLVED (2026-03-04)**: `creditScore`, `debtToIncomeRatio`, and `recommendation` displayed in `Loan360View` and `LoanReviewPanel`. `submitLoan` schedules `processLoanApplication` action automatically.
 
 ---
 
@@ -37,38 +37,48 @@ NamLend Trust is a React SPA backed by Supabase (PostgreSQL + Auth + Edge Functi
 
 ### Frontend
 
-| Technology | Version | Purpose |
-| --- | --- | --- |
-| React | 18.3.1 | UI framework |
-| TypeScript | 5.5.3 | Type safety |
-| Vite | 5.4.1 | Build tool |
-| TailwindCSS | 3.4.11 | Styling |
-| shadcn/ui | Current | UI primitives |
-| TanStack Query | 5.56.2 | Server state |
-| React Router | 6.26.2 | Routing |
-| React Hook Form | 7.53.0 | Forms |
-| Zod | 3.23.8 | Validation |
-| Lucide Icons | 0.462.0 | Icons |
+| Technology      | Version | Purpose                                  |
+| --------------- | ------- | ---------------------------------------- |
+| React           | 18.3.1  | UI framework                             |
+| TypeScript      | 5.5.3   | Type safety                              |
+| Vite            | 5.4.1   | Build tool (port 8080)                   |
+| TailwindCSS     | 3.4.11  | Styling                                  |
+| shadcn/ui       | Current | UI primitives                            |
+| Convex React    | Latest  | Reactive data (`useQuery`/`useMutation`) |
+| TanStack Query  | 5.56.2  | For non-Convex data (legacy hooks)       |
+| React Router    | 6.26.2  | Routing                                  |
+| React Hook Form | 7.53.0  | Forms                                    |
+| Zod             | 3.23.8  | Validation                               |
+| Lucide Icons    | 0.462.0 | Icons                                    |
 
-### Backend (Supabase)
+### Backend (ACTIVE — Convex)
 
-| Component | Purpose |
-| --- | --- |
-| PostgreSQL 15+ | Primary database |
-| Supabase Auth | Authentication and sessions |
-| Row Level Security | Data access control |
-| Edge Functions | Server-side operations |
-| Storage Buckets | Document storage |
-| Realtime | Optional subscriptions |
+| Component                             | Purpose                                           |
+| ------------------------------------- | ------------------------------------------------- |
+| Convex document DB                    | Primary database (55+ tables, `convex/schema.ts`) |
+| `@convex-dev/auth`                    | Authentication (Password provider, session-based) |
+| Auth guards (`convex/lib/auth.ts`)    | Data access control (replaces RLS)                |
+| Convex Queries/Mutations/Actions      | Server logic (replaces RPCs + Edge Functions)     |
+| Convex HTTP Router (`convex/http.ts`) | Webhooks and auth callbacks                       |
+| Convex Cron Jobs (`convex/crons.ts`)  | Scheduled tasks (replaces pg_cron + Edge timers)  |
+
+### Legacy (INACTIVE — Supabase, retained for reference)
+
+| Component                                                 | Status                                   |
+| --------------------------------------------------------- | ---------------------------------------- |
+| `supabase/migrations/` (33 SQL migrations)                | INACTIVE — reference only                |
+| `supabase/functions/` (18 Deno Edge Functions)            | INACTIVE — replaced by Convex actions    |
+| `src/services/` (4 remaining files with active consumers) | LEGACY — do not add new logic here       |
+| `src/integrations/supabase/`                              | LEGACY client and types — reference only |
 
 ### Infrastructure
 
-| Component | Purpose |
-| --- | --- |
-| Netlify | Frontend hosting |
-| Supabase Cloud | DB/Auth/Functions |
-| GitHub Actions | CI workflows (web, mobile, e2e) |
-| Playwright | E2E testing |
+| Component      | Purpose                                |
+| -------------- | -------------------------------------- |
+| Netlify        | Frontend hosting (auto-deploy on push) |
+| Convex Cloud   | Backend (DB/Auth/Functions/Crons)      |
+| GitHub Actions | CI workflows (`ci-web.yml`, `e2e.yml`) |
+| Playwright     | E2E testing                            |
 
 ---
 
@@ -76,139 +86,133 @@ NamLend Trust is a React SPA backed by Supabase (PostgreSQL + Auth + Edge Functi
 
 ```
 namlend-trust-portal-v220-main/
+├── convex/                    # ⭐ ACTIVE BACKEND
+│   ├── schema.ts              # Database schema (55+ tables, SOURCE OF TRUTH)
+│   ├── auth.ts / auth.config.ts  # Convex Auth callbacks + config
+│   ├── http.ts                # HTTP router (webhooks, auth routes)
+│   ├── crons.ts               # Cron jobs (outbox worker, daily tasks)
+│   ├── lib/                   # auth guards, audit helper, regulatory, xmlEscape
+│   ├── loans.ts / payments.ts / disbursements.ts / approvalWorkflow.ts
+│   ├── collections.ts / notifications.ts / analytics.ts / audit.ts / users.ts
+│   ├── reconciliation.ts / systemConfig.ts / loanApprovals.ts / loanDocuments.ts
+│   ├── actions/               # ipsAdapter, processLoanApplication, sendSms, sendWhatsapp, sendNotification
+│   ├── scheduled/             # tigerBeetleOutboxWorker, dailyTasks
+│   ├── ips/                   # IPS domain (5 files)
+│   ├── settlement/            # Settlement domain (10 files)
+│   └── tigerbeetle/           # TigerBeetle domain (4 files)
 ├── src/
-│   ├── components/         # UI components (shadcn + custom)
-│   ├── pages/              # Route pages (client + admin)
-│   ├── services/           # Business logic + RPC wrappers
-│   ├── hooks/              # React Query + custom hooks
-│   ├── integrations/       # Supabase client + types
-│   ├── types/              # Domain types
-│   ├── utils/              # Helpers, debug tooling
-│   └── constants/          # Regulatory constants
-├── supabase/
-│   ├── migrations/         # Database migrations
-│   ├── functions/          # Edge Functions (Deno)
-│   └── config.toml          # Local Supabase config
-├── e2e/                    # Playwright E2E tests + fixtures
-├── tests/                  # Unit/integration tests
-├── docs/                   # Documentation (this folder)
-└── namlend-mobile/         # Separate React Native app (see subfolder docs)
+│   ├── components/            # UI components (shadcn + custom, ~150+ files)
+│   ├── pages/                 # Route pages (client + admin)
+│   ├── hooks/                 # Convex reactive hooks
+│   ├── integrations/
+│   │   ├── convex/            # Convex client + api re-exports (ACTIVE)
+│   │   └── supabase/          # LEGACY client + types (reference only)
+│   ├── types/                 # Domain types (includes convex.ts shared utilities)
+│   ├── utils/                 # Helpers, debug tooling
+│   └── constants/             # Regulatory constants
+├── supabase/                  # ⚠️ LEGACY (reference only)
+│   ├── migrations/            # 33 PostgreSQL migrations (INACTIVE)
+│   └── functions/             # 18 Deno Edge Functions (INACTIVE)
+├── e2e/                       # Playwright E2E tests + fixtures
+├── docs/                      # Documentation (this folder)
+└── namlend-mobile/            # Separate React Native app
 ```
 
 ---
 
 ## Core Domain Model (Summary)
 
-**Primary entities**
+**Primary entities (Convex camelCase table names)**
 
-- `profiles` and `user_roles` (role-based access control, multi-role supported).
-- `approval_requests` + `approval_workflow_history` + `approval_notifications`.
-- `loans`, `disbursements`, `payments`, `payment_schedules`.
-- `audit_logs`, `view_logs`, `state_transitions`.
-- `notification_*` and `communication_logs` (SMS/WhatsApp).
-- `collections_*`, `promise_to_pay`, `reschedule_requests`.
-- `reconciliation_runs`, `bank_transactions` (bank reconciliation system).
-- `ips_*` tables for IPS/IPP transactions and onboarding state.
-- `settlement_*` tables for DNS settlement backoffice workflows.
-- `tigerbeetle_*` tables for outbox + shadow ledger.
+- `profiles` and `userRoles` (role-based access: `client`/`loan_officer`/`admin`).
+- `approvalRequests` + `approvalHistory` + `workflowDefinitions` + `workflowInstances`.
+- `loans`, `disbursements`, `paymentTransactions`, `paymentSchedules`, `loanDocuments`.
+- `auditLogs`, `viewLogs`, `stateTransitions`, `complianceReports`.
+- `notifications`, `notificationQueue`, `notificationPreferences`, `notificationTemplates`, `communicationLogs`.
+- `collectionsInteractions`, `promiseToPay`, `overdueReminders`.
+- `reconciliationRuns`, `bankTransactions` (bank reconciliation).
+- `ipsTransactions`, `vpaRegistry`, `ipsApiLogs`, `ipsAlerts`, `ipsOnboardingApplications`, `ipsDeviceBindings`.
+- `settlement*` tables (13) for DNS settlement backoffice workflows.
+- `tigerBeetleOutbox`, `tigerBeetleAccounts`, `tigerBeetleTransfers`, `tigerBeetleReconciliation`.
+- `systemConfiguration`, `creditScores`, `kycDocuments`.
 
-**Status conventions (not DB-enforced)**
+**Status conventions (enforced by Convex schema validators)**
 
-- `approval_requests.status`: `pending`, `under_review`, `approved`, `rejected`, `requires_info`.
-- `loans.status`: `pending`, `approved`, `disbursed`, `active`, `funded`, `settled`, `completed`, `defaulted`, `rejected`.
-- `disbursements.status`: `pending`, `approved`, `processing`, `completed`, `failed`.
-- `payments.status`: `pending`, `completed`, `failed`.
+- `approvalRequests.status`: `pending`, `approved`, `rejected`, `escalated`, `withdrawn`.
+- `loans.status`: `draft`, `submitted`, `under_review`, `approved`, `rejected`, `funded`, `active`, `overdue`, `defaulted`, `paid_off`, `restructured`, `cancelled`, `written_off`.
+- `disbursements.status`: `pending`, `processing`, `completed`, `failed`, `reversed`.
+- `paymentTransactions.status`: `pending`, `processing`, `completed`, `failed`, `reversed`.
 
-For exact schemas and columns, see `supabase/migrations/` and `src/integrations/supabase/types.ts`.
+For exact schema, see `convex/schema.ts` (source of truth).
 
 ---
 
 ## Authentication & Authorization
 
-- Auth managed via Supabase with session persistence in `localStorage` key `namlend-auth`.
-- Roles stored in `user_roles` with precedence `admin` > `loan_officer` > `client`.
-- `ProtectedRoute` enforces authentication and role gating; `/admin/*` currently uses `requireAdmin` (admin-only).
-- Edge Functions validate JWT and enforce staff roles for privileged actions.
+- Auth managed via `@convex-dev/auth` (Password provider, session-based — no JWT).
+- `ConvexAuthProvider` wraps the app; `useConvexAuth()` provides reactive auth state.
+- Roles stored in `userRoles` Convex table; `ProtectedRoute` enforces role gating.
+- `/admin/*` currently uses `requireAdmin` (admin-only; loan_officer blocked — open debt item).
+- All server-side access controlled by auth guards in `convex/lib/auth.ts` (replaces RLS).
+- New users trigger `afterUserCreatedOrUpdated` callback → seeds `profiles` + `userRoles`.
 
 ---
 
 ## Service Layer Overview
 
-**Loan + approvals**
+> **Note**: `src/services/` is legacy dead code. All active server logic is in `convex/`. The 4 files listed below are the ONLY remaining `src/services/` files with active consumers.
 
-- `approvalWorkflow.ts`: approval request CRUD, admin queue, `process_approval_transaction` RPC.
-- `loanService.ts`: loan status updates and disbursement creation helpers.
+**Remaining legacy services (active consumers)**
 
-**Disbursements and payments**
+- `src/services/brandingService.ts` — used by `useBrandingConfig` hook (inlined Supabase calls).
+- `src/services/creditScoring.ts` — client-side AI scoring engine (re-exported via `src/utils/creditScoring.ts`).
+- `src/services/scoringRules.ts` — imported by `creditScoring.ts`.
+- `src/services/api-client.ts` — wraps Edge Functions (not a Supabase service; kept).
 
-- `disbursementService.ts`: RPC-driven state machine and ledger outbox posts.
-- `paymentService.ts`: `process_loan_payment`, schedules, overdue, late fees.
-- `paymentGateway.ts`: bank transfer, mobile money, PayToday, cash (manual instructions + tracking).
+**Active Convex server functions**
 
-**IPS/IPP**
-
-- `ipsService.ts`: IPS payments and VPA management (calls `ips-adapter` Edge Function).
-- `ipsOnboardingService.ts`: onboarding workflow (RPC + adapter endpoints).
-
-**Collections + reconciliation**
-
-- `collectionsService.ts`: queue, interactions, promises, reschedules.
-- `reconciliationService.ts`: bank transaction import and payment matching.
-
-**Ledger and settlement**
-
-- `ledgerService.ts`: TigerBeetle outbox; direct TB client only in Node.
-- `settlementService.ts`: settlement runs, pacs.009, reports, adjustments.
-
-**Admin + support**
-
-- `adminService.ts`: admin profile and role data.
-- `roleManagementService.ts`: role hierarchy enforcement via RPCs.
-- `workflowEngine.ts`: multi-stage workflow engine via RPCs.
-- `auditService.ts`: audit log and state transitions.
-- `notificationService.ts`: notifications, preferences, realtime subscription.
-
----
-
-## Edge Functions
-
-Located in `supabase/functions/`:
-
-- `ips-adapter`: IPS mock adapter (pay, validate, status, onboarding endpoints).
-- `payment-webhook`: PayToday/MTC/TN webhook handler (HMAC verification).
-- `process-loan-application`: server-side loan review status update (not called by SPA).
-- `scheduled-tasks`: overdue marking, notification queue, reminders, broken promises.
-- `send-notification`: staff-triggered in-app notification creation.
-- `send-sms`: Africa's Talking integration (requires secrets).
-- `send-whatsapp`: Meta Cloud API integration (requires secrets).
-- `tigerbeetle-outbox-worker`: processes outbox entries (simulated TB posting).
-- `api-*`: orchestration layer (loans, users, payments, admin, analytics, audit, collections, disbursements, reconciliation, notifications).
+- `convex/loans.ts` — Loan CRUD + state transitions (`createLoan`, `submitLoan`, `approveLoan`, `rejectLoan`).
+- `convex/payments.ts` — Payment recording + schedules + overdue + settlement detection.
+- `convex/disbursements.ts` — Disbursement state machine (initiate → process → complete/fail/reverse).
+- `convex/approvalWorkflow.ts` — Approval queue, processing, workflow definitions.
+- `convex/collections.ts` — Collections queue, interactions, promises-to-pay.
+- `convex/notifications.ts` — In-app + queued notification lifecycle.
+- `convex/analytics.ts` — Portfolio/revenue/risk analytics (staff-only).
+- `convex/audit.ts` — Audit logs + compliance reports.
+- `convex/users.ts` — User/profile management.
+- `convex/reconciliation.ts` — Bank reconciliation.
+- `convex/actions/ipsAdapter.ts` — IPS outbound transfers + webhook handling (mock mode).
+- `convex/actions/processLoanApplication.ts` — Server-side loan processing + credit scoring.
+- `convex/actions/sendSms.ts` / `sendWhatsapp.ts` / `sendNotification.ts` — External delivery.
+- `convex/scheduled/tigerBeetleOutboxWorker.ts` — TB outbox polling (cron: every 30s).
+- `convex/scheduled/dailyTasks.ts` — Overdue marking, PTP checks, notification queue (cron: 02:00 UTC).
 
 ---
 
 ## IPS/IPP and Settlement Status
 
-- IPS adapter is mock; production IPS API, mTLS, and switch connectivity are pending.
-- IPS monitoring RPCs and alert tables exist; UI includes IPS health widgets.
-- IPP onboarding uses RPCs for state and adapter endpoints for provider operations.
-- Settlement schema and processing RPCs exist; admin UI can create/process runs.
+- IPS adapter (`convex/actions/ipsAdapter.ts`) is mock; production IPS API, mTLS, and switch connectivity are not wired.
+- `ipsTransactions`, `vpaRegistry`, `ipsApiLogs`, `ipsAlerts` tables exist; UI includes IPS health widgets.
+- IPP onboarding uses Convex mutations for state and adapter actions for provider operations.
+- Settlement schema (13 Convex tables) and processing exist; admin UI can create/process runs.
 - File transport (SFTP/AXWAY/SWIFT/NISS) and ack ingestion are not implemented.
 
 ---
 
 ## Regulatory Compliance
 
-- APR cap enforced in UI and services via `APR_LIMIT = 32`.
-- Currency format: `N$ X,XXX.XX` via `formatNAD()`.
-- Data retention target: 7 years (no deletions of financial records).
-- KYC workflow: document upload + approval requests + profile verification.
+- APR cap enforced server-side in `convex/lib/regulatory.ts` (`APR_LIMIT = 32`, `isValidAPR()`).
+- APR cap also enforced client-side in `src/constants/regulatory.ts`.
+- Currency format: `N$ X,XXX.XX` via `formatNAD()` from `@/utils/currency`.
+- Data retention target: 7 years (never delete financial records or audit logs — Namibian law).
+- KYC workflow: document upload (`kycDocuments` table) + approval requests + profile verification.
 
 ---
 
 ## Testing Overview
 
-- Playwright E2E suite in `e2e/` (fixtures, API/RLS, UI flows).
-- Unit/integration tests in `tests/` and `src/tests/`.
+- Playwright E2E suite in `e2e/` (fixtures, API tests, UI flows).
+- Unit/integration tests in `tests/` and `src/tests/` (Vitest not yet wired — open debt item).
 - Run E2E: `npm run test:e2e` (Vite dev server uses port 8080).
 
 See `docs/TESTING.md` for current test inventory.
@@ -218,10 +222,13 @@ See `docs/TESTING.md` for current test inventory.
 ## Deployment Notes
 
 - Vite dev server runs on port `8080` (see `vite.config.ts`).
-- Do not expose service role keys in client; use Edge Function secrets.
+- Frontend: Netlify auto-deploys on push. Build command: `npm run build`.
+- Backend: `npx convex deploy` deploys to Convex Cloud. Schema + functions sync automatically.
+- Secrets: Set Convex environment variables via `npx convex env set KEY value` (never in `VITE_*`).
+- Only `VITE_CONVEX_URL` is required in the client `.env` file.
 - Debug tooling is gated by `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS`.
 
-Environment reference: `./.env.example` and `docs/DEPLOYMENT_2026_01_06.md` (historical).
+Environment reference: `./.env.example`.
 
 ---
 
@@ -229,40 +236,45 @@ Environment reference: `./.env.example` and `docs/DEPLOYMENT_2026_01_06.md` (his
 
 **Current (authoritative)**
 
-- `docs/context.md` (this file)
-- `docs/ARCHITECTURE.md`
-- `docs/SERVICES.md`
-- `docs/DATABASE_SCHEMA.md`
-- `docs/SECURITY.md`
-- `docs/TESTING.md`
-- `docs/FLOWS.md`
-- `docs/FUNCTIONALITY_MAP.md`
+- `docs/CLAUDE.MD` (root — primary AI agent context)
+- `docs/context.md` (this file — technical handover)
+- `docs/ARCHITECTURE.md` — system architecture with Convex diagrams
+- `docs/DATABASE_SCHEMA.md` — Convex schema reference (55+ tables)
+- `docs/SERVICES.md` — service migration status table
+- `docs/SECURITY.md` — security model (auth guards, not RLS)
+- `docs/TESTING.md` — E2E testing guide
+- `docs/FLOWS.md` — user flow documentation
+- `docs/FUNCTIONALITY_MAP.md` — feature-to-code mapping
+- `docs/convexmigratehandover.md` — migration batch status + gotchas (critical reference)
 
 **Feature-specific (current, detailed)**
 
-- `docs/IPS_IMPLEMENTATION.md`
-- `docs/IPP_INTEGRATION.md`
-- `docs/TIGERBEETLE_IMPLEMENTATION.md`
-- `docs/settlement.md`
+- `docs/IPP_INTEGRATION.md` — IPS/IPP integration
+- `docs/IPS_IMPLEMENTATION.md` — IPS system implementation
+- `docs/TIGERBEETLE_IMPLEMENTATION.md` — TigerBeetle financial ledger
+- `docs/settlement.md` — Settlement processing deep dive
+- `docs/TECHNICAL_DEBT.md` — Outstanding technical debt register
 
 **Historical or snapshot reports (reference only)**
 
-- Release notes, audit reports, deployment checklists, and market research files.
-- These have been marked as snapshots where applicable.
+- Release notes, audit reports, deployment checklists, market research files.
+- See `docs/INDEX.md` for document status classifications.
 
 ---
 
 ## Key Files for Handover
 
-- `src/App.tsx` (routing + providers)
-- `src/hooks/useAuth.tsx` (auth + role handling)
-- `src/services/approvalWorkflow.ts`
-- `src/services/disbursementService.ts`
-- `src/services/paymentService.ts`
-- `src/services/ipsService.ts`
-- `src/services/ipsOnboardingService.ts`
-- `src/services/ledgerService.ts`
-- `src/services/settlementService.ts`
-- `supabase/migrations/` (schema source of truth)
-- `supabase/functions/` (Edge Functions)
-- `e2e/fixtures.ts` (Playwright auth isolation)
+- `convex/schema.ts` — **source of truth** for all table shapes and field names
+- `convex/lib/auth.ts` — auth guards (security boundary)
+- `convex/lib/audit.ts` — audit log scheduler helper
+- `convex/lib/regulatory.ts` — APR limit + currency helpers
+- `convex/loans.ts` — loan lifecycle mutations
+- `convex/approvalWorkflow.ts` — approval queue
+- `convex/disbursements.ts` — disbursement state machine
+- `convex/payments.ts` — payment processing
+- `convex/actions/ipsAdapter.ts` — IPS integration (mock)
+- `src/App.tsx` — routing + provider stack
+- `src/hooks/useAuth.tsx` — auth + role handling
+- `src/integrations/convex/api.ts` — Convex API re-exports
+- `e2e/fixtures.ts` — Playwright auth isolation
+- `e2e/helpers/auth.ts` — login utilities

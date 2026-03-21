@@ -15,12 +15,12 @@ The **Instant Payment Platform (IPP)** is Namibia's national real-time payment i
 
 ### Key Documents (in `/docs/IPP/`)
 
-| Document | Description |
-|----------|-------------|
-| `IPN Scheme Rules v0.3` | Governance rules for the Instant Payment Namibia scheme |
-| `IPP Functional Specification Document (FSD) v10.0` | Functional requirements and use cases |
-| `BON IPS TSD v0.7` | Technical Specification Document from Bank of Namibia |
-| `XSD's/` | XML Schema Definitions for all API messages |
+| Document                                            | Description                                             |
+| --------------------------------------------------- | ------------------------------------------------------- |
+| `IPN Scheme Rules v0.3`                             | Governance rules for the Instant Payment Namibia scheme |
+| `IPP Functional Specification Document (FSD) v10.0` | Functional requirements and use cases                   |
+| `BON IPS TSD v0.7`                                  | Technical Specification Document from Bank of Namibia   |
+| `XSD's/`                                            | XML Schema Definitions for all API messages             |
 
 ---
 
@@ -67,24 +67,24 @@ example: 0812345678@fnb
 
 ### Transaction Types
 
-| Type | Description | Use Case |
-|------|-------------|----------|
-| `PAY` | Push payment | Send money to VPA |
-| `COLLECT` | Pull payment | Request money from VPA |
-| `REVERSAL` | Undo transaction | Refund/cancel payment |
-| `AUTOREVERSAL` | System-initiated reversal | Timeout handling |
-| `REFUND` | Merchant refund | Return payment |
-| `BAL` | Balance enquiry | Check account balance |
+| Type           | Description               | Use Case               |
+| -------------- | ------------------------- | ---------------------- |
+| `PAY`          | Push payment              | Send money to VPA      |
+| `COLLECT`      | Pull payment              | Request money from VPA |
+| `REVERSAL`     | Undo transaction          | Refund/cancel payment  |
+| `AUTOREVERSAL` | System-initiated reversal | Timeout handling       |
+| `REFUND`       | Merchant refund           | Return payment         |
+| `BAL`          | Balance enquiry           | Check account balance  |
 
 ### Transaction Sub-Types
 
-| SubType | Description |
-|---------|-------------|
-| `PAY` | Standard payment |
-| `COLLECT` | Collection request |
-| `MANDATE` | Standing instruction |
-| `REVERSAL` | Transaction reversal |
-| `AUTOREVERSAL` | Automatic reversal |
+| SubType        | Description          |
+| -------------- | -------------------- |
+| `PAY`          | Standard payment     |
+| `COLLECT`      | Collection request   |
+| `MANDATE`      | Standing instruction |
+| `REVERSAL`     | Transaction reversal |
+| `AUTOREVERSAL` | Automatic reversal   |
 
 ---
 
@@ -97,7 +97,7 @@ All IPP messages follow this XML structure:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <ReqPay xmlns="http://npci.org/upi/schema/">
-  <Head ver="2.0" ts="2025-12-10T10:00:00+02:00" 
+  <Head ver="2.0" ts="2025-12-10T10:00:00+02:00"
         orgId="NAMLEND" msgId="MSG123" prodType="IPS"/>
   <Meta>
     <Tag name="PAYREQSTART" value="2025-12-10T10:00:00"/>
@@ -239,13 +239,13 @@ interface ListAccountResponse {
 
 ### Credential Types
 
-| Type | SubType | Description |
-|------|---------|-------------|
-| `PIN` | `MPIN` | Mobile PIN (4-6 digits) |
-| `OTP` | `SMS` | SMS-based OTP |
-| `OTP` | `EMAIL` | Email-based OTP |
-| `AADHAAR` | `AADHAAR-BIO-FP` | Fingerprint biometric |
-| `CARD` | `CVV2` | Card CVV verification |
+| Type      | SubType          | Description             |
+| --------- | ---------------- | ----------------------- |
+| `PIN`     | `MPIN`           | Mobile PIN (4-6 digits) |
+| `OTP`     | `SMS`            | SMS-based OTP           |
+| `OTP`     | `EMAIL`          | Email-based OTP         |
+| `AADHAAR` | `AADHAAR-BIO-FP` | Fingerprint biometric   |
+| `CARD`    | `CVV2`           | Card CVV verification   |
 
 ### Encryption
 
@@ -329,29 +329,29 @@ interface IPPWebhookPayload {
 
 ### Common Error Codes
 
-| Code | Description | Action |
-|------|-------------|--------|
-| `U00` | Success | - |
-| `U01` | Invalid VPA | Validate address first |
-| `U02` | Invalid amount | Check amount format |
-| `U03` | Transaction declined | Insufficient funds |
-| `U04` | Authentication failed | Retry with correct PIN |
-| `U05` | Transaction timeout | Check status, retry if needed |
-| `U06` | System error | Retry later |
-| `U07` | Invalid transaction | Check transaction ID |
-| `U08` | Duplicate transaction | Check if already processed |
-| `U09` | Account blocked | Contact bank |
-| `U10` | Daily limit exceeded | Wait or use different account |
+| Code  | Description           | Action                        |
+| ----- | --------------------- | ----------------------------- |
+| `U00` | Success               | -                             |
+| `U01` | Invalid VPA           | Validate address first        |
+| `U02` | Invalid amount        | Check amount format           |
+| `U03` | Transaction declined  | Insufficient funds            |
+| `U04` | Authentication failed | Retry with correct PIN        |
+| `U05` | Transaction timeout   | Check status, retry if needed |
+| `U06` | System error          | Retry later                   |
+| `U07` | Invalid transaction   | Check transaction ID          |
+| `U08` | Duplicate transaction | Check if already processed    |
+| `U09` | Account blocked       | Contact bank                  |
+| `U10` | Daily limit exceeded  | Wait or use different account |
 
 ### Adjustment Flags (Dispute Resolution)
 
-| Flag | Description |
-|------|-------------|
-| `RRC` | Reversal Request for Collect |
-| `RET` | Return/Refund |
-| `PBRB` | Pay By RBI |
-| `TCC` | Transaction Cannot be Completed |
-| `DRC` | Debit Reversal Confirmation |
+| Flag   | Description                     |
+| ------ | ------------------------------- |
+| `RRC`  | Reversal Request for Collect    |
+| `RET`  | Return/Refund                   |
+| `PBRB` | Pay By RBI                      |
+| `TCC`  | Transaction Cannot be Completed |
+| `DRC`  | Debit Reversal Confirmation     |
 
 ---
 
@@ -405,9 +405,15 @@ Types are auto-generated from XSD schemas in `/docs/IPP/XSD's/`:
 
 ```typescript
 // Generated from UPI-Common.xsd
-type PayConstant = 
-  | 'PAY' | 'COLLECT' | 'REVERSAL' | 'AUTOREVERSAL' 
-  | 'REFUND' | 'CREDIT' | 'DEBIT' | 'BAL';
+type PayConstant =
+  | 'PAY'
+  | 'COLLECT'
+  | 'REVERSAL'
+  | 'AUTOREVERSAL'
+  | 'REFUND'
+  | 'CREDIT'
+  | 'DEBIT'
+  | 'BAL';
 
 type ResultType = 'SUCCESS' | 'FAILURE' | 'PARTIAL' | 'DEEMED';
 
@@ -430,8 +436,9 @@ type AccountType = 'SAVINGS' | 'CURRENT' | 'DEFAULT' | 'NRE' | 'NRO';
 ## Support
 
 For IPP integration support:
-- **Bank of Namibia**: ips-support@bon.na
-- **NamLend Technical**: tech@namlend.na
+
+- **Bank of Namibia**: <ips-support@bon.na>
+- **NamLend Technical**: <tech@namlend.na>
 
 ---
 

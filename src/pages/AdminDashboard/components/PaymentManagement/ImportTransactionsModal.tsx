@@ -10,7 +10,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { importBankTransactions, ImportTransactionInput } from '@/services/reconciliationService';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+// Inline type (previously from reconciliationService)
+interface ImportTransactionInput {
+  external_id: string;
+  transaction_date: string;
+  amount: number;
+  transaction_type: 'debit' | 'credit';
+  reference: string;
+  description?: string;
+  source: 'fnb' | 'standard_bank' | 'nedbank' | 'bank_windhoek' | 'csv' | 'api' | 'manual';
+}
 import { formatNAD } from '@/utils/currency';
 import { Loader2, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 
@@ -20,15 +31,12 @@ interface Props {
   onSuccess: () => void;
 }
 
-export const ImportTransactionsModal: React.FC<Props> = ({
-  open,
-  onClose,
-  onSuccess
-}) => {
+export const ImportTransactionsModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
   const [csvText, setCsvText] = useState('');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<ImportTransactionInput[]>([]);
   const { toast } = useToast();
+  const importTransactionsMutation = useMutation(api.reconciliation.importBankTransactions);
 
   const handleClose = () => {
     if (!loading) {
@@ -40,7 +48,10 @@ export const ImportTransactionsModal: React.FC<Props> = ({
 
   const normalizeSource = (raw?: string): ImportTransactionInput['source'] => {
     if (!raw) return 'csv';
-    const value = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+    const value = raw
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
     if (!value) return 'csv';
     if (value.includes('fnb')) return 'fnb';
     if (value.includes('standard')) return 'standard_bank';
@@ -57,14 +68,14 @@ export const ImportTransactionsModal: React.FC<Props> = ({
     if (lines.length < 2) return [];
 
     const transactions: ImportTransactionInput[] = [];
-    
+
     // Skip header row
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-      
+      const parts = line.split(',').map((p) => p.trim().replace(/^"|"$/g, ''));
+
       if (parts.length >= 4) {
         const externalId = parts[0];
         const amount = Number(parts[2]);
@@ -78,10 +89,10 @@ export const ImportTransactionsModal: React.FC<Props> = ({
           external_id: externalId,
           transaction_date: parts[1],
           amount,
-          transaction_type: (parts[3].toLowerCase() === 'debit' ? 'debit' : 'credit'),
+          transaction_type: parts[3].toLowerCase() === 'debit' ? 'debit' : 'credit',
           reference: externalId,
           description,
-          source: normalizeSource(parts[4])
+          source: normalizeSource(parts[4]),
         });
       }
     }
@@ -92,12 +103,12 @@ export const ImportTransactionsModal: React.FC<Props> = ({
   const handlePreview = () => {
     try {
       const transactions = parseCsv(csvText);
-      
+
       if (transactions.length === 0) {
         toast({
           title: 'Validation Error',
           description: 'No valid transactions found in CSV',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         return;
       }
@@ -105,13 +116,13 @@ export const ImportTransactionsModal: React.FC<Props> = ({
       setPreview(transactions);
       toast({
         title: 'Preview Generated',
-        description: `${transactions.length} transaction(s) ready to import`
+        description: `${transactions.length} transaction(s) ready to import`,
       });
     } catch (error) {
       toast({
         title: 'Parse Error',
         description: 'Failed to parse CSV. Please check format.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -121,16 +132,26 @@ export const ImportTransactionsModal: React.FC<Props> = ({
       toast({
         title: 'Error',
         description: 'Please preview transactions first',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
 
     setLoading(true);
     try {
-      const result = await importBankTransactions(preview);
+      const result = await importTransactionsMutation({
+        transactions: preview.map((t) => ({
+          externalId: t.external_id,
+          amount: t.amount,
+          transactionDate: t.transaction_date,
+          transactionType: t.transaction_type,
+          reference: t.reference,
+          description: t.description,
+          source: t.source,
+        })),
+      });
 
-      if (result.success) {
+      if (result) {
         toast({
           title: 'Success',
           description: (
@@ -140,7 +161,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
                 <p className="text-yellow-600">Duplicates skipped: {result.duplicate_count}</p>
               )}
             </div>
-          )
+          ),
         });
         setCsvText('');
         setPreview([]);
@@ -149,8 +170,8 @@ export const ImportTransactionsModal: React.FC<Props> = ({
       } else {
         toast({
           title: 'Import Failed',
-          description: result.error || 'Failed to import transactions',
-          variant: 'destructive'
+          description: 'Failed to import transactions',
+          variant: 'destructive',
         });
       }
     } catch (error) {
@@ -158,7 +179,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -174,7 +195,8 @@ export const ImportTransactionsModal: React.FC<Props> = ({
             <span>Import Bank Transactions</span>
           </DialogTitle>
           <DialogDescription>
-            Paste CSV data with columns: External ID, Date, Amount, Type, Source, Account (optional), Description
+            Paste CSV data with columns: External ID, Date, Amount, Type, Source, Account
+            (optional), Description
           </DialogDescription>
         </DialogHeader>
 
@@ -186,7 +208,8 @@ export const ImportTransactionsModal: React.FC<Props> = ({
               <div className="text-sm text-blue-800 dark:text-blue-300">
                 <p className="font-medium mb-1">Expected CSV Format:</p>
                 <code className="text-xs bg-white dark:bg-black/40 px-2 py-1 rounded block border border-blue-100 dark:border-blue-800/50">
-                  External ID,Date,Amount,Type,Source,Account,Description<br/>
+                  External ID,Date,Amount,Type,Source,Account,Description
+                  <br />
                   TXN001,2026-01-18,5000.00,credit,FNB,123456,Payment received
                 </code>
               </div>
@@ -208,7 +231,7 @@ export const ImportTransactionsModal: React.FC<Props> = ({
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                {csvText.split('\n').filter(l => l.trim()).length - 1} rows
+                {csvText.split('\n').filter((l) => l.trim()).length - 1} rows
               </p>
               <Button
                 variant="outline"
@@ -231,11 +254,21 @@ export const ImportTransactionsModal: React.FC<Props> = ({
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0">
                       <tr>
-                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">External ID</th>
-                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Date</th>
-                        <th className="text-right p-2 text-xs font-medium text-muted-foreground">Amount</th>
-                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Type</th>
-                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">Source</th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">
+                          External ID
+                        </th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">
+                          Date
+                        </th>
+                        <th className="text-right p-2 text-xs font-medium text-muted-foreground">
+                          Amount
+                        </th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">
+                          Type
+                        </th>
+                        <th className="text-left p-2 text-xs font-medium text-muted-foreground">
+                          Source
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -245,7 +278,13 @@ export const ImportTransactionsModal: React.FC<Props> = ({
                           <td className="p-2 text-xs">{txn.transaction_date}</td>
                           <td className="p-2 text-right text-xs">{formatNAD(txn.amount)}</td>
                           <td className="p-2 text-xs">
-                            <span className={txn.transaction_type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                            <span
+                              className={
+                                txn.transaction_type === 'credit'
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : 'text-red-600 dark:text-red-400'
+                              }
+                            >
                               {txn.transaction_type}
                             </span>
                           </td>
@@ -278,15 +317,11 @@ export const ImportTransactionsModal: React.FC<Props> = ({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleClose} 
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleImport} 
+          <Button
+            onClick={handleImport}
             disabled={loading || preview.length === 0}
             className="bg-blue-600 hover:bg-blue-700"
           >

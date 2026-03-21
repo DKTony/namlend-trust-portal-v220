@@ -29,11 +29,11 @@ The integration:
 
 Authoritative external specs:
 
-- **IPS Product Rules** – user journeys, transaction/merchant rules, limits and frequency, handle/mobile number rules.:contentReference[oaicite:1]{index=1}  
-- **IPS Functional Specification Document (FSD)** – functional flows, registration, alias directory, dispute management, settlement, pricing and business rules.:contentReference[oaicite:2]{index=2}  
-- **IPS Scheme Rules** – governance, compliance, fees, participant obligations, operational rules.:contentReference[oaicite:3]{index=3}  
-- **IPS Technical Specification Document (TSD)** – API definitions, message formats, security, alias model, registration and payment flows, negative scenarios.:contentReference[oaicite:4]{index=4}  
-- **UPI Error & Response Codes** – base error catalogue adapted for IPS error handling.:contentReference[oaicite:5]{index=5}  
+- **IPS Product Rules** – user journeys, transaction/merchant rules, limits and frequency, handle/mobile number rules.:contentReference[oaicite:1]{index=1}
+- **IPS Functional Specification Document (FSD)** – functional flows, registration, alias directory, dispute management, settlement, pricing and business rules.:contentReference[oaicite:2]{index=2}
+- **IPS Scheme Rules** – governance, compliance, fees, participant obligations, operational rules.:contentReference[oaicite:3]{index=3}
+- **IPS Technical Specification Document (TSD)** – API definitions, message formats, security, alias model, registration and payment flows, negative scenarios.:contentReference[oaicite:4]{index=4}
+- **UPI Error & Response Codes** – base error catalogue adapted for IPS error handling.:contentReference[oaicite:5]{index=5}
 
 These documents are the **source of truth** for behaviour. This repository documents how our implementation conforms to them.
 
@@ -71,8 +71,8 @@ At a high level:
 
 - Customer channels call an internal **Payment Orchestrator**.
 - The orchestrator uses an **IPS Adapter** to call IPS APIs (ReqRegMob, ReqValAdd, ReqPay, ReqAuthDetails, ReqChkTxn, etc.).
-- Alias Directory and handle management follow IPS centralised/decentralised models (mobile-number short alias + long-form full aliases).:contentReference[oaicite:6]{index=6}  
-- Transactions are logged in a local **Transaction Store** and reconciled with IPS settlement reports (pacs.009 based).  
+- Alias Directory and handle management follow IPS centralised/decentralised models (mobile-number short alias + long-form full aliases).:contentReference[oaicite:6]{index=6}
+- Transactions are logged in a local **Transaction Store** and reconciled with IPS settlement reports (pacs.009 based).
 
 ## 7. Handover Expectations
 
@@ -113,7 +113,7 @@ Logical layers:
    - Alias Directory maintained by IPN.
    - IPN back-office & settlement services.
 
-FSD and TSD describe IPS as an **API-based switch** providing financial and non-financial APIs for payments, registration, alias management and back-office flows.  
+FSD and TSD describe IPS as an **API-based switch** providing financial and non-financial APIs for payments, registration, alias management and back-office flows.
 
 ## 2. Core Components
 
@@ -138,7 +138,7 @@ Responsibilities:
   - ReqRegMob / RespRegMob.
   - ReqValAdd / RespValAdd.
   - ReqGetAdd / RespGetAdd.
-  - ReqManageVae / RespManageVae.:contentReference[oaicite:9]{index=9}  
+  - ReqManageVae / RespManageVae.:contentReference[oaicite:9]{index=9}
 - Maintain local cache of:
   - Device bindings.
   - IPS handles, mobile-number mappings.
@@ -158,7 +158,7 @@ Responsibilities:
 
 Responsibilities:
 
-- Ingest IPS net settlement reports and pacs.009 settlement messages.  
+- Ingest IPS net settlement reports and pacs.009 settlement messages.
 - Reconcile:
   - IPS transaction logs vs internal ledger vs settlement amounts.
 - Produce exception reports and re-processing queues.
@@ -171,7 +171,7 @@ Responsibilities:
   - Failure rates by error code, API, channel.
 - Alerts on:
   - Connectivity failures.
-  - IPS heartbeat failures (ReqHbt/RespHbt).:contentReference[oaicite:11]{index=11}  
+  - IPS heartbeat failures (ReqHbt/RespHbt).:contentReference[oaicite:11]{index=11}
 
 ## 3. Deployment Topology
 
@@ -198,7 +198,7 @@ Responsibilities:
 7. Integration → App: final status + reference.
 8. Transaction persisted and available for reconciliation.
 
-Flows align with FSD payment & alias diagrams and TSD payment/validation APIs.  
+Flows align with FSD payment & alias diagrams and TSD payment/validation APIs.
 
 ### 4.2 Registration (Mobile)
 
@@ -231,7 +231,7 @@ This document maps logical services/modules and their responsibilities.
 - Merchant cash-in/out and ATM cash-out flows.
 - Profile management (PIN set/reset, preferred SoV).
 
-User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentReference[oaicite:13]{index=13}  
+User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentReference[oaicite:13]{index=13}
 
 ### 1.2 USSD Channel
 
@@ -249,7 +249,7 @@ User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentRef
 
 ### 2.2 Alias & Registration Service
 
-- Abstraction over IPS alias/handle and mobile-number rules.  
+- Abstraction over IPS alias/handle and mobile-number rules.
 - Local persistence of:
   - `AliasRegistration`
   - `DeviceBinding`
@@ -272,7 +272,7 @@ User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentRef
 
 ### 2.5 Reconciliation & Reporting Service
 
-- Processes IPS settlement files and reports.  
+- Processes IPS settlement files and reports.
 - Generates:
   - Daily settlement reports.
   - Break sheets and exception queues.
@@ -294,7 +294,7 @@ User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentRef
 
 ### 3.3 Fraud & Risk Service
 
-- Integrates with IPS FRM outputs and internal rules engine.  
+- Integrates with IPS FRM outputs and internal rules engine.
 - Maintains customer, device and alias-level risk scores.
 
 ## 4. External Dependencies
@@ -308,11 +308,11 @@ User journeys are aligned to IPS Product Rules for P2P and P2M flows.:contentRef
 
 # API Reference
 
-> NOTE: This file documents **our** REST APIs and how they map to IPS APIs. IPS API wire-level details remain governed by the TSD.:contentReference[oaicite:17]{index=17}  
+> NOTE: This file documents **our** REST APIs and how they map to IPS APIs. IPS API wire-level details remain governed by the TSD.:contentReference[oaicite:17]{index=17}
 
 ## 1. Authentication
 
-All APIs are protected with OAuth2 access tokens (JWT).  
+All APIs are protected with OAuth2 access tokens (JWT).
 
 Header:
 
@@ -329,7 +329,7 @@ Initiates user registration and IPS onboarding for the selected SoV.
 
 **Request**
 
-```json
+````json
 {
   "customerId": "string",
   "mobileNumber": "26481XXXXXXX",
@@ -438,13 +438,13 @@ ipsCode is an IPS/UPI response code (e.g. 00, 59, IE, XF).
 retryable indicates whether the client should attempt again (e.g. timeouts).
 
 3.2 Common Mappings (examples)
-IPS Code	Description (UPI/IPS)	Internal Code
-00	Approved / completed successfully	SUCCESS
-59	Suspected fraud / declined on risk score	RISK_DECLINED
-IE	Adequate funds not available due to blocked mandate funds	INSUFFICIENT_FUNDS
-UP	PSP timeout	IPS_TIMEOUT
-UB	Internal exception at beneficiary side	IPS_REMOTE_FAILURE
-XB/XC	Invalid transaction / no suitable response code	IPS_GENERIC_FAILURE
+IPS Code Description (UPI/IPS) Internal Code
+00 Approved / completed successfully SUCCESS
+59 Suspected fraud / declined on risk score RISK_DECLINED
+IE Adequate funds not available due to blocked mandate funds INSUFFICIENT_FUNDS
+UP PSP timeout IPS_TIMEOUT
+UB Internal exception at beneficiary side IPS_REMOTE_FAILURE
+XB/XC Invalid transaction / no suitable response code IPS_GENERIC_FAILURE
 
 Clients must not surface raw IPS codes to end-users; use mapped, localised messages instead.
 
@@ -511,7 +511,7 @@ Represents full-form handles & aliases.
 - `status`
 - `created_at`, `updated_at`
 
-Alias rules (allowed characters, centralised vs decentralised model) follow TSD alias definition and FSD alias directory rules.  
+Alias rules (allowed characters, centralised vs decentralised model) follow TSD alias definition and FSD alias directory rules.
 
 ### 1.5 `payments`
 
@@ -553,7 +553,7 @@ Indexes:
 ### 1.7 `error_codes`
 
 - `code` (PK) – internal code.
-- `ips_code` – IPS/UPI code.:contentReference[oaicite:26]{index=26}  
+- `ips_code` – IPS/UPI code.:contentReference[oaicite:26]{index=26}
 - `description`
 - `http_status`
 - `retryable` (bool)
@@ -574,7 +574,7 @@ Indexes:
 ## 3. Future Extensions
 
 - **`mandates`** for recurring/standing instructions.
-- **`disputes`** for chargebacks, pre-arbitration and arbitration aligned to FSD dispute management flows.:contentReference[oaicite:27]{index=27}  
+- **`disputes`** for chargebacks, pre-arbitration and arbitration aligned to FSD dispute management flows.:contentReference[oaicite:27]{index=27}
 
 <!-- FUNCTIONALITY_MAP.md -->
 
@@ -596,7 +596,7 @@ This file links business use-cases to channels, IPS flows and internal services.
 | Bulk Payments (G2P)  | Back-office       | Bulk payment flow                          | File Ingestion, Payment Orchestrator       |
 | Disputes             | Back-office       | Dispute/chargeback flows                   | Dispute Service, Reconciliation            |
 
-Flows and behaviour are derived from IPS FSD sections on functional flows and user journeys.  
+Flows and behaviour are derived from IPS FSD sections on functional flows and user journeys.
 
 ## 2. Registration & Alias
 
@@ -614,17 +614,17 @@ Flows and behaviour are derived from IPS FSD sections on functional flows and us
 
 ### 3.1 P2P using Mobile Number
 
-- Use alias directory short alias (mobile number) linked to one or more long handles.:contentReference[oaicite:29]{index=29}  
+- Use alias directory short alias (mobile number) linked to one or more long handles.:contentReference[oaicite:29]{index=29}
 - Our system:
   - Resolves payee mobile number to IPS handle.
   - Executes P2P ReqPay.
-  - Handles negative scenarios as per FSD (e.g. unavailable participant, duplicate RRN).  
+  - Handles negative scenarios as per FSD (e.g. unavailable participant, duplicate RRN).
 
 ### 3.2 P2M using Merchant Unique Code / QR
 
 - Merchant registration assigns:
   - IPS handle.
-  - Merchant unique numeric code & QR payload.  
+  - Merchant unique numeric code & QR payload.
 - Customer can pay via:
   - Entering merchant code.
   - Scanning QR → merchant handle/code.
@@ -633,10 +633,10 @@ Flows and behaviour are derived from IPS FSD sections on functional flows and us
 
 - **Reconciliation**
   - Inputs: IPS net settlement reports, pacs.009 settlement messages.
-  - Outputs: internal settlement postings, exception lists.  
+  - Outputs: internal settlement postings, exception lists.
 
 - **Disputes**
-  - Stages: Dispute → Chargeback → Pre-arbitration → Arbitration (FSD §15).:contentReference[oaicite:33]{index=33}  
+  - Stages: Dispute → Chargeback → Pre-arbitration → Arbitration (FSD §15).:contentReference[oaicite:33]{index=33}
 
 ## 5. Future Functionality
 
@@ -644,7 +644,7 @@ Potential extensions:
 
 - Request-to-Pay flows (payer-authorised pull).
 - Standing mandates.
-- Additional purpose codes & initiation modes when introduced by IPS.:contentReference[oaicite:34]{index=34}  
+- Additional purpose codes & initiation modes when introduced by IPS.:contentReference[oaicite:34]{index=34}
 
 <!-- IPP_INTEGRATION.md -->
 
@@ -652,7 +652,7 @@ Potential extensions:
 
 ## 1. Participant Role
 
-We integrate as an **IPS Participant (PSP / SOV provider)** as defined in FSD and Scheme Rules.  
+We integrate as an **IPS Participant (PSP / SOV provider)** as defined in FSD and Scheme Rules.
 
 Responsibilities:
 
@@ -666,7 +666,7 @@ Responsibilities:
 - Protocol: REST/HTTPS with mutual TLS.
 - Digital signatures:
   - Requests signed using X.509 certificates.
-  - Signature verification per TSD *Message Security, Trust and Authenticity* section.:contentReference[oaicite:36]{index=36}  
+  - Signature verification per TSD *Message Security, Trust and Authenticity* section.:contentReference[oaicite:36]{index=36}
 - Keys & certificates:
   - Stored in HSM / secure vault.
   - Separate certs per environment.
@@ -679,11 +679,11 @@ Responsibilities:
 - `ReqListPsp` / `ReqListAccPvd` – discovery of participants and account providers.
 - `ReqListVae` / `ReqManageVae` – alias entries.
 - `ReqValAdd` / `ReqGetAdd` – address validation and lookups.
-- `ReqRegMob` / `ReqOtp` / `ReqSetCre` – registration, OTP, credential management.:contentReference[oaicite:37]{index=37}  
+- `ReqRegMob` / `ReqOtp` / `ReqSetCre` – registration, OTP, credential management.:contentReference[oaicite:37]{index=37}
 
 ### 3.2 Financial
 
-- `ReqPay/RespPay` – all payment types (P2P, P2M, cash-in/out, ATM, bulk).  
+- `ReqPay/RespPay` – all payment types (P2P, P2M, cash-in/out, ATM, bulk).
 - `ReqAuthDetails/RespAuthDetails` – pre-debit authorisation and account validation.
 - `ReqChkTxn/RespChkTxn` – transaction status queries.
 - `ReqBalEnq/RespBalEnq` – balance enquiry.
@@ -693,14 +693,14 @@ Responsibilities:
 Our flows must comply with:
 
 - **Transaction limits & frequency** per channel and use-case.
-- **Handle & mobile number rules**, including blacklisting and transfer between participants.  
-- **Merchant categories & acquisition standards** (Category A/B, MCCs).:contentReference[oaicite:40]{index=40}  
+- **Handle & mobile number rules**, including blacklisting and transfer between participants.
+- **Merchant categories & acquisition standards** (Category A/B, MCCs).:contentReference[oaicite:40]{index=40}
 
 Configuration of limits, purpose codes and initiation modes must match the latest FSD and Product Rules.
 
 ## 5. Scheme & Compliance Alignment
 
-According to Scheme Rules:​:contentReference[oaicite:41]{index=41}  
+According to Scheme Rules:​:contentReference[oaicite:41]{index=41}
 
 - We must:
   - Maintain operational SLAs & uptime.
@@ -710,7 +710,7 @@ According to Scheme Rules:​:contentReference[oaicite:41]{index=41}
 
 ## 6. Onboarding & Certification
 
-Per FSD Participant Onboarding section:​:contentReference[oaicite:42]{index=42}  
+Per FSD Participant Onboarding section:​:contentReference[oaicite:42]{index=42}
 
 - **Onboarding steps**
   - Technical connectivity setup.
@@ -723,7 +723,7 @@ Per FSD Participant Onboarding section:​:contentReference[oaicite:42]{index=42
 
 ## 7. Error Handling & Resilience
 
-- Implement full error mapping from UPI/IPS codes to internal codes (see `API_REFERENCE.md`).  
+- Implement full error mapping from UPI/IPS codes to internal codes (see `API_REFERENCE.md`).
 - Timeouts:
   - Follow IPS recommendations for retry vs query.
   - Use ReqChkTxn for uncertain states.
@@ -740,13 +740,13 @@ This document summarises security posture and IPS-specific requirements.
 - **Least privilege** for services and operators.
 - **End-to-end encryption** of data in transit.
 - **Minimal PII** stored and exposed.
-- **Strong customer authentication** aligned to IPS 1-click 2FA model.  
+- **Strong customer authentication** aligned to IPS 1-click 2FA model.
 
 ## 2. IPS-Specific Security
 
 ### 2.1 Message Security
 
-Per TSD:​:contentReference[oaicite:45]{index=45}  
+Per TSD:​:contentReference[oaicite:45]{index=45}
 
 - All IPS requests/responses use:
   - HTTPS/TLS with mutual authentication.
@@ -777,14 +777,14 @@ Per TSD:​:contentReference[oaicite:45]{index=45}
 
 ## 3. Fraud & Risk Management
 
-IPS provides a network-level FRM/eFRM capability.  
+IPS provides a network-level FRM/eFRM capability.
 
 - Our integration:
   - Consumes FRM responses and risk scores.
   - Applies local rules (velocity, unusual devices, high-risk counterparts).
 - Supports:
   - Transaction-level risk scores.
-  - Blacklist/hotlist of aliases/handles as per Scheme Rules.:contentReference[oaicite:47]{index=47}  
+  - Blacklist/hotlist of aliases/handles as per Scheme Rules.:contentReference[oaicite:47]{index=47}
 
 ## 4. Key & Certificate Management
 
@@ -796,7 +796,7 @@ IPS provides a network-level FRM/eFRM capability.
 
 - Alignment with:
   - PSM Act 14 of 2023 and BoN directives.
-  - Scheme Rules compliance framework, including audits and self-assessment.:contentReference[oaicite:48]{index=48}  
+  - Scheme Rules compliance framework, including audits and self-assessment.:contentReference[oaicite:48]{index=48}
 - Maintain evidence:
   - Implementation docs.
   - Test reports.
@@ -806,7 +806,7 @@ IPS provides a network-level FRM/eFRM capability.
 
 - Static and dynamic application security tests.
 - Penetration testing before go-live and periodically thereafter.
-- Negative scenario testing against IPS (invalid signatures, replay attempts, etc.) as defined in TSD and FSD negative scenarios.  
+- Negative scenario testing against IPS (invalid signatures, replay attempts, etc.) as defined in TSD and FSD negative scenarios.
 
 <!-- TESTING.md -->
 
@@ -819,13 +819,13 @@ IPS provides a network-level FRM/eFRM capability.
    - Focus on business rules (limits, purpose codes, channel behaviour).
 
 2. **Contract / API Tests**
-   - Ensure our IPS adapter adheres to TSD field definitions and constraints.:contentReference[oaicite:50]{index=50}  
+   - Ensure our IPS adapter adheres to TSD field definitions and constraints.:contentReference[oaicite:50]{index=50}
    - Validate serialisation/deserialisation of all IPS APIs (ReqPay, RespPay, ReqRegMob, etc.).
 
 3. **Integration Tests**
    - Against IPS certification environment:
      - Happy-path flows for each use-case.
-     - Negative scenarios (down participants, duplicate TxnId, insufficient funds, FRM declines).  
+     - Negative scenarios (down participants, duplicate TxnId, insufficient funds, FRM declines).
 
 4. **End-to-End (E2E) Tests**
    - Full flows from channel → IPS → core banking/wallet → reconciliation.
@@ -861,17 +861,17 @@ IPS provides a network-level FRM/eFRM capability.
 - Edge cases:
   - IPS/AP participant not available.
   - FRM decline.
-  - Transaction exceeds limit or frequency rules.  
+  - Transaction exceeds limit or frequency rules.
 
 ### 2.3 Cash-In/Out & ATM
 
 - Merchant cash-in / cash-out scenarios.
-- ATM cash-out flows, including OTP and limits.  
+- ATM cash-out flows, including OTP and limits.
 
 ### 2.4 Disputes & Reversals
 
 - Chargeback lifecycle: Dispute → Chargeback → Pre-Arbitration → Arbitration.
-- Reversal flows when beneficiary unavailable or declines, as per IPS rules.  
+- Reversal flows when beneficiary unavailable or declines, as per IPS rules.
 
 ## 3. Test Data Management
 
@@ -908,13 +908,13 @@ This file tracks known technical debt and design compromises related to IPS inte
   - Plan: Externalise into config service / feature flags.
 
 - **Limited retry/back-off strategies**
-  - Current implementation may not fully reflect best practices for `UP` (timeout) and similar error codes.  
+  - Current implementation may not fully reflect best practices for `UP` (timeout) and similar error codes.
   - Plan: Introduce centralised retry policy with circuit-breaking.
 
 ## 2. Alias & Registration
 
 - **Partial support for new MNO logic**
-  - FSD v10 and later introduce flexible MNO rules and SPV alias allocation.:contentReference[oaicite:56]{index=56}  
+  - FSD v10 and later introduce flexible MNO rules and SPV alias allocation.:contentReference[oaicite:56]{index=56}
   - Risk: New MNOs may not work without code changes.
   - Plan: Move MNO logic to configuration/lookup tables.
 
@@ -925,7 +925,7 @@ This file tracks known technical debt and design compromises related to IPS inte
 ## 3. Payment Flows
 
 - **Limited coverage of all initiation modes and purpose codes**
-  - FSD defines detailed matrix of purpose codes and initiation modes.:contentReference[oaicite:57]{index=57}  
+  - FSD defines detailed matrix of purpose codes and initiation modes.:contentReference[oaicite:57]{index=57}
   - Plan: Model purpose/initiator as configurable dimensions and expose via admin tooling.
 
 - **Simplified FRM integration**
@@ -971,7 +971,7 @@ This file standardises UX/UI patterns for IPS use-cases across channels.
   - IPS PIN vs channel login PIN.
   - Data privacy and consent.
 
-Flows should mirror registration journeys in Product Rules & FSD.  
+Flows should mirror registration journeys in Product Rules & FSD.
 
 ### 2.2 P2P Payment
 
@@ -990,7 +990,7 @@ Screens:
 
 - Merchant identifier input with:
   - Real-time merchant name lookup.
-  - Category display and MCC (where relevant).:contentReference[oaicite:59]{index=59}  
+  - Category display and MCC (where relevant).:contentReference[oaicite:59]{index=59}
 - Strong visual distinction between:
   - Paying a merchant.
   - Cashing out at an agent.
@@ -1021,7 +1021,7 @@ Screens:
 
 Design USSD menu flows that:
 
-- Reflect IPS USSD rules and constraints.  
+- Reflect IPS USSD rules and constraints.
 - Use short, clear text.
 - Avoid deep nesting (ideally ≤ 4 levels).
 
@@ -1051,7 +1051,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - `DESIGN_SYSTEM.md`
   - `PRODUCT_IMPROVEMENT_PLAN.md`
   - `NamLend Trust – Market Research Gaps.md`
-- Baseline IPS integration design aligned with IPS Product Rules, FSD, Scheme Rules and TSD.  
+- Baseline IPS integration design aligned with IPS Product Rules, FSD, Scheme Rules and TSD.
 
 Future releases should be appended below with date, version and summary.
 
@@ -1071,21 +1071,21 @@ This document outlines medium-term improvements for our IPS-enabled products.
 ## 2. Short-Term (0–3 months)
 
 - Finalise IPS certification for all mandatory use-cases.
-- Improve error-handling coverage for all IPS response codes we encounter.  
+- Improve error-handling coverage for all IPS response codes we encounter.
 - Add monitoring dashboards:
   - Per-channel failure rate.
   - Top error codes and participants.
 
 ## 3. Medium-Term (3–9 months)
 
-- Roll out **Merchant Cash-In** and optimise flows based on product rules additions.  
+- Roll out **Merchant Cash-In** and optimise flows based on product rules additions.
 - Introduce:
   - Alias management in user profile (multiple handles).
   - Self-service device binding management.
 
 - Enhance FRM integration:
   - Use IPS FRM attributes and risk scores.
-  - Establish automated case creation for high-risk events.  
+  - Establish automated case creation for high-risk events.
 
 ## 4. Long-Term (>9 months)
 
@@ -1100,7 +1100,7 @@ This document outlines medium-term improvements for our IPS-enabled products.
 
 - Transaction success rate (target ≥ 98% excluding customer errors).
 - Average registration completion time.
-- Dispute resolution time vs Scheme Rules SLAs.:contentReference[oaicite:65]{index=65}  
+- Dispute resolution time vs Scheme Rules SLAs.:contentReference[oaicite:65]{index=65}
 - Operational cost per 1,000 transactions.
 
 ## 6. Governance
@@ -1119,7 +1119,7 @@ This document outlines medium-term improvements for our IPS-enabled products.
 
 ## 1. Context
 
-IPS aims to support financial inclusion, particularly for underserved communities using low-value, real-time payments across bank accounts and e-money wallets.  
+IPS aims to support financial inclusion, particularly for underserved communities using low-value, real-time payments across bank accounts and e-money wallets.
 
 NamLend-type products (micro-lending, salary advances, SME credit) can leverage:
 
@@ -1143,7 +1143,7 @@ NamLend-type products (micro-lending, salary advances, SME credit) can leverage:
 - Need a structured overview of:
   - Existing micro-lenders using IPS or other rails.
   - Banks and MNO wallets offering instant loans or overdrafts.
-- Understand fee structures vs IPS switching & interchange fees.  
+- Understand fee structures vs IPS switching & interchange fees.
 
 **Action:** Compile competitor matrix (product types, limits, pricing, channels).
 
@@ -1153,7 +1153,7 @@ NamLend-type products (micro-lending, salary advances, SME credit) can leverage:
   - Use of IPS transaction data for credit scoring (data protection & consent).
   - Any limits on loan disbursement/repayment via IPS purpose codes.
 
-**Action:** Engage with BoN/NAMFISA guidelines and IPS Scheme Rules on data usage and purpose codes.  
+**Action:** Engage with BoN/NAMFISA guidelines and IPS Scheme Rules on data usage and purpose codes.
 
 ### 2.4 Operational Model
 
@@ -1164,7 +1164,7 @@ Open questions:
   - Indirect participation through a partner bank?
 - Agent/merchant network:
   - What density is required for effective cash-in/out coverage?
-  - How to incentivise Category B small merchants to act as agents?:contentReference[oaicite:69]{index=69}  
+  - How to incentivise Category B small merchants to act as agents?:contentReference[oaicite:69]{index=69}
 
 ## 3. Next Steps
 
@@ -1174,3 +1174,4 @@ Open questions:
   - Product requirements.
   - Risk models.
   - IPS transaction limit/purpose-code configuration.
+````

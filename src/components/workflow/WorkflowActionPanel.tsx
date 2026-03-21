@@ -12,7 +12,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useWorkflowActions } from '@/hooks/useWorkflow';
-import { WorkflowStageExecution } from '@/services/workflowEngine';
+
+interface WorkflowStageExecution {
+  id: string;
+  workflow_instance_id: string;
+  stage_number: number;
+  stage_name: string;
+  assigned_role: string;
+  assigned_to?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'skipped';
+  decision?: string;
+  decision_notes?: string;
+  decided_by?: string;
+  decided_at?: string;
+  created_at: string;
+}
 
 interface WorkflowActionPanelProps {
   stageExecution: WorkflowStageExecution;

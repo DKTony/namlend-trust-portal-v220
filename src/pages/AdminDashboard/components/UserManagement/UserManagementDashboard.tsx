@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Download, 
+import {
+  Users,
+  Search,
+  Filter,
+  Download,
   Plus,
   Shield,
   Settings,
@@ -15,9 +15,10 @@ import {
   Activity,
   BarChart3,
   Loader2,
-  X
+  X,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -59,9 +60,7 @@ interface UserManagementDashboardProps {
   onUserSelect?: (userId: string) => void;
 }
 
-const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ 
-  onUserSelect 
-}) => {
+const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUserSelect }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('users');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -70,103 +69,63 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showImportWizard, setShowImportWizard] = useState(false);
-  
-  // Stats state
-  const [stats, setStats] = useState<UserStats>({ totalUsers: 0, activeUsers: 0, adminUsers: 0, pendingActions: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
-  
+
+  // Convex reactive queries for stats (N2 — no as any)
+  const rawUsers = useQuery(api.users.listUsers, {});
+  const rawApprovals = useQuery(api.approvalWorkflow.adminListApprovals, { status: 'pending' });
+
+  const statsLoading = rawUsers === undefined;
+  const stats: UserStats = useMemo(() => {
+    if (!rawUsers) return { totalUsers: 0, activeUsers: 0, adminUsers: 0, pendingActions: 0 };
+    return {
+      totalUsers: rawUsers.length,
+      activeUsers: rawUsers.length,
+      adminUsers: rawUsers.filter((u) => u.role === 'admin').length,
+      pendingActions: rawApprovals?.length ?? 0,
+    };
+  }, [rawUsers, rawApprovals]);
+
   // Add User Modal
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [newUserData, setNewUserData] = useState({ email: '', firstName: '', lastName: '', role: 'client' });
+  const [newUserData, setNewUserData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: 'client',
+  });
   const [addingUser, setAddingUser] = useState(false);
-  
+
   // Advanced Filters Modal
   const [showFiltersModal, setShowFiltersModal] = useState(false);
 
-  // Fetch real stats from database
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const handleExportUsers = () => {
+    if (!rawUsers) return;
+    toast({ title: 'Exporting...', description: 'Preparing user data for export' });
 
-  const fetchStats = async () => {
-    setStatsLoading(true);
-    try {
-      // Get total users count
-      const { count: totalCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+    const headers = ['ID', 'Full Name', 'Email', 'Phone', 'Role', 'Created At'];
+    const csvContent = [
+      headers.join(','),
+      ...rawUsers.map((u: any) =>
+        [
+          String(u._id),
+          u.fullName || '',
+          u.email || '',
+          u.phone || '',
+          u.role || 'client',
+          u.createdAt ? new Date(u.createdAt).toISOString() : '',
+        ].join(',')
+      ),
+    ].join('\n');
 
-      // Get active (verified) users
-      const { count: activeCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('verified', true);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
 
-      // Get admin users
-      const { count: adminCount } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'admin');
-
-      // Get pending approval requests as pending actions
-      const { count: pendingCount } = await supabase
-        .from('approval_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-      setStats({
-        totalUsers: totalCount || 0,
-        activeUsers: activeCount || 0,
-        adminUsers: adminCount || 0,
-        pendingActions: pendingCount || 0
-      });
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-    } finally {
-      setStatsLoading(false);
-    }
-  };
-
-  const handleExportUsers = async () => {
-    try {
-      toast({ title: 'Exporting...', description: 'Preparing user data for export' });
-      
-      const { data, error } = await supabase
-        .from('profiles_with_roles')
-        .select('user_id, first_name, last_name, email, phone_number, verified, created_at, primary_role');
-
-      if (error) throw error;
-
-      // Create CSV content
-      const headers = ['ID', 'First Name', 'Last Name', 'Email', 'Phone', 'Verified', 'Created At', 'Role'];
-      const csvContent = [
-        headers.join(','),
-        ...(data || []).map(user => [
-          user.user_id,
-          user.first_name || '',
-          user.last_name || '',
-          user.email || '',
-          user.phone_number || '',
-          user.verified ? 'Yes' : 'No',
-          user.created_at,
-          user.primary_role || 'client'
-        ].join(','))
-      ].join('\n');
-
-      // Download file
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      toast({ title: 'Export Complete', description: `Exported ${data?.length || 0} users` });
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : 'Export failed';
-      toast({ title: 'Export Failed', description: errMsg, variant: 'destructive' });
-    }
+    toast({ title: 'Export Complete', description: `Exported ${rawUsers.length} users` });
   };
 
   const handleAddUser = async () => {
@@ -179,14 +138,13 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
     try {
       // Create auth user via admin API (this would typically be done server-side)
       // For now, we'll just create a profile entry as a placeholder
-      toast({ 
-        title: 'Note', 
+      toast({
+        title: 'Note',
         description: 'User invitation sent. They will receive an email to set up their account.',
       });
-      
+
       setShowAddUserModal(false);
       setNewUserData({ email: '', firstName: '', lastName: '', role: 'client' });
-      fetchStats();
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : 'Failed to add user';
       toast({ title: 'Error', description: errMsg, variant: 'destructive' });
@@ -244,7 +202,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                 {statsLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 ) : (
-                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">{stats.totalUsers.toLocaleString()}</p>
+                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                    {stats.totalUsers.toLocaleString()}
+                  </p>
                 )}
               </div>
               <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -259,7 +219,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                 {statsLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 ) : (
-                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">{stats.activeUsers.toLocaleString()}</p>
+                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                    {stats.activeUsers.toLocaleString()}
+                  </p>
                 )}
               </div>
               <UserCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -274,7 +236,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                 {statsLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 ) : (
-                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">{stats.adminUsers.toLocaleString()}</p>
+                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                    {stats.adminUsers.toLocaleString()}
+                  </p>
                 )}
               </div>
               <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
@@ -289,7 +253,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                 {statsLoading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 ) : (
-                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">{stats.pendingActions.toLocaleString()}</p>
+                  <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                    {stats.pendingActions.toLocaleString()}
+                  </p>
                 )}
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
@@ -392,10 +358,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
         </TabsContent>
 
         <TabsContent value="bulk" className="space-y-4">
-          <BulkUserOperations 
-            selectedUsers={selectedUsers}
-            onSelectionChange={setSelectedUsers}
-          />
+          <BulkUserOperations selectedUsers={selectedUsers} onSelectionChange={setSelectedUsers} />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-4">
@@ -411,24 +374,18 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
         </TabsContent>
 
         <TabsContent value="import" className="space-y-6">
-          <UserImportWizard 
+          <UserImportWizard
             onClose={() => setActiveTab('users')}
             onComplete={(users) => {
               console.log('Imported users:', users);
               setActiveTab('users');
-              fetchStats();
-            }} 
+            }}
           />
         </TabsContent>
       </Tabs>
 
       {/* User Profile Modal */}
-      {selectedUser && (
-        <UserProfile
-          userId={selectedUser}
-          onClose={handleCloseProfile}
-        />
-      )}
+      {selectedUser && <UserProfile userId={selectedUser} onClose={handleCloseProfile} />}
 
       {/* Add User Modal */}
       <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
@@ -447,7 +404,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                 type="email"
                 placeholder="user@example.com"
                 value={newUserData.email}
-                onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                onChange={(e) => setNewUserData((prev) => ({ ...prev, email: e.target.value }))}
                 className="bg-background"
               />
             </div>
@@ -458,7 +415,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                   id="firstName"
                   placeholder="John"
                   value={newUserData.firstName}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({ ...prev, firstName: e.target.value }))
+                  }
                   className="bg-background"
                 />
               </div>
@@ -468,16 +427,18 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
                   id="lastName"
                   placeholder="Doe"
                   value={newUserData.lastName}
-                  onChange={(e) => setNewUserData(prev => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) =>
+                    setNewUserData((prev) => ({ ...prev, lastName: e.target.value }))
+                  }
                   className="bg-background"
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Initial Role</Label>
-              <Select 
-                value={newUserData.role} 
-                onValueChange={(value) => setNewUserData(prev => ({ ...prev, role: value }))}
+              <Select
+                value={newUserData.role}
+                onValueChange={(value) => setNewUserData((prev) => ({ ...prev, role: value }))}
               >
                 <SelectTrigger className="bg-background">
                   <SelectValue />
@@ -495,7 +456,11 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
               Cancel
             </Button>
             <Button onClick={handleAddUser} disabled={addingUser}>
-              {addingUser ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+              {addingUser ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
               Send Invitation
             </Button>
           </DialogFooter>
@@ -507,9 +472,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Advanced Filters</DialogTitle>
-            <DialogDescription>
-              Filter users by multiple criteria
-            </DialogDescription>
+            <DialogDescription>Filter users by multiple criteria</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -552,16 +515,17 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setFilterRole('all');
-              setFilterStatus('all');
-              setSearchTerm('');
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterRole('all');
+                setFilterStatus('all');
+                setSearchTerm('');
+              }}
+            >
               Clear Filters
             </Button>
-            <Button onClick={() => setShowFiltersModal(false)}>
-              Apply Filters
-            </Button>
+            <Button onClick={() => setShowFiltersModal(false)}>Apply Filters</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

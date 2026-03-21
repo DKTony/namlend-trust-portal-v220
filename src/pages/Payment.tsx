@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '@/types/convex';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
@@ -54,12 +56,34 @@ export default function Payment() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { t } = useTranslation('payment');
-  const [activeLoans, setActiveLoans] = useState<Loan[]>([]);
+  // Convex reactive queries
+  const rawLoans = useQuery(api.loans.getMyLoans, {});
+  const recordPaymentMutation = useMutation(api.payments.recordPayment);
+
+  // Filter to active/disbursed loans and map to Loan shape
+  const activeLoans: Loan[] = (rawLoans ?? [])
+    .filter((l) => ['active', 'disbursed'].includes(l.status))
+    .map((l) => ({
+      id: l._id,
+      amount: l.principal ?? l.amount ?? 0,
+      monthly_payment: l.monthlyPayment ?? 0,
+      status: l.status,
+      created_at: l.createdAt ? new Date(l.createdAt).toISOString() : '',
+    }));
+
   const [selectedLoan, setSelectedLoan] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Auto-select first loan when data loads
+  useEffect(() => {
+    if (activeLoans.length > 0 && !selectedLoan) {
+      setSelectedLoan(activeLoans[0].id);
+      setPaymentAmount(activeLoans[0].monthly_payment.toString());
+    }
+  }, [activeLoans, selectedLoan]);
 
   // Processing fee varies by payment method - IPS has no fee
   const getProcessingFee = (method: string): number => {
@@ -75,33 +99,6 @@ export default function Payment() {
     }
   };
   const processingFee = getProcessingFee(paymentMethod);
-
-  useEffect(() => {
-    if (user) {
-      fetchActiveLoans();
-    }
-  }, [user]);
-
-  const fetchActiveLoans = async () => {
-    try {
-      const { data } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('user_id', user?.id)
-        .in('status', ['active', 'disbursed'])
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setActiveLoans(data);
-        if (data.length > 0) {
-          setSelectedLoan(data[0].id);
-          setPaymentAmount(data[0].monthly_payment.toString());
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching loans:', error);
-    }
-  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -133,42 +130,21 @@ export default function Payment() {
     setLoading(true);
 
     try {
-      // Generate deterministic idempotency key based on loan, amount, method, and date
-      // This ensures user retries/reloads with same inputs will dedupe properly
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const amountCents = Math.round(parseFloat(paymentAmount) * 100); // Normalize to cents
       const rpcPaymentMethod = paymentMethodToRpc[paymentMethod] || paymentMethod;
-      const idempotencyKey = `pay-${selectedLoan}-${amountCents}-${rpcPaymentMethod}-${today}`;
 
-      // Use create_payment RPC for proper audit trail, ledger event, and fee recording
-      const { data, error } = await supabase.rpc('create_payment', {
-        p_loan_id: selectedLoan,
-        p_amount: parseFloat(paymentAmount),
-        p_payment_method: rpcPaymentMethod,
-        p_processing_fee: processingFee,
-        p_idempotency_key: idempotencyKey,
-        p_payment_notes: null,
+      // Use Convex mutation for payment recording with audit trail + TigerBeetle outbox
+      const paymentId = await recordPaymentMutation({
+        loanId: selectedLoan as Id<'loans'>,
+        amount: parseFloat(paymentAmount),
+        method: rpcPaymentMethod,
+        feesPaid: processingFee,
       });
-
-      if (error) throw error;
-
-      const result = data as {
-        success: boolean;
-        payment_id: string;
-        reference_number: string;
-        total_amount: number;
-        message: string;
-      };
-
-      if (!result.success) {
-        throw new Error(result.message || 'Payment creation failed');
-      }
 
       toast({
         title: t('toast.initiatedTitle'),
         description: t('toast.initiatedDescription', {
-          reference: result.reference_number,
-          total: result.total_amount.toFixed(2),
+          reference: paymentId,
+          total: (parseFloat(paymentAmount) + processingFee).toFixed(2),
         }),
       });
 

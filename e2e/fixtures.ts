@@ -1,30 +1,38 @@
 /**
  * Playwright Test Fixtures for E2E Tests
  *
- * Provides reusable, isolated Supabase client instances with proper authentication
- * for parallel test execution without session conflicts.
+ * Provides reusable, isolated Convex client instances for parallel test
+ * execution. Supabase fixtures retained for any tests not yet migrated.
+ *
+ * MIGRATION: Supabase fixtures still work during transition.
+ *            New tests should use convexClient and authenticate via the UI.
  */
 
 import 'dotenv/config';
-import { test as base } from '@playwright/test';
+import { test as base, Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ConvexHttpClient } from 'convex/browser';
+
+// ---------------------------------------------------------------------------
+// Environment
+// ---------------------------------------------------------------------------
 
 const DEFAULT_SUPABASE_PROJECT_ID = 'puahejtaskncpazjyxqp';
 
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL ||
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
   (process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID
     ? `https://${process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID}.supabase.co`
     : `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`);
 
-const SUPABASE_ANON_KEY =
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  '';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-// Test user credentials
+const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.convex.cloud';
+
+// ---------------------------------------------------------------------------
+// Test users (same credentials work for both Supabase and Convex Auth)
+// ---------------------------------------------------------------------------
+
 export const TEST_USERS = {
   client1: {
     email: 'client1@test.namlend.com',
@@ -48,10 +56,10 @@ export const TEST_USERS = {
   },
 };
 
-/**
- * Create an isolated Supabase client with unique storage key
- * to prevent session conflicts in parallel test execution
- */
+// ---------------------------------------------------------------------------
+// Supabase helpers (retained for backward compatibility)
+// ---------------------------------------------------------------------------
+
 function createIsolatedClient(storageKey?: string): SupabaseClient {
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -67,113 +75,108 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Authenticate a client with given credentials
- */
-async function authenticateClient(
+async function authenticateSupabaseClient(
   client: SupabaseClient,
   email: string,
   password: string
 ): Promise<void> {
   const maxAttempts = 5;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const { error } = await client.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (!error) {
-      return;
-    }
-
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const { error } = await client.auth.signInWithPassword({ email, password });
+    if (!error) return;
     const isRateLimited = /rate limit/i.test(error.message || '');
     if (!isRateLimited || attempt === maxAttempts) {
       throw new Error(`Authentication failed for ${email}: ${error.message}`);
     }
-
-    // Exponential backoff for transient auth throttling in CI/e2e runs.
     const backoffMs = Math.min(2000 * 2 ** (attempt - 1), 12000);
     await sleep(backoffMs);
   }
 }
 
-/**
- * Extended test fixtures with authenticated Supabase clients
- */
-type TestFixtures = {
-  // Isolated, unauthenticated client
-  supabaseClient: SupabaseClient;
+// ---------------------------------------------------------------------------
+// Convex HTTP client helper (for API-level tests against Convex backend)
+// ---------------------------------------------------------------------------
 
-  // Pre-authenticated clients for each user type
+export function createConvexTestClient(): ConvexHttpClient {
+  return new ConvexHttpClient(CONVEX_URL);
+}
+
+/**
+ * Sign in via the app UI (Playwright page).
+ * Used by E2E tests that need an authenticated browser session with Convex Auth.
+ */
+export async function signInViaUI(page: Page, email: string, password: string): Promise<void> {
+  await page.goto('/auth');
+  await page.fill('[data-testid="email-input"]', email);
+  await page.fill('[data-testid="password-input"]', password);
+  await page.click('[data-testid="sign-in-button"]');
+  // Wait for redirect to dashboard
+  await page.waitForURL(/\/(dashboard|admin)/, { timeout: 15_000 });
+}
+
+// ---------------------------------------------------------------------------
+// Fixture types
+// ---------------------------------------------------------------------------
+
+type TestFixtures = {
+  // Convex HTTP client (stateless — for API testing)
+  convexClient: ConvexHttpClient;
+
+  // Supabase clients (retained for backward compatibility during migration)
+  supabaseClient: SupabaseClient;
   client1Supabase: SupabaseClient;
   client2Supabase: SupabaseClient;
   adminSupabase: SupabaseClient;
   loanOfficerSupabase: SupabaseClient;
-
-  // Anonymous client (no authentication)
   anonSupabase: SupabaseClient;
 };
 
 export const test = base.extend<TestFixtures>({
-  /**
-   * Isolated Supabase client (unauthenticated)
-   * Use this when you need to authenticate manually in your test
-   */
+  // Convex HTTP client (shared, stateless)
+  convexClient: async ({}, use) => {
+    const client = createConvexTestClient();
+    await use(client);
+  },
+
+  // Unauthenticated Supabase client
   supabaseClient: async ({}, use) => {
     const client = createIsolatedClient();
     await use(client);
     await client.auth.signOut();
   },
 
-  /**
-   * Pre-authenticated client1 (regular client user)
-   */
   client1Supabase: async ({}, use, testInfo) => {
-    const storageKey = `client1-${testInfo.testId}-${Date.now()}`;
-    const client = createIsolatedClient(storageKey);
-    await authenticateClient(client, TEST_USERS.client1.email, TEST_USERS.client1.password);
+    const client = createIsolatedClient(`client1-${testInfo.testId}-${Date.now()}`);
+    await authenticateSupabaseClient(client, TEST_USERS.client1.email, TEST_USERS.client1.password);
     await use(client);
     await client.auth.signOut();
   },
 
-  /**
-   * Pre-authenticated client2 (regular client user)
-   */
   client2Supabase: async ({}, use, testInfo) => {
-    const storageKey = `client2-${testInfo.testId}-${Date.now()}`;
-    const client = createIsolatedClient(storageKey);
-    await authenticateClient(client, TEST_USERS.client2.email, TEST_USERS.client2.password);
+    const client = createIsolatedClient(`client2-${testInfo.testId}-${Date.now()}`);
+    await authenticateSupabaseClient(client, TEST_USERS.client2.email, TEST_USERS.client2.password);
     await use(client);
     await client.auth.signOut();
   },
 
-  /**
-   * Pre-authenticated admin user
-   */
   adminSupabase: async ({}, use, testInfo) => {
-    const storageKey = `admin-${testInfo.testId}-${Date.now()}`;
-    const client = createIsolatedClient(storageKey);
-    await authenticateClient(client, TEST_USERS.admin.email, TEST_USERS.admin.password);
+    const client = createIsolatedClient(`admin-${testInfo.testId}-${Date.now()}`);
+    await authenticateSupabaseClient(client, TEST_USERS.admin.email, TEST_USERS.admin.password);
     await use(client);
     await client.auth.signOut();
   },
 
-  /**
-   * Pre-authenticated loan officer user
-   */
   loanOfficerSupabase: async ({}, use, testInfo) => {
-    const storageKey = `loan-officer-${testInfo.testId}-${Date.now()}`;
-    const client = createIsolatedClient(storageKey);
-    await authenticateClient(client, TEST_USERS.loanOfficer.email, TEST_USERS.loanOfficer.password);
+    const client = createIsolatedClient(`loan-officer-${testInfo.testId}-${Date.now()}`);
+    await authenticateSupabaseClient(
+      client,
+      TEST_USERS.loanOfficer.email,
+      TEST_USERS.loanOfficer.password
+    );
     await use(client);
     await client.auth.signOut();
   },
 
-  /**
-   * Anonymous client (no authentication)
-   * Use this for testing unauthenticated access
-   */
   anonSupabase: async ({}, use) => {
     const client = createIsolatedClient('anon');
     await use(client);
@@ -183,24 +186,19 @@ export const test = base.extend<TestFixtures>({
 export { expect } from '@playwright/test';
 
 /**
- * Usage Example:
+ * Usage — Convex-based tests:
  *
- * import { test, expect } from './fixtures';
+ * import { test, expect, signInViaUI, TEST_USERS } from './fixtures';
  *
- * test('Admin can create disbursement', async ({ adminSupabase }) => {
- *   const { data, error } = await adminSupabase
- *     .from('disbursements')
- *     .insert({ ... });
- *
- *   expect(error).toBeNull();
- *   expect(data).toBeTruthy();
+ * test('Admin can list loans', async ({ page, convexClient }) => {
+ *   await signInViaUI(page, TEST_USERS.admin.email, TEST_USERS.admin.password);
+ *   // convexClient is available for API-level assertions
  * });
  *
- * test('Client cannot access admin data', async ({ client1Supabase }) => {
- *   const { data, error } = await client1Supabase
- *     .from('admin_only_table')
- *     .select('*');
+ * Usage — Supabase fixtures (backward compat, for tests not yet migrated):
  *
+ * test('Client cannot access admin data', async ({ client1Supabase }) => {
+ *   const { data } = await client1Supabase.from('loans').select('*');
  *   expect(data).toEqual([]);
  * });
  */

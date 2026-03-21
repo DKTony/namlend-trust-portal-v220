@@ -6,7 +6,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import {
   IPPOnboardingState,
   IPP_ONBOARDING_STATE_LABELS,
@@ -173,51 +174,94 @@ export function useIPPOnboarding() {
   const [ipsPinConfirm, setIpsPinConfirm] = useState('');
   const [vpaUsername, setVpaUsername] = useState('');
 
+  // Convex reactive queries
+  const rawOnboarding = useQuery(api.ips.ipsOnboarding.getMyOnboarding);
+  const startOnboardingMutation = useMutation(api.ips.ipsOnboarding.startOnboarding);
+  const advanceStepMutation = useMutation(api.ips.ipsOnboarding.advanceOnboardingStep);
+
+  // Map Convex onboarding to legacy OnboardingData shape
   useEffect(() => {
-    if (user) {
-      fetchOnboardingStatus();
-      fetchSovProviders();
+    if (rawOnboarding !== undefined) {
+      setLoading(false);
+      if (rawOnboarding) {
+        // Map Convex step-based status to legacy IPP state machine
+        const stepToState: Record<string, IPPOnboardingState> = {
+          step_1_identity: 'DEVICE_BINDING_REQUIRED',
+          step_2_bank_details: 'SOV_SELECTION_PENDING',
+          step_3_documents: 'ACCOUNTS_LISTED',
+          step_4_vpa_selection: 'ALIAS_REGISTRATION_PENDING',
+          step_5_review: 'ALIAS_REGISTERED',
+          step_6_submitted: 'ALIAS_REGISTERED',
+          step_7_approved: 'READY_FOR_IPP_PAYMENTS',
+          rejected: 'NOT_STARTED',
+        };
+        setOnboardingData({
+          id: rawOnboarding._id,
+          user_id: rawOnboarding.userId,
+          state: stepToState[rawOnboarding.status] ?? 'NOT_STARTED',
+          sov_provider_code: rawOnboarding.bankDetails?.sov_provider_code ?? null,
+          sov_provider_name: rawOnboarding.bankDetails?.sov_provider_name ?? null,
+          selected_account_masked: rawOnboarding.bankDetails?.selected_account_masked ?? null,
+          long_alias: rawOnboarding.selectedVpa ?? null,
+          short_alias_mobile: null,
+          ips_pin_set: false,
+          last_step_completed: rawOnboarding.status,
+          last_error_code: null,
+          last_error_message: null,
+          started_at: rawOnboarding.createdAt
+            ? new Date(rawOnboarding.createdAt).toISOString()
+            : null,
+          completed_at: rawOnboarding.approvedAt
+            ? new Date(rawOnboarding.approvedAt).toISOString()
+            : null,
+        });
+      }
     }
-  }, [user]);
+  }, [rawOnboarding]);
+
+  // SOV providers — hardcoded mock data (IPS is in mock mode, no Convex table yet)
+  useEffect(() => {
+    setSovProviders([
+      {
+        id: '1',
+        provider_code: 'FNB',
+        provider_name: 'First National Bank',
+        provider_handle: 'fnb',
+        is_active: true,
+      },
+      {
+        id: '2',
+        provider_code: 'SBN',
+        provider_name: 'Standard Bank Namibia',
+        provider_handle: 'standardbank',
+        is_active: true,
+      },
+      {
+        id: '3',
+        provider_code: 'NDB',
+        provider_name: 'Nedbank Namibia',
+        provider_handle: 'nedbank',
+        is_active: true,
+      },
+      {
+        id: '4',
+        provider_code: 'BOW',
+        provider_name: 'Bank Windhoek',
+        provider_handle: 'bankwindhoek',
+        is_active: true,
+      },
+      {
+        id: '5',
+        provider_code: 'MTC',
+        provider_name: 'MTC MoMo',
+        provider_handle: 'mtc',
+        is_active: true,
+      },
+    ]);
+  }, []);
 
   const fetchOnboardingStatus = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_or_create_ips_onboarding');
-
-      if (error) {
-        console.error('Error fetching onboarding status:', error);
-        return;
-      }
-
-      if (data?.success && data.onboarding) {
-        setOnboardingData(data.onboarding);
-
-        // Pre-fill mobile number from profile if available
-        if (data.profile?.phone) {
-          setMobileNumber(data.profile.phone);
-        }
-      }
-    } catch (err) {
-      console.error('Fetch onboarding error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSovProviders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ips_sov_providers')
-        .select('*')
-        .eq('is_active', true)
-        .order('provider_name');
-
-      if (data) {
-        setSovProviders(data);
-      }
-    } catch (err) {
-      console.error('Fetch SOV providers error:', err);
-    }
+    // No-op: Convex data is reactive via useQuery
   };
 
   const getCurrentStep = () => {
@@ -320,40 +364,33 @@ export function useIPPOnboarding() {
           return;
       }
 
-      // Call the advance step RPC
-      const { data, error } = await supabase.rpc('advance_ips_onboarding_step', {
-        p_user_id: user.id,
-        p_step_name: stepName,
-        p_step_data: stepData,
-        p_success: true,
+      // Start onboarding if not yet started
+      if (!rawOnboarding) {
+        await startOnboardingMutation();
+      }
+
+      // Advance onboarding step via Convex mutation
+      if (rawOnboarding?._id) {
+        await advanceStepMutation({
+          applicationId: rawOnboarding._id,
+          stepData,
+          selectedVpa: currentAction === 'create_alias' ? stepData.long_alias : undefined,
+        });
+      }
+
+      toast({
+        title: 'Step Completed',
+        description: `Successfully completed ${stepName.replace('_', ' ')}`,
       });
 
-      if (error) {
-        console.error('Advance step error:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to complete step',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Convex data updates reactively, close dialog
+      setShowActionDialog(false);
 
-      if (data?.success) {
-        toast({
-          title: 'Step Completed',
-          description: `Successfully completed ${stepName.replace('_', ' ')}`,
-        });
-
-        // Refresh onboarding status
-        await fetchOnboardingStatus();
-        setShowActionDialog(false);
-
-        // Reset form fields
-        setOtpCode('');
-        setIpsPin('');
-        setIpsPinConfirm('');
-        setVpaUsername('');
-      }
+      // Reset form fields
+      setOtpCode('');
+      setIpsPin('');
+      setIpsPinConfirm('');
+      setVpaUsername('');
     } catch (err) {
       console.error('Submit action error:', err);
       toast({

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -15,54 +15,104 @@ import {
   DollarSign,
   Calendar,
 } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
 interface RiskAnalysisProps {
   dateRange?: string;
 }
 
 const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
-  // Mock risk analysis data
-  const riskDistribution = [
-    { name: 'Low Risk', value: 45, color: '#22c55e' },
-    { name: 'Medium Risk', value: 35, color: '#f59e0b' },
-    { name: 'High Risk', value: 15, color: '#ef4444' },
-    { name: 'Critical Risk', value: 5, color: '#dc2626' },
-  ];
+  const risk = useQuery(api.analytics.getRiskMetrics);
+  const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
+
+  const { riskDistribution, riskFactors, riskAlerts } = useMemo(() => {
+    const nplRatio = risk?.nplRatio ?? 0;
+    const par30Ratio = risk?.par30Ratio ?? 0;
+    const overdueCount = risk?.nonPerformingLoans ?? 0;
+    const activeLoans = portfolio?.loans?.active ?? 0;
+
+    const lowPct = activeLoans > 0 ? Math.max(0, 100 - Math.round(nplRatio * 100 * 5)) : 70;
+    const highPct = Math.round(nplRatio * 100 * 2);
+    const critPct = Math.round(par30Ratio * 100);
+    const medPct = Math.max(0, 100 - lowPct - highPct - critPct);
+
+    return {
+      riskDistribution: [
+        { name: 'Low Risk', value: lowPct, color: '#22c55e' },
+        { name: 'Medium Risk', value: medPct, color: '#f59e0b' },
+        { name: 'High Risk', value: highPct, color: '#ef4444' },
+        { name: 'Critical Risk', value: critPct, color: '#dc2626' },
+      ],
+      riskFactors: [
+        {
+          factor: 'Payment Timeliness',
+          impact: Math.max(0, 100 - Math.round(nplRatio * 100 * 10)),
+          trend: nplRatio < 0.05 ? 'stable' : 'worsening',
+        },
+        {
+          factor: 'Portfolio Quality (NPL)',
+          impact: Math.max(0, 100 - Math.round(nplRatio * 100 * 5)),
+          trend: nplRatio < 0.03 ? 'improving' : nplRatio < 0.08 ? 'stable' : 'worsening',
+        },
+        {
+          factor: 'PAR 30+ Ratio',
+          impact: Math.max(0, 100 - Math.round(par30Ratio * 100 * 3)),
+          trend: par30Ratio < 0.05 ? 'stable' : 'worsening',
+        },
+        {
+          factor: 'Active Loan Count',
+          impact: activeLoans > 10 ? 80 : activeLoans > 0 ? 60 : 20,
+          trend: activeLoans > 0 ? 'stable' : 'worsening',
+        },
+        {
+          factor: 'Overdue Amount Coverage',
+          impact: (risk?.overdueAmount ?? 0) > 0 ? 50 : 95,
+          trend: (risk?.overdueAmount ?? 0) > 0 ? 'worsening' : 'improving',
+        },
+      ],
+      riskAlerts: [
+        ...(nplRatio > 0.05
+          ? [
+              {
+                level: 'high',
+                title: 'Elevated Default Risk',
+                description: `NPL ratio is ${(nplRatio * 100).toFixed(1)}% — above 5% threshold`,
+                count: overdueCount,
+              },
+            ]
+          : []),
+        ...(par30Ratio > 0.03
+          ? [
+              {
+                level: 'medium',
+                title: 'PAR 30+ Warning',
+                description: `${(par30Ratio * 100).toFixed(1)}% of portfolio is 30+ days overdue`,
+                count: Math.round(par30Ratio * activeLoans),
+              },
+            ]
+          : []),
+        ...(overdueCount === 0 && activeLoans > 0
+          ? [
+              {
+                level: 'low',
+                title: 'Portfolio Health Good',
+                description: 'No overdue payment schedules detected',
+                count: 0,
+              },
+            ]
+          : []),
+      ],
+    };
+  }, [risk, portfolio]);
 
   const riskTrends = [
-    { month: 'Jan', lowRisk: 40, mediumRisk: 38, highRisk: 18, criticalRisk: 4 },
-    { month: 'Feb', lowRisk: 42, mediumRisk: 36, highRisk: 17, criticalRisk: 5 },
-    { month: 'Mar', lowRisk: 44, mediumRisk: 35, highRisk: 16, criticalRisk: 5 },
-    { month: 'Apr', lowRisk: 45, mediumRisk: 35, highRisk: 15, criticalRisk: 5 },
-  ];
-
-  const riskFactors = [
-    { factor: 'Credit Score', impact: 85, trend: 'stable' },
-    { factor: 'Income Stability', impact: 78, trend: 'improving' },
-    { factor: 'Debt-to-Income', impact: 72, trend: 'worsening' },
-    { factor: 'Employment History', impact: 68, trend: 'stable' },
-    { factor: 'Collateral Value', impact: 65, trend: 'improving' },
-    { factor: 'Payment History', impact: 82, trend: 'stable' },
-  ];
-
-  const riskAlerts = [
     {
-      level: 'high',
-      title: 'Increased Default Risk',
-      description: 'Default rate has increased by 0.8% in the last 30 days',
-      count: 12,
-    },
-    {
-      level: 'medium',
-      title: 'Portfolio Concentration',
-      description: '25% of loans are concentrated in construction sector',
-      count: 8,
-    },
-    {
-      level: 'low',
-      title: 'Credit Score Decline',
-      description: 'Average credit score decreased by 5 points',
-      count: 3,
+      month: 'Current',
+      lowRisk: riskDistribution[0].value,
+      mediumRisk: riskDistribution[1].value,
+      highRisk: riskDistribution[2].value,
+      criticalRisk: riskDistribution[3].value,
     },
   ];
 

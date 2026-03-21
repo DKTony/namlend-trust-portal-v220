@@ -1,37 +1,15 @@
 /**
- * Settlement React Query Hooks
+ * Settlement React Hooks — Convex-native.
+ * Replaces legacy Supabase RPC calls with Convex useQuery/useAction.
+ * All queries are reactive (auto-update on data changes).
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery as useConvexQuery, useAction } from 'convex/react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import * as settlementService from '@/services/settlementService';
-import type { SettlementRunState, SettlementReportType } from '@/types/settlement';
-
-// ============================================================================
-// QUERY KEYS
-// ============================================================================
-
-export const settlementKeys = {
-  all: ['settlement'] as const,
-  runs: () => [...settlementKeys.all, 'runs'] as const,
-  runsList: (filters: Record<string, unknown>) => [...settlementKeys.runs(), filters] as const,
-  runDetails: (id: string) => [...settlementKeys.runs(), id] as const,
-  batches: () => [...settlementKeys.all, 'batches'] as const,
-  batchDetails: (id: string) => [...settlementKeys.batches(), id] as const,
-  reports: () => [...settlementKeys.all, 'reports'] as const,
-  reportsList: (filters: Record<string, unknown>) =>
-    [...settlementKeys.reports(), filters] as const,
-  reportContent: (id: string) => [...settlementKeys.reports(), id] as const,
-  adjustments: () => [...settlementKeys.all, 'adjustments'] as const,
-  adjustmentsList: (filters: Record<string, unknown>) =>
-    [...settlementKeys.adjustments(), filters] as const,
-  timeouts: () => [...settlementKeys.all, 'timeouts'] as const,
-  timeoutsList: (status?: string) => [...settlementKeys.timeouts(), status] as const,
-  statistics: (from?: string, to?: string) =>
-    [...settlementKeys.all, 'statistics', from, to] as const,
-  participants: () => [...settlementKeys.all, 'participants'] as const,
-  acknowledgements: (runId: string) => [...settlementKeys.all, 'acks', runId] as const,
-};
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../convex/_generated/dataModel';
+import type { SettlementRunState } from '@/types/settlement';
 
 // ============================================================================
 // SETTLEMENT RUNS
@@ -43,20 +21,21 @@ export function useSettlementRuns(params?: {
   state?: SettlementRunState;
   limit?: number;
 }) {
-  return useQuery({
-    queryKey: settlementKeys.runsList(params || {}),
-    queryFn: () => settlementService.getSettlementRuns(params),
-    select: (result) => result.data ?? [],
+  const data = useConvexQuery(api.settlement.settlementRuns.listSettlementRuns, {
+    state: params?.state as any,
+    dateFrom: params?.dateFrom,
+    dateTo: params?.dateTo,
+    limit: params?.limit,
   });
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useSettlementRunDetails(runId: string | undefined) {
-  return useQuery({
-    queryKey: settlementKeys.runDetails(runId || ''),
-    queryFn: () => settlementService.getSettlementRunDetails(runId!),
-    enabled: !!runId,
-    select: (result) => result.data ?? null,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementRuns.getSettlementRunDetails,
+    runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? null, isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
@@ -64,21 +43,19 @@ export function useSettlementRunDetails(runId: string | undefined) {
 // ============================================================================
 
 export function usePacs009BatchDetails(batchId: string | undefined) {
-  return useQuery({
-    queryKey: settlementKeys.batchDetails(batchId || ''),
-    queryFn: () => settlementService.getPacs009BatchDetails(batchId!),
-    enabled: !!batchId,
-    select: (result) => result.data ?? null,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementBatches.getBatch,
+    batchId ? { batchId: batchId as Id<'settlementPacs009Batches'> } : 'skip'
+  );
+  return { data: data ?? null, isLoading: data === undefined, error: null };
 }
 
 export function usePacs009Batches(runId: string | undefined) {
-  return useQuery({
-    queryKey: [...settlementKeys.batches(), 'run', runId],
-    queryFn: () => settlementService.getPacs009Batches(runId!),
-    enabled: !!runId,
-    select: (result) => result.data ?? [],
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementBatches.listBatchesByRun,
+    runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
@@ -87,22 +64,22 @@ export function usePacs009Batches(runId: string | undefined) {
 
 export function useSettlementReports(params?: {
   runId?: string;
-  reportType?: SettlementReportType;
+  reportType?: string;
   participantId?: string;
 }) {
-  return useQuery({
-    queryKey: settlementKeys.reportsList(params || {}),
-    queryFn: () => settlementService.getSettlementReports(params),
-    select: (result) => result.data ?? [],
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementReports.listReportsByRun,
+    params?.runId ? { runId: params.runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useReportContent(reportId: string | undefined) {
-  return useQuery({
-    queryKey: settlementKeys.reportContent(reportId || ''),
-    queryFn: () => settlementService.getReportContent(reportId!),
-    enabled: !!reportId,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementReports.getReport,
+    reportId ? { reportId: reportId as Id<'settlementReports'> } : 'skip'
+  );
+  return { data: data ?? null, isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
@@ -110,18 +87,25 @@ export function useReportContent(reportId: string | undefined) {
 // ============================================================================
 
 export function useSettlementAdjustments(params?: { status?: string; runId?: string }) {
-  return useQuery({
-    queryKey: settlementKeys.adjustmentsList(params || {}),
-    queryFn: () => settlementService.getSettlementAdjustments(params),
-  });
+  const byRun = useConvexQuery(
+    api.settlement.settlementAdjustments.listAdjustmentsByRun,
+    params?.runId ? { runId: params.runId as Id<'settlementRuns'> } : 'skip'
+  );
+  const pending = useConvexQuery(
+    api.settlement.settlementAdjustments.listPendingAdjustments,
+    !params?.runId ? {} : 'skip'
+  );
+  const data = params?.runId ? byRun : pending;
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useUpdateAdjustmentStatus() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const approveAction = useAction(api.settlement.settlementAdjustments.approveAdjustment as any);
+  const rejectAction = useAction(api.settlement.settlementAdjustments.rejectAdjustment as any);
 
-  return useMutation({
-    mutationFn: ({
+  const mutate = useCallback(
+    async ({
       adjustmentId,
       status,
       notes,
@@ -129,23 +113,32 @@ export function useUpdateAdjustmentStatus() {
       adjustmentId: string;
       status: string;
       notes?: string;
-    }) => settlementService.updateAdjustmentStatus(adjustmentId, status, notes),
-    retry: false,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settlementKeys.adjustments() });
-      toast({
-        title: 'Adjustment Updated',
-        description: 'The adjustment status has been updated successfully.',
-      });
+    }) => {
+      try {
+        if (status === 'approved') {
+          await approveAction({ adjustmentId: adjustmentId as Id<'settlementAdjustments'>, notes });
+        } else {
+          await rejectAction({
+            adjustmentId: adjustmentId as Id<'settlementAdjustments'>,
+            reason: notes ?? 'Rejected',
+          });
+        }
+        toast({
+          title: 'Adjustment Updated',
+          description: 'The adjustment status has been updated successfully.',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: `Failed to update adjustment: ${error.message}`,
+          variant: 'destructive',
+        });
+      }
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update adjustment: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    [approveAction, rejectAction, toast]
+  );
+
+  return { mutate, mutateAsync: mutate, isLoading: false, isPending: false };
 }
 
 // ============================================================================
@@ -153,18 +146,19 @@ export function useUpdateAdjustmentStatus() {
 // ============================================================================
 
 export function useTimeoutTransactions(status?: string) {
-  return useQuery({
-    queryKey: settlementKeys.timeoutsList(status),
-    queryFn: () => settlementService.getTimeoutTransactions(status),
-  });
+  const data = useConvexQuery(api.settlement.settlementTimeouts.listPendingTimeouts, {});
+  const filtered = status && data ? data.filter((t: any) => t.status === status) : data;
+  return { data: filtered ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useResolveTimeout() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const resolveAction = useAction(
+    api.settlement.settlementTimeouts.resolveTimeoutTransaction as any
+  );
 
-  return useMutation({
-    mutationFn: ({
+  const mutate = useCallback(
+    async ({
       timeoutId,
       status,
       notes,
@@ -172,23 +166,29 @@ export function useResolveTimeout() {
       timeoutId: string;
       status: 'resolved' | 'written_off';
       notes: string;
-    }) => settlementService.resolveTimeoutTransaction(timeoutId, status, notes),
-    retry: false,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settlementKeys.timeouts() });
-      toast({
-        title: 'Timeout Resolved',
-        description: 'The timeout transaction has been resolved.',
-      });
+    }) => {
+      try {
+        await resolveAction({
+          timeoutId: timeoutId as Id<'settlementTimeoutTransactions'>,
+          resolution: status,
+          notes,
+        });
+        toast({
+          title: 'Timeout Resolved',
+          description: 'The timeout transaction has been resolved.',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: `Failed to resolve timeout: ${error.message}`,
+          variant: 'destructive',
+        });
+      }
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to resolve timeout: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    [resolveAction, toast]
+  );
+
+  return { mutate, mutateAsync: mutate, isLoading: false, isPending: false };
 }
 
 // ============================================================================
@@ -196,10 +196,11 @@ export function useResolveTimeout() {
 // ============================================================================
 
 export function useSettlementStatistics(dateFrom?: string, dateTo?: string) {
-  return useQuery({
-    queryKey: settlementKeys.statistics(dateFrom, dateTo),
-    queryFn: () => settlementService.getSettlementStatistics(dateFrom, dateTo),
+  const data = useConvexQuery(api.settlement.settlementRuns.getSettlementStatistics, {
+    dateFrom,
+    dateTo,
   });
+  return { data: data ?? null, isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
@@ -207,10 +208,8 @@ export function useSettlementStatistics(dateFrom?: string, dateTo?: string) {
 // ============================================================================
 
 export function useSettlementParticipants() {
-  return useQuery({
-    queryKey: settlementKeys.participants(),
-    queryFn: () => settlementService.getSettlementParticipants(),
-  });
+  const data = useConvexQuery(api.settlement.settlementParticipants.listParticipants, {});
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
@@ -218,141 +217,151 @@ export function useSettlementParticipants() {
 // ============================================================================
 
 export function useAcknowledgements(runId: string | undefined) {
-  return useQuery({
-    queryKey: settlementKeys.acknowledgements(runId || ''),
-    queryFn: () => settlementService.getAcknowledgements(runId!),
-    enabled: !!runId,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementAcknowledgements.listAcknowledgementsByRun,
+    runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 // ============================================================================
-// SETTLEMENT PROCESSING MUTATIONS
+// SETTLEMENT PROCESSING MUTATIONS (Actions)
 // ============================================================================
 
 export function useCreateSettlementRun() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const createAction = useAction(api.settlement.settlementActions.createSettlementRun);
+  const [isPending, setIsPending] = useState(false);
 
-  return useMutation({
-    mutationFn: (params?: { settlementDate?: string; windowId?: string }) =>
-      settlementService.createSettlementRun(params),
-    retry: false,
-    onSuccess: (data) => {
-      if (data.success) {
-        queryClient.invalidateQueries({ queryKey: settlementKeys.runs() });
-        toast({
-          title: 'Settlement Run Created',
-          description: `Run ${data.run_code} created successfully.`,
+  const mutate = useCallback(
+    async (params?: { settlementDate?: string; windowId?: string }) => {
+      setIsPending(true);
+      try {
+        const runId = await createAction({
+          windowId: params?.windowId || 'SW1',
+          settlementDate: params?.settlementDate || new Date().toISOString().split('T')[0],
         });
-      } else {
+        toast({ title: 'Settlement Run Created', description: `Run created successfully.` });
+        return { success: true, run_id: runId };
+      } catch (error: any) {
         toast({
           title: 'Error',
-          description: data.error || 'Failed to create settlement run',
+          description: `Failed to create settlement run: ${error.message}`,
           variant: 'destructive',
         });
+        return { success: false, error: error.message };
+      } finally {
+        setIsPending(false);
       }
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to create settlement run: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    [createAction, toast]
+  );
+
+  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
 export function useProcessSettlementRun() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const processAction = useAction(api.settlement.settlementActions.processSettlementRun);
+  const [isPending, setIsPending] = useState(false);
 
-  return useMutation({
-    mutationFn: ({
-      runId,
-      dateFrom,
-      dateTo,
-    }: {
-      runId: string;
-      dateFrom?: string;
-      dateTo?: string;
-    }) => settlementService.processSettlementRun(runId, dateFrom, dateTo),
-    retry: false,
-    onSuccess: (data) => {
-      if (data.success) {
-        queryClient.invalidateQueries({ queryKey: settlementKeys.all });
+  const mutate = useCallback(
+    async ({ runId }: { runId: string; dateFrom?: string; dateTo?: string }) => {
+      setIsPending(true);
+      try {
+        const result = await processAction({ runId: runId as Id<'settlementRuns'> });
         toast({
           title: 'Settlement Processed',
-          description: `Processed ${data.ingest?.transactions_processed || 0} transactions, created ${data.batches?.batches_created || 0} batches.`,
+          description: `Processed ${result.obligationCount} obligations, created ${result.batchCount} batches.`,
         });
-      } else {
+        return { success: true, ...result };
+      } catch (error: any) {
         toast({
           title: 'Error',
-          description: data.error || 'Failed to process settlement',
+          description: `Failed to process settlement: ${error.message}`,
           variant: 'destructive',
         });
+        return { success: false, error: error.message };
+      } finally {
+        setIsPending(false);
       }
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to process settlement: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    [processAction, toast]
+  );
+
+  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
 export function useMarkSettlementSettled() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const settleAction = useAction(api.settlement.settlementActions.markSettlementSettled);
+  const [isPending, setIsPending] = useState(false);
 
-  return useMutation({
-    mutationFn: (runId: string) => settlementService.markSettlementSettled(runId),
-    retry: false,
-    onSuccess: (data) => {
-      if (data.success) {
-        queryClient.invalidateQueries({ queryKey: settlementKeys.all });
+  const mutate = useCallback(
+    async (runId: string) => {
+      setIsPending(true);
+      try {
+        await settleAction({ runId: runId as Id<'settlementRuns'> });
         toast({
           title: 'Settlement Settled',
           description: 'Settlement run has been marked as settled.',
         });
-      } else {
+        return { success: true };
+      } catch (error: any) {
         toast({
           title: 'Error',
-          description: data.error || 'Failed to mark settlement as settled',
+          description: `Failed to settle: ${error.message}`,
           variant: 'destructive',
         });
+        return { success: false, error: error.message };
+      } finally {
+        setIsPending(false);
       }
     },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to settle: ${error.message}`,
-        variant: 'destructive',
-      });
-    },
-  });
+    [settleAction, toast]
+  );
+
+  return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
 export function useSettlementObligations(runId: string | undefined) {
-  return useQuery({
-    queryKey: [...settlementKeys.all, 'obligations', runId],
-    queryFn: () => settlementService.getSettlementObligations(runId!),
-    enabled: !!runId,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementObligations.listObligationsByRun,
+    runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useNetInstructions(runId: string | undefined) {
-  return useQuery({
-    queryKey: [...settlementKeys.all, 'net-instructions', runId],
-    queryFn: () => settlementService.getNetInstructions(runId!),
-    enabled: !!runId,
-  });
+  const data = useConvexQuery(
+    api.settlement.settlementNetting.listNetInstructionsByRun,
+    runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
+  );
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
 
 export function useSettlementWindows() {
-  return useQuery({
-    queryKey: [...settlementKeys.all, 'windows'],
-    queryFn: () => settlementService.getSettlementWindows(),
-  });
+  const data = useConvexQuery(api.settlement.settlementParticipants.listSettlementWindows, {});
+  return { data: data ?? [], isLoading: data === undefined, error: null };
 }
+
+// Legacy key exports for backward compatibility with any TanStack Query consumers
+export const settlementKeys = {
+  all: ['settlement'] as const,
+  runs: () => ['settlement', 'runs'] as const,
+  runsList: (filters: Record<string, unknown>) => ['settlement', 'runs', filters] as const,
+  runDetails: (id: string) => ['settlement', 'runs', id] as const,
+  batches: () => ['settlement', 'batches'] as const,
+  batchDetails: (id: string) => ['settlement', 'batches', id] as const,
+  reports: () => ['settlement', 'reports'] as const,
+  reportsList: (filters: Record<string, unknown>) => ['settlement', 'reports', filters] as const,
+  reportContent: (id: string) => ['settlement', 'reports', id] as const,
+  adjustments: () => ['settlement', 'adjustments'] as const,
+  adjustmentsList: (filters: Record<string, unknown>) =>
+    ['settlement', 'adjustments', filters] as const,
+  timeouts: () => ['settlement', 'timeouts'] as const,
+  timeoutsList: (status?: string) => ['settlement', 'timeouts', status] as const,
+  statistics: (from?: string, to?: string) => ['settlement', 'statistics', from, to] as const,
+  participants: () => ['settlement', 'participants'] as const,
+  acknowledgements: (runId: string) => ['settlement', 'acks', runId] as const,
+};

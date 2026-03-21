@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'convex/**'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.json'
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'convex/**'
       - 'package.json'
       - 'package-lock.json'
       - 'tsconfig.json'
@@ -88,6 +90,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_E2E: 'true'
       
       - name: Upload test results
@@ -141,6 +144,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
           VITE_E2E: 'true'
       
       - name: Upload full E2E report
@@ -168,9 +172,25 @@ jobs:
       
       - name: Check for legacy schema fields
         run: |
-          echo "Checking for legacy fields: payment_date, outstanding_balance, next_payment_date..."
+          echo "Checking for legacy fields: payment_date, next_payment_date..."
           if grep -r "payment_date\|next_payment_date" src/ --include="*.ts" --include="*.tsx" --exclude="*_broken.tsx" --exclude="types.ts"; then
             echo "❌ Found legacy schema fields in active code!"
             exit 1
           fi
           echo "✅ No legacy schema fields found in active code"
+
+      - name: Verify Convex schema exists
+        run: |
+          echo "Checking convex/schema.ts exists..."
+          test -f convex/schema.ts && echo "✅ Convex schema found" || { echo "❌ convex/schema.ts missing!"; exit 1; }
+
+      - name: Check no new Supabase service imports
+        run: |
+          echo "Verifying no new legacy service imports..."
+          LEGACY_COUNT=$(grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v brandingService | grep -v creditScoring | grep -v scoringRules | grep -v api-client | wc -l)
+          if [ "$LEGACY_COUNT" -gt 0 ]; then
+            echo "❌ Found $LEGACY_COUNT legacy service imports. Migrate to Convex."
+            grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v brandingService | grep -v creditScoring | grep -v scoringRules | grep -v api-client
+            exit 1
+          fi
+          echo "✅ No legacy service imports found"

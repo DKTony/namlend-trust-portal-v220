@@ -18,8 +18,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
+// QUARANTINE: Legacy Supabase test — queries Supabase `loan_balance_summary` view and
+// `tigerbeetle_accounts` table directly. Convex equivalent: api.loans.getLoanBalance.
+// Status: fail (legacy Supabase dependency) — tracked in plan N4 triage.
+// Self-skips when VITE_SUPABASE_ANON_KEY is absent.
 test.describe('TigerBeetle Balance Fixes', () => {
-  test.skip(!SUPABASE_ANON_KEY, 'VITE_SUPABASE_ANON_KEY must be set — skipping TigerBeetle tests');
+  test.skip(
+    !SUPABASE_ANON_KEY,
+    'QUARANTINE [legacy-supabase]: VITE_SUPABASE_ANON_KEY must be set. Migrate to Convex api.loans in N2 batch.'
+  );
   let testLoanId: string;
   let testUserId: string;
 

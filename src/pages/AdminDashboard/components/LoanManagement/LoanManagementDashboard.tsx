@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import {
   FileText,
   Clock,
@@ -70,47 +69,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
     setHasNewItems(false);
   };
 
-  // Realtime subscription for approval_requests
-  useEffect(() => {
-    // Subscribe to INSERT and UPDATE events on approval_requests
-    const channel = supabase
-      .channel('loan-applications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'approval_requests',
-          filter: 'request_type=eq.loan_application',
-        },
-        (payload) => {
-          console.log('Approval request change detected:', payload);
-
-          // Show toast notification
-          if (payload.eventType === 'INSERT') {
-            setHasNewItems(true);
-            toast({
-              title: 'New Loan Application',
-              description: 'A new loan application has been submitted.',
-              duration: 5000,
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setHasNewItems(true);
-            toast({
-              title: 'Application Updated',
-              description: 'A loan application status has changed.',
-              duration: 5000,
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [toast]);
+  // Note: Convex provides automatic reactivity — no manual subscription needed
 
   return (
     <div className="space-y-6">

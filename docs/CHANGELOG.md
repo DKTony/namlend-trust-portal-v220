@@ -16,9 +16,90 @@ This changelog contains two version tracks:
 | **Web Platform**      | v2.8.5  | Main React web application (this repo's primary focus)         |
 | **Combined Platform** | v3.x    | Web + Mobile app releases (includes `namlend-mobile/` changes) |
 
-**Current production web version: v2.8.6** (February 2026)
+**Current production web version: v2.8.7** (February 2026)
 
 The v3.x versions (Dec 2025) document combined releases that include mobile app optimizations. For web-only changes, refer to the v2.8.x entries.
+
+---
+
+## [2.8.8] - 2026-02-22 (Convex Backend Type Safety — Complete)
+
+### Changed
+
+#### Convex `as any` Remediation — Phase 2 (Complete: 37 → 0)
+
+- **Achieved zero `as any` casts** in the entire `convex/` directory (37 remaining casts fully eliminated)
+- `convex/schema.ts` — Exported union validators (`loanStatus`, `txStatus`, `settlementRunState`, `kycStatus`, `paymentTxStatus`, `approvalRequestStatus`, `ipsTransactionStatus`, `loanRecommendation`) so function args can use narrow union types instead of `v.string()`, eliminating index-narrowing casts
+- `convex/lib/auth.ts` — Replaced `GenericQueryCtx<any>` with `GenericQueryCtx<DataModel>` — `ctx.db` queries are now fully typed without casts
+- `convex/lib/audit.ts` — Replaced `GenericMutationCtx<any>` with `GenericMutationCtx<DataModel>`; updated `scheduleAuditEntry` param from `userId: string` to `userId?: Id<"users">`
+- `convex/audit.ts` — Fixed `writeStateTransition` and `writeAuditEntry` arg validators: `triggeredBy` / `workflowInstanceId` / `userId` now use `v.id(...)` / `v.optional(v.id(...))` instead of `v.string()`
+- `convex/loans.ts` — Added `recordCreditScore` internalMutation used by `processLoanApplication` action
+- `convex/approvalWorkflow.ts` — Added `createSystemApprovalRequest` internalMutation; fixed `status as any` in `processApprovalRequest` using a typed `ApprovalStatus` union
+- `convex/users.ts` — Added `getProfileByUserId` internalQuery used by `processLoanApplication` action
+- `convex/actions/ipsAdapter.ts` — Switched 2 calls from `internal.ips.ipsTransactions.*` → `api.ips.ipsTransactions.*` (public functions must be called via `api`, not `internal`)
+- `convex/actions/processLoanApplication.ts` — Removed 4 `as any` casts on now-typed internal function refs
+- `convex/actions/sendNotification.ts` — Removed `as any` from `getPreferencesForUser` ref and result
+- `convex/settlement/settlementActions.ts` — Typed 2 private helpers with `ActionCtx` instead of `any`; switched `getSettlementRun` call from `internal.*` → `api.*`
+- `convex/settlement/settlementAcknowledgements.ts` — Replaced collect+filter pattern with index queries (`by_batchId`, `by_runId`) — eliminates 5 casts and improves read performance
+- `convex/settlement/settlementNetting.ts` — Removed result casts; corrected field names from schema (`sourceParticipantId` / `targetParticipantId` / `amount`)
+- `convex/scheduled/tigerBeetleOutboxWorker.ts` — Fixed `OutboxEntry._id: string` → `Id<"tigerBeetleOutbox">`; removed 3 casts
+- `convex/analytics.ts` — Removed all `.take() as any[]` casts; fixed `by_status` index callback type
+- `convex/reconciliation.ts` — Removed 5 casts; fixed index names (`by_runId`, `by_externalId`)
+
+#### Schema Enhancements
+
+- `convex/schema.ts` — Added `debtToIncomeRatio` and `recommendation` optional fields to `loans` table (populated by `processLoanApplication` action after credit scoring)
+- `convex/schema.ts` — Made `auditLogs.userId` and `stateTransitions.triggeredBy` optional (`v.optional(v.id("users"))`) — system-triggered events have no user context
+- `convex/schema.ts` — Added `by_batchId` and `by_runId` indexes to `settlementAcknowledgements`
+- `convex/schema.ts` — Added `by_externalId` and `by_runId` indexes to `bankTransactions`
+
+#### Bug Fixes Surfaced During Type Remediation
+
+- **`settlementNetting.ts`** was accessing fields `debtorParticipantId`, `creditorParticipantId`, `netAmount` that do not exist in the schema. Correct field names are `sourceParticipantId`, `targetParticipantId`, `amount`. Previously masked by `as any[]` cast.
+- **`processLoanApplication.ts`** was passing `priority: "normal"` to `createSystemApprovalRequest` but the `approvalRequests.priority` schema union is `"low" | "medium" | "high" | "urgent"` — `"normal"` is not a valid value. Fixed to `"low"`.
+- **`CollectionsDashboard.tsx`** had duplicate `const` declarations (`loading`, `queue`, `stats`) — old `useState` bindings from the Supabase era left alongside new Convex-reactive `const` derivations. esbuild treats this as a hard error. Removed the stale `useState` declarations.
+
+**Verification**:
+
+```bash
+grep -rn "as any" convex/ --include="*.ts" | grep -v "_generated" | wc -l  # → 0
+npx convex dev --once   # → ✔ Convex functions ready!
+npm run build           # → ✓ built in 8.03s
+```
+
+**Files Modified**: 20 files in `convex/`, 1 file in `src/` (`CollectionsDashboard.tsx`)
+**Documentation Updated**: `docs/TYPE_SAFETY_REMEDIATION.md`, `docs/TECHNICAL_DEBT.md`, `docs/DATABASE_SCHEMA.md`, `docs/CHANGELOG.md`, `CLAUDE.md`
+
+---
+
+## [2.8.7] - 2026-02-22 (Convex Backend Type Safety)
+
+### Changed
+
+#### Convex `as any` Remediation (72% Complete)
+
+- **Reduced `as any` casts from 132 → 37** across `convex/` directory (95 casts removed)
+- Auth guard functions (`assertAuthenticated`, `assertStaff`, `assertAdmin`) now return `Id<"users">` — eliminated `userId as any` pattern
+- Removed `(q: any)` annotations from all `withIndex` callbacks — Convex infers types correctly
+- Removed `ctx.db.get() as any` casts where schema fields match code usage
+- Fixed schema property names in `settlementBatches.ts` (`xmlContent` → `fileContent`, `generatedAt` → `createdAt`)
+
+**Files cleaned** (24 files, zero `as any` remaining):
+
+- Core: `users.ts`, `loans.ts`, `payments.ts`, `disbursements.ts`, `audit.ts`, `collections.ts`, `systemConfig.ts`, `notifications.ts`, `approvalWorkflow.ts`, `loanDocuments.ts`, `loanApprovals.ts`
+- IPS: `ipsAlerts.ts`, `ipsVpa.ts`, `ipsOnboarding.ts`, `ipsTransactions.ts`
+- Settlement: `settlementRuns.ts`, `settlementActions.ts`, `settlementBatches.ts`, `settlementReports.ts`, `settlementAdjustments.ts`, `settlementTimeouts.ts`
+- Scheduled: `dailyTasks.ts`
+- TigerBeetle: `outbox.ts`
+- Settlement: `settlementNetting.ts` (withIndex only; data access casts remain due to schema mismatch)
+
+**Remaining 37 casts** fall into two categories requiring separate work:
+
+1. **Structural** (16): action↔mutation type inference gaps, union type narrowing
+2. **Schema mismatches** (10): code references fields/statuses not in `convex/schema.ts` (analytics, reconciliation, settlementAcknowledgements, settlementNetting)
+
+**Files Modified**: 24 files in `convex/`, `convex/lib/auth.ts`
+**Documentation Updated**: `docs/TYPE_SAFETY_REMEDIATION.md`, `docs/TECHNICAL_DEBT.md`
 
 ---
 
@@ -916,8 +997,8 @@ Skipped tests (approval-rpc-race-condition.e2e.ts) require SUPABASE_SERVICE_ROLE
 
 ## Deployment
 
-- **Production URL**: https://namlend-trust-portal-v220.netlify.app
-- **GitHub**: https://github.com/DKTony/namlend-trust-portal-v220
+- **Production URL**: <https://namlend-trust-portal-v220.netlify.app>
+- **GitHub**: <https://github.com/DKTony/namlend-trust-portal-v220>
 - **Supabase Project**: puahejtaskncpazjyxqp (eu-north-1)
 
 ---

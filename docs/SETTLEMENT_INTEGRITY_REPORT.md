@@ -16,13 +16,13 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 ### Overall Health Score: **78/100** ⚠️
 
-| Category | Status | Score |
-|----------|--------|-------|
-| Settlement Runs | ✅ Healthy | 100% |
-| IPS Production Transactions | ✅ Healthy | 95% |
-| IPS Test Data | ⚠️ Cleanup Needed | 60% |
-| TigerBeetle Ledger | ⚠️ Issues Found | 70% |
-| Cross-Rail Reconciliation | ⚠️ Mismatch Found | 75% |
+| Category                    | Status            | Score |
+| --------------------------- | ----------------- | ----- |
+| Settlement Runs             | ✅ Healthy        | 100%  |
+| IPS Production Transactions | ✅ Healthy        | 95%   |
+| IPS Test Data               | ⚠️ Cleanup Needed | 60%   |
+| TigerBeetle Ledger          | ⚠️ Issues Found   | 70%   |
+| Cross-Rail Reconciliation   | ⚠️ Mismatch Found | 75%   |
 
 ---
 
@@ -30,21 +30,21 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 ### 1.1 Transaction Distribution by Status
 
-| Status | Transaction Type | Count | Total Amount (NAD) |
-|--------|-----------------|-------|-------------------|
-| **success** | DISBURSEMENT | 3 | 10,000.00 |
-| **success** | REPAYMENT | 4 | 400.00 |
-| **deemed** | REPAYMENT | 2 | 200.00 |
-| **sent** | REPAYMENT | 10 | 200,700.00 |
-| **pending** | REPAYMENT | 2 | 200.00 |
-| **initiated** | DISBURSEMENT | 1 | 2,000.00 |
+| Status        | Transaction Type | Count | Total Amount (NAD) |
+| ------------- | ---------------- | ----- | ------------------ |
+| **success**   | DISBURSEMENT     | 3     | 10,000.00          |
+| **success**   | REPAYMENT        | 4     | 400.00             |
+| **deemed**    | REPAYMENT        | 2     | 200.00             |
+| **sent**      | REPAYMENT        | 10    | 200,700.00         |
+| **pending**   | REPAYMENT        | 2     | 200.00             |
+| **initiated** | DISBURSEMENT     | 1     | 2,000.00           |
 
 ### 1.2 Final State Summary
 
-| Category | Count | Amount (NAD) |
-|----------|-------|--------------|
-| ✅ Successfully Settled | 9 | 10,600.00 |
-| ⚠️ Non-Final States | 13 | 202,900.00 |
+| Category                | Count | Amount (NAD) |
+| ----------------------- | ----- | ------------ |
+| ✅ Successfully Settled | 9     | 10,600.00    |
+| ⚠️ Non-Final States     | 13    | 202,900.00   |
 
 ---
 
@@ -56,14 +56,15 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 **Affected Transactions:**
 
-| ID | Type | Status | Amount | Age (hours) | Linked Entity |
-|----|------|--------|--------|-------------|---------------|
-| `429ecd78-*` | DISBURSEMENT | initiated | 2,000.00 | 365.7h | Disbursement linked |
-| `05ad0c71-*` | REPAYMENT | sent | 100.00 | 365.7h | None (TEST) |
-| `1fda0707-*` | REPAYMENT | sent | 100,000.00 | 365.7h | None (TEST) |
-| + 10 more TEST transactions | - | sent/pending | - | 365.5h+ | None |
+| ID                          | Type         | Status       | Amount     | Age (hours) | Linked Entity       |
+| --------------------------- | ------------ | ------------ | ---------- | ----------- | ------------------- |
+| `429ecd78-*`                | DISBURSEMENT | initiated    | 2,000.00   | 365.7h      | Disbursement linked |
+| `05ad0c71-*`                | REPAYMENT    | sent         | 100.00     | 365.7h      | None (TEST)         |
+| `1fda0707-*`                | REPAYMENT    | sent         | 100,000.00 | 365.7h      | None (TEST)         |
+| + 10 more TEST transactions | -            | sent/pending | -          | 365.5h+     | None                |
 
 **Root Cause Analysis:**
+
 1. **Production Transaction (1):** Disbursement `429ecd78` was initiated but never completed via IPS - the disbursement was manually marked completed without updating the IPS transaction status.
 2. **Test Transactions (12):** Created by IPS adapter testing with `IPS-ADAPTER-TEST-*` prefix, never cleaned up.
 
@@ -75,11 +76,12 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 **Issue:** 1 disbursement shows status mismatch between internal record and IPS transaction.
 
-| Disbursement ID | Internal Status | IPS Status | Amount | Loan Status |
-|-----------------|-----------------|------------|--------|-------------|
-| `d78a0c06-f3bb-475c-8270-32f78b971a91` | **completed** | **initiated** | 2,000.00 | settled |
+| Disbursement ID                        | Internal Status | IPS Status    | Amount   | Loan Status |
+| -------------------------------------- | --------------- | ------------- | -------- | ----------- |
+| `d78a0c06-f3bb-475c-8270-32f78b971a91` | **completed**   | **initiated** | 2,000.00 | settled     |
 
 **Analysis:**
+
 - Disbursement was marked `completed` on 2025-12-22
 - IPS transaction remains in `initiated` state (never sent to IPS)
 - The linked loan has been marked `settled` (fully paid)
@@ -93,11 +95,11 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 **Issue:** 3 disbursement events failed to sync to TigerBeetle ledger.
 
-| Disbursement ID | Error | Retry Count | Created |
-|-----------------|-------|-------------|---------|
-| `477b815c-*` | Loan principal account not found | 1/5 | 2025-12-27 |
-| `3f729f14-*` | Loan principal account not found | 1/5 | 2025-12-27 |
-| `bf78f217-*` | Loan principal account not found | 2/5 | 2025-12-22 |
+| Disbursement ID | Error                            | Retry Count | Created    |
+| --------------- | -------------------------------- | ----------- | ---------- |
+| `477b815c-*`    | Loan principal account not found | 1/5         | 2025-12-27 |
+| `3f729f14-*`    | Loan principal account not found | 1/5         | 2025-12-27 |
+| `bf78f217-*`    | Loan principal account not found | 2/5         | 2025-12-22 |
 
 **Root Cause:** TigerBeetle loan principal accounts were not initialized for these loans before disbursement was attempted.
 
@@ -110,6 +112,7 @@ This comprehensive audit examined transaction integrity across all financial pro
 **Issue:** 18 IPS transaction records have no linked `loan_id`, `disbursement_id`, or `payment_id`.
 
 **Breakdown:**
+
 - All 18 are **TEST transactions** (prefix: `IPS-ADAPTER-TEST-*`)
 - Total orphaned amount: NAD 200,900.00 (test data)
 - No production transactions are orphaned
@@ -122,11 +125,11 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 ### 3.1 Settlement Runs Health
 
-| State | Count | Total Transactions | Total Principal (NAD) |
-|-------|-------|-------------------|----------------------|
-| ✅ **settled** | 4 | 3 | 10,000.00 |
-| ⚠️ pending states | 0 | - | - |
-| ❌ failed_validation | 0 | - | - |
+| State                | Count | Total Transactions | Total Principal (NAD) |
+| -------------------- | ----- | ------------------ | --------------------- |
+| ✅ **settled**       | 4     | 3                  | 10,000.00             |
+| ⚠️ pending states    | 0     | -                  | -                     |
+| ❌ failed_validation | 0     | -                  | -                     |
 
 **Assessment:** ✅ **HEALTHY** - All settlement runs have completed successfully. No stuck or failed runs.
 
@@ -143,22 +146,22 @@ This comprehensive audit examined transaction integrity across all financial pro
 
 ### 4.1 Cross-System Totals
 
-| Metric | Value |
-|--------|-------|
-| Completed Disbursements | 81 |
-| Total Disbursed Amount | NAD 821,577.51 |
-| Completed Payments | 36 |
-| Total Payments Received | NAD 508,012.03 |
-| Successful IPS Transactions | 9 |
-| Successful IPS Amount | NAD 10,600.00 |
+| Metric                      | Value          |
+| --------------------------- | -------------- |
+| Completed Disbursements     | 81             |
+| Total Disbursed Amount      | NAD 821,577.51 |
+| Completed Payments          | 36             |
+| Total Payments Received     | NAD 508,012.03 |
+| Successful IPS Transactions | 9              |
+| Successful IPS Amount       | NAD 10,600.00  |
 
 ### 4.2 IPS Disbursement Reconciliation
 
-| Metric | Count | Amount (NAD) |
-|--------|-------|--------------|
-| ✅ Matched (IPS success + Disbursement completed) | 3 | 10,000.00 |
-| ⚠️ Mismatched | 0 | 0.00 |
-| ❌ Orphaned IPS Disbursements | 0 | 0.00 |
+| Metric                                            | Count | Amount (NAD) |
+| ------------------------------------------------- | ----- | ------------ |
+| ✅ Matched (IPS success + Disbursement completed) | 3     | 10,000.00    |
+| ⚠️ Mismatched                                     | 0     | 0.00         |
+| ❌ Orphaned IPS Disbursements                     | 0     | 0.00         |
 
 **Assessment:** ✅ **HEALTHY** for production IPS disbursements
 
@@ -175,7 +178,7 @@ This comprehensive audit examined transaction integrity across all financial pro
 ```sql
 -- Update IPS transaction to reflect actual outcome
 UPDATE ips_transactions
-SET 
+SET
   status = 'success',
   ips_result = 'SUCCESS',
   completed_at = '2025-12-22 02:38:43.919035+00',
@@ -231,9 +234,10 @@ WHERE msg_id LIKE 'IPS-ADAPTER-TEST-%';
 #### 5.4 Retry Failed TigerBeetle Outbox Items
 
 After initializing accounts:
+
 ```sql
 UPDATE tigerbeetle_outbox
-SET 
+SET
   status = 'pending',
   retry_count = 0,
   next_retry_at = NOW()
@@ -265,22 +269,22 @@ WHERE status = 'failed'
 
 ### 6.1 Rail Summary
 
-| Rail | Status | Notes |
-|------|--------|-------|
-| **IPS/IPP** | ⚠️ Operational (issues noted) | 13 stuck transactions, 1 mismatch |
-| **Bank Transfer** | ✅ Operational | Standard Supabase flow |
-| **Mobile Money** | ✅ Operational | MTC MoMo, TN Mobile |
-| **Cash** | ✅ Operational | Manual recording |
-| **Debit Order** | ✅ Operational | Batch processing |
+| Rail              | Status                        | Notes                             |
+| ----------------- | ----------------------------- | --------------------------------- |
+| **IPS/IPP**       | ⚠️ Operational (issues noted) | 13 stuck transactions, 1 mismatch |
+| **Bank Transfer** | ✅ Operational                | Standard Supabase flow            |
+| **Mobile Money**  | ✅ Operational                | MTC MoMo, TN Mobile               |
+| **Cash**          | ✅ Operational                | Manual recording                  |
+| **Debit Order**   | ✅ Operational                | Batch processing                  |
 
 ### 6.2 Settlement Rail (IRCS Back Office)
 
-| Component | Status |
-|-----------|--------|
-| pacs.009 Generation | ✅ Functional |
-| SWIFT Dispatch | ✅ Ready (mock mode) |
-| NISS Integration | ✅ Ready (mock mode) |
-| Acknowledgement Processing | ✅ Functional |
+| Component                  | Status               |
+| -------------------------- | -------------------- |
+| pacs.009 Generation        | ✅ Functional        |
+| SWIFT Dispatch             | ✅ Ready (mock mode) |
+| NISS Integration           | ✅ Ready (mock mode) |
+| Acknowledgement Processing | ✅ Functional        |
 
 ---
 
@@ -288,11 +292,11 @@ WHERE status = 'failed'
 
 ### Issues Requiring Resolution
 
-| # | Issue | Severity | Status |
-|---|-------|----------|--------|
-| 1 | Stuck production IPS transaction | 🔴 HIGH | Remediation SQL provided |
-| 2 | TigerBeetle account initialization failures | 🟡 MEDIUM | Remediation SQL provided |
-| 3 | Test data cleanup | 🟢 LOW | Cleanup SQL provided |
+| #   | Issue                                       | Severity  | Status                   |
+| --- | ------------------------------------------- | --------- | ------------------------ |
+| 1   | Stuck production IPS transaction            | 🔴 HIGH   | Remediation SQL provided |
+| 2   | TigerBeetle account initialization failures | 🟡 MEDIUM | Remediation SQL provided |
+| 3   | Test data cleanup                           | 🟢 LOW    | Cleanup SQL provided     |
 
 ### System Integrity Confirmation
 
@@ -309,5 +313,5 @@ WHERE status = 'failed'
 
 ---
 
-*Report generated by Enterprise Architecture Assistant*  
-*NamLend Trust - Transaction Settlement Verification Protocol v1.0*
+_Report generated by Enterprise Architecture Assistant_  
+_NamLend Trust - Transaction Settlement Verification Protocol v1.0_

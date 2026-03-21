@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted (November 2025), with incremental remediation plan
+**SUPERSEDED** (2026-03-04)
+
+> This ADR is superseded. TypeScript strict mode (`strict: true`, `noImplicitAny: true`) was enabled in `tsconfig.app.json` during the 2026-03-04 quality sweep. `tsc --noEmit` passes with zero errors. The incremental remediation plan described below was completed. The original context and rationale are preserved for historical record.
 
 ## Context
 
@@ -14,7 +16,7 @@ NamLend Trust's `tsconfig.app.json` has `strict: false` and `noImplicitAny: fals
 
 3. **Third-party integration complexity**: TigerBeetle, Africa's Talking SMS, and Meta WhatsApp APIs have varying type quality. Strict mode would require extensive type narrowing for external data.
 
-## Decision
+## Decision (Original — Now Superseded)
 
 TypeScript strict mode remains disabled globally. Type safety is improved incrementally through:
 

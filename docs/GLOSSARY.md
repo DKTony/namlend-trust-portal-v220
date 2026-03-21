@@ -1,7 +1,8 @@
 # NamLend Trust Terminology Glossary
 
-**Doc Revision**: 2026-01-19
-**Status**: Active
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current ✅
 **Purpose**: Standardize terminology across documentation and codebase
 
 ---
@@ -11,6 +12,7 @@
 ### IPP (Instant Payment Platform)
 
 The Namibian real-time payment infrastructure operated by the Bank of Namibia. Also referred to as:
+
 - **IPS** (Instant Payment System) - Used interchangeably with IPP
 - **IPN** (Instant Payment Namibia) - The national scheme name
 
@@ -23,12 +25,14 @@ A user-friendly identifier for receiving payments, similar to UPI in India.
 **Format**: `username@provider` (e.g., `john.doe@namlend`, `business@banknam`)
 
 **Components**:
+
 - **Username**: User-chosen identifier (alphanumeric)
 - **Provider**: Participant identifier (e.g., `namlend`, `fnb`, `bankwindhoek`)
 
 ### Central Mapper / VPA Registry
 
 The central database that maps VPAs to underlying bank accounts. Also called:
+
 - **Central Registry** - Same concept
 - **Mapper Service** - The API that performs lookups
 
@@ -37,6 +41,7 @@ The central database that maps VPAs to underlying bank accounts. Also called:
 The final transfer of funds between participating banks after transactions are cleared.
 
 **Related terms**:
+
 - **Clearing**: Validation and netting of transactions before settlement
 - **Reconciliation**: Matching internal records with settlement reports
 - **Netting**: Calculating net positions between participants
@@ -45,14 +50,17 @@ The final transfer of funds between participating banks after transactions are c
 
 Transfer of loan funds from NamLend to the borrower's account.
 
-**Statuses**:
+**Status values** (`txStatus` in schema):
 | Status | Meaning |
-|--------|---------|
-| `pending` | Awaiting approval |
-| `approved` | Ready for processing |
+|--------|--------|
+| `pending` | Awaiting processing |
 | `processing` | Transfer initiated |
 | `completed` | Funds transferred successfully |
 | `failed` | Transfer failed |
+| `reversed` | Transaction reversed |
+| `cancelled` | Cancelled before processing |
+
+**Methods**: `bank_transfer`, `ips`, `mobile_money`, `cash`, `cheque`
 
 ---
 
@@ -61,6 +69,7 @@ Transfer of loan funds from NamLend to the borrower's account.
 ### pacs.008 (Customer Credit Transfer)
 
 Instruction to transfer funds from debtor to creditor. Used for:
+
 - Loan disbursements
 - Customer-initiated payments
 
@@ -69,6 +78,7 @@ Instruction to transfer funds from debtor to creditor. Used for:
 Confirmation message indicating the status of a payment instruction.
 
 **Key statuses**:
+
 - `ACCP` - Accepted
 - `RJCT` - Rejected
 - `ACSC` - Accepted Settlement Completed
@@ -77,12 +87,14 @@ Confirmation message indicating the status of a payment instruction.
 ### pacs.009 (Financial Institution Credit Transfer)
 
 Settlement instruction between financial institutions. Used for:
+
 - Batch settlements
 - Inter-bank transfers
 
 ### pain.001 (Customer Credit Transfer Initiation)
 
 Customer request to initiate a credit transfer. Used by:
+
 - Client applications
 - Batch payment files
 
@@ -92,23 +104,27 @@ Customer request to initiate a credit transfer. Used by:
 
 ### Loan Status
 
-| Status | Description |
-|--------|-------------|
-| `pending` | Application submitted, awaiting review |
-| `under_review` | Being evaluated by loan officer |
-| `approved` | Approved, awaiting disbursement |
-| `rejected` | Application denied (terminal) |
-| `disbursed` | Funds transferred to borrower |
-| `active` | Loan is being repaid |
-| `completed` | All payments made, loan closed |
-| `defaulted` | Borrower failed to repay |
-| `restructured` | Terms modified after origination |
+Valid values in `convex/schema.ts` `loanStatus` validator:
+
+| Status         | Description                                |
+| -------------- | ------------------------------------------ |
+| `draft`        | Client created, not yet submitted          |
+| `submitted`    | Submitted for review, credit score running |
+| `under_review` | Being evaluated by loan officer            |
+| `approved`     | Approved, awaiting disbursement            |
+| `rejected`     | Application denied (terminal)              |
+| `funded`       | Disbursement completed, loan active        |
+| `active`       | Loan is being repaid                       |
+| `paid_off`     | All payments made, loan closed (terminal)  |
+| `defaulted`    | Borrower failed to repay                   |
+| `written_off`  | Bad debt written off (terminal)            |
 
 ### APR (Annual Percentage Rate)
 
 The annualized interest rate including fees. **Maximum: 32%** (Namibian regulatory limit).
 
 **Related**:
+
 - **Nominal Rate**: Base interest rate before fees
 - **Effective Rate**: Actual rate accounting for compounding
 
@@ -119,6 +135,7 @@ Ratio of loan amount to collateral value. Not currently used in NamLend (unsecur
 ### Credit Score
 
 NamLend uses a **300-850 scale** (similar to FICO):
+
 - 300-579: Poor
 - 580-669: Fair
 - 670-739: Good
@@ -131,31 +148,37 @@ NamLend uses a **300-850 scale** (similar to FICO):
 
 ### RLS (Row-Level Security)
 
-PostgreSQL feature that restricts which rows users can access based on policies.
+**Legacy (Supabase era only).** PostgreSQL feature that restricted which rows users could access based on policies.
 
-**Example**: Clients can only see their own loans; staff can see all loans.
+RLS has been **replaced by Convex auth guard functions** (`assertAuthenticated`, `assertOwner`, `assertOwnerOrStaff`, `assertStaff`, `assertAdmin`) in `convex/lib/auth.ts`. Every Convex query and mutation calls the appropriate guard explicitly at the top of its handler.
+
+**Example**: `assertOwnerOrStaff(ctx, loan.userId)` replaces `WHERE user_id = auth.uid() OR is_staff(auth.uid())`.
 
 ### RPC (Remote Procedure Call)
 
-Database functions called from the frontend via Supabase. Used for:
-- Complex transactions
-- Operations requiring elevated privileges
-- Atomic multi-table operations
+**Legacy (Supabase era only).** Database functions called from the frontend via `supabase.rpc('function_name', args)`. Used for complex transactions requiring elevated privileges.
 
-**Naming convention**: `snake_case` (e.g., `process_approval_transaction`)
+RPCs have been **replaced by Convex mutations and actions**. The equivalent of `supabase.rpc('process_approval_transaction', { ... })` is now `useMutation(api.approvalWorkflow.processApprovalRequest)`. See [API_REFERENCE.md](./API_REFERENCE.md) for current function signatures.
 
 ### Edge Function
 
-Server-side Deno functions hosted on Supabase. Used for:
-- Webhook handlers
-- External API integrations
-- Operations requiring secrets
+**Legacy (Supabase era only).** Server-side Deno functions hosted on Supabase. Used for webhook handlers, external API integrations, and operations requiring secrets.
 
-**Location**: `/supabase/functions/`
+Edge Functions have been **replaced by Convex Actions** in `convex/actions/`. Secrets are set via `npx convex env set KEY value` (not in `.env` files).
 
-### API Orchestration Layer
+**Location (legacy, INACTIVE)**: `/supabase/functions/`
 
-The standardized Edge Function layer (`api-*`) that provides RBAC, validation, and audit logging for backoffice operations (loans, payments, collections, analytics, audit, reconciliation, etc.).
+### Convex
+
+The current backend platform for NamLend Trust (migrated from Supabase, February 2026). Provides:
+
+- **Queries**: Reactive reads — automatically re-run when data changes
+- **Mutations**: Atomic, serializable writes
+- **Actions**: External HTTP calls (IPS, SMS, WhatsApp, TigerBeetle)
+- **HTTP Router**: Webhook handlers (`/webhook/ips`, `/webhook/payment`)
+- **Cron Jobs**: Scheduled tasks (outbox worker, daily maintenance)
+
+All backend functions live in `convex/`. Schema is defined in `convex/schema.ts`.
 
 ### Reconciliation Run
 
@@ -168,6 +191,7 @@ High-performance financial ledger for double-entry bookkeeping.
 **Current status**: Shadow mode (records transactions but doesn't control flow)
 
 **Related terms**:
+
 - **Outbox pattern**: Queue events for TigerBeetle processing
 - **Shadow mode**: Record alongside primary system, don't block on failures
 
@@ -176,6 +200,7 @@ High-performance financial ledger for double-entry bookkeeping.
 Design pattern where events are written to a local table first, then processed asynchronously by a worker.
 
 **Benefits**:
+
 - Guaranteed delivery
 - Decoupled from external system availability
 - Audit trail of all events
@@ -187,6 +212,7 @@ Design pattern where events are written to a local table first, then processed a
 ### Client
 
 End user who applies for and repays loans. Access:
+
 - Dashboard
 - Loan application
 - Payment history
@@ -195,6 +221,7 @@ End user who applies for and repays loans. Access:
 ### Loan Officer
 
 Staff member who reviews and approves loans. Access:
+
 - All client features
 - Approval queue
 - Loan review panel
@@ -203,6 +230,7 @@ Staff member who reviews and approves loans. Access:
 ### Admin
 
 Full system access including configuration. Access:
+
 - All loan officer features
 - User management
 - System settings
@@ -218,11 +246,13 @@ Full system access including configuration. Access:
 The official currency of Namibia.
 
 **Formatting**:
+
 - Symbol: `N$`
 - Format: `N$ 1,234.56`
 - Decimal places: 2
 
 **Code usage**:
+
 ```typescript
 import { formatNAD } from '@/utils/currency';
 formatNAD(1234.56); // "N$ 1,234.56"
@@ -239,6 +269,7 @@ Text messages via Africa's Talking gateway.
 ### WhatsApp
 
 Messages via Meta Cloud API. Requires:
+
 - Template approval from Meta
 - Business verification
 
@@ -254,24 +285,24 @@ Mobile app notifications (React Native app only).
 
 ## Abbreviations Quick Reference
 
-| Abbreviation | Full Term |
-|--------------|-----------|
-| APR | Annual Percentage Rate |
-| E2E | End-to-End (testing) |
-| FSD | Functional Specification Document |
-| IPP | Instant Payment Platform |
-| IPS | Instant Payment System |
-| IPN | Instant Payment Namibia |
-| JWT | JSON Web Token |
-| KYC | Know Your Customer |
-| LTV | Loan-to-Value |
-| NAD | Namibian Dollar |
-| PII | Personally Identifiable Information |
-| RLS | Row-Level Security |
-| RPC | Remote Procedure Call |
-| SLA | Service Level Agreement |
-| TSD | Technical Specification Document |
-| VPA | Virtual Payment Address |
+| Abbreviation | Full Term                           |
+| ------------ | ----------------------------------- |
+| APR          | Annual Percentage Rate              |
+| E2E          | End-to-End (testing)                |
+| FSD          | Functional Specification Document   |
+| IPP          | Instant Payment Platform            |
+| IPS          | Instant Payment System              |
+| IPN          | Instant Payment Namibia             |
+| JWT          | JSON Web Token                      |
+| KYC          | Know Your Customer                  |
+| LTV          | Loan-to-Value                       |
+| NAD          | Namibian Dollar                     |
+| PII          | Personally Identifiable Information |
+| RLS          | Row-Level Security                  |
+| RPC          | Remote Procedure Call               |
+| SLA          | Service Level Agreement             |
+| TSD          | Technical Specification Document    |
+| VPA          | Virtual Payment Address             |
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,11 +24,12 @@ import {
   PieChart,
   BarChart3,
   Target,
-  Percent
+  Percent,
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
-import { analyticsAPI } from '@/services/api-client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
 interface PortfolioAnalyticsProps {
   dateRange?: string;
@@ -56,67 +57,39 @@ const STATUS_COLORS: Record<string, string> = {
   approved: 'bg-emerald-500 dark:bg-emerald-600',
   completed: 'bg-gray-500 dark:bg-gray-600',
   rejected: 'bg-red-500 dark:bg-red-600',
-  defaulted: 'bg-red-700 dark:bg-red-800'
+  defaulted: 'bg-red-700 dark:bg-red-800',
 };
 
 const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30d' }) => {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [metrics, setMetrics] = useState<PortfolioMetrics | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState(dateRange);
+  const refreshing = false;
 
-  const fetchMetrics = useCallback(async (showRefresh = false) => {
-    if (showRefresh) setRefreshing(true);
-    else setLoading(true);
+  // Convex reactive queries
+  const portfolioRaw = useConvexQuery(api.analytics.getPortfolioSummary, {});
+  const clientRaw = useConvexQuery(api.analytics.getClientMetrics);
+  const riskRaw = useConvexQuery(api.analytics.getRiskMetrics);
 
-    try {
-      // Fetch portfolio metrics via API Orchestration Layer
-      const result = await analyticsAPI.getPortfolio({ period: selectedPeriod as '7d' | '30d' | '90d' | '365d' | 'all' });
+  const loading = portfolioRaw === undefined;
 
-      if (result.success && result.data) {
-        const data = result.data as {
-          totalLoans?: number;
-          totalDisbursed?: number;
-          totalOutstanding?: number;
-          totalRepaid?: number;
-          averageLoanAmount?: number;
-          averageInterestRate?: number;
-          averageTerm?: number;
-          byStatus?: Record<string, number>;
-          byPurpose?: Record<string, number>;
-          clientCount?: number;
-          repaymentRate?: number;
-          defaultRate?: number;
-        };
+  const metrics: PortfolioMetrics | null = useMemo(() => {
+    if (!portfolioRaw) return null;
+    return {
+      totalLoans: portfolioRaw.totalLoans ?? 0,
+      totalDisbursed: portfolioRaw.totalDisbursed ?? 0,
+      totalOutstanding: portfolioRaw.totalOutstanding ?? 0,
+      totalRepaid: portfolioRaw.totalRepayments ?? portfolioRaw.totalRepaid ?? 0,
+      averageLoanAmount: portfolioRaw.averageLoanSize ?? 0,
+      averageInterestRate: portfolioRaw.averageInterestRate ?? 0,
+      averageTerm: portfolioRaw.averageTerm ?? 0,
+      byStatus: portfolioRaw.byStatus ?? {},
+      byPurpose: portfolioRaw.byPurpose ?? {},
+      clientCount: clientRaw?.totalClients ?? 0,
+      repaymentRate: portfolioRaw.repaymentRate ?? 0,
+      defaultRate: riskRaw?.defaultRate ?? 0,
+    };
+  }, [portfolioRaw, clientRaw, riskRaw]);
 
-        setMetrics({
-          totalLoans: data.totalLoans || 0,
-          totalDisbursed: data.totalDisbursed || 0,
-          totalOutstanding: data.totalOutstanding || 0,
-          totalRepaid: data.totalRepaid || 0,
-          averageLoanAmount: data.averageLoanAmount || 0,
-          averageInterestRate: data.averageInterestRate || 0,
-          averageTerm: data.averageTerm || 0,
-          byStatus: data.byStatus || {},
-          byPurpose: data.byPurpose || {},
-          clientCount: data.clientCount || 0,
-          repaymentRate: data.repaymentRate || 0,
-          defaultRate: data.defaultRate || 0
-        });
-      } else {
-        console.error('Failed to fetch portfolio metrics:', result.error);
-      }
-    } catch (error) {
-      console.error('Error fetching portfolio metrics:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [selectedPeriod]);
-
-  useEffect(() => {
-    fetchMetrics();
-  }, [fetchMetrics, selectedPeriod]);
+  const fetchMetrics = (_showRefresh?: boolean) => {}; // Convex is reactive
 
   if (loading) {
     return (
@@ -134,7 +107,9 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Portfolio Analytics</h2>
-          <p className="text-muted-foreground">Comprehensive view of your loan portfolio performance</p>
+          <p className="text-muted-foreground">
+            Comprehensive view of your loan portfolio performance
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
@@ -149,9 +124,9 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
               <SelectItem value="all">All Time</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => fetchMetrics(true)}
             disabled={refreshing}
           >
@@ -171,7 +146,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Total Disbursed</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalDisbursed || 0)}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={formatNAD(metrics?.totalDisbursed || 0)}
+                >
                   {formatNAD(metrics?.totalDisbursed || 0)}
                 </p>
               </div>
@@ -185,7 +163,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Outstanding Balance</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalOutstanding || 0)}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={formatNAD(metrics?.totalOutstanding || 0)}
+                >
                   {formatNAD(metrics?.totalOutstanding || 0)}
                 </p>
               </div>
@@ -199,7 +180,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Total Repaid</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.totalRepaid || 0)}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={formatNAD(metrics?.totalRepaid || 0)}
+                >
                   {formatNAD(metrics?.totalRepaid || 0)}
                 </p>
               </div>
@@ -213,7 +197,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Active Clients</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums" title={String(metrics?.clientCount || 0)}>
+                <p
+                  className="text-xl sm:text-2xl font-bold truncate tabular-nums"
+                  title={String(metrics?.clientCount || 0)}
+                >
                   {metrics?.clientCount || 0}
                 </p>
               </div>
@@ -233,7 +220,10 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold truncate tabular-nums" title={formatNAD(metrics?.averageLoanAmount || 0)}>
+            <div
+              className="text-2xl font-bold truncate tabular-nums"
+              title={formatNAD(metrics?.averageLoanAmount || 0)}
+            >
               {formatNAD(metrics?.averageLoanAmount || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1 truncate">
@@ -253,9 +243,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="text-2xl font-bold truncate tabular-nums">
               {(metrics?.averageInterestRate || 0).toFixed(1)}%
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              Annual Percentage Rate
-            </p>
+            <p className="text-xs text-muted-foreground mt-1 truncate">Annual Percentage Rate</p>
           </CardContent>
         </Card>
 
@@ -270,9 +258,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
             <div className="text-2xl font-bold truncate tabular-nums">
               {(metrics?.averageTerm || 0).toFixed(0)} months
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              Loan duration
-            </p>
+            <p className="text-xs text-muted-foreground mt-1 truncate">Loan duration</p>
           </CardContent>
         </Card>
       </div>
@@ -286,9 +272,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
               <PieChart className="h-5 w-5" />
               Loan Status Distribution
             </CardTitle>
-            <CardDescription>
-              Breakdown of loans by current status
-            </CardDescription>
+            <CardDescription>Breakdown of loans by current status</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -298,7 +282,12 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   <div key={status} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <div className={cn('w-3 h-3 rounded-full', STATUS_COLORS[status] || 'bg-gray-400')} />
+                        <div
+                          className={cn(
+                            'w-3 h-3 rounded-full',
+                            STATUS_COLORS[status] || 'bg-gray-400'
+                          )}
+                        />
                         <span className="capitalize">{status.replace('_', ' ')}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -321,9 +310,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
               <AlertTriangle className="h-5 w-5" />
               Risk Metrics
             </CardTitle>
-            <CardDescription>
-              Portfolio health indicators
-            </CardDescription>
+            <CardDescription>Portfolio health indicators</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
@@ -333,13 +320,8 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {(metrics?.repaymentRate || 0).toFixed(1)}%
                 </Badge>
               </div>
-              <Progress 
-                value={metrics?.repaymentRate || 0} 
-                className="h-3"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Target: 85%+
-              </p>
+              <Progress value={metrics?.repaymentRate || 0} className="h-3" />
+              <p className="text-xs text-muted-foreground mt-1">Target: 85%+</p>
             </div>
 
             <div>
@@ -349,13 +331,8 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {(metrics?.defaultRate || 0).toFixed(1)}%
                 </Badge>
               </div>
-              <Progress 
-                value={metrics?.defaultRate || 0} 
-                className="h-3"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Target: Below 5%
-              </p>
+              <Progress value={metrics?.defaultRate || 0} className="h-3" />
+              <p className="text-xs text-muted-foreground mt-1">Target: Below 5%</p>
             </div>
 
             <div className="pt-4 border-t">
@@ -387,14 +364,15 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
       <Card>
         <CardHeader>
           <CardTitle>Loan Purpose Distribution</CardTitle>
-          <CardDescription>
-            What clients are borrowing for
-          </CardDescription>
+          <CardDescription>What clients are borrowing for</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {Object.entries(metrics?.byPurpose || {}).map(([purpose, count]) => (
-              <div key={purpose} className="p-4 border border-border rounded-lg text-center bg-card">
+              <div
+                key={purpose}
+                className="p-4 border border-border rounded-lg text-center bg-card"
+              >
                 <div className="text-2xl font-bold text-foreground">{count}</div>
                 <div className="text-sm text-muted-foreground truncate" title={purpose}>
                   {purpose}

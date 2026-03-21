@@ -1,21 +1,20 @@
 /**
  * IPS Payment Hook
- * 
+ *
  * React Query hook for initiating IPS payments (repayments)
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import {
-  initiateIPSRepayment,
-  initiateIPSDisbursement,
-} from '@/services/ipsService';
+import { useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import type {
   InitiateIPSRepaymentParams,
   InitiateIPSRepaymentResult,
   InitiateIPSDisbursementParams,
   InitiateIPSDisbursementResult,
 } from '@/types/ips';
+import type { Id } from '@/integrations/convex/api';
 
 /**
  * Hook for initiating IPS repayments (customer paying loan)
@@ -23,20 +22,34 @@ import type {
 export function useIPSRepayment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const initiateIpsTx = useConvexMutation(api.ips.ipsTransactions.initiateIpsTransaction);
 
-  return useMutation<
-    InitiateIPSRepaymentResult,
-    Error,
-    InitiateIPSRepaymentParams
-  >({
-    mutationFn: initiateIPSRepayment,
+  return useMutation<InitiateIPSRepaymentResult, Error, InitiateIPSRepaymentParams>({
+    mutationFn: async (params) => {
+      const txId = await initiateIpsTx({
+        msgId: params.msgId ?? `repay-${params.loanId}-${Date.now()}`,
+        txType: 'credit_transfer',
+        direction: 'inbound',
+        amount: params.amount,
+        currency: 'NAD',
+        debtorVpa: params.debtorVpa,
+        creditorVpa: params.creditorVpa,
+        loanId: params.loanId as Id<'loans'>,
+        remittanceInfo: params.remittanceInfo,
+      });
+      return {
+        success: true,
+        transactionId: txId,
+        message: 'Payment initiated',
+      } as InitiateIPSRepaymentResult;
+    },
     onSuccess: (result, variables) => {
       if (result.success) {
         toast({
           title: 'Payment Initiated',
           description: `Your payment of NAD ${variables.amount.toFixed(2)} is being processed.`,
         });
-        
+
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['loan', variables.loanId] });
         queryClient.invalidateQueries({ queryKey: ['loan-payments', variables.loanId] });
@@ -67,20 +80,34 @@ export function useIPSRepayment() {
 export function useIPSDisbursement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const initiateIpsTx = useConvexMutation(api.ips.ipsTransactions.initiateIpsTransaction);
 
-  return useMutation<
-    InitiateIPSDisbursementResult,
-    Error,
-    InitiateIPSDisbursementParams
-  >({
-    mutationFn: initiateIPSDisbursement,
+  return useMutation<InitiateIPSDisbursementResult, Error, InitiateIPSDisbursementParams>({
+    mutationFn: async (params) => {
+      const txId = await initiateIpsTx({
+        msgId: params.msgId ?? `disb-${params.disbursementId}-${Date.now()}`,
+        txType: 'credit_transfer',
+        direction: 'outbound',
+        amount: params.amount,
+        currency: 'NAD',
+        creditorVpa: params.creditorVpa,
+        disbursementId: params.disbursementId as Id<'disbursements'>,
+        loanId: params.loanId as Id<'loans'>,
+        remittanceInfo: params.remittanceInfo,
+      });
+      return {
+        success: true,
+        transactionId: txId,
+        message: 'Disbursement initiated',
+      } as InitiateIPSDisbursementResult;
+    },
     onSuccess: (result, variables) => {
       if (result.success) {
         toast({
           title: 'Disbursement Initiated',
           description: `Disbursement of NAD ${result.amount?.toFixed(2)} is being processed via IPS.`,
         });
-        
+
         // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['disbursement', variables.disbursementId] });
         queryClient.invalidateQueries({ queryKey: ['disbursements'] });

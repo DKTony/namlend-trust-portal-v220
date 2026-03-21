@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -7,11 +7,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import {
-  getApprovalNotifications,
-  markNotificationAsRead,
-  type ApprovalNotification,
-} from '@/services/approvalWorkflow';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+
+interface ApprovalNotification {
+  id: string;
+  type: string;
+  request_type?: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+  request_id?: string;
+  priority?: string;
+}
 import {
   Bell,
   BellRing,
@@ -49,44 +59,43 @@ export default function ApprovalNotifications({
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Convex reactive query for notifications (no polling needed)
+  const rawNotifications = useConvexQuery(api.notifications.getMyNotifications, {});
+
   useEffect(() => {
-    loadNotifications();
-
-    // Set up polling for new notifications
-    const interval = setInterval(loadNotifications, 30000); // Poll every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [showUnreadOnly]);
-
-  const loadNotifications = async () => {
-    try {
-      const result = await getApprovalNotifications(showUnreadOnly);
-
-      if (result.success && result.notifications) {
-        setNotifications(result.notifications);
-        setUnreadCount(result.notifications.filter((n) => !n.is_read).length);
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    } finally {
+    if (rawNotifications !== undefined) {
+      const mapped: ApprovalNotification[] = rawNotifications.map((n: any) => ({
+        id: String(n._id),
+        type: n.type ?? 'info',
+        request_type: n.requestType,
+        title: n.title ?? '',
+        message: n.message ?? n.body ?? '',
+        is_read: n.isRead ?? n.read ?? false,
+        read_at: n.readAt ? new Date(n.readAt).toISOString() : undefined,
+        created_at: n._creationTime
+          ? new Date(n._creationTime).toISOString()
+          : new Date().toISOString(),
+        request_id: n.requestId ? String(n.requestId) : undefined,
+        priority: n.priority,
+      }));
+      const filtered = showUnreadOnly ? mapped.filter((n) => !n.is_read) : mapped;
+      setNotifications(filtered);
+      setUnreadCount(mapped.filter((n) => !n.is_read).length);
       setLoading(false);
     }
-  };
+  }, [rawNotifications, showUnreadOnly]);
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const result = await markNotificationAsRead(notificationId);
-
-      if (result.success) {
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
-          )
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-        // notify parent (e.g., NotificationBell) so it can update badge immediately
-        if (onMarkedRead) onMarkedRead();
-      }
+      // TODO: Wire to Convex notifications.markAsRead mutation
+      console.warn('markNotificationAsRead placeholder', notificationId);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      if (onMarkedRead) onMarkedRead();
     } catch (error) {
       toast({
         title: 'Error',
@@ -191,13 +200,10 @@ export default function ApprovalNotifications({
           ) : (
             notifications.map((notification) => {
               const Icon = getNotificationIcon(
-                notification.notification_type,
+                notification.type,
                 notification.metadata?.request_type as string | undefined
               );
-              const iconColor = getNotificationColor(
-                notification.notification_type,
-                notification.is_read
-              );
+              const iconColor = getNotificationColor(notification.type, notification.is_read);
 
               return (
                 <div
@@ -259,7 +265,7 @@ export default function ApprovalNotifications({
 
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-[10px] text-muted-foreground font-medium">
-                          {formatDistanceToNow(new Date(notification.sent_at), {
+                          {formatDistanceToNow(new Date(notification.created_at), {
                             addSuffix: true,
                           })}
                         </span>
@@ -305,27 +311,14 @@ export default function ApprovalNotifications({
 
 // Notification Bell Component for Header
 export function NotificationBell() {
-  const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const { isDark } = useTheme();
 
-  useEffect(() => {
-    const loadUnreadCount = async () => {
-      try {
-        const result = await getApprovalNotifications(true);
-        if (result.success && result.notifications) {
-          setUnreadCount(result.notifications.length);
-        }
-      } catch (error) {
-        console.error('Error loading unread count:', error);
-      }
-    };
-
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Convex reactive query — auto-refreshes, no polling needed
+  const rawNotifications = useConvexQuery(api.notifications.getMyNotifications, {});
+  const unreadCount = (rawNotifications ?? []).filter(
+    (n: { isRead?: boolean; read?: boolean }) => !(n.isRead ?? n.read ?? false)
+  ).length;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -1,86 +1,123 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatNAD } from '@/utils/currency';
-import { 
-  generateCollectionQueue, 
-  CollectionQueueItem,
-  getCollectionActivities,
-  CollectionActivity
-} from '@/services/collectionsService';
-import { 
-  Phone, 
-  Mail, 
-  MessageSquare, 
-  User, 
-  Calendar, 
-  DollarSign, 
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+
+interface CollectionQueueItem {
+  loan_id: string;
+  user_id: string;
+  client_name: string;
+  amount_overdue: number;
+  total_overdue: number;
+  days_overdue: number;
+  outstanding_balance: number;
+  priority_score: number;
+  last_contact_date: string | null;
+  next_action_date: string | null;
+  status: string;
+  phone_number: string;
+  email: string;
+  overdue_installments: number;
+  last_contact_type: string | null;
+  promise_date: string | null;
+  promise_amount: number | null;
+}
+
+interface CollectionActivity {
+  id: string;
+  loan_id: string;
+  activity_type: string;
+  contact_method: string;
+  outcome: string;
+  notes?: string;
+  created_at: string;
+}
+import {
+  Phone,
+  Mail,
+  MessageSquare,
+  User,
+  Calendar,
+  DollarSign,
   AlertTriangle,
   Clock,
   TrendingUp,
   History,
-  Plus
+  Plus,
 } from 'lucide-react';
 import RecordActivityModal from './RecordActivityModal';
 
 export const CollectionsWorkqueue: React.FC = () => {
-  const [queue, setQueue] = useState<CollectionQueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<CollectionQueueItem | null>(null);
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
-  const [activities, setActivities] = useState<Record<string, CollectionActivity[]>>({});
 
-  useEffect(() => {
-    loadQueue();
-  }, []);
+  // Convex reactive query for collections queue
+  const rawQueue = useConvexQuery(api.collections.getCollectionsQueue, {});
 
-  const loadQueue = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await generateCollectionQueue();
-      
-      if (result.success) {
-        setQueue(result.queue || []);
-      } else {
-        setError(result.error || 'Failed to load collection queue');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error('Error loading collection queue:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = rawQueue === undefined;
+  const error: string | null = null;
 
-  const loadActivities = async (loanId: string) => {
-    if (activities[loanId]) {
-      // Already loaded
-      return;
-    }
+  const queue: CollectionQueueItem[] = useMemo(() => {
+    if (!rawQueue) return [];
+    return rawQueue.map((item) => {
+      const amountOverdue = item.amountOverdue ?? item.amount ?? 0;
+      return {
+        loan_id: String(item.loanId ?? item._id ?? ''),
+        user_id: String(item.userId ?? ''),
+        client_name:
+          (item.clientName ?? `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim()) || 'Unknown',
+        amount_overdue: amountOverdue,
+        total_overdue: amountOverdue,
+        days_overdue: item.daysOverdue ?? 0,
+        outstanding_balance: item.outstandingBalance ?? item.amount ?? 0,
+        priority_score: item.priorityScore ?? item.daysOverdue ?? 0,
+        last_contact_date: item.lastContactDate ?? null,
+        next_action_date: item.nextActionDate ?? null,
+        status: item.status ?? 'overdue',
+        phone_number: item.phone ?? '',
+        email: item.email ?? '',
+        overdue_installments: item.overdueInstallments ?? 1,
+        last_contact_type: item.lastContactType ?? null,
+        promise_date: item.promiseDate ?? null,
+        promise_amount: item.promiseAmount ?? null,
+      };
+    });
+  }, [rawQueue]);
 
-    try {
-      const result = await getCollectionActivities(loanId);
-      if (result.success) {
-        setActivities(prev => ({
-          ...prev,
-          [loanId]: result.activities || []
-        }));
-      }
-    } catch (err) {
-      console.error('Error loading activities:', err);
-    }
-  };
+  // Reactive query for activity history of the expanded loan
+  const rawActivities = useConvexQuery(
+    api.collections.listInteractionsByLoan,
+    expandedLoan ? { loanId: expandedLoan as Id<'loans'> } : 'skip'
+  );
 
-  const handleExpandLoan = async (loanId: string) => {
+  // Build activities map from reactive query result
+  const activities: Record<string, CollectionActivity[]> = useMemo(() => {
+    if (!expandedLoan || !rawActivities) return {};
+    return {
+      [expandedLoan]: rawActivities.map((a: any) => ({
+        id: String(a._id),
+        loan_id: String(a.loanId),
+        activity_type: a.activityType ?? '',
+        contact_method: a.contactMethod ?? '',
+        outcome: a.outcome ?? '',
+        notes: a.notes,
+        created_at: a.createdAt ? new Date(a.createdAt).toISOString() : '',
+      })),
+    };
+  }, [expandedLoan, rawActivities]);
+
+  const loadQueue = () => {}; // Convex is reactive
+
+  const handleExpandLoan = (loanId: string) => {
     if (expandedLoan === loanId) {
       setExpandedLoan(null);
     } else {
       setExpandedLoan(loanId);
-      await loadActivities(loanId);
     }
   };
 
@@ -90,29 +127,43 @@ export const CollectionsWorkqueue: React.FC = () => {
   };
 
   const handleActivitySuccess = () => {
+    // Both queue and activities are Convex reactive queries — auto-refresh
     loadQueue();
-    if (expandedLoan) {
-      loadActivities(expandedLoan);
-    }
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getPriorityBadge = (score: number) => {
     if (score >= 100) {
-      return <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">Critical</Badge>;
+      return (
+        <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">
+          Critical
+        </Badge>
+      );
     } else if (score >= 50) {
-      return <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800">High</Badge>;
+      return (
+        <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800">
+          High
+        </Badge>
+      );
     } else if (score >= 20) {
-      return <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">Medium</Badge>;
+      return (
+        <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+          Medium
+        </Badge>
+      );
     } else {
-      return <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800">Low</Badge>;
+      return (
+        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+          Low
+        </Badge>
+      );
     }
   };
 
@@ -197,7 +248,7 @@ export const CollectionsWorkqueue: React.FC = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Critical Cases</p>
                 <p className="text-2xl font-bold">
-                  {queue.filter(item => item.priority_score >= 100).length}
+                  {queue.filter((item) => item.priority_score >= 100).length}
                 </p>
               </div>
               <AlertTriangle className="h-8 w-8 text-orange-600" />
@@ -210,7 +261,9 @@ export const CollectionsWorkqueue: React.FC = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Avg Days Overdue</p>
                 <p className="text-2xl font-bold">
-                  {Math.round(queue.reduce((sum, item) => sum + item.days_overdue, 0) / queue.length)}
+                  {Math.round(
+                    queue.reduce((sum, item) => sum + item.days_overdue, 0) / queue.length
+                  )}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-blue-600" />
@@ -280,7 +333,8 @@ export const CollectionsWorkqueue: React.FC = () => {
                           {formatNAD(item.total_overdue)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {item.overdue_installments} installment{item.overdue_installments > 1 ? 's' : ''}
+                          {item.overdue_installments} installment
+                          {item.overdue_installments > 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -303,7 +357,8 @@ export const CollectionsWorkqueue: React.FC = () => {
                           <div className="flex items-center space-x-1 text-blue-600">
                             <AlertTriangle className="h-3 w-3" />
                             <span>
-                              Promise: {formatNAD(item.promise_amount || 0)} on {formatDate(item.promise_date)}
+                              Promise: {formatNAD(item.promise_amount || 0)} on{' '}
+                              {formatDate(item.promise_date)}
                             </span>
                           </div>
                         )}
@@ -321,10 +376,7 @@ export const CollectionsWorkqueue: React.FC = () => {
                         {expandedLoan === item.loan_id ? 'Hide' : 'View'} History
                       </Button>
                       <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleRecordActivity(item)}
-                        >
+                        <Button size="sm" onClick={() => handleRecordActivity(item)}>
                           <Plus className="h-4 w-4 mr-2" />
                           Record Activity
                         </Button>
@@ -367,7 +419,8 @@ export const CollectionsWorkqueue: React.FC = () => {
                                   <div className="mt-2 text-xs text-blue-600 flex items-center space-x-1">
                                     <AlertTriangle className="h-3 w-3" />
                                     <span>
-                                      Promise: {formatNAD(activity.promise_amount || 0)} on {formatDate(activity.promise_date)}
+                                      Promise: {formatNAD(activity.promise_amount || 0)} on{' '}
+                                      {formatDate(activity.promise_date)}
                                       {activity.promise_fulfilled && ' ✓ Fulfilled'}
                                     </span>
                                   </div>
@@ -376,7 +429,9 @@ export const CollectionsWorkqueue: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">No activity history yet</p>
+                          <p className="text-sm text-muted-foreground italic">
+                            No activity history yet
+                          </p>
                         )}
                       </div>
                     )}

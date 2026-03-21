@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { APR_LIMIT } from '@/constants/regulatory';
 
 interface UserProfile {
@@ -27,8 +28,19 @@ export interface LoanDetails {
 }
 
 export function useLoanForm(userId: string | undefined) {
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  // Convex reactive query replaces Supabase profile fetch
+  const rawProfile = useQuery(api.users.getMyProfile);
+  const profileLoading = userId ? rawProfile === undefined : false;
+
+  // Map Convex profile to UserProfile shape (memoized to stabilize useEffect dep)
+  const userProfile: UserProfile | null = useMemo(() => {
+    if (!rawProfile) return null;
+    return {
+      monthly_income: rawProfile.monthlyIncome ?? null,
+      employment_status: rawProfile.employmentStatus ?? null,
+      credit_score: null, // credit score lives in a separate table
+    };
+  }, [rawProfile]);
 
   const [formData, setFormData] = useState<LoanFormData>({
     amount: '',
@@ -48,52 +60,23 @@ export function useLoanForm(userId: string | undefined) {
     totalRepayment: 0,
   });
 
-  // Fetch user profile to pre-populate financial data
+  // Pre-populate form when profile data loads
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!userId) return;
+    if (!userProfile) return;
 
-      try {
-        setProfileLoading(true);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('monthly_income, employment_status, credit_score')
-          .eq('user_id', userId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-          return;
-        }
-
-        if (data) {
-          // Cast to our expected type
-          const profileData = data as unknown as UserProfile;
-          setUserProfile(profileData);
-
-          // Pre-populate form with existing profile data
-          if (profileData.monthly_income && profileData.monthly_income > 0) {
-            setFormData((prev) => ({
-              ...prev,
-              monthly_income: profileData.monthly_income!.toString(),
-            }));
-          }
-          if (profileData.employment_status) {
-            setFormData((prev) => ({
-              ...prev,
-              employment_status: profileData.employment_status!,
-            }));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch user profile:', err);
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [userId]);
+    if (userProfile.monthly_income && userProfile.monthly_income > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        monthly_income: userProfile.monthly_income!.toString(),
+      }));
+    }
+    if (userProfile.employment_status) {
+      setFormData((prev) => ({
+        ...prev,
+        employment_status: userProfile.employment_status!,
+      }));
+    }
+  }, [userProfile]);
 
   const calculateLoanDetails = (amount: number, term: number) => {
     const principal = amount;

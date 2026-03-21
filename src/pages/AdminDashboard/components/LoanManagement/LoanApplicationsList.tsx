@@ -21,7 +21,9 @@ import { useLoanApplications, LoanApplication } from '../../hooks/useLoanApplica
 import { useLoanActions } from '../../hooks/useLoanActions';
 import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import { type Id } from '@/integrations/convex/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface LoanApplicationsListProps {
@@ -86,43 +88,20 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   };
 
   const { toast } = useToast();
+  const initiateDisbursement = useMutation(api.disbursements.initiateDisbursement);
 
   const handleDisburse = async (application: LoanApplication) => {
     try {
-      // First check if a disbursement already exists for this loan
-      const { data: existingDisbursement } = await supabase
-        .from('disbursements')
-        .select('id, amount, status')
-        .eq('loan_id', application.id)
-        .eq('status', 'pending')
-        .single();
+      // Create disbursement via Convex mutation
+      const disbursementId = await initiateDisbursement({
+        loanId: application.id as Id<'loans'>,
+        amount: application.amount,
+        method: 'bank_transfer',
+      });
 
-      let disbursementId: string;
-
-      if (existingDisbursement) {
-        // Use existing pending disbursement
-        disbursementId = existingDisbursement.id;
-      } else {
-        // Create a new disbursement for this loan
-        const { data: newDisbursement, error: createError } = await supabase.rpc(
-          'create_disbursement_on_approval',
-          { p_loan_id: application.id }
-        );
-
-        if (createError || !newDisbursement?.success) {
-          toast({
-            title: 'Error',
-            description: newDisbursement?.error || 'Failed to create disbursement',
-            variant: 'destructive',
-          });
-          return;
-        }
-        disbursementId = newDisbursement.disbursement_id;
-      }
-
-      // Now open the modal with the correct disbursement ID
+      // Open the modal with the disbursement ID
       setSelectedDisbursement({
-        id: disbursementId, // Actual disbursement ID
+        id: String(disbursementId),
         amount: application.amount,
         clientName: application.applicantName,
         loanId: application.id,
@@ -132,7 +111,10 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
       console.error('Error preparing disbursement:', error);
       toast({
         title: 'Error',
-        description: 'Failed to prepare disbursement. Please try again.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to prepare disbursement. Please try again.',
         variant: 'destructive',
       });
     }

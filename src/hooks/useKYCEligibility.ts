@@ -1,17 +1,22 @@
 /**
- * useKYCEligibility Hook
+ * useKYCEligibility Hook — Convex-native implementation
  *
- * Fetches KYC document verification eligibility status for current user.
- * Wraps the existing check_loan_eligibility RPC function.
+ * Replaces the legacy callRpc('check_loan_eligibility') Supabase call.
+ * Uses api.users.getMyKycDocuments (reactive Convex query) so the gate
+ * lifts in real-time when an admin approves a document — no page reload
+ * required.
  *
- * Used by:
- * - LoanApplication.tsx - To gate loan submissions
- * - Dashboard.tsx - To show verification status
+ * Required document types (from KYC.tsx):
+ *   id_card       — national ID or passport (required)
+ *   proof_income  — payslip or employer letter (required)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from 'convex/react';
 import { useAuth } from '@/hooks/useAuth';
-import { callRpc } from '@/utils/rpc';
+import { api } from '@/integrations/convex/api';
+
+const REQUIRED_DOC_TYPES = ['id_card', 'proof_income'] as const;
 
 export interface KYCEligibility {
   eligible: boolean;
@@ -32,64 +37,58 @@ interface UseKYCEligibilityReturn {
 
 export function useKYCEligibility(): UseKYCEligibilityReturn {
   const { user } = useAuth();
-  const [eligibility, setEligibility] = useState<KYCEligibility | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchEligibility = useCallback(async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+  // Reactive Convex query — auto-updates when KYC docs change
+  const rawDocs = useQuery(api.users.getMyKycDocuments, user ? {} : 'skip');
+  const profile = useQuery(api.users.getMyProfile, user ? {} : 'skip');
 
-    try {
-      setLoading(true);
-      setError(null);
+  const loading = user ? rawDocs === undefined || profile === undefined : false;
 
-      const result = await callRpc<KYCEligibility | KYCEligibility[]>(
-        'check_loan_eligibility',
-        {},
-        { timeoutMs: 3000, retries: 1 }
-      );
+  const eligibility = useMemo((): KYCEligibility | null => {
+    if (!user) return null;
+    if (rawDocs === undefined) return null;
 
-      if (result.ok && result.data) {
-        // RPC may return array or single object
-        if (Array.isArray(result.data) && result.data.length > 0) {
-          setEligibility(result.data[0]);
-        } else if (!Array.isArray(result.data)) {
-          setEligibility(result.data);
-        } else {
-          // Empty array - no eligibility data
-          setEligibility(null);
-        }
-      } else {
-        console.warn('Eligibility RPC failed:', result.error);
-        setError('Failed to fetch eligibility status');
-      }
-    } catch (err) {
-      console.error('Error fetching eligibility:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+    // Build a set of approved document types
+    const approvedTypes = new Set(
+      (rawDocs ?? []).filter((doc) => doc.status === 'approved').map((doc) => doc.documentType)
+    );
 
-  useEffect(() => {
-    fetchEligibility();
-  }, [fetchEligibility]);
+    const missingDocs = REQUIRED_DOC_TYPES.filter((t) => !approvedTypes.has(t));
+    const verifiedCount = REQUIRED_DOC_TYPES.filter((t) => approvedTypes.has(t)).length;
 
-  // Calculate verification progress percentage
-  const verificationProgress = eligibility && eligibility.required_docs > 0
-    ? Math.round((eligibility.verified_docs / eligibility.required_docs) * 100)
-    : 0;
+    // Profile completion: full_name + phone + employment_status + monthly_income = 4 fields
+    const profileFields = [
+      profile?.fullName,
+      profile?.phone,
+      profile?.employmentStatus,
+      profile?.monthlyIncome,
+    ];
+    const completedFields = profileFields.filter(Boolean).length;
+    const profileCompletion = Math.round((completedFields / profileFields.length) * 100);
+
+    return {
+      eligible: missingDocs.length === 0,
+      required_docs: REQUIRED_DOC_TYPES.length,
+      verified_docs: verifiedCount,
+      profile_completion_percentage: profileCompletion,
+      missing_required_docs: missingDocs,
+    };
+  }, [rawDocs, profile, user]);
+
+  const verificationProgress =
+    eligibility && eligibility.required_docs > 0
+      ? Math.round((eligibility.verified_docs / eligibility.required_docs) * 100)
+      : 0;
 
   return {
     eligibility,
     loading,
-    error,
-    refetch: fetchEligibility,
+    error: null,
+    refetch: async () => {
+      // No-op: Convex reactive queries update automatically
+    },
     isEligible: eligibility?.eligible ?? false,
-    verificationProgress
+    verificationProgress,
   };
 }
 

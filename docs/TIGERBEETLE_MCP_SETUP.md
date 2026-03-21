@@ -15,11 +15,13 @@ This guide explains how to install and configure the TigerBeetle MCP server for 
 ## Step 1: Install TigerBeetle
 
 ### macOS (Homebrew)
+
 ```bash
 brew install tigerbeetle
 ```
 
 ### Linux (Download)
+
 ```bash
 curl -LO https://github.com/tigerbeetle/tigerbeetle/releases/latest/download/tigerbeetle-x86_64-linux.zip
 unzip tigerbeetle-x86_64-linux.zip
@@ -27,6 +29,7 @@ sudo mv tigerbeetle /usr/local/bin/
 ```
 
 ### Verify Installation
+
 ```bash
 tigerbeetle version
 ```
@@ -121,12 +124,12 @@ Restart Windsurf and verify the MCP server is connected. You should see `mcp-tig
 
 The following tables were created in Supabase for the integration:
 
-| Table | Purpose |
-|-------|---------|
-| `tigerbeetle_accounts` | Maps NamLend entities to TB 128-bit account IDs |
-| `tigerbeetle_outbox` | Transactional outbox for reliable posting |
-| `tigerbeetle_transfers` | Shadow ledger for reconciliation |
-| `tigerbeetle_reconciliation` | Tracks reconciliation runs |
+| Table                        | Purpose                                         |
+| ---------------------------- | ----------------------------------------------- |
+| `tigerbeetle_accounts`       | Maps NamLend entities to TB 128-bit account IDs |
+| `tigerbeetle_outbox`         | Transactional outbox for reliable posting       |
+| `tigerbeetle_transfers`      | Shadow ledger for reconciliation                |
+| `tigerbeetle_reconciliation` | Tracks reconciliation runs                      |
 
 ## Outbox Worker (Future)
 
@@ -162,7 +165,7 @@ Deno.serve(async (req) => {
     try {
       // Process via TigerBeetle client
       // ... TigerBeetle posting logic ...
-      
+
       await supabase
         .from('tigerbeetle_outbox')
         .update({ status: 'completed', processed_at: new Date().toISOString() })
@@ -170,10 +173,10 @@ Deno.serve(async (req) => {
     } catch (error) {
       await supabase
         .from('tigerbeetle_outbox')
-        .update({ 
-          status: 'failed', 
+        .update({
+          status: 'failed',
           retry_count: entry.retry_count + 1,
-          last_error: error.message 
+          last_error: error.message,
         })
         .eq('id', entry.id);
     }
@@ -200,16 +203,19 @@ const loanResult = await runReconciliation('loan-uuid-here');
 ## Troubleshooting
 
 ### MCP Server Not Connecting
+
 1. Verify Java 17+ is installed: `java -version`
 2. Check TigerBeetle is running: `curl http://127.0.0.1:3001`
 3. Verify JAR path in config
 
 ### TigerBeetle Connection Refused
+
 1. Ensure TigerBeetle server is running
 2. Check port 3001 is not blocked
 3. Verify data file exists
 
 ### Outbox Entries Stuck
+
 1. Check `tigerbeetle_outbox` for `failed` status
 2. Review `last_error` column for details
 3. Manually retry or move to dead letter

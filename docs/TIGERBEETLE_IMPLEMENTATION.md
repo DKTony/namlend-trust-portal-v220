@@ -1,68 +1,124 @@
-# TigerBeetle Integration Guide
+# TigerBeetle Integration — Implementation Reference
 
-**Doc Revision**: 2026-01-19  \
-**Status**: Outbox pattern implemented; Edge worker simulates TB posting.
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current ✅
 
 ---
 
-## Current Architecture
+## Current Status: Shadow Mode (Simulation)
+
+> ⚠️ TigerBeetle is running in **shadow mode**. The outbox pattern is fully implemented end-to-end in Convex, but the cron worker _simulates_ posting rather than connecting to a live cluster. Convex is the authoritative source for all balances.
+
+To enable live posting: `npx convex env set TIGERBEETLE_ADDRESS=your-tb-host:3001`
+
+See [ADR 001](./adr/001-tigerbeetle-shadow-mode.md) for the architectural decision record.
+
+---
+
+## Architecture: Outbox Pattern
 
 ```
-Service Layer
-  -> queue_tigerbeetle_event() RPC
-  -> tigerbeetle_outbox
-  -> tigerbeetle-outbox-worker (Edge Function)
-  -> tigerbeetle_transfers (shadow ledger)
+Financial Mutation (e.g. initiateDisbursement)
+  1. Inserts disbursements (primary record)         ─┐
+  2. Inserts tigerBeetleOutbox (status: "pending")  ─┘  ← SAME ATOMIC MUTATION
+
+tb-outbox-worker cron (every 30 seconds):
+  3. claimPendingEntries → patches outbox status to "processing"
+  4. Simulates POST to TigerBeetle (or live call if TIGERBEETLE_ADDRESS set)
+  5a. On success → completeEntry (status: "completed") + inserts tigerBeetleTransfers
+  5b. On failure → failEntry, increments retryCount (max 10 → "dead_letter")
 ```
 
-- Browser does not use a direct TB client.
-- `ledgerService.ts` posts outbox entries for disbursements and repayments.
-- `useTigerBeetleBalance` reads from `tigerbeetle_transfers` and falls back to `loan_balance_summary` view.
+**Key guarantee**: The `tigerBeetleOutbox` entry is written in the **same atomic mutation** as the business record. If the mutation fails, neither record is written. A payment can never exist without a corresponding outbox entry.
 
 ---
 
-## Chart of Accounts (from `ledgerService.ts`)
+## Convex Tables
 
-Borrower receivables:
+| Table                       | Purpose                                          | Indexes                                       |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------- |
+| `tigerBeetleOutbox`         | Pending TB operations; claimed by cron worker    | `by_status`, `by_sourceId`                    |
+| `tigerBeetleAccounts`       | Maps NamLend entities to TB account IDs          | `by_entityId` (compound: entityType+entityId) |
+| `tigerBeetleTransfers`      | Immutable shadow transfer log (7-year retention) | `by_outboxId`                                 |
+| `tigerBeetleReconciliation` | Balance comparison runs (Convex vs TB)           | —                                             |
 
-- 1001: LOAN_PRINCIPAL_RECEIVABLE
-- 1002: LOAN_INTEREST_RECEIVABLE
-- 1003: LOAN_FEE_RECEIVABLE
-- 1004: LOAN_LATE_FEE_RECEIVABLE
+## Outbox Event Types
 
-Operational accounts:
-
-- 2001: DISBURSEMENT_CLEARING
-- 2002: COLLECTIONS_CLEARING
-- 2003: BANK_SETTLEMENT
-- 2004: SUSPENSE
-
-IPS accounts:
-
-- 3001: IPS_PENDING_INBOUND
-- 3002: IPS_PENDING_OUTBOUND
-- 3003: IPS_OPERATOR_FEE
-
-Income/Expense:
-
-- 5001: INTEREST_INCOME
-- 5002: FEE_INCOME
-- 5003: LATE_FEE_INCOME
-- 6001: WRITE_OFF_EXPENSE
+| `eventType`      | Trigger                 | TB Operation                              |
+| ---------------- | ----------------------- | ----------------------------------------- |
+| `CREATE_ACCOUNT` | New loan                | Create loan principal + interest accounts |
+| `DISBURSEMENT`   | Disbursement completed  | Debit NamLend cash → Credit borrower      |
+| `REPAYMENT`      | Payment completed       | Debit borrower → Credit NamLend income    |
+| `LATE_FEE`       | Late fee assessed       | Debit borrower → Credit fee income        |
+| `IPS_INITIATE`   | IPS transaction started | Pending IPS debit                         |
+| `IPS_COMPLETE`   | IPS transaction settled | Final settlement entry                    |
+| `IPS_REVERSE`    | IPS reversal            | Reversal entry                            |
 
 ---
 
-## Posting Flow
+## Cron Worker
 
-1. Service creates outbox event (`tigerbeetle_outbox`).
-2. Edge worker marks entry as processing.
-3. Worker simulates TB transfer and stores a shadow record in `tigerbeetle_transfers`.
-4. UI reads balances from shadow ledger.
+**File**: `convex/scheduled/tigerBeetleOutboxWorker.ts`
+**Schedule**: Every 30 seconds (`convex/crons.ts`)
+**Handler**: `internal.scheduled.tigerBeetleOutboxWorker.processOutbox`
+
+### Simulation Mode (current — no `TIGERBEETLE_ADDRESS`)
+
+1. Claims pending outbox entries (status → `"processing"`)
+2. Generates simulated TB transfer IDs (no HTTP call)
+3. Marks entry `"completed"`, stores simulated IDs in `tbTransferIds`
+4. Inserts `tigerBeetleTransfers` record as shadow log
+
+### Live Mode (when `TIGERBEETLE_ADDRESS` is configured)
+
+1. Claims pending entries
+2. Constructs TB transfer objects from outbox payload
+3. Calls TigerBeetle Node.js client: `client.createTransfers([...])`
+4. TB returns committed transfer IDs
+5. Marks outbox completed with real TB IDs
+
+Retry behaviour: up to 10 attempts with exponential backoff. After 10 failures: `status = "dead_letter"`. Dead-letter entries require manual investigation via Convex dashboard.
 
 ---
 
-## Gaps
+## Account Structure
 
-- Edge worker does not connect to a real TigerBeetle cluster.
-- Node-only TB client is not used in serverless context.
+Each loan gets three double-entry accounts in TigerBeetle:
 
+| Account (`entityType`) | Represents                            |
+| ---------------------- | ------------------------------------- |
+| `LOAN_PRINCIPAL`       | Outstanding principal balance (asset) |
+| `LOAN_INTEREST`        | Accrued interest receivable (income)  |
+| `LOAN_FEE`             | Late fees and charges (income)        |
+
+TB account IDs are 128-bit UInt128 values, stored as two 64-bit numbers (`tbAccountIdHigh`, `tbAccountIdLow`) in the `tigerBeetleAccounts` Convex table.
+
+---
+
+## Enabling Live TigerBeetle
+
+```bash
+# 1. Deploy TigerBeetle cluster (single-node example)
+tigerbeetle format --cluster=0 --replica=0 /data/0.tigerbeetle
+tigerbeetle start --addresses=0.0.0.0:3001 /data/0.tigerbeetle
+
+# 2. Set Convex env vars
+npx convex env set TIGERBEETLE_ADDRESS=localhost:3001
+npx convex env set TIGERBEETLE_CLUSTER_ID=0
+
+# 3. Deploy
+npx convex deploy
+```
+
+The worker begins posting real transfers on the next 30-second tick. Run the reconciliation check to validate balances match.
+
+---
+
+## See Also
+
+- [ADR 001](./adr/001-tigerbeetle-shadow-mode.md) — Shadow mode architectural decision
+- [FLOWS.md](./FLOWS.md#9-tigerbeetle-outbox-flow) — Outbox flow diagram
+- [TIGERBEETLE_PRODUCTION.md](./TIGERBEETLE_PRODUCTION.md) — Production readiness checklist
+- [TIGERBEETLE_MCP_SETUP.md](./TIGERBEETLE_MCP_SETUP.md) — Development tooling setup
+- [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md#2-tigerbeetle-posting-is-simulated) — Open debt item

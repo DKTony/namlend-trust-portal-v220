@@ -33,12 +33,14 @@ async function signInWithRetry(
   return { data: null, error: new Error('Max auth retries exceeded') as any };
 }
 
-// This test verifies the new admin RPC using a real authenticated session.
-// It runs as an API test (no browser interaction needed).
+// QUARANTINE: Legacy Supabase RPC test — calls get_admin_dashboard_summary Postgres RPC.
+// Convex equivalent: api.analytics.getAdminDashboardSummary (not yet wired in this test).
+// Status: fail (legacy Supabase dependency) — tracked in plan N4 triage.
+// Self-skips when SUPABASE_URL / SUPABASE_ANON_KEY are absent.
 test.describe('Admin Metrics RPC', () => {
   test.skip(
     !SUPABASE_URL || !SUPABASE_ANON_KEY,
-    'SUPABASE_URL and SUPABASE_ANON_KEY must be provided'
+    'QUARANTINE [legacy-supabase]: SUPABASE_URL and SUPABASE_ANON_KEY must be provided. Migrate to Convex api.analytics in N2 batch.'
   );
 
   test('get_admin_dashboard_summary returns numeric metrics for admin', async () => {

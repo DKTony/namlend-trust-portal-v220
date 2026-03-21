@@ -1,22 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Shield, 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Shield,
+  Users,
+  Plus,
+  Edit,
+  Trash2,
   Settings,
   Eye,
   Lock,
   Unlock,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,7 +29,9 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { getProfilesWithRoles, AppRole } from '@/services/adminService';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+type AppRole = 'admin' | 'loan_officer' | 'client';
 import { assignRoleWithServiceRole } from '@/utils/serviceRoleAssignment';
 import AssignRoleModal from './AssignRoleModal';
 
@@ -59,12 +61,18 @@ const RoleManagement: React.FC = () => {
       id: 'admin',
       name: 'Admin',
       description: 'Full system access with all administrative privileges',
-      permissions: ['user_management', 'system_settings', 'analytics_access', 'audit_logs', 'financial_reports'],
+      permissions: [
+        'user_management',
+        'system_settings',
+        'analytics_access',
+        'audit_logs',
+        'financial_reports',
+      ],
       userCount: 0,
       isSystemRole: true,
       isActive: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     },
     {
       id: 'loan_officer',
@@ -75,7 +83,7 @@ const RoleManagement: React.FC = () => {
       isSystemRole: true,
       isActive: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     },
     {
       id: 'client',
@@ -86,25 +94,109 @@ const RoleManagement: React.FC = () => {
       isSystemRole: true,
       isActive: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
+      updatedAt: new Date().toISOString(),
+    },
   ]);
 
   const [permissions] = useState<Permission[]>([
-    { id: 'user_management', name: 'User Management', description: 'Create, edit, and delete users', category: 'Administration', isSystemPermission: true },
-    { id: 'system_settings', name: 'System Settings', description: 'Modify system configuration', category: 'Administration', isSystemPermission: true },
-    { id: 'analytics_access', name: 'Analytics Access', description: 'View analytics and reports', category: 'Analytics', isSystemPermission: false },
-    { id: 'audit_logs', name: 'Audit Logs', description: 'View system audit logs', category: 'Security', isSystemPermission: true },
-    { id: 'financial_reports', name: 'Financial Reports', description: 'Access financial reporting', category: 'Finance', isSystemPermission: false },
-    { id: 'loan_processing', name: 'Loan Processing', description: 'Process loan applications', category: 'Loans', isSystemPermission: false },
-    { id: 'client_management', name: 'Client Management', description: 'Manage client accounts', category: 'Clients', isSystemPermission: false },
-    { id: 'payment_processing', name: 'Payment Processing', description: 'Process payments', category: 'Payments', isSystemPermission: false },
-    { id: 'loan_application', name: 'Loan Application', description: 'Apply for loans', category: 'Loans', isSystemPermission: false },
-    { id: 'account_view', name: 'Account View', description: 'View account information', category: 'Account', isSystemPermission: false },
-    { id: 'payment_history', name: 'Payment History', description: 'View payment history', category: 'Payments', isSystemPermission: false },
-    { id: 'ticket_management', name: 'Ticket Management', description: 'Manage support tickets', category: 'Support', isSystemPermission: false },
-    { id: 'client_communication', name: 'Client Communication', description: 'Communicate with clients', category: 'Communication', isSystemPermission: false },
-    { id: 'basic_reports', name: 'Basic Reports', description: 'View basic reports', category: 'Reports', isSystemPermission: false }
+    {
+      id: 'user_management',
+      name: 'User Management',
+      description: 'Create, edit, and delete users',
+      category: 'Administration',
+      isSystemPermission: true,
+    },
+    {
+      id: 'system_settings',
+      name: 'System Settings',
+      description: 'Modify system configuration',
+      category: 'Administration',
+      isSystemPermission: true,
+    },
+    {
+      id: 'analytics_access',
+      name: 'Analytics Access',
+      description: 'View analytics and reports',
+      category: 'Analytics',
+      isSystemPermission: false,
+    },
+    {
+      id: 'audit_logs',
+      name: 'Audit Logs',
+      description: 'View system audit logs',
+      category: 'Security',
+      isSystemPermission: true,
+    },
+    {
+      id: 'financial_reports',
+      name: 'Financial Reports',
+      description: 'Access financial reporting',
+      category: 'Finance',
+      isSystemPermission: false,
+    },
+    {
+      id: 'loan_processing',
+      name: 'Loan Processing',
+      description: 'Process loan applications',
+      category: 'Loans',
+      isSystemPermission: false,
+    },
+    {
+      id: 'client_management',
+      name: 'Client Management',
+      description: 'Manage client accounts',
+      category: 'Clients',
+      isSystemPermission: false,
+    },
+    {
+      id: 'payment_processing',
+      name: 'Payment Processing',
+      description: 'Process payments',
+      category: 'Payments',
+      isSystemPermission: false,
+    },
+    {
+      id: 'loan_application',
+      name: 'Loan Application',
+      description: 'Apply for loans',
+      category: 'Loans',
+      isSystemPermission: false,
+    },
+    {
+      id: 'account_view',
+      name: 'Account View',
+      description: 'View account information',
+      category: 'Account',
+      isSystemPermission: false,
+    },
+    {
+      id: 'payment_history',
+      name: 'Payment History',
+      description: 'View payment history',
+      category: 'Payments',
+      isSystemPermission: false,
+    },
+    {
+      id: 'ticket_management',
+      name: 'Ticket Management',
+      description: 'Manage support tickets',
+      category: 'Support',
+      isSystemPermission: false,
+    },
+    {
+      id: 'client_communication',
+      name: 'Client Communication',
+      description: 'Communicate with clients',
+      category: 'Communication',
+      isSystemPermission: false,
+    },
+    {
+      id: 'basic_reports',
+      name: 'Basic Reports',
+      description: 'View basic reports',
+      category: 'Reports',
+      isSystemPermission: false,
+    },
   ]);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -112,7 +204,7 @@ const RoleManagement: React.FC = () => {
   const [newRole, setNewRole] = useState({
     name: '',
     description: '',
-    permissions: [] as string[]
+    permissions: [] as string[],
   });
   const { toast } = useToast();
   const [loadingCounts, setLoadingCounts] = useState(false);
@@ -139,37 +231,37 @@ const RoleManagement: React.FC = () => {
     return 'client';
   };
 
-  const refreshRoleCounts = async () => {
-    try {
-      setLoadingCounts(true);
-      const [admins, officers, clients] = await Promise.all([
-        getProfilesWithRoles({ role: 'admin' }),
-        getProfilesWithRoles({ role: 'loan_officer' }),
-        getProfilesWithRoles({ role: 'client' })
-      ]);
-      setRoles(prev => prev.map(r => {
-        const roleKey = nameToAppRole(r.name);
-        const count = roleKey === 'admin' ? (admins.results?.length || 0)
-          : roleKey === 'loan_officer' ? (officers.results?.length || 0)
-          : (clients.results?.length || 0);
-        return { ...r, userCount: count, updatedAt: new Date().toISOString() };
-      }));
-    } catch (e) {
-      console.error('Failed to refresh role counts', e);
-    } finally {
+  // Convex reactive queries for each role
+  const adminUsers = useConvexQuery(api.users.listUsers, { role: 'admin' });
+  const officerUsers = useConvexQuery(api.users.listUsers, { role: 'loan_officer' });
+  const clientUsers = useConvexQuery(api.users.listUsers, { role: 'client' });
+
+  // Update role counts reactively
+  useEffect(() => {
+    if (adminUsers !== undefined && officerUsers !== undefined && clientUsers !== undefined) {
+      setRoles((prev) =>
+        prev.map((r) => {
+          const roleKey = nameToAppRole(r.name);
+          const count =
+            roleKey === 'admin'
+              ? adminUsers?.length || 0
+              : roleKey === 'loan_officer'
+                ? officerUsers?.length || 0
+                : clientUsers?.length || 0;
+          return { ...r, userCount: count, updatedAt: new Date().toISOString() };
+        })
+      );
       setLoadingCounts(false);
     }
-  };
+  }, [adminUsers, officerUsers, clientUsers]);
 
-  useEffect(() => {
-    refreshRoleCounts();
-  }, []);
+  const refreshRoleCounts = () => {}; // Convex is reactive
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -190,7 +282,7 @@ const RoleManagement: React.FC = () => {
 
   const getPermissionsByCategory = () => {
     const categories: { [key: string]: Permission[] } = {};
-    permissions.forEach(permission => {
+    permissions.forEach((permission) => {
       if (!categories[permission.category]) {
         categories[permission.category] = [];
       }
@@ -200,7 +292,10 @@ const RoleManagement: React.FC = () => {
   };
 
   const handleCreateRole = () => {
-    toast({ title: 'Not supported', description: 'Dynamic role creation is disabled. Use system roles only.' });
+    toast({
+      title: 'Not supported',
+      description: 'Dynamic role creation is disabled. Use system roles only.',
+    });
   };
 
   const handleEditRole = (role: Role) => {
@@ -208,16 +303,22 @@ const RoleManagement: React.FC = () => {
     setNewRole({
       name: role.name,
       description: role.description,
-      permissions: role.permissions
+      permissions: role.permissions,
     });
   };
 
   const handleUpdateRole = () => {
-    toast({ title: 'Not supported', description: 'Editing role definitions is disabled. Use role assignment per user.' });
+    toast({
+      title: 'Not supported',
+      description: 'Editing role definitions is disabled. Use role assignment per user.',
+    });
   };
 
   const handleDeleteRole = () => {
-    toast({ title: 'Not supported', description: 'Deleting roles is disabled. Use system roles only.' });
+    toast({
+      title: 'Not supported',
+      description: 'Deleting roles is disabled. Use system roles only.',
+    });
   };
 
   const handleAssignToUser = async (roleName: string) => {
@@ -230,10 +331,18 @@ const RoleManagement: React.FC = () => {
         toast({ title: 'Role assigned', description: `Assigned ${appRole} to ${userId}` });
         refreshRoleCounts();
       } else {
-        toast({ title: 'Assignment failed', description: res.error || 'Unknown error', variant: 'destructive' });
+        toast({
+          title: 'Assignment failed',
+          description: res.error || 'Unknown error',
+          variant: 'destructive',
+        });
       }
     } catch (e) {
-      toast({ title: 'Assignment error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast({
+        title: 'Assignment error',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -243,24 +352,32 @@ const RoleManagement: React.FC = () => {
       setViewUsersLoading(true);
       setViewUsersOpen(true);
       setViewUsersData([]);
-      
+
       const appRole = nameToAppRole(roleName);
       const res = await getProfilesWithRoles({ role: appRole, limit: 50, offset: 0 });
       if (res.success) {
         setViewUsersData(res.results || []);
       } else {
-        toast({ title: 'Load users failed', description: res.error || 'Unknown error', variant: 'destructive' });
+        toast({
+          title: 'Load users failed',
+          description: res.error || 'Unknown error',
+          variant: 'destructive',
+        });
       }
     } catch (e) {
-      toast({ title: 'Load error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast({
+        title: 'Load error',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
     } finally {
       setViewUsersLoading(false);
     }
   };
 
   const handleToggleRoleStatus = (roleId: string) => {
-    const updatedRoles = roles.map(role => 
-      role.id === roleId 
+    const updatedRoles = roles.map((role) =>
+      role.id === roleId
         ? { ...role, isActive: !role.isActive, updatedAt: new Date().toISOString() }
         : role
     );
@@ -269,14 +386,14 @@ const RoleManagement: React.FC = () => {
 
   const handlePermissionChange = (permissionId: string, checked: boolean) => {
     if (checked) {
-      setNewRole(prev => ({
+      setNewRole((prev) => ({
         ...prev,
-        permissions: [...prev.permissions, permissionId]
+        permissions: [...prev.permissions, permissionId],
       }));
     } else {
-      setNewRole(prev => ({
+      setNewRole((prev) => ({
         ...prev,
-        permissions: prev.permissions.filter(p => p !== permissionId)
+        permissions: prev.permissions.filter((p) => p !== permissionId),
       }));
     }
   };
@@ -302,17 +419,14 @@ const RoleManagement: React.FC = () => {
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingRole ? 'Edit Role' : 'Create New Role'}
-              </DialogTitle>
+              <DialogTitle>{editingRole ? 'Edit Role' : 'Create New Role'}</DialogTitle>
               <DialogDescription>
-                {editingRole 
-                  ? 'Modify the role details and permissions' 
-                  : 'Create a new role with specific permissions'
-                }
+                {editingRole
+                  ? 'Modify the role details and permissions'
+                  : 'Create a new role with specific permissions'}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Basic Information */}
               <div className="grid grid-cols-1 gap-4">
@@ -321,7 +435,7 @@ const RoleManagement: React.FC = () => {
                   <Input
                     id="roleName"
                     value={newRole.name}
-                    onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => setNewRole((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter role name"
                   />
                 </div>
@@ -330,7 +444,9 @@ const RoleManagement: React.FC = () => {
                   <Textarea
                     id="roleDescription"
                     value={newRole.description}
-                    onChange={(e) => setNewRole(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setNewRole((prev) => ({ ...prev, description: e.target.value }))
+                    }
                     placeholder="Enter role description"
                     rows={3}
                   />
@@ -343,7 +459,7 @@ const RoleManagement: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Select the permissions this role should have
                 </p>
-                
+
                 <div className="space-y-6">
                   {Object.entries(permissionCategories).map(([category, categoryPermissions]) => (
                     <div key={category} className="border rounded-lg p-4">
@@ -352,17 +468,17 @@ const RoleManagement: React.FC = () => {
                         {category}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {categoryPermissions.map(permission => (
+                        {categoryPermissions.map((permission) => (
                           <div key={permission.id} className="flex items-start space-x-3">
                             <Checkbox
                               id={permission.id}
                               checked={newRole.permissions.includes(permission.id)}
-                              onCheckedChange={(checked) => 
+                              onCheckedChange={(checked) =>
                                 handlePermissionChange(permission.id, checked as boolean)
                               }
                             />
                             <div className="flex-1">
-                              <Label 
+                              <Label
                                 htmlFor={permission.id}
                                 className="text-sm font-medium cursor-pointer"
                               >
@@ -387,8 +503,8 @@ const RoleManagement: React.FC = () => {
 
               {/* Actions */}
               <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setIsCreateDialogOpen(false);
                     setEditingRole(null);
@@ -397,7 +513,7 @@ const RoleManagement: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={editingRole ? handleUpdateRole : handleCreateRole}
                   disabled={!newRole.name || !newRole.description}
                 >
@@ -418,18 +534,21 @@ const RoleManagement: React.FC = () => {
                 <div className="flex items-center space-x-3 min-w-0">
                   <div className="shrink-0">{getRoleIcon(role.name)}</div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-lg truncate" title={role.name}>{role.name}</CardTitle>
+                    <CardTitle className="text-lg truncate" title={role.name}>
+                      {role.name}
+                    </CardTitle>
                     <div className="flex items-center space-x-2 mt-1 flex-wrap gap-y-1">
                       {role.isSystemRole && (
                         <Badge variant="outline" className="text-xs shrink-0">
                           System Role
                         </Badge>
                       )}
-                      <Badge 
-                        variant="outline" 
-                        className={`${role.isActive 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800' 
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+                      <Badge
+                        variant="outline"
+                        className={`${
+                          role.isActive
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
                         } shrink-0`}
                       >
                         {role.isActive ? (
@@ -468,21 +587,18 @@ const RoleManagement: React.FC = () => {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleToggleRoleStatus(role.id)}
-                  >
-                    {role.isActive ? (
-                      <Lock className="h-4 w-4" />
-                    ) : (
-                      <Unlock className="h-4 w-4" />
-                    )}
+                  <Button variant="ghost" size="sm" onClick={() => handleToggleRoleStatus(role.id)}>
+                    {role.isActive ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => toast({ title: 'Not supported', description: 'Editing role definitions is disabled.' })}
+                    onClick={() =>
+                      toast({
+                        title: 'Not supported',
+                        description: 'Editing role definitions is disabled.',
+                      })
+                    }
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -490,10 +606,8 @@ const RoleManagement: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {role.description}
-              </p>
-              
+              <p className="text-sm text-muted-foreground mb-4">{role.description}</p>
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Users:</span>
@@ -517,8 +631,8 @@ const RoleManagement: React.FC = () => {
 
               <div className="mt-4 pt-4 border-t">
                 <div className="flex flex-wrap gap-1">
-                  {role.permissions.slice(0, 3).map(permissionId => {
-                    const permission = permissions.find(p => p.id === permissionId);
+                  {role.permissions.slice(0, 3).map((permissionId) => {
+                    const permission = permissions.find((p) => p.id === permissionId);
                     return permission ? (
                       <Badge key={permissionId} variant="secondary" className="text-xs">
                         {permission.name}
@@ -559,7 +673,7 @@ const RoleManagement: React.FC = () => {
               Users with the {viewUsersRole?.toLowerCase()} role
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex-1 overflow-y-auto py-4">
             {viewUsersLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -592,10 +706,10 @@ const RoleManagement: React.FC = () => {
                           </p>
                         </div>
                         <div className="shrink-0">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`${
-                              user.account_status === 'active' 
+                              user.account_status === 'active'
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
                                 : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
                             }`}

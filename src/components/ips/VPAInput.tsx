@@ -1,6 +1,6 @@
 /**
  * VPA Input Component
- * 
+ *
  * Input field for Virtual Payment Address with validation
  */
 
@@ -11,9 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useValidateVPA } from '@/hooks/useUserVPAs';
-import { isValidVPAFormat, getVPAProvider } from '@/services/ipsService';
 import type { IPSAdapterValidateVPAResponse } from '@/types/ips';
 import { cn } from '@/lib/utils';
+
+function isValidVPAFormat(vpa: string): boolean {
+  return /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+$/.test(vpa);
+}
+
+function getVPAProvider(vpa: string): string | null {
+  const parts = vpa.split('@');
+  return parts.length === 2 ? parts[1] : null;
+}
 
 interface VPAInputProps {
   value: string;
@@ -44,38 +52,45 @@ export function VPAInput({
   autoValidateDelay = 1000,
   className,
 }: VPAInputProps) {
-  const [validationState, setValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
-  const [validationResult, setValidationResult] = useState<IPSAdapterValidateVPAResponse | null>(null);
+  const [validationState, setValidationState] = useState<
+    'idle' | 'validating' | 'valid' | 'invalid'
+  >('idle');
+  const [validationResult, setValidationResult] = useState<IPSAdapterValidateVPAResponse | null>(
+    null
+  );
   const [formatError, setFormatError] = useState<string | null>(null);
-  
+
   const validateVPAMutation = useValidateVPA();
 
   // Format validation on change
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value.toLowerCase().trim();
-    onChange(newValue);
-    
-    // Reset validation state
-    setValidationState('idle');
-    setValidationResult(null);
-    onValidationResult?.(null);
-    
-    // Check format
-    if (newValue && !isValidVPAFormat(newValue)) {
-      setFormatError('Invalid format. Use: username@provider');
-    } else {
-      setFormatError(null);
-    }
-  }, [onChange, onValidationResult]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value.toLowerCase().trim();
+      onChange(newValue);
+
+      // Reset validation state
+      setValidationState('idle');
+      setValidationResult(null);
+      onValidationResult?.(null);
+
+      // Check format
+      if (newValue && !isValidVPAFormat(newValue)) {
+        setFormatError('Invalid format. Use: username@provider');
+      } else {
+        setFormatError(null);
+      }
+    },
+    [onChange, onValidationResult]
+  );
 
   // Auto-validate with debounce
   useEffect(() => {
     if (!autoValidate || !value || !isValidVPAFormat(value)) return;
-    
+
     const timer = setTimeout(() => {
       handleValidate();
     }, autoValidateDelay);
-    
+
     return () => clearTimeout(timer);
   }, [value, autoValidate, autoValidateDelay]);
 
@@ -85,10 +100,10 @@ export function VPAInput({
       setFormatError('Please enter a valid VPA format');
       return;
     }
-    
+
     setValidationState('validating');
     setFormatError(null);
-    
+
     try {
       const result = await validateVPAMutation.mutateAsync(value);
       setValidationResult(result);
@@ -105,7 +120,10 @@ export function VPAInput({
   }, [value, validateVPAMutation, onValidationResult]);
 
   const provider = value ? getVPAProvider(value) : null;
-  const displayError = externalError || formatError || (validationState === 'invalid' ? validationResult?.errorMessage : null);
+  const displayError =
+    externalError ||
+    formatError ||
+    (validationState === 'invalid' ? validationResult?.errorMessage : null);
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -115,7 +133,7 @@ export function VPAInput({
           {required && <span className="text-red-500">*</span>}
         </Label>
       )}
-      
+
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Input
@@ -132,28 +150,26 @@ export function VPAInput({
               validationState === 'valid' && 'border-green-500 focus-visible:ring-green-500'
             )}
           />
-          
+
           {/* Status icon */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {validationState === 'validating' && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
-            {validationState === 'valid' && (
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-            )}
-            {validationState === 'invalid' && (
-              <XCircle className="h-4 w-4 text-red-500" />
-            )}
+            {validationState === 'valid' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            {validationState === 'invalid' && <XCircle className="h-4 w-4 text-red-500" />}
           </div>
         </div>
-        
+
         {showValidateButton && (
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleValidate}
-            disabled={disabled || !value || !isValidVPAFormat(value) || validationState === 'validating'}
+            disabled={
+              disabled || !value || !isValidVPAFormat(value) || validationState === 'validating'
+            }
             data-testid="vpa-verify-button"
           >
             {validationState === 'validating' ? (
@@ -164,7 +180,7 @@ export function VPAInput({
           </Button>
         )}
       </div>
-      
+
       {/* Provider badge */}
       {provider && !displayError && (
         <div className="flex items-center gap-2">
@@ -178,7 +194,7 @@ export function VPAInput({
           )}
         </div>
       )}
-      
+
       {/* Error message */}
       {displayError && (
         <div className="flex items-center gap-1 text-sm text-red-500">
@@ -186,7 +202,7 @@ export function VPAInput({
           {displayError}
         </div>
       )}
-      
+
       {/* Help text */}
       {!displayError && validationState === 'idle' && (
         <p className="text-xs text-muted-foreground">

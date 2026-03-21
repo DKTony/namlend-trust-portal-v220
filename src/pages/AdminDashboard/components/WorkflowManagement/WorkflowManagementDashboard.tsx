@@ -4,23 +4,24 @@
  * Version: v2.4.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Settings, 
-  Plus, 
-  GitBranch, 
-  Clock, 
+import {
+  Settings,
+  Plus,
+  GitBranch,
+  Clock,
   CheckCircle,
   XCircle,
   Edit,
   Eye,
-  History
+  History,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { useToast } from '@/hooks/use-toast';
 import WorkflowEditor from './WorkflowEditor';
 import WorkflowStats from './WorkflowStats';
@@ -32,44 +33,52 @@ interface WorkflowDefinition {
   entity_type: string;
   version: number;
   is_active: boolean;
-  stages: { stage: number; name: string; required_role: string; required_approvals: number; auto_assign: boolean; timeout_hours: number; conditions: { amount_min?: number | null; amount_max?: number | null } }[];
+  stages: {
+    stage: number;
+    name: string;
+    required_role: string;
+    required_approvals: number;
+    auto_assign: boolean;
+    timeout_hours: number;
+    conditions: { amount_min?: number | null; amount_max?: number | null };
+  }[];
   created_at: string;
   updated_at: string;
 }
 
 const WorkflowManagementDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const { toast } = useToast();
 
-  const fetchWorkflows = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('workflow_definitions')
-        .select('*')
-        .order('created_at', { ascending: false });
+  // Convex reactive query — no as any (N2)
+  const rawWorkflows = useConvexQuery(api.approvalWorkflow.listWorkflowDefinitions);
+  const loading = rawWorkflows === undefined;
 
-      if (error) throw error;
-      setWorkflows(data || []);
-    } catch (err) {
-      console.error('Error fetching workflows:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch workflows',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchWorkflows();
-  }, []);
+  const workflows: WorkflowDefinition[] = useMemo(() => {
+    if (!rawWorkflows) return [];
+    return rawWorkflows.map((w) => ({
+      id: String(w._id),
+      name: w.name ?? '',
+      description: '',
+      entity_type: w.entityType ?? '',
+      version: 1,
+      is_active: w.isActive ?? false,
+      stages: (w.stages ?? []).map((s) => ({
+        stage: s.order ?? 0,
+        name: s.name ?? '',
+        required_role: s.requiredRole ?? '',
+        required_approvals: 1,
+        auto_assign: false,
+        timeout_hours: 24,
+        conditions:
+          (s.conditions as { amount_min?: number | null; amount_max?: number | null }) ?? {},
+      })),
+      created_at: w.createdAt ? new Date(w.createdAt).toISOString() : '',
+      updated_at: w.updatedAt ? new Date(w.updatedAt).toISOString() : '',
+    }));
+  }, [rawWorkflows]);
 
   const handleEditWorkflow = (workflow: WorkflowDefinition) => {
     setSelectedWorkflow(workflow);
@@ -86,7 +95,7 @@ const WorkflowManagementDashboard: React.FC = () => {
       loan_application: 'Loan Applications',
       disbursement: 'Disbursements',
       payment: 'Payments',
-      user_role_change: 'Role Changes'
+      user_role_change: 'Role Changes',
     };
     return labels[type] || type;
   };
@@ -98,7 +107,6 @@ const WorkflowManagementDashboard: React.FC = () => {
         onClose={() => {
           setShowEditor(false);
           setSelectedWorkflow(null);
-          fetchWorkflows();
         }}
       />
     );
@@ -110,9 +118,7 @@ const WorkflowManagementDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Workflow Management</h2>
-          <p className="text-muted-foreground">
-            Configure multi-stage approval workflows
-          </p>
+          <p className="text-muted-foreground">Configure multi-stage approval workflows</p>
         </div>
         <Button onClick={handleCreateNew}>
           <Plus className="mr-2 h-4 w-4" />
@@ -168,7 +174,9 @@ const WorkflowManagementDashboard: React.FC = () => {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div className="flex-1 min-w-0 mr-2">
-                        <CardTitle className="text-lg truncate" title={workflow.name}>{workflow.name}</CardTitle>
+                        <CardTitle className="text-lg truncate" title={workflow.name}>
+                          {workflow.name}
+                        </CardTitle>
                         <CardDescription className="mt-1 truncate">
                           {getEntityTypeLabel(workflow.entity_type)}
                         </CardDescription>
@@ -182,7 +190,10 @@ const WorkflowManagementDashboard: React.FC = () => {
                     <div className="space-y-3">
                       {/* Description */}
                       {workflow.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]" title={workflow.description}>
+                        <p
+                          className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]"
+                          title={workflow.description}
+                        >
                           {workflow.description}
                         </p>
                       )}
@@ -246,38 +257,31 @@ const WorkflowManagementDashboard: React.FC = () => {
 };
 
 // Active Workflow Instances Component
-const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition | null }> = ({ 
-  selectedWorkflow 
+const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition | null }> = ({
+  selectedWorkflow,
 }) => {
-  const [instances, setInstances] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Convex reactive query for active approval requests (N2 — no as any)
+  const rawApprovals = useConvexQuery(api.approvalWorkflow.adminListApprovals, {
+    status: 'pending',
+  });
+  const loading = rawApprovals === undefined;
 
-  useEffect(() => {
-    const fetchInstances = async () => {
-      try {
-        setLoading(true);
-        let query = supabase
-          .from('workflow_instances')
-          .select('*, workflow_definitions(name)')
-          .eq('status', 'in_progress')
-          .order('started_at', { ascending: false });
-
-        if (selectedWorkflow) {
-          query = query.eq('workflow_definition_id', selectedWorkflow.id);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        setInstances(data || []);
-      } catch (err) {
-        console.error('Error fetching instances:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInstances();
-  }, [selectedWorkflow]);
+  const instances = useMemo(() => {
+    if (!rawApprovals) return [];
+    let filtered = rawApprovals;
+    if (selectedWorkflow) {
+      filtered = filtered.filter((a) => a.entityType === selectedWorkflow.entity_type);
+    }
+    return filtered.map((a) => ({
+      id: String(a._id),
+      entity_type: a.entityType ?? '',
+      entity_id: a.entityId ?? '',
+      current_stage: a.currentStage ?? 1,
+      status: a.status ?? 'in_progress',
+      started_at: a.createdAt ? new Date(a.createdAt).toISOString() : '',
+      workflow_definitions: { name: a.entityType ?? 'Approval Workflow' },
+    }));
+  }, [rawApprovals, selectedWorkflow]);
 
   if (loading) {
     return (
@@ -309,10 +313,16 @@ const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition |
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0 mr-2">
-                <CardTitle className="text-lg truncate" title={(instance.workflow_definitions as any)?.name || 'Unknown Workflow'}>
-                  {(instance.workflow_definitions as any)?.name || 'Unknown Workflow'}
+                <CardTitle
+                  className="text-lg truncate"
+                  title={instance.workflow_definitions.name || 'Unknown Workflow'}
+                >
+                  {instance.workflow_definitions.name || 'Unknown Workflow'}
                 </CardTitle>
-                <CardDescription className="truncate" title={`Entity: ${instance.entity_type} • Stage ${instance.current_stage}`}>
+                <CardDescription
+                  className="truncate"
+                  title={`Entity: ${instance.entity_type} • Stage ${instance.current_stage}`}
+                >
                   Entity: {instance.entity_type} • Stage {instance.current_stage}
                 </CardDescription>
               </div>
@@ -323,11 +333,15 @@ const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition |
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground shrink-0 mr-2">Started:</span>
-                <span className="truncate tabular-nums text-right">{new Date(instance.started_at).toLocaleString()}</span>
+                <span className="truncate tabular-nums text-right">
+                  {new Date(instance.started_at).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground shrink-0 mr-2">Entity ID:</span>
-                <span className="font-mono text-xs truncate tabular-nums text-right">{instance.entity_id.slice(0, 8)}...</span>
+                <span className="font-mono text-xs truncate tabular-nums text-right">
+                  {instance.entity_id.slice(0, 8)}...
+                </span>
               </div>
             </div>
           </CardContent>
@@ -339,31 +353,32 @@ const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition |
 
 // Workflow History Component
 const WorkflowHistory: React.FC = () => {
-  const [history, setHistory] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Convex reactive query for completed approval requests (N2 — no as any)
+  const rawHistory = useConvexQuery(api.approvalWorkflow.adminListApprovals, {
+    status: 'approved',
+    limit: 20,
+  });
+  const rawRejected = useConvexQuery(api.approvalWorkflow.adminListApprovals, {
+    status: 'rejected',
+    limit: 20,
+  });
+  const loading = rawHistory === undefined;
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('workflow_instances')
-          .select('*, workflow_definitions(name)')
-          .in('status', ['completed', 'rejected', 'cancelled'])
-          .order('completed_at', { ascending: false })
-          .limit(20);
-
-        if (error) throw error;
-        setHistory(data || []);
-      } catch (err) {
-        console.error('Error fetching history:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
-  }, []);
+  const history = useMemo(() => {
+    const all = [...(rawHistory ?? []), ...(rawRejected ?? [])];
+    return all
+      .sort((a, b) => (b.updatedAt ?? b.createdAt ?? 0) - (a.updatedAt ?? a.createdAt ?? 0))
+      .slice(0, 20)
+      .map((a) => ({
+        id: String(a._id),
+        entity_type: a.entityType ?? '',
+        entity_id: a.entityId ?? '',
+        status: a.status ?? 'completed',
+        started_at: a.createdAt ? new Date(a.createdAt).toISOString() : '',
+        completed_at: a.updatedAt ? new Date(a.updatedAt).toISOString() : null,
+        workflow_definitions: { name: a.entityType ?? 'Approval Workflow' },
+      }));
+  }, [rawHistory, rawRejected]);
 
   if (loading) {
     return (
@@ -409,11 +424,9 @@ const WorkflowHistory: React.FC = () => {
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-lg">
-                  {(item.workflow_definitions as any)?.name || 'Unknown Workflow'}
+                  {item.workflow_definitions.name || 'Unknown Workflow'}
                 </CardTitle>
-                <CardDescription>
-                  Entity: {item.entity_type}
-                </CardDescription>
+                <CardDescription>Entity: {item.entity_type}</CardDescription>
               </div>
               {getStatusBadge(item.status)}
             </div>

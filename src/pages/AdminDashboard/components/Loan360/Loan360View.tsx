@@ -105,6 +105,11 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
       last_name: rawClient.fullName?.split(' ').slice(1).join(' ') ?? '',
       email: rawClient.email ?? '',
       phone_number: rawClient.phone ?? '',
+      // Fields required by OverviewTab
+      id_number: rawClient.idNumber ?? undefined,
+      employment_status: rawClient.employmentStatus ?? 'Not specified',
+      employer_name: undefined,
+      monthly_income: rawClient.monthlyIncome ?? 0,
     };
   }, [rawClient]);
 

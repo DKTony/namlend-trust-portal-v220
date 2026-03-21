@@ -15,38 +15,42 @@ Successfully migrated frontend components to use the new API Orchestration Layer
 ## Completed Work
 
 ### 1. API Orchestration Layer (Edge Functions)
+
 All edge functions deployed and operational:
 
-| Function | Endpoints | Status |
-|----------|-----------|--------|
-| `api-loans` | list, details, apply, approve, reject, disburse | ✅ Deployed |
-| `api-users` | profile, update, list, roles | ✅ Deployed |
-| `api-payments` | record, reverse, reconcile | ✅ Deployed |
-| `api-admin` | dashboard, audit-logs, health, bulk-approve | ✅ Deployed |
-| `api-analytics` | portfolio, loan-performance, trends | ✅ Deployed |
-| `api-disbursements` | list, pending, approve, process, complete | ✅ Deployed |
-| `api-collections` | queue, case, interaction, promise | ✅ Deployed |
-| `api-reconciliation` | runs, import, auto-match, manual-match | ✅ Deployed |
-| `api-notifications` | list, mark-read, mark-all-read | ✅ Deployed |
+| Function             | Endpoints                                       | Status      |
+| -------------------- | ----------------------------------------------- | ----------- |
+| `api-loans`          | list, details, apply, approve, reject, disburse | ✅ Deployed |
+| `api-users`          | profile, update, list, roles                    | ✅ Deployed |
+| `api-payments`       | record, reverse, reconcile                      | ✅ Deployed |
+| `api-admin`          | dashboard, audit-logs, health, bulk-approve     | ✅ Deployed |
+| `api-analytics`      | portfolio, loan-performance, trends             | ✅ Deployed |
+| `api-disbursements`  | list, pending, approve, process, complete       | ✅ Deployed |
+| `api-collections`    | queue, case, interaction, promise               | ✅ Deployed |
+| `api-reconciliation` | runs, import, auto-match, manual-match          | ✅ Deployed |
+| `api-notifications`  | list, mark-read, mark-all-read                  | ✅ Deployed |
 
 ### 2. Frontend API Client
+
 Updated `src/services/api-client.ts` with typed API modules:
+
 - `loansAPI`, `usersAPI`, `paymentsAPI`, `adminAPI`
 - `analyticsAPI`, `disbursementsAPI`, `collectionsAPI`
 - `reconciliationAPI`, `notificationsAPI`
 
 ### 3. Component Migrations Completed
 
-| Component | Old Pattern | New Pattern | Status |
-|-----------|-------------|-------------|--------|
-| `useDisbursements.ts` | `disbursementService` | `disbursementsAPI` | ✅ |
-| `PortfolioAnalytics.tsx` | Direct Supabase | `analyticsAPI` | ✅ |
-| `NotificationCenter.tsx` | `notificationService` | `notificationsAPI` | ✅ |
-| `CollectionsDashboard.tsx` | `collectionsService` | `collectionsAPI` + `analyticsAPI` | ✅ |
-| `usePaymentsList.ts` | `paymentService` + Direct Supabase | `paymentsAPI` | ✅ |
-| `useLoanApplications.ts` | Direct Supabase | `loansAPI` | ✅ |
+| Component                  | Old Pattern                        | New Pattern                       | Status |
+| -------------------------- | ---------------------------------- | --------------------------------- | ------ |
+| `useDisbursements.ts`      | `disbursementService`              | `disbursementsAPI`                | ✅     |
+| `PortfolioAnalytics.tsx`   | Direct Supabase                    | `analyticsAPI`                    | ✅     |
+| `NotificationCenter.tsx`   | `notificationService`              | `notificationsAPI`                | ✅     |
+| `CollectionsDashboard.tsx` | `collectionsService`               | `collectionsAPI` + `analyticsAPI` | ✅     |
+| `usePaymentsList.ts`       | `paymentService` + Direct Supabase | `paymentsAPI`                     | ✅     |
+| `useLoanApplications.ts`   | Direct Supabase                    | `loansAPI`                        | ✅     |
 
 ### 4. E2E Tests Fixed
+
 - `backoffice-disbursement.e2e.ts:207` - Now properly skips when no disbursed loans
 - `loan-application.e2e.ts:7` - Now handles KYC eligibility gate
 
@@ -117,6 +121,7 @@ Updated `src/services/api-client.ts` with typed API modules:
 ## Key Files Reference
 
 ### Edge Functions
+
 ```
 supabase/functions/
 ├── _shared/           # Shared utilities (auth, validation, audit, responses)
@@ -132,15 +137,18 @@ supabase/functions/
 ```
 
 ### Frontend API Client
+
 - `src/services/api-client.ts` - Centralized API client with retry logic and performance monitoring
 - `src/hooks/useApiQueries.ts` - TanStack Query hooks for all API endpoints
 
 ### Migrated Components
+
 - `src/pages/AdminDashboard/hooks/useDisbursements.ts`
 - `src/pages/AdminDashboard/components/Analytics/PortfolioAnalytics.tsx`
 - `src/components/NotificationCenter.tsx`
 
 ### Documentation
+
 - `docs/API_REFERENCE.md` - Full API documentation
 - `docs/ARCHITECTURE.md` - System architecture
 - `docs/SERVICES.md` - Service layer documentation
@@ -192,15 +200,15 @@ E2E Tests: 137 passed, 6 skipped, 0 failed
 ```typescript
 // Retry configuration
 interface RetryConfig {
-  maxRetries?: number;      // Default: 3
-  baseDelayMs?: number;     // Default: 1000
-  maxDelayMs?: number;      // Default: 10000
+  maxRetries?: number; // Default: 3
+  baseDelayMs?: number; // Default: 1000
+  maxDelayMs?: number; // Default: 10000
   retryOn?: (error, attempt) => boolean;
 }
 
 // Use with custom retry config
 await callAPI('api-loans/list', {
-  retry: { maxRetries: 5, baseDelayMs: 500 }
+  retry: { maxRetries: 5, baseDelayMs: 500 },
 });
 
 // For mutations (no retry)
@@ -241,6 +249,7 @@ queryClient.invalidateQueries({ queryKey: queryKeys.loans.all });
 ## Contact
 
 For questions about this migration, refer to:
+
 - `docs/API_REFERENCE.md` - API endpoint documentation
 - `docs/ARCHITECTURE.md` - System design decisions
 - `AGENTS.md` - AI agent guidelines

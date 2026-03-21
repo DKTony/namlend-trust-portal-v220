@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,26 +14,37 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import {
-  getAllApprovalRequests,
-  updateApprovalStatus,
-  getApprovalStatistics,
-  processApprovedLoanApplication,
-  processApprovedKYCDocument,
-  type ApprovalRequest,
-} from '@/services/approvalWorkflow';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+
+// ---------------------------------------------------------------------------
+// Local view model — typed to match actual Convex approvalRequests schema (N2)
+// ---------------------------------------------------------------------------
+interface ApprovalRequest {
+  id: string;
+  /** Convex entityType field */
+  request_type: string;
+  entity_id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'escalated' | 'withdrawn';
+  priority: 'low' | 'medium' | 'high' | 'urgent' | 'normal';
+  /** Convex metadata field — typed as unknown, accessed safely */
+  request_data: Record<string, unknown>;
+  reviewer_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 import {
   Clock,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Eye,
-  User,
   FileText,
   DollarSign,
   Calendar,
   Filter,
   Search,
+  User,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { formatNAD } from '@/utils/currency';
@@ -52,14 +63,13 @@ interface ApprovalStats {
 
 export default function ApprovalManagementDashboard() {
   const { toast } = useToast();
-  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
-  const [stats, setStats] = useState<ApprovalStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
   const [loanDetailsModalOpen, setLoanDetailsModalOpen] = useState(false);
-  const [selectedLoanForModal, setSelectedLoanForModal] = useState<any>(null);
+  const [selectedLoanForModal, setSelectedLoanForModal] = useState<Record<string, unknown> | null>(
+    null
+  );
   const [filters, setFilters] = useState({
     status: 'all',
     type: 'all',
@@ -67,104 +77,75 @@ export default function ApprovalManagementDashboard() {
     search: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, [filters]);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load approval requests with filters
-      const requestFilters: Record<string, string> = {};
-      if (filters.status !== 'all') requestFilters.status = filters.status;
-      if (filters.type !== 'all') requestFilters.requestType = filters.type;
-      if (filters.priority !== 'all') requestFilters.priority = filters.priority;
-
-      const [requestsResult, statsResult] = await Promise.all([
-        getAllApprovalRequests(requestFilters),
-        getApprovalStatistics(),
-      ]);
-
-      if (requestsResult.success && requestsResult.requests) {
-        let filteredRequests = requestsResult.requests;
-
-        // Apply search filter
-        if (filters.search) {
-          const searchLower = filters.search.toLowerCase();
-          filteredRequests = filteredRequests.filter((request) => {
-            const reqAny = request as any;
-            const name = `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-            const email =
-              reqAny.user_email || reqAny.request_data?.user_email || reqAny.user?.email;
-            return (
-              request.request_type.toLowerCase().includes(searchLower) ||
-              request.status.toLowerCase().includes(searchLower) ||
-              (name && name.toLowerCase().includes(searchLower)) ||
-              (email && String(email).toLowerCase().includes(searchLower))
-            );
-          });
+  // Convex reactive query — pass status filter only when not 'all'
+  const rawApprovals = useConvexQuery(
+    api.approvalWorkflow.adminListApprovals,
+    filters.status !== 'all'
+      ? {
+          status: filters.status as 'pending' | 'approved' | 'rejected' | 'escalated' | 'withdrawn',
         }
+      : {}
+  );
 
-        setRequests(filteredRequests);
-      }
+  const processApprovalMutation = useConvexMutation(api.approvalWorkflow.processApprovalRequest);
 
-      if (statsResult.success && statsResult.stats) {
-        setStats(statsResult.stats);
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load approval data',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
+  const loading = rawApprovals === undefined;
+
+  // Derive typed view model from Convex query result (N2 — no as any)
+  const requests: ApprovalRequest[] = useMemo(() => {
+    if (!rawApprovals) return [];
+
+    let mapped: ApprovalRequest[] = rawApprovals.map((r) => ({
+      id: String(r._id),
+      request_type: r.entityType ?? 'loan_application',
+      entity_id: String(r.entityId ?? ''),
+      status: r.status as ApprovalRequest['status'],
+      priority: (r.priority ?? 'normal') as ApprovalRequest['priority'],
+      request_data: (r.metadata ?? {}) as Record<string, unknown>,
+      reviewer_notes: r.notes,
+      created_at: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
+      updated_at: r.updatedAt ? new Date(r.updatedAt).toISOString() : new Date().toISOString(),
+    }));
+
+    if (filters.type !== 'all') mapped = mapped.filter((r) => r.request_type === filters.type);
+    if (filters.priority !== 'all') mapped = mapped.filter((r) => r.priority === filters.priority);
+    if (filters.search) {
+      const lower = filters.search.toLowerCase();
+      mapped = mapped.filter(
+        (r) =>
+          r.request_type.toLowerCase().includes(lower) ||
+          r.status.toLowerCase().includes(lower) ||
+          r.entity_id.toLowerCase().includes(lower)
+      );
     }
-  };
+
+    return mapped;
+  }, [rawApprovals, filters]);
+
+  // Derive stats from the same reactive data
+  const stats: ApprovalStats | null = useMemo(() => {
+    if (!rawApprovals) return null;
+    return {
+      total: rawApprovals.length,
+      pending: rawApprovals.filter((r) => r.status === 'pending').length,
+      underReview: rawApprovals.filter((r) => r.status === 'escalated').length,
+      approved: rawApprovals.filter((r) => r.status === 'approved').length,
+      rejected: rawApprovals.filter((r) => r.status === 'rejected').length,
+      byType: {},
+      byPriority: {},
+      avgProcessingTime: 0,
+    };
+  }, [rawApprovals]);
 
   const handleStatusUpdate = async (requestId: string, newStatus: ApprovalRequest['status']) => {
-    // Prevent double-submission with processing flag
-    if (processing) {
-      console.warn('⚠️ Update already in progress, ignoring duplicate request');
-      return;
-    }
-
+    if (processing) return;
     setProcessing(true);
     try {
-      const result = await updateApprovalStatus(requestId, newStatus, reviewNotes);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      // If approved, process the request and verify loan creation
-      if (newStatus === 'approved' && selectedRequest) {
-        if (selectedRequest.request_type === 'loan_application') {
-          const loanResult = await processApprovedLoanApplication(requestId);
-          if (!loanResult.success) {
-            console.error('❌ Failed to create loan:', loanResult.error);
-            toast({
-              title: 'Warning: Loan Creation Failed',
-              description: `Approval saved but loan was not created: ${loanResult.error}. Please retry or contact support.`,
-              variant: 'destructive',
-            });
-            return;
-          }
-          console.log('✅ Loan created successfully:', loanResult.loanId);
-        } else if (selectedRequest.request_type === 'kyc_document') {
-          const kycResult = await processApprovedKYCDocument(requestId);
-          if (!kycResult.success) {
-            console.error('❌ Failed to process KYC:', kycResult.error);
-            toast({
-              title: 'Warning: KYC Processing Failed',
-              description: `Approval saved but KYC was not processed: ${kycResult.error}`,
-              variant: 'destructive',
-            });
-            return;
-          }
-        }
-      }
-
+      await processApprovalMutation({
+        requestId: requestId as Parameters<typeof processApprovalMutation>[0]['requestId'],
+        action: newStatus === 'approved' ? 'approve' : 'reject',
+        notes: reviewNotes || undefined,
+      });
       toast({
         title: 'Status Updated',
         description:
@@ -172,11 +153,9 @@ export default function ApprovalManagementDashboard() {
             ? `Request approved and ${selectedRequest?.request_type === 'loan_application' ? 'loan created' : 'processed'} successfully`
             : `Request has been ${newStatus}`,
       });
-
       setSelectedRequest(null);
       setReviewNotes('');
-      loadData();
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update request status',
@@ -188,43 +167,45 @@ export default function ApprovalManagementDashboard() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      pending: {
-        variant: 'secondary',
-        icon: Clock,
-        color: 'text-yellow-600 dark:text-yellow-400',
-        badgeClass:
-          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      },
-      under_review: {
-        variant: 'default',
-        icon: Eye,
-        color: 'text-blue-600 dark:text-blue-400',
-        badgeClass:
-          'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      },
-      approved: {
-        variant: 'default',
-        icon: CheckCircle,
-        color: 'text-green-600 dark:text-green-400',
-        badgeClass:
-          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      },
-      rejected: {
-        variant: 'destructive',
-        icon: XCircle,
-        color: 'text-red-600 dark:text-red-400',
-        badgeClass:
-          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      },
-      requires_info: {
-        variant: 'outline',
-        icon: AlertTriangle,
-        color: 'text-orange-600 dark:text-orange-400',
-        badgeClass:
-          'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      },
-    };
+    const variants: Record<string, { icon: React.ElementType; color: string; badgeClass: string }> =
+      {
+        pending: {
+          icon: Clock,
+          color: 'text-yellow-600 dark:text-yellow-400',
+          badgeClass:
+            'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+        },
+        under_review: {
+          icon: Eye,
+          color: 'text-blue-600 dark:text-blue-400',
+          badgeClass:
+            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+        },
+        escalated: {
+          icon: Eye,
+          color: 'text-blue-600 dark:text-blue-400',
+          badgeClass:
+            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+        },
+        approved: {
+          icon: CheckCircle,
+          color: 'text-green-600 dark:text-green-400',
+          badgeClass:
+            'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+        },
+        rejected: {
+          icon: XCircle,
+          color: 'text-red-600 dark:text-red-400',
+          badgeClass:
+            'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+        },
+        withdrawn: {
+          icon: AlertTriangle,
+          color: 'text-orange-600 dark:text-orange-400',
+          badgeClass:
+            'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+        },
+      };
 
     const config = variants[status] || variants.pending;
     const Icon = config.icon;
@@ -370,7 +351,6 @@ export default function ApprovalManagementDashboard() {
                   <SelectItem value="under_review">Under Review</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="requires_info">Requires Info</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -461,27 +441,9 @@ export default function ApprovalManagementDashboard() {
                         </p>
                         <p
                           className="text-sm text-muted-foreground truncate"
-                          title={(() => {
-                            const reqAny = request as any;
-                            const fullName =
-                              `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-                            const fallbackEmail =
-                              reqAny.user_email ||
-                              reqAny.request_data?.user_email ||
-                              (reqAny.user as any)?.email;
-                            return fullName || fallbackEmail || 'Unknown user';
-                          })()}
+                          title={request.entity_id}
                         >
-                          {(() => {
-                            const reqAny = request as any;
-                            const fullName =
-                              `${reqAny.user_first_name || ''} ${reqAny.user_last_name || ''}`.trim();
-                            const fallbackEmail =
-                              reqAny.user_email ||
-                              reqAny.request_data?.user_email ||
-                              (reqAny.user as any)?.email;
-                            return fullName || fallbackEmail || 'Unknown user';
-                          })()}
+                          {request.entity_id.slice(-12) || 'Unknown entity'}
                         </p>
                       </div>
                     </div>
@@ -549,16 +511,8 @@ export default function ApprovalManagementDashboard() {
                 </div>
 
                 <div>
-                  <Label className="text-xs text-muted-foreground">USER</Label>
-                  <p className="font-medium">
-                    {(() => {
-                      const srAny = selectedRequest as any;
-                      const fullName =
-                        `${srAny.user_first_name || ''} ${srAny.user_last_name || ''}`.trim();
-                      const fallbackEmail = srAny.user_email || srAny.request_data?.user_email;
-                      return fullName || fallbackEmail || 'Unknown user';
-                    })()}
-                  </p>
+                  <Label className="text-xs text-muted-foreground">ENTITY ID</Label>
+                  <p className="font-medium font-mono text-sm">{selectedRequest.entity_id}</p>
                 </div>
 
                 <div>
@@ -570,24 +524,13 @@ export default function ApprovalManagementDashboard() {
                         className="w-full"
                         onClick={() => {
                           setSelectedLoanForModal({
-                            id: selectedRequest.id,
-                            amount: selectedRequest.request_data?.amount || 0,
-                            term_months:
-                              selectedRequest.request_data?.term_months ||
-                              selectedRequest.request_data?.term ||
-                              0,
-                            interest_rate: selectedRequest.request_data?.interest_rate || 32,
-                            monthly_payment: selectedRequest.request_data?.monthly_payment || 0,
-                            total_repayment: selectedRequest.request_data?.total_repayment || 0,
-                            purpose: selectedRequest.request_data?.purpose || 'Not specified',
+                            id: selectedRequest.entity_id,
                             status: selectedRequest.status,
                             created_at: selectedRequest.created_at,
-                            // Include approval timestamp for status history
                             approved_at:
                               selectedRequest.status === 'approved'
                                 ? selectedRequest.updated_at
                                 : undefined,
-                            request_data: selectedRequest.request_data,
                           });
                           setLoanDetailsModalOpen(true);
                         }}
@@ -647,12 +590,38 @@ export default function ApprovalManagementDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => handleStatusUpdate(selectedRequest.id, 'requires_info')}
+                      onClick={async () => {
+                        if (processing) return;
+                        setProcessing(true);
+                        try {
+                          await processApprovalMutation({
+                            requestId: selectedRequest.id as Parameters<
+                              typeof processApprovalMutation
+                            >[0]['requestId'],
+                            action: 'escalate',
+                            notes: reviewNotes || 'Escalated for additional review',
+                          });
+                          toast({
+                            title: 'Escalated',
+                            description: 'Request escalated for senior review',
+                          });
+                          setSelectedRequest(null);
+                          setReviewNotes('');
+                        } catch {
+                          toast({
+                            title: 'Error',
+                            description: 'Failed to escalate request',
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setProcessing(false);
+                        }
+                      }}
                       disabled={processing}
                       data-testid="approvals-requestinfo-btn"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2" />
-                      Request Info
+                      Escalate
                     </Button>
                   </div>
                 ) : (
@@ -682,7 +651,7 @@ export default function ApprovalManagementDashboard() {
           setLoanDetailsModalOpen(false);
           setSelectedLoanForModal(null);
         }}
-        loan={selectedLoanForModal}
+        loan={selectedLoanForModal as React.ComponentProps<typeof LoanDetailsModal>['loan']}
       />
     </div>
   );

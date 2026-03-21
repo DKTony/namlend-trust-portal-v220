@@ -1,53 +1,70 @@
-# IPS Integration Testing Guide
+# IPS Testing Guide
 
-**Doc Revision**: 2026-01-19  \
-**Status**: IPS adapter runs in mock mode for tests.
-
----
-
-## Overview
-
-IPS tests are implemented in Playwright and SQL fixtures. The adapter is mocked and uses special VPA patterns to simulate outcomes.
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current
 
 ---
 
-## Test Files
+## Current Test Coverage
 
-- `e2e/api/ips-rpc.e2e.ts` (RPC coverage)
-- `e2e/api/ips-adapter.e2e.ts` (Edge Function adapter)
-- `e2e/ips-payment-flow.e2e.ts` (UI flow)
-- `e2e/unit/ips-utils.e2e.ts` (utility helpers)
-- `e2e/ips-rpc-tests.sql` (SQL assertions)
+IPS integration tests are limited — the adapter runs in mock mode with no live BON credentials.
+
+| Area                                       | Type                         | Status                         |
+| ------------------------------------------ | ---------------------------- | ------------------------------ |
+| Webhook HMAC-SHA256 signature verification | Integration (convex/http.ts) | Implemented; manually verified |
+| `ipsTransactions` schema and FSM           | Schema validation via `tsc`  | Passing                        |
+| IPS onboarding step FSM (8 states)         | Schema validation via `tsc`  | Passing                        |
+| Webhook 401 on invalid signature           | Manual curl test             | Verified                       |
+| Webhook warn-only when no secret set       | Manual curl test             | Verified                       |
 
 ---
 
-## Running IPS Tests
+## Running Tests
 
 ```bash
-npx playwright test e2e/api/ips-rpc.e2e.ts
-npx playwright test e2e/api/ips-adapter.e2e.ts
-npx playwright test e2e/ips-payment-flow.e2e.ts
-npx playwright test e2e/unit/ips-utils.e2e.ts
+# All unit tests (includes schema type-checking)
+npm run test:unit
+
+# All E2E tests
+npm run test:e2e
 ```
 
 ---
 
-## Mock Scenarios (Adapter)
+## Mock Adapter Behaviour
 
-| VPA Pattern | Behavior |
-| --- | --- |
-| `*@fnb`, `*@bank` | Success |
-| `*fail*@*` | Payment failure |
-| `*timeout*@*` | Pending/timeout |
-| `*@invalid*` | VPA not registered |
-| Amount > 50,000 | Exceeds limit |
+The mock adapter in `convex/actions/ipsAdapter.ts` simulates outcomes:
+
+| Scenario                | Behaviour                                |
+| ----------------------- | ---------------------------------------- |
+| Any outbound transfer   | Simulated success, status -> `completed` |
+| Missing `msgId`         | Logged error, status -> `failed`         |
+| Inbound webhook payload | Parsed, ipsTransactions updated by msgId |
 
 ---
 
-## Cleanup (Manual)
+## What Needs Testing Before Production
 
-```sql
-DELETE FROM ips_transactions WHERE msg_id LIKE 'IPS-%';
-DELETE FROM ips_vpa_registry WHERE vpa_address LIKE 'ips-%';
+When live BON credentials are available:
+
+1. **Happy path**: Outbound pacs.008 -> pacs.002 ACSC confirmation
+2. **Rejection**: pacs.002 RJCT received -> transaction marked `failed`
+3. **Timeout**: No pacs.002 within SLA -> transaction marked `timeout`
+4. **Idempotency**: Same `msgId` submitted twice -> second request rejected
+5. **Reversal**: Completed transaction reversed -> `reversed` status propagated
+6. **Inbound repayment**: Credit from borrower bank -> payment completed in NamLend
+
+```bash
+npx convex env set IPS_API_URL=https://sandbox.ips.bon.na/api/v1
+npx convex env set IPS_WEBHOOK_SECRET=<sandbox-hmac-secret>
 ```
 
+---
+
+## See Also
+
+- [IPS_IMPLEMENTATION.md](./IPS_IMPLEMENTATION.md) - Architecture and mock adapter details
+- [IPS_PRODUCTION_CHECKLIST.md](./IPS_PRODUCTION_CHECKLIST.md) - Production readiness
+- [API_REFERENCE.md](./API_REFERENCE.md) - Webhook endpoint spec
+- [FLOWS.md](./FLOWS.md) - IPS webhook flow

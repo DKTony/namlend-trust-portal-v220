@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { paymentsAPI } from '@/services/api-client';
+import { useState, useMemo } from 'react';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
 interface Payment {
   id: string;
@@ -31,75 +32,50 @@ export const usePaymentsList = (
   status: 'all' | 'pending' | 'completed' | 'failed' | 'overdue',
   searchTerm: string
 ) => {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Convex reactive query — adminListPayments or fallback
+  const rawPayments = useConvexQuery(api.payments.adminListPayments, {
+    status: status !== 'all' ? status : undefined,
+  });
 
-  const fetchPayments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loading = rawPayments === undefined;
+  const error: string | null = null;
 
-      // Fetch payments via API orchestration layer
-      const result = await paymentsAPI.list({
-        status: status !== 'all' ? status : undefined,
-      });
+  const payments: Payment[] = useMemo(() => {
+    if (!rawPayments) return [];
 
-      if (!result.success) {
-        console.error('Error fetching payments via API:', result.error);
-        throw new Error(result.error || 'Failed to fetch payments');
-      }
+    const transformed: Payment[] = rawPayments.map((p) => ({
+      id: String(p._id),
+      loanId: String(p.loanId ?? ''),
+      clientName: p.clientName ?? 'Unknown',
+      amount: p.amount ?? 0,
+      paymentMethod: (p.method ?? p.paymentMethod ?? 'bank_transfer') as Payment['paymentMethod'],
+      status: (p.status ?? 'pending') as Payment['status'],
+      reference: p.referenceNumber ?? `PAY-${String(p._id).slice(0, 8)}`,
+      dueDate: p.dueDate
+        ? new Date(p.dueDate).toISOString()
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      paidAt: p.paidAt ? new Date(p.paidAt).toISOString() : undefined,
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : '',
+    }));
 
-      const paymentsData = (result.data as PaymentApiItem[]) || [];
+    // Apply search filter
+    if (!searchTerm.trim()) return transformed;
+    const searchLower = searchTerm.toLowerCase();
+    return transformed.filter(
+      (payment) =>
+        payment.clientName.toLowerCase().includes(searchLower) ||
+        payment.reference.toLowerCase().includes(searchLower) ||
+        payment.id.toLowerCase().includes(searchLower) ||
+        payment.amount.toString().includes(searchTerm)
+    );
+  }, [rawPayments, searchTerm]);
 
-      // Transform payments data
-      const transformedPayments: Payment[] = paymentsData.map((payment: PaymentApiItem) => ({
-        id: payment.id,
-        loanId: payment.loan_id,
-        clientName: payment.client_name || 'Unknown',
-        amount: payment.amount || 0,
-        paymentMethod: (payment.payment_method as Payment['paymentMethod']) || 'bank_transfer',
-        status: (payment.status as Payment['status']) || 'pending',
-        reference: payment.reference_number || `PAY-${payment.id.slice(0, 8)}`,
-        dueDate: payment.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        paidAt: payment.paid_at,
-        createdAt: payment.created_at
-      }));
-
-      // Apply search filter (status filter is handled by API)
-      let filteredPayments = transformedPayments;
-      if (searchTerm.trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        filteredPayments = filteredPayments.filter(payment =>
-          payment.clientName.toLowerCase().includes(searchLower) ||
-          payment.reference.toLowerCase().includes(searchLower) ||
-          payment.id.toLowerCase().includes(searchLower) ||
-          payment.amount.toString().includes(searchTerm)
-        );
-      }
-
-      setPayments(filteredPayments);
-
-    } catch (err) {
-      console.error('Error in fetchPayments:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPayments();
-  }, [status, searchTerm]);
-
-  const refetch = () => {
-    fetchPayments();
-  };
+  const refetch = () => {}; // Convex is reactive
 
   return {
     payments,
     loading,
     error,
-    refetch
+    refetch,
   };
 };

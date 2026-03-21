@@ -11,8 +11,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { completeDisbursement } from '@/services/disbursementService';
-import { Loader2, CheckCircle, AlertCircle, CreditCard, Smartphone, Banknote, Building2, Zap } from 'lucide-react';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+import {
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  Building2,
+  Zap,
+} from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
 import { IPSDisbursementForm } from '@/components/ips';
 
@@ -34,13 +45,14 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
   open,
   onClose,
   onSuccess,
-  disbursement
+  disbursement,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [paymentReference, setPaymentReference] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const completeDisbursementMutation = useMutation(api.disbursements.completeDisbursement);
 
   const handleClose = () => {
     if (!loading) {
@@ -56,7 +68,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
       toast({
         title: 'Error',
         description: 'No disbursement selected',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -66,7 +78,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
       toast({
         title: 'Validation Error',
         description: 'Payment reference is required',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -75,7 +87,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
       toast({
         title: 'Validation Error',
         description: 'Payment reference must be at least 5 characters',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -86,45 +98,29 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
     setLoading(true);
     try {
-      const result = await completeDisbursement(
-        disbursement.id,
-        paymentMethod as Exclude<PaymentMethod, 'ips'>,
-        paymentReference.trim(),
-        notes.trim() || undefined
-      );
-
-      if (result.success) {
-        toast({
-          title: 'Success',
-          description: (
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span>Disbursement completed successfully. Payment schedule generated.</span>
-            </div>
-          )
-        });
-        setPaymentReference('');
-        setNotes('');
-        onSuccess();
-        onClose();
-      } else {
-        toast({
-          title: 'Error',
-          description: (
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4" />
-              <span>{result.error || 'Failed to complete disbursement'}</span>
-            </div>
-          ),
-          variant: 'destructive'
-        });
-      }
+      await completeDisbursementMutation({
+        disbursementId: disbursement.id as Id<'disbursements'>,
+        referenceNumber: paymentReference.trim(),
+      });
+      toast({
+        title: 'Success',
+        description: (
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span>Disbursement completed successfully. Payment schedule generated.</span>
+          </div>
+        ),
+      });
+      setPaymentReference('');
+      setNotes('');
+      onSuccess();
+      onClose();
     } catch (error) {
       console.error('Complete disbursement error:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -135,7 +131,10 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" data-testid="disbursement-modal">
+      <DialogContent
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+        data-testid="disbursement-modal"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2" data-testid="modal-title">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -188,7 +187,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 <Building2 className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Bank Transfer</span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setPaymentMethod('mobile_money')}
@@ -203,7 +202,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 <Smartphone className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Mobile Money</span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setPaymentMethod('cash')}
@@ -218,7 +217,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 <Banknote className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Cash</span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setPaymentMethod('debit_order')}
@@ -233,7 +232,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 <CreditCard className="h-5 w-5 shrink-0" />
                 <span className="text-sm font-medium">Debit Order</span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setPaymentMethod('ips')}
@@ -267,7 +266,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                   toast({
                     title: 'IPS Disbursement Failed',
                     description: error,
-                    variant: 'destructive'
+                    variant: 'destructive',
                   });
                 }}
                 className="border-0 shadow-none p-0"
@@ -309,9 +308,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                   disabled={loading}
                   maxLength={500}
                 />
-                <p className="text-xs text-gray-500 text-right">
-                  {notes.length}/500 characters
-                </p>
+                <p className="text-xs text-gray-500 text-right">{notes.length}/500 characters</p>
               </div>
             </>
           )}
@@ -324,9 +321,9 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
             <div className="text-sm text-yellow-800">
               <p className="font-medium">Important:</p>
               <p className="mt-1">
-                This action will mark the disbursement as completed and automatically generate 
-                the payment schedule for the client. Ensure the payment has been successfully 
-                processed in your banking system.
+                This action will mark the disbursement as completed and automatically generate the
+                payment schedule for the client. Ensure the payment has been successfully processed
+                in your banking system.
               </p>
             </div>
           </div>
@@ -335,16 +332,16 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
         {/* Footer - only show for non-IPS methods (IPS has its own buttons) */}
         {paymentMethod !== 'ips' && (
           <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleClose} 
+            <Button
+              variant="outline"
+              onClick={handleClose}
               disabled={loading}
               data-testid="cancel-disbursement-button"
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleSubmit} 
+            <Button
+              onClick={handleSubmit}
               disabled={loading || !paymentReference.trim()}
               className="bg-green-600 hover:bg-green-700"
               data-testid="complete-disbursement-button"

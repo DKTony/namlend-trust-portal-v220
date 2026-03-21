@@ -198,6 +198,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
         fullName: editedUser.fullName,
         phone: editedUser.phone,
         isVerified: editedUser.isVerified,
+        role: editedUser.role,
       });
 
       if (success) {

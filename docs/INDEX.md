@@ -1,8 +1,8 @@
 # NamLend Trust Documentation Index
 
-**Doc Revision**: 2026-02-15
-**Project Version**: 2.8.4
-**Status**: Production-Ready Digital Lending Platform
+**Doc Revision**: 2026-03-19
+**Project Version**: 4.0.0 (Convex migration complete)
+**Status**: Production-Ready Digital Lending Platform — Backend on Convex
 
 ---
 
@@ -24,17 +24,20 @@
 
 ### Architecture & Design
 
-| Document                                                             | Description                                 | Status |
-| -------------------------------------------------------------------- | ------------------------------------------- | ------ |
-| [ARCHITECTURE.md](./ARCHITECTURE.md)                                 | System architecture overview                | Active |
-| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                           | PostgreSQL tables, RLS policies, RPCs       | Active |
-| [SERVICES.md](./SERVICES.md)                                         | Service layer implementation details        | Active |
-| [FLOWS.md](./FLOWS.md)                                               | User flows and state machines               | Active |
-| [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md)                 | End-to-end flow validation approach         | Active |
-| [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md)             | Action-level flow conformance tracker       | Active |
-| [FLOW_FIX_PR_TASKS_2026-02-15.md](./FLOW_FIX_PR_TASKS_2026-02-15.md) | Owner/severity backlog for static flow gaps | Active |
-| [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md)                       | Feature implementation status               | Active |
-| [API_REFERENCE.md](./API_REFERENCE.md)                               | RPC functions and API endpoints             | Active |
+| Document                                                                 | Description                                                   | Status |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------- | ------ |
+| [ARCHITECTURE.md](./ARCHITECTURE.md)                                     | System architecture overview                                  | Active |
+| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                               | Convex schema reference (55+ tables)                          | Active |
+| [SERVICES.md](./SERVICES.md)                                             | Service layer + migration status table                        | Active |
+| [convexmigratehandover.md](./convexmigratehandover.md)                   | Convex migration handover — batch status, field maps, gotchas | Active |
+| [FLOWS.md](./FLOWS.md)                                                   | User flows and state machines                                 | Active |
+| [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md)                     | End-to-end flow validation approach                           | Active |
+| [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md)                 | Action-level flow conformance tracker                         | Active |
+| [FLOW_FIX_PR_TASKS_2026-02-15.md](./FLOW_FIX_PR_TASKS_2026-02-15.md)     | Owner/severity backlog for static flow gaps                   | Active |
+| [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md)                           | Feature implementation status                                 | Active |
+| [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md)                     | Modularization plan & domain event bus roadmap                | Active |
+| [FOLLOWUP_ASSESSMENT_2026-03-19.md](./FOLLOWUP_ASSESSMENT_2026-03-19.md) | Remaining work quantification (ground-truth audit)            | Active |
+| [API_REFERENCE.md](./API_REFERENCE.md)                                   | RPC functions and API endpoints                               | Active |
 
 ### UI/UX & Design
 
@@ -91,10 +94,11 @@
 
 ## Technical Context
 
-| Document                         | Description                          | Status |
-| -------------------------------- | ------------------------------------ | ------ |
-| [context.md](./context.md)       | Complete technical handover document | Active |
-| [settlement.md](./settlement.md) | Settlement processing deep dive      | Active |
+| Document                                               | Description                                | Status |
+| ------------------------------------------------------ | ------------------------------------------ | ------ |
+| [context.md](./context.md)                             | Complete technical handover document       | Active |
+| [settlement.md](./settlement.md)                       | Settlement processing deep dive            | Active |
+| [convexmigratehandover.md](./convexmigratehandover.md) | Convex migration batch status + next steps | Active |
 
 ---
 
@@ -129,14 +133,15 @@
 
 ### By Audience
 
-| Audience               | Key Documents                                         |
-| ---------------------- | ----------------------------------------------------- |
-| **New Developers**     | INDEX.md → ARCHITECTURE.md → SERVICES.md → TESTING.md |
-| **AI/LLM Agents**      | CLAUDE.md (root) → AGENTS.md → GLOSSARY.md            |
-| **Backend Engineers**  | DATABASE_SCHEMA.md → SERVICES.md → context.md         |
-| **Frontend Engineers** | DESIGN_SYSTEM.md → FLOWS.md → FUNCTIONALITY_MAP.md    |
-| **DevOps/SRE**         | SECURITY.md → TESTING.md → DEPLOYMENT docs            |
-| **Integration Work**   | IPP*INTEGRATION.md → TIGERBEETLE*\*.md                |
+| Audience               | Key Documents                                                         |
+| ---------------------- | --------------------------------------------------------------------- |
+| **New Developers**     | INDEX.md → ARCHITECTURE.md → SERVICES.md → TESTING.md                 |
+| **Architects/Leads**   | ARCHITECTURAL_REVIEW.md → ARCHITECTURE.md → TECHNICAL_DEBT.md         |
+| **AI/LLM Agents**      | CLAUDE.MD (root) → AGENTS.md → convexmigratehandover.md → GLOSSARY.md |
+| **Backend Engineers**  | DATABASE_SCHEMA.md → SERVICES.md → context.md                         |
+| **Frontend Engineers** | DESIGN_SYSTEM.md → FLOWS.md → FUNCTIONALITY_MAP.md                    |
+| **DevOps/SRE**         | SECURITY.md → TESTING.md → DEPLOYMENT docs                            |
+| **Integration Work**   | IPP*INTEGRATION.md → TIGERBEETLE*\*.md                                |
 
 ### By Status
 
@@ -162,19 +167,20 @@ See [GLOSSARY.md](./GLOSSARY.md) for standardized definitions of:
 
 ## Related Files (Outside `/docs/`)
 
-| Location                | Purpose                       |
-| ----------------------- | ----------------------------- |
-| `/CLAUDE.md`            | AI agent context (root-level) |
-| `/README.md`            | Project setup and overview    |
-| `/e2e/`                 | Playwright E2E test files     |
-| `/supabase/migrations/` | Database migration files      |
-| `/supabase/functions/`  | Edge Function source code     |
+| Location                | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `/CLAUDE.MD`            | AI agent context (root-level, start here)       |
+| `/README.md`            | Project setup and overview                      |
+| `/convex/`              | **Active backend** (schema, queries, mutations) |
+| `/e2e/`                 | Playwright E2E test files                       |
+| `/supabase/migrations/` | INACTIVE — legacy SQL migrations (reference)    |
+| `/supabase/functions/`  | INACTIVE — legacy Edge Functions (reference)    |
 
 ---
 
 ## Maintenance
 
-- **Last audited**: 2026-02-15
+- **Last audited**: 2026-03-19
 - **Maintainer**: Development team
 - **Update frequency**: With major releases
 

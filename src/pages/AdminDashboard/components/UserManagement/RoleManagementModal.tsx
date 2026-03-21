@@ -4,32 +4,55 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Shield, 
-  User, 
-  Settings, 
-  Plus, 
-  Minus, 
+import { useMutation, useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+import {
+  Shield,
+  User,
+  Settings,
+  Plus,
+  Minus,
   AlertTriangle,
   CheckCircle,
-  Info
+  Info,
 } from 'lucide-react';
-import {
-  AppRole,
-  getUserRoles,
-  assignUserRole,
-  removeUserRole,
-  getAllowedRoles,
-  isRoleOperationAllowed,
-  UserRole
-} from '@/services/roleManagementService';
+
+type AppRole = 'admin' | 'loan_officer' | 'client';
+interface UserRole {
+  role: AppRole;
+  assigned_at?: string;
+  created_at?: string;
+}
+
+// Pure utility functions (previously from roleManagementService)
+function getAllowedRoles(currentRoles: string[], _email?: string) {
+  const allRoles: AppRole[] = ['admin', 'loan_officer', 'client'];
+  const canAdd = allRoles.filter((r) => !currentRoles.includes(r));
+  const canRemove = currentRoles.filter((r) => r !== 'client') as AppRole[];
+  return { canAdd, canRemove, description: `User has ${currentRoles.length} role(s)` };
+}
+
+function isRoleOperationAllowed(
+  currentRoles: string[],
+  operation: 'add' | 'remove',
+  role: AppRole
+) {
+  if (operation === 'add' && currentRoles.includes(role)) {
+    return { allowed: false, reason: `User already has the ${role} role` };
+  }
+  if (operation === 'remove' && !currentRoles.includes(role)) {
+    return { allowed: false, reason: `User does not have the ${role} role` };
+  }
+  return { allowed: true, reason: '' };
+}
 
 interface RoleManagementModalProps {
   open: boolean;
@@ -44,21 +67,24 @@ const roleConfig = {
   admin: {
     label: 'Admin',
     icon: Shield,
-    color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-    description: 'Full system access and user management'
+    color:
+      'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+    description: 'Full system access and user management',
   },
   loan_officer: {
     label: 'Loan Officer',
     icon: User,
-    color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-    description: 'Loan approval and client management'
+    color:
+      'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    description: 'Loan approval and client management',
   },
   client: {
     label: 'Client',
     icon: User,
-    color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-    description: 'Basic client access and loan applications'
-  }
+    color:
+      'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+    description: 'Basic client access and loan applications',
+  },
 };
 
 const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
@@ -67,9 +93,10 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
   userName,
   userEmail,
   onClose,
-  onRoleChanged
+  onRoleChanged,
 }) => {
   const { toast } = useToast();
+  const removeRoleMutation = useMutation(api.users.removeRole);
   const [loading, setLoading] = useState(false);
   const [currentRoles, setCurrentRoles] = useState<UserRole[]>([]);
   const [allowedOperations, setAllowedOperations] = useState<{
@@ -90,74 +117,67 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
 
   // Update allowed operations when roles change
   useEffect(() => {
-    const roleNames = currentRoles.map(r => r.role);
+    const roleNames = currentRoles.map((r) => r.role);
     const operations = getAllowedRoles(roleNames, userEmail || undefined);
     setAllowedOperations(operations);
   }, [currentRoles, userEmail]);
 
-  const loadUserRoles = async () => {
-    if (!userId) return;
-    
-    setLoading(true);
-    try {
-      const result = await getUserRoles(userId);
-      if (result.success && result.roles) {
-        setCurrentRoles(result.roles);
+  // Convex reactive query for user role
+  const userRoleData = useConvexQuery(
+    api.users.getUserRole,
+    open && userId ? { userId: userId as Id<'users'> } : 'skip'
+  );
+
+  useEffect(() => {
+    if (userRoleData !== undefined && open && userId) {
+      const role = userRoleData?.role;
+      if (role) {
+        setCurrentRoles([
+          {
+            role: role as AppRole,
+            assigned_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          },
+        ]);
       } else {
-        toast({
-          title: 'Failed to load roles',
-          description: result.error || 'Unknown error',
-          variant: 'destructive'
-        });
+        setCurrentRoles([]);
       }
-    } catch (error) {
-      toast({
-        title: 'Error loading roles',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive'
-      });
-    } finally {
       setLoading(false);
     }
-  };
+  }, [userRoleData, open, userId]);
+
+  const assignRoleMutation = useMutation(api.users.assignRole);
+
+  const loadUserRoles = () => {}; // Convex is reactive
 
   const handleAddRole = async (role: AppRole) => {
     if (!userId) return;
 
-    const currentRoleNames = currentRoles.map(r => r.role);
+    const currentRoleNames = currentRoles.map((r) => r.role);
     const check = isRoleOperationAllowed(currentRoleNames, 'add', role);
-    
+
     if (!check.allowed) {
       toast({
         title: 'Cannot add role',
         description: check.reason,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
 
     setLoading(true);
     try {
-      const result = await assignUserRole(userId, role);
-      if (result.success) {
-        toast({
-          title: 'Role added',
-          description: `Successfully added ${roleConfig[role].label} role`
-        });
-        await loadUserRoles();
-        onRoleChanged?.();
-      } else {
-        toast({
-          title: 'Failed to add role',
-          description: result.error || 'Unknown error',
-          variant: 'destructive'
-        });
-      }
+      await assignRoleMutation({ targetUserId: userId as Id<'users'>, role });
+      toast({
+        title: 'Role added',
+        description: `Successfully added ${roleConfig[role].label} role`,
+      });
+      onRoleChanged?.();
     } catch (error) {
       toast({
         title: 'Error adding role',
         description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -167,40 +187,34 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
   const handleRemoveRole = async (role: AppRole) => {
     if (!userId) return;
 
-    const currentRoleNames = currentRoles.map(r => r.role);
+    const currentRoleNames = currentRoles.map((r) => r.role);
     const check = isRoleOperationAllowed(currentRoleNames, 'remove', role);
-    
+
     if (!check.allowed) {
       toast({
         title: 'Cannot remove role',
         description: check.reason,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
 
     setLoading(true);
     try {
-      const result = await removeUserRole(userId, role);
-      if (result.success) {
-        toast({
-          title: 'Role removed',
-          description: `Successfully removed ${roleConfig[role].label} role`
-        });
-        await loadUserRoles();
-        onRoleChanged?.();
-      } else {
-        toast({
-          title: 'Failed to remove role',
-          description: result.error || 'Unknown error',
-          variant: 'destructive'
-        });
-      }
+      await removeRoleMutation({
+        targetUserId: userId as Id<'users'>,
+        role: role as 'client' | 'loan_officer' | 'admin',
+      });
+      toast({
+        title: 'Role removed',
+        description: `Successfully removed ${roleConfig[role].label} role`,
+      });
+      onRoleChanged?.();
     } catch (error) {
       toast({
         title: 'Error removing role',
         description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -213,11 +227,11 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
-  const currentRoleNames = currentRoles.map(r => r.role);
+  const currentRoleNames = currentRoles.map((r) => r.role);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -247,9 +261,12 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
                   const config = roleConfig[userRole.role];
                   const Icon = config.icon;
                   const canRemove = allowedOperations.canRemove.includes(userRole.role);
-                  
+
                   return (
-                    <div key={userRole.role} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={userRole.role}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className={config.color}>
                           <Icon className="h-3 w-3 mr-1" />
@@ -291,17 +308,18 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
                 {allowedOperations.canAdd.map((role) => {
                   const config = roleConfig[role];
                   const Icon = config.icon;
-                  
+
                   return (
-                    <div key={role} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={role}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className={config.color}>
                           <Icon className="h-3 w-3 mr-1" />
                           {config.label}
                         </Badge>
-                        <div className="text-sm text-muted-foreground">
-                          {config.description}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{config.description}</div>
                       </div>
                       <Button
                         variant="outline"
@@ -318,9 +336,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
                 })}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">
-                No additional roles can be added
-              </div>
+              <div className="text-sm text-muted-foreground">No additional roles can be added</div>
             )}
           </div>
 
@@ -336,10 +352,18 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
               {allowedOperations.description}
             </div>
             <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-              <div>• <strong>Super Admin:</strong> Can have any role combination</div>
-              <div>• <strong>Client:</strong> Can only be a client (no multiple roles)</div>
-              <div>• <strong>Loan Officer:</strong> Can only be a loan officer (single role)</div>
-              <div>• <strong>Admin:</strong> Can be admin + loan officer (but NOT client)</div>
+              <div>
+                • <strong>Super Admin:</strong> Can have any role combination
+              </div>
+              <div>
+                • <strong>Client:</strong> Can only be a client (no multiple roles)
+              </div>
+              <div>
+                • <strong>Loan Officer:</strong> Can only be a loan officer (single role)
+              </div>
+              <div>
+                • <strong>Admin:</strong> Can be admin + loan officer (but NOT client)
+              </div>
             </div>
           </div>
 

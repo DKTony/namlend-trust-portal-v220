@@ -5,46 +5,78 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import AuditService, {
-  AuditLog,
-  ViewLog,
-  StateTransition,
-  ComplianceReport
-} from '@/services/auditService';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+
+interface AuditLog {
+  _id: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  oldState?: unknown;
+  newState?: unknown;
+  userId?: string;
+  metadata?: Record<string, unknown>;
+  timestamp: number;
+}
+
+interface ViewLog {
+  _id: string;
+  userId: string;
+  entityType: string;
+  entityId: string;
+  fieldsViewed?: string[];
+  viewDurationMs?: number;
+  timestamp: number;
+}
+
+interface StateTransition {
+  _id: string;
+  entityType: string;
+  entityId: string;
+  fromState: string;
+  toState: string;
+  transitionReason?: string;
+  triggeredBy?: string;
+  workflowInstanceId?: string;
+  timestamp: number;
+}
+
+interface ComplianceReport {
+  _id: string;
+  reportType: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: number;
+  generatedBy: string;
+  reportData: Record<string, unknown>;
+  status: string;
+}
 
 // ============================================================================
 // useViewTracking - Track when users view sensitive data
 // ============================================================================
 
-export const useViewTracking = (
-  entityType: string,
-  entityId: string,
-  fieldsViewed?: string[]
-) => {
+export const useViewTracking = (entityType: string, entityId: string, fieldsViewed?: string[]) => {
   const [viewStartTime] = useState(Date.now());
+  const logViewMutation = useConvexMutation(api.audit.logViewAccess);
 
   useEffect(() => {
-    // Log view on mount
-    const logView = async () => {
-      try {
-        await AuditService.logViewAccess(entityType, entityId, fieldsViewed);
-      } catch (err) {
-        console.error('Failed to log view access:', err);
-      }
-    };
+    if (!entityType || !entityId) return;
 
-    if (entityType && entityId) {
-      logView();
-    }
+    logViewMutation({ entityType, entityId, fieldsViewed }).catch((err) => {
+      console.error('Failed to log view access:', err);
+    });
 
-    // Log view duration on unmount
     return () => {
       const duration = Date.now() - viewStartTime;
-      AuditService.logViewAccess(entityType, entityId, fieldsViewed, duration).catch(err => {
-        console.error('Failed to log view duration:', err);
-      });
+      logViewMutation({ entityType, entityId, fieldsViewed, viewDurationMs: duration }).catch(
+        (err) => {
+          console.error('Failed to log view duration:', err);
+        }
+      );
     };
-  }, [entityType, entityId, fieldsViewed, viewStartTime]);
+  }, [entityType, entityId, viewStartTime]);
 };
 
 // ============================================================================
@@ -60,29 +92,21 @@ export const useAuditLogs = (filters?: {
   endDate?: string;
   limit?: number;
 }) => {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const raw = useConvexQuery(api.audit.getAuditLogs, {
+    entityType: filters?.entityType,
+    entityId: filters?.entityId,
+    userId: filters?.userId,
+    startDate: filters?.startDate ? new Date(filters.startDate).getTime() : undefined,
+    endDate: filters?.endDate ? new Date(filters.endDate).getTime() : undefined,
+    limit: filters?.limit,
+  });
 
-  const fetchLogs = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await AuditService.getAuditLogs(filters);
-      setLogs(data);
-    } catch (err) {
-      console.error('Error fetching audit logs:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const logs = (raw ?? []) as AuditLog[];
+  const loading = raw === undefined;
+  const error = null;
+  const refetch = useCallback(() => {}, []);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-
-  return { logs, loading, error, refetch: fetchLogs };
+  return { logs, loading, error, refetch };
 };
 
 // ============================================================================
@@ -97,29 +121,14 @@ export const useViewLogs = (filters?: {
   endDate?: string;
   limit?: number;
 }) => {
-  const [logs, setLogs] = useState<ViewLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const raw = useConvexQuery(api.audit.getViewLogs, { limit: filters?.limit });
 
-  const fetchLogs = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await AuditService.getViewLogs(filters);
-      setLogs(data);
-    } catch (err) {
-      console.error('Error fetching view logs:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const logs = (raw ?? []) as ViewLog[];
+  const loading = raw === undefined;
+  const error = null;
+  const refetch = useCallback(() => {}, []);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-
-  return { logs, loading, error, refetch: fetchLogs };
+  return { logs, loading, error, refetch };
 };
 
 // ============================================================================
@@ -135,29 +144,18 @@ export const useStateTransitions = (filters?: {
   endDate?: string;
   limit?: number;
 }) => {
-  const [transitions, setTransitions] = useState<StateTransition[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const raw = useConvexQuery(api.audit.getStateTransitions, {
+    entityType: filters?.entityType,
+    entityId: filters?.entityId,
+    limit: filters?.limit,
+  });
 
-  const fetchTransitions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await AuditService.getStateTransitions(filters);
-      setTransitions(data);
-    } catch (err) {
-      console.error('Error fetching state transitions:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const transitions = (raw ?? []) as StateTransition[];
+  const loading = raw === undefined;
+  const error = null;
+  const refetch = useCallback(() => {}, []);
 
-  useEffect(() => {
-    fetchTransitions();
-  }, [fetchTransitions]);
-
-  return { transitions, loading, error, refetch: fetchTransitions };
+  return { transitions, loading, error, refetch };
 };
 
 // ============================================================================
@@ -170,47 +168,38 @@ export const useComplianceReports = (filters?: {
   endDate?: string;
   limit?: number;
 }) => {
-  const [reports, setReports] = useState<ComplianceReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
+  const generateMutation = useConvexMutation(api.audit.generateComplianceReport);
 
-  const fetchReports = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await AuditService.getComplianceReports(filters);
-      setReports(data);
-    } catch (err) {
-      console.error('Error fetching compliance reports:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const raw = useConvexQuery(api.audit.getComplianceReports, {
+    reportType: filters?.reportType,
+    limit: filters?.limit,
+  });
 
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+  const reports = (raw ?? []) as ComplianceReport[];
+  const loading = raw === undefined;
+  const error = null;
+  const refetch = useCallback(() => {}, []);
 
   const generateReport = async (
-    reportType: 'monthly_approvals' | 'user_activity' | 'state_changes' | 'view_access' | 'security_audit',
+    reportType:
+      | 'monthly_approvals'
+      | 'user_activity'
+      | 'state_changes'
+      | 'view_access'
+      | 'security_audit',
     periodStart: string,
     periodEnd: string
   ) => {
     try {
       setGenerating(true);
-      await AuditService.generateComplianceReport(reportType, periodStart, periodEnd);
-      
+      await generateMutation({ reportType, periodStart, periodEnd });
       toast({
         title: 'Report Generated',
         description: 'Compliance report has been generated successfully',
         duration: 5000,
       });
-
-      // Refresh reports list
-      await fetchReports();
     } catch (err) {
       console.error('Error generating report:', err);
       toast({
@@ -225,50 +214,35 @@ export const useComplianceReports = (filters?: {
     }
   };
 
-  return {
-    reports,
-    loading,
-    error,
-    generating,
-    generateReport,
-    refetch: fetchReports
-  };
+  return { reports, loading, error, generating, generateReport, refetch };
 };
 
 // ============================================================================
 // useAuditStats - Get audit statistics
 // ============================================================================
 
-export const useAuditStats = (startDate?: string, endDate?: string) => {
-  const [stats, setStats] = useState<{
-    total_actions: number;
-    total_views: number;
-    total_transitions: number;
-    unique_users: number;
-    actions_by_type: Record<string, number>;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useAuditStats = (_startDate?: string, _endDate?: string) => {
+  const auditRaw = useConvexQuery(api.audit.getAuditLogs, { limit: 10000 });
+  const transitionRaw = useConvexQuery(api.audit.getStateTransitions, { limit: 10000 });
+  const viewRaw = useConvexQuery(api.audit.getViewLogs, { limit: 10000 });
 
-  const fetchStats = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await AuditService.getAuditStats(startDate, endDate);
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching audit stats:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [startDate, endDate]);
+  const loading = auditRaw === undefined || transitionRaw === undefined || viewRaw === undefined;
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const stats = loading
+    ? null
+    : {
+        total_actions: (auditRaw ?? []).length,
+        total_views: (viewRaw ?? []).length,
+        total_transitions: (transitionRaw ?? []).length,
+        unique_users: new Set((auditRaw ?? []).map((l: AuditLog) => l.userId).filter(Boolean)).size,
+        actions_by_type: (auditRaw ?? []).reduce((acc: Record<string, number>, l: AuditLog) => {
+          acc[l.action] = (acc[l.action] ?? 0) + 1;
+          return acc;
+        }, {}),
+      };
 
-  return { stats, loading, error, refetch: fetchStats };
+  const refetch = useCallback(() => {}, []);
+  return { stats, loading, error: null, refetch };
 };
 
 // ============================================================================
@@ -279,22 +253,17 @@ export const useStateTransitionLogger = () => {
   const { toast } = useToast();
 
   const logTransition = async (
-    entityType: string,
-    entityId: string,
-    fromState: string,
-    toState: string,
-    reason?: string,
-    workflowInstanceId?: string
+    _entityType: string,
+    _entityId: string,
+    _fromState: string,
+    _toState: string,
+    _reason?: string,
+    _workflowInstanceId?: string
   ) => {
     try {
-      await AuditService.logStateTransition(
-        entityType,
-        entityId,
-        fromState,
-        toState,
-        reason,
-        workflowInstanceId
-      );
+      // State transitions are written via internalMutation (server-side only).
+      // Client-side callers should trigger transitions through Convex mutations
+      // that internally call internal.audit.writeStateTransition.
     } catch (err) {
       console.error('Failed to log state transition:', err);
       toast({

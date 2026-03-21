@@ -4,11 +4,10 @@
  * Refactored: header, sidebar, and sections extracted to sub-components.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { callRpc } from '@/utils/rpc';
-import { monitorDatabaseError } from '@/utils/errorMonitoring';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { useProfileEdit } from '@/hooks/useProfileEdit';
 import { ClientProfileHeader } from '@/components/client/ClientProfileHeader';
 import { ClientProfileSidebar } from '@/components/client/ClientProfileSidebar';
@@ -60,17 +59,7 @@ interface DocumentRequirement {
 
 export default function ClientProfileDashboard() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<ExtendedProfile | null>(null);
-  const [documentRequirements, setDocumentRequirements] = useState<DocumentRequirement[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
-  const [eligibility, setEligibility] = useState<{
-    eligible: boolean;
-    required_docs: number;
-    verified_docs: number;
-    profile_completion_percentage: number;
-    missing_required_docs: string[];
-  } | null>(null);
 
   const {
     editingSection,
@@ -81,57 +70,64 @@ export default function ClientProfileDashboard() {
     handleInputChange,
   } = useProfileEdit();
 
-  useEffect(() => {
-    if (user) {
-      fetchProfileData();
-      fetchEligibility();
-    }
-  }, [user]);
+  // Convex reactive query for user profile
+  const rawProfile = useConvexQuery(api.users.getMyProfile);
+  const loading = rawProfile === undefined;
 
-  const fetchProfileData = async () => {
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
+  const profile: ExtendedProfile | null = useMemo(() => {
+    if (!rawProfile) return null;
+    const names = (rawProfile.fullName ?? '').split(' ');
+    return {
+      id: String(rawProfile._id ?? ''),
+      user_id: rawProfile.userId ?? '',
+      first_name: names[0] ?? '',
+      last_name: names.slice(1).join(' ') ?? '',
+      phone_number: rawProfile.phone ?? '',
+      id_number: rawProfile.idNumber ?? '',
+      address_line1: rawProfile.addressLine1 ?? '',
+      address_line2: rawProfile.addressLine2 ?? '',
+      city: rawProfile.city ?? '',
+      postal_code: rawProfile.postalCode ?? '',
+      country: rawProfile.country ?? 'Namibia',
+      employer_name: rawProfile.employerName ?? '',
+      employer_phone: rawProfile.employerPhone ?? '',
+      employer_contact_person: rawProfile.employerContactPerson ?? '',
+      employment_status: rawProfile.employmentStatus ?? '',
+      monthly_income: rawProfile.monthlyIncome ?? 0,
+      bank_name: rawProfile.bankName ?? '',
+      account_number: rawProfile.accountNumber ?? '',
+      branch_code: rawProfile.branchCode ?? '',
+      branch_name: rawProfile.branchName ?? '',
+      profile_completion_percentage: rawProfile.profileCompletionPercentage ?? 0,
+      loan_application_eligible: rawProfile.loanApplicationEligible ?? false,
+      id_document_verified: rawProfile.idDocumentVerified ?? false,
+      bank_statements_verified: rawProfile.bankStatementsVerified ?? false,
+      payslip_verified: rawProfile.payslipVerified ?? false,
+      documents_complete: rawProfile.documentsComplete ?? false,
+    };
+  }, [rawProfile]);
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
-
-      const { data: docData, error: docError } = await supabase
-        .from('document_verification_requirements')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('document_type');
-
-      if (docError) throw docError;
-      setDocumentRequirements(docData || []);
-    } catch (error) {
-      console.error('Error fetching profile data:', error);
-      monitorDatabaseError('fetch_profile_data', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEligibility = async () => {
-    const result = await callRpc('check_loan_eligibility', {}, { timeoutMs: 2500, retries: 1 });
-    if (result.ok) {
-      const data = result.data;
-      if (Array.isArray(data) && data.length > 0) {
-        setEligibility(data[0] as any);
-      } else if (data) {
-        setEligibility(data as any);
-      }
-    }
-  };
+  // Document requirements and eligibility are derived from profile for now
+  const documentRequirements: DocumentRequirement[] = [];
+  const eligibility = useMemo(() => {
+    if (!profile) return null;
+    return {
+      eligible: profile.loan_application_eligible,
+      required_docs: 5,
+      verified_docs: [
+        profile.id_document_verified,
+        profile.bank_statements_verified,
+        profile.payslip_verified,
+      ].filter(Boolean).length,
+      profile_completion_percentage: profile.profile_completion_percentage,
+      missing_required_docs: [] as string[],
+    };
+  }, [profile]);
 
   const onEditSave = async () => {
     if (!user) return;
     await handleEditSave(user.id, () => {
-      fetchProfileData();
-      fetchEligibility();
+      // Convex reactivity handles refresh automatically
     });
   };
 

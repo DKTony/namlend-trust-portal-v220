@@ -4,7 +4,8 @@
  */
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { monitorDatabaseError } from '@/utils/errorMonitoring';
 
 interface UseProfileEditReturn {
@@ -22,6 +23,8 @@ export function useProfileEdit(): UseProfileEditReturn {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
 
+  const updateMyProfile = useMutation(api.users.updateMyProfile);
+
   const handleEditStart = (section: string, initialData: Record<string, any>) => {
     setEditingSection(section);
     setIsEditing(true);
@@ -34,25 +37,25 @@ export function useProfileEdit(): UseProfileEditReturn {
     setEditForm({});
   };
 
-  const handleEditSave = async (userId: string, onSuccess: () => void) => {
-    if (!userId || !editForm) return;
+  const handleEditSave = async (_userId: string, onSuccess: () => void) => {
+    if (!editForm) return;
 
     try {
-      const allowedFields = {
-        first_name: editForm.first_name,
-        last_name: editForm.last_name,
-        phone_number: editForm.phone_number,
-        monthly_income: editForm.monthly_income,
-        employment_status: editForm.employment_status,
-      };
-
-      const updateData = Object.fromEntries(
-        Object.entries(allowedFields).filter(([_, value]) => value !== undefined)
-      );
-
-      const { error } = await supabase.from('profiles').update(updateData).eq('user_id', userId);
-
-      if (error) throw error;
+      // Map legacy Supabase field names to Convex camelCase fields
+      await updateMyProfile({
+        fullName:
+          editForm.first_name && editForm.last_name
+            ? `${editForm.first_name} ${editForm.last_name}`.trim()
+            : editForm.fullName,
+        phone: editForm.phone_number ?? editForm.phone,
+        employmentStatus: editForm.employment_status ?? editForm.employmentStatus,
+        monthlyIncome:
+          editForm.monthly_income != null
+            ? Number(editForm.monthly_income)
+            : editForm.monthlyIncome != null
+              ? Number(editForm.monthlyIncome)
+              : undefined,
+      });
 
       setEditingSection(null);
       setIsEditing(false);

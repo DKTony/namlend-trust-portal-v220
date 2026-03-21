@@ -79,7 +79,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
       setInternalSelectedUsers(users);
     }
   };
-  const [bulkAction, setBulkAction] = useState('');
+  const [bulkAction, setBulkAction] = useState<BulkOperation['type'] | ''>('');
   const [bulkValue, setBulkValue] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -192,7 +192,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
 
     const newOperation: BulkOperation = {
       id: Date.now().toString(),
-      type: bulkAction as any,
+      type: bulkAction as BulkOperation['type'],
       status: 'pending',
       totalUsers: selectedUsers.length,
       processedUsers: 0,

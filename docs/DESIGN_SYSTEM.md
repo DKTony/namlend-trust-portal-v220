@@ -1,10 +1,10 @@
 # NamLend Trust - Design System Specification
 
-**Doc Revision**: 2026-01-19  
+**Doc Revision**: 2026-03-19  
 **Status**: Implemented with Tailwind + CSS variables. Google Fonts are loaded in `index.html` (Inter, Playfair Display, Space Grotesk).
 
 **Version**: 2.2.0  
-**Last Updated**: December 14, 2025  
+**Last Updated**: 2026-03-19  
 **Theme**: Neo-Fintech / "The Black Card Aesthetic"  
 **Status**: ✅ Implemented with Full Dark Mode Support
 
@@ -26,33 +26,35 @@ The new NamLend Trust interface adopts a **"Neo-Fintech"** aesthetic, drawing in
 The palette shifts from traditional corporate blues to a sophisticated **Zinc & Black** theme with **Electric Blue** accents.
 
 ### Primary Base (Zinc/Black)
+
 Used for backgrounds, text, and structural elements.
 
-| Name | Tailwind Class | Hex Code | Usage |
-|------|----------------|----------|-------|
-| **Obsidian** | `bg-zinc-950` | `#09090b` | Main background, Sidebar |
-| **Charcoal** | `bg-zinc-900` | `#18181b` | Card backgrounds (Dark mode) |
-| **Graphite** | `bg-zinc-800` | `#27272a` | Secondary backgrounds, Borders |
-| **Smoke** | `bg-zinc-100` | `#f4f4f5` | Light mode background |
-| **White** | `bg-white` | `#ffffff` | Card backgrounds (Light mode) |
+| Name         | Tailwind Class | Hex Code  | Usage                          |
+| ------------ | -------------- | --------- | ------------------------------ |
+| **Obsidian** | `bg-zinc-950`  | `#09090b` | Main background, Sidebar       |
+| **Charcoal** | `bg-zinc-900`  | `#18181b` | Card backgrounds (Dark mode)   |
+| **Graphite** | `bg-zinc-800`  | `#27272a` | Secondary backgrounds, Borders |
+| **Smoke**    | `bg-zinc-100`  | `#f4f4f5` | Light mode background          |
+| **White**    | `bg-white`     | `#ffffff` | Card backgrounds (Light mode)  |
 
 ### Accent (Electric Blue)
+
 Used sparingly for primary actions, active states, and data visualization.
 
-| Name | Tailwind Class | Hex Code | Usage |
-|------|----------------|----------|-------|
-| **Electric Blue** | `bg-blue-600` | `#2563eb` | Primary buttons, active states |
-| **Vivid Blue** | `bg-blue-500` | `#3b82f6` | Hovers, gradients |
-| **Soft Blue** | `bg-blue-500/10` | `rgba(59,130,246,0.1)` | Active list items, ghost hovers |
+| Name              | Tailwind Class   | Hex Code               | Usage                           |
+| ----------------- | ---------------- | ---------------------- | ------------------------------- |
+| **Electric Blue** | `bg-blue-600`    | `#2563eb`              | Primary buttons, active states  |
+| **Vivid Blue**    | `bg-blue-500`    | `#3b82f6`              | Hovers, gradients               |
+| **Soft Blue**     | `bg-blue-500/10` | `rgba(59,130,246,0.1)` | Active list items, ghost hovers |
 
 ### Functional Colors
 
-| Role | Class | Usage |
-|------|-------|-------|
-| **Success** | `text-emerald-500` | Positive trends, completed items |
-| **Warning** | `text-amber-500` | Pending actions, alerts |
-| **Error** | `text-rose-500` | Validation errors, negative trends |
-| **Muted** | `text-zinc-400` | Secondary text, labels |
+| Role        | Class              | Usage                              |
+| ----------- | ------------------ | ---------------------------------- |
+| **Success** | `text-emerald-500` | Positive trends, completed items   |
+| **Warning** | `text-amber-500`   | Pending actions, alerts            |
+| **Error**   | `text-rose-500`    | Validation errors, negative trends |
+| **Muted**   | `text-zinc-400`    | Secondary text, labels             |
 
 ---
 
@@ -61,21 +63,23 @@ Used sparingly for primary actions, active states, and data visualization.
 **Font Family**: `Inter` (loaded via Google Fonts) - optimized for UI readability.
 
 ### Scales & Weights
+
 Heavier weights and tighter tracking create a bold, confident look.
 
-| Role | Size | Weight | Tracking | Class |
-|------|------|--------|----------|-------|
-| **Display** | 32px | Bold (700) | Tight (-0.02em) | `text-3xl font-bold tracking-tight` |
-| **H1** | 24px | SemiBold (600) | Tight (-0.01em) | `text-2xl font-semibold tracking-tight` |
-| **H2** | 18px | SemiBold (600) | Normal | `text-lg font-semibold` |
-| **Body** | 14px | Regular (400) | Normal | `text-sm` |
-| **Label** | 12px | Medium (500) | Wide (0.02em) | `text-xs font-medium tracking-wide` |
+| Role        | Size | Weight         | Tracking        | Class                                   |
+| ----------- | ---- | -------------- | --------------- | --------------------------------------- |
+| **Display** | 32px | Bold (700)     | Tight (-0.02em) | `text-3xl font-bold tracking-tight`     |
+| **H1**      | 24px | SemiBold (600) | Tight (-0.01em) | `text-2xl font-semibold tracking-tight` |
+| **H2**      | 18px | SemiBold (600) | Normal          | `text-lg font-semibold`                 |
+| **Body**    | 14px | Regular (400)  | Normal          | `text-sm`                               |
+| **Label**   | 12px | Medium (500)   | Wide (0.02em)   | `text-xs font-medium tracking-wide`     |
 
 ---
 
 ## 4. Core Components
 
 ### Sidebar Navigation
+
 Expanded width for better hierarchy and touch targets.
 
 - **Width**: `w-72` (288px)
@@ -85,6 +89,7 @@ Expanded width for better hierarchy and touch targets.
 - **Styling**: Clean ghost buttons, rounded-lg, distinct section headers.
 
 ### Cards & Containers
+
 Moving away from sharp edges to organic, friendly shapes.
 
 - **Border Radius**: `rounded-3xl` (24px) for main containers, `rounded-2xl` for inner cards.
@@ -93,11 +98,13 @@ Moving away from sharp edges to organic, friendly shapes.
 - **Dark Mode**: `bg-zinc-900 border border-zinc-800`.
 
 ### Buttons
+
 - **Primary**: `bg-blue-600 text-white rounded-xl font-medium shadow-lg shadow-blue-600/20 hover:bg-blue-500 active:scale-95 transition-all`.
 - **Secondary**: `bg-zinc-100 text-zinc-900 rounded-xl hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100`.
 - **Ghost**: `text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50 rounded-lg`.
 
 ### Input Fields
+
 Simplified visuals with focus on content.
 
 - **Style**: `bg-zinc-50/50 border-zinc-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`.
@@ -109,6 +116,7 @@ Simplified visuals with focus on content.
 ## 5. Feature-Specific Designs
 
 ### Authentication (Split Screen) ✅ Implemented
+
 - **Layout**: 50/50 Split on desktop, full-width form on mobile.
 - **Left Side (Brand Panel)**:
   - Deep black background (`bg-black`)
@@ -124,6 +132,7 @@ Simplified visuals with focus on content.
 - **File**: `src/pages/Auth.tsx`
 
 ### Loan Application Form ("The Receipt")
+
 - **Concept**: As users fill the form, a "live receipt" updates on the side.
 - **Preview Card**:
   - "Glossy" dark appearance (`bg-zinc-900` with subtle gradient).
@@ -132,6 +141,7 @@ Simplified visuals with focus on content.
   - Real-time calculation updates.
 
 ### Charts & Analytics
+
 - **Library**: CSS-only bar charts (Recharts optional).
 - **Style**: Minimalist with hover interactions.
 - **Bars**: Gradient fills (`bg-gradient-to-t from-blue-500/20`) with hover state (`group-hover:bg-blue-200`).
@@ -172,12 +182,15 @@ module.exports = {
 ## 7. Responsive Layout System ✅ Implemented
 
 ### Mobile-First Architecture
+
 The application uses a mobile-first responsive approach with breakpoints:
+
 - **Mobile**: `< 768px` - Single column, stacked layouts
 - **Tablet**: `md:` (768px+) - Two column grids
 - **Desktop**: `lg:` (1024px+) - Full sidebar + content layout
 
 ### Dashboard Layout
+
 - **Desktop**: Fixed sidebar (`w-72`) + scrollable main content
 - **Mobile**: Collapsible slide-out sidebar with overlay backdrop
 - **Mobile Header**: Compact header with hamburger menu toggle
@@ -185,6 +198,7 @@ The application uses a mobile-first responsive approach with breakpoints:
 ### Key Components
 
 #### DashboardSidebar (`src/components/DashboardSidebar.tsx`)
+
 - **Width**: `w-72` (288px)
 - **Background**: `bg-zinc-950` (Obsidian)
 - **Mobile Behavior**: Slide-in from left with backdrop blur overlay
@@ -192,11 +206,13 @@ The application uses a mobile-first responsive approach with breakpoints:
 - **User Profile Section**: Bottom-aligned with email and role display
 
 #### StatCard (`src/components/StatCard.tsx`)
+
 - **Purpose**: Display key metrics (Balance, Credit Score, Next Payment)
 - **Variants**: `black`, `green`, `blue`, `amber`, `red`
 - **Structure**: Label, value, optional subValue, icon with colored background
 
 #### Mobile Header
+
 - **Height**: Standard mobile header height
 - **Content**: Logo + hamburger menu button
 - **Visibility**: `lg:hidden` (only on mobile/tablet)
@@ -222,21 +238,22 @@ text-3xl md:text-4xl        /* Larger on desktop */
 
 ## 8. Component Files Reference
 
-| Component | File | Purpose |
-|-----------|------|--------|
-| **Auth Page** | `src/pages/Auth.tsx` | Split-screen authentication |
-| **Dashboard** | `src/pages/Dashboard.tsx` | Client dashboard with sidebar |
-| **DashboardSidebar** | `src/components/DashboardSidebar.tsx` | Collapsible navigation |
-| **StatCard** | `src/components/StatCard.tsx` | Metric display cards |
-| **Card** | `src/components/ui/card.tsx` | Base card with rounded-3xl |
-| **Button** | `src/components/ui/button.tsx` | Styled buttons |
-| **Input** | `src/components/ui/input.tsx` | Form inputs |
+| Component            | File                                  | Purpose                       |
+| -------------------- | ------------------------------------- | ----------------------------- |
+| **Auth Page**        | `src/pages/Auth.tsx`                  | Split-screen authentication   |
+| **Dashboard**        | `src/pages/Dashboard.tsx`             | Client dashboard with sidebar |
+| **DashboardSidebar** | `src/components/DashboardSidebar.tsx` | Collapsible navigation        |
+| **StatCard**         | `src/components/StatCard.tsx`         | Metric display cards          |
+| **Card**             | `src/components/ui/card.tsx`          | Base card with rounded-3xl    |
+| **Button**           | `src/components/ui/button.tsx`        | Styled buttons                |
+| **Input**            | `src/components/ui/input.tsx`         | Form inputs                   |
 
 ---
 
 ## 9. Dark Mode Implementation ✅ Implemented
 
 ### Theme Provider Architecture
+
 The application uses a robust theme system with automatic system preference detection:
 
 - **ThemeProvider** (`src/components/ThemeProvider.tsx`) - Context-based theme management
@@ -244,42 +261,44 @@ The application uses a robust theme system with automatic system preference dete
 - **Storage**: Theme preference persisted in localStorage
 
 ### Semantic Color Tokens
+
 All components use semantic color tokens that automatically adapt to the current theme:
 
-| Token | Light Mode | Dark Mode | Usage |
-|-------|------------|-----------|-------|
-| `bg-background` | `#ffffff` | `#09090b` (zinc-950) | Page backgrounds |
-| `bg-card` | `#ffffff` | `#18181b` (zinc-900) | Card backgrounds |
-| `bg-muted` | `#f4f4f5` | `#27272a` (zinc-800) | Subtle backgrounds |
-| `text-foreground` | `#09090b` | `#fafafa` | Primary text |
-| `text-muted-foreground` | `#71717a` | `#a1a1aa` | Secondary text |
-| `border-border` | `#e4e4e7` | `#27272a` | Borders |
+| Token                   | Light Mode | Dark Mode            | Usage              |
+| ----------------------- | ---------- | -------------------- | ------------------ |
+| `bg-background`         | `#ffffff`  | `#09090b` (zinc-950) | Page backgrounds   |
+| `bg-card`               | `#ffffff`  | `#18181b` (zinc-900) | Card backgrounds   |
+| `bg-muted`              | `#f4f4f5`  | `#27272a` (zinc-800) | Subtle backgrounds |
+| `text-foreground`       | `#09090b`  | `#fafafa`            | Primary text       |
+| `text-muted-foreground` | `#71717a`  | `#a1a1aa`            | Secondary text     |
+| `border-border`         | `#e4e4e7`  | `#27272a`            | Borders            |
 
 ### Status Badge Patterns
+
 Colored badges use explicit dark mode variants for proper contrast:
 
 ```tsx
 // Success badge
-"bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
+'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
 
-// Warning badge  
-"bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400"
+// Warning badge
+'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
 
 // Error badge
-"bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
+'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
 
 // Info badge
-"bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
+'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
 ```
 
 ### Components Refactored for Dark Mode
 
-| Category | Components |
-|----------|------------|
-| **Core** | Dashboard, Auth, NotFound, ErrorBoundary |
-| **Client** | SelfServicePortal, ClientProfileDashboard, LoanStatusTimeline |
-| **Admin** | All Payment Management, User Management, Analytics, Reconciliation components |
-| **Modals** | All dialog components use `bg-background` and `border-border` |
+| Category   | Components                                                                    |
+| ---------- | ----------------------------------------------------------------------------- |
+| **Core**   | Dashboard, Auth, NotFound, ErrorBoundary                                      |
+| **Client** | SelfServicePortal, ClientProfileDashboard, LoanStatusTimeline                 |
+| **Admin**  | All Payment Management, User Management, Analytics, Reconciliation components |
+| **Modals** | All dialog components use `bg-background` and `border-border`                 |
 
 ### Best Practices
 
@@ -290,4 +309,4 @@ Colored badges use explicit dark mode variants for proper contrast:
 
 ---
 
-*Design System Version: 2.2.0*
+_Design System Version: 2.2.0_

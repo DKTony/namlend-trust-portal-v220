@@ -6,7 +6,10 @@
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://puahejtaskncpazjyxqp.supabase.co';
+const SUPABASE_URL =
+  process.env.VITE_SUPABASE_URL ||
+  process.env.SUPABASE_URL ||
+  'https://puahejtaskncpazjyxqp.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -29,10 +32,16 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
   });
 }
 
-// Skip all tests in this suite if service role key is not available
+// QUARANTINE: Legacy Supabase RPC test — calls process_approval_transaction Postgres RPC.
+// Convex equivalent: api.approvalWorkflow.processApproval mutation (not yet wired in this test).
+// Status: fail (legacy Supabase dependency) — tracked in plan N4 triage.
+// Self-skips when SUPABASE_SERVICE_ROLE_KEY is absent.
 test.describe('Approval RPC Race Condition Fix', () => {
   // Skip entire suite if no service key (RLS blocks direct inserts)
-  test.skip(!serviceClient, 'SUPABASE_SERVICE_ROLE_KEY not set; skipping RPC race condition tests');
+  test.skip(
+    !serviceClient,
+    'QUARANTINE [legacy-supabase]: SUPABASE_SERVICE_ROLE_KEY not set. Migrate to Convex api.approvalWorkflow in N2 batch.'
+  );
 
   let testApprovalRequestId: string;
   let testUserId: string;
@@ -51,7 +60,7 @@ test.describe('Approval RPC Race Condition Fix', () => {
     if (authError) throw authError;
 
     // Wait a moment for auth to propagate
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Create a test approval request using service client (bypasses RLS)
     const client = serviceClient || supabase;
@@ -156,11 +165,11 @@ test.describe('Approval RPC Race Condition Fix', () => {
       });
 
       // All calls should return the same loan_id
-      const loanIds = results.map(r => r.data.loan_id);
+      const loanIds = results.map((r) => r.data.loan_id);
       expect(new Set(loanIds).size).toBe(1); // All should be the same
 
       // At least one should be marked as idempotent
-      const idempotentCalls = results.filter(r => r.data.idempotent === true);
+      const idempotentCalls = results.filter((r) => r.data.idempotent === true);
       expect(idempotentCalls.length).toBeGreaterThanOrEqual(1);
 
       // Verify only one loan was created
@@ -171,7 +180,6 @@ test.describe('Approval RPC Race Condition Fix', () => {
 
       expect(loansError).toBeNull();
       expect(loans?.length).toBe(1); // Only one loan should exist
-
     } finally {
       // Cleanup using service client
       await client.from('loans').delete().eq('approval_request_id', concurrentRequestId);

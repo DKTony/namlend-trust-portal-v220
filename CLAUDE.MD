@@ -1,15 +1,16 @@
 # CLAUDE.MD - AI Agent Context for NamLend Trust Platform
 
-**Last Updated**: February 14, 2026
-**Project Version**: 2.8.0
-**Status**: Production-Ready Digital Lending Platform
+**Last Updated**: February 22, 2026
+**Project Version**: 4.0.0 (Convex Migration)
+**Status**: Backend Migrated to Convex — Type-safe (0 `as any` in Convex backend; ~20 remain in frontend) — Frontend service layer migration in progress
 
 ## Quick Project Summary
 
-NamLend Trust is a production-ready loan management platform for the Namibian market. Built with React 18.3.1 + TypeScript frontend and Supabase (PostgreSQL) backend, featuring TigerBeetle financial ledger integration, comprehensive approval workflows, payment processing, and Neo-Fintech design system.
+NamLend Trust is a loan management platform for the Namibian market. Built with React 18.3.1 + TypeScript frontend and **Convex** backend (migrated from Supabase in Feb 2026), featuring TigerBeetle financial ledger integration, comprehensive approval workflows, payment processing, and Neo-Fintech design system.
 
 **Live URL**: https://namlend-trust-portal-v220.netlify.app
-**Database**: PostgreSQL 17+ (Supabase eu-north-1)
+**Backend**: Convex (reactive document-relational database)
+**Previous Backend**: Supabase PostgreSQL (eu-north-1) — retained for reference
 **Design**: Neo-Fintech "Black Card" aesthetic with mobile-first approach
 
 ## Critical Constraints - READ FIRST
@@ -23,19 +24,20 @@ NamLend Trust is a production-ready loan management platform for the Namibian ma
 
 ### Security Requirements (NON-NEGOTIABLE)
 
-1. **Row-Level Security (RLS)** - Every table with user data MUST have RLS policies
-2. **Audit Trails** - All financial operations MUST be logged to `audit_logs` table
-3. **Role-Based Access** - Three roles: `client`, `loan_officer`, `admin`
-4. **Service Keys** - NEVER expose `VITE_SUPABASE_SERVICE_ROLE_KEY` to frontend
+1. **Auth Guards** - Every Convex query/mutation with user data MUST call an auth guard (`assertAuthenticated`, `assertStaff`, `assertAdmin`, etc.) from `convex/lib/auth.ts`
+2. **Audit Trails** - All financial operations MUST be logged via `convex/lib/audit.ts` helpers
+3. **Role-Based Access** - Three roles: `client`, `loan_officer`, `admin` (stored in `userRoles` table)
+4. **No Secret Exposure** - Convex environment variables (set via dashboard) are server-side only; `VITE_*` vars are client-side
 5. **PII Protection** - Never log or expose personally identifiable information
 
 ### Architecture Constraints
 
 1. **Mobile-First** - All UI must work on 375px width minimum
-2. **Real-time Updates** - Use Supabase real-time subscriptions for live data
-3. **No Direct DB Access** - All database operations through RLS-protected tables or RPC functions
+2. **Reactive Updates** - Use Convex `useQuery()` for automatic live data (no manual subscriptions)
+3. **Guard-Protected Access** - All Convex functions must call appropriate auth guard before DB access
 4. **Approval Workflow** - All loan operations require back office approval
 5. **TigerBeetle Shadow Mode** - Financial ledger runs in shadow mode (records but doesn't control flow)
+6. **Atomic Mutations** - Every Convex mutation is automatically transactional (serializable isolation)
 
 ## Technology Stack
 
@@ -44,25 +46,32 @@ Frontend:
 - React 18.3.1 with TypeScript
 - Vite 5.4.1 (build tool, runs on port 8080)
 - TailwindCSS 3.4.11 + shadcn/ui components
-- TanStack Query 5.x (React Query) for server state
+- Convex React client (useQuery/useMutation for reactive data)
+- TanStack Query 5.x (for non-Convex data, legacy)
 - Zod 3.x for validation
 - React Hook Form 7.x for forms
 - Recharts 3.x for data visualization
 - Lucide React for icons
 - next-themes for dark mode
 
-Backend:
-- Supabase (PostgreSQL 17+)
-- Supabase Auth (authentication)
-- Supabase Real-time (live updates)
-- Row-Level Security (RLS)
-- Edge Functions (Deno runtime) - 18 functions
-- 54 database migrations
+Backend (ACTIVE - Convex):
+- Convex (reactive document-relational database)
+- @convex-dev/auth (Password provider authentication)
+- Schema: convex/schema.ts (55+ tables, ~1031 lines)
+- Auth guards: convex/lib/auth.ts (replaces RLS)
+- Queries, Mutations, Actions, Internal functions
+- HTTP Router: convex/http.ts (webhooks, auth)
+- Cron Jobs: convex/crons.ts (outbox worker, daily tasks)
+
+Backend (LEGACY - Supabase, retained for reference):
+- supabase/migrations/ (33 SQL migrations - INACTIVE)
+- supabase/functions/ (18 Edge Functions - INACTIVE)
+- src/services/ (25 service files - NEEDS MIGRATION to Convex)
 
 Financial Ledger:
 - TigerBeetle v0.16.67 (double-entry bookkeeping)
 - Runs on 127.0.0.1:3001
-- Shadow mode with outbox pattern
+- Shadow mode with outbox pattern (outbox in Convex DB)
 
 Testing:
 - Playwright 1.47.2 (E2E tests) - 45+ test files
@@ -71,13 +80,34 @@ Testing:
 
 Deployment:
 - Netlify (frontend) - SPA mode with security headers
-- Supabase Cloud (backend)
+- Convex Cloud (backend) - auto-deploy via npx convex deploy
 ```
 
 ## Project Structure
 
 ```
 namlend-trust-portal-v220-main/
+├── convex/                # ⭐ ACTIVE BACKEND (Convex)
+│   ├── schema.ts          # Database schema (55+ tables, SOURCE OF TRUTH)
+│   ├── auth.ts            # Auth callbacks (afterUserCreatedOrUpdated)
+│   ├── auth.config.ts     # Convex Auth provider config
+│   ├── http.ts            # HTTP router (webhooks, auth routes)
+│   ├── crons.ts           # Cron jobs (outbox worker, daily tasks)
+│   ├── lib/               # Shared utilities (auth guards, audit, regulatory)
+│   ├── loans.ts           # Loan queries + mutations
+│   ├── payments.ts        # Payment queries + mutations
+│   ├── disbursements.ts   # Disbursement state machine
+│   ├── collections.ts     # Collections queue + interactions
+│   ├── notifications.ts   # Notification lifecycle
+│   ├── analytics.ts       # Portfolio analytics (staff-only)
+│   ├── audit.ts           # Audit log queries + compliance
+│   ├── users.ts           # User/profile management
+│   ├── actions/           # External API actions (IPS, SMS, WhatsApp)
+│   ├── scheduled/         # Cron handlers (outbox worker, daily tasks)
+│   ├── ips/               # IPS domain (5 files)
+│   ├── settlement/        # Settlement domain (10 files)
+│   ├── tigerbeetle/       # TigerBeetle domain (4 files)
+│   └── _generated/        # Auto-generated types (DO NOT EDIT)
 ├── src/
 │   ├── components/         # React components (~150+ files)
 │   │   ├── ui/            # shadcn/ui + custom themed components
@@ -88,23 +118,24 @@ namlend-trust-portal-v220-main/
 │   │   └── AdminDashboard/  # Back office (14 subdirectories, 75+ components)
 │   │       ├── components/  # Domain-organized admin components
 │   │       └── hooks/       # Admin-specific hooks (16 files)
-│   ├── services/          # Business logic & API calls (25 services - CRITICAL)
+│   ├── services/          # ⚠️ LEGACY Supabase services (25 files - NEEDS MIGRATION)
 │   ├── hooks/             # Custom React hooks (14 files)
 │   ├── context/           # React Context providers (ThemeContext, BrandingContext)
 │   ├── types/             # TypeScript definitions (9 files)
 │   ├── constants/         # App constants (regulatory, loanStatuses, schemaReference)
-│   ├── utils/             # Utility functions (29 files, mostly dev/debug tools)
+│   ├── utils/             # Utility functions (13 files — 19 dead Supabase dev tools deleted Mar 2026)
 │   ├── integrations/      # External service integrations
-│   │   └── supabase/      # Supabase client, adminClient, mockClient & types
+│   │   ├── convex/        # Convex client + API re-exports (ACTIVE)
+│   │   └── supabase/      # Supabase client & types (LEGACY)
 │   └── lib/               # Third-party library configs (utils.ts for cn())
 ├── docs/                  # Comprehensive documentation (37+ files)
 ├── e2e/                   # Playwright E2E tests (45+ test files)
 │   ├── helpers/           # Test helpers (auth.ts, admin.ts)
 │   ├── api/               # API/RLS test files
 │   └── unit/              # Unit test files
-├── supabase/              # Database migrations (54) & edge functions (18)
-│   ├── migrations/        # Timestamped SQL migrations
-│   └── functions/         # Deno edge functions
+├── supabase/              # ⚠️ LEGACY - migrations (33) & edge functions (18)
+│   ├── migrations/        # Timestamped SQL migrations (INACTIVE)
+│   └── functions/         # Deno edge functions (INACTIVE)
 ├── scripts/               # Automation scripts (TigerBeetle init, link-check)
 ├── sql/                   # SQL utilities (schema verify, performance, fixes)
 ├── namlend-mobile/        # Mobile app (separate React Native project)
@@ -113,10 +144,35 @@ namlend-trust-portal-v220-main/
 
 ## Key Files Reference
 
-### Critical Service Files (USE THESE - Don't Reinvent)
+### Convex Backend Files (ACTIVE - Use These)
 
 ```
-src/services/
+convex/
+├── schema.ts               # Database schema (55+ tables, SOURCE OF TRUTH)
+├── lib/auth.ts             # Auth guards (assertAuthenticated, assertStaff, etc.)
+├── lib/audit.ts            # Audit log scheduling helper
+├── lib/regulatory.ts       # APR_LIMIT, isValidAPR, formatNAD
+├── loans.ts                # Loan CRUD + state transitions (replaces loanService.ts)
+├── payments.ts             # Payment processing + schedules (replaces paymentService.ts)
+├── disbursements.ts        # Disbursement state machine (replaces disbursementService.ts)
+├── approvalWorkflow.ts     # Approval queue + workflow (replaces approvalWorkflow.ts)
+├── collections.ts          # Collections queue + interactions
+├── notifications.ts        # In-app + queued notifications
+├── analytics.ts            # Portfolio/revenue/risk analytics (staff-only)
+├── audit.ts                # Audit logs + compliance reports
+├── users.ts                # User/profile management
+├── reconciliation.ts       # Bank reconciliation
+├── actions/ipsAdapter.ts   # IPS outbound transfers + webhooks
+├── actions/sendSms.ts      # Africa's Talking SMS
+├── actions/sendWhatsapp.ts # Meta WhatsApp Business API
+├── scheduled/tigerBeetleOutboxWorker.ts  # TB outbox polling
+└── scheduled/dailyTasks.ts # Overdue marking, PTP checks, notifications
+```
+
+### Legacy Supabase Service Files (NEEDS MIGRATION)
+
+```
+src/services/               # ⚠️ These still reference Supabase client
 ├── approvalWorkflow.ts      # Loan approval state machine
 ├── loanService.ts           # Core loan CRUD operations
 ├── disbursementService.ts   # Fund disbursement (posts to TigerBeetle)
@@ -156,17 +212,25 @@ src/constants/
 ### Core Types
 
 ```
-src/integrations/supabase/
-├── client.ts               # Supabase client instance (anon key)
-├── adminClient.ts          # Admin client (service role - server-side only)
-├── mockClient.ts           # Mock client for testing
-└── types.ts                # Database type definitions (permissive - see note below)
+convex/_generated/           # Auto-generated by Convex (DO NOT EDIT)
+├── api.d.ts                # Typed API for all queries/mutations/actions
+├── dataModel.d.ts          # Document types from schema.ts
+└── server.d.ts             # Server function type helpers
+
+src/integrations/convex/     # Convex client setup (ACTIVE)
+├── client.ts               # ConvexReactClient instance
+└── api.ts                  # Re-exported api from _generated
+
+src/integrations/supabase/   # LEGACY - retained for reference
+├── client.ts               # Supabase client instance (LEGACY)
+├── adminClient.ts          # Admin client (LEGACY)
+├── mockClient.ts           # Mock client for testing (LEGACY)
+└── types.ts                # Database type definitions (LEGACY)
 ```
 
-> **Note**: `types.ts` currently uses permissive `any` for the Database type. TypeScript strict mode
-> is NOT enabled in `tsconfig.app.json` (`strict: false`, `noImplicitAny: false`). Full type safety
-> requires generating types from a running Supabase instance:
-> `npx supabase gen types typescript --local > src/integrations/supabase/types.ts`
+> **Note**: Convex provides end-to-end type safety automatically. Types are generated from
+> `convex/schema.ts` on every `npx convex dev` or deploy. No manual type generation needed.
+> The legacy `src/integrations/supabase/types.ts` is no longer the active type source.
 
 ### Additional Type Files
 
@@ -252,15 +316,25 @@ npm run dev  # Runs on http://localhost:8080
 ### Common Commands
 
 ```bash
+# Frontend
 npm run dev              # Start dev server (port 8080)
 npm run build            # Production build
 npm run build:dev        # Development build
 npm run preview          # Preview production build
 npm run lint             # Run ESLint
+
+# Convex Backend
+npx convex dev           # Start Convex dev server (auto-syncs schema + functions)
+npx convex deploy        # Deploy to Convex Cloud (production)
+npx convex dashboard     # Open Convex dashboard in browser
+
+# Testing
 npm run dev:e2e          # Start dev server in E2E mode
 npm run test:e2e         # Run Playwright E2E tests
 npm run test:e2e:headed  # Run E2E with browser UI
 npm run test:e2e:ui      # Playwright UI mode
+
+# Docs
 npm run docs:lint        # Lint markdown docs
 npm run docs:fix         # Auto-fix markdown lint issues
 ```
@@ -279,33 +353,38 @@ Loan Officer:      loan_officer@test.namlend.com / test123 → /admin
 ### Provider Stack (App.tsx)
 
 ```
-ErrorBoundary
-  → QueryClientProvider (TanStack Query - no mutation retries for financial safety)
-    → ThemeProvider (shadcn default theme)
-      → EnhancedThemeProvider (custom ThemeContext)
-        → BrandingProvider (branding customization)
-          → ThemeBackground
-            → AuthProvider (useAuth hook)
-              → TooltipProvider
-                → [Toasters - shadcn + Sonner]
-                  → BrowserRouter
-                    → AuthEventBridge (auth state listener)
-                      → Routes
-                    → ThemeSwitcher (floating toggle)
+ConvexProvider (Convex React client)
+  → ConvexAuthProvider (Convex Auth session management)
+    → ErrorBoundary
+      → QueryClientProvider (TanStack Query - for non-Convex data)
+        → ThemeProvider (shadcn default theme)
+          → EnhancedThemeProvider (custom ThemeContext)
+            → BrandingProvider (branding customization)
+              → ThemeBackground
+                → AuthProvider (useConvexAuth-based)
+                  → TooltipProvider
+                    → [Toasters - shadcn + Sonner]
+                      → BrowserRouter
+                        → AuthEventBridge (Convex-native, redirects on session loss)
+                        → Routes
+                      → ThemeSwitcher (floating toggle)
 ```
+
+> **Note**: `AuthEventBridge` was migrated from Supabase `onAuthStateChange` to Convex-native `useConvexAuth()` in Feb 2026. The Supabase client import was removed from `App.tsx`.
 
 ### Authentication Flow
 
-1. User signs in via Supabase Auth
-2. `AuthProvider` (in `src/hooks/useAuth.tsx`) manages reactive auth state
+1. User signs in via Convex Auth (`@convex-dev/auth` Password provider)
+2. `ConvexAuthProvider` manages reactive auth state (session-based, no JWT)
 3. `ProtectedRoute` component guards routes (supports `requireAdmin`, `requireLoanOfficer`)
 4. Role-based routing (`/dashboard` for clients, `/admin` for staff)
+5. New users trigger `afterUserCreatedOrUpdated` callback → seeds `profiles` + `userRoles`
 
 ### Route Structure
 
 ```
 /                   → Index (public landing page)
-/auth               → Auth (login, signup, password reset)
+/auth               → Auth (login, signup, password reset via Convex Auth)
 /dashboard          → Dashboard (client - protected)
 /loan-application   → LoanApplication (client - protected)
 /payment            → Payment (client - protected)
@@ -318,11 +397,11 @@ ErrorBoundary
 
 ### Data Flow
 
-1. **Read**: TanStack Query → Supabase RLS-protected tables
-2. **Write**: Service layer → RPC function or RLS table → Audit log
-3. **Real-time**: Supabase subscription → React state update
-4. **Financial**: Service → Supabase + TigerBeetle (shadow mode)
-5. **RPC Calls**: `src/utils/rpc.ts` provides circuit breaker + retry with jitter
+1. **Read**: `useQuery(api.module.fn)` → Convex query → auth guard → DB → reactive update
+2. **Write**: `useMutation(api.module.fn)` → Convex mutation → auth guard → atomic DB write → audit log via scheduler
+3. **Reactive**: All `useQuery()` calls auto-update when underlying data changes (no manual subscriptions)
+4. **Financial**: Mutation → DB write + TigerBeetle outbox entry (same atomic tx) → cron worker posts to TB
+5. **External APIs**: Convex actions (`actions/*.ts`) for IPS, SMS, WhatsApp — use `ctx.runMutation()` for DB writes
 
 ### Approval Workflow
 
@@ -332,15 +411,15 @@ Application → Under Review → Approved → Funded → Active
                 Rejected (terminal state)
 ```
 
-All transitions go through `approvalWorkflow.ts` service.
+All transitions go through `convex/approvalWorkflow.ts` (Convex) or `src/services/approvalWorkflow.ts` (legacy).
 
 ### Payment Processing
 
-1. Payment initiated (UI or external webhook)
-2. `paymentService.ts` validates and records
-3. Posts to TigerBeetle ledger (shadow mode) via `ledgerService.ts`
-4. `settlementService.ts` detects and matches settlements
-5. Loan balance updated via `updateLoanBalance()` RPC
+1. Payment initiated via `useMutation(api.payments.recordPayment)` or webhook
+2. Convex mutation validates, records payment, and inserts TigerBeetle outbox entry (same atomic tx)
+3. Cron worker (`tb-outbox-worker`, every 30s) posts to TigerBeetle shadow ledger
+4. Loan balance updated atomically within the mutation
+5. Settlement detection on final payment (balance = 0 → status `paid_off`)
 
 ### Admin Dashboard Structure
 
@@ -395,103 +474,111 @@ Card: #18181B with backdrop-blur
 
 ## Database Guidelines
 
-### Core Tables
+### Core Tables (Convex)
 
 ```
-users                 # User profiles (linked to auth.users)
-user_roles            # Role assignments (client/loan_officer/admin)
+profiles              # User profiles (linked to Convex Auth users)
+userRoles             # Role assignments (client/loan_officer/admin)
 loans                 # Loan applications and lifecycle
-loan_documents        # Document attachments
-loan_approvals        # Approval workflow history
+loanDocuments         # Document attachments
+approvalRequests      # Approval queue
+approvalHistory       # Approval workflow history
 disbursements         # Fund disbursement records
-payment_transactions  # Payment records
-payment_schedules     # Expected payment dates
-tigerbeetle_entries   # Financial ledger entries (shadow)
-audit_logs            # Complete audit trail
+paymentTransactions   # Payment records
+paymentSchedules      # Expected payment dates
+tigerBeetleOutbox     # TigerBeetle outbox (shadow ledger sync)
+auditLogs             # Complete audit trail
+stateTransitions      # State change records
 ```
 
-### RLS Policies
+### Auth Guard Pattern (Replaces RLS)
 
-Every table with user data has RLS enabled. Key patterns:
+Every Convex query/mutation must call an auth guard at the top:
 
-```sql
--- Clients see only their own data
-CREATE POLICY "client_select_own" ON loans
-  FOR SELECT USING (user_id = auth.uid());
+```typescript
+// convex/loans.ts
+import { assertAuthenticated, assertStaff } from "./lib/auth";
 
--- Staff see all data for their role
-CREATE POLICY "staff_select_all" ON loans
-  FOR SELECT USING (is_staff(auth.uid()));
+// Clients see only their own data
+export const getMyLoans = query({
+  handler: async (ctx) => {
+    const userId = await assertAuthenticated(ctx);
+    return ctx.db.query("loans")
+      .withIndex("by_userId", q => q.eq("userId", userId))
+      .collect();
+  },
+});
 
--- Only staff can insert/update
-CREATE POLICY "staff_insert" ON loans
-  FOR INSERT WITH CHECK (is_staff(auth.uid()));
+// Staff see all data
+export const adminListLoans = query({
+  handler: async (ctx) => {
+    await assertStaff(ctx);
+    return ctx.db.query("loans").collect();
+  },
+});
 ```
 
-### Migrations
+### Schema Changes
 
-- Located in `supabase/migrations/` (54 migrations as of Feb 2026)
-- Named with timestamp: `YYYYMMDDHHMMSS_description.sql`
-- Always include rollback logic
-- Test locally before production deployment
+- Schema defined in `convex/schema.ts` (single source of truth)
+- Types auto-generate on `npx convex dev` or `npx convex deploy`
+- No manual migrations needed — Convex handles schema evolution
+- Add indexes inline: `.index("by_name", ["field1", "field2"])`
 
-### Edge Functions (Supabase)
+### Convex Server Functions (Replaces Edge Functions)
 
 ```
-supabase/functions/
-├── api-admin/             # Admin operations API
-├── api-loans/             # Loan management API
-├── api-payments/          # Payment processing API
-├── api-disbursements/     # Disbursement operations API
-├── api-users/             # User management API
-├── api-analytics/         # Analytics API
-├── api-notifications/     # Notification API
-├── api-collections/       # Collections API
-├── api-audit/             # Audit logging API
-├── api-reconciliation/    # Reconciliation API
-├── ips-adapter/           # IPS protocol adapter
-├── payment-webhook/       # Webhook handler
-├── send-sms/              # Africa's Talking SMS
-├── send-whatsapp/         # Meta Cloud API WhatsApp
-├── send-notification/     # Multi-channel dispatcher
-├── process-loan-application/  # Loan processing
-├── tigerbeetle-outbox-worker/ # Ledger sync worker
-├── scheduled-tasks/       # Cron-like scheduled tasks
-└── _shared/               # Shared utilities (auth, audit, responses, router, validation)
+convex/
+├── loans.ts                    # Loan management (replaces api-loans)
+├── payments.ts                 # Payment operations (replaces api-payments)
+├── disbursements.ts            # Disbursement operations (replaces api-disbursements)
+├── users.ts                    # User management (replaces api-users)
+├── analytics.ts                # Analytics queries (replaces api-analytics)
+├── notifications.ts            # Notification operations (replaces api-notifications)
+├── collections.ts              # Collections operations (replaces api-collections)
+├── audit.ts                    # Audit logging (replaces api-audit)
+├── reconciliation.ts           # Reconciliation (replaces api-reconciliation)
+├── actions/ipsAdapter.ts       # IPS protocol adapter (replaces ips-adapter)
+├── actions/sendSms.ts          # SMS delivery (replaces send-sms)
+├── actions/sendWhatsapp.ts     # WhatsApp delivery (replaces send-whatsapp)
+├── actions/sendNotification.ts # Multi-channel dispatch (replaces send-notification)
+├── actions/processLoanApplication.ts  # Loan processing (replaces process-loan-application)
+├── scheduled/tigerBeetleOutboxWorker.ts  # Ledger sync (replaces tigerbeetle-outbox-worker)
+└── scheduled/dailyTasks.ts     # Daily maintenance (replaces scheduled-tasks)
 ```
 
 ## Common Tasks
 
 ### Adding a New Feature
 
-1. Check existing services in `src/services/` - don't duplicate functionality
-2. Create/update components in `src/components/`
-3. Add service methods in `src/services/` if needed
-4. Update types in `src/types/`
+1. Check existing Convex functions in `convex/` — don't duplicate
+2. Add query/mutation in appropriate `convex/*.ts` file with auth guards
+3. Create/update components in `src/components/`
+4. Use `useQuery(api.module.fn)` / `useMutation(api.module.fn)` in components
 5. Add E2E test in `e2e/`
 6. Update documentation in `docs/`
 
 ### Modifying Loan Logic
 
-1. **Read** `src/services/approvalWorkflow.ts` first
-2. Check APR doesn't exceed 32% (`APR_LIMIT` in `@/constants/regulatory`)
-3. Ensure audit logging is included (`auditService.ts`)
-4. Update `loan_approvals` table for state transitions
-5. Post to TigerBeetle if financial operation (`ledgerService.ts`)
+1. **Read** `convex/loans.ts` and `convex/approvalWorkflow.ts` first
+2. Check APR doesn't exceed 32% (`APR_LIMIT` in `convex/lib/regulatory.ts`)
+3. Ensure audit logging via `convex/lib/audit.ts` helper
+4. Add state transition to `stateTransitions` table
+5. Insert TigerBeetle outbox entry if financial operation (same mutation)
 
 ### Adding Payment Methods
 
-1. Update `payment_methods` enum in database
-2. Implement handler in `src/services/paymentService.ts`
+1. Update payment method validators in `convex/schema.ts`
+2. Implement handler in `convex/payments.ts`
 3. Add UI in `src/components/ips/`
-4. Configure webhook handling if applicable
+4. Configure webhook handling in `convex/http.ts` + `convex/actions/ipsAdapter.ts`
 5. Add E2E test for payment flow
 
 ### Database Schema Changes
 
-1. Create migration in `supabase/migrations/`
-2. Add RLS policies for new tables
-3. Regenerate types: `npx supabase gen types typescript --local > src/integrations/supabase/types.ts`
+1. Update `convex/schema.ts` (add table with `defineTable()` + validators + indexes)
+2. Add auth guards in the corresponding query/mutation file
+3. Types auto-regenerate on `npx convex dev` — no manual step needed
 4. Add audit logging if financial data
 5. Document in `docs/DATABASE_SCHEMA.md`
 
@@ -553,48 +640,74 @@ Additional test infrastructure:
 // WRONG - might exceed 32%
 const monthlyRate = annualRate / 12;
 
-// CORRECT - use regulatory constant
+// CORRECT - use regulatory constant (server-side)
+import { APR_LIMIT, isValidAPR } from "./lib/regulatory";
+if (!isValidAPR(requestedAPR)) throw new ConvexError("Exceeds legal limit");
+
+// CORRECT - use regulatory constant (client-side)
 import { APR_LIMIT, isValidAPR } from '@/constants/regulatory';
-if (!isValidAPR(requestedAPR)) throw new Error('Exceeds legal limit');
 ```
 
-### 2. Direct Database Access
+### 2. Missing Auth Guards
 
 ```typescript
-// WRONG - bypasses RLS
-const { data } = await supabase.from('loans').select('*');
+// WRONG - no auth guard, accessible by anyone
+export const getAllLoans = query({
+  handler: async (ctx) => {
+    return ctx.db.query("loans").collect(); // UNPROTECTED!
+  },
+});
 
-// CORRECT - respects RLS
-const { data } = await supabase
-  .from('loans')
-  .select('*')
-  .eq('user_id', userId);
+// CORRECT - auth guard enforces access
+export const getAllLoans = query({
+  handler: async (ctx) => {
+    await assertStaff(ctx); // ← Guard REQUIRED
+    return ctx.db.query("loans").collect();
+  },
+});
 ```
 
 ### 3. Missing Audit Logs
 
 ```typescript
 // WRONG - no audit trail
-await supabase.from('loans').update({ status: 'approved' });
+export const approveLoan = mutation({
+  handler: async (ctx, { loanId }) => {
+    await ctx.db.patch(loanId, { status: "approved" });
+  },
+});
 
-// CORRECT - includes audit via auditService
-import { createAuditLog } from '@/services/auditService';
-await createAuditLog({
-  table_name: 'loans',
-  action: 'UPDATE',
-  old_data: oldLoan,
-  new_data: newLoan
+// CORRECT - includes audit via scheduler
+import { scheduleAuditLog } from "./lib/audit";
+export const approveLoan = mutation({
+  handler: async (ctx, { loanId }) => {
+    const old = await ctx.db.get(loanId);
+    await ctx.db.patch(loanId, { status: "approved" });
+    await scheduleAuditLog(ctx, {
+      action: "UPDATE", entityType: "loans", entityId: loanId,
+      oldState: old, newState: { ...old, status: "approved" },
+    });
+  },
 });
 ```
 
-### 4. Service Key Exposure
+### 4. External IO in Mutations
 
 ```typescript
-// WRONG - exposes service key to frontend
-const client = createClient(url, import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY);
+// WRONG - mutations cannot make HTTP calls
+export const sendSms = mutation({
+  handler: async (ctx, args) => {
+    await fetch("https://api.africastalking.com/..."); // WILL FAIL
+  },
+});
 
-// CORRECT - use anon key or server-side only
-const client = createClient(url, import.meta.env.VITE_SUPABASE_ANON_KEY);
+// CORRECT - use an action for external IO
+export const sendSms = action({
+  handler: async (ctx, args) => {
+    await fetch("https://api.africastalking.com/...");
+    await ctx.runMutation(internal.notifications.updateStatus, { ... });
+  },
+});
 ```
 
 ### 5. Currency Formatting
@@ -603,37 +716,24 @@ const client = createClient(url, import.meta.env.VITE_SUPABASE_ANON_KEY);
 // WRONG - lacks NAD formatting
 <span>{amount}</span>
 
-// CORRECT - uses NAD formatter (available in both locations)
+// CORRECT - uses NAD formatter
 import { formatNAD } from '@/utils/currency';
 // or
 import { formatNAD } from '@/constants/regulatory';
 <span>{formatNAD(amount)}</span>
 ```
 
-### 6. XSS Prevention
+### 6. Using Legacy Supabase Services
 
 ```typescript
-// WRONG - rendering raw HTML from user input is unsafe
-// Always sanitize if you must render HTML
+// WRONG - still using Supabase client (LEGACY)
+import { supabase } from '@/integrations/supabase/client';
+const { data } = await supabase.from('loans').select('*');
 
-// CORRECT - React auto-escapes by default
-<div>{userInput}</div>
-
-// If HTML rendering is needed, sanitize first with DOMPurify
-import DOMPurify from 'dompurify';
-const clean = DOMPurify.sanitize(userInput);
-```
-
-### 7. RPC Calls Without Resilience
-
-```typescript
-// WRONG - no timeout, no retry, no circuit breaker
-const { data, error } = await supabase.rpc('my_function', args);
-
-// CORRECT - use the RPC utility with built-in resilience
-import { callRpc } from '@/utils/rpc';
-const result = await callRpc('my_function', args, { timeoutMs: 3000, retries: 1 });
-if (result.ok) { /* use result.data */ }
+// CORRECT - use Convex queries
+import { useQuery } from "convex/react";
+import { api } from "@/integrations/convex/api";
+const loans = useQuery(api.loans.getMyLoans);
 ```
 
 ## Debugging Tips
@@ -641,15 +741,11 @@ if (result.ok) { /* use result.data */ }
 ### Enable Debug Mode
 
 ```env
-VITE_DEBUG_TOOLS=true       # Enables window.debug* utilities
-VITE_RUN_DEV_SCRIPTS=true   # Loads development utilities (sample data, test scripts)
-VITE_E2E=true               # E2E test mode (disables debug tools)
+VITE_E2E=true               # E2E test mode
 ```
 
-Available in browser console (when debug tools enabled):
-- `window.directPasswordReset()` - Test password reset
-- `window.debugServiceKey()` - Check service key config
-- `window.testSupabaseAccess()` - Verify Supabase connection
+Legacy Supabase debug utilities (`VITE_DEBUG_TOOLS`, `VITE_RUN_DEV_SCRIPTS`) were removed in Mar 2026.
+Use `npx convex dashboard` for data inspection and debugging.
 
 ### Check TigerBeetle Ledger
 
@@ -661,25 +757,12 @@ curl http://localhost:3001/accounts
 curl http://localhost:3001/transfers
 ```
 
-### Database Queries
+### Database Queries (Convex)
 
-```sql
--- Check loan approval state
-SELECT id, status, current_stage
-FROM loan_approvals
-WHERE loan_id = 'LOAN_ID';
-
--- Audit trail for loan
-SELECT * FROM audit_logs
-WHERE table_name = 'loans'
-AND record_id = 'LOAN_ID'
-ORDER BY created_at DESC;
-
--- TigerBeetle reconciliation
-SELECT * FROM tigerbeetle_entries
-WHERE status = 'pending_sync'
-ORDER BY created_at DESC;
-```
+Use the Convex dashboard (`npx convex dashboard`) to inspect data. SQL queries above are stale (Supabase era). For programmatic debugging, use Convex queries:
+- Loan approvals: `api.loans.getLoanWithHistory`
+- Audit trail: `api.audit.getAuditLogs`
+- TigerBeetle outbox: `api.tigerbeetle.outbox.getPendingEntries`
 
 ## Key Documentation to Read
 
@@ -712,27 +795,27 @@ For specific tasks, consult these docs:
 ### Before Making Changes
 
 1. Read relevant documentation in `docs/`
-2. Check if functionality exists in `src/services/` (25 services available)
+2. Check if functionality exists in `convex/` (backend) — don't duplicate
 3. Verify regulatory constraints (APR, currency, data retention)
-4. Ensure RLS policies cover data access
+4. Ensure auth guards protect new queries/mutations
 5. Plan audit logging for financial operations
 
 ### When Writing Code
 
-1. Use existing service methods - don't reinvent the wheel
-2. Avoid introducing `any` types - use proper interfaces from `src/types/`
-3. Use Zod for runtime validation
-4. Format currency with `formatNAD()` from `@/utils/currency`
+1. **Backend**: Add queries/mutations in `convex/*.ts` with auth guards — NOT in `src/services/`
+2. **Frontend**: Use `useQuery(api.module.fn)` and `useMutation(api.module.fn)` — NOT `supabase.from()`
+3. Validate inputs with Convex validators (`v.string()`, etc.) in function `args`
+4. Format currency with `formatNAD()` from `@/utils/currency` or `convex/lib/regulatory.ts`
 5. Test on mobile viewport (375px minimum)
-6. Add audit logs for financial operations via `auditService.ts`
+6. Add audit logs via `convex/lib/audit.ts` scheduler helpers
 7. Follow Neo-Fintech design system
-8. Use `callRpc()` from `@/utils/rpc` for Supabase RPC calls (includes circuit breaker)
+8. External HTTP calls go in `actions` only — never in queries or mutations
 
 ### When Stuck
 
 1. Check `docs/AGENTS.md` for project-specific guidelines
 2. Search `docs/` for related documentation (start with `docs/INDEX.md`)
-3. Look for similar patterns in existing code
+3. Look for similar patterns in existing `convex/*.ts` files
 4. Test theory with E2E test before implementing
 5. Ask clarifying questions about regulatory requirements
 
@@ -740,49 +823,83 @@ For specific tasks, consult these docs:
 
 Before submitting code, verify:
 
-- [ ] RLS policies protect new/modified tables
-- [ ] No service keys exposed to frontend
-- [ ] Audit logs created for financial operations
+- [ ] Auth guards (`assertAuthenticated`, `assertStaff`, `assertAdmin`) protect all new queries/mutations
+- [ ] No Convex environment variables exposed to frontend (only `VITE_*` vars are client-side)
+- [ ] Audit logs scheduled via `convex/lib/audit.ts` for financial operations
 - [ ] PII not logged or exposed in errors
-- [ ] APR calculations don't exceed 32%
-- [ ] User input validated with Zod
-- [ ] SQL injection prevention (use parameterized queries)
+- [ ] APR calculations don't exceed 32% (`convex/lib/regulatory.ts`)
+- [ ] User input validated with Convex validators (`v.string()`, `v.number()`, etc.) in `args`
+- [ ] External IO only in actions (never in queries or mutations)
 - [ ] XSS prevention (React auto-escapes, avoid unsafe HTML rendering)
 
 ## Current Status (February 2026)
 
 ### Completed Features
 
+- **Convex backend migration** — 55+ tables, auth guards, queries, mutations, actions
+- **Convex backend type safety** — 132→0 `as any` casts in `convex/` directory; all 48 Convex files fully typed (Feb 2026)
+- **Frontend `as any` reduction** — 38→20 casts in `src/` (Mar 2026); remaining are in tests, legacy utils, and admin stubs
 - Phase 1-4 implementation (all features)
-- TigerBeetle financial ledger (shadow mode)
+- TigerBeetle financial ledger (shadow mode, outbox in Convex)
 - IPP/IPN integration (ready for production)
 - Payment processing (5 methods)
-- Credit scoring (AI-powered, declarative rule engine)
+- Credit scoring — server-side scoring via `processLoanApplication` action writes `creditScore`, `debtToIncomeRatio`, `recommendation` to `loans` table; AI-powered client-side engine in `creditScoring.ts`
 - SMS/WhatsApp notifications (Africa's Talking + Meta Cloud API)
 - Neo-Fintech UI redesign
 - Comprehensive E2E tests (45+ test files)
-- Production security audit
 - Netlify deployment with security headers
 
-### Known Limitations
+### Schema Additions (Feb 2026 Phase 2)
+
+> See [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md#resolved-schema-issues-feb-2026-remediation) for full details.
+
+- `loans.creditScore`, `loans.debtToIncomeRatio`, `loans.recommendation` — populated by `processLoanApplication` action after credit scoring
+- `auditLogs.userId` and `stateTransitions.triggeredBy` are now **optional** — system-triggered events have no user context
+- `settlementAcknowledgements` now has `by_batchId` and `by_runId` indexes
+- `bankTransactions` now has `by_externalId` and `by_runId` indexes
+- Corrected `settlementNetInstructions` field names: `sourceParticipantId` / `targetParticipantId` / `amount`
+
+### Known Limitations & Migration Gaps
+
+**Critical (Pre-Production Blockers) — ALL RESOLVED (Feb 2026):**
+
+- ~~`convex/auth.ts` callback inserts fields not in schema~~ — **FIXED**: Auth callback now inserts only schema-valid fields
+- ~~`promiseToPay.status` mismatch~~ — **FIXED**: Code changed from `"fulfilled"` to `"kept"`
+- ~~Missing `paymentSchedules.by_status` index~~ — **FIXED**: Index added to `schema.ts`
+- ~~`notificationPreferences` table missing~~ — **FIXED**: Table added to `schema.ts`
+- ~~`notifications`/`notificationQueue`/`collectionsInteractions` field mismatches~~ — **FIXED**: Schemas expanded
+- ~~`markFunded`/`updateLoanBalance` exposed publicly~~ — **FIXED**: Converted to `internalMutation`
+- ~~Analytics full-table scans~~ — **FIXED**: Capped with `.take(10000)` safety limits
+- ~~`AuthEventBridge` still used Supabase~~ — **FIXED**: Replaced with Convex-native `useConvexAuth()`
+- ~~37 `as any` casts in Convex backend~~ — **FIXED**: All eliminated; 0 remaining (Feb 2026)
+- ~~`settlementNetting.ts` reading wrong field names~~ — **FIXED**: `sourceParticipantId`/`targetParticipantId`/`amount`
+- ~~`CollectionsDashboard.tsx` duplicate `const` declarations~~ — **FIXED**: Stale `useState` bindings removed
+
+**Migration In Progress:**
+
+- `src/services/` (~25 files) still reference Supabase client — needs migration to Convex `useQuery`/`useMutation`
+- `src/integrations/supabase/client.ts` retained for legacy hooks (`useSettlement`, `useBrandingConfig`, `useWorkflow`, `useUserVPAs`) + `serviceRoleAssignment.ts`; `adminClient.ts` and `mockClient.ts` deleted (Mar 2026)
+- 19 dead Supabase dev utilities deleted (Mar 2026); `serviceRoleAssignment.ts` and `testUtils.ts` retained (active importers)
+
+**Other Limitations:**
 
 - TypeScript strict mode is disabled (`strict: false` in tsconfig.app.json)
-- Database types use permissive `any` (requires generated types for full safety)
 - External API keys need production configuration
 - WhatsApp templates need Meta registration
 - Backoffice UI test coverage at ~30%
 - TigerBeetle in shadow mode (not primary ledger yet)
-- No CI/CD pipeline (no GitHub Actions configured)
+- No CI/CD pipeline (no GitHub Actions configured for Convex deploy)
+- Credit scoring UI: `creditScore`/`recommendation` data exists in DB but not displayed in approval review panel yet
 
 ### Next Priorities
 
-1. Enable TypeScript strict mode and generate proper Supabase types
-2. Increase E2E test coverage to 80%
-3. Set up CI/CD pipeline (GitHub Actions)
-4. Complete WhatsApp template registration
-5. Production IPP/IPN onboarding
-6. Transition TigerBeetle to primary ledger
-7. Advanced analytics dashboard
+1. **Migrate frontend services** from Supabase to Convex hooks (`src/services/` → `useQuery`/`useMutation`)
+2. **Wire credit scoring UI** — display `creditScore`, `debtToIncomeRatio`, `recommendation` in `Loan360View` and `LoanReviewPanel`
+3. Increase E2E test coverage to 80%
+4. Set up CI/CD pipeline (GitHub Actions + `npx convex deploy`)
+5. Complete WhatsApp template registration
+6. Production IPP/IPN onboarding
+7. Transition TigerBeetle to primary ledger
 
 ## Emergency Contacts
 
@@ -793,6 +910,11 @@ Before submitting code, verify:
 
 ## Version History
 
+- **v4.1.0** (Mar 2026): **Tier 1 ship-blocking fixes** — financial idempotency guards (payments, disbursements, loans), N+1 query fix (`getMyPayments`), 15 dead admin buttons wired to Convex mutations, 3 new mutations (`batchUpdateLoanStatus`, `removeRole`, `deactivateUser`), 19 dead Supabase utils deleted, frontend `as any` 38→20, CLAUDE.MD accuracy corrections
+- **v4.0.0** (Feb 2026): **Convex migration** — backend migrated from Supabase to Convex (55+ tables, auth guards, queries/mutations/actions, cron jobs, HTTP router)
+- **v2.8.8** (Feb 2026): **Convex type safety complete** — 132→0 `as any` casts, exported schema validators, typed contexts, new internal exports (`recordCreditScore`, `createSystemApprovalRequest`, `getProfileByUserId`), schema bug fixes, `CollectionsDashboard` duplicate-const fix
+- **v2.8.7** (Feb 2026): Convex `as any` Phase 1 — 132→37 casts removed (72% reduction)
+- **v2.8.6** (Feb 2026): Settlement compliance hardening — XML injection prevention, audit, resilience
 - **v2.8.0** (Jan 2026): Type safety remediation, 40 files fixed, 54 interfaces added
 - **v2.7.0** (Dec 2025): TigerBeetle integration, Neo-Fintech redesign
 - **v2.6.0** (Dec 2025): Payment fixes, schema alignment
@@ -801,4 +923,4 @@ Before submitting code, verify:
 
 ---
 
-**Remember**: This is a production financial system handling real money. Every change must be tested, audited, and compliant with Namibian regulations. When in doubt, ask questions before making changes.
+**Remember**: This is a production financial system handling real money. Every change must be tested, audited, and compliant with Namibian regulations. The backend now runs on Convex — all new server logic goes in `convex/`, not `supabase/` or `src/services/`. When in doubt, ask questions before making changes.

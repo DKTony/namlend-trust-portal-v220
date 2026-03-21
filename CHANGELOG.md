@@ -5,6 +5,135 @@ All notable changes to the NamLend Trust Platform will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2] - 2026-02-22 (Frontend Supabase→Convex Rewiring)
+
+### Changed
+
+- **Core Pages Rewired** — Replaced all `supabase.from()` / `supabase.rpc()` / `supabase.storage` calls with Convex `useQuery()` / `useMutation()`:
+  - `Auth.tsx`, `Dashboard.tsx`, `Payment.tsx`, `LoanDetails.tsx`, `KYC.tsx`
+
+- **Core Hooks Rewired** (6 files):
+  - `useFetchActiveLoans.ts` → `useQuery(api.loans.getMyLoans)`
+  - `useProfileEdit.ts` → `useMutation(api.users.updateMyProfile)`
+  - `useLoanForm.ts` → `useQuery(api.users.getMyProfile)`
+  - `useIPPOnboarding.ts` → `useQuery/useMutation(api.ips.ipsOnboarding.*)`
+  - `useTigerBeetleBalance.ts` → `useQuery(api.loans.getLoan)` (reads balance from loan doc)
+  - `useTigerBeetleConfig.ts` → `useQuery(api.systemConfig.getAllConfig)` + `useMutation(api.systemConfig.setConfig)`
+
+- **Admin Dashboard Hooks Rewired** (10 files — all direct Supabase imports removed):
+  - `useFinancialMetrics.ts` → `analytics.getPortfolioSummary`, `getRiskMetrics`, `getMonthlyTrends`, `getClientMetrics`
+  - `useKPIData.ts` → `analytics.getPortfolioSummary`, `getClientMetrics`, `getRiskMetrics`
+  - `usePaymentMetrics.ts` → `analytics.*`, `loans.adminListLoans`
+  - `useLoanPortfolioMetrics.ts` → `analytics.getPortfolioSummary`, `approvalWorkflow.adminListApprovals`
+  - `useClientPortfolioMetrics.ts` → `analytics.getClientMetrics`, `getPortfolioSummary`
+  - `useClientsList.ts` → `users.listUsers`, `loans.adminListLoans`
+  - `useUsersList.ts` → `users.listUsers` (removed `getProfilesWithRoles` service dependency)
+  - `useUserManagement.ts` → `users.listUsers`, `users.assignRole` (removed `admin-assign-role` edge function call)
+  - `useUserProfile.ts` → `users.getUserProfile`
+  - `useClientProfile.ts` → `users.getUserProfile`, `loans.adminListLoans`
+
+### Added
+
+- `convex/payments.ts:getMyPayments` — Client's own payments query
+- `convex/approvalWorkflow.ts:getMyApprovalRequests` — Client's own approval requests query
+
+- **Admin Dashboard Components Rewired** (14 files — zero supabase imports remain in `src/pages/AdminDashboard/`):
+  - `UserAuditLog.tsx` → `audit.getAuditLogs` (reactive, removed manual fetch)
+  - `UserManagementDashboard.tsx` → `users.listUsers`, `approvalWorkflow.adminListApprovals` (reactive stats + export)
+  - `SettledLoansList.tsx` → `loans.adminListLoans({ status: 'settled' })`, `users.listUsers`
+  - `PaymentManagementDashboard.tsx` → Removed Supabase realtime subscription (Convex auto-reactive)
+  - `LoanManagementDashboard.tsx` → Removed Supabase realtime subscription (Convex auto-reactive)
+  - `LoanApplicationsList.tsx` → `disbursements.initiateDisbursement` (replaced `supabase.rpc('create_disbursement_on_approval')`)
+  - `BatchOperations.tsx` → `loans.adminListLoans`, `users.listUsers` (bulk status update TODO)
+  - `Loan360View.tsx` → `loans.getLoan`, `users.getUserProfile`, `payments.getPaymentsByLoan`, `disbursements.getDisbursementsByLoan`
+  - `IPSHealthWidget.tsx` → `ips.ipsAlerts.getActiveAlerts`, `ips.ipsTransactions.adminListIpsTransactions`, `ips.ipsAlerts.resolveAlert`
+  - `IPSTransactionsViewer.tsx` → `ips.ipsTransactions.adminListIpsTransactions`
+  - `WorkflowEditor.tsx` → `approvalWorkflow.createWorkflowDefinition` (update TODO)
+  - `WorkflowManagementDashboard.tsx` → `approvalWorkflow.listWorkflowDefinitions`, `adminListApprovals`
+  - `SettlementConfig.tsx` → `systemConfig.getAllConfig`, `systemConfig.setConfig`
+  - `LedgerDashboard.tsx` → TigerBeetle tables not yet in Convex (placeholders, supabase removed)
+
+### Technical
+
+- **Build**: `npx tsc --noEmit` passes clean ✅
+- **Pattern**: All rewired hooks and components use Convex reactive queries — no manual `refetch()` needed, UI updates automatically on data change
+- **Supabase realtime**: Removed `supabase.channel()` subscriptions from PaymentManagement and LoanManagement dashboards (Convex reactivity replaces polling)
+- **TODOs**: Batch loan status update mutation, workflow update mutation, TigerBeetle Convex tables, Convex file storage for KYC docs
+
+- **Page/Component Files Rewired** (5 files — zero supabase imports in `src/pages/` and `src/components/`):
+  - `AdminDashboard.tsx` → `analytics.getPortfolioSummary`, `analytics.getClientMetrics`, `loans.adminListLoans`
+  - `ClientProfileDashboard.tsx` → `users.getMyProfile` (reactive, removed `callRpc` + `supabase.from('profiles')`)
+  - `SelfServicePortal.tsx` → `loans.getMyLoans`, `payments.getMyPayments`
+  - `DocumentVerificationSystem.tsx` → `users.getMyProfile` (eligibility derived; file upload TODO for Convex storage)
+  - `ClientProfileModal.tsx` → `users.getUserProfile`, `loans.adminListLoans`, `approvalWorkflow.adminListApprovals`
+
+- **Service-Layer Hooks Rewired** (3 files):
+  - `useLoanActions.ts` → `loans.approveLoan`, `loans.rejectLoan` (Convex mutations, bulk support)
+  - `usePaymentsList.ts` → `payments.adminListPayments` (reactive, removed `paymentsAPI`)
+  - `useDisbursements.ts` → `disbursements.adminListDisbursements` (reactive, mutation TODOs)
+
+- **Remaining**: ~25 legacy `src/services/*.ts` files (P4), ~17 `src/utils/` test scripts (P4.5)
+
+---
+
+## [4.0.1] - 2026-02-22 (Convex Migration Remediation)
+
+### Fixed
+
+- **Auth Callback → Schema Mismatch** (CRITICAL — Sign-Up Blocker)
+  - `convex/auth.ts` `afterUserCreatedOrUpdated` was inserting non-existent fields (`firstName`, `lastName`, `nationalId`, `bankAccountNumber`, `bankName`, `employerName`, `profilePhotoId`) into `profiles`
+  - Changed `kycStatus` from `"not_started"` (invalid enum) to `"pending"`
+  - Removed `null` values (Convex optional fields should be omitted, not null)
+  - Removed `assignedAt`/`updatedAt` from `userRoles` insert (not in schema)
+  - **Impact**: New user sign-up now works correctly
+
+- **`promiseToPay.status` Enum Mismatch** (HIGH — Collections Failure)
+  - `collections.ts` was setting status `"fulfilled"` but schema only allows `"pending" | "kept" | "broken" | "rescheduled"`
+  - Changed to `"kept"` in `markPromiseFulfilled` and `getCollectionsStats`
+  - Fixed `createPromiseToPay` missing `amount` and `createdBy` fields
+  - Fixed `scheduleAuditLog` calls passing `null` where `string` required → changed to `"none"`
+
+- **`markFunded`/`updateLoanBalance` Exposed Publicly** (MEDIUM — Security)
+  - Converted from client-callable `mutation` to `internalMutation` in `loans.ts`
+  - These are now only callable from other server functions (disbursements, payments)
+  - Prevents clients from bypassing disbursement workflow
+
+- **Analytics Full-Table Scans** (MEDIUM — Performance)
+  - All 6 analytics queries replaced `.collect()` with `.take(10000)` safety limit
+  - Prevents hitting Convex read limits at scale
+
+- **Dead Supabase AuthEventBridge** (LOW — Dead Code)
+  - Replaced `supabase.auth.onAuthStateChange` listener in `src/App.tsx` with Convex-native `useConvexAuth()`
+  - Removed `supabase` import from `App.tsx`
+  - New bridge uses `wasAuthenticated` ref to detect session loss → redirect to `/auth`
+
+### Added
+
+- **`notificationPreferences` Table** — New table in `schema.ts` for user notification preferences per channel/category
+- **`paymentSchedules.by_status` Index** — Enables efficient overdue payment queries in `collections.ts`
+- **`overdueReminders.sent` Boolean** — Convenience field used by `collections.ts`
+
+### Changed
+
+- **`notifications` Schema** — Expanded: `type`/`channel` now optional, added `message`, `category`, `priority`, `actionUrl`, `actionLabel`, `expiresAt` fields
+- **`notificationQueue` Schema** — Expanded: added `content`, `retryCount`, `scheduledAt`, `updatedAt` aliases; added `"processing"` status; made `recipient`/`body`/`attempts` optional
+- **`collectionsInteractions` Schema** — Expanded: added `activityType`, `activityStatus`, `contactMethod`, `promiseDate`, `promiseAmount`, `promiseFulfilled`, `nextActionType`, `assignedTo`, `updatedAt`
+- **`overdueReminders` Schema** — Added `sent` boolean and `updatedAt` field
+
+### Documentation
+
+- Updated `docs/DATABASE_SCHEMA.md` — Reflects all schema changes, replaced "Known Schema Issues" with "Resolved" section
+- Updated `docs/ARCHITECTURE.md` — Marked critical gaps as resolved, updated medium/low risk items
+- Updated `CLAUDE.MD` — Updated provider stack, marked all critical blockers resolved, updated priorities
+
+### Technical
+
+- **Files modified**: `convex/auth.ts`, `convex/schema.ts`, `convex/collections.ts`, `convex/loans.ts`, `convex/analytics.ts`, `src/App.tsx`, `docs/DATABASE_SCHEMA.md`, `docs/ARCHITECTURE.md`, `CLAUDE.MD`
+- **Build**: `npx tsc --noEmit` passes clean ✅
+- **Build**: `npx vite build` passes clean ✅
+
+---
+
 ## [2.8.6] - 2026-02-17 (Reconciliation Tab Crash Fix)
 
 ### Fixed

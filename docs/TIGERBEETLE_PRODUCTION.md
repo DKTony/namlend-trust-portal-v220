@@ -42,31 +42,31 @@ This document outlines the production deployment strategy for TigerBeetle as Nam
 
 ### Minimum Cluster Specification
 
-| Component | Per Node | Total (3 nodes) |
-|-----------|----------|-----------------|
-| CPU | 4 cores | 12 cores |
-| RAM | 16 GB | 48 GB |
-| Storage | 500 GB NVMe SSD | 1.5 TB |
-| Network | 10 Gbps | 10 Gbps |
+| Component | Per Node        | Total (3 nodes) |
+| --------- | --------------- | --------------- |
+| CPU       | 4 cores         | 12 cores        |
+| RAM       | 16 GB           | 48 GB           |
+| Storage   | 500 GB NVMe SSD | 1.5 TB          |
+| Network   | 10 Gbps         | 10 Gbps         |
 
 ### Recommended Production Specification
 
-| Component | Per Node | Total (3 nodes) |
-|-----------|----------|-----------------|
-| CPU | 8 cores | 24 cores |
-| RAM | 32 GB | 96 GB |
-| Storage | 1 TB NVMe SSD | 3 TB |
-| Network | 25 Gbps | 25 Gbps |
+| Component | Per Node      | Total (3 nodes) |
+| --------- | ------------- | --------------- |
+| CPU       | 8 cores       | 24 cores        |
+| RAM       | 32 GB         | 96 GB           |
+| Storage   | 1 TB NVMe SSD | 3 TB            |
+| Network   | 25 Gbps       | 25 Gbps         |
 
 ### Cloud Provider Options
 
-| Provider | Instance Type | Monthly Cost (est.) |
-|----------|---------------|---------------------|
-| AWS | c6i.2xlarge | ~$750/node |
-| GCP | n2-standard-8 | ~$700/node |
-| Azure | Standard_D8s_v5 | ~$720/node |
-| Hetzner | CCX33 | ~$150/node |
-| DigitalOcean | m6-4vcpu-32gb | ~$280/node |
+| Provider     | Instance Type   | Monthly Cost (est.) |
+| ------------ | --------------- | ------------------- |
+| AWS          | c6i.2xlarge     | ~$750/node          |
+| GCP          | n2-standard-8   | ~$700/node          |
+| Azure        | Standard_D8s_v5 | ~$720/node          |
+| Hetzner      | CCX33           | ~$150/node          |
+| DigitalOcean | m6-4vcpu-32gb   | ~$280/node          |
 
 ## Deployment Steps
 
@@ -191,27 +191,30 @@ Deno.serve(async () => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      status: 'unhealthy', 
-      error: error.message 
-    }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        status: 'unhealthy',
+        error: error.message,
+      }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
 ```
 
 ### Metrics to Monitor
 
-| Metric | Alert Threshold | Description |
-|--------|-----------------|-------------|
-| Request Latency | > 100ms | Average operation time |
-| Queue Depth | > 1000 | Pending operations |
-| Replication Lag | > 1s | Replica sync delay |
-| Disk Usage | > 80% | Storage capacity |
-| CPU Usage | > 70% | Processing load |
-| Memory Usage | > 80% | RAM utilization |
+| Metric          | Alert Threshold | Description            |
+| --------------- | --------------- | ---------------------- |
+| Request Latency | > 100ms         | Average operation time |
+| Queue Depth     | > 1000          | Pending operations     |
+| Replication Lag | > 1s            | Replica sync delay     |
+| Disk Usage      | > 80%           | Storage capacity       |
+| CPU Usage       | > 70%           | Processing load        |
+| Memory Usage    | > 80%           | RAM utilization        |
 
 ### Grafana Dashboard
 
@@ -323,14 +326,14 @@ find $BACKUP_DIR -name "*.tigerbeetle" -mtime +7 -delete
 
 ### Monthly Production Costs
 
-| Item | Cost |
-|------|------|
-| 3x Cloud VMs (Hetzner CCX33) | $450 |
-| Storage (1TB NVMe each) | Included |
-| Network Egress | ~$50 |
-| Monitoring (Datadog/Grafana) | ~$100 |
-| Backups (S3) | ~$50 |
-| **Total** | **~$650/month** |
+| Item                         | Cost            |
+| ---------------------------- | --------------- |
+| 3x Cloud VMs (Hetzner CCX33) | $450            |
+| Storage (1TB NVMe each)      | Included        |
+| Network Egress               | ~$50            |
+| Monitoring (Datadog/Grafana) | ~$100           |
+| Backups (S3)                 | ~$50            |
+| **Total**                    | **~$650/month** |
 
 ### Scaling Considerations
 
@@ -342,9 +345,9 @@ find $BACKUP_DIR -name "*.tigerbeetle" -mtime +7 -delete
 
 ### TigerBeetle Resources
 
-- Documentation: https://docs.tigerbeetle.com/
-- GitHub Issues: https://github.com/tigerbeetle/tigerbeetle/issues
-- Discord Community: https://discord.gg/tigerbeetle
+- Documentation: <https://docs.tigerbeetle.com/>
+- GitHub Issues: <https://github.com/tigerbeetle/tigerbeetle/issues>
+- Discord Community: <https://discord.gg/tigerbeetle>
 
 ### NamLend Internal
 

@@ -1,12 +1,12 @@
 // Backup of AdminDashboard.tsx before fixing syntax errors
 // This file contains the working admin dashboard with system health monitoring
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { adminAPI } from '@/services/api-client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
@@ -57,101 +57,32 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('financial');
-  const [metrics, setMetrics] = useState<any>(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Fetch admin dashboard metrics
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      if (activeTab !== 'financial' || !user) return;
+  // Convex reactive queries for dashboard metrics
+  const portfolio = useConvexQuery(api.analytics.getPortfolioSummary);
+  const clientMetrics = useConvexQuery(api.analytics.getClientMetrics);
+  const rawLoans = useConvexQuery(api.loans.adminListLoans, {});
 
-      setMetricsLoading(true);
-      try {
-        console.log('🔄 Fetching admin dashboard metrics...');
+  const metricsLoading = portfolio === undefined;
 
-        const fetchClients = supabase.from('profiles').select('id', { count: 'exact', head: true });
-
-        const fetchLoans = supabase.from('loans').select('amount, status');
-
-        const fetchPayments = supabase.from('payments').select('amount').eq('status', 'completed');
-
-        // P1-001 FIX: Query payment_schedules for overdue (not payments table)
-        // Using filter() instead of lt() to avoid TS inference issues with head: true
-        const fetchOverdue = supabase
-          .from('payment_schedules')
-          .select('id', { count: 'exact', head: true })
-          .filter('due_date', 'lt', new Date().toISOString())
-          .neq('status', 'paid');
-
-        // Direct database queries for reliability
-        const [clientsResult, loansResult, paymentsResult, overdueResult] = await Promise.all([
-          fetchClients,
-          fetchLoans,
-          fetchPayments,
-          fetchOverdue,
-        ]);
-
-        console.log('📊 Query results:', {
-          clients: clientsResult.count,
-          loans: loansResult.data?.length,
-          payments: paymentsResult.data?.length,
-          overdue: overdueResult.count,
-        });
-
-        // Calculate totals
-        const totalClients = clientsResult.count || 0;
-        const loans = loansResult.data || [];
-        const totalLoans = loans.length;
-        const totalDisbursed = loans
-          .filter(
-            (l) => l.status === 'approved' || l.status === 'active' || l.status === 'completed'
-          )
-          .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0);
-
-        const payments = paymentsResult.data || [];
-        const totalRepayments = payments.reduce(
-          (sum, payment) => sum + (Number(payment.amount) || 0),
-          0
-        );
-
-        const overduePayments = overdueResult.count || 0;
-
-        const calculatedMetrics = {
-          totalClients,
-          totalDisbursed,
-          totalRepayments,
-          overduePayments,
-          totalLoans,
-          pendingAmount: loans
-            .filter((l) => l.status === 'pending')
-            .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0),
-          rejectedAmount: loans
-            .filter((l) => l.status === 'rejected')
-            .reduce((sum, loan) => sum + (Number(loan.amount) || 0), 0),
-        };
-
-        console.log('✅ Calculated metrics:', calculatedMetrics);
-        setMetrics(calculatedMetrics);
-      } catch (error) {
-        console.error('❌ Error fetching admin metrics:', error);
-        // Set fallback zero values on error
-        setMetrics({
-          totalClients: 0,
-          totalDisbursed: 0,
-          totalRepayments: 0,
-          overduePayments: 0,
-          totalLoans: 0,
-          pendingAmount: 0,
-          rejectedAmount: 0,
-        });
-      } finally {
-        setMetricsLoading(false);
-      }
+  const metrics = useMemo(() => {
+    if (!portfolio) return null;
+    const loans = rawLoans ?? [];
+    return {
+      totalClients: clientMetrics?.totalClients ?? 0,
+      totalDisbursed: portfolio.totalDisbursed ?? 0,
+      totalRepayments: portfolio.totalRepayments ?? 0,
+      overduePayments: portfolio.overdueCount ?? 0,
+      totalLoans: portfolio.totalLoans ?? loans.length,
+      pendingAmount: loans
+        .filter((l: any) => l.status === 'pending')
+        .reduce((sum: number, l: any) => sum + (Number(l.amount) || 0), 0),
+      rejectedAmount: loans
+        .filter((l: any) => l.status === 'rejected')
+        .reduce((sum: number, l: any) => sum + (Number(l.amount) || 0), 0),
     };
-
-    fetchMetrics();
-  }, [activeTab, user, refreshKey]);
+  }, [portfolio, clientMetrics, rawLoans]);
 
   // Redirect if not authenticated or not authorized
   if (!user) {

@@ -1,3 +1,4 @@
+/** @deprecated Legacy Supabase test/debug script. Zero UI imports. Safe to delete after full Convex migration. */
 import { supabase } from '@/integrations/supabase/client';
 import { errorLogger, trackUserAction } from '@/utils/errorHandler';
 
@@ -77,9 +78,9 @@ export class TestEnvironment {
           phone_number: '+264811234567',
           id_number: '12345678901',
           employment_status: 'employed',
-          monthly_income: 50000
+          monthly_income: 50000,
         },
-        role: 'admin'
+        role: 'admin',
       },
       {
         id: 'test-client-001',
@@ -91,9 +92,9 @@ export class TestEnvironment {
           phone_number: '+264812345678',
           id_number: '12345678902',
           employment_status: 'employed',
-          monthly_income: 25000
+          monthly_income: 25000,
         },
-        role: 'client'
+        role: 'client',
       },
       {
         id: 'test-officer-001',
@@ -105,21 +106,24 @@ export class TestEnvironment {
           phone_number: '+264813456789',
           id_number: '12345678903',
           employment_status: 'employed',
-          monthly_income: 35000
+          monthly_income: 35000,
         },
-        role: 'loan_officer'
-      }
+        role: 'loan_officer',
+      },
     ];
   }
 
   // Authentication testing
   async testAuthentication(): Promise<{ success: boolean; results: TestResult[] }> {
     const results: TestResult[] = [];
-    
+
     for (const testUser of this.testUsers) {
       try {
-        trackUserAction('test_authentication_start', { email: testUser.email, role: testUser.role });
-        
+        trackUserAction('test_authentication_start', {
+          email: testUser.email,
+          role: testUser.role,
+        });
+
         // Test sign up
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: testUser.email,
@@ -127,9 +131,9 @@ export class TestEnvironment {
           options: {
             data: {
               first_name: testUser.profile.first_name,
-              last_name: testUser.profile.last_name
-            }
-          }
+              last_name: testUser.profile.last_name,
+            },
+          },
         });
 
         if (signUpError && !signUpError.message.includes('already registered')) {
@@ -137,7 +141,7 @@ export class TestEnvironment {
             test: 'signup',
             user: testUser.email,
             success: false,
-            error: signUpError.message
+            error: signUpError.message,
           });
           continue;
         }
@@ -145,7 +149,7 @@ export class TestEnvironment {
         // Test sign in
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: testUser.email,
-          password: testUser.password
+          password: testUser.password,
         });
 
         if (signInError) {
@@ -153,91 +157,86 @@ export class TestEnvironment {
             test: 'signin',
             user: testUser.email,
             success: false,
-            error: signInError.message
+            error: signInError.message,
           });
           continue;
         }
 
         // Test profile creation/update
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            user_id: signInData.user.id,
-            ...testUser.profile,
-            email: testUser.email
-          });
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          user_id: signInData.user.id,
+          ...testUser.profile,
+          email: testUser.email,
+        });
 
         if (profileError) {
           results.push({
             test: 'profile',
             user: testUser.email,
             success: false,
-            error: profileError.message
+            error: profileError.message,
           });
           continue;
         }
 
         // Test role assignment
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({
-            user_id: signInData.user.id,
-            role: testUser.role
-          });
+        const { error: roleError } = await supabase.from('user_roles').upsert({
+          user_id: signInData.user.id,
+          role: testUser.role,
+        });
 
         results.push({
           test: 'complete_auth_flow',
           user: testUser.email,
           success: !roleError,
           error: roleError?.message,
-          userId: signInData.user.id
+          userId: signInData.user.id,
         });
 
-        trackUserAction('test_authentication_complete', { 
-          email: testUser.email, 
+        trackUserAction('test_authentication_complete', {
+          email: testUser.email,
           role: testUser.role,
-          success: !roleError
+          success: !roleError,
         });
-
       } catch (error: unknown) {
         const errMsg = error instanceof Error ? error.message : String(error);
         results.push({
           test: 'auth_exception',
           user: testUser.email,
           success: false,
-          error: errMsg
+          error: errMsg,
         });
 
         errorLogger.logError({
           message: `Authentication test failed for ${testUser.email}`,
           category: 'authentication',
           severity: 'high',
-          context: { testUser: testUser.email, error: errMsg }
+          context: { testUser: testUser.email, error: errMsg },
         });
       }
     }
 
     return {
-      success: results.every(r => r.success),
-      results
+      success: results.every((r) => r.success),
+      results,
     };
   }
 
   // Loan workflow testing
   async testLoanWorkflow(userEmail: string): Promise<{ success: boolean; results: TestResult[] }> {
     const results: TestResult[] = [];
-    
+
     try {
       // Sign in as test client
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: userEmail,
-        password: this.testUsers.find(u => u.email === userEmail)?.password || 'TestClient123!'
+        password: this.testUsers.find((u) => u.email === userEmail)?.password || 'TestClient123!',
       });
 
       if (authError) {
         return {
           success: false,
-          results: [{ test: 'auth_for_loan_test', success: false, error: authError.message }]
+          results: [{ test: 'auth_for_loan_test', success: false, error: authError.message }],
         };
       }
 
@@ -249,8 +248,8 @@ export class TestEnvironment {
         term_months: 12,
         purpose: 'Business expansion',
         interest_rate: 18.5,
-        monthly_payment: 1389.50,
-        total_repayment: 16674
+        monthly_payment: 1389.5,
+        total_repayment: 16674,
       };
 
       const { data: approvalData, error: approvalError } = await supabase
@@ -260,7 +259,7 @@ export class TestEnvironment {
           request_type: 'loan_application',
           request_data: testLoanApp,
           status: 'pending',
-          priority: 'normal'
+          priority: 'normal',
         })
         .select()
         .single();
@@ -269,7 +268,7 @@ export class TestEnvironment {
         test: 'loan_application_submission',
         success: !approvalError,
         error: approvalError?.message,
-        approvalRequestId: approvalData?.id
+        approvalRequestId: approvalData?.id,
       });
 
       if (approvalData) {
@@ -282,7 +281,7 @@ export class TestEnvironment {
         results.push({
           test: 'loan_approval',
           success: !approveError,
-          error: approveError?.message
+          error: approveError?.message,
         });
 
         // Test loan record creation
@@ -297,7 +296,7 @@ export class TestEnvironment {
             total_repayment: testLoanApp.total_repayment,
             purpose: testLoanApp.purpose,
             status: 'approved',
-            approval_request_id: approvalData.id
+            approval_request_id: approvalData.id,
           })
           .select()
           .single();
@@ -306,41 +305,40 @@ export class TestEnvironment {
           test: 'loan_record_creation',
           success: !loanError,
           error: loanError?.message,
-          loanId: loanData?.id
+          loanId: loanData?.id,
         });
       }
 
-      trackUserAction('test_loan_workflow_complete', { 
+      trackUserAction('test_loan_workflow_complete', {
         userEmail,
-        success: results.every(r => r.success)
+        success: results.every((r) => r.success),
       });
-
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'loan_workflow_exception',
         success: false,
-        error: errMsg
+        error: errMsg,
       });
 
       errorLogger.logError({
         message: `Loan workflow test failed for ${userEmail}`,
         category: 'business_logic',
         severity: 'high',
-        context: { userEmail, error: errMsg }
+        context: { userEmail, error: errMsg },
       });
     }
 
     return {
-      success: results.every(r => r.success),
-      results
+      success: results.every((r) => r.success),
+      results,
     };
   }
 
   // Database connectivity testing
   async testDatabaseConnectivity(): Promise<{ success: boolean; results: TestResult[] }> {
     const results: TestResult[] = [];
-    
+
     try {
       trackUserAction('test_database_connectivity_start');
 
@@ -353,7 +351,7 @@ export class TestEnvironment {
       results.push({
         test: 'database_connection',
         success: !connectionError,
-        error: connectionError?.message
+        error: connectionError?.message,
       });
 
       // Test RLS policies
@@ -365,60 +363,56 @@ export class TestEnvironment {
       results.push({
         test: 'rls_policies',
         success: !rlsError,
-        error: rlsError?.message
+        error: rlsError?.message,
       });
 
       // Test table existence
       const tables = ['profiles', 'loans', 'approval_requests', 'user_roles', 'payments'];
       for (const table of tables) {
-        const { error: tableError } = await supabase
-          .from(table)
-          .select('*')
-          .limit(1);
+        const { error: tableError } = await supabase.from(table).select('*').limit(1);
 
         results.push({
           test: `table_${table}`,
           success: !tableError,
-          error: tableError?.message
+          error: tableError?.message,
         });
       }
 
       trackUserAction('test_database_connectivity_complete', {
-        success: results.every(r => r.success)
+        success: results.every((r) => r.success),
       });
-
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'database_connectivity_exception',
         success: false,
-        error: errMsg
+        error: errMsg,
       });
 
       errorLogger.logError({
         message: 'Database connectivity test failed',
         category: 'database',
         severity: 'critical',
-        context: { error: errMsg }
+        context: { error: errMsg },
       });
     }
 
     return {
-      success: results.every(r => r.success),
-      results
+      success: results.every((r) => r.success),
+      results,
     };
   }
 
   // Performance testing
   async testPerformance(): Promise<{ success: boolean; results: PerformanceTestResult[] }> {
     const results: PerformanceTestResult[] = [];
-    
+
     try {
       trackUserAction('test_performance_start');
 
       // Test query performance
       const startTime = performance.now();
-      
+
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -431,12 +425,12 @@ export class TestEnvironment {
         success: !profilesError && profilesTime < 2000,
         error: profilesError?.message,
         duration: profilesTime,
-        threshold: 2000
+        threshold: 2000,
       });
 
       // Test loan data query performance
       const loansStartTime = performance.now();
-      
+
       const { data: loansData, error: loansError } = await supabase
         .from('loans')
         .select('*')
@@ -449,33 +443,32 @@ export class TestEnvironment {
         success: !loansError && loansTime < 1500,
         error: loansError?.message,
         duration: loansTime,
-        threshold: 1500
+        threshold: 1500,
       });
 
       trackUserAction('test_performance_complete', {
-        success: results.every(r => r.success),
-        avgDuration: results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length
+        success: results.every((r) => r.success),
+        avgDuration: results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length,
       });
-
     } catch (error: unknown) {
       const errMsg = error instanceof Error ? error.message : String(error);
       results.push({
         test: 'performance_exception',
         success: false,
-        error: errMsg
+        error: errMsg,
       });
 
       errorLogger.logError({
         message: 'Performance test failed',
         category: 'system',
         severity: 'medium',
-        context: { error: errMsg }
+        context: { error: errMsg },
       });
     }
 
     return {
-      success: results.every(r => r.success),
-      results
+      success: results.every((r) => r.success),
+      results,
     };
   }
 
@@ -489,7 +482,7 @@ export class TestEnvironment {
         // Sign in as test user to get their ID
         const { data: authData } = await supabase.auth.signInWithPassword({
           email: testUser.email,
-          password: testUser.password
+          password: testUser.password,
         });
 
         if (authData?.user) {
@@ -509,7 +502,7 @@ export class TestEnvironment {
         message: 'Test cleanup failed',
         category: 'system',
         severity: 'low',
-        context: { error: errMsg }
+        context: { error: errMsg },
       });
     }
   }
@@ -522,25 +515,34 @@ export class TestEnvironment {
       database: await this.testDatabaseConnectivity(),
       authentication: await this.testAuthentication(),
       loanWorkflow: await this.testLoanWorkflow('client@test.namlend.com'),
-      performance: await this.testPerformance()
+      performance: await this.testPerformance(),
     };
 
-    const overallSuccess = Object.values(testResults).every(result => result.success);
+    const overallSuccess = Object.values(testResults).every((result) => result.success);
 
     const summary = {
       success: overallSuccess,
       timestamp: new Date().toISOString(),
       results: testResults,
-      totalTests: Object.values(testResults).reduce((sum, result) => sum + result.results.length, 0),
-      passedTests: Object.values(testResults).reduce((sum, result) => sum + result.results.filter(r => r.success).length, 0),
-      failedTests: Object.values(testResults).reduce((sum, result) => sum + result.results.filter(r => !r.success).length, 0)
+      totalTests: Object.values(testResults).reduce(
+        (sum, result) => sum + result.results.length,
+        0
+      ),
+      passedTests: Object.values(testResults).reduce(
+        (sum, result) => sum + result.results.filter((r) => r.success).length,
+        0
+      ),
+      failedTests: Object.values(testResults).reduce(
+        (sum, result) => sum + result.results.filter((r) => !r.success).length,
+        0
+      ),
     };
 
     trackUserAction('comprehensive_test_suite_complete', {
       success: overallSuccess,
       totalTests: summary.totalTests,
       passedTests: summary.passedTests,
-      failedTests: summary.failedTests
+      failedTests: summary.failedTests,
     });
 
     return { success: overallSuccess, summary };

@@ -1,487 +1,774 @@
-# NamLend Trust - API Reference
+# NamLend Trust — Convex API Reference
 
-**Doc Revision**: 2026-01-19
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current ✅
 
 ---
 
 ## Overview
 
-NamLend Trust uses Supabase for:
+NamLend Trust uses **Convex** as its backend. There is no REST API, no PostgREST, no Supabase RPC, and no Edge Functions. All server logic is implemented as Convex functions (queries, mutations, actions) called via the Convex React SDK.
 
-- REST API (PostgREST)
-- RPC functions for business logic
-- Edge Functions for privileged operations
+### Calling Convex Functions from the Frontend
 
-All requests require JWT auth unless explicitly public.
+```typescript
+import { useQuery, useMutation, useAction } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
----
+// Reactive read — auto-updates when data changes
+const loans = useQuery(api.loans.getMyLoans);
 
-## Authentication
-
-```ts
-const { data, error } = await supabase.auth.signInWithPassword({
-  email,
-  password,
-});
-
-await supabase.auth.signOut({ scope: 'global' });
+// Atomic write
+const createLoan = useMutation(api.loans.createLoan);
+await createLoan({ principal: 50000, interestRate: 18, termMonths: 24 });
 ```
 
----
+### Authentication
 
-## Approval Workflow
+Authentication is managed by `@convex-dev/auth` (Password provider). There are no JWTs managed by the client — sessions are handled server-side by Convex.
 
-### Submit Approval Request
+```typescript
+import { useAuthActions } from '@convex-dev/auth/react';
 
-```ts
-const { data, error } = await supabase
-  .from('approval_requests')
-  .insert({
-    user_id,
-    request_type: 'loan_application',
-    request_data: {
-      amount,
-      term_months,
-      interest_rate,
-      monthly_payment,
-      total_repayment,
-      purpose,
-    },
-    status: 'pending',
-    priority: 'normal',
-  })
-  .select()
-  .single();
+const { signIn, signOut } = useAuthActions();
+
+// Sign in
+await signIn('password', { email, password, flow: 'signIn' });
+
+// Sign out
+await signOut();
 ```
 
-### Process Approved Loan (RPC)
+Auth state is exposed via `useConvexAuth()` (from `convex/react`) and wrapped by `useAuth()` in `src/hooks/useAuth.tsx` which adds role-based logic.
 
-```ts
-const { data, error } = await supabase.rpc('process_approval_transaction', {
-  p_request_id: approvalRequestId,
-});
-```
+### Error Handling
 
----
+Convex functions throw `ConvexError` on business rule violations. The error shape is:
 
-## Disbursements
+```typescript
+// Server-side throw
+throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
 
-```ts
-await supabase.rpc('create_disbursement_on_approval', {
-  p_loan_id: loanId,
-});
-
-await supabase.rpc('complete_disbursement', {
-  p_disbursement_id: disbursementId,
-  p_payment_method: 'bank_transfer',
-  p_payment_reference: 'REF-2026-001',
-  p_notes: 'Manual transfer',
-});
-```
-
----
-
-## Payments
-
-### Create Payment (RPC - idempotent)
-
-```ts
-await supabase.rpc('create_payment', {
-  p_loan_id: loanId,
-  p_amount: 500,
-  p_payment_method: 'bank_transfer',
-  p_processing_fee: 25,
-  p_idempotency_key: 'client-ref-123',
-});
-```
-
-### Process Payment + Apply to Schedule
-
-```ts
-await supabase.rpc('process_loan_payment', {
-  p_loan_id: loanId,
-  p_amount: 500,
-  p_payment_method: 'bank_transfer',
-  p_reference_number: 'PAY-2026-001',
-});
-```
-
----
-
-## IPS / IPP
-
-### Initiate IPS Repayment (RPC + Edge)
-
-```ts
-await supabase.rpc('initiate_ips_repayment', {
-  p_loan_id: loanId,
-  p_amount: 500,
-  p_payer_vpa: 'user@bank',
-});
-```
-
-### IPS Adapter (Edge Function)
-
-```ts
-const res = await fetch(`${SUPABASE_URL}/functions/v1/ips-adapter/pay`, {
-  method: 'POST',
-  headers: {
-    Authorization: `Bearer ${accessToken}`,
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    ipsTransactionId,
-    msgId,
-    txnId,
-    amount,
-    currency: 'NAD',
-    payerVpa,
-    payeeVpa,
-    purposeCode: 'PERS',
-  }),
-});
-```
-
----
-
-## Notifications
-
-```ts
-await supabase.rpc('queue_notification', {
-  p_user_id: userId,
-  p_template_code: 'PAYMENT_RECEIVED',
-  p_data: { amount: '500.00', date: '2026-01-10' },
-});
-```
-
----
-
-## Collections
-
-```ts
-await supabase.rpc('generate_collection_queue');
-
-await supabase.rpc('record_collection_activity', {
-  p_loan_id: loanId,
-  p_activity_type: 'call_attempt',
-  p_notes: 'Left voicemail',
-});
-```
-
----
-
-## Settlement
-
-```ts
-await supabase.rpc('create_settlement_run', {
-  p_settlement_date: '2026-01-10',
-  p_window_id: 'SW1',
-});
-
-await supabase.rpc('process_settlement_run', {
-  p_run_id: runId,
-});
-```
-
----
-
-## Edge Functions
-
-| Function                    | Purpose                     |
-| --------------------------- | --------------------------- |
-| `payment-webhook`           | Provider webhook processing |
-| `send-sms`                  | SMS delivery                |
-| `send-whatsapp`             | WhatsApp delivery           |
-| `send-notification`         | Staff notification send     |
-| `scheduled-tasks`           | Overdue + reminders         |
-| `tigerbeetle-outbox-worker` | Ledger outbox processing    |
-
-Each Edge Function requires a valid `Authorization: Bearer <JWT>` header unless explicitly documented.
-
----
-
-## API Orchestration Layer
-
-Centralized API endpoints for backoffice operations with consistent security, validation, and audit logging.
-
-### Base URL
-
-```
-https://puahejtaskncpazjyxqp.supabase.co/functions/v1/
-```
-
-Use `VITE_SUPABASE_URL` in client builds to avoid hardcoding the project URL.
-
-### api-loans
-
-| Method | Endpoint                       | Description                        | Roles                  |
-| ------ | ------------------------------ | ---------------------------------- | ---------------------- |
-| GET    | `/api-loans/list`              | List loans with pagination/filters | All (filtered by role) |
-| GET    | `/api-loans/:id`               | Get loan details                   | All (owner or staff)   |
-| POST   | `/api-loans/apply`             | Submit loan application            | client                 |
-| POST   | `/api-loans/approve`           | Approve loan                       | loan_officer, admin    |
-| POST   | `/api-loans/reject`            | Reject loan                        | loan_officer, admin    |
-| POST   | `/api-loans/disburse`          | Initiate disbursement              | loan_officer, admin    |
-| GET    | `/api-loans/approval-requests` | List pending approvals             | loan_officer, admin    |
-| GET    | `/api-loans/schedules/:id`     | Get payment schedule               | All (owner or staff)   |
-
-### api-users
-
-| Method | Endpoint              | Description                 | Roles               |
-| ------ | --------------------- | --------------------------- | ------------------- |
-| GET    | `/api-users/profile`  | Get current user profile    | All                 |
-| PATCH  | `/api-users/profile`  | Update current user profile | All                 |
-| GET    | `/api-users/list`     | List all users              | admin               |
-| GET    | `/api-users/:id`      | Get user by ID              | admin, loan_officer |
-| PATCH  | `/api-users/:id/role` | Update user role            | admin               |
-| GET    | `/api-users/roles`    | List available roles        | admin, loan_officer |
-
-### api-payments
-
-| Method | Endpoint                       | Description                | Roles                  |
-| ------ | ------------------------------ | -------------------------- | ---------------------- |
-| GET    | `/api-payments/list`           | List payments with filters | All (filtered by role) |
-| GET    | `/api-payments/:id`            | Get payment details        | All (owner or staff)   |
-| POST   | `/api-payments/record`         | Record a payment           | loan_officer, admin    |
-| POST   | `/api-payments/reverse`        | Reverse a payment          | admin                  |
-| GET    | `/api-payments/loan/:loanId`   | Get payments for loan      | All (owner or staff)   |
-| GET    | `/api-payments/reconciliation` | Get reconciliation data    | admin                  |
-
-### api-admin
-
-| Method | Endpoint                       | Description          | Roles               |
-| ------ | ------------------------------ | -------------------- | ------------------- |
-| GET    | `/api-admin/dashboard`         | Dashboard statistics | loan_officer, admin |
-| GET    | `/api-admin/audit-logs`        | View audit logs      | admin               |
-| GET    | `/api-admin/system-health`     | System health check  | admin               |
-| POST   | `/api-admin/bulk-approve`      | Bulk approve loans   | admin               |
-| GET    | `/api-admin/compliance-report` | Compliance report    | admin               |
-| GET    | `/api-admin/collections`       | Collections overview | loan_officer, admin |
-
-### api-audit
-
-| Method | Endpoint                      | Description                  | Roles |
-| ------ | ----------------------------- | ---------------------------- | ----- |
-| GET    | `/api-audit/logs`             | List audit logs with filters | admin |
-| GET    | `/api-audit/logs/:id`         | Get audit log details        | admin |
-| GET    | `/api-audit/financial`        | Financial operation logs     | admin |
-| GET    | `/api-audit/user/:userId`     | Audit logs for a user        | admin |
-| GET    | `/api-audit/table/:tableName` | Audit logs for a table       | admin |
-| GET    | `/api-audit/export`           | Export logs (CSV/JSON)       | admin |
-| GET    | `/api-audit/summary`          | Audit summary statistics     | admin |
-| GET    | `/api-audit/actions`          | List all action types        | admin |
-
-### api-analytics
-
-| Method | Endpoint                            | Description                  | Roles               |
-| ------ | ----------------------------------- | ---------------------------- | ------------------- |
-| GET    | `/api-analytics/portfolio`          | Portfolio summary statistics | loan_officer, admin |
-| GET    | `/api-analytics/loan-performance`   | Loan performance metrics     | loan_officer, admin |
-| GET    | `/api-analytics/collections-stats`  | Collections statistics       | loan_officer, admin |
-| GET    | `/api-analytics/disbursement-stats` | Disbursement statistics      | loan_officer, admin |
-| GET    | `/api-analytics/risk-analysis`      | Risk analysis report         | admin               |
-| GET    | `/api-analytics/trends`             | Trend analysis over time     | loan_officer, admin |
-
-### api-disbursements
-
-| Method | Endpoint                      | Description                     | Roles               |
-| ------ | ----------------------------- | ------------------------------- | ------------------- |
-| GET    | `/api-disbursements/list`     | List disbursements with filters | loan_officer, admin |
-| GET    | `/api-disbursements/pending`  | List pending disbursements      | loan_officer, admin |
-| GET    | `/api-disbursements/:id`      | Get disbursement details        | loan_officer, admin |
-| POST   | `/api-disbursements/approve`  | Approve disbursement            | loan_officer, admin |
-| POST   | `/api-disbursements/process`  | Mark as processing              | loan_officer, admin |
-| POST   | `/api-disbursements/complete` | Mark as completed               | loan_officer, admin |
-| POST   | `/api-disbursements/fail`     | Mark as failed                  | loan_officer, admin |
-| GET    | `/api-disbursements/queue`    | Get disbursement queue          | loan_officer, admin |
-
-### api-collections
-
-| Method | Endpoint                        | Description                 | Roles               |
-| ------ | ------------------------------- | --------------------------- | ------------------- |
-| GET    | `/api-collections/queue`        | Get collections work queue  | loan_officer, admin |
-| GET    | `/api-collections/case/:loanId` | Get collection case details | loan_officer, admin |
-| POST   | `/api-collections/interaction`  | Record borrower interaction | loan_officer, admin |
-| POST   | `/api-collections/promise`      | Create promise to pay       | loan_officer, admin |
-| PATCH  | `/api-collections/promise/:id`  | Update promise status       | loan_officer, admin |
-| POST   | `/api-collections/escalate`     | Escalate collection case    | admin               |
-| GET    | `/api-collections/reminders`    | List payment reminders      | loan_officer, admin |
-| POST   | `/api-collections/reminder`     | Schedule payment reminder   | loan_officer, admin |
-
-### api-reconciliation
-
-| Method | Endpoint                           | Description                   | Roles               |
-| ------ | ---------------------------------- | ----------------------------- | ------------------- |
-| GET    | `/api-reconciliation/runs`         | List reconciliation runs      | loan_officer, admin |
-| GET    | `/api-reconciliation/runs/:id`     | Get run details               | loan_officer, admin |
-| POST   | `/api-reconciliation/runs`         | Create new reconciliation run | admin               |
-| POST   | `/api-reconciliation/import`       | Import bank transactions      | loan_officer, admin |
-| POST   | `/api-reconciliation/auto-match`   | Auto-match transactions       | loan_officer, admin |
-| POST   | `/api-reconciliation/manual-match` | Manual match transaction      | loan_officer, admin |
-| GET    | `/api-reconciliation/unmatched`    | List unmatched transactions   | loan_officer, admin |
-| GET    | `/api-reconciliation/summary`      | Reconciliation summary        | loan_officer, admin |
-
-### api-notifications
-
-| Method | Endpoint                           | Description                     | Roles |
-| ------ | ---------------------------------- | ------------------------------- | ----- |
-| GET    | `/api-notifications/list`          | List user notifications         | All   |
-| GET    | `/api-notifications/:id`           | Get notification details        | All   |
-| POST   | `/api-notifications/mark-read`     | Mark notification as read       | All   |
-| POST   | `/api-notifications/mark-all-read` | Mark all as read                | All   |
-| DELETE | `/api-notifications/:id`           | Delete notification             | All   |
-| GET    | `/api-notifications/preferences`   | Get notification preferences    | All   |
-| PUT    | `/api-notifications/preferences`   | Update notification preferences | All   |
-| POST   | `/api-notifications/send`          | Send notification               | admin |
-
-### Error Codes
-
-All API endpoints return a consistent error envelope:
-
-```json
-{
-  "success": false,
-  "error": "Human-readable error message"
-}
-```
-
-| HTTP Status | Response Helper      | Meaning                                                       | Retryable            |
-| ----------- | -------------------- | ------------------------------------------------------------- | -------------------- |
-| 400         | `badRequest()`       | Invalid request parameters or body                            | No                   |
-| 401         | `unauthorized()`     | Missing or expired JWT token                                  | No (re-authenticate) |
-| 403         | `forbidden()`        | Valid JWT but insufficient role/permissions                   | No                   |
-| 404         | `notFound()`         | Resource does not exist                                       | No                   |
-| 405         | `methodNotAllowed()` | HTTP method not supported for this endpoint                   | No                   |
-| 409         | `conflict()`         | Resource state conflict (e.g. duplicate idempotency key)      | No                   |
-| 422         | `unprocessable()`    | Validation passed but business rule violated (e.g. APR > 32%) | No                   |
-| 429         | `rateLimited()`      | Too many requests; includes `Retry-After` header              | Yes                  |
-| 500         | `serverError()`      | Unexpected server error                                       | Yes                  |
-| 502         | —                    | Bad gateway / upstream failure                                | Yes                  |
-| 503         | —                    | Service unavailable                                           | Yes                  |
-| 504         | —                    | Gateway timeout                                               | Yes                  |
-
-**Source**: `supabase/functions/_shared/responses.ts`
-
-### Pagination Metadata
-
-Paginated endpoints include a `meta` object in the response:
-
-```json
-{
-  "success": true,
-  "data": [...],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 142,
-    "hasMore": true
+// Client-side catch
+try {
+  await createLoan(args);
+} catch (err) {
+  if (err instanceof ConvexError) {
+    const { code, message } = err.data;
   }
 }
 ```
 
-| Field     | Type      | Description                     |
-| --------- | --------- | ------------------------------- |
-| `page`    | `number`  | Current page number (1-indexed) |
-| `limit`   | `number`  | Items per page                  |
-| `total`   | `number`  | Total matching records          |
-| `hasMore` | `boolean` | `true` if more pages exist      |
+Common error codes used in this codebase:
 
-### Retry Configuration
-
-The frontend API client (`src/services/api-client.ts`) implements automatic retry with exponential backoff:
-
-| Parameter     | Default | Description                                      |
-| ------------- | ------- | ------------------------------------------------ |
-| `maxRetries`  | 3       | Maximum retry attempts                           |
-| `baseDelayMs` | 1000    | Base delay before first retry                    |
-| `maxDelayMs`  | 10000   | Maximum delay cap                                |
-| Jitter        | 30%     | Random jitter applied to prevent thundering herd |
-
-**Retryable status codes**: 408, 429, 500, 502, 503, 504
-
-Rate-limited requests (429) receive up to 5 retry attempts. Non-retryable errors (400, 401, 403, 404, 409, 422) fail immediately.
-
-For mutations that must not be retried (financial operations), use `callAPIOnce()`:
-
-```typescript
-import { callAPIOnce } from '@/services/api-client';
-const result = await callAPIOnce('api-payments/record', { method: 'POST', body: data });
-```
-
-### Usage Example
-
-```typescript
-import {
-  loansAPI,
-  usersAPI,
-  paymentsAPI,
-  adminAPI,
-  analyticsAPI,
-  disbursementsAPI,
-  notificationsAPI,
-} from '@/services/api-client';
-
-// List loans with pagination
-const result = await loansAPI.list({ page: 1, limit: 20, status: 'active' });
-if (result.success) {
-  const { data, meta } = result;
-}
-
-// Get user profile
-const profile = await usersAPI.getProfile();
-
-// Record a payment
-await paymentsAPI.record({
-  loan_id: 'uuid',
-  amount: 500,
-  payment_method: 'bank_transfer',
-});
-
-// Admin dashboard stats
-const stats = await adminAPI.getDashboard();
-
-// Analytics - portfolio metrics
-const portfolio = await analyticsAPI.getPortfolio({ period: '30d' });
-
-// Disbursements - list with filters
-const disbursements = await disbursementsAPI.list({ status: 'pending' });
-
-// Notifications - list and mark as read
-const notifications = await notificationsAPI.list({ limit: 50 });
-await notificationsAPI.markRead({ notification_id: 'uuid' });
-```
+| Code                 | Meaning                                |
+| -------------------- | -------------------------------------- |
+| `UNAUTHENTICATED`    | No active session                      |
+| `UNAUTHORIZED`       | Insufficient role                      |
+| `NOT_FOUND`          | Document does not exist                |
+| `VALIDATION_ERROR`   | Argument failed schema validation      |
+| `APR_LIMIT_EXCEEDED` | interestRate > 32% (Namibian law)      |
+| `CONFLICT`           | Idempotency key collision or duplicate |
 
 ---
 
-## Frontend Integration Status
+## Auth Guards
 
-The following components have been migrated to use the API Orchestration Layer:
+Every Convex query and mutation calls an auth guard at the start of its handler. There are no implicit access controls.
 
-| Component                  | API Module          | Status                 |
-| -------------------------- | ------------------- | ---------------------- |
-| `useDisbursements.ts`      | `disbursementsAPI`  | ✅ Migrated            |
-| `PortfolioAnalytics.tsx`   | `analyticsAPI`      | ✅ Migrated            |
-| `NotificationCenter.tsx`   | `notificationsAPI`  | ✅ Migrated            |
-| `CollectionsDashboard.tsx` | `collectionsAPI`    | ✅ Migrated            |
-| `usePaymentsList.ts`       | `paymentsAPI`       | ✅ Migrated            |
-| `useLoanApplications.ts`   | `loansAPI`          | ✅ Migrated            |
-| `usersAPI`                 | `usersAPI`          | ✅ Defined (available) |
-| `adminAPI`                 | `adminAPI`          | ✅ Defined (available) |
-| `auditAPI`                 | `auditAPI`          | ✅ Defined (available) |
-| `reconciliationAPI`        | `reconciliationAPI` | ✅ Defined (available) |
+| Guard (in `convex/lib/auth.ts`)   | Access Required             |
+| --------------------------------- | --------------------------- |
+| `assertAuthenticated(ctx)`        | Any signed-in user          |
+| `assertOwner(ctx, userId)`        | Owner of the resource only  |
+| `assertOwnerOrStaff(ctx, userId)` | Owner OR loan_officer/admin |
+| `assertStaff(ctx)`                | loan_officer or admin       |
+| `assertAdmin(ctx)`                | admin only                  |
 
-### Migration Pattern
+---
 
-```typescript
-// Before (direct Supabase)
-const { data, error } = await supabase.from('table').select('*');
+## Module: `api.users`
 
-// After (API client)
-import { someAPI } from '@/services/api-client';
-const result = await someAPI.list({ params });
-if (result.success) {
-  // Handle result.data
-} else {
-  // Handle result.error
-}
+### Queries
+
+#### `getMyProfile`
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `Doc<"profiles"> | null`
+- **Purpose**: Get the current user's profile, including KYC status.
+
+#### `getMyKycDocuments`
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `Doc<"kycDocuments">[]`
+- **Purpose**: Get all KYC documents uploaded by the current user.
+
+#### `adminListUsers`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ limit?: number }`
+- **Returns**: Array of `{ user, profile, role }` objects
+- **Purpose**: List all users with their profiles and roles (admin dashboard).
+
+#### `getUserRole`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ userId: Id<"users"> }`
+- **Returns**: `"client" | "loan_officer" | "admin"`
+- **Purpose**: Get the role of any user.
+
+### Mutations
+
+#### `updateMyProfile`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ fullName?: string; phone?: string }`
+- **Purpose**: Update the current user's displayable profile fields.
+
+#### `setUserRole`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ userId: Id<"users">; role: "client" | "loan_officer" | "admin" }`
+- **Purpose**: Assign or change a user's role. Writes audit log.
+
+#### `createUserProfile`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ userId, email, fullName?, phone?, ... }`
+- **Purpose**: Create a profile for a user (used by admin when creating accounts directly).
+
+#### `recordKycDocument`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ documentType: string; fileStorageId?: Id<"_storage">; documentNumber?: string }`
+- **Returns**: `Id<"kycDocuments">`
+- **Purpose**: Record a KYC document upload. Sets status to `"pending"`.
+
+#### `reviewKycDocument`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ documentId: Id<"kycDocuments">; status: "approved" | "rejected"; reviewNotes?: string }`
+- **Purpose**: Admin approves or rejects a KYC document. Writes audit log for the document status change. On approval, automatically sets `profiles.kycStatus = "verified"` when all of the user's documents are approved. On rejection, sets `profiles.kycStatus = "rejected"`. Both profile changes are also audit-logged.
+
+---
+
+## Module: `api.loans`
+
+### Queries
+
+#### `getMyLoans`
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `Doc<"loans">[]`
+- **Purpose**: Get all loans for the current user.
+
+#### `getLoanById`
+
+- **Auth**: `assertOwnerOrStaff`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Returns**: `Doc<"loans"> | null`
+- **Purpose**: Get full loan details.
+
+#### `adminListLoans`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ status?: loanStatus; limit?: number }`
+- **Returns**: Array of loans with profile enrichment
+- **Purpose**: Staff view of all loans, optionally filtered by status.
+
+### Mutations
+
+#### `createLoan`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ principal: number; interestRate: number; termMonths: number; purpose?: string }`
+- **Returns**: `Id<"loans">`
+- **Side effects**: Inserts loan with status `"draft"`. Validates `interestRate <= 32`. Schedules audit log.
+- **Purpose**: Create a draft loan application.
+
+#### `submitLoan`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Side effects**: Updates loan status to `"submitted"`. Creates `approvalRequests` entry. Schedules `processLoanApplication` action (runs server-side credit scoring, writes `creditScore`, `debtToIncomeRatio`, `recommendation` to the loan). Schedules audit log.
+- **Purpose**: Submit a draft loan for review.
+
+#### `approveLoan`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId: Id<"loans">; notes?: string }`
+- **Side effects**: Updates loan status to `"approved"`. Inserts `loanApprovals` record. Schedules audit log.
+
+#### `rejectLoan`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId: Id<"loans">; reason: string }`
+- **Side effects**: Updates loan status to `"rejected"`, sets `rejectionReason`. Inserts `loanApprovals` record. Schedules audit log.
+
+#### `updateLoanStatus`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId: Id<"loans">; status: loanStatus; notes?: string }`
+- **Side effects**: Updates loan status. Schedules audit log.
+
+---
+
+## Module: `api.disbursements`
+
+### Queries
+
+#### `getDisbursementsByLoan`
+
+- **Auth**: `assertOwnerOrStaff`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Returns**: `Doc<"disbursements">[]`
+
+#### `adminListDisbursements`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ status?: txStatus; limit?: number }`
+- **Returns**: Disbursements array
+
+### Mutations
+
+#### `initiateDisbursement`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId, amount, method, bankName?, accountNumber?, accountName?, branchCode? }`
+- **Returns**: `Id<"disbursements">`
+- **Side effects**: Inserts disbursement (status `"pending"`). Inserts `tigerBeetleOutbox` entry in **the same atomic mutation**. Schedules audit log.
+
+#### `processDisbursement`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ disbursementId: Id<"disbursements"> }`
+- **Side effects**: Updates status to `"processing"`.
+
+#### `completeDisbursement`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ disbursementId: Id<"disbursements">; referenceNumber?: string }`
+- **Side effects**: Updates disbursement to `"completed"`. Updates `loans.status` to `"funded"` and sets `loans.disbursedAt`. Schedules audit log.
+
+#### `failDisbursement`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ disbursementId: Id<"disbursements">; failureReason: string }`
+- **Side effects**: Updates status to `"failed"`.
+
+#### `reverseDisbursement`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ disbursementId: Id<"disbursements">; reason: string }`
+- **Side effects**: Updates status to `"reversed"`. Schedules audit log.
+
+---
+
+## Module: `api.payments`
+
+### Queries
+
+#### `getPaymentsByLoan`
+
+- **Auth**: `assertOwnerOrStaff`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Returns**: `Doc<"paymentTransactions">[]`
+
+#### `getPaymentSchedule`
+
+- **Auth**: `assertOwnerOrStaff`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Returns**: `Doc<"paymentSchedules">[]`
+
+#### `getOverduePayments`
+
+- **Auth**: `assertStaff`
+- **Returns**: Overdue payment schedule entries
+
+#### `adminListPayments`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ status?: string; limit?: number }`
+- **Returns**: Payment transactions array
+
+### Mutations
+
+#### `recordPayment`
+
+- **Auth**: `assertOwnerOrStaff`
+- **Args**: `{ loanId, amount, method, referenceNumber? }`
+- **Returns**: `Id<"paymentTransactions">`
+- **Side effects**: Inserts payment (status `"pending"`). Inserts `tigerBeetleOutbox` entry atomically. Schedules audit log.
+
+#### `completePayment`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ paymentId: Id<"paymentTransactions">; principalPaid?: number; interestPaid?: number }`
+- **Side effects**: Updates payment to `"completed"`. Updates `loans.outstandingBalance` and `loans.totalPaid`. Checks for loan payoff. Schedules audit log.
+
+#### `failPayment`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ paymentId: Id<"paymentTransactions"> }`
+- **Side effects**: Updates payment to `"failed"`.
+
+#### `createPaymentSchedule`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId, disbursementDate, principal, annualRate, termMonths }`
+- **Side effects**: Generates and inserts `paymentSchedules` entries using amortization formula.
+
+---
+
+## Module: `api.approvalWorkflow`
+
+### Queries
+
+#### `adminListApprovals`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ status?: approvalRequestStatus; limit?: number }`
+- **Returns**: Approval requests with enriched entity data
+
+#### `getApprovalRequestById`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ requestId: Id<"approvalRequests"> }`
+- **Returns**: `Doc<"approvalRequests"> | null`
+
+#### `listWorkflowDefinitions`
+
+- **Auth**: `assertStaff`
+- **Returns**: `Doc<"workflowDefinitions">[]`
+
+### Mutations
+
+#### `createApprovalRequest`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ entityType, entityId, requestType, notes?, priority? }`
+- **Returns**: `Id<"approvalRequests">`
+
+#### `processApprovalRequest`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ requestId: Id<"approvalRequests">; action: "approve" | "reject" | "escalate"; notes? }`
+- **Side effects**: Updates approval status. Inserts `approvalHistory` entry. Schedules audit log.
+
+#### `createWorkflowDefinition`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ name, entityType, stages, isActive }`
+- **Returns**: `Id<"workflowDefinitions">`
+
+---
+
+## Module: `api.notifications`
+
+### Queries
+
+#### `getMyNotifications`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ limit?: number }`
+- **Returns**: `Doc<"notifications">[]` — array (not object)
+
+#### `getUnreadCount`
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `number`
+
+#### `getMyNotificationPreferences`
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `Doc<"notificationPreferences">[]`
+
+### Mutations
+
+#### `markNotificationRead`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ notificationId: Id<"notifications"> }`
+
+#### `markAllNotificationsRead`
+
+- **Auth**: `assertAuthenticated`
+
+#### `updateNotificationPreference`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ channel: string; category: string; enabled: boolean }`
+
+---
+
+## Module: `api.collections`
+
+### Queries
+
+#### `getCollectionsQueue`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ limit?: number }`
+- **Returns**: Overdue loans with collections context
+
+#### `getCollectionsStats`
+
+- **Auth**: `assertStaff`
+- **Returns**: Collection metrics
+
+#### `listPromisesToPay`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId?: Id<"loans"> }`
+- **Returns**: `Doc<"promiseToPay">[]`
+
+#### `listInteractionsByLoan`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId: Id<"loans"> }`
+- **Returns**: `Doc<"collectionsInteractions">[]`
+
+### Mutations
+
+#### `recordInteraction`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId, activityType, contactMethod, notes?, outcome?, nextAction?, nextActionDate? }`
+- **Returns**: `Id<"collectionsInteractions">`
+
+#### `createPromiseToPay`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ loanId, amount, promiseDate, notes? }`
+- **Returns**: `Id<"promiseToPay">`
+
+#### `markPromiseFulfilled`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ promiseId: Id<"promiseToPay"> }`
+- **Side effects**: Updates status to `"kept"`.
+
+---
+
+## Module: `api.analytics`
+
+All analytics queries require `assertStaff`.
+
+#### `getPortfolioSummary`
+
+- **Returns**: `{ totalClients, kycApproved, kycPending, newThisMonth, withActiveLoans, ... }`
+
+#### `getRevenueMetrics`
+
+- **Returns**: Revenue and interest income metrics
+
+#### `getRiskMetrics`
+
+- **Returns**: Portfolio risk distribution
+
+#### `getMonthlyTrends`
+
+- **Args**: `{ months?: number }`
+- **Returns**: Monthly loan and payment trend data
+
+---
+
+## Module: `api.audit`
+
+### Queries
+
+#### `getAuditLogs`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ entityType?: string; entityId?: string; limit?: number }`
+- **Returns**: `Doc<"auditLogs">[]`
+
+#### `getStateTransitions`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ entityType: string; entityId: string }`
+- **Returns**: `Doc<"stateTransitions">[]`
+
+#### `getViewLogs`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ userId?: Id<"users">; limit?: number }`
+- **Returns**: `Doc<"viewLogs">[]`
+
+#### `getComplianceReports`
+
+- **Auth**: `assertAdmin`
+- **Returns**: `Doc<"complianceReports">[]`
+
+### Mutations
+
+#### `logViewAccess`
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ entityType, entityId, fieldsViewed? }`
+- **Purpose**: Record that a user viewed a sensitive record.
+
+#### `generateComplianceReport`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ reportType, periodStart, periodEnd }`
+- **Returns**: `Id<"complianceReports">`
+
+---
+
+## Module: `api.systemConfig`
+
+### Queries
+
+#### `getConfig`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ key: string }`
+- **Returns**: `Doc<"systemConfiguration"> | null`
+
+#### `getAllConfig`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ category?: string }`
+- **Returns**: `Doc<"systemConfiguration">[]`
+
+#### `getConfigValue`
+
+- **Auth**: `assertStaff`
+- **Args**: `{ key: string }`
+- **Returns**: `any | null`
+
+### Mutations
+
+#### `setConfig`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ key, value, category?, description?, isPublic? }`
+- **Side effects**: Upserts config. Schedules `update_config` or `create_config` audit log.
+
+#### `deleteConfig`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ key: string }`
+- **Side effects**: Deletes config. Schedules `delete_config` audit log.
+
+#### `seedDefaultConfig`
+
+- **Auth**: `assertAdmin`
+- **Args**: `{}`
+- **Returns**: `{ created: number, skipped: number }`
+- **Purpose**: Insert default regulatory config keys if they don't exist.
+
+---
+
+## Module: `api.reconciliation`
+
+All functions require `assertStaff` or `assertAdmin`.
+
+#### `listRuns` (query)
+
+- **Returns**: `Doc<"reconciliationRuns">[]`
+
+#### `getRunById` (query)
+
+- **Args**: `{ runId: Id<"reconciliationRuns"> }`
+
+#### `createRun` (mutation)
+
+- **Auth**: `assertAdmin`
+- **Args**: `{ runDate: string }`
+- **Returns**: `Id<"reconciliationRuns">`
+
+#### `importBankTransactions` (mutation)
+
+- **Auth**: `assertStaff`
+- **Args**: `{ runId, transactions: Array<{ amount, date, description, reference, direction }> }`
+
+#### `autoMatch` (mutation)
+
+- **Auth**: `assertStaff`
+- **Args**: `{ runId: Id<"reconciliationRuns"> }`
+- **Purpose**: Automatically match bank transactions to internal payment records by reference number and amount.
+
+---
+
+## Module: `api.ips` (IPS/IPP domain — Mock Adapter)
+
+> ⚠️ All IPS functions currently use a **mock adapter** (`convex/actions/ipsAdapter.ts`). No real Bank of Namibia IPS connectivity is in place.
+
+### IPS Onboarding (`api.ips.onboarding`)
+
+#### `getMyOnboardingApplication` (query)
+
+- **Auth**: `assertAuthenticated`
+
+#### `startOnboarding` (mutation)
+
+- **Auth**: `assertAuthenticated`
+
+#### `updateOnboardingStep` (mutation)
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ step, data }`
+
+#### `adminListOnboarding` (query)
+
+- **Auth**: `assertAdmin`
+
+#### `adminUpdateOnboardingStatus` (mutation)
+
+- **Auth**: `assertAdmin`
+
+### IPS Transactions (`api.ips.ipsTransactions`)
+
+#### `initiateIpsTransaction` (mutation)
+
+- **Auth**: `assertStaff`
+- **Args**: `{ amount, currency, txType, debtorVpa?, creditorVpa?, loanId?, disbursementId? }`
+- **Returns**: `Id<"ipsTransactions">`
+- **Side effects**: Inserts IPS transaction. Schedules `ipsAdapter.processOutbound` action (mock).
+
+### VPA Registry (`api.ips.vpaRegistry`)
+
+#### `getMyVpas` (query)
+
+- **Auth**: `assertAuthenticated`
+- **Returns**: `Doc<"vpaRegistry">[]`
+
+#### `registerVpa` (mutation)
+
+- **Auth**: `assertAuthenticated`
+- **Args**: `{ vpa, vpaType, bankBic?, accountNumber? }`
+
+---
+
+## HTTP Endpoints
+
+HTTP endpoints are defined in `convex/http.ts` via Convex's HTTP router. These handle webhooks and health checks from external systems.
+
+### `GET /health`
+
+Public. No authentication required.
+
+**Response** (`200 OK`):
+
+```json
+{ "status": "ok", "service": "namlend-convex", "ts": 1709510400000 }
 ```
+
+### `POST /webhook/ips`
+
+Receives IPS transaction status callbacks from the Bank of Namibia switch.
+
+**Security**: HMAC-SHA256 signature verification. The request must include either `X-IPS-Signature` or `X-Signature` header containing the hex-encoded HMAC of the raw request body, computed with `IPS_WEBHOOK_SECRET` (set via `npx convex env set`).
+
+- If `IPS_WEBHOOK_SECRET` is not configured: request is processed with a warning log (permissive mode for development).
+- If `IPS_WEBHOOK_SECRET` is configured and signature is missing or invalid: `401 Unauthorized`.
+
+**Request body**: JSON object (IPS pacs.002 status payload)
+
+**Responses**:
+| Status | Meaning |
+|--------|---------|
+| `200` | `{ "received": true }` — processed successfully |
+| `400` | Cannot read body or invalid JSON |
+| `401` | Missing or invalid signature (when secret is configured) |
+| `500` | Internal error in handler |
+
+**Handler**: `internal.actions.ipsAdapter.handleWebhook`
+
+### `POST /webhook/payment`
+
+Receives payment gateway webhooks from PayToday, MTC MoMo, and TN Mobile.
+
+**Security**: HMAC-SHA256 signature verification using `PAYMENT_WEBHOOK_SECRET`. Checks headers `X-PayToday-Signature`, `X-Signature`, or `X-Webhook-Signature` (first match wins).
+
+**Responses**: Same structure as `/webhook/ips`.
+
+**Handler**: `internal.actions.ipsAdapter.handlePaymentWebhook`
+
+### Auth Routes (mounted by `@convex-dev/auth`)
+
+The following routes are automatically mounted by `auth.addHttpRoutes(http)`:
+
+| Path                     | Method | Purpose                        |
+| ------------------------ | ------ | ------------------------------ |
+| `/api/auth/signin`       | POST   | Sign in with email + password  |
+| `/api/auth/signout`      | POST   | Sign out (invalidates session) |
+| `/api/auth/token`        | POST   | Refresh session token          |
+| `/api/auth/userIdentity` | GET    | Get current user identity      |
+
+---
+
+## Actions (Server-Side, Not Called Directly from Browser)
+
+Actions are internal Convex functions that can make external HTTP calls. They are triggered by mutations (via `ctx.scheduler`) or cron jobs.
+
+| File                                | Internal Reference                          | Purpose                                              |
+| ----------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
+| `actions/ipsAdapter.ts`             | `internal.actions.ipsAdapter.*`             | IPS outbound transfers and webhook handling          |
+| `actions/processLoanApplication.ts` | `internal.actions.processLoanApplication.*` | Server-side credit scoring (runs after `submitLoan`) |
+| `actions/sendNotification.ts`       | `internal.actions.sendNotification.*`       | Multi-channel notification dispatch                  |
+| `actions/sendSms.ts`                | `internal.actions.sendSms.*`                | Africa's Talking SMS delivery                        |
+| `actions/sendWhatsapp.ts`           | `internal.actions.sendWhatsapp.*`           | Meta WhatsApp Business API                           |
+
+### `processLoanApplication` (Action)
+
+Triggered by `api.loans.submitLoan` via `ctx.scheduler.runAfter(0, ...)`.
+
+**What it does**:
+
+1. Loads borrower profile
+2. Computes server-side credit score (300–850 scale) based on KYC status, employment, income, DTI
+3. Determines recommendation: `"approve"` (score ≥ 650, DTI ≤ 35%, APR ≤ 32%, KYC verified) or `"reject"` or `"review"`
+4. Writes `creditScore`, `debtToIncomeRatio`, `recommendation` to the `loans` table via `internal.loans.recordCreditScore`
+
+---
+
+## Scheduled Jobs
+
+Defined in `convex/crons.ts`:
+
+| Name                | Schedule         | Handler                                                    | Purpose                                                                                |
+| ------------------- | ---------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `tb-outbox-worker`  | Every 30 seconds | `internal.scheduled.tigerBeetleOutboxWorker.processOutbox` | Claims pending TigerBeetle outbox entries and posts to ledger (simulation)             |
+| `daily-maintenance` | 02:00 UTC daily  | `internal.scheduled.dailyTasks.runDailyTasks`              | Marks overdue payments, checks promise-to-pay deadlines, dispatches notification queue |
+
+---
+
+## Environment Variables
+
+### Client-Side (`VITE_*`)
+
+| Variable               | Required | Description                                     |
+| ---------------------- | -------- | ----------------------------------------------- |
+| `VITE_CONVEX_URL`      | ✅       | Convex deployment URL                           |
+| `VITE_DEBUG_TOOLS`     | No       | Enable dev window utilities (default: `false`)  |
+| `VITE_RUN_DEV_SCRIPTS` | No       | Auto-run dev seeding scripts (default: `false`) |
+| `VITE_SENTRY_DSN`      | No       | Sentry error tracking DSN                       |
+| `VITE_E2E`             | No       | Set by `npm run dev:e2e` — do not set manually  |
+
+### Server-Side (Convex env vars — set via `npx convex env set KEY value`)
+
+| Variable                   | Required for       | Description                                |
+| -------------------------- | ------------------ | ------------------------------------------ |
+| `AFRICASTALKING_API_KEY`   | SMS                | Africa's Talking API key                   |
+| `AFRICASTALKING_USERNAME`  | SMS                | Africa's Talking username                  |
+| `WHATSAPP_ACCESS_TOKEN`    | WhatsApp           | Meta Cloud API token                       |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp           | Meta phone number ID                       |
+| `IPS_API_URL`              | IPS (production)   | IPS switch base URL                        |
+| `IPS_CLIENT_CERT`          | IPS (production)   | mTLS client certificate (base64)           |
+| `IPS_CLIENT_KEY`           | IPS (production)   | mTLS client key (base64)                   |
+| `IPS_WEBHOOK_SECRET`       | Webhook security   | HMAC secret for `/webhook/ips`             |
+| `PAYMENT_WEBHOOK_SECRET`   | Webhook security   | HMAC secret for `/webhook/payment`         |
+| `TIGERBEETLE_ADDRESS`      | TigerBeetle (live) | TB cluster address (e.g. `localhost:3001`) |
+
+---
+
+## See Also
+
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — All Convex tables, fields, and indexes
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture and auth flow diagrams
+- [FLOWS.md](./FLOWS.md) — End-to-end transaction flows using these APIs
+- [SECURITY.md](./SECURITY.md) — Auth guards and security model
+- [openapi.yaml](./openapi.yaml) — HTTP endpoint schema (Convex HTTP router only)

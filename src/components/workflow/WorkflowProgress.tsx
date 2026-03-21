@@ -9,7 +9,21 @@ import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, XCircle, Circle } from 'lucide-react';
-import { WorkflowStageExecution } from '@/services/workflowEngine';
+
+interface WorkflowStageExecution {
+  id: string;
+  workflow_instance_id: string;
+  stage_number: number;
+  stage_name: string;
+  assigned_role: string;
+  assigned_to?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'skipped';
+  decision?: string;
+  decision_notes?: string;
+  decided_by?: string;
+  decided_at?: string;
+  created_at: string;
+}
 
 interface WorkflowProgressProps {
   stages: WorkflowStageExecution[];

@@ -1,45 +1,56 @@
 # NamLend Trust - Functionality Map
 
-**Doc Revision**: 2026-01-19  \
-**Purpose**: Feature to service and database wiring map (current codebase).
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current ✅
+**Purpose**: Feature to Convex API and database wiring map (current codebase).
+
+> All backend references are Convex (`convex/schema.ts` tables, `api.*` functions). The `src/services/` directory is legacy dead code — 23 files deleted in Milestone D, 4 remain with active consumers. See [SERVICES.md](./SERVICES.md) for migration status.
 
 ---
 
 ## Core Feature Map
 
-| Feature | UI Entry | Services | Tables/RPCs | Status |
-| --- | --- | --- | --- | --- |
-| Auth & Roles | `Auth.tsx`, `useAuth.tsx` | `useAuth`, `roleManagementService` | `profiles`, `user_roles` | Implemented |
-| Loan Application | `LoanApplication.tsx` | `approvalWorkflow` | `approval_requests` | Implemented |
-| Admin Approval | `ApprovalManagementDashboard` | `approvalWorkflow` | `approval_requests_expanded`, `process_approval_transaction` | Implemented |
-| Loan Records | Admin + client views | `loanService` | `loans` | Implemented |
-| Disbursements | `DisbursementManager` | `disbursementService`, `disbursementsAPI` | `disbursements`, RPCs | Implemented |
-| Payments (initiation) | `Payment.tsx` | RPC call | `create_payment` RPC, `payments` | Implemented |
-| Payments (direct) | `PaymentModal` | `paymentService` | `process_loan_payment`, `payment_schedules` | Implemented |
-| Payment Webhooks | Edge Function | `paymentGateway` | `payment_webhooks`, `payment_transactions` | Implemented |
-| IPS Repayments/Disb. | IPS modals | `ipsService` | `ips_transactions`, `ips-adapter` | Mock adapter |
-| IPP Onboarding | `BankingSection`, admin IPP | `ipsOnboardingService` | `ips_onboarding`, `ips_*` | Implemented (mock adapter) |
-| Collections | `CollectionsDashboard` | `collectionsAPI` | `collections_interactions`, `promise_to_pay` | Implemented |
-| Reconciliation | `ReconciliationDashboard` | `reconciliationService` (legacy) | `bank_transactions`, `payment_reconciliations` | Partial (schema drift) |
-| Notifications | `NotificationCenter` | `notificationService` | `notifications`, `notification_queue` | Implemented |
-| SMS/WhatsApp | Admin tools | `smsGateway`, `whatsappGateway` | `communication_logs` + Edge Functions | Wired, secrets needed |
-| Audit Logs | Admin panels | `auditService` | `audit_logs`, `view_logs`, `state_transitions` | Implemented |
-| Settlement | Admin reconciliation | `settlementService` | `settlement_*` RPCs | Implemented (no transport) |
-| TigerBeetle | Admin ledger + outbox | `ledgerService` | `tigerbeetle_*` | Simulated posting |
-| Budget Tracker | `BudgetTracker.tsx` | `financeService` | Mock data (pending tables) | Implemented (mock) |
-| Credit Scoring | `CreditScoreDisplay` | `creditScoring` | Profile data | Partial (display-only) |
-| KYC Verification | `KYC.tsx` | `useKYCEligibility` | `kyc_documents`, `document_verification_requirements` | Implemented |
+| Feature              | UI Entry                                               | Convex API                                                                                                                                                                                        | Tables (Convex)                                                             | Status                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Auth & Roles         | `Auth.tsx`, `useAuth.tsx`                              | `api.users.getMyRole`, `api.users.listUsers`                                                                                                                                                      | `profiles`, `userRoles`                                                     | ✅ Implemented                                                                                                                                                     |
+| Loan Application     | `LoanApplication.tsx`                                  | `api.loans.createLoan`, `api.loans.submitLoan`                                                                                                                                                    | `loans`, `approvalRequests`                                                 | ✅ Implemented                                                                                                                                                     |
+| Admin Approval       | `ApprovalManagementDashboard`                          | `api.approvalWorkflow.adminListApprovals`, `api.approvalWorkflow.processApprovalRequest`                                                                                                          | `approvalRequests`, `approvalHistory`                                       | ✅ Implemented                                                                                                                                                     |
+| Loan Records         | Admin + client views                                   | `api.loans.adminListLoans`, `api.loans.getMyLoans`                                                                                                                                                | `loans`, `loanDocuments`                                                    | ✅ Implemented                                                                                                                                                     |
+| Disbursements        | `DisbursementManager`                                  | `api.disbursements.initiateDisbursement`, `api.disbursements.completeDisbursement`                                                                                                                | `disbursements`, `tigerBeetleOutbox`                                        | ✅ Implemented                                                                                                                                                     |
+| Payments (client)    | `Payment.tsx`                                          | `api.payments.recordPayment`, `api.payments.getPaymentSchedule`                                                                                                                                   | `paymentTransactions`, `paymentSchedules`                                   | ✅ Implemented                                                                                                                                                     |
+| Payment Webhooks     | HTTP Router                                            | `convex/http.ts` + `actions/ipsAdapter.handlePaymentWebhook`                                                                                                                                      | `paymentTransactions`                                                       | ✅ Implemented                                                                                                                                                     |
+| IPS Repayments/Disb. | IPS modals                                             | `api.ips.ipsTransactions.initiateIpsTransaction`                                                                                                                                                  | `ipsTransactions`, `ipsApiLogs`                                             | ⚠️ Mock adapter                                                                                                                                                    |
+| IPP Onboarding       | `BankingSection`, admin IPP                            | `api.ips.onboarding.*`, `api.ips.vpaRegistry.*`                                                                                                                                                   | `ipsOnboardingApplications`, `vpaRegistry`                                  | ⚠️ Implemented (mock adapter)                                                                                                                                      |
+| Collections          | `CollectionsDashboard`                                 | `api.collections.getCollectionsQueue`, `api.collections.recordInteraction`                                                                                                                        | `collectionsInteractions`, `promiseToPay`, `overdueReminders`               | ✅ Implemented                                                                                                                                                     |
+| Reconciliation       | `ReconciliationDashboard`                              | `api.reconciliation.*`                                                                                                                                                                            | `reconciliationRuns`, `bankTransactions`                                    | ⚠️ Partial (stub functions)                                                                                                                                        |
+| Notifications        | `NotificationCenter`                                   | `api.notifications.getMyNotifications`, `api.notifications.markNotificationRead`                                                                                                                  | `notifications`, `notificationQueue`                                        | ✅ Implemented — `getMyNotifications` returns array directly (fixed runtime crash from object/array type mismatch)                                                 |
+| SMS/WhatsApp         | Admin tools                                            | `api.actions.sendSms`, `api.actions.sendWhatsapp`                                                                                                                                                 | `communicationLogs`, `notificationQueue`                                    | ⚠️ Wired, secrets needed                                                                                                                                           |
+| Audit Logs           | Admin panels                                           | `api.audit.getAuditLogs`, `api.audit.getStateTransitions`                                                                                                                                         | `auditLogs`, `viewLogs`, `stateTransitions`                                 | ✅ Implemented                                                                                                                                                     |
+| Settlement           | Admin reconciliation                                   | `convex/settlement/*`                                                                                                                                                                             | `settlementRuns`, `settlementObligations`, `settlementPacs009Batches`, etc. | ⚠️ Implemented (no transport)                                                                                                                                      |
+| TigerBeetle          | Admin ledger + outbox                                  | `convex/scheduled/tigerBeetleOutboxWorker`                                                                                                                                                        | `tigerBeetleOutbox`, `tigerBeetleTransfers`, `tigerBeetleAccounts`          | ⚠️ Simulated posting                                                                                                                                               |
+| Budget Tracker       | `BudgetTracker.tsx`                                    | None (inline mock data)                                                                                                                                                                           | Mock (no Convex tables)                                                     | ⚠️ Mock data                                                                                                                                                       |
+| Credit Scoring       | `CreditScoreDisplay`, `Loan360View`, `LoanReviewPanel` | `convex/actions/processLoanApplication.ts` (server-side)                                                                                                                                          | `loans.creditScore`, `loans.recommendation`                                 | ✅ Implemented — `submitLoan` schedules `processLoanApplication`; score/DTI/recommendation written to `loans` table and displayed in Loan360View + LoanReviewPanel |
+| KYC Verification     | `KYC.tsx`                                              | `useKYCEligibility` hook → `api.users.getMyKycDocuments`, `api.users.recordKycDocument` (client upload), `api.users.reviewKycDocument` (admin approve/reject — auto-updates `profiles.kycStatus`) | `kycDocuments`, `profiles`                                                  | ✅ Implemented (reactive — gate lifts in real-time on admin approval; audit logged)                                                                                |
+| System Config        | Admin Settings tabs                                    | `api.systemConfig.*`                                                                                                                                                                              | `systemConfiguration`                                                       | ✅ Implemented                                                                                                                                                     |
+| Workflow Engine      | `WorkflowManagementDashboard`                          | `api.approvalWorkflow.listWorkflowDefinitions`, `api.approvalWorkflow.createWorkflowDefinition`                                                                                                   | `workflowDefinitions`, `workflowInstances`                                  | ✅ Implemented                                                                                                                                                     |
+| Credit Policy        | `CreditPolicyConfig`                                   | `api.systemConfig.*`                                                                                                                                                                              | `systemConfiguration`                                                       | ✅ Implemented                                                                                                                                                     |
 
 ---
 
 ## Notes on Partial Wiring
 
-- `paymentGateway` is not currently used by the UI; payment flows use RPCs directly.
-- `creditScoring` is not integrated into the loan application flow (display-only component exists).
-- `financeService` uses mock data; Supabase tables pending for budget tracking.
-- IPS adapter is mock; production integration requires secrets and mTLS.
-- `/admin/*` route is admin-only in `ProtectedRoute`, despite loan officer UI logic.
-- Reconciliation uses legacy tables; new `reconciliation_runs` schema + `api-reconciliation` are not yet wired into the UI.
+- **IPS adapter**: Mock mode — production IPS API, mTLS, and Bank of Namibia switch connectivity not wired.
+- **Credit scoring UI**: ✅ Fully wired — `submitLoan` schedules `processLoanApplication` action which writes `creditScore`, `debtToIncomeRatio`, and `recommendation` to the `loans` table. `Loan360View` (Overview tab) and `LoanReviewPanel` display these fields.
+- **Budget Tracker**: Uses inline mock data; no Convex tables for budget/savings data yet.
+- **Reconciliation**: Convex `reconciliation.ts` has queries; UI stub functions (`ReconciliationDashboard`) use mock data for some operations.
+- **TigerBeetle**: Outbox pattern implemented end-to-end; cron worker simulates TB cluster posting (no live cluster connection yet).
+- **`/admin/*` route**: `requireLoanOfficer` guard — both `loan_officer` and `admin` roles can access. Admin-only features (user management, system config delete) are gated inside UI components by `isAdmin` check.
+- **Collections activity history**: `CollectionsWorkqueue.loadActivities` is a placeholder — expanded activity history per loan not yet wired to `api.collections.listInteractionsByLoan`.
+
+## Audit
+
+See [AUDIT_REPORT.md](./AUDIT_REPORT.md) for the full end-to-end integration audit conducted 2026-03-03. Seven critical issues were found and fixed including the loan application flow (no loan record created), KYC gate permanently blocking users (dead Supabase RPC), and payments never being processed (mock-only).
 
 ---
 
@@ -50,3 +61,4 @@
 - [SERVICES.md](./SERVICES.md) - Service layer details
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
+- [AUDIT_REPORT.md](./AUDIT_REPORT.md) - End-to-end integration audit (2026-03-03)

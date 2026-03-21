@@ -3,8 +3,8 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { getUserApprovalRequests } from '@/services/approvalWorkflow';
+import { useQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { useTheme } from '@/context/ThemeContext';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { useTranslation } from 'react-i18next';
@@ -74,16 +74,41 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
   const { t } = useTranslation('dashboard');
 
-  // Data State
-  const [profile, setProfile] = useState<any>(null);
-  const [loans, setLoans] = useState<any[]>([]);
-  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  // Convex reactive queries — no as any (N2)
+  const profile = useQuery(api.users.getMyProfile);
+  const rawLoans = useQuery(api.loans.getMyLoans, {});
+  const rawApprovals = useQuery(api.approvalWorkflow.getMyApprovalRequests, { status: 'pending' });
+  const rawPayments = useQuery(api.payments.getMyPayments, { limit: 50 });
+
+  const loans = rawLoans ?? [];
+  const payments = rawPayments ?? [];
+
+  // Map approval requests to LoanApplication shape — using Convex schema field names
+  const loanApplications: LoanApplication[] = (rawApprovals ?? [])
+    .filter((req) => req.requestType === 'loan_application')
+    .map((req) => {
+      const data = (req.metadata as Record<string, unknown>) ?? {};
+      return {
+        id: String(req._id),
+        amount: Number(data.amount ?? 0),
+        purpose: String(data.purpose ?? 'Not specified'),
+        status: req.status,
+        submittedAt: new Date(req.createdAt).toISOString(),
+        termMonths: Number(data.term_months ?? data.term ?? 0),
+        interestRate: Number(data.interest_rate ?? 0),
+        monthlyPayment: Number(data.monthly_payment ?? 0),
+        priority: req.priority ?? 'normal',
+        created_at: new Date(req.createdAt).toISOString(),
+        request_data: req.metadata,
+      };
+    });
 
   // UI State
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Data is loading if any query hasn't returned yet
+  const loading = profile === undefined || rawLoans === undefined;
 
   // KYC eligibility for status indicator
   const {
@@ -107,80 +132,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       trackAction('dashboard_load', { userId: user.id });
-      fetchDashboardData();
     }
   }, [user, trackAction]);
-
-  const fetchDashboardData = async () => {
-    await handleAsyncOperation(
-      async () => {
-        setLoading(true);
-
-        // Run all queries in parallel for better performance
-        const [profileResult, loansResult, applicationsResult, paymentsResult] = await Promise.all([
-          // Fetch user profile
-          supabase.from('profiles').select('*').eq('user_id', user?.id).single(),
-
-          // Fetch user's loans with balance info
-          supabase
-            .from('loans')
-            .select('*')
-            .eq('user_id', user?.id)
-            .order('created_at', { ascending: false }),
-
-          // Fetch user's loan applications
-          getUserApprovalRequests('pending'),
-
-          // Fetch user's payments (limit to recent 50 for performance)
-          supabase
-            .from('payments')
-            .select(`*, loans!inner(user_id)`)
-            .eq('loans.user_id', user?.id)
-            .order('created_at', { ascending: false })
-            .limit(50),
-        ]);
-
-        // Process profile
-        if (profileResult.error)
-          throw new Error(`Profile fetch failed: ${profileResult.error.message}`);
-        setProfile(profileResult.data);
-
-        // Process loans
-        if (loansResult.error) throw new Error(`Loans fetch failed: ${loansResult.error.message}`);
-        setLoans(loansResult.data || []);
-
-        // Process applications
-        if (applicationsResult.requests) {
-          const loanApps = applicationsResult.requests
-            .filter((req) => req.request_type === 'loan_application')
-            .map((req) => {
-              const data = (req.request_data as any) || {};
-              return {
-                id: req.id,
-                amount: Number(data.amount || 0),
-                purpose: String(data.purpose || 'Not specified'),
-                status: req.status || 'pending',
-                submittedAt: req.created_at || new Date().toISOString(),
-                termMonths: Number(data.term_months || data.term || 0),
-                interestRate: Number(data.interest_rate || 0),
-                monthlyPayment: Number(data.monthly_payment || 0),
-                priority: req.priority || 'normal',
-                created_at: req.created_at,
-                request_data: req.request_data,
-              };
-            });
-          setLoanApplications(loanApps);
-        }
-
-        // Process payments
-        if (paymentsResult.error)
-          throw new Error(`Payments fetch failed: ${paymentsResult.error.message}`);
-        setPayments(paymentsResult.data || []);
-      },
-      'fetch_dashboard_data',
-      { showErrorToast: true, retries: 2 }
-    ).finally(() => setLoading(false));
-  };
 
   if (authLoading || loading) {
     return (
@@ -192,7 +145,7 @@ export default function Dashboard() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  const activeLoan = loans.find((loan) => loan.status === 'active' || loan.status === 'disbursed');
+  const activeLoan = loans.find((loan) => ['active', 'disbursed', 'funded'].includes(loan.status));
   const pendingLoan = loanApplications.find((app) => app.status === 'pending');
 
   const handleTabChange = (tab: string) => {
@@ -231,7 +184,7 @@ export default function Dashboard() {
                     styles.textClass
                   )}
                 >
-                  {t('greeting', { name: profile?.first_name || 'Client' })}
+                  {t('greeting', { name: profile?.fullName?.split(' ')[0] || 'Client' })}
                 </h2>
                 <p className="text-muted-foreground mt-2 text-base md:text-lg">{t('subtitle')}</p>
               </div>
@@ -248,7 +201,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               <StatCard
                 label={t('stats.totalBalance')}
-                value={activeLoan ? formatNAD(activeLoan.amount) : 'N$0.00'}
+                value={activeLoan ? formatNAD(activeLoan.principal) : 'N$0.00'}
                 icon={Wallet}
                 color="black"
               />
@@ -266,7 +219,7 @@ export default function Dashboard() {
                     ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : '--'
                 }
-                subValue={activeLoan ? formatNAD(activeLoan.monthly_payment) : ''}
+                subValue={activeLoan ? formatNAD(activeLoan.monthlyPayment ?? 0) : ''}
                 icon={Calendar}
                 color="blue"
               />
@@ -462,11 +415,11 @@ export default function Dashboard() {
             {loans.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {loans.map((loan) => {
-                  const isSettled = loan.status === 'settled';
+                  const isSettled = loan.status === 'paid_off';
                   const isActive = ['active', 'disbursed', 'funded'].includes(loan.status);
                   const progressPercent =
-                    loan.total_paid && loan.total_repayment
-                      ? Math.round((loan.total_paid / loan.total_repayment) * 100)
+                    (loan.totalPaid ?? 0) > 0 && loan.principal > 0
+                      ? Math.round(((loan.totalPaid ?? 0) / loan.principal) * 100)
                       : 0;
 
                   return (
@@ -481,7 +434,7 @@ export default function Dashboard() {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h3 className={cn('text-xl font-bold', styles.textClass)}>
-                            {formatNAD(loan.amount)}
+                            {formatNAD(loan.principal)}
                           </h3>
                           <p className="text-sm text-muted-foreground">{loan.purpose}</p>
                         </div>
@@ -508,11 +461,11 @@ export default function Dashboard() {
                               value={progressPercent}
                               className={`h-2 ${isSettled ? '[&>div]:bg-green-600 dark:[&>div]:bg-green-500' : ''}`}
                             />
-                            {!isSettled && loan.outstanding_balance > 0 && (
+                            {!isSettled && (loan.outstandingBalance ?? 0) > 0 && (
                               <p className="text-xs text-muted-foreground">
                                 {t('loans.outstanding')}{' '}
                                 <span className="font-semibold text-foreground">
-                                  {formatNAD(loan.outstanding_balance)}
+                                  {formatNAD(loan.outstandingBalance ?? 0)}
                                 </span>
                               </p>
                             )}
@@ -523,19 +476,19 @@ export default function Dashboard() {
                           <div>
                             <p className="text-muted-foreground text-xs">{t('loans.term')}</p>
                             <p className="font-medium text-foreground">
-                              {t('loans.termValue', { months: loan.term_months })}
+                              {t('loans.termValue', { months: loan.termMonths })}
                             </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">{t('loans.rate')}</p>
                             <p className="font-medium text-foreground">
-                              {t('loans.rateValue', { rate: loan.interest_rate })}
+                              {t('loans.rateValue', { rate: loan.interestRate })}
                             </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">{t('loans.monthly')}</p>
                             <p className="font-medium text-foreground">
-                              {formatNAD(loan.monthly_payment)}
+                              {formatNAD(loan.monthlyPayment ?? 0)}
                             </p>
                           </div>
                           <div>
@@ -543,7 +496,7 @@ export default function Dashboard() {
                               {isSettled ? t('loans.totalPaid') : t('loans.totalDue')}
                             </p>
                             <p className="font-medium text-foreground">
-                              {formatNAD(isSettled ? loan.total_paid : loan.total_repayment)}
+                              {formatNAD(isSettled ? (loan.totalPaid ?? 0) : loan.principal)}
                             </p>
                           </div>
                         </div>
@@ -560,10 +513,10 @@ export default function Dashboard() {
                           </ThemedButton>
                         )}
 
-                        {isSettled && loan.settled_at && (
+                        {isSettled && loan.completedAt && (
                           <p className="text-xs text-green-600 dark:text-green-400 text-center">
                             {t('loans.settledOn', {
-                              date: new Date(loan.settled_at).toLocaleDateString('en-ZA', {
+                              date: new Date(loan.completedAt).toLocaleDateString('en-ZA', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric',
@@ -663,7 +616,7 @@ export default function Dashboard() {
                 <div className="divide-y divide-border">
                   {payments.map((payment) => (
                     <div
-                      key={payment.id}
+                      key={payment._id}
                       className="p-4 flex justify-between items-center hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
@@ -675,7 +628,9 @@ export default function Dashboard() {
                             {formatNAD(payment.amount)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(payment.paid_at).toLocaleDateString()}
+                            {new Date(
+                              payment.paymentDate ?? payment.createdAt
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -713,9 +668,7 @@ export default function Dashboard() {
       activeTab={activeTab}
       onTabChange={handleTabChange}
       variant="client"
-      userName={
-        profile?.first_name ? `${profile.first_name} ${profile.last_name || ''}` : undefined
-      }
+      userName={profile?.fullName ?? (profile?.email ? profile.email.split('@')[0] : undefined)}
     >
       {!isMobile && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -731,7 +684,7 @@ export default function Dashboard() {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         userId={user?.id || ''}
-        onPaymentSuccess={fetchDashboardData}
+        onPaymentSuccess={() => setShowPaymentModal(false)}
       />
     </DashboardLayout>
   );

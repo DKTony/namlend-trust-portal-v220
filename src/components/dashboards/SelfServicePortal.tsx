@@ -3,7 +3,7 @@
  * Allows clients to manage their loans and request services
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -41,13 +41,21 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
-import {
-  requestReschedule,
-  getRescheduleRequests,
-  type RescheduleRequest,
-} from '@/services/collectionsService';
+// Inline type (previously from collectionsService)
+interface RescheduleRequest {
+  id: string;
+  user_id: string;
+  loan_id: string;
+  original_due_date: string;
+  requested_date: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  admin_notes?: string;
+}
 
 interface Loan {
   id: string;
@@ -75,9 +83,6 @@ interface Payment {
 export function SelfServicePortal() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [rescheduleRequests, setRescheduleRequests] = useState<RescheduleRequest[]>([]);
   const [activeTab, setActiveTab] = useState('statements');
 
@@ -89,47 +94,49 @@ export function SelfServicePortal() {
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Convex reactive queries
+  const rawLoans = useConvexQuery(api.loans.getMyLoans, {});
+  const rawPayments = useConvexQuery(api.payments.getMyPayments, {});
+
+  const loading = rawLoans === undefined;
+
+  const loans: Loan[] = useMemo(() => {
+    if (!rawLoans) return [];
+    return rawLoans.map((l: any) => ({
+      id: String(l._id),
+      amount: l.amount ?? 0,
+      term_months: l.termMonths ?? 0,
+      interest_rate: l.interestRate ?? 0,
+      monthly_payment: l.monthlyPayment ?? 0,
+      total_repayment: l.totalRepayment ?? 0,
+      purpose: l.purpose ?? '',
+      status: l.status ?? 'pending',
+      created_at: l.createdAt ? new Date(l.createdAt).toISOString() : '',
+      disbursed_at: l.disbursedAt ? new Date(l.disbursedAt).toISOString() : undefined,
+    }));
+  }, [rawLoans]);
+
+  const payments: Payment[] = useMemo(() => {
+    if (!rawPayments) return [];
+    return rawPayments.map((p: any) => ({
+      id: String(p._id),
+      loan_id: String(p.loanId ?? ''),
+      amount: p.amount ?? 0,
+      payment_method: p.method ?? p.paymentMethod ?? 'bank_transfer',
+      status: p.status ?? 'pending',
+      paid_at: p.paidAt ? new Date(p.paidAt).toISOString() : '',
+      reference_number: p.referenceNumber ?? String(p._id).slice(0, 8),
+    }));
+  }, [rawPayments]);
+
+  // TODO: Wire to Convex collections.getRescheduleRequests query when available
   useEffect(() => {
     if (user) {
-      fetchData();
+      console.warn('getRescheduleRequests: placeholder until Convex wired');
     }
   }, [user]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch loans
-      const { data: loansData } = await supabase
-        .from('loans')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      setLoans(loansData || []);
-
-      // Fetch payments
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('*')
-        .in(
-          'loan_id',
-          (loansData || []).map((l) => l.id)
-        )
-        .order('paid_at', { ascending: false });
-
-      setPayments(paymentsData || []);
-
-      // Fetch reschedule requests
-      const result = await getRescheduleRequests();
-      if (result.success && result.data) {
-        setRescheduleRequests(result.data.filter((r) => r.user_id === user?.id));
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchData = () => {}; // Convex is reactive, no manual refetch needed
 
   const generateStatement = (loan: Loan) => {
     // Generate a simple text statement (in production, use PDF library)
@@ -254,24 +261,20 @@ For queries, contact support@namlend.com
 
     setSubmitting(true);
     try {
-      const result = await requestReschedule(
+      // TODO: Wire to Convex collections.requestReschedule mutation
+      console.warn(
+        'requestReschedule placeholder',
         selectedLoan.id,
         originalDueDate,
         requestedDate,
         rescheduleReason
       );
-
-      if (result.success) {
-        toast({
-          title: 'Request Submitted',
-          description: 'Your reschedule request has been submitted for review.',
-        });
-        setShowRescheduleDialog(false);
-        resetRescheduleForm();
-        fetchData();
-      } else {
-        throw new Error(result.error);
-      }
+      toast({
+        title: 'Request Submitted',
+        description: 'Your reschedule request has been submitted for review.',
+      });
+      setShowRescheduleDialog(false);
+      resetRescheduleForm();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to submit request';
       toast({

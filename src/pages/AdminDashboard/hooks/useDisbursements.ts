@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { disbursementsAPI } from '@/services/api-client';
+import { useMemo } from 'react';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../convex/_generated/dataModel';
 
 // Use the interface that matches the RPC function return
 export interface Disbursement {
@@ -7,7 +9,7 @@ export interface Disbursement {
   loan_id: string;
   client_name: string; // From RPC function
   amount: number;
-  status: 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'reversed' | 'cancelled';
   method: string;
   reference: string;
   scheduled_at: string;
@@ -18,119 +20,84 @@ export const useDisbursements = (
   status: 'all' | 'pending' | 'approved' | 'processing' | 'completed' | 'failed' = 'all',
   searchTerm: string = ''
 ) => {
-  const [disbursements, setDisbursements] = useState<Disbursement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Convex reactive query
+  const rawDisbursements = useConvexQuery(api.disbursements.adminListDisbursements, {
+    status: (status !== 'all' ? status : undefined) as any,
+  });
 
-  const fetchDisbursements = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loading = rawDisbursements === undefined;
+  const error: string | null = null;
 
-      // Fetch disbursements via API Orchestration Layer
-      const result = await disbursementsAPI.list({ status: status === 'all' ? undefined : status });
+  const disbursements: Disbursement[] = useMemo(() => {
+    if (!rawDisbursements) return [];
 
-      if (!result.success) {
-        setError(result.error || 'Failed to fetch disbursements');
-        setDisbursements([]);
-        return;
-      }
+    let transformed: Disbursement[] = rawDisbursements.map((d: any) => ({
+      id: String(d._id),
+      loan_id: String(d.loanId ?? ''),
+      client_name: d.accountName ?? 'Unknown',
+      amount: d.amount ?? 0,
+      status: (d.status ?? 'pending') as Disbursement['status'],
+      method: d.method ?? 'bank_transfer',
+      reference: d.referenceNumber ?? `DIS-${String(d._id).slice(0, 8)}`,
+      scheduled_at: d.processedAt ? new Date(d.processedAt).toISOString() : '',
+      created_at: d.createdAt ? new Date(d.createdAt).toISOString() : '',
+    }));
 
-      let filteredDisbursements = (result.data as Disbursement[]) || [];
-
-      // Apply status filter
-      if (status !== 'all') {
-        filteredDisbursements = filteredDisbursements.filter(
-          disbursement => disbursement.status === status
-        );
-      }
-
-      // Apply search filter
-      if ((searchTerm ?? '').trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        filteredDisbursements = filteredDisbursements.filter(disbursement =>
-          disbursement.client_name.toLowerCase().includes(searchLower) ||
-          disbursement.reference.toLowerCase().includes(searchLower) ||
-          disbursement.id.toLowerCase().includes(searchLower) ||
-          disbursement.amount.toString().includes(searchTerm)
-        );
-      }
-
-      setDisbursements(filteredDisbursements);
-
-    } catch (err) {
-      console.error('Error in fetchDisbursements:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-    } finally {
-      setLoading(false);
+    // Apply search filter
+    if ((searchTerm ?? '').trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      transformed = transformed.filter(
+        (d) =>
+          d.client_name.toLowerCase().includes(searchLower) ||
+          d.reference.toLowerCase().includes(searchLower) ||
+          d.id.toLowerCase().includes(searchLower) ||
+          d.amount.toString().includes(searchTerm)
+      );
     }
-  };
 
-  useEffect(() => {
-    fetchDisbursements();
-  }, [status, searchTerm]);
+    return transformed;
+  }, [rawDisbursements, searchTerm]);
 
-  const refetch = () => {
-    fetchDisbursements();
-  };
+  const refetch = () => {}; // Convex is reactive
 
-  const approveDisbursementAction = async (disbursementId: string, notes?: string) => {
-    try {
-      const result = await disbursementsAPI.approve({ disbursement_id: disbursementId, notes });
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to approve disbursement');
-      }
-      refetch();
-      return result;
-    } catch (err) {
-      console.error('Error approving disbursement:', err);
-      throw err;
-    }
+  // Convex mutations for disbursement state transitions
+  const processMutation = useConvexMutation(api.disbursements.processDisbursement);
+  const completeMutation = useConvexMutation(api.disbursements.completeDisbursement);
+  const failMutation = useConvexMutation(api.disbursements.failDisbursement);
+
+  const approveDisbursementAction = async (disbursementId: string, _notes?: string) => {
+    // Approve = transition from pending to processing (ready for bank transfer)
+    await processMutation({
+      disbursementId: disbursementId as Id<'disbursements'>,
+    });
+    return { success: true };
   };
 
   const markProcessingAction = async (disbursementId: string, paymentReference: string) => {
-    try {
-      const result = await disbursementsAPI.process({ disbursement_id: disbursementId, payment_reference: paymentReference });
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to mark as processing');
-      }
-      refetch();
-      return result;
-    } catch (err) {
-      console.error('Error marking as processing:', err);
-      throw err;
-    }
+    await processMutation({
+      disbursementId: disbursementId as Id<'disbursements'>,
+      referenceNumber: paymentReference,
+    });
+    return { success: true };
   };
 
   const completeDisbursementAction = async (
     disbursementId: string,
     confirmationReference: string
   ) => {
-    try {
-      const result = await disbursementsAPI.complete({ disbursement_id: disbursementId, confirmation_reference: confirmationReference });
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to complete disbursement');
-      }
-      refetch();
-      return result;
-    } catch (err) {
-      console.error('Error completing disbursement:', err);
-      throw err;
-    }
+    await completeMutation({
+      disbursementId: disbursementId as Id<'disbursements'>,
+      referenceNumber: confirmationReference,
+    });
+    return { success: true };
   };
 
   const failDisbursementAction = async (disbursementId: string, reason: string) => {
-    try {
-      const result = await disbursementsAPI.fail({ disbursement_id: disbursementId, reason });
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to mark as failed');
-      }
-      refetch();
-      return result;
-    } catch (err) {
-      console.error('Error failing disbursement:', err);
-      throw err;
-    }
+    await failMutation({
+      disbursementId: disbursementId as Id<'disbursements'>,
+      reason,
+    });
+    return { success: true };
   };
 
   return {
@@ -141,6 +108,6 @@ export const useDisbursements = (
     approveDisbursement: approveDisbursementAction,
     markProcessing: markProcessingAction,
     completeDisbursement: completeDisbursementAction,
-    failDisbursement: failDisbursementAction
+    failDisbursement: failDisbursementAction,
   };
 };

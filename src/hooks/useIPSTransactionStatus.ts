@@ -1,19 +1,15 @@
 /**
  * IPS Transaction Status Hook
- * 
+ *
  * React Query hook for polling IPS transaction status
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useCallback } from 'react';
-import {
-  getIPSTransactionStatus,
-  checkIPSTransactionStatus,
-} from '@/services/ipsService';
-import type {
-  IPSTransactionStatusResult,
-  IPSTransactionStatus,
-} from '@/types/ips';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import { type Id } from '@/integrations/convex/api';
+import type { IPSTransactionStatusResult, IPSTransactionStatus } from '@/types/ips';
 import { isIPSStatusFinal } from '@/types/ips';
 
 interface UseIPSTransactionStatusOptions {
@@ -36,37 +32,48 @@ export function useIPSTransactionStatus(
   transactionId: string | null | undefined,
   options: UseIPSTransactionStatusOptions = {}
 ) {
-  const {
-    enablePolling = true,
-    pollInterval = 3000,
-    maxPolls = 20,
-    onComplete,
-    onError,
-  } = options;
+  const { enablePolling = true, pollInterval = 3000, maxPolls = 20, onComplete, onError } = options;
 
   const queryClient = useQueryClient();
 
+  const convexTx = useConvexQuery(
+    api.ips.ipsTransactions.getTransaction,
+    transactionId ? { transactionId: transactionId as Id<'ipsTransactions'> } : 'skip'
+  );
+
   const query = useQuery<IPSTransactionStatusResult>({
     queryKey: ['ips-transaction-status', transactionId],
-    queryFn: () => getIPSTransactionStatus(transactionId!),
-    enabled: !!transactionId,
+    queryFn: () => {
+      if (!convexTx)
+        return { success: false, error: 'Transaction not found' } as IPSTransactionStatusResult;
+      return {
+        success: true,
+        status: convexTx.status as IPSTransactionStatus,
+        transactionId: convexTx._id,
+        amount: convexTx.amount,
+        currency: convexTx.currency,
+        errorCode: convexTx.errorCode,
+        errorDescription: convexTx.errorDescription,
+      } as IPSTransactionStatusResult;
+    },
+    enabled: !!transactionId && convexTx !== undefined,
     refetchInterval: (query) => {
       if (!enablePolling) return false;
-      
+
       const data = query.state.data;
       if (!data?.success) return false;
-      
+
       // Stop polling if transaction is in final state
       if (data.status && isIPSStatusFinal(data.status)) {
         return false;
       }
-      
+
       // Stop polling after max polls
       const pollCount = query.state.dataUpdateCount;
       if (pollCount >= maxPolls) {
         return false;
       }
-      
+
       return pollInterval;
     },
     staleTime: 1000, // Consider data stale after 1 second
@@ -93,14 +100,9 @@ export function useIPSTransactionStatus(
    */
   const checkStatus = useCallback(async () => {
     if (!transactionId) return null;
-    
-    const result = await checkIPSTransactionStatus(transactionId);
-    
-    // Update the query cache with new result
-    queryClient.setQueryData(['ips-transaction-status', transactionId], result);
-    
-    return result;
-  }, [transactionId, queryClient]);
+    queryClient.invalidateQueries({ queryKey: ['ips-transaction-status', transactionId] });
+    return query.data ?? null;
+  }, [transactionId, queryClient, query.data]);
 
   /**
    * Force refresh the status
@@ -121,12 +123,9 @@ export function useIPSTransactionStatus(
  * Hook for fetching all IPS transactions for a loan
  */
 export function useLoanIPSTransactions(loanId: string | null | undefined) {
-  return useQuery({
-    queryKey: ['loan-ips-transactions', loanId],
-    queryFn: async () => {
-      const { getLoanIPSTransactions } = await import('@/services/ipsService');
-      return getLoanIPSTransactions(loanId!);
-    },
-    enabled: !!loanId,
-  });
+  const raw = useConvexQuery(
+    api.ips.ipsTransactions.getTransactionsByLoan,
+    loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
+  return { data: raw, isLoading: raw === undefined, isError: false };
 }

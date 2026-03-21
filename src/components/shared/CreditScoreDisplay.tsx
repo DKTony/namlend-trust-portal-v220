@@ -34,7 +34,7 @@ import {
   type CreditFactors,
   type CreditScore,
   type LoanRecommendation,
-} from '@/services/creditScoring';
+} from '@/utils/creditScoring';
 import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
 

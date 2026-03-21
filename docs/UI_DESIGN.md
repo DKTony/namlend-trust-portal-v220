@@ -43,27 +43,27 @@ The NamLend Trust UI is built on three core principles:
 The system supports **3 distinct theme variants**, each with light/dark modes.  
 **Default**: `neo` (stored in `localStorage` under `namlend-theme-variant`).
 
-| Variant | Name | Aesthetic | Primary Use Case |
-|---------|------|-----------|------------------|
-| `glass` | Deep Glass | Glassmorphism, blur, translucency | Modern fintech, premium feel |
-| `lux` | Midnight Lux | Matte black, gold accents, serif fonts | Luxury, high-end financial |
-| `neo` | Neo Pop | Hard shadows, brutalist, bold borders | Bold, playful, crypto-style |
+| Variant | Name         | Aesthetic                              | Primary Use Case             |
+| ------- | ------------ | -------------------------------------- | ---------------------------- |
+| `glass` | Deep Glass   | Glassmorphism, blur, translucency      | Modern fintech, premium feel |
+| `lux`   | Midnight Lux | Matte black, gold accents, serif fonts | Luxury, high-end financial   |
+| `neo`   | Neo Pop      | Hard shadows, brutalist, bold borders  | Bold, playful, crypto-style  |
 
 ### ThemeConfig Interface
 
 ```typescript
 interface ThemeConfig {
-  name: string;           // Human-readable theme name
-  variant: ThemeVariant;  // 'glass' | 'lux' | 'neo'
-  background: string;     // Page background class
-  cardClass: string;      // Card component styling
-  textClass: string;      // Typography styling
-  accentClass: string;    // Primary action/accent styling
-  borderClass: string;    // Border styling
-  buttonClass: string;    // Secondary button styling
-  inputClass: string;     // Input styling
-  badgeClass: string;     // Badge styling
-  radius: string;         // Default border radius
+  name: string; // Human-readable theme name
+  variant: ThemeVariant; // 'glass' | 'lux' | 'neo'
+  background: string; // Page background class
+  cardClass: string; // Card component styling
+  textClass: string; // Typography styling
+  accentClass: string; // Primary action/accent styling
+  borderClass: string; // Border styling
+  buttonClass: string; // Secondary button styling
+  inputClass: string; // Input styling
+  badgeClass: string; // Badge styling
+  radius: string; // Default border radius
 }
 ```
 
@@ -78,11 +78,11 @@ The theme system uses React Context API with the following structure:
 ```typescript
 // context/ThemeContext.tsx
 interface ThemeContextType {
-  theme: ThemeVariant;           // Current theme variant
+  theme: ThemeVariant; // Current theme variant
   setTheme: (theme: ThemeVariant) => void;
-  isDark: boolean;               // Dark mode toggle state
+  isDark: boolean; // Dark mode toggle state
   toggleDarkMode: () => void;
-  styles: ThemeConfig;           // Computed styles object
+  styles: ThemeConfig; // Computed styles object
 }
 ```
 
@@ -93,11 +93,13 @@ interface ThemeContextType {
    - `isDark`: Boolean for light/dark mode
 
 2. **Style Computation**: A `getThemeStyles()` function computes the full `ThemeConfig` based on both states:
+
    ```typescript
    const styles = getThemeStyles(theme, isDark);
    ```
 
 3. **DOM Synchronization**: Dark mode applies a `dark` class to `<html>`:
+
    ```typescript
    useEffect(() => {
      if (isDark) {
@@ -109,6 +111,7 @@ interface ThemeContextType {
    ```
 
 4. **Consumer Access**: Components access theme via the `useTheme()` hook:
+
    ```typescript
    const { styles, theme, isDark } = useTheme();
    ```
@@ -116,31 +119,33 @@ interface ThemeContextType {
 ### Theme Style Definitions
 
 #### Glass Theme
+
 ```typescript
 {
   name: 'Deep Glass',
   variant: 'glass',
   background: dark ? 'bg-[#0f172a]' : 'bg-slate-100',
-  cardClass: dark 
-    ? 'bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-3xl' 
+  cardClass: dark
+    ? 'bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-3xl'
     : 'bg-white/60 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] rounded-3xl',
   textClass: dark ? 'text-slate-100 font-sans' : 'text-slate-800 font-sans',
   accentClass: 'bg-blue-600/80 backdrop-blur-md text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]',
   borderClass: dark ? 'border-white/10' : 'border-white/20',
-  buttonClass: dark 
+  buttonClass: dark
     ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-white backdrop-blur-md rounded-2xl'
     : 'bg-white/40 hover:bg-white/60 border border-white/20 text-slate-900 backdrop-blur-md rounded-2xl'
 }
 ```
 
 #### Lux Theme
+
 ```typescript
 {
   name: 'Midnight Lux',
   variant: 'lux',
   background: dark ? 'bg-[#050505]' : 'bg-[#f4f4f4]',
-  cardClass: dark 
-    ? 'bg-[#0a0a0a] border border-amber-500/20 shadow-2xl shadow-black rounded-xl' 
+  cardClass: dark
+    ? 'bg-[#0a0a0a] border border-amber-500/20 shadow-2xl shadow-black rounded-xl'
     : 'bg-white border border-amber-900/10 shadow-xl shadow-amber-900/5 rounded-xl',
   textClass: dark ? 'text-amber-50/90 font-serif tracking-wide' : 'text-slate-900 font-serif tracking-wide',
   accentClass: 'bg-gradient-to-r from-amber-700 to-amber-500 text-white shadow-lg shadow-amber-500/20',
@@ -152,13 +157,14 @@ interface ThemeContextType {
 ```
 
 #### Neo Theme
+
 ```typescript
 {
   name: 'Neo Pop',
   variant: 'neo',
   background: dark ? 'bg-zinc-900' : 'bg-[#f0f0f0]',
-  cardClass: dark 
-    ? 'bg-zinc-800 border-2 border-white shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] rounded-md' 
+  cardClass: dark
+    ? 'bg-zinc-800 border-2 border-white shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] rounded-md'
     : 'bg-white border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-md',
   textClass: dark ? 'text-white font-mono' : 'text-black font-mono',
   accentClass: dark
@@ -180,6 +186,7 @@ interface ThemeContextType {
 The `Card` is the foundational container component. It automatically adapts to the current theme.
 
 **Key Features:**
+
 - Receives `cardClass` and `textClass` from theme
 - Adds theme-specific visual enhancements (shine, noise, glow)
 - Supports hover effects that respect theme physics
@@ -189,7 +196,7 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
-  hoverEffect?: boolean;  // Enable/disable hover animations
+  hoverEffect?: boolean; // Enable/disable hover animations
   style?: React.CSSProperties;
 }
 ```
@@ -198,27 +205,34 @@ interface CardProps {
 
 ```tsx
 // Glass Theme: Reflection & Noise
-{styles.variant === 'glass' && (
-  <>
-    {/* Top edge highlight */}
-    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-70" />
-    
-    {/* Noise texture overlay */}
-    <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay" 
-         style={{ backgroundImage: `url("data:image/svg+xml,...")` }} />
-    
-    {/* Hover shine effect */}
-    <div className="absolute -inset-full h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
-  </>
-)}
+{
+  styles.variant === 'glass' && (
+    <>
+      {/* Top edge highlight */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-70" />
+
+      {/* Noise texture overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
+        style={{ backgroundImage: `url("data:image/svg+xml,...")` }}
+      />
+
+      {/* Hover shine effect */}
+      <div className="absolute -inset-full h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:animate-shine" />
+    </>
+  );
+}
 
 // Lux Theme: Gold glow on hover
-{styles.variant === 'lux' && (
-  <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-amber-500/0 via-amber-500/40 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
-)}
+{
+  styles.variant === 'lux' && (
+    <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-amber-500/0 via-amber-500/40 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+  );
+}
 ```
 
 **Hover Behavior by Theme:**
+
 - **Glass**: Subtle lift (`-translate-y-1`) + shadow expansion
 - **Lux**: Gold border glow
 - **Neo**: Press-down effect (`translate-x-[2px] translate-y-[2px]`) + shadow shrink
@@ -235,26 +249,28 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 ```
 
 **Variant Mapping:**
+
 ```typescript
 if (variant === 'primary') {
-  variantClass = styles.accentClass;      // Bold, high-contrast
+  variantClass = styles.accentClass; // Bold, high-contrast
 } else if (variant === 'secondary') {
-  variantClass = styles.buttonClass;      // Subdued, bordered
+  variantClass = styles.buttonClass; // Subdued, bordered
 } else {
-  variantClass = `bg-transparent hover:bg-white/5 ${styles.textClass}`;  // Ghost
+  variantClass = `bg-transparent hover:bg-white/5 ${styles.textClass}`; // Ghost
 }
 ```
 
 **Interactive Physics:**
+
 ```typescript
 // Neo theme: Physics handled in theme classes (translate on hover/active)
 // Other themes: Scale + brightness change
-const interactiveClass = theme === 'neo' 
-  ? '' 
-  : 'active:scale-95 shadow-lg hover:shadow-xl hover:brightness-110';
+const interactiveClass =
+  theme === 'neo' ? '' : 'active:scale-95 shadow-lg hover:shadow-xl hover:brightness-110';
 ```
 
 **Border Radius by Theme:**
+
 ```typescript
 ${theme === 'glass' ? 'rounded-2xl' : theme === 'lux' ? 'rounded-lg' : 'rounded-md'}
 ```
@@ -264,14 +280,16 @@ ${theme === 'glass' ? 'rounded-2xl' : theme === 'lux' ? 'rounded-lg' : 'rounded-
 A decorative credit card visualization that adapts to themes:
 
 ```typescript
-const cardGradient = theme === 'lux' 
-  ? 'bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-black border-amber-500/30' 
-  : theme === 'neo' 
-  ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700'
-  : 'bg-gradient-to-br from-white/20 via-white/10 to-transparent border-white/20';
+const cardGradient =
+  theme === 'lux'
+    ? 'bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-black border-amber-500/30'
+    : theme === 'neo'
+      ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700'
+      : 'bg-gradient-to-br from-white/20 via-white/10 to-transparent border-white/20';
 ```
 
 **Features:**
+
 - Fixed dimensions (340×220px)
 - Rotated positioning (`rotate-[-15deg]`)
 - Hover rotation adjustment
@@ -283,20 +301,22 @@ const cardGradient = theme === 'lux'
 An SVG-based circular progress indicator:
 
 **Score-to-Color Mapping:**
+
 ```typescript
 const getScoreColor = () => {
-  if (score >= 750) return '#10b981';  // Emerald - Excellent
-  if (score >= 670) return '#3b82f6';  // Blue - Good
-  if (score >= 580) return '#f59e0b';  // Amber - Fair
-  return '#ef4444';                     // Red - Poor
+  if (score >= 750) return '#10b981'; // Emerald - Excellent
+  if (score >= 670) return '#3b82f6'; // Blue - Good
+  if (score >= 580) return '#f59e0b'; // Amber - Fair
+  return '#ef4444'; // Red - Poor
 };
 ```
 
 **Theme-Aware Background Circle:**
+
 ```typescript
 stroke={
-  theme === 'glass' ? 'rgba(255,255,255,0.1)' : 
-  theme === 'neo' ? 'rgba(0,0,0,0.1)' : 
+  theme === 'glass' ? 'rgba(255,255,255,0.1)' :
+  theme === 'neo' ? 'rgba(0,0,0,0.1)' :
   'rgba(212, 175, 55, 0.1)'  // Lux gold
 }
 ```
@@ -306,6 +326,7 @@ stroke={
 A slide-out panel with backdrop blur:
 
 **Panel Animation:**
+
 ```typescript
 className={`
   fixed top-0 right-0 h-full w-[350px] z-[90]
@@ -315,11 +336,12 @@ className={`
 ```
 
 **Notification State Styling:**
+
 ```typescript
 // Unread vs Read styling
 className={`
-  ${notif.read 
-    ? 'border-transparent bg-transparent opacity-60' 
+  ${notif.read
+    ? 'border-transparent bg-transparent opacity-60'
     : `${styles.variant === 'glass' ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/5'}`
   }
 `}
@@ -334,11 +356,13 @@ The Sidebar is a sophisticated responsive navigation component with two modes:
 ### Desktop: Vertical Rail (Expandable Dock)
 
 **Collapsed State (w-20):**
+
 - Icon-only display
 - Fixed width container
 - Active indicator dot
 
 **Expanded State (w-64, on hover):**
+
 - Full labels visible
 - Profile section with avatar
 - Smooth width transition
@@ -347,13 +371,14 @@ The Sidebar is a sophisticated responsive navigation component with two modes:
 onMouseEnter={() => setIsHovered(true)}
 onMouseLeave={() => setIsHovered(false)}
 className={`
-  hidden md:flex flex-col fixed top-0 left-0 h-full z-50 
+  hidden md:flex flex-col fixed top-0 left-0 h-full z-50
   transition-all duration-300 ease-in-out
   ${isHovered ? 'w-64' : 'w-20'}
 `}
 ```
 
 **Theme-Specific Container Styling:**
+
 ```typescript
 ${theme === 'glass' ? 'rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20' : ''}
 ${theme === 'lux' ? 'bg-[#080808] border-r border-amber-500/20' : ''}
@@ -361,6 +386,7 @@ ${theme === 'neo' ? (isDark ? 'bg-zinc-900 border-r-2 border-white' : 'bg-white 
 ```
 
 **Menu Item Animation:**
+
 ```typescript
 {/* Label slides in on hover */}
 <span className={`
@@ -375,17 +401,19 @@ ${theme === 'neo' ? (isDark ? 'bg-zinc-900 border-r-2 border-white' : 'bg-white 
 ### Mobile: Bottom Navigation Bar
 
 **Fixed bottom bar with core navigation:**
+
 ```typescript
 <div className={`
-  md:hidden fixed bottom-0 left-0 w-full z-50 px-4 py-2 
+  md:hidden fixed bottom-0 left-0 w-full z-50 px-4 py-2
   flex justify-between items-center
-  ${theme === 'glass' ? 'bg-white/10 backdrop-blur-xl border-t border-white/10' : 
-    theme === 'lux' ? 'bg-[#0a0a0a] border-t border-amber-500/20' : 
+  ${theme === 'glass' ? 'bg-white/10 backdrop-blur-xl border-t border-white/10' :
+    theme === 'lux' ? 'bg-[#0a0a0a] border-t border-amber-500/20' :
     'bg-white border-t-2 border-black'}
 `}>
 ```
 
 **Features:**
+
 - Shows first 4 menu items + logout
 - Theme-aware background
 - Active state uses `accentClass`
@@ -425,64 +453,80 @@ The app uses a **fixed, pointer-events-none** container for background effects:
 ### Glass Theme Background
 
 **Aurora Effect:**
+
 ```tsx
-{theme === 'glass' && (
-  <div className="absolute inset-0 opacity-40 dark:opacity-20">
-    <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-500 rounded-full blur-[120px] animate-aurora mix-blend-screen" />
-    <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-purple-500 rounded-full blur-[120px] animate-aurora mix-blend-screen" style={{ animationDelay: '-10s' }} />
-    <div className="absolute top-[40%] left-[40%] w-[50%] h-[50%] bg-emerald-400 rounded-full blur-[120px] animate-pulse" />
-  </div>
-)}
+{
+  theme === 'glass' && (
+    <div className="absolute inset-0 opacity-40 dark:opacity-20">
+      <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-blue-500 rounded-full blur-[120px] animate-aurora mix-blend-screen" />
+      <div
+        className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-purple-500 rounded-full blur-[120px] animate-aurora mix-blend-screen"
+        style={{ animationDelay: '-10s' }}
+      />
+      <div className="absolute top-[40%] left-[40%] w-[50%] h-[50%] bg-emerald-400 rounded-full blur-[120px] animate-pulse" />
+    </div>
+  );
+}
 ```
 
 **Noise Overlay (Global):**
+
 ```html
 <!-- SVG filter definition in index.html -->
 <svg style="display: none;">
   <filter id="noiseFilter">
-    <feTurbulence type="fractalNoise" baseFrequency="0.6" stitchTiles="stitch"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.6" stitchTiles="stitch" />
   </filter>
 </svg>
 
 <!-- Applied via CSS -->
-<div className="glass-noise" /> <!-- 5% opacity, fixed, full-screen -->
+<div className="glass-noise" />
+<!-- 5% opacity, fixed, full-screen -->
 ```
 
 ### Lux Theme Background
 
 **Gold Grid Pattern + Gradient:**
+
 ```tsx
-{theme === 'lux' && (
-  <>
-    {/* Subtle grid */}
-    <div className="absolute inset-0 opacity-[0.03]" 
-         style={{ 
-           backgroundImage: isDark 
-             ? 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)' 
-             : 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', 
-           backgroundSize: '40px 40px' 
-         }} 
-    />
-    {/* Top gradient wash */}
-    <div className="absolute top-0 right-0 w-full h-[800px] bg-gradient-to-b from-amber-500/10 to-transparent" />
-  </>
-)}
+{
+  theme === 'lux' && (
+    <>
+      {/* Subtle grid */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: isDark
+            ? 'linear-gradient(#D4AF37 1px, transparent 1px), linear-gradient(90deg, #D4AF37 1px, transparent 1px)'
+            : 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+      {/* Top gradient wash */}
+      <div className="absolute top-0 right-0 w-full h-[800px] bg-gradient-to-b from-amber-500/10 to-transparent" />
+    </>
+  );
+}
 ```
 
 ### Neo Theme Background
 
 **Dot Matrix Pattern:**
+
 ```tsx
-{theme === 'neo' && (
-  <div className="absolute inset-0 opacity-[0.1]" 
-       style={{ 
-         backgroundImage: isDark 
-           ? 'radial-gradient(#fff 2px, transparent 2px)' 
-           : 'radial-gradient(#000 2px, transparent 2px)', 
-         backgroundSize: '24px 24px' 
-       }} 
-  />
-)}
+{
+  theme === 'neo' && (
+    <div
+      className="absolute inset-0 opacity-[0.1]"
+      style={{
+        backgroundImage: isDark
+          ? 'radial-gradient(#fff 2px, transparent 2px)'
+          : 'radial-gradient(#000 2px, transparent 2px)',
+        backgroundSize: '24px 24px',
+      }}
+    />
+  );
+}
 ```
 
 ---
@@ -492,6 +536,7 @@ The app uses a **fixed, pointer-events-none** container for background effects:
 ### Breakpoint System
 
 Uses Tailwind's default breakpoints:
+
 - `sm`: 640px
 - `md`: 768px (primary mobile/desktop breakpoint)
 - `lg`: 1024px
@@ -500,17 +545,18 @@ Uses Tailwind's default breakpoints:
 ### Layout Patterns
 
 **Main Content Area:**
+
 ```tsx
 <main className="min-h-screen relative z-10 w-full md:pl-20 transition-all duration-300">
-  <div className="max-w-7xl mx-auto">
-    {/* Page content */}
-  </div>
+  <div className="max-w-7xl mx-auto">{/* Page content */}</div>
 </main>
 ```
+
 - Mobile: Full width, bottom nav accounts for padding
 - Desktop: Left padding for sidebar (20 = 80px)
 
 **Grid Responsiveness:**
+
 ```tsx
 {/* Stats Grid */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -520,10 +566,11 @@ Uses Tailwind's default breakpoints:
 ```
 
 **Conditional Visibility:**
+
 ```tsx
 {/* Desktop only */}
 <div className="hidden md:flex ...">
-  
+
 {/* Mobile only */}
 <div className="md:hidden ...">
 
@@ -550,8 +597,8 @@ tailwind.config = {
   theme: {
     extend: {
       animation: {
-        'float': 'float 6s ease-in-out infinite',
-        'aurora': 'aurora 20s linear infinite',
+        float: 'float 6s ease-in-out infinite',
+        aurora: 'aurora 20s linear infinite',
         'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
@@ -568,25 +615,27 @@ tailwind.config = {
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        }
-      }
-    }
-  }
-}
+        },
+      },
+    },
+  },
+};
 ```
 
 ### Usage Patterns
 
 **Staggered Entry Animations:**
+
 ```tsx
 {stats.map((stat, idx) => (
-  <Card 
-    className="animate-fade-in-up" 
+  <Card
+    className="animate-fade-in-up"
     style={{ animationDelay: `${idx * 100}ms` }}
   >
 ```
 
 **Floating Elements:**
+
 ```tsx
 <div className="animate-float">
   <HeroCard />
@@ -594,15 +643,16 @@ tailwind.config = {
 ```
 
 **Interactive Transitions:**
+
 ```tsx
 // Hover scale
-className="transition-all hover:scale-105 active:scale-95"
+className = 'transition-all hover:scale-105 active:scale-95';
 
 // Smooth color transitions
-className="transition-colors duration-300"
+className = 'transition-colors duration-300';
 
 // Transform + opacity
-className="transition-all duration-300 opacity-0 group-hover:opacity-100"
+className = 'transition-all duration-300 opacity-0 group-hover:opacity-100';
 ```
 
 ---
@@ -612,6 +662,7 @@ className="transition-all duration-300 opacity-0 group-hover:opacity-100"
 ### Hover States
 
 **Card Hover (Theme-Aware):**
+
 ```tsx
 // Glass/Lux: Lift effect
 ${hoverEffect && theme !== 'neo' ? 'hover:-translate-y-1 hover:shadow-2xl cursor-pointer group' : ''}
@@ -621,17 +672,19 @@ ${hoverEffect && theme === 'neo' ? 'cursor-pointer group active:translate-x-[2px
 ```
 
 **Button Hover:**
+
 - Glass/Lux: Brightness increase + shadow expansion
 - Neo: Translate + shadow shrink (simulating physical button press)
 
 ### Focus States
 
 Form inputs have theme-aware focus:
+
 ```tsx
 className={`
   outline-none transition-all
-  ${styles.variant === 'glass' 
-    ? 'bg-white/5 border border-white/10 focus:bg-white/10' 
+  ${styles.variant === 'glass'
+    ? 'bg-white/5 border border-white/10 focus:bg-white/10'
     : 'bg-transparent border border-zinc-700 focus:border-zinc-500'}
 `}
 ```
@@ -640,7 +693,7 @@ className={`
 
 ```tsx
 // Neo buttons have "pressed" physics
-hover:translate-x-[2px] hover:translate-y-[2px] 
+hover:translate-x-[2px] hover:translate-y-[2px]
 hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]
 
 // Standard buttons scale down
@@ -650,14 +703,11 @@ active:scale-95
 ### Group Hover Patterns
 
 Using Tailwind's `group` class for child element reactions:
+
 ```tsx
 <div className="group cursor-pointer">
-  <div className="group-hover:scale-110 transition-all">
-    {/* Icon */}
-  </div>
-  <p className="group-hover:text-blue-500 transition-colors">
-    {/* Label */}
-  </p>
+  <div className="group-hover:scale-110 transition-all">{/* Icon */}</div>
+  <p className="group-hover:text-blue-500 transition-colors">{/* Label */}</p>
 </div>
 ```
 
@@ -679,13 +729,13 @@ fontFamily: {
 
 ```typescript
 // Glass
-textClass: 'text-slate-100 font-sans'
+textClass: 'text-slate-100 font-sans';
 
 // Lux
-textClass: 'text-amber-50/90 font-serif tracking-wide'
+textClass: 'text-amber-50/90 font-serif tracking-wide';
 
 // Neo
-textClass: 'text-white font-mono'
+textClass: 'text-white font-mono';
 ```
 
 ### Heading Hierarchy
@@ -710,43 +760,43 @@ textClass: 'text-white font-mono'
 
 ### Glass Theme Colors
 
-| Purpose | Light | Dark |
-|---------|-------|------|
-| Background | `bg-slate-100` | `bg-[#0f172a]` |
-| Card | `bg-white/60` | `bg-slate-900/40` |
-| Text | `text-slate-800` | `text-slate-100` |
-| Accent | `bg-blue-600/80` | `bg-blue-600/80` |
-| Border | `border-white/20` | `border-white/10` |
+| Purpose    | Light             | Dark              |
+| ---------- | ----------------- | ----------------- |
+| Background | `bg-slate-100`    | `bg-[#0f172a]`    |
+| Card       | `bg-white/60`     | `bg-slate-900/40` |
+| Text       | `text-slate-800`  | `text-slate-100`  |
+| Accent     | `bg-blue-600/80`  | `bg-blue-600/80`  |
+| Border     | `border-white/20` | `border-white/10` |
 
 ### Lux Theme Colors
 
-| Purpose | Light | Dark |
-|---------|-------|------|
-| Background | `bg-[#f4f4f4]` | `bg-[#050505]` |
-| Card | `bg-white` | `bg-[#0a0a0a]` |
-| Text | `text-slate-900` | `text-amber-50/90` |
-| Accent | `from-amber-700 to-amber-500` | `from-amber-700 to-amber-500` |
-| Border | `border-amber-900/10` | `border-amber-500/20` |
+| Purpose    | Light                         | Dark                          |
+| ---------- | ----------------------------- | ----------------------------- |
+| Background | `bg-[#f4f4f4]`                | `bg-[#050505]`                |
+| Card       | `bg-white`                    | `bg-[#0a0a0a]`                |
+| Text       | `text-slate-900`              | `text-amber-50/90`            |
+| Accent     | `from-amber-700 to-amber-500` | `from-amber-700 to-amber-500` |
+| Border     | `border-amber-900/10`         | `border-amber-500/20`         |
 
 ### Neo Theme Colors
 
-| Purpose | Light | Dark |
-|---------|-------|------|
-| Background | `bg-[#f0f0f0]` | `bg-zinc-900` |
-| Card | `bg-white` | `bg-zinc-800` |
-| Text | `text-black` | `text-white` |
-| Accent | `bg-[#8b5cf6]` | `bg-[#8b5cf6]` |
-| Secondary | `bg-[#bef264]` | `bg-zinc-700` |
-| Border | `border-black` | `border-white` |
+| Purpose    | Light          | Dark           |
+| ---------- | -------------- | -------------- |
+| Background | `bg-[#f0f0f0]` | `bg-zinc-900`  |
+| Card       | `bg-white`     | `bg-zinc-800`  |
+| Text       | `text-black`   | `text-white`   |
+| Accent     | `bg-[#8b5cf6]` | `bg-[#8b5cf6]` |
+| Secondary  | `bg-[#bef264]` | `bg-zinc-700`  |
+| Border     | `border-black` | `border-white` |
 
 ### Semantic Colors (All Themes)
 
-| Purpose | Color |
-|---------|-------|
+| Purpose | Color               |
+| ------- | ------------------- |
 | Success | `#10b981` (Emerald) |
-| Warning | `#f59e0b` (Amber) |
-| Error | `#ef4444` (Rose) |
-| Info | `#3b82f6` (Blue) |
+| Warning | `#f59e0b` (Amber)   |
+| Error   | `#ef4444` (Rose)    |
+| Info    | `#3b82f6` (Blue)    |
 
 ---
 
@@ -793,7 +843,7 @@ Use the `useTheme()` hook in every component to access `styles`:
 ```tsx
 const MyComponent = () => {
   const { styles, theme, isDark } = useTheme();
-  
+
   return (
     <div className={styles.cardClass}>
       <h2 className={styles.textClass}>Hello</h2>
@@ -844,4 +894,4 @@ const MyComponent = () => {
 
 ---
 
-*Generated for NamLend Trust NextGen UI. Last updated: January 2026.*
+_Generated for NamLend Trust NextGen UI. Last updated: January 2026._

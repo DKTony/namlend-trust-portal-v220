@@ -1,29 +1,32 @@
 # NamLend Trust - Security Documentation
 
-**Doc Revision**: 2026-02-18 \
-**Status**: Core auth and RLS implemented; Edge Functions enforce JWT and staff role checks. Settlement layer hardened (Feb 2026).
+**Last Updated**: 2026-03-04
+**Aligned With**: Post-quality-sweep codebase
+**Status**: Current ✅
 
 ---
 
 ## Security Layers
 
 ```
-1. Transport Security (HTTPS/TLS)
-2. Authentication (Supabase Auth, JWT)
+1. Transport Security (HTTPS/TLS + WSS)
+2. Authentication (@convex-dev/auth, session-based — no JWT)
 3. Frontend Route Guards (ProtectedRoute)
-4. Service Layer Validation
-5. Row Level Security (Postgres RLS)
-6. Database Constraints and Triggers
-7. Audit Logging (audit_logs, state_transitions)
+4. Convex Args Validation (v.string(), v.number(), etc.)
+5. Auth Guards (convex/lib/auth.ts — replaces RLS)
+6. Convex Serializable Mutations (automatic atomicity)
+7. Audit Logging (auditLogs + stateTransitions via convex/lib/audit.ts)
 ```
 
 ---
 
 ## Authentication
 
-- Supabase Auth with persisted sessions in `localStorage` (`namlend-auth`).
-- Session restore logic in `useAuth.tsx` avoids race conditions on hydration.
-- Global sign-out is enforced via `supabase.auth.signOut({ scope: 'global' })` with local cleanup.
+- `@convex-dev/auth` (Password provider) manages sessions — no JWT, session-based.
+- `ConvexAuthProvider` wraps the app and provides reactive auth state via `useConvexAuth()`.
+- `useAuth.tsx` wraps `useConvexAuth()` and adds role-based logic.
+- New users trigger `afterUserCreatedOrUpdated` callback in `convex/auth.ts` → seeds `profiles` + `userRoles`.
+- Sign-out via Convex Auth signOut (clears server-side session).
 
 ---
 
@@ -32,72 +35,79 @@
 ### Roles
 
 - `admin`: full backoffice access.
-- `loan_officer`: intended for backoffice access (router currently admin-only).
+- `loan_officer`: backoffice access (same routes as admin via `requireLoanOfficer` guard; admin-only features are gated in UI).
 - `client`: self-service access only.
 
 Role precedence in UI: `admin` > `loan_officer` > `client`.
+Roles stored in `userRoles` Convex table.
 
 ### Frontend Route Guards
 
 - `ProtectedRoute` enforces auth and role checks.
-- `/admin/*` currently uses `requireAdmin` (admin-only). Update to `requireLoanOfficer` if staff access is required.
+- `/admin/*` uses `requireLoanOfficer` (allows `loan_officer` AND `admin`). Admin-only features (user management, system config delete) are gated inside UI components by `isAdmin` check.
 - `ProtectedRoute` sanitizes redirect paths to avoid open redirects.
 
 ---
 
-## Row Level Security (RLS)
+## Auth Guard Security (Replaces RLS)
 
-Core user tables enable RLS. Policies generally follow:
+Convex does **not** use Row-Level Security. Access is enforced by guard functions in `convex/lib/auth.ts` called at the top of **every** query and mutation:
 
-- Own-data access: `auth.uid() = user_id`.
-- Staff/admin access: role checks via `user_roles`.
-- Service role access for Edge Functions.
-- New finance tables (e.g., `reconciliation_runs`, `bank_transactions`) also enable RLS as of the 2026-01-17 migration.
+| Guard                             | Replaces RLS Policy                            |
+| --------------------------------- | ---------------------------------------------- |
+| `assertAuthenticated(ctx)`        | `auth.uid() IS NOT NULL`                       |
+| `assertOwner(ctx, userId)`        | `user_id = auth.uid()`                         |
+| `assertOwnerOrStaff(ctx, userId)` | `user_id = auth.uid() OR is_staff(auth.uid())` |
+| `assertStaff(ctx)`                | `is_staff(auth.uid())`                         |
+| `assertAdmin(ctx)`                | `is_admin(auth.uid())`                         |
 
-Review RLS policies in `supabase/migrations/` before adding new tables.
+**Every new query/mutation must call the appropriate guard first.** There are no implicit access controls — a function without a guard is unprotected.
+
+Review `convex/lib/auth.ts` when adding new tables or functions.
 
 ---
 
-## Edge Function Security
+## Convex Action Security (Replaces Edge Functions)
 
-- JWT required for all Edge Function endpoints.
-- Staff role enforcement in `send-sms`, `send-whatsapp`, `send-notification`.
-- API orchestration functions (`api-*`) enforce JWT + RBAC at the edge layer.
-- `payment-webhook` uses HMAC verification; fails closed in production if secrets are missing.
-- `ips-adapter` runs in mock mode unless `IPS_ENABLED=true` with secrets configured.
+- Auth guards called at start of any action that accesses user data.
+- `payment-webhook` in `convex/http.ts` uses HMAC verification; fails closed if secrets are missing.
+- `convex/actions/ipsAdapter.ts` runs in mock mode until production IPS credentials are configured.
+- Secrets are set via `npx convex env set KEY value` — never in `VITE_*` env vars.
+- Actions are the only place that can make external HTTP calls (`fetch()`). Never in mutations or queries.
 
 ---
 
 ## Client-Side Admin Access Controls
 
-- `supabaseAdmin` is gated by `VITE_ALLOW_LOCAL_ADMIN=true` and DEV mode only (**deprecated**, see `src/main.tsx` warning).
 - Debug tooling is gated by `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS`.
-- Do not ship service role keys in Vite environment variables.
+- Do not ship Convex secrets in `VITE_*` environment variables — only `VITE_CONVEX_URL` is safe.
+- `supabaseAdmin` reference in legacy code is deprecated and gated by `VITE_ALLOW_LOCAL_ADMIN` (DEV only).
 
 ---
 
 ## Audit and Logging
 
-- Financial operations log to `audit_logs` via RPCs/triggers.
-- Sensitive access is tracked in `view_logs`.
+- Financial operations schedule audit log entries via `scheduleAuditLog()` from `convex/lib/audit.ts`.
+- Audit logs are written asynchronously via `ctx.scheduler.runAfter()` to avoid blocking mutations.
+- Sensitive access is tracked in `viewLogs` Convex table.
 - Do not log PII, financial details, or credentials in client errors.
-- Settlement operations (`createSettlementRun`, `processSettlementRun`, `markSettlementSettled`, `updateAdjustmentStatus`, `resolveTimeoutTransaction`) log state transitions via `AuditService.logStateTransition()` (added 2026-02-18).
+- Settlement state transitions log via `scheduleAuditLog()` in Convex mutations (added 2026-02-18).
 
 ## Settlement Security (2026-02-18)
 
-- **XML injection prevention**: `xml_escape()` SQL function applied to all user-sourced values in `generate_pacs009_xml` (ISO 20022 pacs.009 generation). Escapes `&`, `<`, `>`, `"`, `'` entities.
-- **Mutation retry prevention**: All settlement mutation hooks use `retry: false` to prevent TanStack Query from auto-retrying failed financial operations.
-- **RPC resilience**: Settlement RPCs use `callRpc()` wrapper with circuit breaker, timeout, and jitter. Financial mutations use `retries: 0`.
+- **XML injection prevention**: `xmlEscape()` TypeScript function in `convex/lib/xmlEscape.ts` applied to all user-sourced values in pacs.009 generation. Escapes `&`, `<`, `>`, `"`, `'` entities.
+- **Mutation retry prevention**: Convex financial mutations run in serializable transactions. TanStack Query retries are disabled (`retry: false`) for all financial mutations via the `QueryClient` config in `src/App.tsx`.
 
 ---
 
 ## Security Checklist (Handover)
 
-1. Confirm all RLS policies exist for user-data tables.
-2. Verify Edge Function secrets are set in Supabase.
+1. Confirm auth guards (`assertAuthenticated`, `assertStaff`, `assertAdmin`) protect all new Convex queries/mutations.
+2. Verify Convex environment secrets are set via `npx convex env set` (not in `.env` files).
 3. Ensure `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS` are false in production.
-4. Rotate provider webhook secrets in production environments.
-5. Regenerate Supabase types after schema changes.
+4. Rotate provider webhook secrets (`PAYTODAY_WEBHOOK_SECRET`, etc.) in production environments.
+5. Run `npx convex dev` after schema changes — types regenerate automatically in `convex/_generated/`.
+6. Verify no Convex secrets exposed as `VITE_*` environment variables.
 
 ---
 
@@ -105,6 +115,6 @@ Review RLS policies in `supabase/migrations/` before adding new tables.
 
 - [INDEX.md](./INDEX.md) - Documentation index
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture with auth flow diagram
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - RLS policies per table
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Auth guards and access control per table
 - [AGENTS.md](./AGENTS.md) - Security rules for AI agents
 - [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md) - Security-related debt items

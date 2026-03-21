@@ -3,7 +3,7 @@
  * Allows admins to configure settlement, IPS, and reconciliation settings
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,8 @@ import {
   Shield,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
 
 // Types
@@ -263,47 +264,44 @@ export function SettlementConfig() {
   const [recon, setRecon] = useState<ReconciliationConfig>(DEFAULT_RECON);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    loadConfig();
-  }, []);
+  // Convex reactive queries for config categories
+  const settlementConfig = useConvexQuery(api.systemConfig.getAllConfig, {
+    category: 'settlement',
+  });
+  const ipsConfig = useConvexQuery(api.systemConfig.getAllConfig, { category: 'ips' });
+  const reconConfig = useConvexQuery(api.systemConfig.getAllConfig, { category: 'reconciliation' });
+  const setConfigMutation = useConvexMutation(api.systemConfig.setConfig);
 
-  const loadConfig = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_all_config', {
-        p_categories: ['settlement', 'reconciliation', 'ips'],
-      });
-      if (error) throw error;
-      if (data?.length) {
-        const s = { ...DEFAULT_SETTLEMENT },
-          i = { ...DEFAULT_IPS },
-          r = { ...DEFAULT_RECON };
-        (data as ConfigItem[]).forEach((item) => {
-          const key = item.config_key.split('.')[1] as
-            | keyof SettlementConfig
-            | keyof IPSConfig
-            | keyof ReconciliationConfig;
-          if (item.category === 'settlement' && key in s) {
-            s[key as keyof SettlementConfig] =
-              item.config_value as SettlementConfig[keyof SettlementConfig];
-          }
-          if (item.category === 'ips' && key in i) {
-            i[key as keyof IPSConfig] = item.config_value as IPSConfig[keyof IPSConfig];
-          }
-          if (item.category === 'reconciliation' && key in r) {
-            r[key as keyof ReconciliationConfig] =
-              item.config_value as ReconciliationConfig[keyof ReconciliationConfig];
-          }
-        });
-        setSettlement(s);
-        setIPS(i);
-        setRecon(r);
-      }
-    } catch (e) {
-      console.error('Load config error:', e);
-    }
+  // Hydrate state from Convex config when data arrives
+  useEffect(() => {
+    if (settlementConfig === undefined || ipsConfig === undefined || reconConfig === undefined)
+      return;
     setLoading(false);
-  };
+    const s = { ...DEFAULT_SETTLEMENT };
+    const i = { ...DEFAULT_IPS };
+    const r = { ...DEFAULT_RECON };
+    for (const item of settlementConfig) {
+      const section = item.key?.split('.')[1];
+      if (section && section in s) {
+        Object.assign(s, { [section]: item.value });
+      }
+    }
+    for (const item of ipsConfig) {
+      const section = item.key?.split('.')[1];
+      if (section && section in i) {
+        Object.assign(i, { [section]: item.value });
+      }
+    }
+    for (const item of reconConfig) {
+      const section = item.key?.split('.')[1];
+      if (section && section in r) {
+        Object.assign(r, { [section]: item.value });
+      }
+    }
+    setSettlement(s);
+    setIPS(i);
+    setRecon(r);
+  }, [settlementConfig, ipsConfig, reconConfig]);
 
   const updateS = (
     section: keyof SettlementConfig,
@@ -330,13 +328,14 @@ export function SettlementConfig() {
     setSaving(true);
     try {
       for (const [k, v] of Object.entries(settlement))
-        await supabase.rpc('update_config', { p_config_key: `settlement.${k}`, p_config_value: v });
+        await setConfigMutation({ key: `settlement.${k}`, value: v, category: 'settlement' });
       for (const [k, v] of Object.entries(ips))
-        await supabase.rpc('update_config', { p_config_key: `ips.${k}`, p_config_value: v });
+        await setConfigMutation({ key: `ips.${k}`, value: v, category: 'ips' });
       for (const [k, v] of Object.entries(recon))
-        await supabase.rpc('update_config', {
-          p_config_key: `reconciliation.${k}`,
-          p_config_value: v,
+        await setConfigMutation({
+          key: `reconciliation.${k}`,
+          value: v,
+          category: 'reconciliation',
         });
       toast({ title: 'Configuration Saved', description: 'Settings updated successfully.' });
       setHasChanges(false);

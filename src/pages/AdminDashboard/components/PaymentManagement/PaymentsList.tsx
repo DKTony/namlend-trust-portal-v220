@@ -16,7 +16,9 @@ import {
 import { usePaymentsList } from '../../hooks/usePaymentsList';
 import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
-import { recordPayment } from '@/services/paymentService';
+import { useMutation } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 import PaymentDetailsModal from '@/components/modals/PaymentDetailsModal';
 
 interface Payment {
@@ -43,6 +45,7 @@ interface PaymentsListProps {
 const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPaymentSelect }) => {
   const { payments, loading, error, refetch } = usePaymentsList(status, searchTerm);
   const { toast } = useToast();
+  const recordPaymentMutation = useMutation(api.payments.recordPayment);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
@@ -63,26 +66,17 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
     reference: string;
   }) => {
     try {
-      const res = await recordPayment({
-        loanId: p.loanId,
+      await recordPaymentMutation({
+        loanId: p.loanId as Id<'loans'>,
         amount: p.amount,
-        payment_method: p.paymentMethod,
-        reference_number: `RETRY-${p.reference}`,
+        method: p.paymentMethod,
+        referenceNumber: p.reference,
       });
-      if (!res.success) {
-        toast({
-          title: 'Retry failed',
-          description: res.error || 'Could not record payment',
-          variant: 'destructive',
-        });
-        return;
-      }
       toast({ title: 'Retry queued', description: 'Payment recorded as pending.' });
-      refetch();
-    } catch (e) {
+    } catch (err) {
       toast({
-        title: 'Retry error',
-        description: e instanceof Error ? e.message : String(e),
+        title: 'Retry failed',
+        description: err instanceof Error ? err.message : 'An error occurred',
         variant: 'destructive',
       });
     }

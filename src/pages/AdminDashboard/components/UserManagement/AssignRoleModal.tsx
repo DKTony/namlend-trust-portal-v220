@@ -4,12 +4,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getProfilesWithRoles, AppRole } from '@/services/adminService';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
+type AppRole = 'admin' | 'loan_officer' | 'client';
 import { assignRoleWithServiceRole } from '@/utils/serviceRoleAssignment';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,35 +48,57 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
     }
   }, [open]);
 
+  // Convex reactive query for user list
+  const allUsers = useConvexQuery(api.users.listUsers, open ? {} : 'skip');
+
   useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await getProfilesWithRoles({ search: query, limit: 20 });
-        if (res.success) setResults((res.results as UserResult[]) ?? []);
-        else toast({ title: 'Search failed', description: res.error ?? 'Unknown error', variant: 'destructive' });
-      } catch (e) {
-        toast({ title: 'Search error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [query, open, toast]);
+    if (!open || !allUsers) return;
+    setLoading(true);
+    const searchLower = query.toLowerCase();
+    const filtered: UserResult[] = (allUsers ?? [])
+      .filter((u) => {
+        if (!searchLower) return true;
+        const name = `${u.fullName ?? ''} ${u.email ?? ''}`.toLowerCase();
+        return (
+          name.includes(searchLower) ||
+          String(u._id ?? '')
+            .toLowerCase()
+            .includes(searchLower)
+        );
+      })
+      .slice(0, 20)
+      .map((u) => ({
+        user_id: String(u._id ?? ''),
+        id: String(u._id ?? ''),
+        first_name: u.fullName?.split(' ')[0] ?? null,
+        last_name: u.fullName?.split(' ').slice(1).join(' ') ?? null,
+        email: u.email ?? null,
+        roles: u.role ? [u.role] : [],
+      }));
+    setResults(filtered);
+    setLoading(false);
+  }, [query, open, allUsers]);
 
   const handleAssign = async (userId: string) => {
     if (!role) return;
     try {
       const res = await assignRoleWithServiceRole(userId, role);
       if (!res.success) {
-        toast({ title: 'Assignment failed', description: res.error ?? 'Unknown error', variant: 'destructive' });
+        toast({
+          title: 'Assignment failed',
+          description: res.error ?? 'Unknown error',
+          variant: 'destructive',
+        });
         return;
       }
       toast({ title: 'Role assigned', description: `Assigned ${role} to ${userId}` });
       onAssigned?.();
     } catch (e) {
-      toast({ title: 'Assignment error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast({
+        title: 'Assignment error',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -106,10 +130,15 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
                 const name = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || '(no name)';
                 const email = u.email ?? '';
                 return (
-                  <div key={`${uid}-${idx}`} className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50 transition-colors">
+                  <div
+                    key={`${uid}-${idx}`}
+                    className="flex items-center justify-between rounded-md border p-2 hover:bg-muted/50 transition-colors"
+                  >
                     <div className="min-w-0">
                       <div className="font-medium truncate">{name}</div>
-                      <div className="text-xs text-muted-foreground truncate">{email} · {uid}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {email} · {uid}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -135,7 +164,9 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
           </ScrollArea>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
             <Button
               onClick={() => selectedUserId && role && handleAssign(selectedUserId)}
               disabled={!selectedUserId || !role}

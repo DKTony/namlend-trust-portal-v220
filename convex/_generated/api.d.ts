@@ -38,6 +38,8 @@ import type * as payments from '../payments.js';
 import type * as reconciliation from '../reconciliation.js';
 import type * as scheduled_dailyTasks from '../scheduled/dailyTasks.js';
 import type * as scheduled_tigerBeetleOutboxWorker from '../scheduled/tigerBeetleOutboxWorker.js';
+import type * as seed from '../seed.js';
+import type * as seedMutations from '../seedMutations.js';
 import type * as settlement_settlementAcknowledgements from '../settlement/settlementAcknowledgements.js';
 import type * as settlement_settlementActions from '../settlement/settlementActions.js';
 import type * as settlement_settlementAdjustments from '../settlement/settlementAdjustments.js';
@@ -89,6 +91,8 @@ declare const fullApi: ApiFromModules<{
   reconciliation: typeof reconciliation;
   'scheduled/dailyTasks': typeof scheduled_dailyTasks;
   'scheduled/tigerBeetleOutboxWorker': typeof scheduled_tigerBeetleOutboxWorker;
+  seed: typeof seed;
+  seedMutations: typeof seedMutations;
   'settlement/settlementAcknowledgements': typeof settlement_settlementAcknowledgements;
   'settlement/settlementActions': typeof settlement_settlementActions;
   'settlement/settlementAdjustments': typeof settlement_settlementAdjustments;

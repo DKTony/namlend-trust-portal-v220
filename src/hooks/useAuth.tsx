@@ -128,7 +128,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await authActions.signIn('password', { email, password, flow: 'signIn' });
         return { error: null, data: { session: null, user: null } };
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Sign in failed');
+        const raw = err instanceof Error ? err : new Error('Sign in failed');
+        // Map Convex Auth errors to user-friendly messages
+        const msg = raw.message || '';
+        let error: Error;
+        if (msg.includes('InvalidAccountId')) {
+          error = new Error('No account found with this email. Please sign up first.');
+        } else if (msg.includes('InvalidSecret')) {
+          error = new Error('Incorrect password. Please try again.');
+        } else {
+          error = raw;
+        }
         return { error: error as AuthError, data: undefined };
       }
     },

@@ -20,7 +20,7 @@ const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.co
 
 // Admin credentials for authentication
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'test123';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Test1234!';
 
 // Test user IDs (Supabase legacy — Convex uses opaque _id strings)
 const TEST_USERS = {

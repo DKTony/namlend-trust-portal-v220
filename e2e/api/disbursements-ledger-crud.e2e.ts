@@ -10,7 +10,7 @@ const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUP
   | string
   | undefined;
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'test123';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Test1234!';
 
 async function signInWithRetry(
   supabase: {

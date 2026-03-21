@@ -54,7 +54,7 @@ test.describe('Approval RPC Race Condition Fix', () => {
     // Authenticate anon client as admin for RPC calls
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: 'admin@test.namlend.com',
-      password: 'test123',
+      password: 'Test1234!',
     });
 
     if (authError) throw authError;

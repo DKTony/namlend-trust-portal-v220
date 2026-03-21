@@ -342,10 +342,10 @@ npm run docs:fix         # Auto-fix markdown lint issues
 ### Test Credentials (E2E)
 
 ```
-Client User:       client1@test.namlend.com / test123 → /dashboard
-Client User 2:     client2@test.namlend.com / test123 → /dashboard
-Admin User:        admin@test.namlend.com / test123 → /admin
-Loan Officer:      loan_officer@test.namlend.com / test123 → /admin
+Client User:       client1@test.namlend.com / Test1234! → /dashboard
+Client User 2:     client2@test.namlend.com / Test1234! → /dashboard
+Admin User:        admin@test.namlend.com / Test1234! → /admin
+Loan Officer:      loan_officer@test.namlend.com / Test1234! → /admin
 ```
 
 ## Architecture Patterns

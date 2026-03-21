@@ -36,22 +36,22 @@ const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.co
 export const TEST_USERS = {
   client1: {
     email: 'client1@test.namlend.com',
-    password: 'test123',
+    password: 'Test1234!',
     id: '11111111-0000-0000-0000-000000000001',
   },
   client2: {
     email: 'client2@test.namlend.com',
-    password: 'test123',
+    password: 'Test1234!',
     id: '22222222-0000-0000-0000-000000000002',
   },
   admin: {
     email: 'admin@test.namlend.com',
-    password: 'test123',
+    password: 'Test1234!',
     id: 'fbf720fd-7de2-4142-974f-6d6809f4f8c6',
   },
   loanOfficer: {
     email: 'loan_officer@test.namlend.com',
-    password: 'test123',
+    password: 'Test1234!',
     id: '44444444-0000-0000-0000-000000000004',
   },
 };
@@ -109,7 +109,7 @@ export async function signInViaUI(page: Page, email: string, password: string): 
   await page.goto('/auth');
   await page.fill('[data-testid="email-input"]', email);
   await page.fill('[data-testid="password-input"]', password);
-  await page.click('[data-testid="sign-in-button"]');
+  await page.click('[data-testid="login-button"]');
   // Wait for redirect to dashboard
   await page.waitForURL(/\/(dashboard|admin)/, { timeout: 15_000 });
 }

@@ -34,7 +34,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
     // Authenticate as admin to bypass RLS
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: 'admin@test.namlend.com',
-      password: 'test123',
+      password: 'Test1234!',
     });
 
     if (authError) throw authError;

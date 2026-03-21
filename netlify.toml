@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "test -n \"$VITE_CONVEX_URL\" || (echo 'ERROR: VITE_CONVEX_URL is not set in Netlify environment variables. Go to Site configuration → Environment variables and add it.' && exit 1) && npm run build"
   publish = "dist"
 
 # SPA fallback so React Router works on refresh and deep links
@@ -31,4 +31,4 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(self)"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.convex.cloud wss://*.convex.cloud"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.convex.site"

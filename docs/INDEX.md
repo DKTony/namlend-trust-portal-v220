@@ -49,12 +49,13 @@
 
 ### Security & Operations
 
-| Document                                                   | Description                                | Status |
-| ---------------------------------------------------------- | ------------------------------------------ | ------ |
-| [SECURITY.md](./SECURITY.md)                               | Security implementation (RLS, auth, audit) | Active |
-| [TESTING.md](./TESTING.md)                                 | E2E testing guide with Playwright          | Active |
-| [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md)                   | Outstanding technical debt items           | Active |
-| [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) | TypeScript type safety fixes               | Active |
+| Document                                                   | Description                                 | Status |
+| ---------------------------------------------------------- | ------------------------------------------- | ------ |
+| [SECURITY.md](./SECURITY.md)                               | Security implementation (RLS, auth, audit)  | Active |
+| [TESTING.md](./TESTING.md)                                 | E2E testing guide with Playwright           | Active |
+| [E2E_TEST_FIX_2026_03_22.md](./E2E_TEST_FIX_2026_03_22.md) | Loan application E2E test fix & KYC seeding | Active |
+| [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md)                   | Outstanding technical debt items            | Active |
+| [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) | TypeScript type safety fixes                | Active |
 
 ---
 

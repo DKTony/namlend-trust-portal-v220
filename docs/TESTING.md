@@ -1,7 +1,7 @@
 # NamLend Trust - Testing Documentation
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-03-22
+**Aligned With**: Post-E2E-fixes codebase
 **Status**: Current ✅
 **Original Doc Revision**: 2026-01-19
 
@@ -9,8 +9,15 @@
 
 ## Testing Overview
 
-- **E2E**: Playwright in `e2e/`
+- **E2E**: Playwright in `e2e/` — **56 tests passing** ✅
 - **Unit**: Vitest (`^4.0.18`) in `src/tests/` — run with `npm run test:unit` (137 passing tests)
+
+### Recent Updates (2026-03-22)
+
+- ✅ Fixed loan application E2E test (`e2e/loan-application.e2e.ts`)
+- ✅ Implemented KYC document seeding for test users
+- ✅ Corrected test navigation to use dashboard "Apply Now" button
+- ✅ Added timing fixes for Convex reactive query population
 
 ---
 

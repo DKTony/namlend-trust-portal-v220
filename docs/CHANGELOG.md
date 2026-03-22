@@ -22,6 +22,36 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 
 ---
 
+## [2.8.9] - 2026-03-22 (E2E Testing & KYC Seeding)
+
+### Fixed
+
+#### E2E Test Infrastructure
+
+- **Fixed loan application E2E test** - Test now passes reliably after addressing KYC eligibility gate
+- **Corrected KYC document seeding schema** - Fixed `seedKycDocuments` mutation to use correct `kycDocuments` table instead of `loanDocuments`
+- **Schema alignment** - Removed invalid `documentUrl` field, using proper Convex schema fields (`fileStorageId`, `documentType`, `status`)
+- **Test navigation improvements** - Updated test to use dashboard "Apply Now" button instead of non-existent sidebar link
+- **Timing fixes** - Added 3-second wait for Convex reactive queries to populate before navigation
+- **Enhanced logging** - Added try-catch blocks and detailed logging to `seed.ts` for debugging
+
+#### Test Results
+
+- **56 E2E tests passing** ✅
+- Loan application form flow validated end-to-end
+- KYC eligibility gate properly tested
+- Test user (`client1@test.namlend.com`) now has approved KYC documents seeded automatically
+
+### Changed
+
+#### Convex Seed Mutations
+
+- `convex/seedMutations.ts` - Added `seedKycDocuments` internal mutation for E2E test setup
+- `convex/seed.ts` - Integrated KYC document seeding into `seedTestUsers` action with error handling
+- Test users now created with proper KYC verification status for E2E testing
+
+---
+
 ## [2.8.8] - 2026-02-22 (Convex Backend Type Safety — Complete)
 
 ### Changed

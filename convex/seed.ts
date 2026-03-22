@@ -39,9 +39,16 @@ export const seedTestUsers = internalAction({
     }
 
     // Seed KYC documents for client1 to enable loan application E2E tests
-    await ctx.runMutation(internal.seedMutations.seedKycDocuments, {
-      email: 'client1@test.namlend.com',
-    });
+    console.log('[seed] Seeding KYC documents for client1...');
+    try {
+      await ctx.runMutation(internal.seedMutations.seedKycDocuments, {
+        email: 'client1@test.namlend.com',
+      });
+      console.log('[seed] KYC documents seeded successfully');
+    } catch (error) {
+      console.error('[seed] Failed to seed KYC documents:', error);
+      throw error;
+    }
 
     console.log('[seed] All test users seeded successfully');
   },

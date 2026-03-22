@@ -13,7 +13,10 @@ test.describe('Client Loan Application Form', () => {
 
     // Wait for dashboard to load
     await page.waitForURL(/dashboard/, { timeout: 10000 });
-    await page.waitForTimeout(1000);
+
+    // Wait for Convex queries to populate (KYC documents should be loaded)
+    // This ensures the KYC eligibility check has the correct data
+    await page.waitForTimeout(3000);
 
     // Look for "Apply Now" or "Apply for Loan" button
     const applyButton = page.getByRole('button', { name: /apply now|apply for loan/i }).first();
@@ -22,7 +25,7 @@ test.describe('Client Loan Application Form', () => {
 
     // Wait for navigation to loan application
     await page.waitForURL(/loan-application/, { timeout: 10000 });
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     console.log('Final URL:', page.url());
 

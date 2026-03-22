@@ -38,6 +38,11 @@ export const seedTestUsers = internalAction({
       });
     }
 
+    // Seed KYC documents for client1 to enable loan application E2E tests
+    await ctx.runMutation(internal.seedMutations.seedKycDocuments, {
+      email: 'client1@test.namlend.com',
+    });
+
     console.log('[seed] All test users seeded successfully');
   },
 });

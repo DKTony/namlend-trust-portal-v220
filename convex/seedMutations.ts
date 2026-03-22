@@ -119,7 +119,7 @@ export const seedKycDocuments = internalMutation({
 
     // Check if KYC docs already exist
     const existingDocs = await ctx.db
-      .query('loanDocuments')
+      .query('kycDocuments')
       .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
       .collect();
 
@@ -128,26 +128,25 @@ export const seedKycDocuments = internalMutation({
 
     // Create ID card document if missing
     if (!hasIdCard) {
-      await ctx.db.insert('loanDocuments', {
+      await ctx.db.insert('kycDocuments', {
         userId: profile.userId,
         documentType: 'id_card',
-        documentUrl: 'https://test.namlend.com/kyc/id_card_test.pdf',
+        documentNumber: 'TEST-ID-001',
         status: 'approved',
-        uploadedAt: now,
-        verifiedAt: now,
+        createdAt: now,
+        updatedAt: now,
       });
       console.log(`[seed] Created approved ID card for ${email}`);
     }
 
     // Create proof of income document if missing
     if (!hasProofIncome) {
-      await ctx.db.insert('loanDocuments', {
+      await ctx.db.insert('kycDocuments', {
         userId: profile.userId,
         documentType: 'proof_income',
-        documentUrl: 'https://test.namlend.com/kyc/proof_income_test.pdf',
         status: 'approved',
-        uploadedAt: now,
-        verifiedAt: now,
+        createdAt: now,
+        updatedAt: now,
       });
       console.log(`[seed] Created approved proof of income for ${email}`);
     }

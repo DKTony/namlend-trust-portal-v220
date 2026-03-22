@@ -8,48 +8,21 @@ test.describe('Client Loan Application Form', () => {
     const role = await login(page, false); // prefer client
     expect(role).toBe('client');
 
-    // Navigate to loan application - session may be lost on page.goto()
-    await page.goto(`${baseURL}/loan-application`);
-    await page.waitForTimeout(2000);
+    // Navigate to loan application via dashboard "Apply Now" button
+    console.log('Navigating to loan application from dashboard...');
 
-    // If redirected to auth, re-login and use SPA navigation
-    if (page.url().includes('/auth')) {
-      console.log('Session lost after navigation, re-logging in...');
-      await page.fill('[data-testid="email-input"]', 'client1@test.namlend.com');
-      await page.fill('[data-testid="password-input"]', 'Test1234!');
-      await page.click('[data-testid="login-button"]');
-      await page.waitForURL(/\/(dashboard|loans|loan-application)/, { timeout: 20000 });
-      await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 10000 });
-      console.log('After re-login, URL:', page.url());
+    // Wait for dashboard to load
+    await page.waitForURL(/dashboard/, { timeout: 10000 });
+    await page.waitForTimeout(1000);
 
-      // If we landed on dashboard, navigate to loan application
-      if (!page.url().includes('loan-application')) {
-        // Try clicking sidebar to expand it first
-        await page.getByTestId('sidebar-trigger').click();
-        await page.waitForTimeout(500);
+    // Look for "Apply Now" or "Apply for Loan" button
+    const applyButton = page.getByRole('button', { name: /apply now|apply for loan/i }).first();
+    await applyButton.waitFor({ state: 'visible', timeout: 10000 });
+    await applyButton.click();
 
-        // Look for loan application link with various patterns
-        const loanAppLink = page.locator('a[href*="loan-application"]');
-        if ((await loanAppLink.count()) > 0) {
-          console.log('Found loan-application link, clicking...');
-          await loanAppLink.first().click();
-          await page.waitForURL(/loan-application/, { timeout: 10000 });
-        } else {
-          // Navigate directly via URL but use history.pushState to avoid full reload
-          console.log('No link found, navigating directly...');
-          await page.evaluate(() => {
-            window.history.pushState({}, '', '/loan-application');
-            window.dispatchEvent(new PopStateEvent('popstate'));
-          });
-          await page.waitForTimeout(1000);
-          // If that doesn't work, reload at the new URL
-          if (!page.url().includes('loan-application')) {
-            await page.goto(`${baseURL}/loan-application`);
-            await page.waitForTimeout(2000);
-          }
-        }
-      }
-    }
+    // Wait for navigation to loan application
+    await page.waitForURL(/loan-application/, { timeout: 10000 });
+    await page.waitForTimeout(1000);
 
     console.log('Final URL:', page.url());
 

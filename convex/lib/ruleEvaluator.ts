@@ -11,6 +11,8 @@
  */
 
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { v } from 'convex/values';
+import { internalQuery } from '../_generated/server';
 import { DataModel } from '../_generated/dataModel';
 
 type Ctx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
@@ -70,3 +72,15 @@ export async function getBooleanRule(
   if (!row || row.valueType !== 'boolean') return fallback;
   return row.value === 'true';
 }
+
+// ---------------------------------------------------------------------------
+// Internal query wrappers — callable from actions via ctx.runQuery()
+// ---------------------------------------------------------------------------
+
+/** Internal query wrapper for getStringRule (used by actions like ipsAdapter) */
+export const getStringRuleQuery = internalQuery({
+  args: { ruleCode: v.string(), fallback: v.string() },
+  handler: async (ctx, { ruleCode, fallback }) => {
+    return getStringRule(ctx, ruleCode, fallback);
+  },
+});

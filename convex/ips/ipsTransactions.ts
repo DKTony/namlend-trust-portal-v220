@@ -5,7 +5,7 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
+import { query, mutation, internalQuery, internalMutation } from '../_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
@@ -27,6 +27,17 @@ export const getTransactionByMsgId = query({
   args: { msgId: v.string() },
   handler: async (ctx, { msgId }) => {
     await assertAuthenticated(ctx);
+    return ctx.db
+      .query('ipsTransactions')
+      .withIndex('by_msgId', (q) => q.eq('msgId', msgId))
+      .first();
+  },
+});
+
+/** Internal version — callable from actions/webhooks without auth context. */
+export const getTransactionByMsgIdInternal = internalQuery({
+  args: { msgId: v.string() },
+  handler: async (ctx, { msgId }) => {
     return ctx.db
       .query('ipsTransactions')
       .withIndex('by_msgId', (q) => q.eq('msgId', msgId))
@@ -195,6 +206,75 @@ export const updateIpsTransactionStatus = mutation({
       });
     } else if (args.status === 'failed' || args.status === 'timeout') {
       // Enqueue IPS_REVERSE for TigerBeetle
+      await ctx.db.insert('tigerBeetleOutbox', {
+        eventType: 'IPS_REVERSE',
+        sourceTable: 'ipsTransactions',
+        sourceId: args.transactionId,
+        payload: { amount: tx.amount * 100, msg_id: tx.msgId, reason: args.errorDescription },
+        status: 'pending',
+        retryCount: 0,
+        createdAt: now,
+      });
+    }
+
+    await ctx.db.patch(args.transactionId, updates);
+
+    scheduleAuditLog(
+      ctx,
+      'ips_transaction',
+      args.transactionId,
+      'STATUS_CHANGE',
+      tx.status,
+      args.status
+    );
+  },
+});
+
+/**
+ * Internal version of updateIpsTransactionStatus — callable from actions/webhooks
+ * without auth context. Same logic as the public mutation above.
+ */
+export const updateIpsTransactionStatusInternal = internalMutation({
+  args: {
+    transactionId: v.id('ipsTransactions'),
+    status: v.union(
+      v.literal('processing'),
+      v.literal('completed'),
+      v.literal('failed'),
+      v.literal('reversed'),
+      v.literal('timeout')
+    ),
+    rawResponse: v.optional(v.any()),
+    errorCode: v.optional(v.string()),
+    errorDescription: v.optional(v.string()),
+    settlementDate: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const tx = await ctx.db.get(args.transactionId);
+    if (!tx) throw new ConvexError({ code: 'NOT_FOUND', message: 'IPS transaction not found.' });
+
+    const now = Date.now();
+    const updates: Record<string, unknown> = {
+      status: args.status,
+      rawResponse: args.rawResponse,
+      errorCode: args.errorCode,
+      errorDescription: args.errorDescription,
+      settlementDate: args.settlementDate,
+      updatedAt: now,
+    };
+
+    if (args.status === 'completed') {
+      updates.completedAt = now;
+      await ctx.db.insert('tigerBeetleOutbox', {
+        eventType: 'IPS_COMPLETE',
+        sourceTable: 'ipsTransactions',
+        sourceId: args.transactionId,
+        payload: { amount: tx.amount * 100, msg_id: tx.msgId },
+        status: 'pending',
+        retryCount: 0,
+        createdAt: now,
+      });
+    } else if (args.status === 'failed' || args.status === 'timeout') {
       await ctx.db.insert('tigerBeetleOutbox', {
         eventType: 'IPS_REVERSE',
         sourceTable: 'ipsTransactions',

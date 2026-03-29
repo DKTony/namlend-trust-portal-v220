@@ -700,6 +700,14 @@ export default defineSchema({
     responseBody: v.optional(v.any()),
     durationMs: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
+    // Phase 1: XML protocol support fields
+    direction: v.optional(
+      v.union(v.literal('OUTBOUND'), v.literal('INBOUND'), v.literal('CALLBACK'))
+    ),
+    contentType: v.optional(v.union(v.literal('json'), v.literal('xml'))),
+    apiName: v.optional(v.string()), // e.g. "ReqPay", "RespPay", "ReqValAdd"
+    rawXml: v.optional(v.string()), // full XML body for audit trail
+    correlationId: v.optional(v.string()), // for tracing async Req→Resp pairs
     createdAt: v.number(),
   }).index('by_transactionId', ['transactionId']),
 
@@ -717,7 +725,24 @@ export default defineSchema({
 
   ipsOnboardingApplications: defineTable({
     userId: v.id('users'),
+    /** IPS-mandated onboarding state — matches IPPOnboardingState in src/types/ips.ts */
     status: v.union(
+      v.literal('NOT_STARTED'),
+      v.literal('DEVICE_BINDING_REQUIRED'),
+      v.literal('DEVICE_BOUND'),
+      v.literal('SOV_SELECTION_PENDING'),
+      v.literal('SOV_SELECTED'),
+      v.literal('ACCOUNTS_LISTED'),
+      v.literal('VERIFICATION_PENDING'),
+      v.literal('VERIFIED'),
+      v.literal('IPS_PIN_SETTING'),
+      v.literal('IPS_PIN_SET'),
+      v.literal('ALIAS_REGISTRATION_PENDING'),
+      v.literal('ALIAS_REGISTERED'),
+      v.literal('READY_FOR_IPP_PAYMENTS'),
+      v.literal('SUSPENDED'),
+      v.literal('DEREGISTERED'),
+      // Legacy states kept for backward compatibility with existing records
       v.literal('step_1_identity'),
       v.literal('step_2_bank_details'),
       v.literal('step_3_documents'),
@@ -727,6 +752,27 @@ export default defineSchema({
       v.literal('step_7_approved'),
       v.literal('rejected')
     ),
+    // Device binding
+    deviceBindingId: v.optional(v.id('ipsDeviceBindings')),
+    mobileNumberNormalized: v.optional(v.string()),
+    // SoV provider selection
+    sovProviderCode: v.optional(v.string()),
+    sovProviderName: v.optional(v.string()),
+    // Account selection
+    selectedAccountRef: v.optional(v.string()),
+    selectedAccountMasked: v.optional(v.string()),
+    selectedAccountIfsc: v.optional(v.string()),
+    // Verification method
+    verificationMethod: v.optional(v.union(v.literal('debit_card'), v.literal('mno'))),
+    // IPS PIN
+    ipsPinSet: v.optional(v.boolean()),
+    // Alias
+    aliasAddr: v.optional(v.string()),
+    aliasId: v.optional(v.id('ipsAliasDirectory')),
+    // Error tracking
+    lastErrorCode: v.optional(v.string()),
+    lastErrorMessage: v.optional(v.string()),
+    // Legacy fields (kept for existing records)
     identityData: v.optional(v.any()),
     bankDetails: v.optional(v.any()),
     selectedVpa: v.optional(v.string()),
@@ -736,7 +782,9 @@ export default defineSchema({
     rejectionReason: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status']),
 
   ipsDeviceBindings: defineTable({
     userId: v.id('users'),
@@ -748,6 +796,53 @@ export default defineSchema({
     boundAt: v.number(),
     expiresAt: v.optional(v.number()),
   }).index('by_userId', ['userId']),
+
+  // IPN Alias Directory — centralized alias registry synced with IPN
+  ipsAliasDirectory: defineTable({
+    userId: v.id('users'),
+    /** Full alias address (e.g., "john@namlend", "812345678@namlend") */
+    addr: v.string(),
+    /** Entity type per IPN spec */
+    entityType: v.union(v.literal('PERSON'), v.literal('ENTITY')),
+    /** Identifier type: MOBILE (9-digit normalized) or NUMERICID */
+    idType: v.union(v.literal('MOBILE'), v.literal('NUMERICID')),
+    /** Normalized identifier value (9-digit mobile or numeric ID) */
+    idValue: v.string(),
+    /** IPN Alias Directory lifecycle status */
+    status: v.union(
+      v.literal('NEW'),
+      v.literal('ACTIVE'),
+      v.literal('INACTIVE'),
+      v.literal('BLOCKED'),
+      v.literal('DEREGISTERED'),
+      v.literal('PORTED')
+    ),
+    /** Central Mapper ID returned by IPN on successful registration */
+    cmId: v.optional(v.string()),
+    /** Alias expiration timestamp (if time-limited) */
+    expiryTs: v.optional(v.number()),
+    /** Linked bank account reference */
+    linkedAccountRef: v.optional(v.string()),
+    /** Linked bank BIC/SWIFT code */
+    linkedBankBic: v.optional(v.string()),
+    /** Account holder name (from bank verification) */
+    accountHolderName: v.optional(v.string()),
+    /** Whether this alias has been synced with IPN directory */
+    syncedWithIps: v.boolean(),
+    /** Last successful sync timestamp */
+    lastSyncAt: v.optional(v.number()),
+    /** Last sync error message (cleared on success) */
+    syncError: v.optional(v.string()),
+    /** Whether this is the user's default/primary alias */
+    isDefault: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_addr', ['addr'])
+    .index('by_status', ['status'])
+    .index('by_idValue', ['idValue'])
+    .index('by_syncedWithIps', ['syncedWithIps']),
 
   // ==========================================================================
   // SETTLEMENT SYSTEM

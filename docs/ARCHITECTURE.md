@@ -317,13 +317,15 @@ PayToday / MTC MoMo / TN Mobile
           v
       paymentTransactions (via ctx.runMutation)
 
-IPS/IPP (mock adapter)
+IPS/IPP (async XML over HTTPS — mock or live per IPS_PROTOCOL_MODE)
           |
           v
-    actions/ipsAdapter.ts (Convex Action)
+    actions/ipsAdapter.ts           (payments: ReqPay, ReqChkTxn, ReqHbt, ReqBalEnq)
+    actions/ipsAliasAdapter.ts      (aliases: ReqRegMapper, ReqGetAdd)
+    actions/ipsOnboardingAdapter.ts (onboarding: ReqRegMob, ReqListAccPvd, ReqOtp, ReqSetCre)
           |
           v
-    ipsTransactions + ipsApiLogs
+    ipsTransactions + ipsAliasDirectory + ipsApiLogs
 
 SMS / WhatsApp
           |
@@ -404,7 +406,7 @@ Convex Platform
 - `loans`, `disbursements`, `paymentTransactions`, `paymentSchedules` are core lending records.
 - `collectionsInteractions`, `promiseToPay`, `overdueReminders` track delinquency workflow.
 - `notifications`, `notificationQueue`, `communicationLogs` power in-app/SMS/WhatsApp.
-- `ipsTransactions`, `vpaRegistry`, `ipsApiLogs` track IPS/IPP activity (mock adapter).
+- `ipsTransactions`, `ipsAliasDirectory`, `ipsApiLogs`, `ipsOnboardingApplications`, `ipsDeviceBindings` track IPS/IPP activity. `vpaRegistry` is legacy (being replaced by `ipsAliasDirectory`).
 - `settlement*` tables (13) support DNS settlement and reconciliation.
 - `reconciliationRuns` and `bankTransactions` track bank reconciliation batches.
 - `tigerBeetle*` tables (4) implement outbox + shadow ledger.
@@ -454,7 +456,9 @@ convex/
 ├── reconciliation.ts         # Bank reconciliation
 ├── systemConfig.ts           # System configuration CRUD
 ├── actions/
-│   ├── ipsAdapter.ts         # IPS outbound transfers + webhooks
+│   ├── ipsAdapter.ts         # IPS payment + utility APIs (ReqPay, ReqChkTxn, ReqHbt, ReqBalEnq)
+│   ├── ipsAliasAdapter.ts    # IPN Alias Directory (ReqRegMapper, ReqGetAdd)
+│   ├── ipsOnboardingAdapter.ts # IPS onboarding APIs (ReqRegMob, ReqListAccPvd, ReqOtp, ReqSetCre)
 │   ├── processLoanApplication.ts  # Server-side loan processing
 │   ├── sendNotification.ts   # Multi-channel notification dispatch
 │   ├── sendSms.ts            # Africa's Talking SMS
@@ -462,7 +466,7 @@ convex/
 ├── scheduled/
 │   ├── tigerBeetleOutboxWorker.ts  # TB outbox polling + posting
 │   └── dailyTasks.ts         # Overdue marking, PTP checks, notification queue
-├── ips/                      # IPS domain (5 files)
+├── ips/                      # IPS domain (7 files: transactions, VPA, onboarding, alias directory, API logs, alerts)
 ├── settlement/               # Settlement domain (10 files)
 └── tigerbeetle/              # TigerBeetle domain (4 files)
 ```
@@ -535,7 +539,7 @@ All admin queries use `assertStaff(ctx)` or `assertAdmin(ctx)` guards in the Con
 ### Medium Risk
 
 4. ~~**Internal mutations exposed publicly**~~ — **RESOLVED** (Feb 2026): `markFunded` and `updateLoanBalance` in `loans.ts` converted from `mutation` to `internalMutation`. Analytics queries capped with `.take(10000)` safety limits.
-5. **IPS adapter is mock** — Production IPS API + mTLS not wired.
+5. **IPS adapter supports mock and XML modes** — XML protocol (Phases 1-3) implemented; toggle via `IPS_PROTOCOL_MODE` business rule. Production mTLS/HSM not yet wired (Phase 4).
 6. **TigerBeetle outbox worker simulates posting** — No live TB cluster integration.
 7. **`/admin/*` route guard** — loan_officer AND admin access allowed via `requireLoanOfficer` guard.
 

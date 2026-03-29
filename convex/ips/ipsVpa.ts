@@ -18,10 +18,46 @@ export const getMyVpas = query({
   },
 });
 
+/**
+ * Look up a VPA by address — checks ipsAliasDirectory first (IPN-synced),
+ * falls back to legacy vpaRegistry for backward compatibility.
+ */
 export const getVpaByAddress = query({
   args: { vpa: v.string() },
   handler: async (ctx, { vpa }) => {
     await assertAuthenticated(ctx);
+
+    // Phase 2: check IPN alias directory first
+    const alias = await ctx.db
+      .query('ipsAliasDirectory')
+      .withIndex('by_addr', (q) => q.eq('addr', vpa))
+      .first();
+
+    if (alias && alias.status !== 'DEREGISTERED' && alias.status !== 'PORTED') {
+      return {
+        _id: alias._id,
+        userId: alias.userId,
+        vpa: alias.addr,
+        vpaType: 'personal' as const,
+        bankBic: alias.linkedBankBic,
+        accountNumber: alias.linkedAccountRef,
+        isDefault: alias.isDefault,
+        status:
+          alias.status === 'ACTIVE'
+            ? ('active' as const)
+            : alias.status === 'BLOCKED'
+              ? ('suspended' as const)
+              : ('active' as const),
+        createdAt: alias.createdAt,
+        updatedAt: alias.updatedAt,
+        // Bridge fields
+        _source: 'ipsAliasDirectory' as const,
+        syncedWithIps: alias.syncedWithIps,
+        cmId: alias.cmId,
+      };
+    }
+
+    // Fallback: legacy vpaRegistry
     return ctx.db
       .query('vpaRegistry')
       .withIndex('by_vpa', (q) => q.eq('vpa', vpa))

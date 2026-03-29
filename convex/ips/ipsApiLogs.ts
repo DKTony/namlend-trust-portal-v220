@@ -16,6 +16,14 @@ export const logApiCall = internalMutation({
     responseBody: v.optional(v.any()),
     durationMs: v.optional(v.number()),
     errorMessage: v.optional(v.string()),
+    // Phase 1: XML protocol support
+    direction: v.optional(
+      v.union(v.literal('OUTBOUND'), v.literal('INBOUND'), v.literal('CALLBACK'))
+    ),
+    contentType: v.optional(v.union(v.literal('json'), v.literal('xml'))),
+    apiName: v.optional(v.string()),
+    rawXml: v.optional(v.string()),
+    correlationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert('ipsApiLogs', {

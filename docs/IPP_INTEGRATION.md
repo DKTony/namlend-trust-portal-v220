@@ -1,13 +1,15 @@
 # Instant Payment Platform (IPP) Integration Guide
 
-**Doc Revision**: 2026-01-19  
-**Status**: Reference specification. Current code uses the `ips-adapter` Edge Function in mock mode. Production IPS API integration is pending.
+**Doc Revision**: 2026-03-29
+**Status**: Phases 1-3 implemented. XML protocol, alias directory, and IPS-mandated onboarding flow complete. Protocol mode toggleable via `IPS_PROTOCOL_MODE` business rule.
 
 ## Implementation Notes (Current Code)
 
-- Adapter: `supabase/functions/ips-adapter` (mock responses by default).
-- Services: `src/services/ipsService.ts`, `src/services/ipsOnboardingService.ts`.
-- Data: `ips_transactions`, `ips_vpa_registry`, onboarding tables in `supabase/migrations/`.
+- **Adapters**: `convex/actions/ipsAdapter.ts` (payments), `convex/actions/ipsAliasAdapter.ts` (aliases), `convex/actions/ipsOnboardingAdapter.ts` (onboarding)
+- **Domain logic**: `convex/ips/` — ipsTransactions, ipsVpa, ipsOnboarding, ipsAliasDirectory, ipsApiLogs, ipsAlerts
+- **Libraries**: `convex/lib/ipsXmlBuilder.ts`, `convex/lib/ipsSigningProvider.ts`, `convex/lib/ipsErrorCodes.ts`, `convex/lib/ipsPhoneNormalize.ts`
+- **UI Hook**: `src/hooks/useIPPOnboarding.ts` — calls step-specific mutations for IPS-mandated onboarding flow
+- **Data**: `ipsTransactions`, `ipsAliasDirectory`, `ipsOnboardingApplications`, `ipsDeviceBindings`, `ipsApiLogs` in `convex/schema.ts`
 
 ## Overview
 
@@ -305,22 +307,18 @@ Device information is captured for fraud prevention:
 
 ### Webhook Integration
 
-NamLend receives payment callbacks via webhooks:
+NamLend receives IPS callbacks via `convex/http.ts` at `/webhook/ips`:
 
-```typescript
-// supabase/functions/payment-webhook/index.ts
-interface IPPWebhookPayload {
-  type: 'PAYMENT_COMPLETE' | 'PAYMENT_FAILED' | 'REVERSAL';
-  txnId: string;
-  orgTxnId?: string;
-  amount: number;
-  currency: 'NAD';
-  payer: string;
-  payee: string;
-  timestamp: string;
-  result: 'SUCCESS' | 'FAILURE';
-  errCode?: string;
-}
+```
+IPS Switch → POST /webhook/ips (XML body)
+  → Parse XML root element to identify API (RespPay, RespRegMapper, etc.)
+  → Verify RSA-SHA256 signature
+  → Route to internal action handler:
+      RespPay            → ipsAdapter.handleRespPay
+      RespRegMapper      → ipsAliasAdapter.handleRespRegMapper
+      RespGetAdd         → ipsAliasAdapter.handleRespGetAdd
+      MapperConfirmation → ipsAliasAdapter.handleMapperConfirmation
+  → Return XML ACK
 ```
 
 ---
@@ -357,46 +355,67 @@ interface IPPWebhookPayload {
 
 ## Implementation Checklist
 
-### Phase 1: Basic Integration
+### Phase 1: XML Protocol Foundation ✅
+
+- [x] XML request builder + response parser (`convex/lib/ipsXmlBuilder.ts`)
+- [x] RSA-SHA256 signing abstraction (`convex/lib/ipsSigningProvider.ts`)
+- [x] Software signing implementation (`convex/lib/ipsSoftwareSigner.ts`)
+- [x] IPS error code mapping (100+ codes, `convex/lib/ipsErrorCodes.ts`)
+- [x] Feature flag: `IPS_PROTOCOL_MODE` (json_mock / xml_sandbox / xml_production)
+- [x] Webhook handler: XML parsing + RSA-SHA256 verification + API routing
+- [x] Payment APIs: ReqPay, ReqValAdd, ReqChkTxn, ReqHbt, ReqBalEnq
+
+### Phase 2: Alias Directory & Mobile Normalization ✅
+
+- [x] Namibian mobile normalization (`convex/lib/ipsPhoneNormalize.ts`)
+- [x] IPN Alias Directory adapter (`convex/actions/ipsAliasAdapter.ts`)
+- [x] Alias directory domain logic (`convex/ips/ipsAliasDirectory.ts`)
+- [x] Alias lifecycle: register local → IPN sync → cmId → ACTIVE
+- [x] VPA bridge: check `ipsAliasDirectory` first, fall back to `vpaRegistry`
+
+### Phase 3: IPS-Mandated Onboarding ✅
+
+- [x] Onboarding schema: 14 IPS-mandated states + legacy compatibility
+- [x] 10 step-specific mutations with state machine enforcement
+- [x] Onboarding adapter: ReqRegMob, ReqListAccPvd, ReqListAccount, ReqOtp, ReqSetCre
+- [x] Frontend hook: calls step-specific mutations, reactive via useQuery
+- [x] Audit logging on every state transition
+
+### Phase 4: HSM/PKI Integration (Planned)
+
+- [ ] HSM-backed `IpsSigningProvider` implementation
+- [ ] Certificate management table + rotation alerts
+- [ ] PIN encryption pipeline (client → IPS HSM → bank HSM)
+- [ ] `ReqListKeys` API for fetching IPS signing/encryption keys
+
+### Phase 5: Remaining APIs & Reconciliation (Planned)
 
 - [ ] Register as PSP with Bank of Namibia
-- [ ] Obtain IPP credentials (orgId, certificates)
-- [ ] Implement VPA validation (ReqValAdd)
-- [ ] Implement payment initiation (ReqPay)
-- [ ] Implement status check (ReqChkTxn)
-- [ ] Set up webhook endpoint
-
-### Phase 2: Enhanced Features
-
-- [ ] Implement balance enquiry (ReqBalEnq)
-- [ ] Add mandate support for recurring payments
-- [ ] Implement dispute resolution APIs
-- [ ] Add multi-account support
-
-### Phase 3: Production Readiness
-
-- [ ] Complete UAT with BON
+- [ ] Complete UAT with BON sandbox
+- [ ] ReqListVae / ReqManageVae (Virtual Account Enrolment)
+- [ ] IPS settlement reconciliation
 - [ ] Security audit and penetration testing
-- [ ] Implement monitoring and alerting
 - [ ] Go-live certification
 
 ---
 
 ## Configuration
 
-### Environment Variables
+### Environment Variables (Convex)
 
 ```bash
-# IPP Configuration
-IPP_ORG_ID=NAMLEND
-IPP_ENDPOINT_URL=https://ips.bon.na/api/v2
-IPP_CALLBACK_URL=https://namlend.na/webhooks/ipp
-IPP_CERT_PATH=/certs/namlend.p12
-IPP_CERT_PASSWORD=<secret>
+# IPS Connection
+IPS_BASE_URL=https://ips-sandbox.bon.na/api/v2   # or https://ips.bon.na/api/v2 for production
+IPS_ORG_ID=NAMLEND
 
-# VPA Configuration
-IPP_VPA_HANDLE=@namlend
-IPP_MERCHANT_VPA=collections@namlend
+# Signing (Phase 1: Software / Phase 4: HSM)
+IPS_SIGNING_PRIVATE_KEY=<PEM-encoded RSA private key>
+IPS_BON_PUBLIC_CERT=<PEM-encoded BoN public certificate>
+IPS_KEY_ID=NAMLEND-SIGN-01
+IPS_SIGNING_MODE=software                        # or "hsm" when Phase 4 is deployed
+
+# Protocol Mode (via businessRules table, not env var)
+# Set IPS_PROTOCOL_MODE rule: json_mock | xml_sandbox | xml_production
 ```
 
 ### TypeScript Types
@@ -459,16 +478,18 @@ These responsibilities must be interpreted together with `IPP_GOVERNANCE.md`, wh
 
 ## Connectivity & Security (IPS/IPP)
 
-- **Protocol**: REST/HTTPS with mutual TLS, as per IPS TSD.
+- **Protocol**: Async XML over HTTPS with RSA-SHA256 digital signatures (implemented in Phase 1).
 - **Digital signatures**:
-  - Requests are signed using X.509 certificates issued for IPS participation.
-  - IPS verifies payload and header signatures for authenticity and integrity.
+  - Outbound requests signed via `IpsSigningProvider` abstraction (`convex/lib/ipsSigningProvider.ts`)
+  - Phase 1: Software signing using Node.js `crypto` with PEM keys from env vars
+  - Phase 4 (planned): HSM-backed signing via microservice
 - **Keys & certificates**:
-  - Stored in HSM or secure vault.
-  - Rotated according to IPS key-schedule requirements.
-  - Separate keys/certs per environment (DEV, SIT/UAT, PROD).
+  - Phase 1: PEM keys in `IPS_SIGNING_PRIVATE_KEY` and `IPS_BON_PUBLIC_CERT` env vars
+  - Phase 4 (planned): HSM or secure vault, rotated per IPS key-schedule requirements
+  - Separate keys/certs per environment (DEV, SIT/UAT, PROD)
+- **Webhook verification**: Inbound XML parsed and RSA-SHA256 signature verified; routes by API name
 
-See also `IPP_TECHNICAL_REFERENCE.md` for message-level details and `SECURITY.md` for broader platform security posture.
+See also `IPS_IMPLEMENTATION.md` for detailed adapter architecture and `SECURITY.md` for broader platform security posture.
 
 ---
 

@@ -22,6 +22,44 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 
 ---
 
+## [2.8.10] - 2026-03-29 (IPS/IPP Phase 3 — Onboarding Rework)
+
+### Added
+
+#### IPS Onboarding Adapter (`convex/actions/ipsOnboardingAdapter.ts`)
+
+- **6 IPS API actions**: `reqRegMob`, `reqListAccPvd`, `reqListAccount`, `startVerification`, `reqOtp`, `reqSetCre`
+- All support `json_mock` (development) and XML protocol (sandbox/production) modes
+- Automatic status updates via `updateOnboardingStatus` internal mutation on success/failure
+
+#### IPS-Mandated Onboarding State Machine (`convex/ips/ipsOnboarding.ts`)
+
+- **10 step-specific mutations**: `completeDeviceBinding`, `selectSovProvider`, `selectAccount`, `startVerification`, `submitOtp`, `setupIpsPin`, `createHandle`, `registerAlias`, `confirmOnboarding`, `reviewOnboarding`
+- State machine enforcement via `VALID_TRANSITIONS` map — prevents invalid state jumps
+- Audit logging on every transition via `scheduleAuditLog`
+- Legacy `advanceOnboardingStep` mutation retained for backward-compatible records
+
+#### Onboarding Schema Expansion (`convex/schema.ts`)
+
+- 14 IPS-mandated onboarding states (NOT_STARTED → READY_FOR_IPP_PAYMENTS)
+- 8 legacy states retained for existing records
+- New fields: `deviceBindingId`, `mobileNumberNormalized`, `sovProviderCode`, `sovProviderName`, `selectedAccountRef`, `selectedAccountMasked`, `selectedAccountIfsc`, `verificationMethod`, `ipsPinSet`, `aliasAddr`, `aliasId`, `lastErrorCode`, `lastErrorMessage`
+
+### Changed
+
+#### Frontend Onboarding Hook (`src/hooks/useIPPOnboarding.ts`)
+
+- Rewritten to call step-specific mutations instead of generic `advanceOnboardingStep`
+- Derived state from `useQuery` (eliminated `useEffect` + `useState` pattern for data mapping)
+- Legacy state mapping preserved for existing `step_1_identity`..`step_7_approved` records
+- ConvexError messages surfaced to toast notifications
+
+### Fixed
+
+- **Convex bundler error**: Fixed `ipsSoftwareSigner.ts` — removed invalid `"use node"` directive (lib file, not action file) and deferred `crypto` import to avoid static resolution by the bundler
+
+---
+
 ## [2.8.9] - 2026-03-22 (E2E Testing & KYC Seeding)
 
 ### Fixed

@@ -1,7 +1,7 @@
 # NamLend Trust - Functionality Map
 
 **Last Updated**: 2026-03-28
-**Aligned With**: Financial Ontology Engine (v5.0.0)
+**Aligned With**: Financial Ontology Engine (v5.2.1)
 **Status**: Current ✅
 **Purpose**: Feature to Convex API and database wiring map (current codebase).
 

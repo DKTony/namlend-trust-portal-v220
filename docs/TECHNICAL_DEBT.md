@@ -513,7 +513,9 @@ rg "console\.(log|warn|error)" src --type ts -c
 
 ## See Also
 
-- [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) - TypeScript type improvements
-- [TESTING.md](./TESTING.md) - Testing strategy
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
-- [INDEX.md](./INDEX.md) - Documentation index
+- [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) — TypeScript type improvements
+- [TESTING.md](./TESTING.md) — Testing strategy
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation (v5.2.1)
+- [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md) — Feature implementation status
+- [INDEX.md](./INDEX.md) — Documentation index

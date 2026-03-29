@@ -403,7 +403,7 @@ Do not expose secrets in `VITE_*` client environment variables. Only `VITE_CONVE
 
 ## Financial Ontology Engine Modules (Mar 2026)
 
-The following Convex modules were added as part of the Financial Ontology Engine (v5.0.0). These are **not** legacy services — they are active Convex backend modules in `convex/ontology/` and `convex/lib/`.
+The following Convex modules were added as part of the Financial Ontology Engine (v5.0.0, hardened in v5.2.1). These are **not** legacy services — they are active Convex backend modules in `convex/ontology/` and `convex/lib/`. See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report.
 
 ### Ontology Domain Modules (`convex/ontology/`)
 

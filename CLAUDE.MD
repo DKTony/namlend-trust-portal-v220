@@ -456,6 +456,42 @@ All transitions go through `convex/approvalWorkflow.ts` (Convex) or `src/service
 4. Loan balance updated atomically within the mutation
 5. Settlement detection on final payment (balance = 0 → status `paid_off`)
 
+## Design Philosophy
+
+NamLend Trust is not a lending CRUD app — it is **Namibia's Financial Ontology Engine**: a system where every entity, relationship, and event is a node in a knowledge graph of financial reality.
+
+### The Three Certainties
+
+Every change to this codebase must improve at least one of:
+
+1. **Execution Certainty** — Can money move when it should? (Disbursements, mandates, rail selection, settlement)
+2. **Authorization Certainty** — Can you prove who agreed to what? (Mandates, consent records, electronic signatures, audit trails)
+3. **Financial Truth** — Can you prove what actually happened? (Event journal, projections, TigerBeetle, snapshots)
+
+If a feature does not improve one of these three, it is probably secondary.
+
+### The Iron Rule
+
+Every feature must add a row to the ontology, not just a screen to the UI. If a feature doesn't introduce or enrich an entity, a relationship between entities, or an event in the financial journal — redesign it until it does.
+
+### Five Ontology Primitives
+
+| Primitive | What It Represents | Examples |
+|-----------|-------------------|----------|
+| **Entity** | A noun in the financial world | Person, Institution, Account, Loan, Product, PaymentRail, Mandate |
+| **Relationship** | A typed, temporal edge between entities | Person→guarantees→Loan, Mandate→governs→Loan |
+| **Event** | An immutable fact that happened | loan.approved, payment.completed, mandate.executed |
+| **Rule** | A constraint or policy governing behavior | APR ≤ 32%, MIN_CREDIT_SCORE, RAIL_WEIGHTS |
+| **Projection** | A derived, queryable view of current state | portfolioMetrics, loan balance, settlement position |
+
+### Strategic Sequencing
+
+1. **Sell lending infrastructure** (current — v5.2.1)
+2. **Build mandate infrastructure** (mandate lifecycle, POPIA consent, execution engine)
+3. **Become execution infrastructure** (multi-institution, rail orchestration, settlement transport)
+
+See [Raw_Thoughts.md](docs/Raw_Thoughts.md) for the full strategic analysis.
+
 ### Admin Dashboard Structure
 
 The admin dashboard (`/admin/*`) uses tab-based navigation with 15 domain areas:

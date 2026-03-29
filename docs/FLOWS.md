@@ -436,6 +436,9 @@ Client → /budget page (BudgetTracker.tsx)
 - [API_REFERENCE.md](./API_REFERENCE.md) — Full function signatures and auth requirements
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Tables used in each flow
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture and data flow diagrams
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Domain events, projections, and rules triggered by each flow
 - [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md) — Feature implementation status
 - [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md) — Flow validation approach
 - [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md) — Flow conformance tracker
+
+> **Note**: Each flow step that changes financial state emits domain events to the event journal (via `emitDomainEvent()` in `convex/lib/domainEvents.ts`). These events drive real-time projections and are the primary audit trail. See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the complete event catalog.

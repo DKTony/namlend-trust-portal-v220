@@ -93,6 +93,17 @@ export const getMyLoans = query({
 // src/services/loanService.ts — DO NOT USE
 ```
 
+### Ontology-First Development Pattern
+
+Every mutation that changes financial state must participate in the ontology. Follow this checklist:
+
+1. **Emit domain event** via `emitDomainEvent()` from `convex/lib/domainEvents.ts` (past-tense: `loan.approved`, `payment.completed`)
+2. **Emit relationships** via `emitRelationship()` from `convex/lib/relationshipEmitter.ts` when creating connections between entities
+3. **Log audit** via `scheduleAuditLog()` from `convex/lib/audit.ts` (bridges to event journal automatically)
+4. **Read business rules** via `getNumericRule()` / `getJsonRule()` from `convex/lib/ruleEvaluator.ts` instead of hardcoding thresholds
+
+The design principle: every change must improve **execution certainty**, **authorization certainty**, or **financial truth**. See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for implementation details and [Raw_Thoughts.md](./Raw_Thoughts.md) for the strategic reasoning.
+
 ### Frontend Data Access Pattern
 
 ```typescript
@@ -436,10 +447,12 @@ api.settlement.*          // Settlement runs + reports (convex/settlement/)
 
 ## See Also
 
-- [CLAUDE.MD](../CLAUDE.MD) - Root-level AI context (start here)
-- [INDEX.md](./INDEX.md) - Documentation index
-- [GLOSSARY.md](./GLOSSARY.md) - Terminology definitions
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture (Convex)
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Convex schema reference
-- [SERVICES.md](./SERVICES.md) - Service migration status
-- [convexmigratehandover.md](./convexmigratehandover.md) - Convex migration handover notes
+- [CLAUDE.MD](../CLAUDE.MD) — Root-level AI context (start here, includes Design Philosophy)
+- [INDEX.md](./INDEX.md) — Documentation index
+- [GLOSSARY.md](./GLOSSARY.md) — Terminology definitions (including ontology primitives)
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation report (domain events, projections, rules-as-data)
+- [Raw_Thoughts.md](./Raw_Thoughts.md) — Strategic vision: three certainties, five primitives, design principles
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture (Convex)
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (67+ tables)
+- [SERVICES.md](./SERVICES.md) — Service migration status
+- [convexmigratehandover.md](./convexmigratehandover.md) — Convex migration handover notes

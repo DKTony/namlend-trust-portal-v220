@@ -343,3 +343,13 @@ Expected outcome in CI without Supabase creds: **~77 tests run, ~182 skipped**.
 2. Verify `SUPABASE_STORAGE_KEY` in `auth.ts` matches Convex Auth localStorage key.
 3. Fix any selector drift in UI tests (use `--headed` to diagnose).
 4. Begin N1: wire `creditScore`, `debtToIncomeRatio`, `recommendation` in `Loan360View` + `LoanReviewPanel`.
+
+---
+
+## See Also
+
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Domain events and projections to verify in tests
+- [FLOWS.md](./FLOWS.md) — User and system flows (test scenarios)
+- [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md) — Feature implementation status
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture
+- [INDEX.md](./INDEX.md) — Documentation index

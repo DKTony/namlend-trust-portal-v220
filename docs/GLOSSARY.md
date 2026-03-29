@@ -209,41 +209,67 @@ Design pattern where events are written to a local table first, then processed a
 
 ## Financial Ontology Engine Terms
 
+> See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report. See [Raw_Thoughts.md](./Raw_Thoughts.md) for the strategic analysis behind these concepts.
+
+### Ontology (Financial)
+
+A structured model where every entity, relationship, and event forms a knowledge graph of financial reality. Built on five primitives: **Entity** (nouns), **Relationship** (typed temporal edges), **Event** (immutable facts), **Rule** (constraints as data), **Projection** (derived queryable views). Implemented across 6 layers: event journal, mandates/consent, knowledge graph, multi-institution, payment rails, and product engine.
+
 ### Event Journal
 
-Append-only stream of every state-changing event in the system (`eventJournal` table). Populated automatically via the **audit bridge** in `convex/lib/audit.ts` — every call to `scheduleAuditLog()` or `scheduleAuditEntry()` emits both a traditional audit log entry and an event journal entry.
+A unified, append-only event stream (`eventJournal` table) capturing every significant state change across all domains. Populated via two mechanisms: (1) the **audit bridge** in `convex/lib/audit.ts` (automatic, ~95% coverage), and (2) **semantic domain events** in `convex/lib/domainEvents.ts` (23 past-tense event types like `loan.approved`, `payment.completed`).
 
-**Key fields**:
-
-- **correlationId**: Groups related events (e.g., all events in one loan lifecycle)
-- **causationId**: The event that caused this event (enables "what triggered this?" queries)
-- **domainSource**: Category (`lending`, `payments`, `settlement`, `mandates`, `collections`, etc.)
+**Key fields**: `correlationId` (groups related events across a lifecycle), `causationId` (what triggered this event), `domainSource` (lending, payments, settlement, mandates, collections, approvals, identity).
 
 ### Entity Relationship Graph (Knowledge Graph)
 
-A typed, directed graph of relationships between entities (`relationships` table). Populated via `emitRelationship()` helper (fire-and-forget via scheduler). Supports BFS traversal up to N degrees of separation.
+A typed, directed graph of relationships between entities (`relationships` table). Populated via `emitRelationship()` helper (fire-and-forget via scheduler). Supports BFS traversal up to N degrees of separation. 25+ relationship emissions across all core + ontology modules.
 
-**Example relationships**: `user -> borrowed -> loan`, `loan -> repaid_via -> payment`, `mandate -> executed_via -> mandateExecution`
+**Example relationships**: `user -> borrowed -> loan`, `loan -> repaid_via -> payment`, `mandate -> executed_via -> mandateExecution`, `institution -> licensed_by -> regulator`
 
 ### Mandate
 
-A debit order authorization allowing NamLend to automatically collect payments from a borrower's bank account (`mandates` table).
+A debtor authorization for recurring collections (`mandates` table). Types: `debit_order`, `once_off_debit`, `recurring_collection`, `ipp_mandate`. This is the keystone entity — without it, every payment is a voluntary act. With it, the system has pre-authorized access to funds.
 
-**Lifecycle**: `draft` → `pending_authorization` → `active` → `suspended` / `revoked` / `expired`
+**Lifecycle**: `draft` → `pending_authorization` → `active` → `suspended` ↔ `active` → `revoked` | `expired`
 
 ### Payment Rail
 
-A first-class entity representing a payment channel (`paymentRails` table). The `selectOptimalRail()` function in `convex/lib/railSelector.ts` scores rails by cost, speed, availability, and reliability.
+A first-class entity representing a payment channel (`paymentRails` table) with cost model, settlement latency, availability windows, and health status. The `selectOptimalRail()` function scores rails by cost (40%), speed (30%), availability (20%), and reliability (10%) — weights are data-driven from `businessRules` table via `RAIL_WEIGHTS` rule.
 
 **Namibian rails**: EFT, IPS/IPP, mobile_money, cash, cheque
 
 ### Product Version
 
-An immutable configuration snapshot for a financial product (`productVersions` table). Products evolve via new versions — old versions are never modified. The eligibility engine checks applicant criteria against product rules.
+An immutable configuration record for a financial product (`productVersions` table). Once created, product versions are never updated — new versions supersede old ones. Loans can optionally reference a `productVersionId` for validation against configurable criteria (amount range, term limits, interest rate cap, eligibility rules).
 
 ### Institution
 
-A financial institution operating on the platform (`institutions` table). Supports multi-tenancy via `institutionId` fields on core tables and the `withInstitution()` filter helper.
+A financial institution operating on the platform (`institutions` table). Supports multi-tenancy via `institutionId` fields on core tables and the `withInstitution()` filter helper. Each institution can have its own temporal configuration (`institutionConfig`).
+
+### Business Rules
+
+Data-driven rules stored in the `businessRules` table with close-and-insert versioning. Consumed by `ruleEvaluator.ts` (`getNumericRule`, `getJsonRule`, `getStringRule`). 5 seeded rules: `APR_LIMIT`, `MIN_CREDIT_SCORE`, `MAX_DTI_RATIO`, `RAIL_WEIGHTS`, `DATA_RETENTION_YEARS`. Changeable via admin UI without deploy.
+
+### Domain Events
+
+Semantic, past-tense events emitted by `emitDomainEvent()` in `convex/lib/domainEvents.ts`. Unlike audit bridge events (CRUD-style), domain events carry business meaning: `loan.approved`, `disbursement.completed`, `collection.promise_fulfilled`. These drive event-driven projections via `projectionEmitter.ts`.
+
+### Projections
+
+Derived, incrementally-updated metrics (`portfolioMetrics` table) computed from domain events. 10 idempotent projection handlers in `portfolioProjection.ts` update metrics like `active_loan_count`, `total_disbursed`, `pending_loan_count` in real-time as events flow in. Analytics queries read from projections (O(1)) when available, falling back to full scan.
+
+### Temporal Versioning
+
+A pattern where records are never overwritten. Instead, the old record's `effectiveTo` is set, and a new record is inserted with `effectiveFrom`. Used for `systemConfiguration`, `institutionConfig`, `productVersions`, and `businessRules`. Helpers: `effectiveAt()`, `asOf()` in `convex/lib/temporal.ts`.
+
+### Institution Scoping
+
+Multi-tenant isolation by optional `institutionId` field on core tables. The `withInstitution()` helper filters query results by tenant while preserving backward compatibility for unscoped records.
+
+### POPIA Consent
+
+Consent records required by the Protection of Personal Information Act (South Africa, adopted by Namibia). Types tracked: `data_processing`, `debit_mandate`, `credit_check`, `communication`, `data_sharing`. Grant/withdraw lifecycle with full audit trail.
 
 ### Audit Bridge
 
@@ -355,50 +381,12 @@ Mobile app notifications (React Native app only).
 
 ---
 
-## Ontology Engine Terms
-
-### Ontology (Financial)
-
-A structured model where every entity, relationship, and event forms a knowledge graph of financial reality. In NamLend, the ontology is implemented across 6 layers: event journal, mandates/consent, knowledge graph, multi-institution, payment rails, and product engine.
-
-### Event Journal
-
-A unified, append-only event stream (`eventJournal` table) capturing every significant state change across all domains. Events carry `correlationId` and `causationId` for tracing cross-domain event chains.
-
-### Knowledge Graph / Relationships
-
-Typed, temporal, directional edges between any two entities in the system (`relationships` table). Examples: `user -[borrowed]-> loan`, `loan -[disbursed_via]-> disbursement`, `institution -[licensed_by]-> regulator`. Supports BFS traversal with configurable depth.
-
-### Mandate
-
-A debtor authorization for recurring collections. Types: `debit_order`, `once_off_debit`, `recurring_collection`, `ipp_mandate`. Lifecycle: draft -> pending_authorization -> active -> [suspended <-> active] -> revoked | expired.
-
-### Payment Rail
-
-A first-class entity representing a payment channel (IPS, bank transfer, mobile money, cash, cheque) with cost model, settlement latency, availability windows, and health status. The `selectOptimalRail()` function scores rails by cost (40%), speed (30%), availability (20%), and reliability (10%).
-
-### Product Version
-
-An immutable configuration record for a financial product. Once created, product versions are never updated — new versions supersede old ones. Loans can optionally reference a `productVersionId` for validation against configurable criteria (amount range, term limits, interest rate cap, eligibility rules).
-
-### Temporal Versioning
-
-A pattern where records are never overwritten. Instead, the old record's `effectiveTo` is set, and a new record is inserted with `effectiveFrom`. Used for `systemConfiguration`, `institutionConfig`, and `productVersions`.
-
-### Institution Scoping
-
-Multi-tenant isolation by optional `institutionId` field on core tables. The `withInstitution()` helper filters query results by tenant while preserving backward compatibility for unscoped records.
-
-### POPIA Consent
-
-Consent records required by the Protection of Personal Information Act (South Africa, adopted by Namibia). Types tracked: `data_processing`, `debit_mandate`, `credit_check`, `communication`, `data_sharing`.
-
----
-
 ## See Also
 
-- [INDEX.md](./INDEX.md) - Documentation index
-- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
-- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) - IPP/IPS details
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables
+- [INDEX.md](./INDEX.md) — Documentation index
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation report (v5.2.1)
+- [Raw_Thoughts.md](./Raw_Thoughts.md) — Strategic vision and ontological analysis
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture overview
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Complete schema reference (67+ tables)
+- [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md) — Feature-to-code wiring map
+- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) — IPP/IPS payment details

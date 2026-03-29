@@ -570,11 +570,15 @@ Layer 1: Event Journal & Temporal — unified event stream + point-in-time snaps
 - **Pure scoring functions**: `selectOptimalRail()` is a pure function called inside mutations — rails are queried first, then passed into the scorer
 - **Graceful degradation**: All ontology features are additive — rail selection skips if no rails seeded, product validation skips if no `productVersionId`, institution scoping passes through unscoped records
 
-### Adoption Metrics (v5.1.0)
+### Adoption Metrics (v5.2.1)
 
-- **Event journal coverage**: ~95% of financial mutations emit events (via audit bridge)
-- **Relationship graph**: 25 emissions across core + ontology modules
+- **Domain event coverage**: ~95% of financial mutations emit semantic domain events (23 event types in `domainEvents.ts`) + audit bridge events
+- **Relationship graph**: 25+ emissions across core + ontology modules
+- **Event-driven projections**: 10 projection handlers in `portfolioProjection.ts` (loan created/submitted/rejected/approved/funded/paid_off, payment completed/failed, disbursement completed/failed)
+- **Business rules consumed**: 5 data-driven rules (APR_LIMIT, MIN_CREDIT_SCORE, MAX_DTI_RATIO, RAIL_WEIGHTS, DATA_RETENTION_YEARS) — changeable via admin UI, no deploy needed
 - **Correlation infrastructure**: `loans.correlationId` + `eventJournal.by_causationId` index + `getEventsByCausation` query (threading not yet active in lifecycle flows)
+
+See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report including phase-by-phase details.
 
 ### New Directories
 

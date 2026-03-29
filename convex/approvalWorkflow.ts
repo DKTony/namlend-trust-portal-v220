@@ -13,6 +13,7 @@ import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertAdmin } from './lib/auth';
 import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
+import { emitDomainEvent } from './lib/domainEvents';
 import { approvalRequestStatus } from './schema';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
@@ -149,6 +150,19 @@ export const submitForApproval = mutation({
       { type: 'approvalRequests', id: requestId },
       'requires_approval'
     );
+    emitDomainEvent(
+      ctx,
+      'approval.submitted',
+      'approvalRequests',
+      requestId,
+      {
+        entityType: args.entityType,
+        entityId: args.entityId,
+        requestType: args.requestType,
+        priority: args.priority,
+      },
+      { actorId: userId, actorType: 'user' }
+    );
 
     // Notify requesting user that their application was received
     ctx.scheduler
@@ -237,6 +251,18 @@ export const processApprovalRequest = mutation({
       { type: 'users', id: actorId },
       'decided_by',
       { action, newStatus }
+    );
+    emitDomainEvent(
+      ctx,
+      action === 'approve'
+        ? 'approval.approved'
+        : action === 'reject'
+          ? 'approval.rejected'
+          : `approval.${action}`,
+      'approvalRequests',
+      requestId,
+      { entityType: request.entityType, entityId: request.entityId, decision: action },
+      { actorId, actorType: 'user' }
     );
 
     // If this request is for a loan, sync the loan status and notify the client

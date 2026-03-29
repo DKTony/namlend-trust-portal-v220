@@ -38,6 +38,20 @@ export const DOMAIN_EVENTS = {
   PAYMENT_RECORDED: 'payment.recorded',
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
+
+  // Approval lifecycle
+  APPROVAL_SUBMITTED: 'approval.submitted',
+  APPROVAL_APPROVED: 'approval.approved',
+  APPROVAL_REJECTED: 'approval.rejected',
+
+  // Collections lifecycle
+  COLLECTION_INTERACTION_RECORDED: 'collection.interaction_recorded',
+  COLLECTION_PROMISE_RECORDED: 'collection.promise_recorded',
+  COLLECTION_PROMISE_FULFILLED: 'collection.promise_fulfilled',
+
+  // User lifecycle
+  USER_ROLE_ASSIGNED: 'user.role_assigned',
+  USER_PROFILE_UPDATED: 'user.profile_updated',
 } as const;
 
 /** Infer domain source from entity type. */
@@ -45,6 +59,15 @@ function inferDomainSource(entityType: string): string {
   if (entityType.startsWith('loan') || entityType === 'loans') return 'lending';
   if (entityType.startsWith('payment') || entityType === 'paymentTransactions') return 'payments';
   if (entityType.startsWith('disbursement') || entityType === 'disbursements') return 'payments';
+  if (entityType.startsWith('approval') || entityType === 'approvalRequests') return 'approvals';
+  if (
+    entityType.startsWith('collection') ||
+    entityType === 'collectionsInteractions' ||
+    entityType === 'promiseToPay'
+  )
+    return 'collections';
+  if (entityType.startsWith('user') || entityType === 'users' || entityType === 'profiles')
+    return 'identity';
   return 'system';
 }
 

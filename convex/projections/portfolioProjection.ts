@@ -113,3 +113,57 @@ export const onDisbursementCompleted = internalMutation({
     }
   },
 });
+
+/** loan.created → increment pending loan count */
+export const onLoanCreated = internalMutation({
+  args: {
+    eventId: v.string(),
+    amount: v.optional(v.number()),
+  },
+  handler: async (ctx, { eventId, amount }) => {
+    await upsertMetric(ctx, 'pending_loan_count', 1, eventId);
+    if (amount && amount > 0) {
+      await upsertMetric(ctx, 'pending_loan_amount', amount, eventId + ':amount');
+    }
+  },
+});
+
+/** loan.submitted → increment submitted loan count */
+export const onLoanSubmitted = internalMutation({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, { eventId }) => {
+    await upsertMetric(ctx, 'submitted_loan_count', 1, eventId);
+  },
+});
+
+/** loan.rejected → increment rejected loan count */
+export const onLoanRejected = internalMutation({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, { eventId }) => {
+    await upsertMetric(ctx, 'rejected_loan_count', 1, eventId);
+  },
+});
+
+/** disbursement.failed → increment failed disbursement count */
+export const onDisbursementFailed = internalMutation({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, { eventId }) => {
+    await upsertMetric(ctx, 'failed_disbursement_count', 1, eventId);
+  },
+});
+
+/** payment.failed → increment failed payment count */
+export const onPaymentFailed = internalMutation({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, { eventId }) => {
+    await upsertMetric(ctx, 'failed_payment_count', 1, eventId);
+  },
+});

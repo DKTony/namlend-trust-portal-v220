@@ -20,7 +20,7 @@ type MutCtx = GenericMutationCtx<DataModel>;
 export function scheduleProjection(
   ctx: MutCtx,
   eventName: string,
-  entityType: string,
+  _entityType: string,
   entityId: string,
   payload?: Record<string, unknown>
 ): void {
@@ -69,6 +69,47 @@ export function scheduleProjection(
         .runAfter(0, internal.projections.portfolioProjection.onDisbursementCompleted, {
           eventId,
           amount: typeof payload?.amount === 'number' ? payload.amount : undefined,
+        })
+        .catch(() => {});
+      break;
+
+    case 'loan.created':
+      ctx.scheduler
+        .runAfter(0, internal.projections.portfolioProjection.onLoanCreated, {
+          eventId,
+          amount: typeof payload?.amount === 'number' ? payload.amount : undefined,
+        })
+        .catch(() => {});
+      break;
+
+    case 'loan.submitted':
+      ctx.scheduler
+        .runAfter(0, internal.projections.portfolioProjection.onLoanSubmitted, {
+          eventId,
+        })
+        .catch(() => {});
+      break;
+
+    case 'loan.rejected':
+      ctx.scheduler
+        .runAfter(0, internal.projections.portfolioProjection.onLoanRejected, {
+          eventId,
+        })
+        .catch(() => {});
+      break;
+
+    case 'disbursement.failed':
+      ctx.scheduler
+        .runAfter(0, internal.projections.portfolioProjection.onDisbursementFailed, {
+          eventId,
+        })
+        .catch(() => {});
+      break;
+
+    case 'payment.failed':
+      ctx.scheduler
+        .runAfter(0, internal.projections.portfolioProjection.onPaymentFailed, {
+          eventId,
         })
         .catch(() => {});
       break;

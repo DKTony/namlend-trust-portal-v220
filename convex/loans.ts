@@ -15,6 +15,7 @@ import { APR_LIMIT, isValidAPR } from './lib/regulatory';
 import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { getNumericRule } from './lib/ruleEvaluator';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { loanStatus, loanRecommendation } from './schema';
 
@@ -355,6 +356,26 @@ export const approveLoan = mutation({
         code: 'INVALID_STATE',
         message: `Loan cannot be approved from status '${loan.status}'.`,
       });
+    }
+
+    // Validate credit score and DTI against data-driven business rules (if scored)
+    if (loan.creditScore !== undefined) {
+      const minScore = await getNumericRule(ctx, 'MIN_CREDIT_SCORE', 580);
+      if (loan.creditScore < minScore) {
+        throw new ConvexError({
+          code: 'CREDIT_CHECK_FAILED',
+          message: `Credit score ${loan.creditScore} is below minimum threshold of ${minScore}.`,
+        });
+      }
+    }
+    if (loan.debtToIncomeRatio !== undefined) {
+      const maxDTI = await getNumericRule(ctx, 'MAX_DTI_RATIO', 0.43);
+      if (loan.debtToIncomeRatio > maxDTI) {
+        throw new ConvexError({
+          code: 'DTI_CHECK_FAILED',
+          message: `Debt-to-income ratio ${loan.debtToIncomeRatio} exceeds maximum of ${maxDTI}.`,
+        });
+      }
     }
 
     await ctx.db.patch(loanId, {

@@ -1,7 +1,7 @@
 # NamLend Trust - System Architecture
 
-**Last Updated**: 2026-03-22
-**Aligned With**: Financial Ontology Engine (v5.1.0)
+**Last Updated**: 2026-03-29
+**Aligned With**: Financial Ontology Engine (v5.2.1)
 **Status**: Current ✅
 **Previous Backend**: Supabase (PostgreSQL + RLS + Edge Functions) — retained for reference in `supabase/` (INACTIVE).
 

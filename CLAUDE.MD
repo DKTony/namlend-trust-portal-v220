@@ -1,7 +1,7 @@
 # CLAUDE.MD - AI Agent Context for NamLend Trust Platform
 
-**Last Updated**: March 28, 2026
-**Project Version**: 5.2.0 (Ontology Gap Closure)
+**Last Updated**: March 29, 2026
+**Project Version**: 5.2.1 (Execution Hardening)
 **Status**: Backend Migrated to Convex — Type-safe (0 `as any` in Convex backend; ~20 remain in frontend) — Semantic domain events + event-driven projections + rules-as-data + ontology admin UI — Frontend service layer migration in progress
 
 ## Quick Project Summary
@@ -458,7 +458,7 @@ All transitions go through `convex/approvalWorkflow.ts` (Convex) or `src/service
 
 ### Admin Dashboard Structure
 
-The admin dashboard (`/admin/*`) uses tab-based navigation with 14 domain areas:
+The admin dashboard (`/admin/*`) uses tab-based navigation with 15 domain areas:
 
 | Domain | Key Components |
 |--------|---------------|
@@ -476,6 +476,7 @@ The admin dashboard (`/admin/*`) uses tab-based navigation with 14 domain areas:
 | **Loan360** | Loan360View |
 | **IPPOnboarding** | IPPOnboardingDashboard |
 | **BatchOperations** | BatchOperations |
+| **BusinessRules** | BusinessRulesDashboard |
 
 ## Design System
 
@@ -973,6 +974,7 @@ Before submitting code, verify:
 
 ## Version History
 
+- **v5.2.1** (Mar 2026): **Execution Hardening** — Domain event coverage 68%→~95% (approval, collections, user lifecycle events added to `domainEvents.ts`, 15→23 event types), projection coverage 38%→77% (5 new handlers: `onLoanCreated`, `onLoanSubmitted`, `onLoanRejected`, `onDisbursementFailed`, `onPaymentFailed`), business rules fully consumed (RAIL_WEIGHTS drives `selectOptimalRail()`, MIN_CREDIT_SCORE/MAX_DTI_RATIO enforce approval thresholds), Business Rules admin UI tab (list/edit/seed/history). 7 files modified, 1 created.
 - **v5.2.0** (Mar 2026): **Ontology Gap Closure** — Semantic domain events (15 past-tense events in `domainEvents.ts`, wired into all lifecycle mutations), event-driven projections (`portfolioMetrics` table, 5 idempotent projection handlers, `projectionEmitter.ts`), rules-as-data (`businessRules` table with close-and-insert versioning, `ruleEvaluator.ts`, `getAPRLimit(ctx)`, rail weight params), ontology admin UI (3 new admin tabs: Institutions, Payment Rails, Products), credit scoring UI completion (real scores in Dashboard, AI reasoning in LoanReviewPanel), legacy cleanup (deleted dead `api-client.ts` + `useApiQueries.ts`). 9 files created, 12 files modified.
 - **v5.1.0** (Mar 2026): **Ontology Adoption Complete** — Event journal coverage ~30%→~95% (10 mutations wired via audit bridge), relationship graph 13→25 emissions (collections, mandateExecutions, consentRecords, users, payments, approvalWorkflow), correlation chain infrastructure (loans.correlationId, by_causationId index, audit bridge threading, getEventsByCausation query). ~215 lines across 14 files.
 - **v5.0.0** (Mar 2026): **Financial Ontology Engine** — 6-phase implementation: unified event journal with causality, mandate authorization + POPIA consent, entity knowledge graph with BFS traversal, multi-institution model, intelligent payment rail selection, configurable product engine with eligibility rules. 12 new tables, 10 ontology modules (`convex/ontology/`), 6 lib helpers, 3 scheduled workers, 3 new crons. Modified `loans.ts`, `payments.ts`, `disbursements.ts`, `approvalWorkflow.ts` with relationship emission + rail selection + product validation.

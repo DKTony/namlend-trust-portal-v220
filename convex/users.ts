@@ -11,6 +11,7 @@ import { query, mutation, internalQuery } from './_generated/server';
 import { assertAuthenticated, assertAdmin, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { emitDomainEvent } from './lib/domainEvents';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -206,6 +207,17 @@ export const assignRole = mutation({
       'has_role',
       { role }
     );
+    emitDomainEvent(
+      ctx,
+      'user.role_assigned',
+      'users',
+      targetUserId,
+      {
+        role,
+        assignedBy: adminId,
+      },
+      { actorId: adminId, actorType: 'user' }
+    );
   },
 });
 
@@ -360,6 +372,11 @@ export const adminUpdateProfile = mutation({
       ...(fullName !== undefined && { fullName }),
       ...(phone !== undefined && { phone }),
       updatedAt: Date.now(),
+    });
+    emitDomainEvent(ctx, 'user.profile_updated', 'profiles', profile._id, {
+      userId: targetUserId,
+      ...(fullName !== undefined && { fullName }),
+      ...(phone !== undefined && { phone }),
     });
   },
 });

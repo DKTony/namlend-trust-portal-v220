@@ -1,7 +1,7 @@
 # NamLend Trust Terminology Glossary
 
-**Last Updated**: 2026-03-28
-**Aligned With**: Financial Ontology Engine (v5.0.0)
+**Last Updated**: 2026-03-29
+**Aligned With**: Financial Ontology Engine (v5.2.1)
 **Status**: Current ✅
 **Purpose**: Standardize terminology across documentation and codebase
 

@@ -56,6 +56,7 @@ import { IPPOnboardingDashboard } from '@/pages/AdminDashboard/components/IPPOnb
 import InstitutionsDashboard from '@/pages/AdminDashboard/components/Institutions/InstitutionsDashboard';
 import PaymentRailsDashboard from '@/pages/AdminDashboard/components/PaymentRails/PaymentRailsDashboard';
 import ProductsDashboard from '@/pages/AdminDashboard/components/Products/ProductsDashboard';
+import BusinessRulesDashboard from '@/pages/AdminDashboard/components/BusinessRules/BusinessRulesDashboard';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, isAdmin, isLoanOfficer } = useAuth();
@@ -139,6 +140,7 @@ const AdminDashboard: React.FC = () => {
           { id: 'institutions', label: 'Institutions', icon: Building2 },
           { id: 'payment-rails', label: 'Payment Rails', icon: Route },
           { id: 'products', label: 'Products', icon: Package },
+          { id: 'business-rules', label: 'Business Rules', icon: Settings },
         ]
       : []),
   ];
@@ -315,6 +317,13 @@ const AdminDashboard: React.FC = () => {
       {activeTab === 'products' && isAdmin && (
         <div className="space-y-6">
           <ProductsDashboard key={`products-${refreshKey}`} />
+        </div>
+      )}
+
+      {/* Ontology: Business Rules - Admin Only */}
+      {activeTab === 'business-rules' && isAdmin && (
+        <div className="space-y-6">
+          <BusinessRulesDashboard key={`business-rules-${refreshKey}`} />
         </div>
       )}
     </DashboardLayout>

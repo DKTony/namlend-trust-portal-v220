@@ -18,8 +18,14 @@ import { assertStaff, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
-import { selectOptimalRail, type RailCandidate } from './lib/railSelector';
+import {
+  selectOptimalRail,
+  DEFAULT_RAIL_WEIGHTS,
+  type RailCandidate,
+  type RailWeights,
+} from './lib/railSelector';
 import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { getJsonRule } from './lib/ruleEvaluator';
 import { txStatus } from './schema';
 import { internal } from './_generated/api';
 
@@ -141,11 +147,14 @@ export const initiateDisbursement = mutation({
       .collect();
 
     if (allRails.length > 0) {
+      // Read rail weights from business rules (data-driven); falls back to hardcoded defaults
+      const weights = await getJsonRule<RailWeights>(ctx, 'RAIL_WEIGHTS', DEFAULT_RAIL_WEIGHTS);
       const ranked = selectOptimalRail(
         allRails as RailCandidate[],
         args.amount,
         'disbursement',
-        args.railCode
+        args.railCode,
+        weights
       );
       if (ranked.length > 0) {
         selectedRailId = ranked[0].railId;

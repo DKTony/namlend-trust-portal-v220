@@ -9,6 +9,7 @@ import { query, mutation } from './_generated/server';
 import { assertStaff, assertAdmin } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { emitDomainEvent } from './lib/domainEvents';
 
 const activityType = v.union(
   v.literal('call_attempt'),
@@ -148,6 +149,17 @@ export const recordInteraction = mutation({
       { type: 'collectionsInteractions', id: interactionId },
       'has_interaction'
     );
+    emitDomainEvent(
+      ctx,
+      'collection.interaction_recorded',
+      'collectionsInteractions',
+      interactionId,
+      {
+        loanId: args.loanId,
+        activityType: args.activityType,
+        activityStatus: args.activityStatus,
+      }
+    );
 
     return interactionId;
   },
@@ -214,6 +226,11 @@ export const createPromiseToPay = mutation({
       { type: 'promiseToPay', id: ptpId },
       'has_promise'
     );
+    emitDomainEvent(ctx, 'collection.promise_recorded', 'promiseToPay', ptpId, {
+      loanId: args.loanId,
+      promiseAmount: args.promiseAmount,
+      promiseDate: args.promiseDate,
+    });
 
     return ptpId;
   },
@@ -242,6 +259,10 @@ export const markPromiseFulfilled = mutation({
       { type: 'promiseToPay', id: ptpId },
       'has_promise'
     );
+    emitDomainEvent(ctx, 'collection.promise_fulfilled', 'promiseToPay', ptpId, {
+      loanId: ptp.loanId,
+      amount: ptp.amount,
+    });
   },
 });
 

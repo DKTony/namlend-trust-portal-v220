@@ -1,12 +1,12 @@
 # NamLend Trust - Database Schema Summary
 
-**Last Updated**: 2026-03-22
-**Aligned With**: Financial Ontology Engine (v5.0.0)
+**Last Updated**: 2026-03-29
+**Aligned With**: Financial Ontology Engine (v5.2.1)
 **Status**: Current ✅
-**Last verified against schema**: 2026-03-22 (convex/schema.ts)
+**Last verified against schema**: 2026-03-29 (convex/schema.ts)
 **Database**: Convex (document-relational)
 **Previous Database**: PostgreSQL 15+ (Supabase) — migrated February 2026
-**Backend Version**: v5.0.0 (Financial Ontology Engine)
+**Backend Version**: v5.2.1 (Execution Hardening)
 
 ---
 

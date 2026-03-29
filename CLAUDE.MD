@@ -1,8 +1,8 @@
 # CLAUDE.MD - AI Agent Context for NamLend Trust Platform
 
-**Last Updated**: February 22, 2026
-**Project Version**: 4.0.0 (Convex Migration)
-**Status**: Backend Migrated to Convex — Type-safe (0 `as any` in Convex backend; ~20 remain in frontend) — Frontend service layer migration in progress
+**Last Updated**: March 28, 2026
+**Project Version**: 5.2.0 (Ontology Gap Closure)
+**Status**: Backend Migrated to Convex — Type-safe (0 `as any` in Convex backend; ~20 remain in frontend) — Semantic domain events + event-driven projections + rules-as-data + ontology admin UI — Frontend service layer migration in progress
 
 ## Quick Project Summary
 
@@ -88,22 +88,33 @@ Deployment:
 ```
 namlend-trust-portal-v220-main/
 ├── convex/                # ⭐ ACTIVE BACKEND (Convex)
-│   ├── schema.ts          # Database schema (55+ tables, SOURCE OF TRUTH)
+│   ├── schema.ts          # Database schema (67+ tables, SOURCE OF TRUTH)
 │   ├── auth.ts            # Auth callbacks (afterUserCreatedOrUpdated)
 │   ├── auth.config.ts     # Convex Auth provider config
 │   ├── http.ts            # HTTP router (webhooks, auth routes)
-│   ├── crons.ts           # Cron jobs (outbox worker, daily tasks)
-│   ├── lib/               # Shared utilities (auth guards, audit, regulatory)
-│   ├── loans.ts           # Loan queries + mutations
-│   ├── payments.ts        # Payment queries + mutations
-│   ├── disbursements.ts   # Disbursement state machine
+│   ├── crons.ts           # Cron jobs (outbox, daily tasks, mandates, snapshots, rail health)
+│   ├── lib/               # Shared utilities (auth, audit, regulatory, eventEmitter, temporal, railSelector, mandateStateMachine, institutionScope, relationshipEmitter)
+│   ├── ontology/          # Financial Ontology Engine (10 files)
+│   │   ├── eventJournal.ts      # Unified event stream with causality
+│   │   ├── relationships.ts     # Entity knowledge graph (BFS traversal)
+│   │   ├── mandates.ts          # Mandate lifecycle (debit order authorization)
+│   │   ├── mandateExecutions.ts # Mandate execution tracking
+│   │   ├── consentRecords.ts    # POPIA consent management
+│   │   ├── institutions.ts      # Multi-institution model + config
+│   │   ├── paymentRails.ts      # Payment rail registry + health
+│   │   ├── products.ts          # Product definitions + versioning + eligibility
+│   │   ├── accounts.ts          # Generalized ledger accounts
+│   │   └── snapshots.ts         # Regulatory point-in-time snapshots
+│   ├── loans.ts           # Loan queries + mutations (+ product validation, relationships)
+│   ├── payments.ts        # Payment queries + mutations (+ relationships)
+│   ├── disbursements.ts   # Disbursement state machine (+ rail selection, relationships)
 │   ├── collections.ts     # Collections queue + interactions
 │   ├── notifications.ts   # Notification lifecycle
 │   ├── analytics.ts       # Portfolio analytics (staff-only)
 │   ├── audit.ts           # Audit log queries + compliance
 │   ├── users.ts           # User/profile management
 │   ├── actions/           # External API actions (IPS, SMS, WhatsApp)
-│   ├── scheduled/         # Cron handlers (outbox worker, daily tasks)
+│   ├── scheduled/         # Cron handlers (outbox, daily tasks, mandateExecutor, snapshotGenerator, railHealthMonitor)
 │   ├── ips/               # IPS domain (5 files)
 │   ├── settlement/        # Settlement domain (10 files)
 │   ├── tigerbeetle/       # TigerBeetle domain (4 files)
@@ -148,14 +159,35 @@ namlend-trust-portal-v220-main/
 
 ```
 convex/
-├── schema.ts               # Database schema (55+ tables, SOURCE OF TRUTH)
+├── schema.ts               # Database schema (67+ tables, SOURCE OF TRUTH)
 ├── lib/auth.ts             # Auth guards (assertAuthenticated, assertStaff, etc.)
-├── lib/audit.ts            # Audit log scheduling helper
+├── lib/audit.ts            # Audit log scheduling helper (bridges to event journal)
 ├── lib/regulatory.ts       # APR_LIMIT, isValidAPR, formatNAD
-├── loans.ts                # Loan CRUD + state transitions (replaces loanService.ts)
-├── payments.ts             # Payment processing + schedules (replaces paymentService.ts)
-├── disbursements.ts        # Disbursement state machine (replaces disbursementService.ts)
-├── approvalWorkflow.ts     # Approval queue + workflow (replaces approvalWorkflow.ts)
+├── lib/eventEmitter.ts     # emitEvent() fire-and-forget helper
+├── lib/temporal.ts         # effectiveAt(), asOf() temporal query helpers
+├── lib/relationshipEmitter.ts  # emitRelationship() fire-and-forget helper
+├── lib/domainEvents.ts         # Semantic domain events (loan.approved, etc.)
+├── lib/projectionEmitter.ts    # Routes domain events to projection handlers
+├── lib/ruleEvaluator.ts        # Reads business rules with typed fallbacks
+├── lib/railSelector.ts     # selectOptimalRail() pure scoring function
+├── lib/mandateStateMachine.ts  # Mandate state transition rules
+├── lib/institutionScope.ts # withInstitution() tenant isolation filter
+├── ontology/eventJournal.ts       # Unified event stream (writeEvent, getEventsByEntity, etc.)
+├── ontology/relationships.ts      # Knowledge graph (createRelationship, getEntityContext, BFS)
+├── ontology/mandates.ts           # Mandate lifecycle (create, authorize, suspend, revoke)
+├── ontology/mandateExecutions.ts  # Mandate execution tracking + payment creation
+├── ontology/consentRecords.ts     # POPIA consent CRUD
+├── ontology/institutions.ts       # Institution CRUD + temporal config + seeding
+├── ontology/paymentRails.ts       # Rail registry + health updates + seeding
+├── ontology/products.ts           # Product definitions + versions + eligibility engine
+├── ontology/accounts.ts           # Generalized ledger accounts (credit/debit/close)
+├── ontology/snapshots.ts          # Regulatory point-in-time snapshots
+├── ontology/businessRules.ts      # Business rules CRUD + seeding
+├── projections/portfolioProjection.ts  # Event-driven portfolio metrics
+├── loans.ts                # Loan CRUD + state transitions + product validation + relationships
+├── payments.ts             # Payment processing + schedules + relationships
+├── disbursements.ts        # Disbursement state machine + rail selection + relationships
+├── approvalWorkflow.ts     # Approval queue + workflow + relationships
 ├── collections.ts          # Collections queue + interactions
 ├── notifications.ts        # In-app + queued notifications
 ├── analytics.ts            # Portfolio/revenue/risk analytics (staff-only)
@@ -166,7 +198,10 @@ convex/
 ├── actions/sendSms.ts      # Africa's Talking SMS
 ├── actions/sendWhatsapp.ts # Meta WhatsApp Business API
 ├── scheduled/tigerBeetleOutboxWorker.ts  # TB outbox polling
-└── scheduled/dailyTasks.ts # Overdue marking, PTP checks, notifications
+├── scheduled/dailyTasks.ts        # Overdue marking, PTP checks, notifications
+├── scheduled/mandateExecutor.ts   # Daily: execute due mandates
+├── scheduled/snapshotGenerator.ts # Daily: end-of-day portfolio snapshots
+└── scheduled/railHealthMonitor.ts # 5-min: check rail availability
 ```
 
 ### Legacy Supabase Service Files (NEEDS MIGRATION)
@@ -832,22 +867,42 @@ Before submitting code, verify:
 - [ ] External IO only in actions (never in queries or mutations)
 - [ ] XSS prevention (React auto-escapes, avoid unsafe HTML rendering)
 
-## Current Status (February 2026)
+## Current Status (March 2026)
 
 ### Completed Features
 
-- **Convex backend migration** — 55+ tables, auth guards, queries, mutations, actions
-- **Convex backend type safety** — 132→0 `as any` casts in `convex/` directory; all 48 Convex files fully typed (Feb 2026)
+- **Financial Ontology Engine** — 6-phase implementation complete (Mar 2026): event journal, mandate authorization, knowledge graph, multi-institution, payment rails, product engine. 12 new tables, 10 ontology modules, 6 lib helpers, 3 scheduled workers. See [ONTOLOGY_ENGINE.md](docs/ONTOLOGY_ENGINE.md)
+- **Convex backend migration** — 67+ tables, auth guards, queries, mutations, actions
+- **Convex backend type safety** — 132→0 `as any` casts in `convex/` directory; all Convex files fully typed (Feb 2026)
 - **Frontend `as any` reduction** — 38→20 casts in `src/` (Mar 2026); remaining are in tests, legacy utils, and admin stubs
 - Phase 1-4 implementation (all features)
 - TigerBeetle financial ledger (shadow mode, outbox in Convex)
 - IPP/IPN integration (ready for production)
-- Payment processing (5 methods)
+- Payment processing (5 methods) with intelligent rail selection
 - Credit scoring — server-side scoring via `processLoanApplication` action writes `creditScore`, `debtToIncomeRatio`, `recommendation` to `loans` table; AI-powered client-side engine in `creditScoring.ts`
 - SMS/WhatsApp notifications (Africa's Talking + Meta Cloud API)
 - Neo-Fintech UI redesign
 - Comprehensive E2E tests (45+ test files)
 - Netlify deployment with security headers
+
+### Financial Ontology Engine (Mar 2026)
+
+> See [ONTOLOGY_ENGINE.md](docs/ONTOLOGY_ENGINE.md) for the full implementation report.
+
+**12 new tables**: `eventJournal`, `snapshots`, `relationships`, `mandates`, `mandateExecutions`, `consentRecords`, `institutions`, `institutionConfig`, `paymentRails`, `productDefinitions`, `productVersions`, `accounts`
+
+**5 existing tables modified**: `loans` (+`productVersionId`), `disbursements` (+`railId`), `approvalRequests` (+`institutionId`), `paymentTransactions` (+`institutionId`), `mandates` (+`institutionId`)
+
+**Key capabilities**:
+- Unified event journal with causality tracking (`correlationId`/`causationId`) — **~95% mutation coverage** via audit bridge
+- Entity knowledge graph with BFS traversal — **25 relationship emissions** across all core + ontology modules
+- Mandate authorization lifecycle (debit orders, POPIA consent)
+- Multi-institution tenant isolation
+- Intelligent payment rail selection (cost/speed/availability/reliability scoring)
+- Configurable financial product engine with immutable versioning and eligibility rules
+- Generalized ledger accounts (loan_principal, loan_interest, savings, clearing, income, suspense)
+- Regulatory snapshots (end-of-day/month/quarter/year)
+- Correlation chain threading via `loans.correlationId` + `by_causationId` index on event journal
 
 ### Schema Additions (Feb 2026 Phase 2)
 
@@ -858,6 +913,12 @@ Before submitting code, verify:
 - `settlementAcknowledgements` now has `by_batchId` and `by_runId` indexes
 - `bankTransactions` now has `by_externalId` and `by_runId` indexes
 - Corrected `settlementNetInstructions` field names: `sourceParticipantId` / `targetParticipantId` / `amount`
+
+### Schema Additions (Mar 2026 — Ontology Adoption)
+
+- `loans.correlationId` — optional string; tracks event chain across loan lifecycle mutations
+- `eventJournal` — new `by_causationId` index for causation chain traversal
+- Audit bridge (`convex/lib/audit.ts`) now accepts optional `correlationId`/`causationId` params for chain threading
 
 ### Known Limitations & Migration Gaps
 
@@ -893,13 +954,15 @@ Before submitting code, verify:
 
 ### Next Priorities
 
-1. **Migrate frontend services** from Supabase to Convex hooks (`src/services/` → `useQuery`/`useMutation`)
-2. **Wire credit scoring UI** — display `creditScore`, `debtToIncomeRatio`, `recommendation` in `Loan360View` and `LoanReviewPanel`
-3. Increase E2E test coverage to 80%
-4. Set up CI/CD pipeline (GitHub Actions + `npx convex deploy`)
-5. Complete WhatsApp template registration
-6. Production IPP/IPN onboarding
-7. Transition TigerBeetle to primary ledger
+1. **Seed ontology data** — run `seedNamLendTrust`, `seedDefaultRails`, `seedPersonalLoan` via Convex dashboard to populate institutions, rails, and products
+2. **Ontology UI integration** — build admin views for institutions, payment rails, products, mandates, and relationship explorer
+3. **Migrate frontend services** from Supabase to Convex hooks (`src/services/` → `useQuery`/`useMutation`)
+4. **Wire credit scoring UI** — display `creditScore`, `debtToIncomeRatio`, `recommendation` in `Loan360View` and `LoanReviewPanel`
+5. Increase E2E test coverage to 80%
+6. Set up CI/CD pipeline (GitHub Actions + `npx convex deploy`)
+7. Complete WhatsApp template registration
+8. Production IPP/IPN onboarding
+9. Transition TigerBeetle to primary ledger
 
 ## Emergency Contacts
 
@@ -910,6 +973,9 @@ Before submitting code, verify:
 
 ## Version History
 
+- **v5.2.0** (Mar 2026): **Ontology Gap Closure** — Semantic domain events (15 past-tense events in `domainEvents.ts`, wired into all lifecycle mutations), event-driven projections (`portfolioMetrics` table, 5 idempotent projection handlers, `projectionEmitter.ts`), rules-as-data (`businessRules` table with close-and-insert versioning, `ruleEvaluator.ts`, `getAPRLimit(ctx)`, rail weight params), ontology admin UI (3 new admin tabs: Institutions, Payment Rails, Products), credit scoring UI completion (real scores in Dashboard, AI reasoning in LoanReviewPanel), legacy cleanup (deleted dead `api-client.ts` + `useApiQueries.ts`). 9 files created, 12 files modified.
+- **v5.1.0** (Mar 2026): **Ontology Adoption Complete** — Event journal coverage ~30%→~95% (10 mutations wired via audit bridge), relationship graph 13→25 emissions (collections, mandateExecutions, consentRecords, users, payments, approvalWorkflow), correlation chain infrastructure (loans.correlationId, by_causationId index, audit bridge threading, getEventsByCausation query). ~215 lines across 14 files.
+- **v5.0.0** (Mar 2026): **Financial Ontology Engine** — 6-phase implementation: unified event journal with causality, mandate authorization + POPIA consent, entity knowledge graph with BFS traversal, multi-institution model, intelligent payment rail selection, configurable product engine with eligibility rules. 12 new tables, 10 ontology modules (`convex/ontology/`), 6 lib helpers, 3 scheduled workers, 3 new crons. Modified `loans.ts`, `payments.ts`, `disbursements.ts`, `approvalWorkflow.ts` with relationship emission + rail selection + product validation.
 - **v4.1.0** (Mar 2026): **Tier 1 ship-blocking fixes** — financial idempotency guards (payments, disbursements, loans), N+1 query fix (`getMyPayments`), 15 dead admin buttons wired to Convex mutations, 3 new mutations (`batchUpdateLoanStatus`, `removeRole`, `deactivateUser`), 19 dead Supabase utils deleted, frontend `as any` 38→20, CLAUDE.MD accuracy corrections
 - **v4.0.0** (Feb 2026): **Convex migration** — backend migrated from Supabase to Convex (55+ tables, auth guards, queries/mutations/actions, cron jobs, HTTP router)
 - **v2.8.8** (Feb 2026): **Convex type safety complete** — 132→0 `as any` casts, exported schema validators, typed contexts, new internal exports (`recordCreditScore`, `createSystemApprovalRequest`, `getProfileByUserId`), schema bug fixes, `CollectionsDashboard` duplicate-const fix

@@ -10,6 +10,7 @@ import { v, ConvexError } from 'convex/values';
 import { query, mutation, internalQuery } from './_generated/server';
 import { assertAuthenticated, assertAdmin, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
+import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -198,6 +199,13 @@ export const assignRole = mutation({
         createdAt: Date.now(),
       });
     }
+    emitRelationship(
+      ctx,
+      { type: 'users', id: targetUserId },
+      { type: 'userRoles', id: existing?._id ?? targetUserId },
+      'has_role',
+      { role }
+    );
   },
 });
 
@@ -228,6 +236,12 @@ export const removeRole = mutation({
     // Downgrade to client — never delete the role record
     await ctx.db.patch(existing._id, { role: 'client', assignedBy: adminId });
     scheduleAuditLog(ctx, 'userRole', existing._id, 'REMOVE_ROLE', role, 'client');
+    deactivateRelationship(
+      ctx,
+      { type: 'users', id: targetUserId },
+      { type: 'userRoles', id: existing._id },
+      'has_role'
+    );
   },
 });
 

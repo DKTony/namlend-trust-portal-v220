@@ -96,6 +96,135 @@ export const loanRecommendation = v.union(
   v.literal('reject')
 );
 
+/** Event journal actor type */
+export const eventActorType = v.union(
+  v.literal('user'),
+  v.literal('system'),
+  v.literal('webhook'),
+  v.literal('cron')
+);
+
+/** Snapshot type for regulatory point-in-time captures */
+export const snapshotType = v.union(
+  v.literal('end_of_day'),
+  v.literal('end_of_month'),
+  v.literal('end_of_quarter'),
+  v.literal('end_of_year'),
+  v.literal('ad_hoc')
+);
+
+/** Ontology relationship status */
+export const relationshipStatus = v.union(
+  v.literal('active'),
+  v.literal('inactive'),
+  v.literal('superseded')
+);
+
+/** Mandate type */
+export const mandateType = v.union(
+  v.literal('debit_order'),
+  v.literal('once_off_debit'),
+  v.literal('recurring_collection'),
+  v.literal('ipp_mandate')
+);
+
+/** Mandate status */
+export const mandateStatus = v.union(
+  v.literal('draft'),
+  v.literal('pending_authorization'),
+  v.literal('active'),
+  v.literal('suspended'),
+  v.literal('revoked'),
+  v.literal('expired')
+);
+
+/** Mandate execution status */
+export const mandateExecutionStatus = v.union(
+  v.literal('pending'),
+  v.literal('processing'),
+  v.literal('completed'),
+  v.literal('failed'),
+  v.literal('reversed')
+);
+
+/** Mandate frequency */
+export const mandateFrequency = v.union(
+  v.literal('once'),
+  v.literal('weekly'),
+  v.literal('fortnightly'),
+  v.literal('monthly'),
+  v.literal('quarterly')
+);
+
+/** Consent type (POPIA-aligned) */
+export const consentType = v.union(
+  v.literal('data_processing'),
+  v.literal('debit_mandate'),
+  v.literal('credit_check'),
+  v.literal('communication'),
+  v.literal('data_sharing')
+);
+
+/** Consent status */
+export const consentStatus = v.union(
+  v.literal('granted'),
+  v.literal('withdrawn'),
+  v.literal('expired')
+);
+
+/** Institution type */
+export const institutionType = v.union(
+  v.literal('lender'),
+  v.literal('bank'),
+  v.literal('fintech'),
+  v.literal('mno'),
+  v.literal('regulator')
+);
+
+/** Institution status */
+export const institutionStatus = v.union(
+  v.literal('active'),
+  v.literal('suspended'),
+  v.literal('deregistered')
+);
+
+/** Payment rail status */
+export const paymentRailStatus = v.union(
+  v.literal('active'),
+  v.literal('degraded'),
+  v.literal('offline'),
+  v.literal('decommissioned')
+);
+
+/** Product category */
+export const productCategory = v.union(
+  v.literal('loan'),
+  v.literal('savings'),
+  v.literal('insurance'),
+  v.literal('investment')
+);
+
+/** Product status */
+export const productStatus = v.union(
+  v.literal('draft'),
+  v.literal('active'),
+  v.literal('discontinued')
+);
+
+/** Generalized account type */
+export const accountType = v.union(
+  v.literal('loan_principal'),
+  v.literal('loan_interest'),
+  v.literal('loan_fees'),
+  v.literal('savings'),
+  v.literal('clearing'),
+  v.literal('income'),
+  v.literal('suspense')
+);
+
+/** Account status */
+export const accountStatus = v.union(v.literal('active'), v.literal('frozen'), v.literal('closed'));
+
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
@@ -181,10 +310,16 @@ export default defineSchema({
     metadata: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Ontology forward-compatible fields (Phases 4-6)
+    institutionId: v.optional(v.id('institutions')),
+    productVersionId: v.optional(v.id('productVersions')),
+    accountId: v.optional(v.id('accounts')),
+    correlationId: v.optional(v.string()), // Tracks event chain across loan lifecycle
   })
     .index('by_userId', ['userId'])
     .index('by_status', ['status'])
-    .index('by_loanNumber', ['loanNumber']),
+    .index('by_loanNumber', ['loanNumber'])
+    .index('by_institutionId', ['institutionId']),
 
   /** Loan supporting documents via Convex File Storage */
   loanDocuments: defineTable({
@@ -242,11 +377,15 @@ export default defineSchema({
     metadata: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Ontology forward-compatible fields (Phases 4-5)
+    institutionId: v.optional(v.id('institutions')),
+    railId: v.optional(v.id('paymentRails')),
   })
     .index('by_loanId', ['loanId'])
     .index('by_userId', ['userId'])
     .index('by_status', ['status'])
-    .index('by_loanId_status', ['loanId', 'status']),
+    .index('by_loanId_status', ['loanId', 'status'])
+    .index('by_institutionId', ['institutionId']),
 
   // ==========================================================================
   // PAYMENTS
@@ -275,12 +414,15 @@ export default defineSchema({
     metadata: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    // Ontology forward-compatible field (Phase 4)
+    institutionId: v.optional(v.id('institutions')),
   })
     .index('by_loanId', ['loanId'])
     .index('by_userId', ['userId'])
     .index('by_status', ['status'])
     .index('by_externalTransactionId', ['externalTransactionId'])
-    .index('by_referenceNumber', ['referenceNumber']),
+    .index('by_referenceNumber', ['referenceNumber'])
+    .index('by_institutionId', ['institutionId']),
 
   paymentSchedules: defineTable({
     loanId: v.id('loans'),
@@ -325,12 +467,14 @@ export default defineSchema({
     dueBy: v.optional(v.number()),
     notes: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    institutionId: v.optional(v.id('institutions')),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index('by_entityId', ['entityId'])
     .index('by_status', ['status'])
-    .index('by_requestedBy', ['requestedBy']),
+    .index('by_requestedBy', ['requestedBy'])
+    .index('by_institutionId', ['institutionId']),
 
   approvalHistory: defineTable({
     approvalRequestId: v.id('approvalRequests'),
@@ -1078,5 +1222,392 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
     createdAt: v.optional(v.number()),
     updatedAt: v.number(),
-  }).index('by_key', ['key']),
+    // Temporal versioning (Phase 1 — ontology engine)
+    effectiveFrom: v.optional(v.number()),
+    effectiveTo: v.optional(v.number()),
+    version: v.optional(v.number()),
+  })
+    .index('by_key', ['key'])
+    .index('by_key_effective', ['key', 'effectiveFrom']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Event Journal & Temporal Foundation (Phase 1)
+  // ==========================================================================
+
+  /**
+   * Unified event journal — the financial event stream with causality tracking.
+   * Supplements (not replaces) stateTransitions + auditLogs.
+   * Every state-changing mutation writes here via emitEvent() fire-and-forget.
+   */
+  eventJournal: defineTable({
+    eventType: v.string(), // e.g. "loan.created", "payment.completed", "mandate.executed"
+    entityType: v.string(), // e.g. "loans", "paymentTransactions", "mandates"
+    entityId: v.string(), // Convex document ID as string (polymorphic reference)
+    domainSource: v.string(), // e.g. "lending", "payments", "settlement", "mandates"
+    payload: v.optional(v.any()), // Event-specific data (typed per eventType)
+    correlationId: v.string(), // Groups related events (e.g. all events in one loan lifecycle)
+    causationId: v.optional(v.string()), // The event that caused this event
+    actorId: v.optional(v.id('users')), // Who triggered this (undefined for system events)
+    actorType: eventActorType, // "user" | "system" | "webhook" | "cron"
+    version: v.number(), // Monotonic per entityId for ordering
+    occurredAt: v.number(), // When the event happened (business time)
+    recordedAt: v.number(), // When it was written (system time)
+    metadata: v.optional(v.any()), // Additional context
+  })
+    .index('by_entityId', ['entityType', 'entityId'])
+    .index('by_correlationId', ['correlationId'])
+    .index('by_causationId', ['causationId'])
+    .index('by_eventType', ['eventType'])
+    .index('by_occurredAt', ['occurredAt'])
+    .index('by_domainSource', ['domainSource']),
+
+  /**
+   * Regulatory point-in-time snapshots — end-of-day/month/year captures.
+   * Immutable once created. Enables "show me the portfolio as of date X" queries.
+   */
+  snapshots: defineTable({
+    snapshotType: snapshotType,
+    snapshotDate: v.string(), // "YYYY-MM-DD"
+    entityType: v.optional(v.string()), // Scope: specific table or undefined for aggregate
+    entityId: v.optional(v.string()), // Scope: specific entity or undefined for aggregate
+    data: v.any(), // Frozen state at snapshot time
+    generatedAt: v.number(),
+    generatedBy: v.optional(v.id('users')), // undefined for system-generated
+    metadata: v.optional(v.any()),
+  })
+    .index('by_date', ['snapshotDate'])
+    .index('by_type_date', ['snapshotType', 'snapshotDate'])
+    .index('by_entity', ['entityType', 'entityId']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Entity Relationships / Knowledge Graph (Phase 3)
+  // ==========================================================================
+
+  /**
+   * Entity relationship graph — typed, temporal edges between any entities.
+   * Append-only: to "delete" a relationship, set effectiveTo and status=inactive.
+   */
+  relationships: defineTable({
+    sourceEntityType: v.string(),
+    sourceEntityId: v.string(),
+    targetEntityType: v.string(),
+    targetEntityId: v.string(),
+    relationshipType: v.string(), // "borrowed", "secured_by", "authorized", "disbursed_via", etc.
+    status: relationshipStatus,
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    strength: v.optional(v.number()), // 0-100 for weighted graph queries
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index('by_source', ['sourceEntityType', 'sourceEntityId'])
+    .index('by_target', ['targetEntityType', 'targetEntityId'])
+    .index('by_type', ['relationshipType'])
+    .index('by_source_type', ['sourceEntityType', 'sourceEntityId', 'relationshipType']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Mandates & Authorization (Phase 2)
+  // ==========================================================================
+
+  /**
+   * Debit mandates — authorization for creditors to debit debtor accounts.
+   * The missing "keystone" entity that enables collections enforcement.
+   */
+  mandates: defineTable({
+    mandateRef: v.string(), // Unique reference: "MDT-{YYYYMMDD}-{seq}"
+    mandateType: mandateType,
+    status: mandateStatus,
+    // Debtor (flattened for Convex indexing)
+    debtorUserId: v.id('users'),
+    debtorAccountRef: v.optional(v.string()), // Bank account or VPA
+    debtorName: v.optional(v.string()),
+    // Creditor
+    creditorEntityType: v.string(), // "institution" or "user"
+    creditorEntityId: v.string(),
+    creditorAccountRef: v.optional(v.string()),
+    creditorName: v.optional(v.string()),
+    // Linked entities
+    loanId: v.optional(v.id('loans')),
+    institutionId: v.optional(v.id('institutions')),
+    // Financial terms
+    amount: v.number(), // Authorized amount per execution
+    currency: v.string(), // "NAD"
+    frequency: v.optional(mandateFrequency),
+    collectionDay: v.optional(v.number()), // Day of month for recurring (1-31)
+    maxExecutions: v.optional(v.number()), // Limit total executions
+    executionCount: v.number(), // Current count
+    // Temporal
+    firstExecutionDate: v.optional(v.number()),
+    nextExecutionDate: v.optional(v.number()),
+    lastExecutionDate: v.optional(v.number()),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    // Authorization
+    authorizedAt: v.optional(v.number()),
+    authorizedVia: v.optional(v.string()), // "digital_signature" | "otp_confirmation" | "branch_sign" | "ipp_auth"
+    revokedAt: v.optional(v.number()),
+    revocationReason: v.optional(v.string()),
+    // Tracking
+    correlationId: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_mandateRef', ['mandateRef'])
+    .index('by_debtorUserId', ['debtorUserId'])
+    .index('by_loanId', ['loanId'])
+    .index('by_status', ['status'])
+    .index('by_nextExecutionDate', ['nextExecutionDate'])
+    .index('by_institutionId', ['institutionId']),
+
+  /**
+   * Mandate execution records — each time a mandate is exercised against a debtor.
+   */
+  mandateExecutions: defineTable({
+    mandateId: v.id('mandates'),
+    executionNumber: v.number(),
+    amount: v.number(),
+    status: mandateExecutionStatus,
+    paymentTransactionId: v.optional(v.id('paymentTransactions')),
+    railUsed: v.optional(v.string()),
+    failureReason: v.optional(v.string()),
+    attemptNumber: v.optional(v.number()),
+    executedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    correlationId: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_mandateId', ['mandateId'])
+    .index('by_status', ['status']),
+
+  /**
+   * POPIA-aligned consent records — what the person agreed to, when, and how.
+   */
+  consentRecords: defineTable({
+    userId: v.id('users'),
+    consentType: consentType,
+    status: consentStatus,
+    entityType: v.optional(v.string()), // What entity this consent relates to
+    entityId: v.optional(v.string()),
+    grantedAt: v.number(),
+    withdrawnAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    legalBasis: v.optional(v.string()), // POPIA section reference
+    description: v.string(), // Exact text the user agreed to
+    collectionMethod: v.optional(v.string()), // "digital_acceptance" | "wet_signature" | "verbal_recorded"
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status'])
+    .index('by_userId_type', ['userId', 'consentType']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Multi-Institution Model (Phase 4)
+  // ==========================================================================
+
+  /**
+   * Institution registry — banks, fintechs, MNOs, regulators.
+   * Enables multi-tenancy when NamLend becomes infrastructure.
+   */
+  institutions: defineTable({
+    name: v.string(),
+    shortCode: v.string(), // "NAMLEND", "NAMPOST", "BON", etc.
+    type: institutionType,
+    registrationNumber: v.optional(v.string()),
+    regulatoryLicense: v.optional(v.string()),
+    status: institutionStatus,
+    contactEmail: v.optional(v.string()),
+    contactPhone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_shortCode', ['shortCode'])
+    .index('by_status', ['status']),
+
+  /**
+   * Per-institution configuration with temporal versioning.
+   */
+  institutionConfig: defineTable({
+    institutionId: v.id('institutions'),
+    key: v.string(),
+    value: v.any(),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    version: v.number(),
+    updatedBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+  }).index('by_institution_key', ['institutionId', 'key']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Payment Rail Abstraction (Phase 5)
+  // ==========================================================================
+
+  /**
+   * Payment rails as first-class entities with cost, availability, and health.
+   */
+  paymentRails: defineTable({
+    railCode: v.string(), // "ips", "bank_transfer", "mobile_money_mtc", "cash", "cheque"
+    displayName: v.string(),
+    provider: v.optional(v.string()), // "Namclear", "MTC", "TN Mobile", etc.
+    status: paymentRailStatus,
+    availability: v.object({
+      businessHoursOnly: v.boolean(),
+      startTime: v.optional(v.string()), // "HH:mm"
+      endTime: v.optional(v.string()),
+      excludeWeekends: v.boolean(),
+      excludeHolidays: v.boolean(),
+    }),
+    costModel: v.object({
+      fixedFeeNAD: v.optional(v.number()),
+      percentageFee: v.optional(v.number()),
+      minFeeNAD: v.optional(v.number()),
+      maxFeeNAD: v.optional(v.number()),
+    }),
+    settlementLatencyMinutes: v.optional(v.number()),
+    retryPolicy: v.object({
+      maxRetries: v.number(),
+      backoffMultiplier: v.number(),
+      initialDelayMs: v.number(),
+    }),
+    supportedDirections: v.array(
+      v.union(v.literal('disbursement'), v.literal('collection'), v.literal('both'))
+    ),
+    lastHealthCheck: v.optional(v.number()),
+    lastHealthStatus: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_railCode', ['railCode'])
+    .index('by_status', ['status']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Financial Product Abstraction (Phase 6)
+  // ==========================================================================
+
+  /**
+   * Product catalog — configurable financial product definitions.
+   */
+  productDefinitions: defineTable({
+    productCode: v.string(), // "personal_loan", "micro_loan", "stokvel_pool"
+    name: v.string(),
+    category: productCategory,
+    status: productStatus,
+    description: v.optional(v.string()),
+    institutionId: v.optional(v.id('institutions')),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_productCode', ['productCode'])
+    .index('by_status', ['status'])
+    .index('by_category', ['category']),
+
+  /**
+   * Immutable versioned product configurations.
+   */
+  productVersions: defineTable({
+    productId: v.id('productDefinitions'),
+    versionNumber: v.number(),
+    isCurrentVersion: v.boolean(),
+    config: v.object({
+      minAmount: v.optional(v.number()),
+      maxAmount: v.optional(v.number()),
+      minTermMonths: v.optional(v.number()),
+      maxTermMonths: v.optional(v.number()),
+      defaultInterestRate: v.optional(v.number()),
+      maxInterestRate: v.optional(v.number()), // Must be <= APR_LIMIT (32%)
+      fees: v.optional(v.any()),
+      eligibilityCriteria: v.optional(v.any()),
+      allowedRails: v.optional(v.array(v.string())),
+      requiresMandate: v.optional(v.boolean()),
+      requiresKYC: v.optional(v.boolean()),
+    }),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    approvedBy: v.optional(v.id('users')),
+    changeReason: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index('by_productId', ['productId'])
+    .index('by_productId_current', ['productId', 'isCurrentVersion']),
+
+  /**
+   * Generalized ledger accounts — balances for any financial product instance.
+   */
+  accounts: defineTable({
+    accountNumber: v.string(),
+    accountType: accountType,
+    ownerId: v.optional(v.id('users')),
+    ownerType: v.optional(v.string()), // "user" | "institution" | "system"
+    productInstanceId: v.optional(v.string()), // Loan ID or other product instance
+    balance: v.number(),
+    currency: v.string(), // "NAD"
+    status: accountStatus,
+    institutionId: v.optional(v.id('institutions')),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_accountNumber', ['accountNumber'])
+    .index('by_owner', ['ownerId'])
+    .index('by_productInstance', ['productInstanceId']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Portfolio Projections (Phase 2)
+  // ==========================================================================
+
+  /**
+   * Materialized portfolio metrics — incrementally updated by domain events.
+   * Replaces full-scan analytics with O(1) reads. Each metric is keyed by
+   * a unique string (e.g., "active_loan_count", "total_disbursed").
+   */
+  portfolioMetrics: defineTable({
+    metricKey: v.string(),
+    value: v.number(),
+    lastEventId: v.optional(v.string()), // Idempotency guard
+    updatedAt: v.number(),
+  }).index('by_metricKey', ['metricKey']),
+
+  // ==========================================================================
+  // ONTOLOGY ENGINE — Business Rules as Data (Phase 3A)
+  // ==========================================================================
+
+  /**
+   * Declarative business rules stored as typed data.
+   * Close-and-insert versioning: to update, set effectiveTo on the old version
+   * and insert a new row. Rules have a hardcoded fallback in code so the system
+   * works identically before any rules are seeded.
+   *
+   * Value types: "number" → parseFloat(value), "json" → JSON.parse(value),
+   *              "string" → value as-is, "boolean" → value === "true"
+   */
+  businessRules: defineTable({
+    ruleCode: v.string(), // Unique key, e.g., "APR_LIMIT", "RAIL_WEIGHTS"
+    category: v.string(), // "regulatory", "scoring", "payments", "products"
+    displayName: v.string(),
+    description: v.optional(v.string()),
+    valueType: v.union(
+      v.literal('number'),
+      v.literal('json'),
+      v.literal('string'),
+      v.literal('boolean')
+    ),
+    value: v.string(), // Stored as string; parsed by valueType
+    effectiveFrom: v.number(), // Timestamp
+    effectiveTo: v.optional(v.number()), // Undefined = currently active
+    version: v.number(),
+    createdBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+  })
+    .index('by_ruleCode', ['ruleCode'])
+    .index('by_category', ['category'])
+    .index('by_ruleCode_effective', ['ruleCode', 'effectiveTo']),
 });

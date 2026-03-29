@@ -1,11 +1,11 @@
 # NamLend Trust - System Architecture
 
-**Last Updated**: 2026-03-19
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-03-22
+**Aligned With**: Financial Ontology Engine (v5.1.0)
 **Status**: Current ✅
 **Previous Backend**: Supabase (PostgreSQL + RLS + Edge Functions) — retained for reference in `supabase/` (INACTIVE).
 
-> Backend fully migrated to Convex (Feb 2026). Frontend service migration complete. IPS adapter and TigerBeetle posting are mock/simulated.
+> Backend fully migrated to Convex (Feb 2026). Financial Ontology Engine implemented (Mar 2026). Frontend service migration complete. IPS adapter and TigerBeetle posting are mock/simulated.
 
 ---
 
@@ -40,7 +40,7 @@ The backend was migrated from Supabase to Convex in February 2026. The frontend 
 | Aspect                | Before (Supabase)                          | After (Convex)                                           |
 | --------------------- | ------------------------------------------ | -------------------------------------------------------- |
 | **Database**          | PostgreSQL 15+ (relational, SQL)           | Document-relational (TypeScript, no SQL)                 |
-| **Schema**            | 33 SQL migrations                          | `convex/schema.ts` (1,031 lines, 55+ tables)             |
+| **Schema**            | 33 SQL migrations                          | `convex/schema.ts` (67+ tables incl. 12 ontology tables) |
 | **Access control**    | 40+ RLS policies (SQL)                     | 5 guard functions in `convex/lib/auth.ts`                |
 | **Server logic**      | 35+ RPCs + 18 Edge Functions (Deno)        | Queries, Mutations, Actions (TypeScript)                 |
 | **Auth**              | GoTrue (JWT-based)                         | `@convex-dev/auth` (Password provider, session-based)    |
@@ -547,6 +547,55 @@ All admin queries use `assertStaff(ctx)` or `assertAdmin(ctx)` guards in the Con
 
 ---
 
+## Financial Ontology Engine (Mar 2026)
+
+The system was extended with a **Financial Ontology Engine** — 6 architectural layers that transform the database from a flat lending app into a knowledge graph of financial reality. See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report.
+
+### Ontology Architecture
+
+```
+Layer 6: Product Engine          — configurable financial products + eligibility
+Layer 5: Payment Rails           — intelligent routing with cost/speed scoring
+Layer 4: Multi-Institution       — tenant isolation + temporal config
+Layer 3: Knowledge Graph         — typed entity relationships with BFS traversal
+Layer 2: Mandates & Consent      — debit authorization + POPIA compliance
+Layer 1: Event Journal & Temporal — unified event stream + point-in-time snapshots
+```
+
+### Key Patterns
+
+- **Audit bridge**: `scheduleAuditLog()` in `convex/lib/audit.ts` auto-emits event journal entries — every existing audit call populates the unified event stream without separate `emitEvent()` calls. Accepts optional `correlationId`/`causationId` for chain threading.
+- **Fire-and-forget emission**: `emitEvent()` and `emitRelationship()` use `ctx.scheduler.runAfter(0, ...)` to decouple side-effects from the main mutation path
+- **Close-and-insert temporal versioning**: Config and product versions are never updated — old records get `effectiveTo` set, new records are inserted with `effectiveFrom`
+- **Pure scoring functions**: `selectOptimalRail()` is a pure function called inside mutations — rails are queried first, then passed into the scorer
+- **Graceful degradation**: All ontology features are additive — rail selection skips if no rails seeded, product validation skips if no `productVersionId`, institution scoping passes through unscoped records
+
+### Adoption Metrics (v5.1.0)
+
+- **Event journal coverage**: ~95% of financial mutations emit events (via audit bridge)
+- **Relationship graph**: 25 emissions across core + ontology modules
+- **Correlation infrastructure**: `loans.correlationId` + `eventJournal.by_causationId` index + `getEventsByCausation` query (threading not yet active in lifecycle flows)
+
+### New Directories
+
+```
+convex/ontology/     # 10 domain modules (eventJournal, relationships, mandates, etc.)
+convex/lib/          # 6 new helpers (eventEmitter, temporal, relationshipEmitter, railSelector, mandateStateMachine, institutionScope)
+convex/scheduled/    # 3 new cron workers (mandateExecutor, snapshotGenerator, railHealthMonitor)
+```
+
+### Cron Jobs (updated)
+
+| Job                   | Interval        | Handler                                                |
+| --------------------- | --------------- | ------------------------------------------------------ |
+| `tb-outbox-worker`    | Every 30s       | `scheduled/tigerBeetleOutboxWorker.processOutbox`      |
+| `daily-tasks`         | Daily 06:00 UTC | `scheduled/dailyTasks.runDailyTasks`                   |
+| `eod-snapshot`        | Daily 23:30 UTC | `scheduled/snapshotGenerator.generateEndOfDaySnapshot` |
+| `mandate-executor`    | Daily 06:00 UTC | `scheduled/mandateExecutor.executeDueMandates`         |
+| `rail-health-monitor` | Every 5 min     | `scheduled/railHealthMonitor.checkRailHealth`          |
+
+---
+
 ## Legacy Supabase Reference
 
 The previous Supabase backend is retained in the repository for reference:
@@ -568,6 +617,7 @@ These files document the previous architecture and can be used as reference duri
 ## See Also
 
 - [INDEX.md](./INDEX.md) - Documentation index
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md) - Modularization plan & domain event bus roadmap
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables and relationships (Convex)
 - [SERVICES.md](./SERVICES.md) - Service layer implementation details (legacy Supabase)

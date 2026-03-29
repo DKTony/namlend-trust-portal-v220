@@ -207,8 +207,19 @@ export default function Dashboard() {
               />
               <StatCard
                 label={t('stats.creditScore')}
-                value={720} // Mocked for now as per snippet
-                subValue={t('stats.excellent')}
+                value={(() => {
+                  const scoredLoan = loans.find((l) => l.creditScore != null);
+                  return scoredLoan?.creditScore ?? 'N/A';
+                })()}
+                subValue={(() => {
+                  const scoredLoan = loans.find((l) => l.creditScore != null);
+                  const score = scoredLoan?.creditScore;
+                  if (!score) return '';
+                  if (score >= 750) return 'Excellent';
+                  if (score >= 670) return 'Good';
+                  if (score >= 580) return 'Fair';
+                  return 'Poor';
+                })()}
                 icon={TrendingUp}
                 color="green"
               />

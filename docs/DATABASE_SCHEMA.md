@@ -1,18 +1,18 @@
 # NamLend Trust - Database Schema Summary
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-03-22
+**Aligned With**: Financial Ontology Engine (v5.0.0)
 **Status**: Current ✅
-**Last verified against schema**: 2026-03-04 (convex/schema.ts)
-**Database**: Convex (document-relational)  
-**Previous Database**: PostgreSQL 15+ (Supabase) — migrated February 2026  
-**Backend Version**: v4.0.0 (Convex)
+**Last verified against schema**: 2026-03-22 (convex/schema.ts)
+**Database**: Convex (document-relational)
+**Previous Database**: PostgreSQL 15+ (Supabase) — migrated February 2026
+**Backend Version**: v5.0.0 (Financial Ontology Engine)
 
 ---
 
 ## Source of Truth
 
-- **Schema is defined in** `convex/schema.ts` (~1,031 lines, 55+ tables).
+- **Schema is defined in** `convex/schema.ts` (67+ tables including 12 ontology tables).
 - Generated types live in `convex/_generated/` and are auto-generated on `npx convex dev` or deploy.
 - Re-exported for frontend use via `src/integrations/convex/api.ts`.
 
@@ -350,9 +350,69 @@ erDiagram
 
 ---
 
+## Financial Ontology Engine Tables (Mar 2026)
+
+12 new tables added as part of the Financial Ontology Engine (v5.0.0). See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for full implementation details.
+
+### Event & Temporal Layer
+
+| Table          | Purpose                                                             | Key Indexes                                                                                             |
+| -------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `eventJournal` | Unified event stream with causality (`correlationId`/`causationId`) | `by_entityId`, `by_correlationId`, `by_causationId`, `by_eventType`, `by_occurredAt`, `by_domainSource` |
+| `snapshots`    | Regulatory point-in-time captures (EOD/month/quarter/year/ad-hoc)   | `by_date`, `by_type_date`, `by_entity`                                                                  |
+
+### Mandate & Consent Layer
+
+| Table               | Purpose                                                               | Key Indexes                                                                             |
+| ------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `mandates`          | Debit order / collection authorization lifecycle                      | `by_debtorUserId`, `by_loanId`, `by_status`, `by_nextExecutionDate`, `by_institutionId` |
+| `mandateExecutions` | Individual mandate execution tracking                                 | `by_mandateId`, `by_status`                                                             |
+| `consentRecords`    | POPIA consent management (data processing, debit, credit check, etc.) | `by_userId`, `by_status`                                                                |
+
+### Knowledge Graph Layer
+
+| Table           | Purpose                                                 | Key Indexes                                           |
+| --------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| `relationships` | Typed, temporal, directional edges between any entities | `by_source`, `by_target`, `by_type`, `by_source_type` |
+
+### Multi-Institution Layer
+
+| Table               | Purpose                                                            | Key Indexes                 |
+| ------------------- | ------------------------------------------------------------------ | --------------------------- |
+| `institutions`      | Financial institution registry (lender/bank/fintech/mno/regulator) | `by_shortCode`, `by_status` |
+| `institutionConfig` | Per-institution temporal configuration (close-and-insert pattern)  | `by_institution_key`        |
+
+### Payment Rail Layer
+
+| Table          | Purpose                                                   | Key Indexes                |
+| -------------- | --------------------------------------------------------- | -------------------------- |
+| `paymentRails` | Payment rail registry with cost/speed/availability/health | `by_railCode`, `by_status` |
+
+### Product Engine Layer
+
+| Table                | Purpose                                                                                      | Key Indexes                                          |
+| -------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `productDefinitions` | Financial product catalog (loan/savings/insurance/investment)                                | `by_productCode`, `by_status`, `by_category`         |
+| `productVersions`    | Immutable product version configs with eligibility rules                                     | `by_productId`, `by_productId_current`               |
+| `accounts`           | Generalized ledger accounts (principal, interest, fees, savings, clearing, income, suspense) | `by_accountNumber`, `by_owner`, `by_productInstance` |
+
+### Modified Existing Tables
+
+| Table                 | New Field                     | Purpose                                            |
+| --------------------- | ----------------------------- | -------------------------------------------------- |
+| `loans`               | `productVersionId` (optional) | Links loan to a product version for validation     |
+| `loans`               | `correlationId` (optional)    | Tracks event chain across loan lifecycle mutations |
+| `disbursements`       | `railId` (optional)           | Links disbursement to selected payment rail        |
+| `approvalRequests`    | `institutionId` (optional)    | Multi-tenant scoping                               |
+| `paymentTransactions` | `institutionId` (optional)    | Multi-tenant scoping                               |
+| `mandates`            | `institutionId` (optional)    | Multi-tenant scoping                               |
+
+---
+
 ## See Also
 
 - [INDEX.md](./INDEX.md) - Documentation index
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture with Convex flow diagrams
 - [SERVICES.md](./SERVICES.md) - Service layer reference (legacy Supabase services)
 - [SECURITY.md](./SECURITY.md) - Security implementation (now auth guards, not RLS)

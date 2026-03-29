@@ -13,25 +13,61 @@ import { scheduleAuditLog } from './lib/audit';
 // Queries
 // ---------------------------------------------------------------------------
 
+/**
+ * Get the currently effective configuration for a key.
+ * Filters by effectiveFrom/effectiveTo if temporal versioning is active,
+ * otherwise falls back to the first matching non-deleted record.
+ */
 export const getConfig = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
     await assertStaff(ctx);
-    const entry = await ctx.db
+    const entries = await ctx.db
       .query('systemConfiguration')
       .withIndex('by_key', (q) => q.eq('key', key))
-      .first();
-    return entry ?? null;
+      .collect();
+
+    // Filter out soft-deleted entries
+    const active = entries.filter((e) => !e.deletedAt);
+
+    // If temporal versioning is present, find the currently effective record
+    const now = Date.now();
+    const temporalMatch = active.find((e) => {
+      if (e.effectiveFrom === undefined) return true; // Legacy record without temporal fields
+      const from = e.effectiveFrom;
+      const to = e.effectiveTo ?? Infinity;
+      return from <= now && now < to;
+    });
+
+    return temporalMatch ?? active[0] ?? null;
   },
 });
 
+/**
+ * Get all currently effective configurations.
+ * Filters out soft-deleted and superseded (effectiveTo in past) records.
+ */
 export const getAllConfig = query({
-  args: { category: v.optional(v.string()) },
-  handler: async (ctx, { category }) => {
+  args: {
+    category: v.optional(v.string()),
+    includeHistory: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { category, includeHistory }) => {
     await assertStaff(ctx);
     let results = await ctx.db.query('systemConfiguration').collect();
+
     // Exclude soft-deleted entries
     results = results.filter((c) => !c.deletedAt);
+
+    // Unless history requested, show only currently effective records
+    if (!includeHistory) {
+      const now = Date.now();
+      results = results.filter((c) => {
+        if (c.effectiveTo !== undefined && c.effectiveTo <= now) return false;
+        return true;
+      });
+    }
+
     if (category) {
       results = results.filter((c) => c.category === category);
     }
@@ -41,17 +77,31 @@ export const getAllConfig = query({
 
 /**
  * Get configuration value as a typed result.
- * Returns null if key not found, preserving default handling on the client.
+ * Returns the currently effective value, or null if not found.
  */
 export const getConfigValue = query({
-  args: { key: v.string() },
-  handler: async (ctx, { key }) => {
+  args: {
+    key: v.string(),
+    asOf: v.optional(v.number()),
+  },
+  handler: async (ctx, { key, asOf }) => {
     await assertStaff(ctx);
-    const entry = await ctx.db
+    const entries = await ctx.db
       .query('systemConfiguration')
       .withIndex('by_key', (q) => q.eq('key', key))
-      .first();
-    return entry?.value ?? null;
+      .collect();
+
+    const active = entries.filter((e) => !e.deletedAt);
+    const pointInTime = asOf ?? Date.now();
+
+    const match = active.find((e) => {
+      if (e.effectiveFrom === undefined) return true; // Legacy record
+      const from = e.effectiveFrom;
+      const to = e.effectiveTo ?? Infinity;
+      return from <= pointInTime && pointInTime < to;
+    });
+
+    return match?.value ?? active[0]?.value ?? null;
   },
 });
 
@@ -59,6 +109,13 @@ export const getConfigValue = query({
 // Mutations
 // ---------------------------------------------------------------------------
 
+/**
+ * Set a configuration value with temporal versioning.
+ *
+ * Instead of overwriting, this mutation "closes" the old record by setting
+ * effectiveTo = now, then inserts a new record with effectiveFrom = now.
+ * This preserves the full history of configuration changes for regulatory reporting.
+ */
 export const setConfig = mutation({
   args: {
     key: v.string(),
@@ -70,41 +127,65 @@ export const setConfig = mutation({
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
 
-    const existing = await ctx.db
-      .query('systemConfiguration')
-      .withIndex('by_key', (q) => q.eq('key', args.key))
-      .first();
-
     const now = Date.now();
 
-    if (existing) {
-      const oldValue = existing.value;
-      await ctx.db.patch(existing._id, {
+    // Find all records for this key (may have temporal history)
+    const allEntries = await ctx.db
+      .query('systemConfiguration')
+      .withIndex('by_key', (q) => q.eq('key', args.key))
+      .collect();
+
+    // Find the currently effective record (no effectiveTo, or effectiveTo in future)
+    const current = allEntries.find((e) => {
+      if (e.deletedAt) return false;
+      if (e.effectiveTo !== undefined && e.effectiveTo <= now) return false;
+      return true;
+    });
+
+    if (current) {
+      const oldValue = current.value;
+      const oldVersion = current.version ?? 0;
+
+      // Close the current record
+      await ctx.db.patch(current._id, {
+        effectiveTo: now,
+        updatedAt: now,
+      });
+
+      // Insert new versioned record
+      const configId = await ctx.db.insert('systemConfiguration', {
+        key: args.key,
         value: args.value,
-        category: args.category ?? existing.category,
-        description: args.description ?? existing.description,
-        isPublic: args.isPublic ?? existing.isPublic,
+        category: args.category ?? current.category,
+        description: args.description ?? current.description,
+        isPublic: args.isPublic ?? current.isPublic,
+        effectiveFrom: now,
+        version: oldVersion + 1,
+        createdAt: now,
         updatedAt: now,
       });
 
       scheduleAuditLog(
         ctx,
         'systemConfiguration',
-        existing._id,
+        configId,
         'update_config',
         JSON.stringify(oldValue),
         JSON.stringify(args.value),
-        `Updated key: ${args.key}`
+        `Updated key: ${args.key} (v${oldVersion} → v${oldVersion + 1})`
       );
 
-      return existing._id;
+      return configId;
     } else {
+      // No existing record — create initial version
       const configId = await ctx.db.insert('systemConfiguration', {
         key: args.key,
         value: args.value,
         category: args.category ?? 'general',
         description: args.description,
         isPublic: args.isPublic ?? false,
+        effectiveFrom: now,
+        version: 1,
         createdAt: now,
         updatedAt: now,
       });
@@ -116,7 +197,7 @@ export const setConfig = mutation({
         'create_config',
         'none',
         JSON.stringify(args.value),
-        `Created key: ${args.key}`
+        `Created key: ${args.key} (v1)`
       );
 
       return configId;

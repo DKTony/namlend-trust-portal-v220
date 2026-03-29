@@ -1,7 +1,7 @@
 # NamLend Trust Terminology Glossary
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-03-28
+**Aligned With**: Financial Ontology Engine (v5.0.0)
 **Status**: Current ✅
 **Purpose**: Standardize terminology across documentation and codebase
 
@@ -207,6 +207,50 @@ Design pattern where events are written to a local table first, then processed a
 
 ---
 
+## Financial Ontology Engine Terms
+
+### Event Journal
+
+Append-only stream of every state-changing event in the system (`eventJournal` table). Populated automatically via the **audit bridge** in `convex/lib/audit.ts` — every call to `scheduleAuditLog()` or `scheduleAuditEntry()` emits both a traditional audit log entry and an event journal entry.
+
+**Key fields**:
+
+- **correlationId**: Groups related events (e.g., all events in one loan lifecycle)
+- **causationId**: The event that caused this event (enables "what triggered this?" queries)
+- **domainSource**: Category (`lending`, `payments`, `settlement`, `mandates`, `collections`, etc.)
+
+### Entity Relationship Graph (Knowledge Graph)
+
+A typed, directed graph of relationships between entities (`relationships` table). Populated via `emitRelationship()` helper (fire-and-forget via scheduler). Supports BFS traversal up to N degrees of separation.
+
+**Example relationships**: `user -> borrowed -> loan`, `loan -> repaid_via -> payment`, `mandate -> executed_via -> mandateExecution`
+
+### Mandate
+
+A debit order authorization allowing NamLend to automatically collect payments from a borrower's bank account (`mandates` table).
+
+**Lifecycle**: `draft` → `pending_authorization` → `active` → `suspended` / `revoked` / `expired`
+
+### Payment Rail
+
+A first-class entity representing a payment channel (`paymentRails` table). The `selectOptimalRail()` function in `convex/lib/railSelector.ts` scores rails by cost, speed, availability, and reliability.
+
+**Namibian rails**: EFT, IPS/IPP, mobile_money, cash, cheque
+
+### Product Version
+
+An immutable configuration snapshot for a financial product (`productVersions` table). Products evolve via new versions — old versions are never modified. The eligibility engine checks applicant criteria against product rules.
+
+### Institution
+
+A financial institution operating on the platform (`institutions` table). Supports multi-tenancy via `institutionId` fields on core tables and the `withInstitution()` filter helper.
+
+### Audit Bridge
+
+The pattern in `convex/lib/audit.ts` where `scheduleAuditLog()` automatically emits event journal entries alongside traditional audit log writes. This means adding ontology coverage to a mutation is as simple as adding a `scheduleAuditLog()` call — no separate `emitEvent()` needed.
+
+---
+
 ## User Roles
 
 ### Client
@@ -304,11 +348,57 @@ Mobile app notifications (React Native app only).
 | TSD          | Technical Specification Document    |
 | VPA          | Virtual Payment Address             |
 
+| BFS | Breadth-First Search (graph traversal) |
+| DTI | Debt-to-Income (ratio) |
+| EOD | End of Day |
+| POPIA | Protection of Personal Information Act |
+
+---
+
+## Ontology Engine Terms
+
+### Ontology (Financial)
+
+A structured model where every entity, relationship, and event forms a knowledge graph of financial reality. In NamLend, the ontology is implemented across 6 layers: event journal, mandates/consent, knowledge graph, multi-institution, payment rails, and product engine.
+
+### Event Journal
+
+A unified, append-only event stream (`eventJournal` table) capturing every significant state change across all domains. Events carry `correlationId` and `causationId` for tracing cross-domain event chains.
+
+### Knowledge Graph / Relationships
+
+Typed, temporal, directional edges between any two entities in the system (`relationships` table). Examples: `user -[borrowed]-> loan`, `loan -[disbursed_via]-> disbursement`, `institution -[licensed_by]-> regulator`. Supports BFS traversal with configurable depth.
+
+### Mandate
+
+A debtor authorization for recurring collections. Types: `debit_order`, `once_off_debit`, `recurring_collection`, `ipp_mandate`. Lifecycle: draft -> pending_authorization -> active -> [suspended <-> active] -> revoked | expired.
+
+### Payment Rail
+
+A first-class entity representing a payment channel (IPS, bank transfer, mobile money, cash, cheque) with cost model, settlement latency, availability windows, and health status. The `selectOptimalRail()` function scores rails by cost (40%), speed (30%), availability (20%), and reliability (10%).
+
+### Product Version
+
+An immutable configuration record for a financial product. Once created, product versions are never updated — new versions supersede old ones. Loans can optionally reference a `productVersionId` for validation against configurable criteria (amount range, term limits, interest rate cap, eligibility rules).
+
+### Temporal Versioning
+
+A pattern where records are never overwritten. Instead, the old record's `effectiveTo` is set, and a new record is inserted with `effectiveFrom`. Used for `systemConfiguration`, `institutionConfig`, and `productVersions`.
+
+### Institution Scoping
+
+Multi-tenant isolation by optional `institutionId` field on core tables. The `withInstitution()` helper filters query results by tenant while preserving backward compatibility for unscoped records.
+
+### POPIA Consent
+
+Consent records required by the Protection of Personal Information Act (South Africa, adopted by Namibia). Types tracked: `data_processing`, `debit_mandate`, `credit_check`, `communication`, `data_sharing`.
+
 ---
 
 ## See Also
 
 - [INDEX.md](./INDEX.md) - Documentation index
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
 - [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) - IPP/IPS details
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables

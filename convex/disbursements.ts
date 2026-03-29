@@ -16,6 +16,10 @@ import { query, mutation } from './_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertStaff, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
+import { selectOptimalRail, type RailCandidate } from './lib/railSelector';
+import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { txStatus } from './schema';
 import { internal } from './_generated/api';
 
@@ -81,6 +85,7 @@ export const initiateDisbursement = mutation({
     accountNumber: v.optional(v.string()),
     accountName: v.optional(v.string()),
     branchCode: v.optional(v.string()),
+    railCode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const staffId = await assertStaff(ctx);
@@ -109,6 +114,49 @@ export const initiateDisbursement = mutation({
       .first();
     if (existingPending) return existingPending._id;
 
+    // --- MANDATE SOFT-CHECK (Ontology Phase 2) ---
+    // Warn if no active mandate exists for this loan.
+    // This is a soft check (warning, not blocker) to preserve backward compatibility.
+    const loanMandates = await ctx.db
+      .query('mandates')
+      .withIndex('by_loanId', (q) => q.eq('loanId', args.loanId))
+      .collect();
+    const activeMandate = loanMandates.find((m) => m.status === 'active');
+    if (!activeMandate) {
+      console.warn(
+        `[disbursement] No active mandate for loan ${args.loanId}. ` +
+          `Collections will rely on soft path (reminders/PTP) only.`
+      );
+    }
+
+    // --- RAIL SELECTION (Ontology Phase 5) ---
+    // Query active rails, run selector, record decision in event journal.
+    // Falls back gracefully if no rails are seeded yet.
+    let selectedRailId: string | undefined;
+    let railDecision: { railCode: string; score: number; reasoning: string } | undefined;
+
+    const allRails = await ctx.db
+      .query('paymentRails')
+      .withIndex('by_status', (q) => q.eq('status', 'active'))
+      .collect();
+
+    if (allRails.length > 0) {
+      const ranked = selectOptimalRail(
+        allRails as RailCandidate[],
+        args.amount,
+        'disbursement',
+        args.railCode
+      );
+      if (ranked.length > 0) {
+        selectedRailId = ranked[0].railId;
+        railDecision = {
+          railCode: ranked[0].railCode,
+          score: ranked[0].score,
+          reasoning: ranked[0].reasoning,
+        };
+      }
+    }
+
     const now = Date.now();
     const disbursementId = await ctx.db.insert('disbursements', {
       loanId: args.loanId,
@@ -120,6 +168,7 @@ export const initiateDisbursement = mutation({
       accountNumber: args.accountNumber,
       accountName: args.accountName,
       branchCode: args.branchCode,
+      railId: selectedRailId as never,
       initiatedBy: staffId,
       createdAt: now,
       updatedAt: now,
@@ -142,6 +191,40 @@ export const initiateDisbursement = mutation({
     });
 
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'INITIATE', 'none', 'pending');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_INITIATED, 'disbursements', disbursementId, {
+      loanId: args.loanId,
+      amount: loan.principal,
+    });
+
+    // Ontology: record rail selection decision in event journal
+    if (railDecision) {
+      emitEvent(ctx, {
+        eventType: 'disbursement.rail_selected',
+        entityType: 'disbursements',
+        entityId: disbursementId,
+        domainSource: 'payments',
+        correlationId: generateCorrelationId(),
+        actorId: staffId,
+        actorType: 'user',
+        payload: {
+          loanId: args.loanId,
+          amount: args.amount,
+          selectedRail: railDecision.railCode,
+          score: railDecision.score,
+          reasoning: railDecision.reasoning,
+          preferredRailCode: args.railCode,
+          availableRails: allRails.length,
+        },
+      });
+    }
+
+    // Ontology: loan -> disbursed_via -> disbursement
+    emitRelationship(
+      ctx,
+      { type: 'loans', id: args.loanId },
+      { type: 'disbursements', id: disbursementId },
+      'disbursed_via'
+    );
 
     return disbursementId;
   },
@@ -175,6 +258,7 @@ export const processDisbursement = mutation({
     });
 
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'PROCESS', 'pending', 'processing');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_PROCESSING, 'disbursements', disbursementId);
   },
 });
 
@@ -242,6 +326,10 @@ export const completeDisbursement = mutation({
     }
 
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'COMPLETE', d.status, 'completed');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_COMPLETED, 'disbursements', disbursementId, {
+      loanId: d.loanId,
+      amount: d.amount,
+    });
   },
 });
 
@@ -270,6 +358,9 @@ export const failDisbursement = mutation({
       updatedAt: Date.now(),
     });
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'FAIL', d.status, 'failed', reason);
+    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_FAILED, 'disbursements', disbursementId, {
+      reason,
+    });
   },
 });
 
@@ -325,5 +416,8 @@ export const reverseDisbursement = mutation({
       'reversed',
       reason
     );
+    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_REVERSED, 'disbursements', disbursementId, {
+      reason,
+    });
   },
 });

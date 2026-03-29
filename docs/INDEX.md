@@ -1,8 +1,8 @@
 # NamLend Trust Documentation Index
 
-**Doc Revision**: 2026-03-19
-**Project Version**: 4.0.0 (Convex migration complete)
-**Status**: Production-Ready Digital Lending Platform — Backend on Convex
+**Doc Revision**: 2026-03-22
+**Project Version**: 5.0.0 (Financial Ontology Engine)
+**Status**: Production-Ready Digital Lending Platform — Backend on Convex + Financial Ontology Engine
 
 ---
 
@@ -27,7 +27,8 @@
 | Document                                                                 | Description                                                   | Status |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------- | ------ |
 | [ARCHITECTURE.md](./ARCHITECTURE.md)                                     | System architecture overview                                  | Active |
-| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                               | Convex schema reference (55+ tables)                          | Active |
+| [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md)                               | Financial Ontology Engine implementation report (v5.1.0)      | Active |
+| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                               | Convex schema reference (67+ tables incl. 12 ontology)        | Active |
 | [SERVICES.md](./SERVICES.md)                                             | Service layer + migration status table                        | Active |
 | [convexmigratehandover.md](./convexmigratehandover.md)                   | Convex migration handover — batch status, field maps, gotchas | Active |
 | [FLOWS.md](./FLOWS.md)                                                   | User flows and state machines                                 | Active |

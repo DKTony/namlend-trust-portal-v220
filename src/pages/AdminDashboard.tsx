@@ -25,6 +25,9 @@ import {
   CheckSquare,
   Database,
   Palette,
+  Building2,
+  Route,
+  Package,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -50,6 +53,9 @@ import { BatchOperations } from '@/pages/AdminDashboard/components/BatchOperatio
 import PortfolioAnalytics from '@/pages/AdminDashboard/components/Analytics/PortfolioAnalytics';
 import { LedgerDashboard } from '@/pages/AdminDashboard/components/TigerBeetle';
 import { IPPOnboardingDashboard } from '@/pages/AdminDashboard/components/IPPOnboarding';
+import InstitutionsDashboard from '@/pages/AdminDashboard/components/Institutions/InstitutionsDashboard';
+import PaymentRailsDashboard from '@/pages/AdminDashboard/components/PaymentRails/PaymentRailsDashboard';
+import ProductsDashboard from '@/pages/AdminDashboard/components/Products/ProductsDashboard';
 
 const AdminDashboard: React.FC = () => {
   const { user, userRole, isAdmin, isLoanOfficer } = useAuth();
@@ -130,6 +136,9 @@ const AdminDashboard: React.FC = () => {
           { id: 'tigerbeetle-config', label: 'TB Config', icon: Database },
           { id: 'settlement-config', label: 'Settlement', icon: DollarSign },
           { id: 'branding', label: 'Branding', icon: Palette },
+          { id: 'institutions', label: 'Institutions', icon: Building2 },
+          { id: 'payment-rails', label: 'Payment Rails', icon: Route },
+          { id: 'products', label: 'Products', icon: Package },
         ]
       : []),
   ];
@@ -285,6 +294,27 @@ const AdminDashboard: React.FC = () => {
       {activeTab === 'branding' && isAdmin && (
         <div className="space-y-6">
           <BrandingConfigComponent key={`branding-${refreshKey}`} />
+        </div>
+      )}
+
+      {/* Ontology: Institutions - Admin Only */}
+      {activeTab === 'institutions' && isAdmin && (
+        <div className="space-y-6">
+          <InstitutionsDashboard key={`institutions-${refreshKey}`} />
+        </div>
+      )}
+
+      {/* Ontology: Payment Rails - Admin Only */}
+      {activeTab === 'payment-rails' && isAdmin && (
+        <div className="space-y-6">
+          <PaymentRailsDashboard key={`payment-rails-${refreshKey}`} />
+        </div>
+      )}
+
+      {/* Ontology: Products - Admin Only */}
+      {activeTab === 'products' && isAdmin && (
+        <div className="space-y-6">
+          <ProductsDashboard key={`products-${refreshKey}`} />
         </div>
       )}
     </DashboardLayout>

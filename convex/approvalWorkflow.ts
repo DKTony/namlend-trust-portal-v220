@@ -11,7 +11,8 @@ import { v } from 'convex/values';
 import { query, mutation, internalMutation } from './_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertAdmin } from './lib/auth';
-import { scheduleAuditLog } from './lib/audit';
+import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
+import { emitRelationship } from './lib/relationshipEmitter';
 import { approvalRequestStatus } from './schema';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
@@ -141,6 +142,14 @@ export const submitForApproval = mutation({
 
     scheduleAuditLog(ctx, 'approval_request', requestId, 'SUBMIT', 'none', 'pending');
 
+    // Ontology: entity → requires_approval → approvalRequest
+    emitRelationship(
+      ctx,
+      { type: args.entityType, id: args.entityId },
+      { type: 'approvalRequests', id: requestId },
+      'requires_approval'
+    );
+
     // Notify requesting user that their application was received
     ctx.scheduler
       .runAfter(0, internal.notifications.createNotification, {
@@ -222,6 +231,13 @@ export const processApprovalRequest = mutation({
       newStatus,
       notes
     );
+    emitRelationship(
+      ctx,
+      { type: 'approvalRequests', id: requestId },
+      { type: 'users', id: actorId },
+      'decided_by',
+      { action, newStatus }
+    );
 
     // If this request is for a loan, sync the loan status and notify the client
     if (request.entityType === 'loan' && request.entityId) {
@@ -288,7 +304,7 @@ export const createWorkflowDefinition = mutation({
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
     const now = Date.now();
-    return ctx.db.insert('workflowDefinitions', {
+    const id = await ctx.db.insert('workflowDefinitions', {
       name: args.name,
       entityType: args.entityType,
       stages: args.stages,
@@ -296,6 +312,20 @@ export const createWorkflowDefinition = mutation({
       createdAt: now,
       updatedAt: now,
     });
+    scheduleAuditEntry(ctx, {
+      entityType: 'workflowDefinitions',
+      entityId: id,
+      action: 'CREATE',
+      newState: { name: args.name, entityType: args.entityType, stageCount: args.stages.length },
+    });
+    emitRelationship(
+      ctx,
+      { type: 'workflowDefinitions', id },
+      { type: 'system', id: args.entityType },
+      'applies_to',
+      { entityType: args.entityType }
+    );
+    return id;
   },
 });
 
@@ -333,7 +363,7 @@ export const createSystemApprovalRequest = internalMutation({
       .first();
     if (!adminRole) return null;
 
-    return ctx.db.insert('approvalRequests', {
+    const id = await ctx.db.insert('approvalRequests', {
       entityType: args.entityType,
       entityId: args.entityId,
       requestType: args.requestType,
@@ -344,5 +374,17 @@ export const createSystemApprovalRequest = internalMutation({
       createdAt: now,
       updatedAt: now,
     });
+    scheduleAuditEntry(ctx, {
+      entityType: 'approvalRequests',
+      entityId: id,
+      action: 'SYSTEM_CREATE',
+      newState: {
+        entityType: args.entityType,
+        entityId: args.entityId,
+        requestType: args.requestType,
+        priority: args.priority,
+      },
+    });
+    return id;
   },
 });

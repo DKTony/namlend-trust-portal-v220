@@ -12,7 +12,10 @@ import { internal } from './_generated/api';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertAdmin, assertOwnerOrStaff } from './lib/auth';
 import { APR_LIMIT, isValidAPR } from './lib/regulatory';
-import { scheduleAuditLog } from './lib/audit';
+import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { loanStatus, loanRecommendation } from './schema';
 
 // ---------------------------------------------------------------------------
@@ -116,6 +119,7 @@ export const createLoan = mutation({
     termMonths: v.number(),
     purpose: v.optional(v.string()),
     monthlyPayment: v.optional(v.number()),
+    productVersionId: v.optional(v.id('productVersions')),
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
@@ -140,6 +144,52 @@ export const createLoan = mutation({
         code: 'VALIDATION_ERROR',
         message: 'Term must be between 1 and 360 months.',
       });
+    }
+
+    // --- PRODUCT VALIDATION (Ontology Phase 6) ---
+    // If a productVersionId is provided, validate loan params against product config.
+    if (args.productVersionId) {
+      const version = await ctx.db.get(args.productVersionId);
+      if (!version) {
+        throw new ConvexError({ code: 'NOT_FOUND', message: 'Product version not found.' });
+      }
+      if (!version.isCurrentVersion) {
+        throw new ConvexError({
+          code: 'INVALID_STATE',
+          message: 'Cannot create loan against a superseded product version.',
+        });
+      }
+      const cfg = version.config;
+      if (cfg.minAmount && args.principal < cfg.minAmount) {
+        throw new ConvexError({
+          code: 'PRODUCT_VIOLATION',
+          message: `Principal N$${args.principal} below product minimum N$${cfg.minAmount}.`,
+        });
+      }
+      if (cfg.maxAmount && args.principal > cfg.maxAmount) {
+        throw new ConvexError({
+          code: 'PRODUCT_VIOLATION',
+          message: `Principal N$${args.principal} exceeds product maximum N$${cfg.maxAmount}.`,
+        });
+      }
+      if (cfg.minTermMonths && args.termMonths < cfg.minTermMonths) {
+        throw new ConvexError({
+          code: 'PRODUCT_VIOLATION',
+          message: `Term ${args.termMonths}mo below product minimum ${cfg.minTermMonths}mo.`,
+        });
+      }
+      if (cfg.maxTermMonths && args.termMonths > cfg.maxTermMonths) {
+        throw new ConvexError({
+          code: 'PRODUCT_VIOLATION',
+          message: `Term ${args.termMonths}mo exceeds product maximum ${cfg.maxTermMonths}mo.`,
+        });
+      }
+      if (cfg.maxInterestRate && args.interestRate > cfg.maxInterestRate) {
+        throw new ConvexError({
+          code: 'PRODUCT_VIOLATION',
+          message: `Interest rate ${args.interestRate}% exceeds product max ${cfg.maxInterestRate}%.`,
+        });
+      }
     }
 
     // --- IDEMPOTENCY GUARD ---
@@ -167,6 +217,7 @@ export const createLoan = mutation({
       termMonths: args.termMonths,
       monthlyPayment: args.monthlyPayment,
       purpose: args.purpose,
+      productVersionId: args.productVersionId,
       status: 'draft',
       outstandingBalance: args.principal,
       totalPaid: 0,
@@ -175,6 +226,37 @@ export const createLoan = mutation({
     });
 
     scheduleAuditLog(ctx, 'loan', loanId, 'CREATE', 'none', 'draft');
+    emitDomainEvent(
+      ctx,
+      DOMAIN_EVENTS.LOAN_CREATED,
+      'loans',
+      loanId,
+      { principal: args.principal, interestRate: args.interestRate, termMonths: args.termMonths },
+      { actorId: userId, actorType: 'user' }
+    );
+
+    // Ontology: user -> borrowed -> loan
+    emitRelationship(ctx, { type: 'users', id: userId }, { type: 'loans', id: loanId }, 'borrowed');
+
+    // Ontology: loan -> instance_of -> productVersion (if product-backed)
+    if (args.productVersionId) {
+      emitRelationship(
+        ctx,
+        { type: 'loans', id: loanId },
+        { type: 'productVersions', id: args.productVersionId },
+        'instance_of'
+      );
+      emitEvent(ctx, {
+        eventType: 'loan.product_validated',
+        entityType: 'loans',
+        entityId: loanId,
+        domainSource: 'lending',
+        correlationId: generateCorrelationId(),
+        actorId: userId,
+        actorType: 'user',
+        payload: { productVersionId: args.productVersionId },
+      });
+    }
 
     return loanId;
   },
@@ -198,6 +280,9 @@ export const submitLoan = mutation({
 
     await ctx.db.patch(loanId, { status: 'submitted', updatedAt: Date.now() });
     scheduleAuditLog(ctx, 'loan', loanId, 'SUBMIT', 'draft', 'submitted');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.LOAN_SUBMITTED, 'loans', loanId, {
+      principal: loan.principal,
+    });
 
     ctx.scheduler.runAfter(0, internal.actions.processLoanApplication.processLoanApplication, {
       loanId,
@@ -234,6 +319,7 @@ export const moveToReview = mutation({
       updatedAt: Date.now(),
     });
     scheduleAuditLog(ctx, 'loan', loanId, 'MOVE_TO_REVIEW', 'submitted', 'under_review');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.LOAN_UNDER_REVIEW, 'loans', loanId);
 
     ctx.scheduler
       .runAfter(0, internal.notifications.createNotification, {
@@ -286,6 +372,14 @@ export const approveLoan = mutation({
     });
 
     scheduleAuditLog(ctx, 'loan', loanId, 'APPROVE', loan.status, 'approved', notes);
+    emitDomainEvent(
+      ctx,
+      DOMAIN_EVENTS.LOAN_APPROVED,
+      'loans',
+      loanId,
+      { approvedBy: staffId },
+      { actorId: staffId, actorType: 'user' }
+    );
   },
 });
 
@@ -321,6 +415,14 @@ export const rejectLoan = mutation({
     });
 
     scheduleAuditLog(ctx, 'loan', loanId, 'REJECT', loan.status, 'rejected', reason);
+    emitDomainEvent(
+      ctx,
+      DOMAIN_EVENTS.LOAN_REJECTED,
+      'loans',
+      loanId,
+      { reason },
+      { actorId: staffId, actorType: 'user' }
+    );
   },
 });
 
@@ -341,6 +443,7 @@ export const markFunded = internalMutation({
     });
 
     scheduleAuditLog(ctx, 'loan', loanId, 'FUND', 'approved', 'funded');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.LOAN_FUNDED, 'loans', loanId, { principal: loan.principal });
   },
 });
 
@@ -357,12 +460,24 @@ export const recordCreditScore = internalMutation({
     recommendation: loanRecommendation,
   },
   handler: async (ctx, args) => {
+    const loan = await ctx.db.get(args.loanId);
     await ctx.db.patch(args.loanId, {
       creditScore: args.creditScore,
       monthlyPayment: args.monthlyPayment,
       debtToIncomeRatio: args.debtToIncomeRatio,
       recommendation: args.recommendation,
       updatedAt: Date.now(),
+    });
+    scheduleAuditEntry(ctx, {
+      entityType: 'loans',
+      entityId: args.loanId,
+      action: 'RECORD_CREDIT_SCORE',
+      oldState: { creditScore: loan?.creditScore, debtToIncomeRatio: loan?.debtToIncomeRatio },
+      newState: {
+        creditScore: args.creditScore,
+        debtToIncomeRatio: args.debtToIncomeRatio,
+        recommendation: args.recommendation,
+      },
     });
   },
 });
@@ -390,10 +505,23 @@ export const updateLoanBalance = internalMutation({
       updatedAt: Date.now(),
     };
 
+    // Audit every balance update (ontology event journal coverage)
+    scheduleAuditLog(
+      ctx,
+      'loans',
+      loanId,
+      'BALANCE_UPDATE',
+      String(loan.outstandingBalance ?? loan.principal),
+      String(newBalance)
+    );
+
     if (newBalance === 0) {
       updates.status = 'paid_off';
       updates.completedAt = Date.now();
-      scheduleAuditLog(ctx, 'loan', loanId, 'PAID_OFF', loan.status, 'paid_off');
+      scheduleAuditLog(ctx, 'loans', loanId, 'PAID_OFF', loan.status, 'paid_off');
+      emitDomainEvent(ctx, DOMAIN_EVENTS.LOAN_PAID_OFF, 'loans', loanId, {
+        totalPaid: loan.totalPaid,
+      });
       ctx.scheduler
         .runAfter(0, internal.notifications.createNotification, {
           userId: loan.userId,

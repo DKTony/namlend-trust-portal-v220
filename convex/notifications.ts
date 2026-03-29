@@ -6,6 +6,7 @@
 import { v } from 'convex/values';
 import { query, mutation, internalMutation, internalQuery } from './_generated/server';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
+import { scheduleAuditEntry } from './lib/audit';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -101,6 +102,12 @@ export const markNotificationRead = mutation({
       isRead: true,
       readAt: Date.now(),
     });
+    scheduleAuditEntry(ctx, {
+      entityType: 'notifications',
+      entityId: notificationId,
+      action: 'MARK_READ',
+      newState: { isRead: true },
+    });
   },
 });
 
@@ -114,9 +121,17 @@ export const markAllNotificationsRead = mutation({
       .collect();
 
     const now = Date.now();
-    await Promise.all(
-      unread.filter((n) => !n.isRead).map((n) => ctx.db.patch(n._id, { isRead: true, readAt: now }))
-    );
+    const toMark = unread.filter((n) => !n.isRead);
+    await Promise.all(toMark.map((n) => ctx.db.patch(n._id, { isRead: true, readAt: now })));
+    if (toMark.length > 0) {
+      scheduleAuditEntry(ctx, {
+        entityType: 'notifications',
+        entityId: userId,
+        action: 'MARK_ALL_READ',
+        newState: { markedCount: toMark.length },
+        userId,
+      });
+    }
   },
 });
 
@@ -154,6 +169,13 @@ export const updateNotificationPreference = mutation({
         updatedAt: Date.now(),
       });
     }
+    scheduleAuditEntry(ctx, {
+      entityType: 'notificationPreferences',
+      entityId: userId,
+      action: 'UPDATE_PREFERENCE',
+      newState: { channel, category, enabled },
+      userId,
+    });
   },
 });
 

@@ -8,6 +8,7 @@ import { ConvexError } from 'convex/values';
 import { query, mutation } from './_generated/server';
 import { assertStaff, assertAdmin } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
+import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 
 const activityType = v.union(
   v.literal('call_attempt'),
@@ -54,13 +55,36 @@ export const getCollectionsQueue = query({
     const now = Date.now();
     const MS_PER_DAY = 86_400_000;
 
-    return overdue
+    const enriched = overdue
       .map((s) => ({
         ...s,
         daysOverdue: Math.floor((now - s.dueDate) / MS_PER_DAY),
       }))
       .filter((s) => (minDaysOverdue !== undefined ? s.daysOverdue >= minDaysOverdue : true))
       .sort((a, b) => b.daysOverdue - a.daysOverdue);
+
+    // Enrich with mandate status for collections routing (Ontology Phase 2)
+    // Loans with active mandates → automatic debit path (hard collection)
+    // Loans without mandates → manual follow-up path (soft collection)
+    const loanIds = [...new Set(enriched.map((s) => s.loanId))];
+    const mandateMap: Record<string, { hasMandate: boolean; mandateRef?: string }> = {};
+
+    for (const loanId of loanIds) {
+      const mandates = await ctx.db
+        .query('mandates')
+        .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
+        .collect();
+      const active = mandates.find((m) => m.status === 'active');
+      mandateMap[loanId] = {
+        hasMandate: !!active,
+        mandateRef: active?.mandateRef,
+      };
+    }
+
+    return enriched.map((item) => ({
+      ...item,
+      mandateStatus: mandateMap[item.loanId] ?? { hasMandate: false },
+    }));
   },
 });
 
@@ -117,6 +141,12 @@ export const recordInteraction = mutation({
       'none',
       args.activityStatus,
       args.notes
+    );
+    emitRelationship(
+      ctx,
+      { type: 'loans', id: args.loanId },
+      { type: 'collectionsInteractions', id: interactionId },
+      'has_interaction'
     );
 
     return interactionId;
@@ -178,6 +208,12 @@ export const createPromiseToPay = mutation({
       'pending',
       args.notes
     );
+    emitRelationship(
+      ctx,
+      { type: 'loans', id: args.loanId },
+      { type: 'promiseToPay', id: ptpId },
+      'has_promise'
+    );
 
     return ptpId;
   },
@@ -200,6 +236,12 @@ export const markPromiseFulfilled = mutation({
     });
 
     scheduleAuditLog(ctx, 'promiseToPay', ptpId, 'fulfill_promise', 'pending', 'kept');
+    deactivateRelationship(
+      ctx,
+      { type: 'loans', id: ptp.loanId },
+      { type: 'promiseToPay', id: ptpId },
+      'has_promise'
+    );
   },
 });
 
@@ -230,6 +272,7 @@ export const markReminderSent = mutation({
       sentAt: Date.now(),
       updatedAt: Date.now(),
     });
+    scheduleAuditLog(ctx, 'overdueReminders', reminderId, 'SEND', 'pending', 'sent');
   },
 });
 

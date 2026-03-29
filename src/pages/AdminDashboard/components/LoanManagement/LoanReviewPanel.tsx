@@ -639,12 +639,21 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                   AI Recommendation
                 </h4>
                 {loanDetails.recommendation != null ? (
-                  <Badge
-                    variant="outline"
-                    className={RECOMMENDATION_CONFIG[loanDetails.recommendation].className}
-                  >
-                    {RECOMMENDATION_CONFIG[loanDetails.recommendation].label}
-                  </Badge>
+                  <>
+                    <Badge
+                      variant="outline"
+                      className={RECOMMENDATION_CONFIG[loanDetails.recommendation].className}
+                    >
+                      {RECOMMENDATION_CONFIG[loanDetails.recommendation].label}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {loanDetails.recommendation === 'approve'
+                        ? 'All automated criteria met. Credit score and debt-to-income ratio are within acceptable thresholds.'
+                        : loanDetails.recommendation === 'review'
+                          ? 'Credit score or DTI ratio is borderline. Manual review required before a decision can be made.'
+                          : 'One or more criteria below threshold. Credit risk exceeds acceptable limits for automated approval.'}
+                    </p>
+                  </>
                 ) : (
                   <p className="text-xs text-muted-foreground">Not yet computed</p>
                 )}

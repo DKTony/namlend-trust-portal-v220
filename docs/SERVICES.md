@@ -401,9 +401,53 @@ Do not expose secrets in `VITE_*` client environment variables. Only `VITE_CONVE
 
 ---
 
+## Financial Ontology Engine Modules (Mar 2026)
+
+The following Convex modules were added as part of the Financial Ontology Engine (v5.0.0). These are **not** legacy services — they are active Convex backend modules in `convex/ontology/` and `convex/lib/`.
+
+### Ontology Domain Modules (`convex/ontology/`)
+
+| Module                 | Purpose                                        | Key Exports                                                                                                      |
+| ---------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `eventJournal.ts`      | Unified event stream with causality tracking   | `writeEvent`, `getEventsByEntity`, `getEventsByCorrelation`, `getEventsByCausation`, `getEventStream`            |
+| `relationships.ts`     | Entity knowledge graph with BFS traversal      | `createRelationship`, `deactivateRelationship`, `getRelated`, `getRelationshipGraph`, `getEntityContext`         |
+| `mandates.ts`          | Mandate authorization lifecycle                | `createMandate`, `authorizeMandate`, `suspendMandate`, `revokeMandate`, `expireMandate`                          |
+| `mandateExecutions.ts` | Mandate execution tracking                     | `recordExecution`, `getExecutionsByMandate`                                                                      |
+| `consentRecords.ts`    | POPIA consent management                       | `grantConsent`, `withdrawConsent`, `getActiveConsents`, `hasActiveConsent`                                       |
+| `institutions.ts`      | Multi-institution model                        | `createInstitution`, `setInstitutionConfig`, `getInstitutionConfig`, `seedNamLendTrust`, `backfillInstitutionId` |
+| `paymentRails.ts`      | Payment rail registry + health                 | `createRail`, `updateRailHealth`, `getActiveRails`, `seedDefaultRails`                                           |
+| `products.ts`          | Product definitions + versioning + eligibility | `createProduct`, `createVersion`, `checkEligibility`, `seedPersonalLoan`                                         |
+| `accounts.ts`          | Generalized ledger accounts                    | `createAccount`, `creditAccount`, `debitAccount`, `closeAccount`, `getAccountsByOwner`                           |
+| `snapshots.ts`         | Regulatory point-in-time snapshots             | `generateSnapshot`, `getSnapshot`, `getLatestSnapshot`                                                           |
+
+### Ontology Library Helpers (`convex/lib/`)
+
+| Helper                   | Purpose                                                                                               | Pattern                                                                               |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `eventEmitter.ts`        | `emitEvent()` — schedules event journal writes                                                        | Fire-and-forget via `ctx.scheduler.runAfter(0, ...)`                                  |
+| `relationshipEmitter.ts` | `emitRelationship()`, `deactivateRelationship()` — schedules relationship creation/deactivation       | Fire-and-forget via `ctx.scheduler.runAfter(0, ...)`                                  |
+| `audit.ts`               | `scheduleAuditLog()`, `scheduleAuditEntry()` — **audit bridge** that auto-emits event journal entries | Accepts optional `correlationId`/`causationId` for chain threading                    |
+| `temporal.ts`            | `effectiveAt()`, `asOf()` — temporal query helpers                                                    | Filters records by `effectiveFrom`/`effectiveTo` dates                                |
+| `railSelector.ts`        | `selectOptimalRail()` — pure scoring function                                                         | Weighted: cost 40%, speed 30%, availability 20%, reliability 10%                      |
+| `mandateStateMachine.ts` | Mandate state transition rules                                                                        | draft -> pending_authorization -> active -> [suspended <-> active] -> revoked/expired |
+| `institutionScope.ts`    | `withInstitution()` — tenant isolation filter                                                         | Filters by `institutionId`, passes through unscoped records                           |
+
+### Scheduled Workers (`convex/scheduled/`)
+
+| Worker                 | Schedule        | Purpose                                                    |
+| ---------------------- | --------------- | ---------------------------------------------------------- |
+| `mandateExecutor.ts`   | Daily 06:00 UTC | Executes due mandates, creates payment transactions        |
+| `snapshotGenerator.ts` | Daily 23:30 UTC | Generates end-of-day portfolio snapshots                   |
+| `railHealthMonitor.ts` | Every 5 min     | Checks rail availability, auto-transitions active/degraded |
+
+See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report.
+
+---
+
 ## See Also
 
 - [INDEX.md](./INDEX.md) - Documentation index
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture overview
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables used by services
 - [API_REFERENCE.md](./API_REFERENCE.md) - RPC function reference

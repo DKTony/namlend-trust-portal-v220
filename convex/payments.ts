@@ -13,7 +13,9 @@ import { query, mutation } from './_generated/server';
 import { internal } from './_generated/api';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { scheduleAuditLog } from './lib/audit';
+import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { paymentTxStatus } from './schema';
 
 // ---------------------------------------------------------------------------
@@ -208,6 +210,19 @@ export const recordPayment = mutation({
     });
 
     scheduleAuditLog(ctx, 'payment', paymentId, 'RECORD', 'none', 'pending');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_RECORDED, 'paymentTransactions', paymentId, {
+      loanId,
+      amount: args.amount,
+      method: args.method,
+    });
+
+    // Ontology: loan → repaid_via → payment
+    emitRelationship(
+      ctx,
+      { type: 'loans', id: args.loanId },
+      { type: 'paymentTransactions', id: paymentId },
+      'repaid_via'
+    );
 
     return paymentId;
   },
@@ -291,6 +306,16 @@ export const completePayment = mutation({
     }
 
     scheduleAuditLog(ctx, 'payment', paymentId, 'COMPLETE', 'pending', 'completed');
+    emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_COMPLETED, 'paymentTransactions', paymentId, {
+      loanId: payment.loanId,
+      amount: payment.amount,
+    });
+    emitRelationship(
+      ctx,
+      { type: 'paymentTransactions', id: paymentId },
+      { type: 'loans', id: payment.loanId },
+      'settled_against'
+    );
   },
 });
 
@@ -318,6 +343,9 @@ export const failPayment = mutation({
       updatedAt: Date.now(),
     });
     scheduleAuditLog(ctx, 'payment', paymentId, 'FAIL', 'pending', 'failed', reason);
+    emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_FAILED, 'paymentTransactions', paymentId, {
+      reason,
+    });
   },
 });
 
@@ -352,6 +380,23 @@ export const createPaymentSchedule = mutation({
         createdAt: now,
       });
     }
+    scheduleAuditEntry(ctx, {
+      entityType: 'paymentSchedules',
+      entityId: loanId,
+      action: 'CREATE_SCHEDULE',
+      newState: {
+        loanId,
+        installmentCount: schedule.length,
+        totalDue: schedule.reduce((s, i) => s + i.totalDue, 0),
+      },
+    });
+    emitRelationship(
+      ctx,
+      { type: 'loans', id: loanId },
+      { type: 'paymentSchedules', id: loanId },
+      'has_schedule',
+      { installmentCount: schedule.length }
+    );
   },
 });
 
@@ -368,5 +413,6 @@ export const markSchedulePaid = mutation({
       paidAt: Date.now(),
       paidAmount,
     });
+    scheduleAuditLog(ctx, 'paymentSchedules', scheduleId, 'MARK_PAID', 'scheduled', 'paid');
   },
 });

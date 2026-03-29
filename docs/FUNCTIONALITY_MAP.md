@@ -1,7 +1,7 @@
 # NamLend Trust - Functionality Map
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-03-28
+**Aligned With**: Financial Ontology Engine (v5.0.0)
 **Status**: Current ✅
 **Purpose**: Feature to Convex API and database wiring map (current codebase).
 
@@ -47,6 +47,29 @@
 - **TigerBeetle**: Outbox pattern implemented end-to-end; cron worker simulates TB cluster posting (no live cluster connection yet).
 - **`/admin/*` route**: `requireLoanOfficer` guard — both `loan_officer` and `admin` roles can access. Admin-only features (user management, system config delete) are gated inside UI components by `isAdmin` check.
 - **Collections activity history**: `CollectionsWorkqueue.loadActivities` is a placeholder — expanded activity history per loan not yet wired to `api.collections.listInteractionsByLoan`.
+
+---
+
+## Financial Ontology Engine Features (v5.1.0 — Mar 2026)
+
+Backend features from the Financial Ontology Engine. **Event journal ~95% coverage**, **25 relationship emissions**. No UI yet — admin views pending.
+
+| Feature            | Convex API                                                                                   | Tables                                  | Status                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| Event Journal      | `api.ontology.eventJournal.getEventsByEntity`, `getEventStream`, `getEventsByCausation`      | `eventJournal`                          | ✅ Backend (~95% mutation coverage via audit bridge)                  |
+| Knowledge Graph    | `api.ontology.relationships.getEntityContext`, `getRelationshipGraph`                        | `relationships`                         | ✅ Backend (25 emissions across all core + ontology modules)          |
+| Correlation Chains | `api.ontology.eventJournal.getEventsByCorrelation`, `getEventsByCausation`                   | `eventJournal`                          | ✅ Infrastructure ready (threading not yet active in lifecycle flows) |
+| Mandates           | `api.ontology.mandates.createMandate`, `authorizeMandate`, `suspendMandate`, `revokeMandate` | `mandates`, `mandateExecutions`         | ✅ Backend (needs admin UI)                                           |
+| POPIA Consent      | `api.ontology.consentRecords.grantConsent`, `withdrawConsent`, `hasActiveConsent`            | `consentRecords`                        | ✅ Backend (needs admin UI)                                           |
+| Institutions       | `api.ontology.institutions.createInstitution`, `seedNamLendTrust`, `backfillInstitutionId`   | `institutions`, `institutionConfig`     | ✅ Backend (needs seeding + admin UI)                                 |
+| Payment Rails      | `api.ontology.paymentRails.seedDefaultRails`, `getActiveRails`                               | `paymentRails`                          | ✅ Backend (needs seeding + admin UI)                                 |
+| Products           | `api.ontology.products.seedPersonalLoan`, `checkEligibility`, `createVersion`                | `productDefinitions`, `productVersions` | ✅ Backend (needs seeding + admin UI)                                 |
+| Accounts           | `api.ontology.accounts.createAccount`, `creditAccount`, `debitAccount`                       | `accounts`                              | ✅ Backend (internal, used by disbursement)                           |
+| Snapshots          | `api.ontology.snapshots.generateSnapshot`, `getLatestSnapshot`                               | `snapshots`                             | ✅ Backend (auto via cron)                                            |
+| Rail Selection     | Integrated into `api.disbursements.initiateDisbursement`                                     | `paymentRails`, `eventJournal`          | ✅ Backend (transparent to existing UI)                               |
+| Product Validation | Integrated into `api.loans.createLoan` (optional `productVersionId`)                         | `productVersions`                       | ✅ Backend (transparent to existing UI)                               |
+
+See [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) for the full implementation report including adoption metrics.
 
 ## Audit
 

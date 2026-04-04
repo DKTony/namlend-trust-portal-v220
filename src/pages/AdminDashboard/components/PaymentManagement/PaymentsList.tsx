@@ -16,6 +16,7 @@ import {
 import { usePaymentsList } from '../../hooks/usePaymentsList';
 import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
+import { handleMutationError } from '@/lib/mutationError';
 import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
@@ -46,8 +47,10 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
   const { payments, loading, error, refetch } = usePaymentsList(status, searchTerm);
   const { toast } = useToast();
   const recordPaymentMutation = useMutation(api.payments.recordPayment);
+  const completePaymentMutation = useMutation(api.payments.completePayment);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [completingPaymentId, setCompletingPaymentId] = useState<string | null>(null);
 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
@@ -79,6 +82,28 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
         description: err instanceof Error ? err.message : 'An error occurred',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleCompletePayment = async (paymentId: string) => {
+    setCompletingPaymentId(paymentId);
+    try {
+      await completePaymentMutation({
+        paymentId: paymentId as Id<'paymentTransactions'>,
+      });
+      toast({
+        title: 'Payment Confirmed',
+        description: 'Payment completed and loan balance updated.',
+      });
+      refetch();
+    } catch (err) {
+      toast({
+        title: 'Failed to complete payment',
+        description: handleMutationError(err, 'An error occurred'),
+        variant: 'destructive',
+      });
+    } finally {
+      setCompletingPaymentId(null);
     }
   };
 
@@ -314,6 +339,25 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
+                        {payment.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            data-testid={`complete-payment-${payment.id}`}
+                            disabled={completingPaymentId === payment.id}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCompletePayment(payment.id);
+                            }}
+                          >
+                            {completingPaymentId === payment.id ? (
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                            )}
+                            Complete Payment
+                          </Button>
+                        )}
                         {payment.status === 'failed' && (
                           <Button
                             variant="outline"

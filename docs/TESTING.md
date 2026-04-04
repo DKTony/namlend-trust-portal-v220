@@ -1,7 +1,7 @@
 # NamLend Trust - Testing Documentation
 
-**Last Updated**: 2026-03-22
-**Aligned With**: Post-E2E-fixes codebase
+**Last Updated**: 2026-04-04
+**Aligned With**: Post-payment-lifecycle codebase (v5.2.2)
 **Status**: Current ✅
 **Original Doc Revision**: 2026-01-19
 
@@ -11,13 +11,35 @@
 
 - **E2E**: Playwright in `e2e/` — **56 tests passing** ✅
 - **Unit**: Vitest (`^4.0.18`) in `src/tests/` — run with `npm run test:unit` (137 passing tests)
+- **Interactive**: Playwright MCP browser testing via `.claude/commands/test-portal.md` skill
 
-### Recent Updates (2026-03-22)
+### Recent Updates (2026-04-04)
+
+- ✅ Full lifecycle browser test validated: application → approval → disbursement → payment → settlement
+- ✅ Payment completion flow verified: two-phase (client records → admin confirms)
+- ✅ Loan state transitions confirmed: funded → active (first payment), active → paid_off (full payoff)
+- ✅ TigerBeetle outbox entries verified: DISBURSEMENT + REPAYMENT entries created atomically
+- ✅ IPS disbursement type bug fixed (`src/types/ips.ts`, `IPSDisbursementForm.tsx`)
+- ✅ Admin payment "Complete Payment" button verified on local dev (not yet deployed to Netlify)
+
+### Previous Updates (2026-03-22)
 
 - ✅ Fixed loan application E2E test (`e2e/loan-application.e2e.ts`)
 - ✅ Implemented KYC document seeding for test users
 - ✅ Corrected test navigation to use dashboard "Apply Now" button
 - ✅ Added timing fixes for Convex reactive query population
+
+### Interactive Browser Testing
+
+The `test-portal` skill (`.claude/commands/test-portal.md`) provides a comprehensive playbook for interactive browser testing via Playwright MCP. It covers:
+
+- Login/logout flows for all test roles
+- Full loan lifecycle: application → approval → disbursement → payment → settlement
+- Admin navigation patterns (sidebar `dispatchEvent` workaround)
+- Client dashboard tab navigation
+- Payment modal interaction (loan selection, amount entry, method selection)
+- TigerBeetle outbox and ledger verification
+- Known bugs and troubleshooting guides
 
 ---
 

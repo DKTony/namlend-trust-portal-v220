@@ -12,7 +12,7 @@
 import { v } from 'convex/values';
 import { internalMutation, mutation, query } from '../_generated/server';
 import { internal } from '../_generated/api';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { assertStaff } from '../lib/auth';
 import { snapshotType } from '../schema';
 import { toSnapshotDate } from '../lib/temporal';
 
@@ -84,7 +84,7 @@ export const generatePortfolioSnapshot = internalMutation({
 export const triggerAdHocSnapshot = mutation({
   args: {},
   handler: async (ctx) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const today = toSnapshotDate(Date.now());
 
     await ctx.scheduler.runAfter(0, internal.ontology.snapshots.generatePortfolioSnapshot, {

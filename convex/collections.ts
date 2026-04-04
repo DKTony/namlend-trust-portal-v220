@@ -6,7 +6,7 @@
 import { v } from 'convex/values';
 import { ConvexError } from 'convex/values';
 import { query, mutation } from './_generated/server';
-import { assertStaff, assertAdmin } from './lib/auth';
+import { assertStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
@@ -242,7 +242,7 @@ export const markPromiseFulfilled = mutation({
     paymentId: v.optional(v.id('paymentTransactions')),
   },
   handler: async (ctx, { ptpId, paymentId }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
 
     const ptp = await ctx.db.get(ptpId);
     if (!ptp) throw new Error('Promise-to-pay not found');
@@ -287,7 +287,7 @@ export const listOverdueReminders = query({
 export const markReminderSent = mutation({
   args: { reminderId: v.id('overdueReminders') },
   handler: async (ctx, { reminderId }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     await ctx.db.patch(reminderId, {
       sent: true,
       sentAt: Date.now(),

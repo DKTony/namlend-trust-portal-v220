@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { handleMutationError } from '@/lib/mutationError';
 import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '../../../../../convex/_generated/dataModel';
@@ -119,7 +120,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
       console.error('Complete disbursement error:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: handleMutationError(error, 'An unexpected error occurred. Please try again.'),
         variant: 'destructive',
       });
     } finally {

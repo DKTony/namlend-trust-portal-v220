@@ -201,7 +201,11 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               <StatCard
                 label={t('stats.totalBalance')}
-                value={activeLoan ? formatNAD(activeLoan.principal) : 'N$0.00'}
+                value={
+                  activeLoan
+                    ? formatNAD(activeLoan.outstandingBalance ?? activeLoan.principal)
+                    : 'N$0.00'
+                }
                 icon={Wallet}
                 color="black"
               />
@@ -670,6 +674,10 @@ export default function Dashboard() {
         return <ClientProfileDashboard />;
 
       default:
+        // Unknown tab — reset to overview to prevent blank content
+        if (activeTab !== 'overview') {
+          setActiveTab('overview');
+        }
         return null;
     }
   };

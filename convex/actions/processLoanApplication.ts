@@ -20,6 +20,9 @@ export const processLoanApplication = internalAction({
     interestRate: v.number(),
     termMonths: v.number(),
     purpose: v.optional(v.string()),
+    monthlyIncome: v.optional(v.number()),
+    monthlyExpenses: v.optional(v.number()),
+    existingDebt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     console.log(`[processLoanApplication] Starting for loan ${args.loanId}`);
@@ -36,11 +39,13 @@ export const processLoanApplication = internalAction({
       }
 
       // 2. Compute a basic credit score (300–850 range)
-      // Full AI scoring is in src/services/creditScoring.ts — this is the server-side version.
+      // Prefer submitted financial data from application form; fall back to profile
+      const income = args.monthlyIncome ?? profile.monthlyIncome ?? 0;
+
       const creditScore = computeCreditScore({
         kycStatus: profile.kycStatus,
         employmentStatus: profile.employmentStatus ?? '',
-        monthlyIncome: profile.monthlyIncome ?? 0,
+        monthlyIncome: income,
         requestedAmount: args.amount,
         interestRate: args.interestRate,
         termMonths: args.termMonths,
@@ -48,7 +53,7 @@ export const processLoanApplication = internalAction({
 
       // 3. Determine initial recommendation
       const monthlyPayment = computeMonthlyPayment(args.amount, args.interestRate, args.termMonths);
-      const dti = profile.monthlyIncome ? monthlyPayment / profile.monthlyIncome : 1;
+      const dti = income > 0 ? monthlyPayment / income : 1;
 
       let recommendation: 'approve' | 'review' | 'reject' = 'review';
       if (

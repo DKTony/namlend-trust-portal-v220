@@ -78,7 +78,22 @@ export const adminListLoans = query({
     if (userId) {
       results = results.filter((l) => l.userId === userId);
     }
-    return results;
+
+    // Enrich with profile names for admin display
+    const enriched = await Promise.all(
+      results.map(async (loan) => {
+        const profile = await ctx.db
+          .query('profiles')
+          .withIndex('by_userId', (q) => q.eq('userId', loan.userId))
+          .first();
+        return {
+          ...loan,
+          applicantName: profile?.fullName || profile?.email?.split('@')[0] || 'Unknown',
+          applicantEmail: profile?.email,
+        };
+      })
+    );
+    return enriched;
   },
 });
 
@@ -121,6 +136,9 @@ export const createLoan = mutation({
     purpose: v.optional(v.string()),
     monthlyPayment: v.optional(v.number()),
     productVersionId: v.optional(v.id('productVersions')),
+    monthlyIncome: v.optional(v.number()),
+    monthlyExpenses: v.optional(v.number()),
+    existingDebt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
@@ -219,6 +237,9 @@ export const createLoan = mutation({
       monthlyPayment: args.monthlyPayment,
       purpose: args.purpose,
       productVersionId: args.productVersionId,
+      monthlyIncome: args.monthlyIncome,
+      monthlyExpenses: args.monthlyExpenses,
+      existingDebt: args.existingDebt,
       status: 'draft',
       outstandingBalance: args.principal,
       totalPaid: 0,
@@ -292,6 +313,9 @@ export const submitLoan = mutation({
       interestRate: loan.interestRate,
       termMonths: loan.termMonths,
       purpose: loan.purpose,
+      monthlyIncome: loan.monthlyIncome,
+      monthlyExpenses: loan.monthlyExpenses,
+      existingDebt: loan.existingDebt,
     });
   },
 });

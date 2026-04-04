@@ -1,9 +1,39 @@
 import { Page } from '@playwright/test';
 
 export async function ensureAdminReady(page: Page): Promise<void> {
-  await page.waitForURL(/\/admin/);
+  await page.waitForURL(/\/admin/, { timeout: 30000 });
   await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 30000 });
 }
+
+/**
+ * Map from nav item IDs to their route paths.
+ * Used to verify URL change after navigation.
+ */
+const NAV_ROUTES: Record<string, string> = {
+  overview: '/admin/overview',
+  loans: '/admin/loans',
+  clients: '/admin/clients',
+  payments: '/admin/payments',
+  approvals: '/admin/approvals',
+  collections: '/admin/collections',
+  'ipp-onboarding': '/admin/ipp-onboarding',
+  batch: '/admin/batch',
+  users: '/admin/users',
+  analytics: '/admin/analytics',
+  ledger: '/admin/ledger',
+  reconciliation: '/admin/reconciliation',
+  institutions: '/admin/institutions',
+  products: '/admin/products',
+  'payment-rails': '/admin/payment-rails',
+  'business-rules': '/admin/business-rules',
+  workflows: '/admin/workflows',
+  mandates: '/admin/mandates',
+  consent: '/admin/consent',
+  'credit-policy': '/admin/settings/credit-policy',
+  'tigerbeetle-config': '/admin/settings/tigerbeetle',
+  'settlement-config': '/admin/settings/settlement',
+  branding: '/admin/settings/branding',
+};
 
 export async function openAdminTab(page: Page, tabId: string): Promise<void> {
   await ensureAdminReady(page);
@@ -22,6 +52,14 @@ export async function openAdminTab(page: Page, tabId: string): Promise<void> {
     await nav.click({ timeout: 10000 });
   } catch {
     await nav.evaluate((el: HTMLElement) => el.click());
+  }
+
+  // Wait for route change if we know the expected path
+  const expectedPath = NAV_ROUTES[tabId];
+  if (expectedPath) {
+    await page
+      .waitForURL(new RegExp(expectedPath.replace(/\//g, '\\/')), { timeout: 10000 })
+      .catch(() => {});
   }
 
   // Wait for drawer overlay to close before interacting with page content.

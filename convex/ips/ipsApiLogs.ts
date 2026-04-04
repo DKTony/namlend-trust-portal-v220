@@ -4,7 +4,7 @@
 
 import { v } from 'convex/values';
 import { query, internalMutation } from '../_generated/server';
-import { assertAdmin } from '../lib/auth';
+import { assertStaff } from '../lib/auth';
 
 export const logApiCall = internalMutation({
   args: {
@@ -39,7 +39,7 @@ export const getApiLogs = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { transactionId, limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     if (transactionId) {
       return ctx.db
         .query('ipsApiLogs')

@@ -353,7 +353,10 @@ export default function PaymentModal({
                     setSelectedLoanId(value);
                   }}
                 >
-                  <SelectTrigger className="bg-secondary border-transparent h-12 text-foreground">
+                  <SelectTrigger
+                    data-testid="payment-loan-select"
+                    className="bg-secondary border-transparent h-12 text-foreground"
+                  >
                     <SelectValue placeholder="Choose a loan" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-border">
@@ -440,6 +443,7 @@ export default function PaymentModal({
                   </span>
                   <Input
                     type="number"
+                    data-testid="payment-amount-input"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     className="pl-8 bg-secondary border-transparent text-foreground text-lg h-12 focus:ring-blue-500/20 focus:border-blue-500"
@@ -494,6 +498,7 @@ export default function PaymentModal({
                   ).map((method) => (
                     <button
                       key={method.id}
+                      data-testid={`payment-method-${method.id}`}
                       onClick={() => setPaymentMethod(method.id)}
                       className={cn(
                         'flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative',
@@ -538,7 +543,10 @@ export default function PaymentModal({
                         value={bankDetails.bank}
                         onValueChange={(v) => setBankDetails({ ...bankDetails, bank: v })}
                       >
-                        <SelectTrigger className="bg-card border-border text-foreground">
+                        <SelectTrigger
+                          data-testid="payment-bank-select"
+                          className="bg-card border-border text-foreground"
+                        >
                           <SelectValue placeholder="Select Bank" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border-border">
@@ -549,6 +557,7 @@ export default function PaymentModal({
                       </Select>
                       <Input
                         placeholder="Account Number"
+                        data-testid="payment-account-input"
                         value={bankDetails.accountNumber}
                         onChange={(e) =>
                           setBankDetails({ ...bankDetails, accountNumber: e.target.value })
@@ -641,6 +650,7 @@ export default function PaymentModal({
                 </div>
 
                 <ThemedButton
+                  data-testid="payment-confirm-button"
                   onClick={handlePayment}
                   disabled={loading || !paymentAmount || !selectedLoan}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-lg font-medium shadow-lg shadow-blue-900/20"

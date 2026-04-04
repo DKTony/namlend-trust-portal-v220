@@ -1,6 +1,6 @@
 # IPS (Instant Payment System) Implementation
 
-**Last Updated**: 2026-03-29
+**Last Updated**: 2026-04-04
 **Aligned With**: IPS/IPP Phase 3 (Onboarding Rework) — v5.2.2
 **Status**: Current ✅
 
@@ -204,6 +204,21 @@ To enable XML protocol mode:
 | pacs.008 | ISO 20022 | Customer credit transfer (payment initiation)      |
 | pacs.002 | ISO 20022 | Payment status report (acceptance/rejection)       |
 | pacs.009 | ISO 20022 | Financial institution credit transfer (settlement) |
+
+---
+
+## Known Issues
+
+### IPS Disbursement Type Bug (Fixed 2026-04-04)
+
+The `InitiateIPSDisbursementParams` interface in `src/types/ips.ts` was missing required fields (`amount`, `loanId`, `creditorVpa`). The `IPSDisbursementForm` component passed `disbursementId` and `payeeVpa` but not the other fields needed by the `initiateIpsTransaction` mutation, causing an `ArgumentValidationError: Object is missing the required field 'amount'`.
+
+**Fix applied to:**
+
+- `src/types/ips.ts` — Added `loanId`, `amount`, `creditorVpa` to `InitiateIPSDisbursementParams`
+- `src/components/ips/IPSDisbursementForm.tsx` — Passes all required fields to `disbursementMutation.mutateAsync()`
+
+**Status:** Fixed locally, pending Netlify deployment.
 
 ---
 

@@ -124,7 +124,7 @@ export const createReconciliationRun = mutation({
     source: v.string(),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const now = Date.now();
     return ctx.db.insert('reconciliationRuns', {
       ...args,
@@ -150,7 +150,7 @@ export const matchTransaction = mutation({
     matchNotes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
 
     const txn = await ctx.db.get(args.transactionId);
     if (!txn) throw new Error('Bank transaction not found');
@@ -185,7 +185,7 @@ export const disputeTransaction = mutation({
     reason: v.string(),
   },
   handler: async (ctx, { transactionId, reason }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
 
     await ctx.db.patch(transactionId, {
       status: 'disputed',
@@ -211,7 +211,7 @@ export const excludeTransaction = mutation({
     reason: v.string(),
   },
   handler: async (ctx, { transactionId, reason }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
 
     await ctx.db.patch(transactionId, {
       status: 'excluded',

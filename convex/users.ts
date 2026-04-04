@@ -8,7 +8,7 @@
 
 import { v, ConvexError } from 'convex/values';
 import { query, mutation, internalQuery } from './_generated/server';
-import { assertAuthenticated, assertAdmin, assertOwnerOrStaff } from './lib/auth';
+import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
@@ -61,7 +61,7 @@ export const listUsers = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { role, limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
 
     const profiles = await ctx.db
       .query('profiles')
@@ -360,7 +360,7 @@ export const adminUpdateProfile = mutation({
     phone: v.optional(v.string()),
   },
   handler: async (ctx, { targetUserId, fullName, phone }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const profile = await ctx.db
       .query('profiles')
       .withIndex('by_userId', (q) => q.eq('userId', targetUserId))
@@ -442,11 +442,11 @@ export const reviewKycDocument = mutation({
   },
 });
 
-/** Get role for any user (admin only). */
+/** Get role for any user (staff). */
 export const getUserRole = query({
   args: { userId: v.id('users') },
   handler: async (ctx, { userId }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const roleDoc = await ctx.db
       .query('userRoles')
       .withIndex('by_userId', (q) => q.eq('userId', userId))

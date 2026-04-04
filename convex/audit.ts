@@ -11,7 +11,7 @@
 
 import { v } from 'convex/values';
 import { internalMutation, mutation, query } from './_generated/server';
-import { assertAdmin, assertStaff, assertAuthenticated } from './lib/auth';
+import { assertStaff, assertAuthenticated } from './lib/auth';
 
 // ---------------------------------------------------------------------------
 // Internal writes (not callable from browser)
@@ -172,7 +172,7 @@ export const getViewLogs = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     return ctx.db
       .query('viewLogs')
       .order('desc')
@@ -186,7 +186,7 @@ export const getComplianceReports = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     let results = await ctx.db
       .query('complianceReports')
       .order('desc')
@@ -211,7 +211,7 @@ export const generateComplianceReport = mutation({
     periodEnd: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAdmin(ctx);
+    const userId = await assertStaff(ctx);
 
     const reportId = await ctx.db.insert('complianceReports', {
       reportType: args.reportType,

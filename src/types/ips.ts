@@ -1,6 +1,6 @@
 /**
  * IPS/IPP Integration Types
- * 
+ *
  * Type definitions for Instant Payment Solution integration
  */
 
@@ -8,67 +8,48 @@
 // ENUMS & CONSTANTS
 // =============================================================================
 
-export type IPSTransactionType = 
-  | 'DISBURSEMENT' 
-  | 'REPAYMENT' 
-  | 'REFUND' 
-  | 'REVERSAL' 
-  | 'BALANCE_CHECK' 
+export type IPSTransactionType =
+  | 'DISBURSEMENT'
+  | 'REPAYMENT'
+  | 'REFUND'
+  | 'REVERSAL'
+  | 'BALANCE_CHECK'
   | 'VPA_VALIDATION';
 
-export type IPSTxnType = 
-  | 'PAY' 
-  | 'COLLECT' 
-  | 'REVERSAL' 
-  | 'AUTOREVERSAL' 
-  | 'REFUND' 
-  | 'BAL' 
-  | 'CHK' 
+export type IPSTxnType =
+  | 'PAY'
+  | 'COLLECT'
+  | 'REVERSAL'
+  | 'AUTOREVERSAL'
+  | 'REFUND'
+  | 'BAL'
+  | 'CHK'
   | 'VAL';
 
-export type IPSTransactionStatus = 
-  | 'initiated' 
-  | 'pending' 
-  | 'sent' 
-  | 'success' 
-  | 'failed' 
-  | 'timeout' 
-  | 'reversed' 
-  | 'deemed' 
+export type IPSTransactionStatus =
+  | 'initiated'
+  | 'pending'
+  | 'sent'
+  | 'success'
+  | 'failed'
+  | 'timeout'
+  | 'reversed'
+  | 'deemed'
   | 'unknown';
 
-export type IPSResult = 
-  | 'SUCCESS' 
-  | 'FAILURE' 
-  | 'PENDING' 
-  | 'PARTIAL' 
-  | 'DEEMED';
+export type IPSResult = 'SUCCESS' | 'FAILURE' | 'PENDING' | 'PARTIAL' | 'DEEMED';
 
-export type VPAType = 
-  | 'HANDLE' 
-  | 'MOBILE_NUMBER' 
-  | 'ACCOUNT' 
-  | 'AADHAAR' 
-  | 'QR';
+export type VPAType = 'HANDLE' | 'MOBILE_NUMBER' | 'ACCOUNT' | 'AADHAAR' | 'QR';
 
-export type IPSPurposeCode = 
-  | 'PERS'  // Personal
-  | 'BUSN'  // Business
-  | 'G2P'   // Government to Person
-  | 'B2P';  // Business to Person
+export type IPSPurposeCode =
+  | 'PERS' // Personal
+  | 'BUSN' // Business
+  | 'G2P' // Government to Person
+  | 'B2P'; // Business to Person
 
-export type IPSInitiationMode = 
-  | 'MOBILE_APP' 
-  | 'USSD' 
-  | 'BACKOFFICE' 
-  | 'API';
+export type IPSInitiationMode = 'MOBILE_APP' | 'USSD' | 'BACKOFFICE' | 'API';
 
-export type IPSChannel = 
-  | 'MOBILE' 
-  | 'WEB' 
-  | 'USSD' 
-  | 'ATM' 
-  | 'POS';
+export type IPSChannel = 'MOBILE' | 'WEB' | 'USSD' | 'ATM' | 'POS';
 
 // =============================================================================
 // DATABASE TYPES
@@ -184,6 +165,9 @@ export interface IPSApiLog {
 // Initiate Disbursement
 export interface InitiateIPSDisbursementParams {
   disbursementId: string;
+  loanId: string;
+  amount: number;
+  creditorVpa: string;
   payeeVpa: string;
   note?: string;
 }
@@ -949,7 +933,8 @@ export const IPP_ONBOARDING_STATE_LABELS: Record<IPPOnboardingState, string> = {
 
 export const IPP_ONBOARDING_STATE_COLORS: Record<IPPOnboardingState, string> = {
   NOT_STARTED: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  DEVICE_BINDING_REQUIRED: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  DEVICE_BINDING_REQUIRED:
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   DEVICE_BOUND: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   SOV_SELECTION_PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   SOV_SELECTED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -958,7 +943,8 @@ export const IPP_ONBOARDING_STATE_COLORS: Record<IPPOnboardingState, string> = {
   VERIFIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   IPS_PIN_SETTING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   IPS_PIN_SET: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  ALIAS_REGISTRATION_PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  ALIAS_REGISTRATION_PENDING:
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   ALIAS_REGISTERED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   READY_FOR_IPP_PAYMENTS: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   SUSPENDED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -989,7 +975,7 @@ export const getIPPOnboardingProgress = (state: IPPOnboardingState): number => {
     'ALIAS_REGISTERED',
     'READY_FOR_IPP_PAYMENTS',
   ];
-  
+
   const index = stateOrder.indexOf(state);
   if (index === -1) return 0;
   return Math.round((index / (stateOrder.length - 1)) * 100);

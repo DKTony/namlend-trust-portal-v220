@@ -4,12 +4,12 @@
 
 import { v } from 'convex/values';
 import { query, mutation } from '../_generated/server';
-import { assertAdmin } from '../lib/auth';
+import { assertStaff } from '../lib/auth';
 
 export const listReconciliations = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     return ctx.db
       .query('tigerBeetleReconciliation')
       .order('desc')
@@ -27,7 +27,7 @@ export const recordReconciliation = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     return ctx.db.insert('tigerBeetleReconciliation', {
       ...args,
       status: Math.abs(args.variance) < 0.01 ? 'matched' : 'variance_detected',

@@ -76,6 +76,9 @@ export function IPSDisbursementForm({
     try {
       const disbursementResult = await disbursementMutation.mutateAsync({
         disbursementId,
+        loanId,
+        amount,
+        creditorVpa: payeeVpa,
         payeeVpa,
         note: `Loan disbursement for ${customerName}`,
       });

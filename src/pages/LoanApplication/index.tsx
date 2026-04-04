@@ -37,7 +37,6 @@ export default function LoanApplication() {
   const [loading, setLoading] = useState(false);
   const createLoanMutation = useConvexMutation(api.loans.createLoan);
   const submitLoanMutation = useConvexMutation(api.loans.submitLoan);
-  const submitForApprovalMutation = useConvexMutation(api.approvalWorkflow.submitForApproval);
 
   // KYC eligibility check - gates loan application
   const {
@@ -170,19 +169,15 @@ export default function LoanApplication() {
         termMonths: loanDetails.term,
         purpose: formData.purpose,
         monthlyPayment: loanDetails.monthlyPayment,
+        monthlyIncome,
+        monthlyExpenses,
+        existingDebt,
       })) as Id<'loans'>;
 
       // Step 2: Transition loan from draft → submitted
+      // This triggers processLoanApplication server-side which creates the approval request
+      // with credit scoring data. No client-side submitForApproval needed.
       await submitLoanMutation({ loanId });
-
-      // Step 3: Create approval request linked to the real loan ID
-      await submitForApprovalMutation({
-        entityType: 'loan',
-        entityId: loanId as string,
-        requestType: 'loan_application',
-        metadata: loanApplicationData,
-        priority: 'medium' as const,
-      });
 
       toast({
         title: t('toast.submittedTitle'),

@@ -22,6 +22,40 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 
 ---
 
+## [2.8.11] - 2026-04-04 (Payment Lifecycle & IPS Fix)
+
+### Fixed
+
+#### IPS Disbursement Type Bug (`src/types/ips.ts`, `src/components/ips/IPSDisbursementForm.tsx`)
+
+- **`InitiateIPSDisbursementParams`** was missing `amount`, `loanId`, `creditorVpa` fields
+- `IPSDisbursementForm` now passes all required fields to `disbursementMutation.mutateAsync()`
+- Without this fix, IPS disbursements fail with `ArgumentValidationError: Object is missing the required field 'amount'`
+
+#### Admin Payment Completion (`src/pages/AdminDashboard/components/PaymentManagement/PaymentsList.tsx`)
+
+- "Complete Payment" button added to pending payment cards (testid: `complete-payment-{paymentId}`)
+- Calls `api.payments.completePayment` mutation which updates loan balance, triggers status transitions, and sends client notifications
+
+### Changed
+
+#### Payment Lifecycle Documentation
+
+- Updated `docs/FLOWS.md` with detailed two-phase payment settlement flow
+- Payment amount options documented (Monthly, Pay Full, Custom)
+- Loan status transition table: funded → active (first payment), active → paid_off (full payoff)
+
+#### Test Portal Skill (`.claude/commands/test-portal.md`)
+
+- Enhanced with complete admin payment completion flow
+- Added Quick Role Switch pattern for multi-role testing
+- Documented all admin routes for local dev server
+- Added payment modal interaction details (dropdown selection, amount precision, Pay Full)
+- Documented 7 known bugs with status
+- Added troubleshooting for payment amount precision and session persistence
+
+---
+
 ## [2.8.10] - 2026-03-29 (IPS/IPP Phase 3 — Onboarding Rework)
 
 ### Added

@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
+import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -264,7 +265,11 @@ export function CollectionsDashboard() {
       setShowInteractionDialog(false);
       resetInteractionForm();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to log interaction', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: handleMutationError(error, 'Failed to log interaction'),
+        variant: 'destructive',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -291,7 +296,7 @@ export function CollectionsDashboard() {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to record promise to pay',
+        description: handleMutationError(error, 'Failed to record promise to pay'),
         variant: 'destructive',
       });
     } finally {

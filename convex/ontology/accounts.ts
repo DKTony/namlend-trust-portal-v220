@@ -322,7 +322,7 @@ export const getAccountsByProductInstance = query({
 });
 
 /**
- * List all accounts (admin view).
+ * List all accounts (staff view).
  */
 export const listAccounts = query({
   args: {
@@ -330,7 +330,7 @@ export const listAccounts = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { status, limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const results = await ctx.db.query('accounts').take(limit ?? 200);
     if (status) return results.filter((a) => a.status === status);
     return results;

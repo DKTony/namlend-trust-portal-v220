@@ -48,8 +48,8 @@ export const useLoanApplications = ({
 
     let items: LoanApplication[] = rawLoans.map((row) => ({
       id: String(row._id),
-      applicantName: 'Unknown', // enriched by LoanApplicationsList via getUserProfile if needed
-      applicantEmail: '',
+      applicantName: row.applicantName ?? 'Unknown',
+      applicantEmail: row.applicantEmail ?? '',
       amount: row.principal ?? 0,
       purpose: row.purpose ?? 'Not specified',
       status: row.status as LoanApplication['status'],

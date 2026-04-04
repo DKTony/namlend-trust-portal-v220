@@ -184,7 +184,7 @@ export const getInstitutionByCode = query({
 });
 
 /**
- * List all institutions (admin view).
+ * List all institutions (staff view).
  */
 export const listInstitutions = query({
   args: {
@@ -192,7 +192,7 @@ export const listInstitutions = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { status, limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     if (status) {
       return ctx.db
         .query('institutions')

@@ -19,6 +19,7 @@ export const usePaymentMetrics = () => {
   const risk = useQuery(api.analytics.getRiskMetrics);
   const revenue = useQuery(api.analytics.getRevenueMetrics, {});
   const allLoans = useQuery(api.loans.adminListLoans, {});
+  const completedPayments = useQuery(api.payments.adminListPayments, { status: 'completed' });
 
   const loading = portfolio === undefined;
   const error: string | null = null;
@@ -29,8 +30,16 @@ export const usePaymentMetrics = () => {
   const activeLoans = loans.filter((l) => ['active', 'funded', 'disbursed'].includes(l.status));
   const settledLoans = loans.filter((l) => l.status === 'paid_off');
 
+  // Calculate today's completed payment total
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayMs = todayStart.getTime();
+  const totalPaymentsToday = (completedPayments ?? [])
+    .filter((p) => (p.updatedAt ?? p.createdAt) >= todayMs)
+    .reduce((sum, p) => sum + (p.amount ?? 0), 0);
+
   const metrics: PaymentMetrics = {
-    totalPaymentsToday: 0, // would need time-windowed query
+    totalPaymentsToday,
     pendingDisbursements: approvedLoans.reduce((s, l) => s + (l.principal ?? 0), 0),
     pendingDisbursementCount: approvedLoans.length,
     overdueAmount: risk?.overdueAmount ?? 0,

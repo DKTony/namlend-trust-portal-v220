@@ -8,7 +8,7 @@
 
 import { v } from 'convex/values';
 import { query, internalMutation, internalQuery } from '../_generated/server';
-import { assertAdmin } from '../lib/auth';
+import { assertStaff } from '../lib/auth';
 
 // ---------------------------------------------------------------------------
 // Internal: used by tigerBeetleOutboxWorker scheduled action
@@ -110,7 +110,7 @@ export const resetDeadLetter = internalMutation({
 export const getOutboxStats = query({
   args: {},
   handler: async (ctx) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     const pending = await ctx.db
       .query('tigerBeetleOutbox')
       .withIndex('by_status', (q) => q.eq('status', 'pending'))
@@ -135,7 +135,7 @@ export const getOutboxStats = query({
 export const listDeadLetterEntries = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
-    await assertAdmin(ctx);
+    await assertStaff(ctx);
     return ctx.db
       .query('tigerBeetleOutbox')
       .withIndex('by_status', (q) => q.eq('status', 'dead_letter'))

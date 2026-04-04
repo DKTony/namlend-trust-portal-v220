@@ -14,7 +14,7 @@ import ErrorBoundary from '@/components/system/ErrorBoundary';
 const Index = React.lazy(() => import('@/pages/Index'));
 const Auth = React.lazy(() => import('@/pages/Auth'));
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
-const AdminDashboard = React.lazy(() => import('@/pages/AdminDashboard'));
+const AdminLayout = React.lazy(() => import('@/pages/AdminDashboard/AdminLayout'));
 const LoanApplication = React.lazy(() => import('@/pages/LoanApplication'));
 const Payment = React.lazy(() => import('@/pages/Payment'));
 const LoanDetails = React.lazy(() => import('@/pages/LoanDetails'));
@@ -22,6 +22,7 @@ const KYC = React.lazy(() => import('@/pages/KYC'));
 const BudgetTracker = React.lazy(() => import('@/pages/BudgetTracker'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 import { ProtectedRoute } from '@/components/system/ProtectedRoute';
+import { adminRoutes } from '@/pages/AdminDashboard/adminRoutes';
 import { ThemeProvider } from '@/components/system/ThemeProvider';
 import { ThemeProvider as EnhancedThemeProvider } from '@/context/ThemeContext';
 import { BrandingProvider } from '@/context/BrandingContext';
@@ -111,13 +112,15 @@ const App = () => (
                             }
                           />
                           <Route
-                            path="/admin/*"
+                            path="/admin"
                             element={
                               <ProtectedRoute requireLoanOfficer>
-                                <AdminDashboard />
+                                <AdminLayout />
                               </ProtectedRoute>
                             }
-                          />
+                          >
+                            {adminRoutes()}
+                          </Route>
                           <Route
                             path="/loan-application"
                             element={

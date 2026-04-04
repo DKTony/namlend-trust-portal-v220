@@ -57,17 +57,34 @@ export const adminListPayments = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    let results;
     if (status) {
-      return ctx.db
+      results = await ctx.db
         .query('paymentTransactions')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
+    } else {
+      results = await ctx.db
+        .query('paymentTransactions')
+        .order('desc')
+        .take(limit ?? 100);
     }
-    return ctx.db
-      .query('paymentTransactions')
-      .order('desc')
-      .take(limit ?? 100);
+
+    // Enrich with profile names for admin display
+    const enriched = await Promise.all(
+      results.map(async (payment) => {
+        const profile = await ctx.db
+          .query('profiles')
+          .withIndex('by_userId', (q) => q.eq('userId', payment.userId))
+          .first();
+        return {
+          ...payment,
+          clientName: profile?.fullName || profile?.email?.split('@')[0] || 'Unknown',
+        };
+      })
+    );
+    return enriched;
   },
 });
 
@@ -211,7 +228,7 @@ export const recordPayment = mutation({
 
     scheduleAuditLog(ctx, 'payment', paymentId, 'RECORD', 'none', 'pending');
     emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_RECORDED, 'paymentTransactions', paymentId, {
-      loanId,
+      loanId: args.loanId,
       amount: args.amount,
       method: args.method,
     });
@@ -260,7 +277,8 @@ export const completePayment = mutation({
     });
 
     // Update loan balance
-    const pp = principalPaid ?? payment.principalPaid ?? 0;
+    // When no principal/interest split is provided, treat the full payment as principal reduction
+    const pp = principalPaid ?? payment.principalPaid ?? payment.amount;
     const loan = await ctx.db.get(payment.loanId);
     if (loan) {
       const newBalance = Math.max(0, (loan.outstandingBalance ?? loan.principal) - pp);

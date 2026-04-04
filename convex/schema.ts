@@ -308,6 +308,10 @@ export default defineSchema({
     rejectedAt: v.optional(v.number()),
     rejectionReason: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    // Financial data submitted with application (used for credit scoring)
+    monthlyIncome: v.optional(v.number()),
+    monthlyExpenses: v.optional(v.number()),
+    existingDebt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
     // Ontology forward-compatible fields (Phases 4-6)

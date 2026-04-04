@@ -1,7 +1,7 @@
 # NamLend Trust — Transaction Flows
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
+**Last Updated**: 2026-04-04
+**Aligned With**: Post-payment-lifecycle codebase (v5.2.2)
 **Status**: Current ✅
 
 All Convex function references below are in the form `api.module.function` (public) or `internal.module.function` (server-only). See [API_REFERENCE.md](./API_REFERENCE.md) for full signatures and auth requirements.
@@ -152,24 +152,47 @@ Admin → IPS disbursement form
 
 ## 4. Payment Flow
 
-### 4.1 Client-Initiated Payment (Payment Page)
+### 4.1 Client-Initiated Payment (Payment Modal)
 
 ```
-Client → /payment page
+Client → /dashboard → My Loans → "Make Payment" button → Payment Modal
 
 1. useMutation(api.payments.recordPayment)
       - assertOwnerOrStaff
       - Inserts paymentTransactions (status: "pending")
-      - Inserts tigerBeetleOutbox entry atomically
+      - Inserts tigerBeetleOutbox entry atomically (eventType: "REPAYMENT")
       - scheduleAuditLog(...)
+      - Payment amount can be: monthly installment, custom amount, or full outstanding balance
 
-2. Admin or webhook marks payment complete:
+2. Admin confirms payment (two-phase settlement):
    useMutation(api.payments.completePayment)
+      - assertStaff
       - Patches paymentTransactions.status → "completed"
       - Updates loans.outstandingBalance (reduces by principalPaid)
       - Updates loans.totalPaid
-      - Checks: if outstandingBalance <= 0 → patch loans.status → "paid_off"
+      - If first payment on funded loan → patches loans.status: "funded" → "active"
+      - If outstandingBalance <= 0 → patches loans.status → "paid_off", sets completedAt
+      - Sends client notification ("Loan Account Active" or "Payment Confirmed")
       - scheduleAuditLog(...)
+```
+
+### 4.1.1 Payment Amount Options
+
+The Payment Modal offers three amount options:
+
+- **Monthly**: Auto-fills with the calculated monthly installment
+- **Pay Full**: Fills with the entire outstanding balance (triggers loan payoff on completion)
+- **Custom**: Client enters any amount via the amount input
+
+### 4.1.2 Payment Status Lifecycle
+
+```
+pending (client recorded) → completed (admin confirmed)
+                         → failed (admin rejected or system error)
+
+Loan status transitions triggered by completePayment:
+  funded → active   (first payment on a funded loan)
+  active → paid_off (outstandingBalance reaches 0)
 ```
 
 ### 4.2 Payment Webhook (External Gateway — PayToday, MTC MoMo, TN Mobile)

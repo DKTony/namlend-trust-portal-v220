@@ -21,6 +21,14 @@
 import { xmlEscape } from './xmlEscape';
 
 // ---------------------------------------------------------------------------
+// XML Namespace — configurable per IPS TSD §2.1
+// Default: spec-mandated "http://npci.org/upi/schema/" (UPI heritage)
+// Override via IPS_XML_NAMESPACE env var if BoN issues a Namibian namespace
+// ---------------------------------------------------------------------------
+
+const IPS_XML_NAMESPACE = process.env.IPS_XML_NAMESPACE ?? 'http://npci.org/upi/schema/';
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -125,6 +133,53 @@ export interface IpsReqListAccountPayload {
   providerCode: string;
 }
 
+// Phase 4B: New API payload types
+
+export interface IpsReqRevPayload {
+  /** Original transaction ID to reverse */
+  orgTxnId: string;
+  /** Original message ID */
+  orgMsgId: string;
+  /** Reversal type */
+  revType: 'FULL' | 'PARTIAL';
+  /** Amount to reverse (for partial reversals) */
+  amount?: number;
+  currency?: string;
+  /** Reason code per IPP FSD §4.14 */
+  reasonCode: string;
+  reasonDescription?: string;
+}
+
+export interface IpsReqAuthDetailPayload {
+  /** Transaction ID to query auth status for */
+  txnId: string;
+  /** API name of the original request */
+  orgApi: string;
+}
+
+export interface IpsTxnConfirmationPayload {
+  /** Original transaction ID being confirmed */
+  orgTxnId: string;
+  /** Original message ID */
+  orgMsgId: string;
+  /** Confirmation status */
+  status: 'CREDITED' | 'FAILED' | 'PENDING';
+  /** Beneficiary name (confirmed) */
+  beneficiaryName?: string;
+  /** Timestamp of credit to beneficiary account */
+  creditTimestamp?: string;
+}
+
+export interface IpsReqListPspPayload {
+  /** Optional filter by region or type */
+  pspType?: 'BANK' | 'WALLET' | 'ALL';
+}
+
+export interface IpsReqListKeysPayload {
+  /** PSP code to list key types for */
+  pspCode?: string;
+}
+
 /** Parsed inbound IPS XML message */
 export interface IpsXmlParsed {
   apiName: string;
@@ -141,6 +196,8 @@ export interface IpsAckParsed {
   result: 'SUCCESS' | 'FAILURE';
   errorCode?: string;
   errorDescription?: string;
+  /** NACK-specific: structured error from Err element (IPS TSD §2.4) */
+  nackErrors?: Array<{ code: string; type?: string; message?: string }>;
   rawXml: string;
 }
 
@@ -205,7 +262,7 @@ export function buildIpsRequestXml(apiName: string, head: IpsXmlHead, txnXml: st
   const headWithApi = { ...head, api: apiName };
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<upi:${xmlEscape(apiName)} xmlns:upi="http://www.ips.bon.na/upi/schema/">`,
+    `<upi:${xmlEscape(apiName)} xmlns:upi="${IPS_XML_NAMESPACE}">`,
     `  ${buildHeadXml(headWithApi)}`,
     `  ${txnXml}`,
     `</upi:${xmlEscape(apiName)}>`,
@@ -247,7 +304,7 @@ export function buildAckResponseXml(
   if (errorCode) attrs.push(`errorCode="${xmlEscape(errorCode)}"`);
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<upi:Ack xmlns:upi="http://www.ips.bon.na/upi/schema/" ${attrs.join(' ')}/>`,
+    `<upi:Ack xmlns:upi="${IPS_XML_NAMESPACE}" ${attrs.join(' ')}/>`,
   ].join('\n');
 }
 
@@ -356,6 +413,69 @@ export function buildReqListAccount(head: IpsXmlHead, payload: IpsReqListAccount
 }
 
 // ---------------------------------------------------------------------------
+// Phase 4B: New API builders
+// ---------------------------------------------------------------------------
+
+/** Build a ReqRev (Reversal) XML payload — IPP FSD §4.14 */
+export function buildReqRev(head: IpsXmlHead, payload: IpsReqRevPayload): string {
+  const parts: string[] = [];
+  parts.push(`<OrgTxnId>${xmlEscape(payload.orgTxnId)}</OrgTxnId>`);
+  parts.push(`<OrgMsgId>${xmlEscape(payload.orgMsgId)}</OrgMsgId>`);
+  parts.push(`<RevType>${xmlEscape(payload.revType)}</RevType>`);
+  if (payload.amount !== undefined) {
+    parts.push(
+      `<Amount Ccy="${xmlEscape(payload.currency ?? 'NAD')}">${payload.amount.toFixed(2)}</Amount>`
+    );
+  }
+  parts.push(`<ReasonCode>${xmlEscape(payload.reasonCode)}</ReasonCode>`);
+  if (payload.reasonDescription) {
+    parts.push(`<ReasonDesc>${xmlEscape(payload.reasonDescription)}</ReasonDesc>`);
+  }
+  return buildIpsRequestXml('ReqRev', head, `<Txn>${parts.join('')}</Txn>`);
+}
+
+/** Build a ReqAuthDetail XML payload — IPP FSD §4.5 */
+export function buildReqAuthDetail(head: IpsXmlHead, payload: IpsReqAuthDetailPayload): string {
+  const parts: string[] = [];
+  parts.push(`<TxnId>${xmlEscape(payload.txnId)}</TxnId>`);
+  parts.push(`<OrgApi>${xmlEscape(payload.orgApi)}</OrgApi>`);
+  return buildIpsRequestXml('ReqAuthDetail', head, `<Txn>${parts.join('')}</Txn>`);
+}
+
+/** Build a TxnConfirmation XML payload — IPP FSD §4.16 */
+export function buildTxnConfirmation(head: IpsXmlHead, payload: IpsTxnConfirmationPayload): string {
+  const parts: string[] = [];
+  parts.push(`<OrgTxnId>${xmlEscape(payload.orgTxnId)}</OrgTxnId>`);
+  parts.push(`<OrgMsgId>${xmlEscape(payload.orgMsgId)}</OrgMsgId>`);
+  parts.push(`<Status>${xmlEscape(payload.status)}</Status>`);
+  if (payload.beneficiaryName) {
+    parts.push(`<BeneficiaryName>${xmlEscape(payload.beneficiaryName)}</BeneficiaryName>`);
+  }
+  if (payload.creditTimestamp) {
+    parts.push(`<CreditTs>${xmlEscape(payload.creditTimestamp)}</CreditTs>`);
+  }
+  return buildIpsRequestXml('TxnConfirmation', head, `<Txn>${parts.join('')}</Txn>`);
+}
+
+/** Build a ReqListPsp XML payload — IPP FSD §4.9 */
+export function buildReqListPsp(head: IpsXmlHead, payload: IpsReqListPspPayload): string {
+  const parts: string[] = [];
+  if (payload.pspType) {
+    parts.push(`<PspType>${xmlEscape(payload.pspType)}</PspType>`);
+  }
+  return buildIpsRequestXml('ReqListPsp', head, `<Txn>${parts.join('')}</Txn>`);
+}
+
+/** Build a ReqListKeys XML payload — IPP FSD §4.10 */
+export function buildReqListKeys(head: IpsXmlHead, payload: IpsReqListKeysPayload): string {
+  const parts: string[] = [];
+  if (payload.pspCode) {
+    parts.push(`<PspCode>${xmlEscape(payload.pspCode)}</PspCode>`);
+  }
+  return buildIpsRequestXml('ReqListKeys', head, `<Txn>${parts.join('')}</Txn>`);
+}
+
+// ---------------------------------------------------------------------------
 // XML Parsing (for inbound responses — requires fast-xml-parser in "use node")
 // ---------------------------------------------------------------------------
 
@@ -433,12 +553,25 @@ export function parseIpsAck(rawXml: string): IpsAckParsed {
 
   const ack = parsed[ackKey];
 
+  // Parse NACK Err elements if present (IPS TSD §2.4)
+  let nackErrors: Array<{ code: string; type?: string; message?: string }> | undefined;
+  if (ack.Err || ack['upi:Err']) {
+    const errElements = ack.Err ?? ack['upi:Err'];
+    const errArray = Array.isArray(errElements) ? errElements : [errElements];
+    nackErrors = errArray.map((err: any) => ({
+      code: err['@_code'] ?? err.Code ?? '',
+      type: err['@_type'] ?? err.Type,
+      message: err['@_msg'] ?? err['#text'] ?? err.Msg ?? '',
+    }));
+  }
+
   return {
     api: ack['@_api'] ?? '',
     reqMsgId: ack['@_reqMsgId'] ?? '',
     result: (ack['@_result'] ?? 'FAILURE') as 'SUCCESS' | 'FAILURE',
-    errorCode: ack['@_errorCode'],
-    errorDescription: ack['@_errorDescription'],
+    errorCode: ack['@_errorCode'] ?? nackErrors?.[0]?.code,
+    errorDescription: ack['@_errorDescription'] ?? nackErrors?.[0]?.message,
+    nackErrors,
     rawXml,
   };
 }
@@ -450,6 +583,22 @@ export function parseIpsAck(rawXml: string): IpsAckParsed {
 /** Generate ISO 8601 timestamp for IPS messages */
 export function ipsTimestamp(): string {
   return new Date().toISOString();
+}
+
+/**
+ * Generate a spec-compliant IPS msgId.
+ * Format: 35 digits = 3-digit bank code + 32 hex chars (UUID without hyphens).
+ * Per IPS TSD §2.3: msgId must be exactly 35 characters, numeric+hex.
+ */
+export function generateMsgId(bankCode?: string): string {
+  const code = bankCode ?? process.env.IPS_BANK_CODE ?? '099';
+  const padded = code.padStart(3, '0').slice(0, 3);
+  // Generate 32 hex characters from crypto.randomUUID() or fallback
+  const uuid =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID().replace(/-/g, '')
+      : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  return `${padded}${uuid}`;
 }
 
 /** Build a standard IPS XML Head from config + msgId */

@@ -22,6 +22,48 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 
 ---
 
+## [2.8.12] - 2026-04-05 (IPS Phase 4A+4B — Sandbox Certification & Missing APIs)
+
+### Added
+
+#### Phase 4A — Sandbox Certification Fixes
+
+- **Spec-compliant msgId format** — 35-char IDs (3-digit bank code + 32 hex UUID) per IPS TSD §2.3 (`convex/lib/ipsXmlBuilder.ts`)
+- **Configurable XML namespace** — `IPS_XML_NAMESPACE` env var, defaults to spec `http://npci.org/upi/schema/` per IPS TSD §2.1
+- **Daily transaction limits** — P2P/P2M/ATM/G2P enforcement per IPP FSD §5.2 (`convex/lib/ipsTransactionLimits.ts`)
+- **API timeouts with AbortController** — 10s non-financial, 30s financial per IPS TSD §2.5 (`convex/actions/ipsAdapter.ts`)
+- **RSA-OAEP PIN encryption** — Activated when `IPS_HSM_PUBLIC_KEY` configured per IPS TSD §3.3
+- **mTLS support** — `IPS_CLIENT_CERT`/`IPS_CLIENT_KEY`/`IPS_CA_CERT` env vars per IPS TSD §3.1
+- **Idempotent msgId retry** — Duplicate msgId returns existing transaction per IPS TSD §2.3
+- **NACK error parsing** — Structured `Err` element extraction from IPS NACK responses per IPS TSD §2.4
+
+#### Phase 4B — Missing Core APIs
+
+- **Reversal API** (`initiateReversal`) — Full/partial reversal via ReqRev/RespRev per IPP FSD §4.14
+- **Request-to-Pay / Collect** (`initiateCollectRequest`) — Creditor-initiated payment collection per IPP FSD §4.3
+- **Auth Detail API** (`queryAuthDetail`) — Transaction authentication status per IPP FSD §4.5
+- **Txn Confirmation** (`sendTxnConfirmation`) — Payee-side credit confirmation per IPP FSD §4.16
+- **ListPsp API** (`reqListPsp`) — List participating PSPs per IPP FSD §4.9
+- **ListKeys API** (`reqListKeys`) — List alias key types per IPP FSD §4.10
+- **Deemed transaction resolution** (`resolveDeemedTransaction`) — Exponential backoff ChkTxn for timed-out transactions per IPS TSD §2.6
+
+#### Gap Analysis
+
+- Comprehensive 29-gap analysis comparing IPP FSD v10.0 and IPS TSD v0.7 against codebase implementation
+- Phase 4A (8 gaps) and Phase 4B (6 gaps) implemented; Phase 5A/5B gaps documented for future work
+
+### Files Modified
+
+- `convex/lib/ipsXmlBuilder.ts` — 6 new XML builders (ReqRev, ReqAuthDetail, TxnConfirmation, ReqListPsp, ReqListKeys), `generateMsgId()`, configurable namespace, NACK parsing
+- `convex/lib/ipsTransactionLimits.ts` — NEW: Daily limit enforcement per use case type
+- `convex/actions/ipsAdapter.ts` — 5 new actions (reversal, collect, authDetail, txnConfirmation, deemedResolution), mTLS, timeouts
+- `convex/actions/ipsOnboardingAdapter.ts` — 2 new actions (reqListPsp, reqListKeys), activated PIN encryption
+- `convex/actions/ipsAliasAdapter.ts` — Spec-compliant msgId
+- `convex/ips/ipsTransactions.ts` — Transaction limits enforcement, idempotent retry
+- `convex/lib/ipsSoftwareSigner.ts` — RSA-OAEP PIN encryption (already implemented, now activated)
+
+---
+
 ## [2.8.11] - 2026-04-04 (Payment Lifecycle & IPS Fix)
 
 ### Fixed

@@ -23,6 +23,8 @@ import {
   buildReqListAccount,
   buildReqOtp,
   buildReqSetCre,
+  buildReqListPsp,
+  buildReqListKeys,
   buildStandardHead,
   insertSignature,
   parseIpsAck,
@@ -31,6 +33,7 @@ import {
   type IpsReqListAccountPayload,
   type IpsReqOtpPayload,
   type IpsReqSetCrePayload,
+  generateMsgId,
 } from '../lib/ipsXmlBuilder';
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
@@ -146,7 +149,7 @@ export const reqRegMob = internalAction({
 
     // XML protocol
     try {
-      const msgId = `REGMOB-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqRegMobPayload = {
         mobileNumber: args.mobileNumber,
@@ -207,7 +210,7 @@ export const reqListAccPvd = internalAction({
 
     // XML protocol
     try {
-      const msgId = `LAP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqListAccPvdPayload = {
         mobileNumber: args.mobileNumber,
@@ -260,7 +263,7 @@ export const reqListAccount = internalAction({
 
     // XML protocol
     try {
-      const msgId = `LA-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqListAccountPayload = {
         mobileNumber: args.mobileNumber,
@@ -321,7 +324,7 @@ export const startVerification = internalAction({
 
     // XML protocol — the method determines which API to call
     try {
-      const msgId = `VER-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
 
       let xml: string;
@@ -399,7 +402,7 @@ export const reqOtp = internalAction({
 
     // XML protocol
     try {
-      const msgId = `OTP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
 
       // In production, the OTP should be encrypted with IPS HSM public key
@@ -450,6 +453,7 @@ export const reqSetCre = internalAction({
     applicationId: v.id('ipsOnboardingApplications'),
     operation: v.union(v.literal('SET'), v.literal('CHANGE'), v.literal('RESET')),
     deviceId: v.string(),
+    encryptedNewPin: v.string(),
   },
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
@@ -461,27 +465,26 @@ export const reqSetCre = internalAction({
       return { success: true, mode: 'json_mock' };
     }
 
-    // XML protocol — PIN encryption requires Phase 4 (HSM integration)
-    // Guard: do not send placeholder to real IPS endpoints
-    console.warn(
-      `[onboarding] ReqSetCre in ${mode} mode — PIN encryption not yet implemented (Phase 4)`
-    );
-    await updateStatus(
-      ctx,
-      args.applicationId,
-      'IPS_PIN_SET' // Advance anyway for sandbox testing
-    );
-    return { success: true, note: 'PIN encryption pending Phase 4 — PIN set locally' };
+    // XML protocol — encrypt PIN server-side using BoN HSM public key
+    const hsmPublicKey = process.env.IPS_HSM_PUBLIC_KEY ?? '';
+    if (!hsmPublicKey) {
+      console.warn(
+        `[onboarding] ReqSetCre in ${mode} mode — IPS_HSM_PUBLIC_KEY not configured, using local PIN set`
+      );
+      await updateStatus(ctx, args.applicationId, 'IPS_PIN_SET');
+      return { success: true, note: 'IPS_HSM_PUBLIC_KEY not configured — PIN set locally' };
+    }
 
-    // The following code will be activated in Phase 4 when HSM integration is ready:
-    /*
     try {
-      const msgId = `PIN-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const signer = createSigningProvider();
+      const encryptedPin = await signer.encryptPin(args.encryptedNewPin, hsmPublicKey);
+
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
 
       const payload: IpsReqSetCrePayload = {
         operation: args.operation,
-        encryptedNewPin: args.encryptedNewPin, // Phase 4: client sends actual encrypted PIN
+        encryptedNewPin: encryptedPin,
         deviceId: args.deviceId,
       };
 
@@ -490,10 +493,17 @@ export const reqSetCre = internalAction({
 
       if (ack.result === 'SUCCESS') {
         console.log(`[onboarding] ReqSetCre ACK for application`);
+        await updateStatus(ctx, args.applicationId, 'IPS_PIN_SET');
         return { success: true };
       } else {
         const errorEntry = getErrorEntry(ack.errorCode ?? 'UNKNOWN');
-        await updateStatus(ctx, args.applicationId, 'IPS_PIN_SETTING', ack.errorCode, errorEntry.userMessage);
+        await updateStatus(
+          ctx,
+          args.applicationId,
+          'IPS_PIN_SETTING',
+          ack.errorCode,
+          errorEntry.userMessage
+        );
         return { success: false, error: ack.errorDescription };
       }
     } catch (error) {
@@ -501,6 +511,95 @@ export const reqSetCre = internalAction({
       await updateStatus(ctx, args.applicationId, 'IPS_PIN_SETTING', 'NETWORK_ERROR', msg);
       return { success: false, error: msg };
     }
-    */
+  },
+});
+
+// ---------------------------------------------------------------------------
+// List PSPs (ReqListPsp) — IPP FSD §4.9
+// Lists participating Payment Service Providers registered with IPS.
+// ---------------------------------------------------------------------------
+
+export const reqListPsp = internalAction({
+  args: {
+    pspType: v.optional(v.union(v.literal('BANK'), v.literal('WALLET'), v.literal('ALL'))),
+  },
+  handler: async (ctx, args) => {
+    const mode = await getProtocolMode(ctx);
+    if (mode === 'json_mock') {
+      return {
+        success: true,
+        mode: 'json_mock',
+        psps: [
+          { code: 'FNB', name: 'First National Bank Namibia', type: 'BANK' },
+          { code: 'STD', name: 'Standard Bank Namibia', type: 'BANK' },
+          { code: 'NED', name: 'Nedbank Namibia', type: 'BANK' },
+          { code: 'BOW', name: 'Bank Windhoek', type: 'BANK' },
+          { code: 'MTC', name: 'MTC Mobile Money', type: 'WALLET' },
+          { code: 'TNM', name: 'TN Mobile Money', type: 'WALLET' },
+        ],
+      };
+    }
+
+    try {
+      const msgId = generateMsgId();
+      const head = buildStandardHead(msgId);
+      const xml = buildReqListPsp(head, { pspType: args.pspType });
+      const { ack } = await sendSignedXml(ctx, 'ReqListPsp', xml, msgId);
+
+      return {
+        success: ack.result === 'SUCCESS',
+        errorCode: ack.errorCode,
+        errorDescription: ack.errorDescription,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errorCode: 'NETWORK_ERROR',
+        errorDescription: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// List Key Types (ReqListKeys) — IPP FSD §4.10
+// Lists key types available for alias registration (MOBILE, NUMERICID, etc.).
+// ---------------------------------------------------------------------------
+
+export const reqListKeys = internalAction({
+  args: {
+    pspCode: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const mode = await getProtocolMode(ctx);
+    if (mode === 'json_mock') {
+      return {
+        success: true,
+        mode: 'json_mock',
+        keyTypes: [
+          { type: 'MOBILE', description: 'Mobile Number (+264...)' },
+          { type: 'NUMERICID', description: 'National ID Number' },
+        ],
+      };
+    }
+
+    try {
+      const msgId = generateMsgId();
+      const head = buildStandardHead(msgId);
+      const xml = buildReqListKeys(head, { pspCode: args.pspCode });
+      const { ack } = await sendSignedXml(ctx, 'ReqListKeys', xml, msgId);
+
+      return {
+        success: ack.result === 'SUCCESS',
+        errorCode: ack.errorCode,
+        errorDescription: ack.errorDescription,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        errorCode: 'NETWORK_ERROR',
+        errorDescription: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
   },
 });

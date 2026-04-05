@@ -37,6 +37,7 @@ import type * as lib_ipsErrorCodes from '../lib/ipsErrorCodes.js';
 import type * as lib_ipsPhoneNormalize from '../lib/ipsPhoneNormalize.js';
 import type * as lib_ipsSigningProvider from '../lib/ipsSigningProvider.js';
 import type * as lib_ipsSoftwareSigner from '../lib/ipsSoftwareSigner.js';
+import type * as lib_ipsTransactionLimits from '../lib/ipsTransactionLimits.js';
 import type * as lib_ipsXmlBuilder from '../lib/ipsXmlBuilder.js';
 import type * as lib_mandateStateMachine from '../lib/mandateStateMachine.js';
 import type * as lib_pagination from '../lib/pagination.js';
@@ -122,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   'lib/ipsPhoneNormalize': typeof lib_ipsPhoneNormalize;
   'lib/ipsSigningProvider': typeof lib_ipsSigningProvider;
   'lib/ipsSoftwareSigner': typeof lib_ipsSoftwareSigner;
+  'lib/ipsTransactionLimits': typeof lib_ipsTransactionLimits;
   'lib/ipsXmlBuilder': typeof lib_ipsXmlBuilder;
   'lib/mandateStateMachine': typeof lib_mandateStateMachine;
   'lib/pagination': typeof lib_pagination;

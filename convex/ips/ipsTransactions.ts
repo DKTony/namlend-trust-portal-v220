@@ -10,6 +10,7 @@ import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { ipsTransactionStatus } from '../schema';
+import { enforceTransactionLimits, deriveUseCaseType } from '../lib/ipsTransactionLimits';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -122,11 +123,14 @@ export const initiateIpsTransaction = mutation({
       .first();
 
     if (existing) {
-      throw new ConvexError({
-        code: 'DUPLICATE_MSG_ID',
-        message: `IPS transaction with msgId '${args.msgId}' already exists.`,
-      });
+      // Idempotent retry: return existing transaction ID instead of throwing.
+      // Per IPS TSD §2.3, same msgId on retry must return same result.
+      return existing._id;
     }
+
+    // Enforce daily transaction limits per IPP FSD §5.2
+    const useCaseType = deriveUseCaseType(args.txType, args.remittanceInfo, undefined);
+    await enforceTransactionLimits(ctx, userId, args.amount, useCaseType);
 
     const now = Date.now();
     const txId = await ctx.db.insert('ipsTransactions', {

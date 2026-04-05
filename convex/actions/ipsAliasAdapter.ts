@@ -21,6 +21,7 @@ import {
   insertSignature,
   parseIpsAck,
   parseIpsXml,
+  generateMsgId,
   type IpsReqRegMapperPayload,
   type IpsReqGetAddPayload,
 } from '../lib/ipsXmlBuilder';
@@ -39,7 +40,7 @@ async function sendSignedXml(
   xml: string,
   correlationId?: string
 ): Promise<{
-  ack: ReturnType<typeof parseIpsAck> extends Promise<infer T> ? T : never;
+  ack: import('../lib/ipsXmlBuilder').IpsAckParsed;
   durationMs: number;
 }> {
   const signer = createSigningProvider();
@@ -137,7 +138,7 @@ export const reqRegMapper = internalAction({
 
     // XML protocol
     try {
-      const msgId = `REG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqRegMapperPayload = {
         operation: args.operation,
@@ -214,7 +215,7 @@ export const reqGetAdd = internalAction({
 
     // XML protocol
     try {
-      const msgId = `GAD-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const msgId = generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqGetAddPayload = {
         operation: args.operation,

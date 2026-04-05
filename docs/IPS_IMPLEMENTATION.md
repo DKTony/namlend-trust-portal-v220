@@ -1,7 +1,7 @@
 # IPS (Instant Payment System) Implementation
 
-**Last Updated**: 2026-04-04
-**Aligned With**: IPS/IPP Phase 3 (Onboarding Rework) — v5.2.2
+**Last Updated**: 2026-04-05
+**Aligned With**: IPS/IPP Phase 4A+4B (Sandbox Certification + Missing APIs) — v5.2.3
 **Status**: Current ✅
 
 ---
@@ -15,8 +15,10 @@
 > - ✅ Phase 1: XML protocol foundation (ipsXmlBuilder, ipsSigningProvider, RSA-SHA256 signing)
 > - ✅ Phase 2: Alias Directory integration (ipsAliasAdapter, ipsAliasDirectory, phone normalization)
 > - ✅ Phase 3: IPS-mandated onboarding flow (10-step state machine, 6 onboarding APIs)
-> - ⬜ Phase 4: HSM/PKI integration (pending)
-> - ⬜ Phase 5: Remaining APIs & settlement reconciliation (pending)
+> - ✅ Phase 4A: Sandbox certification fixes (msgId format, namespace, limits, timeouts, mTLS, PIN encryption, NACK parsing, idempotency)
+> - ✅ Phase 4B: Missing core APIs (reversal, collect/request-to-pay, auth detail, txn confirmation, ListPsp, ListKeys, deemed resolution)
+> - ⬜ Phase 5A: Production features (eFRM, 3-way reconciliation, settlement transport, dispute framework, HSM)
+> - ⬜ Phase 5B: Extended capabilities (merchant P2M, bulk G2P/B2P, USSD, ATM cash-out)
 
 ---
 
@@ -105,21 +107,22 @@ The `/webhook/ips` endpoint in `convex/http.ts` supports both legacy JSON and XM
 
 ### Action Files
 
-| File                                     | APIs                                                                   | Purpose                              |
-| ---------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------ |
-| `convex/actions/ipsAdapter.ts`           | ReqPay, ReqValAdd, ReqChkTxn, ReqHbt, ReqBalEnq                        | Core payment + utility APIs          |
-| `convex/actions/ipsAliasAdapter.ts`      | ReqRegMapper, ReqGetAdd, RespRegMapper, RespGetAdd, MapperConfirmation | Alias Directory (IPN Central Mapper) |
-| `convex/actions/ipsOnboardingAdapter.ts` | ReqRegMob, ReqListAccPvd, ReqListAccount, ReqOtp, ReqSetCre            | Onboarding flow APIs                 |
+| File                                     | APIs                                                                                                               | Purpose                                |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| `convex/actions/ipsAdapter.ts`           | ReqPay, ReqValAdd, ReqChkTxn, ReqHbt, ReqBalEnq, ReqRev, ReqAuthDetail, TxnConfirmation, Collect, DeemedResolution | Core payment + utility + Phase 4B APIs |
+| `convex/actions/ipsAliasAdapter.ts`      | ReqRegMapper, ReqGetAdd, RespRegMapper, RespGetAdd, MapperConfirmation                                             | Alias Directory (IPN Central Mapper)   |
+| `convex/actions/ipsOnboardingAdapter.ts` | ReqRegMob, ReqListAccPvd, ReqListAccount, ReqOtp, ReqSetCre, ReqListPsp, ReqListKeys                               | Onboarding flow APIs                   |
 
 ### Library Files
 
-| File                               | Purpose                                                        |
-| ---------------------------------- | -------------------------------------------------------------- |
-| `convex/lib/ipsXmlBuilder.ts`      | XML request builders + response parsers for all 17 IPS APIs    |
-| `convex/lib/ipsSigningProvider.ts` | `IpsSigningProvider` interface + factory (software or HSM)     |
-| `convex/lib/ipsSoftwareSigner.ts`  | RSA-SHA256 signing using Node.js `crypto` (Phase 1 impl)       |
-| `convex/lib/ipsErrorCodes.ts`      | 100+ IPS error codes → retryable flag + user-friendly messages |
-| `convex/lib/ipsPhoneNormalize.ts`  | Namibian mobile normalization (+264/0 → 9-digit)               |
+| File                                 | Purpose                                                                |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| `convex/lib/ipsXmlBuilder.ts`        | XML request builders + response parsers for all IPS APIs (18 builders) |
+| `convex/lib/ipsSigningProvider.ts`   | `IpsSigningProvider` interface + factory (software or HSM)             |
+| `convex/lib/ipsSoftwareSigner.ts`    | RSA-SHA256 signing + RSA-OAEP PIN encryption (Node.js `crypto`)        |
+| `convex/lib/ipsErrorCodes.ts`        | 100+ IPS error codes → retryable flag + user-friendly messages         |
+| `convex/lib/ipsPhoneNormalize.ts`    | Namibian mobile normalization (+264/0 → 9-digit)                       |
+| `convex/lib/ipsTransactionLimits.ts` | Daily transaction limit enforcement per IPP FSD §5.2                   |
 
 ### Protocol Mode
 
@@ -178,6 +181,35 @@ Each transition has a **dedicated mutation** in `convex/ips/ipsOnboarding.ts`:
 
 ---
 
+## Phase 4 Implementation (2026-04-05)
+
+### Phase 4A — Sandbox Certification Fixes
+
+| Fix                    | Spec Reference | Description                                                                                          |
+| ---------------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
+| **msgId format**       | IPS TSD §2.3   | 35-char: 3-digit bank code (`IPS_BANK_CODE`) + 32 hex UUID. `generateMsgId()` in `ipsXmlBuilder.ts`  |
+| **XML namespace**      | IPS TSD §2.1   | Configurable via `IPS_XML_NAMESPACE` env var, defaults to `http://npci.org/upi/schema/`              |
+| **Transaction limits** | IPP FSD §5.2   | P2P N$10k/10txn, P2M N$10k/100txn, ATM N$2k/2txn, G2P N$25k/50txn per day. `ipsTransactionLimits.ts` |
+| **Timeouts**           | IPS TSD §2.5   | 10s non-financial, 30s financial. AbortController on all `sendIpsXml()` calls                        |
+| **PIN encryption**     | IPS TSD §3.3   | RSA-OAEP + SHA-256 via `encryptPin()` when `IPS_HSM_PUBLIC_KEY` is configured                        |
+| **mTLS**               | IPS TSD §3.1   | Client cert via `IPS_CLIENT_CERT`/`IPS_CLIENT_KEY`/`IPS_CA_CERT` env vars                            |
+| **Idempotent retry**   | IPS TSD §2.3   | Duplicate msgId returns existing transaction (no duplicate insert)                                   |
+| **NACK parsing**       | IPS TSD §2.4   | Structured error extraction from `Err` elements in NACK responses                                    |
+
+### Phase 4B — Missing Core APIs
+
+| API                   | Spec Reference | Action                     | Purpose                                                        |
+| --------------------- | -------------- | -------------------------- | -------------------------------------------------------------- |
+| **ReqRev/RespRev**    | IPP FSD §4.14  | `initiateReversal`         | Full/partial transaction reversal                              |
+| **ReqPay (COLLECT)**  | IPP FSD §4.3   | `initiateCollectRequest`   | Creditor-initiated payment request (loan repayment collection) |
+| **ReqAuthDetail**     | IPP FSD §4.5   | `queryAuthDetail`          | Transaction authentication status query                        |
+| **TxnConfirmation**   | IPP FSD §4.16  | `sendTxnConfirmation`      | Payee confirmation after crediting beneficiary                 |
+| **ReqListPsp**        | IPP FSD §4.9   | `reqListPsp`               | List participating PSPs                                        |
+| **ReqListKeys**       | IPP FSD §4.10  | `reqListKeys`              | List alias key types                                           |
+| **Deemed resolution** | IPS TSD §2.6   | `resolveDeemedTransaction` | Exponential backoff ChkTxn for timed-out transactions          |
+
+---
+
 ## Production Requirements
 
 To enable XML protocol mode:
@@ -190,7 +222,12 @@ To enable XML protocol mode:
    npx convex env set IPS_SIGNING_PRIVATE_KEY <PEM-encoded RSA key>
    npx convex env set IPS_BON_PUBLIC_CERT <PEM-encoded BoN cert>
    npx convex env set IPS_KEY_ID <key-identifier>
-   npx convex env set IPS_SIGNING_MODE software  # or "hsm" in Phase 4
+   npx convex env set IPS_SIGNING_MODE software  # or "hsm" in Phase 5A
+   npx convex env set IPS_BANK_CODE 099  # 3-digit participant code from BoN
+   npx convex env set IPS_HSM_PUBLIC_KEY <PEM-encoded BoN HSM public key>
+   npx convex env set IPS_CLIENT_CERT <PEM-encoded client certificate for mTLS>
+   npx convex env set IPS_CLIENT_KEY <PEM-encoded client private key for mTLS>
+   npx convex env set IPS_CA_CERT <PEM-encoded CA certificate for mTLS>
    ```
 3. **Toggle protocol mode**: Set `IPS_PROTOCOL_MODE` business rule to `xml_sandbox` or `xml_production`
 4. **Register aliases** in IPN Central Mapper for NamLend's routing codes

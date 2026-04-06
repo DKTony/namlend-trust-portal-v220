@@ -27,6 +27,7 @@ import {
 } from '../lib/ipsXmlBuilder';
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
+import { parseRespGetAddDetails } from '../lib/ipsResponseParsers';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
 
@@ -38,6 +39,7 @@ async function sendSignedXml(
   ctx: any,
   apiName: string,
   xml: string,
+  requestMsgId: string,
   correlationId?: string
 ): Promise<{
   ack: import('../lib/ipsXmlBuilder').IpsAckParsed;
@@ -64,6 +66,7 @@ async function sendSignedXml(
 
   // Log the API call
   await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
+    requestMsgId,
     method: 'POST',
     endpoint: `/xml/${apiName}`,
     requestBody: { apiName, xmlLength: signedXml.length },
@@ -103,6 +106,7 @@ async function getProtocolMode(ctx: any): Promise<string> {
 export const reqRegMapper = internalAction({
   args: {
     aliasId: v.id('ipsAliasDirectory'),
+    applicationId: v.optional(v.id('ipsOnboardingApplications')),
     operation: v.union(
       v.literal('ADD'),
       v.literal('MODIFY'),
@@ -115,6 +119,7 @@ export const reqRegMapper = internalAction({
     idValue: v.string(),
     linkedAccountRef: v.optional(v.string()),
     linkedBankBic: v.optional(v.string()),
+    requestMsgId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
@@ -132,13 +137,18 @@ export const reqRegMapper = internalAction({
               : 'ACTIVE',
         cmId: mockCmId,
       });
+      if (args.applicationId && args.operation === 'ADD') {
+        await ctx.runMutation(internal.ips.ipsOnboarding.markAliasRegistered, {
+          aliasId: args.aliasId,
+        });
+      }
       console.log(`[alias] Mock ${args.operation} for ${args.addr} → cmId: ${mockCmId}`);
       return { success: true, cmId: mockCmId };
     }
 
     // XML protocol
     try {
-      const msgId = generateMsgId();
+      const msgId = args.requestMsgId ?? generateMsgId();
       const head = buildStandardHead(msgId);
       const payload: IpsReqRegMapperPayload = {
         operation: args.operation,
@@ -151,13 +161,13 @@ export const reqRegMapper = internalAction({
       };
 
       const xml = buildReqRegMapper(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqRegMapper', xml, msgId);
+      const { ack } = await sendSignedXml(ctx, 'ReqRegMapper', xml, msgId, msgId);
 
       if (ack.result === 'SUCCESS') {
         // ACK received — actual confirmation will arrive via RespRegMapper callback
         // For now, mark as synced but still NEW (ACTIVE comes from callback)
         console.log(`[alias] ReqRegMapper ${args.operation} ACK received for ${args.addr}`);
-        return { success: true, ackResult: ack.result };
+        return { success: true, ackResult: ack.result, requestMsgId: msgId };
       } else {
         // ACK rejected — update alias with error
         const errorEntry = getErrorEntry(ack.errorCode ?? 'UNKNOWN');
@@ -166,6 +176,14 @@ export const reqRegMapper = internalAction({
           status: 'NEW', // stay in NEW on failure
           syncError: ack.errorDescription ?? errorEntry.userMessage,
         });
+        if (args.applicationId) {
+          await ctx.runMutation(internal.ips.ipsOnboarding.updateOnboardingStatus, {
+            applicationId: args.applicationId,
+            status: 'ALIAS_REGISTRATION_PENDING',
+            errorCode: ack.errorCode,
+            errorMessage: ack.errorDescription ?? errorEntry.userMessage,
+          });
+        }
         return { success: false, error: ack.errorDescription };
       }
     } catch (error) {
@@ -175,6 +193,14 @@ export const reqRegMapper = internalAction({
         status: 'NEW',
         syncError: `XML protocol error: ${msg}`,
       });
+      if (args.applicationId) {
+        await ctx.runMutation(internal.ips.ipsOnboarding.updateOnboardingStatus, {
+          applicationId: args.applicationId,
+          status: 'ALIAS_REGISTRATION_PENDING',
+          errorCode: 'NETWORK_ERROR',
+          errorMessage: msg,
+        });
+      }
       return { success: false, error: msg };
     }
   },
@@ -225,20 +251,75 @@ export const reqGetAdd = internalAction({
       };
 
       const xml = buildReqGetAdd(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqGetAdd', xml, args.correlationId ?? msgId);
+      const { ack } = await sendSignedXml(
+        ctx,
+        'ReqGetAdd',
+        xml,
+        msgId,
+        args.correlationId ?? msgId
+      );
 
-      // For CHECK, the ACK result itself may indicate existence
-      // Full response arrives via RespGetAdd callback
+      if (ack.result !== 'SUCCESS') {
+        return {
+          ackSuccess: false,
+          errorCode: ack.errorCode,
+          errorDescription: ack.errorDescription,
+          lookupStatus: 'failed' as const,
+        };
+      }
+
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        const callbackLog = await ctx.runQuery(
+          internal.ips.ipsApiLogs.getLatestCallbackApiLogByRequestMsgId,
+          {
+            requestMsgId: msgId,
+          }
+        );
+
+        if (callbackLog?.apiName !== 'RespGetAdd' || !callbackLog.rawXml) {
+          continue;
+        }
+
+        const details = parseRespGetAddDetails(callbackLog.rawXml);
+        const resolved = details.result === 'SUCCESS';
+        const available =
+          args.operation === 'CHECK'
+            ? resolved && (details.idStatus ?? '').toUpperCase() === 'NEW'
+            : undefined;
+
+        return {
+          ackSuccess: true,
+          lookupStatus: resolved ? ('resolved' as const) : ('failed' as const),
+          errorCode: details.errorCode,
+          errorDescription: details.errorDescription,
+          result: details.result,
+          operation: details.operation ?? args.operation,
+          addr: details.addr ?? args.addr,
+          entityType: details.entityType,
+          idStatus: details.idStatus,
+          channel: details.channel,
+          lastUpdatedTs: details.lastUpdatedTs,
+          mobileNumber: details.mobileNumber,
+          numericId: details.numericId,
+          available,
+          found: args.operation !== 'CHECK' ? resolved : undefined,
+        };
+      }
+
       return {
-        ackSuccess: ack.result === 'SUCCESS',
-        errorCode: ack.errorCode,
-        errorDescription: ack.errorDescription,
+        ackSuccess: true,
+        errorCode: 'PENDING_CALLBACK',
+        errorDescription:
+          'IPS accepted the alias lookup request but the detailed response has not arrived yet.',
+        lookupStatus: 'pending' as const,
       };
     } catch (error) {
       return {
         ackSuccess: false,
         errorCode: 'NETWORK_ERROR',
         errorDescription: error instanceof Error ? error.message : 'Unknown error',
+        lookupStatus: 'failed' as const,
       };
     }
   },
@@ -251,6 +332,7 @@ export const reqGetAdd = internalAction({
 export const handleRespRegMapper = internalAction({
   args: {
     msgId: v.string(),
+    requestMsgId: v.optional(v.string()),
     respCode: v.optional(v.string()),
     respDescription: v.optional(v.string()),
     rawXml: v.optional(v.string()),
@@ -281,12 +363,25 @@ export const handleRespRegMapper = internalAction({
 
       if (alias) {
         const success = isSuccess(args.respCode ?? '');
+        const nextStatus = success
+          ? alias.status === 'DEREGISTERED'
+            ? 'DEREGISTERED'
+            : alias.status === 'BLOCKED'
+              ? 'BLOCKED'
+              : 'ACTIVE'
+          : alias.status;
         await ctx.runMutation(internal.ips.ipsAliasDirectory.updateAliasFromIpn, {
           aliasId: alias._id,
-          status: success ? 'ACTIVE' : alias.status,
+          status: nextStatus,
           cmId: cmId ?? alias.cmId,
           syncError: success ? undefined : (args.respDescription ?? 'Registration failed'),
         });
+
+        if (success && nextStatus === 'ACTIVE') {
+          await ctx.runMutation(internal.ips.ipsOnboarding.markAliasRegistered, {
+            aliasId: alias._id,
+          });
+        }
       }
     }
   },
@@ -299,6 +394,7 @@ export const handleRespRegMapper = internalAction({
 export const handleRespGetAdd = internalAction({
   args: {
     msgId: v.string(),
+    requestMsgId: v.optional(v.string()),
     respCode: v.optional(v.string()),
     respDescription: v.optional(v.string()),
     rawXml: v.optional(v.string()),
@@ -310,13 +406,13 @@ export const handleRespGetAdd = internalAction({
     // Parse the response XML for alias details
     if (args.rawXml) {
       try {
-        const parsed = parseIpsXml(args.rawXml);
-        // Log the parsed data — the calling code can check the API logs
+        const parsed = parseRespGetAddDetails(args.rawXml);
         await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
+          requestMsgId: args.requestMsgId,
           method: 'CALLBACK',
           endpoint: '/webhook/ips/RespGetAdd',
           requestBody: { msgId: args.msgId },
-          responseBody: parsed.txn,
+          responseBody: parsed,
           direction: 'CALLBACK' as const,
           contentType: 'xml' as const,
           apiName: 'RespGetAdd',

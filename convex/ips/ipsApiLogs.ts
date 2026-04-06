@@ -3,7 +3,7 @@
  */
 
 import { v } from 'convex/values';
-import { query, internalMutation } from '../_generated/server';
+import { query, internalMutation, internalQuery } from '../_generated/server';
 import { assertStaff } from '../lib/auth';
 
 export const logApiCall = internalMutation({
@@ -11,6 +11,7 @@ export const logApiCall = internalMutation({
     transactionId: v.optional(v.id('ipsTransactions')),
     method: v.string(),
     endpoint: v.string(),
+    requestMsgId: v.optional(v.string()),
     requestBody: v.optional(v.any()),
     responseStatus: v.optional(v.number()),
     responseBody: v.optional(v.any()),
@@ -51,5 +52,50 @@ export const getApiLogs = query({
       .query('ipsApiLogs')
       .order('desc')
       .take(limit ?? 50);
+  },
+});
+
+export const getLatestApiLogByRequestMsgId = internalQuery({
+  args: {
+    requestMsgId: v.string(),
+  },
+  handler: async (ctx, { requestMsgId }) => {
+    const logs = await ctx.db
+      .query('ipsApiLogs')
+      .withIndex('by_requestMsgId', (q) => q.eq('requestMsgId', requestMsgId))
+      .order('desc')
+      .take(1);
+
+    return logs[0] ?? null;
+  },
+});
+
+export const getLatestCallbackApiLogByRequestMsgId = internalQuery({
+  args: {
+    requestMsgId: v.string(),
+  },
+  handler: async (ctx, { requestMsgId }) => {
+    const logs = await ctx.db
+      .query('ipsApiLogs')
+      .withIndex('by_requestMsgId', (q) => q.eq('requestMsgId', requestMsgId))
+      .order('desc')
+      .take(10);
+
+    return logs.find((log) => log.direction === 'CALLBACK') ?? null;
+  },
+});
+
+export const getLatestOutboundApiLogByRequestMsgId = internalQuery({
+  args: {
+    requestMsgId: v.string(),
+  },
+  handler: async (ctx, { requestMsgId }) => {
+    const logs = await ctx.db
+      .query('ipsApiLogs')
+      .withIndex('by_requestMsgId', (q) => q.eq('requestMsgId', requestMsgId))
+      .order('desc')
+      .take(10);
+
+    return logs.find((log) => log.direction === 'OUTBOUND') ?? null;
   },
 });

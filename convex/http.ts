@@ -190,6 +190,7 @@ async function handleIpsXmlCallback(
   // Extract key fields from XML (lightweight — no parser needed)
   const apiName = extractApiName(rawBody);
   const msgId = extractXmlAttr(rawBody, 'msgId') ?? extractXmlElement(rawBody, 'MsgId');
+  const requestMsgId = extractXmlAttr(rawBody, 'reqMsgId');
   const respCode = extractXmlElement(rawBody, 'RespCode') ?? extractXmlAttr(rawBody, 'result');
   const respDescription =
     extractXmlElement(rawBody, 'RespDesc') ?? extractXmlElement(rawBody, 'ErrMsg');
@@ -243,6 +244,7 @@ async function handleIpsXmlCallback(
     await ctx.runAction(internal.actions.ipsAdapter.handleWebhook, {
       apiName,
       msgId,
+      requestMsgId,
       respCode,
       respDescription,
       txnData: { rawExtracted: true },

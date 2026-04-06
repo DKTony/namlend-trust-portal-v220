@@ -37,6 +37,16 @@ const TRANSACTION_LIMITS: Record<IpsUseCaseType, TransactionLimitConfig> = {
   B2P: { maxDailyAmount: 25_000, maxDailyCount: 50 },
 };
 
+interface TransactionUseCaseSnapshot {
+  amount?: number;
+  direction?: 'inbound' | 'outbound' | string;
+  disbursementId?: unknown;
+  metadata?: Record<string, unknown>;
+  remittanceInfo?: string;
+  txType?: string;
+  useCaseType?: IpsUseCaseType;
+}
+
 /**
  * Derive use case type from transaction parameters.
  * Default: P2P for person-to-person credit transfers (NamLend's primary use case).
@@ -63,6 +73,42 @@ export function deriveUseCaseType(
 
   // Default: NamLend primarily handles loan disbursements (P2P)
   return 'P2P';
+}
+
+/**
+ * Resolve a stored transaction's use-case type. Older rows may not persist the
+ * explicit type, so we infer it from disbursement context and message fields.
+ */
+export function resolveTransactionUseCaseType(
+  transaction: TransactionUseCaseSnapshot
+): IpsUseCaseType {
+  if (transaction.useCaseType) {
+    return transaction.useCaseType;
+  }
+
+  if (transaction.disbursementId && transaction.direction === 'outbound') {
+    return 'B2P';
+  }
+
+  return deriveUseCaseType(
+    transaction.txType ?? 'credit_transfer',
+    transaction.remittanceInfo,
+    transaction.metadata
+  );
+}
+
+export function summarizeTransactionsForUseCaseType(
+  transactions: TransactionUseCaseSnapshot[],
+  useCaseType: IpsUseCaseType
+): { count: number; amount: number } {
+  const matchingTransactions = transactions.filter(
+    (transaction) => resolveTransactionUseCaseType(transaction) === useCaseType
+  );
+
+  return {
+    count: matchingTransactions.length,
+    amount: matchingTransactions.reduce((sum, transaction) => sum + (transaction.amount ?? 0), 0),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -109,8 +155,10 @@ export async function enforceTransactionLimits(
     )
     .collect();
 
-  const dailyCount = todayTxns.length;
-  const dailyAmount = todayTxns.reduce((sum, tx) => sum + (tx.amount ?? 0), 0);
+  const { count: dailyCount, amount: dailyAmount } = summarizeTransactionsForUseCaseType(
+    todayTxns,
+    useCaseType
+  );
 
   // Check count limit
   if (dailyCount >= limits.maxDailyCount) {

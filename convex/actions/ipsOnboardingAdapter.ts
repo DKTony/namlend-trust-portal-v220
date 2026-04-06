@@ -28,6 +28,7 @@ import {
   buildStandardHead,
   insertSignature,
   parseIpsAck,
+  parseIpsXml,
   type IpsReqRegMobPayload,
   type IpsReqListAccPvdPayload,
   type IpsReqListAccountPayload,
@@ -48,6 +49,7 @@ async function sendSignedXml(
   ctx: any,
   apiName: string,
   xml: string,
+  requestMsgId: string,
   correlationId?: string,
   redactedXmlForLog?: string
 ): Promise<{
@@ -76,6 +78,7 @@ async function sendSignedXml(
   // Log the API call — use redacted XML for logging if provided (PII protection)
   const xmlForLog = redactedXmlForLog ? insertSignature(redactedXmlForLog, signature) : signedXml;
   await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
+    requestMsgId,
     method: 'POST',
     endpoint: `/xml/${apiName}`,
     requestBody: { apiName, xmlLength: signedXml.length },
@@ -91,6 +94,109 @@ async function sendSignedXml(
 
   const ack = parseIpsAck(ackXml);
   return { ack, durationMs };
+}
+
+function toArray<T>(value: T | T[] | undefined): T[] {
+  if (value === undefined || value === null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function slugProviderHandle(input: string): string {
+  return input.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function supportsDebitCard(mobRegFormat?: string, featureSupported?: string): boolean {
+  const source = `${mobRegFormat ?? ''} ${featureSupported ?? ''}`.toUpperCase();
+  return source.includes('FORMAT2') || source.includes('FORMAT6') || source.includes('CARD');
+}
+
+function supportsWalletPin(mobRegFormat?: string, featureSupported?: string): boolean {
+  const source = `${mobRegFormat ?? ''} ${featureSupported ?? ''}`.toUpperCase();
+  return source.includes('FORMAT7') || source.includes('WALLET');
+}
+
+function deriveVerificationMethods(account: {
+  aeba?: string;
+  mbeba?: string;
+  credsAllowed?: Array<{ type: string; subType: string }>;
+}): string[] {
+  const methods = new Set<string>();
+  const credsAllowed = account.credsAllowed ?? [];
+
+  if (account.mbeba === 'Y') {
+    methods.add('mno');
+  }
+
+  if (
+    account.aeba === 'Y' ||
+    credsAllowed.some((cred) =>
+      ['ATMPIN', 'CARDDETAILS'].includes((cred.subType ?? '').toUpperCase())
+    )
+  ) {
+    methods.add('debit_card');
+  }
+
+  if (!methods.size) {
+    methods.add('mno');
+  }
+
+  return Array.from(methods);
+}
+
+function extractProvidersFromXml(rawXml: string) {
+  const parsed = parseIpsXml(rawXml);
+  const accountProviderList = (parsed.body.AccPvdList ?? {}) as Record<string, unknown>;
+
+  return toArray((accountProviderList as any).AccPvd).map((provider: any) => ({
+    providerCode: provider?.['@_bankCode'] ?? provider?.['@_orgId'] ?? provider?.['@_iin'] ?? '',
+    providerName: provider?.['@_name'] ?? provider?.['@_orgId'] ?? 'Unknown Provider',
+    providerHandle: slugProviderHandle(provider?.['@_name'] ?? provider?.['@_orgId'] ?? 'provider'),
+    providerOrgId: provider?.['@_orgId'],
+    providerIfsc: provider?.['@_ifsc'],
+    active: provider?.['@_active'],
+    mobRegFormat: provider?.['@_mobRegFormat'],
+    featureSupported: provider?.['@_featureSupported'],
+    supportsDebitCard: supportsDebitCard(
+      provider?.['@_mobRegFormat'],
+      provider?.['@_featureSupported']
+    ),
+    supportsWalletPin: supportsWalletPin(
+      provider?.['@_mobRegFormat'],
+      provider?.['@_featureSupported']
+    ),
+  }));
+}
+
+function extractAccountsFromXml(rawXml: string) {
+  const parsed = parseIpsXml(rawXml);
+  const accountList = (parsed.body.AccountList ?? {}) as Record<string, unknown>;
+
+  return toArray((accountList as any).Account).map((account: any) => {
+    const credsAllowed = toArray(account?.CredsAllowed).map((cred: any) => ({
+      type: cred?.['@_type'] ?? '',
+      subType: cred?.['@_subType'] ?? '',
+      dType: cred?.['@_dType'],
+      dLength: cred?.['@_dLength'],
+    }));
+
+    const normalized = {
+      accountRef: account?.['@_accRefNumber'] ?? '',
+      maskedAccountNumber: account?.['@_maskedAccnumber'],
+      accountType: account?.['@_accType'],
+      accountHolderName: account?.['@_name'],
+      ifsc: account?.['@_ifsc'],
+      mmid: account?.['@_mmid'],
+      aeba: account?.['@_aeba'],
+      mbeba: account?.['@_mbeba'],
+      aadhaarNo: account?.['@_aadhaarNo'],
+      credsAllowed,
+    };
+
+    return {
+      ...normalized,
+      verificationMethods: deriveVerificationMethods(normalized),
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +265,7 @@ export const reqRegMob = internalAction({
       };
 
       const xml = buildReqRegMob(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqRegMob', xml, msgId);
+      const { ack } = await sendSignedXml(ctx, 'ReqRegMob', xml, msgId, args.applicationId);
 
       if (ack.result !== 'SUCCESS') {
         const errorEntry = getErrorEntry(ack.errorCode ?? 'UNKNOWN');
@@ -189,23 +295,58 @@ export const reqRegMob = internalAction({
 
 export const reqListAccPvd = internalAction({
   args: {
+    applicationId: v.id('ipsOnboardingApplications'),
     mobileNumber: v.string(),
   },
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
 
     if (mode === 'json_mock') {
-      // Mock: return sample Namibian SoV providers
-      return {
-        providers: [
-          { code: 'FIRNNANX', name: 'First National Bank Namibia' },
-          { code: 'ABORNANX', name: 'Absa Bank Namibia' },
-          { code: 'BABORNANX', name: 'Bank BIC Namibia' },
-          { code: 'NEDBNANX', name: 'Nedbank Namibia' },
-          { code: 'SBIANANX', name: 'Standard Bank Namibia' },
-        ],
-        mode: 'json_mock',
-      };
+      const providers = [
+        {
+          providerCode: 'FIRNNANX',
+          providerName: 'First National Bank Namibia',
+          providerHandle: 'fnb',
+          providerOrgId: 'FIRNNANX',
+          providerIfsc: 'FIRNNANX',
+          active: 'Y',
+          mobRegFormat: 'FORMAT6',
+          featureSupported: 'CARD,ACCOUNT',
+          supportsDebitCard: true,
+          supportsWalletPin: false,
+        },
+        {
+          providerCode: 'SBIANANX',
+          providerName: 'Standard Bank Namibia',
+          providerHandle: 'standardbank',
+          providerOrgId: 'SBIANANX',
+          providerIfsc: 'SBIANANX',
+          active: 'Y',
+          mobRegFormat: 'FORMAT6',
+          featureSupported: 'CARD,ACCOUNT',
+          supportsDebitCard: true,
+          supportsWalletPin: false,
+        },
+        {
+          providerCode: 'NEDBNANX',
+          providerName: 'Nedbank Namibia',
+          providerHandle: 'nedbank',
+          providerOrgId: 'NEDBNANX',
+          providerIfsc: 'NEDBNANX',
+          active: 'Y',
+          mobRegFormat: 'FORMAT7',
+          featureSupported: 'WALLET',
+          supportsDebitCard: false,
+          supportsWalletPin: true,
+        },
+      ];
+
+      await ctx.runMutation(internal.ips.ipsOnboarding.cacheAvailableSovProviders, {
+        applicationId: args.applicationId,
+        providers,
+      });
+
+      return { providers, mode: 'json_mock' };
     }
 
     // XML protocol
@@ -217,7 +358,7 @@ export const reqListAccPvd = internalAction({
       };
 
       const xml = buildReqListAccPvd(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqListAccPvd', xml, msgId);
+      const { ack } = await sendSignedXml(ctx, 'ReqListAccPvd', xml, msgId, args.applicationId);
 
       // The actual provider list arrives via RespListAccPvd callback
       return {
@@ -249,16 +390,46 @@ export const reqListAccount = internalAction({
     const mode = await getProtocolMode(ctx);
 
     if (mode === 'json_mock') {
-      // Mock: simulate account list. Do NOT change status — the user will
-      // call selectAccount to advance from SOV_SELECTED → ACCOUNTS_LISTED.
-      console.log(`[onboarding] Mock ReqListAccount for ${args.providerCode}`);
-      return {
-        accounts: [
-          { ref: 'ACCT-001', masked: '****1234', type: 'SAVINGS' },
-          { ref: 'ACCT-002', masked: '****5678', type: 'CHEQUE' },
-        ],
-        mode: 'json_mock',
-      };
+      const accounts = [
+        {
+          accountRef: 'ACCT-001',
+          maskedAccountNumber: 'XXXXXXXXXX1234',
+          accountType: 'SAVINGS',
+          accountHolderName: 'Primary Savings',
+          ifsc: args.providerCode,
+          mmid: '3004010',
+          aeba: 'Y',
+          mbeba: 'Y',
+          credsAllowed: [
+            { type: 'OTP', subType: 'SMS', dType: 'Numeric', dLength: '6' },
+            { type: 'PIN', subType: 'MPIN', dType: 'Numeric', dLength: '6' },
+            { type: 'PIN', subType: 'ATMPIN', dType: 'Numeric', dLength: '6' },
+          ],
+          verificationMethods: ['mno', 'debit_card'],
+        },
+        {
+          accountRef: 'ACCT-002',
+          maskedAccountNumber: 'XXXXXXXXXX5678',
+          accountType: 'WALLET',
+          accountHolderName: 'MoMo Wallet',
+          ifsc: args.providerCode,
+          mmid: '3004011',
+          aeba: 'N',
+          mbeba: 'Y',
+          credsAllowed: [
+            { type: 'OTP', subType: 'SMS', dType: 'Numeric', dLength: '6' },
+            { type: 'PIN', subType: 'WALLETPIN', dType: 'Numeric', dLength: '5' },
+          ],
+          verificationMethods: ['mno'],
+        },
+      ];
+
+      await ctx.runMutation(internal.ips.ipsOnboarding.cacheAvailableAccounts, {
+        applicationId: args.applicationId,
+        accounts,
+      });
+
+      return { accounts, mode: 'json_mock' };
     }
 
     // XML protocol
@@ -271,7 +442,7 @@ export const reqListAccount = internalAction({
       };
 
       const xml = buildReqListAccount(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqListAccount', xml, msgId);
+      const { ack } = await sendSignedXml(ctx, 'ReqListAccount', xml, msgId, args.applicationId);
 
       if (ack.result !== 'SUCCESS') {
         const errorEntry = getErrorEntry(ack.errorCode ?? 'UNKNOWN');
@@ -354,7 +525,7 @@ export const startVerification = internalAction({
         xml = buildReqRegMob(head, payload);
       }
 
-      const { ack } = await sendSignedXml(ctx, apiName, xml, msgId);
+      const { ack } = await sendSignedXml(ctx, apiName, xml, msgId, args.applicationId);
 
       if (ack.result !== 'SUCCESS') {
         const errorEntry = getErrorEntry(ack.errorCode ?? 'UNKNOWN');
@@ -418,7 +589,14 @@ export const reqOtp = internalAction({
         /<EncryptedOtp>[^<]*<\/EncryptedOtp>/,
         '<EncryptedOtp>***REDACTED***</EncryptedOtp>'
       );
-      const { ack } = await sendSignedXml(ctx, 'ReqOtp', xml, msgId, redactedXml);
+      const { ack } = await sendSignedXml(
+        ctx,
+        'ReqOtp',
+        xml,
+        msgId,
+        args.applicationId,
+        redactedXml
+      );
 
       if (ack.result === 'SUCCESS') {
         // OTP accepted — advance to VERIFIED
@@ -489,7 +667,7 @@ export const reqSetCre = internalAction({
       };
 
       const xml = buildReqSetCre(head, payload);
-      const { ack } = await sendSignedXml(ctx, 'ReqSetCre', xml, msgId);
+      const { ack } = await sendSignedXml(ctx, 'ReqSetCre', xml, msgId, args.applicationId);
 
       if (ack.result === 'SUCCESS') {
         console.log(`[onboarding] ReqSetCre ACK for application`);
@@ -601,5 +779,55 @@ export const reqListKeys = internalAction({
         errorDescription: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  },
+});
+
+export const handleRespListAccPvd = internalAction({
+  args: {
+    requestMsgId: v.optional(v.string()),
+    rawXml: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.requestMsgId || !args.rawXml) return;
+
+    const requestLog = await ctx.runQuery(
+      internal.ips.ipsApiLogs.getLatestOutboundApiLogByRequestMsgId,
+      {
+        requestMsgId: args.requestMsgId,
+      }
+    );
+
+    if (!requestLog?.correlationId) return;
+
+    const providers = extractProvidersFromXml(args.rawXml);
+    await ctx.runMutation(internal.ips.ipsOnboarding.cacheAvailableSovProviders, {
+      applicationId: requestLog.correlationId as any,
+      providers,
+    });
+  },
+});
+
+export const handleRespListAccount = internalAction({
+  args: {
+    requestMsgId: v.optional(v.string()),
+    rawXml: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.requestMsgId || !args.rawXml) return;
+
+    const requestLog = await ctx.runQuery(
+      internal.ips.ipsApiLogs.getLatestOutboundApiLogByRequestMsgId,
+      {
+        requestMsgId: args.requestMsgId,
+      }
+    );
+
+    if (!requestLog?.correlationId) return;
+
+    const accounts = extractAccountsFromXml(args.rawXml);
+    await ctx.runMutation(internal.ips.ipsOnboarding.cacheAvailableAccounts, {
+      applicationId: requestLog.correlationId as any,
+      accounts,
+    });
   },
 });

@@ -36,6 +36,24 @@ export function useIPSTransactionStatus(
 
   const queryClient = useQueryClient();
 
+  const mapStatus = useCallback((status?: string): IPSTransactionStatus => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'failed';
+      case 'reversed':
+        return 'reversed';
+      case 'timeout':
+        return 'timeout';
+      case 'processing':
+      case 'pending':
+        return 'pending';
+      default:
+        return 'unknown';
+    }
+  }, []);
+
   const convexTx = useConvexQuery(
     api.ips.ipsTransactions.getTransaction,
     transactionId ? { transactionId: transactionId as Id<'ipsTransactions'> } : 'skip'
@@ -48,12 +66,21 @@ export function useIPSTransactionStatus(
         return { success: false, error: 'Transaction not found' } as IPSTransactionStatusResult;
       return {
         success: true,
-        status: convexTx.status as IPSTransactionStatus,
-        transactionId: convexTx._id,
+        id: convexTx._id,
+        status: mapStatus(convexTx.status),
         amount: convexTx.amount,
         currency: convexTx.currency,
-        errorCode: convexTx.errorCode,
-        errorDescription: convexTx.errorDescription,
+        transaction_type: convexTx.direction === 'outbound' ? 'DISBURSEMENT' : 'REPAYMENT',
+        payer_vpa: convexTx.debtorVpa,
+        payee_vpa: convexTx.creditorVpa,
+        error_code: convexTx.errorCode,
+        error_message: convexTx.errorDescription,
+        initiated_at: convexTx.initiatedAt
+          ? new Date(convexTx.initiatedAt).toISOString()
+          : undefined,
+        completed_at: convexTx.completedAt
+          ? new Date(convexTx.completedAt).toISOString()
+          : undefined,
       } as IPSTransactionStatusResult;
     },
     enabled: !!transactionId && convexTx !== undefined,

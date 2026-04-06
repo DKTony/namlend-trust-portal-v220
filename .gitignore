@@ -35,3 +35,4 @@ dist/
 .windsurf/
 test-results/
 playwright-report/
+.playwright-mcp/

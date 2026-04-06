@@ -592,53 +592,36 @@ All functions require `assertStaff` or `assertAdmin`.
 
 ---
 
-## Module: `api.ips` (IPS/IPP domain — Mock Adapter)
+## Module: `api.ips` (IPS/IPP domain — Convex live path)
 
-> ⚠️ All IPS functions currently use a **mock adapter** (`convex/actions/ipsAdapter.ts`). No real Bank of Namibia IPS connectivity is in place.
+> The live IPP runtime is Convex. Transport mode may be `json_mock`, `xml_sandbox`, or `xml_production`, but the application-facing boundary remains `api.ips.*`.
 
-### IPS Onboarding (`api.ips.onboarding`)
+High-signal current surfaces:
 
-#### `getMyOnboardingApplication` (query)
+### Onboarding (`api.ips.ipsOnboarding`)
 
-- **Auth**: `assertAuthenticated`
+- user onboarding queries and mutations
+- alias registration lifecycle
+- readiness confirmation gated by confirmed IPS alias state
 
-#### `startOnboarding` (mutation)
+### Transactions (`api.ips.ipsTransactions`)
 
-- **Auth**: `assertAuthenticated`
+- `initiateIpsTransaction`
+- transaction status and admin listing helpers
+- disbursement and repayment initiation share this backend transaction model
 
-#### `updateOnboardingStep` (mutation)
+### Alias and VPA bridge (`api.ips.ipsVpa`)
 
-- **Auth**: `assertAuthenticated`
-- **Args**: `{ step, data }`
+- authenticated VPA validation
+- saved alias reads
+- default-alias management
+- legacy `vpaRegistry` access only as a compatibility bridge
 
-#### `adminListOnboarding` (query)
+For the exact supported flow set and behavioral contract, use:
 
-- **Auth**: `assertAdmin`
-
-#### `adminUpdateOnboardingStatus` (mutation)
-
-- **Auth**: `assertAdmin`
-
-### IPS Transactions (`api.ips.ipsTransactions`)
-
-#### `initiateIpsTransaction` (mutation)
-
-- **Auth**: `assertStaff`
-- **Args**: `{ amount, currency, txType, debtorVpa?, creditorVpa?, loanId?, disbursementId? }`
-- **Returns**: `Id<"ipsTransactions">`
-- **Side effects**: Inserts IPS transaction. Schedules `ipsAdapter.processOutbound` action (mock).
-
-### VPA Registry (`api.ips.vpaRegistry`)
-
-#### `getMyVpas` (query)
-
-- **Auth**: `assertAuthenticated`
-- **Returns**: `Doc<"vpaRegistry">[]`
-
-#### `registerVpa` (mutation)
-
-- **Auth**: `assertAuthenticated`
-- **Args**: `{ vpa, vpaType, bankBic?, accountNumber? }`
+- `docs/IPP_INTEGRATION.md`
+- `src/constants/ippSupportMatrix.ts`
+- `docs/IPS_IMPLEMENTATION.md`
 
 ---
 
@@ -660,19 +643,19 @@ Public. No authentication required.
 
 Receives IPS transaction status callbacks from the Bank of Namibia switch.
 
-**Security**: HMAC-SHA256 signature verification. The request must include either `X-IPS-Signature` or `X-Signature` header containing the hex-encoded HMAC of the raw request body, computed with `IPS_WEBHOOK_SECRET` (set via `npx convex env set`).
+**Security**: The endpoint supports both legacy JSON and the current XML callback path. Live XML callbacks are routed through the Convex IPP handlers and may also enforce signature verification depending on configured transport material.
 
-- If `IPS_WEBHOOK_SECRET` is not configured: request is processed with a warning log (permissive mode for development).
-- If `IPS_WEBHOOK_SECRET` is configured and signature is missing or invalid: `401 Unauthorized`.
+- legacy JSON path: HMAC-style header verification when configured
+- current XML path: parsed and routed by API name in `convex/http.ts`
 
-**Request body**: JSON object (IPS pacs.002 status payload)
+**Request body**: XML for the current IPS callback path; legacy JSON remains compatibility-only
 
 **Responses**:
 | Status | Meaning |
 |--------|---------|
-| `200` | `{ "received": true }` — processed successfully |
-| `400` | Cannot read body or invalid JSON |
-| `401` | Missing or invalid signature (when secret is configured) |
+| `200` | Callback accepted and routed |
+| `400` | Cannot read or parse request body |
+| `401` | Missing or invalid signature where enforced |
 | `500` | Internal error in handler |
 
 **Handler**: `internal.actions.ipsAdapter.handleWebhook`

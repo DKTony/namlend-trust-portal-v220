@@ -83,7 +83,11 @@ export function IPSPaymentModal({
       : savedVpas.find((v) => v.id === selectedVpaId)?.vpa_address || '';
 
   const canProceedToVpa = isValidAmount;
-  const canProceedToConfirm = selectedVpa && (selectedVpaId !== 'new' || vpaValidation?.isValid);
+  const canProceedToConfirm =
+    selectedVpa &&
+    (selectedVpaId !== 'new'
+      ? savedVpas.find((v) => v.id === selectedVpaId)?.is_usable !== false
+      : vpaValidation?.validationStatus === 'validated');
 
   const handleAmountSelect = (value: number) => {
     setAmount(value.toString());
@@ -237,10 +241,21 @@ export function IPSPaymentModal({
                   {savedVpas.map((vpa) => (
                     <div
                       key={vpa.id}
-                      className="flex items-center space-x-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedVpaId(vpa.id)}
+                      className={`flex items-center space-x-3 rounded-lg border p-3 ${
+                        vpa.is_usable === false
+                          ? 'cursor-not-allowed opacity-60'
+                          : 'cursor-pointer hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        if (vpa.is_usable === false) return;
+                        setSelectedVpaId(vpa.id);
+                      }}
                     >
-                      <RadioGroupItem value={vpa.id} id={vpa.id} />
+                      <RadioGroupItem
+                        value={vpa.id}
+                        id={vpa.id}
+                        disabled={vpa.is_usable === false}
+                      />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{vpa.vpa_address}</span>
@@ -249,11 +264,19 @@ export function IPSPaymentModal({
                               Default
                             </Badge>
                           )}
+                          {vpa.is_usable === false && (
+                            <Badge variant="outline" className="text-xs">
+                              Unavailable
+                            </Badge>
+                          )}
                         </div>
                         {vpa.account_holder_name && (
                           <span className="text-sm text-muted-foreground">
                             {vpa.account_holder_name}
                           </span>
+                        )}
+                        {vpa.is_usable === false && vpa.unavailable_reason && (
+                          <p className="text-xs text-muted-foreground">{vpa.unavailable_reason}</p>
                         )}
                       </div>
                     </div>

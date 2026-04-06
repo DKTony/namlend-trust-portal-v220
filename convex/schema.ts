@@ -642,6 +642,15 @@ export default defineSchema({
       v.literal('reversal')
     ),
     direction: v.union(v.literal('inbound'), v.literal('outbound')),
+    useCaseType: v.optional(
+      v.union(
+        v.literal('P2P'),
+        v.literal('P2M'),
+        v.literal('ATM'),
+        v.literal('G2P'),
+        v.literal('B2P')
+      )
+    ),
     status: v.union(
       v.literal('pending'),
       v.literal('processing'),
@@ -699,6 +708,7 @@ export default defineSchema({
     transactionId: v.optional(v.id('ipsTransactions')),
     method: v.string(),
     endpoint: v.string(),
+    requestMsgId: v.optional(v.string()),
     requestBody: v.optional(v.any()),
     responseStatus: v.optional(v.number()),
     responseBody: v.optional(v.any()),
@@ -713,7 +723,9 @@ export default defineSchema({
     rawXml: v.optional(v.string()), // full XML body for audit trail
     correlationId: v.optional(v.string()), // for tracing async Req→Resp pairs
     createdAt: v.number(),
-  }).index('by_transactionId', ['transactionId']),
+  })
+    .index('by_transactionId', ['transactionId'])
+    .index('by_requestMsgId', ['requestMsgId', 'createdAt']),
 
   ipsAlerts: defineTable({
     transactionId: v.optional(v.id('ipsTransactions')),
@@ -762,10 +774,66 @@ export default defineSchema({
     // SoV provider selection
     sovProviderCode: v.optional(v.string()),
     sovProviderName: v.optional(v.string()),
+    availableSovProviders: v.optional(
+      v.array(
+        v.object({
+          providerCode: v.string(),
+          providerName: v.string(),
+          providerHandle: v.optional(v.string()),
+          providerOrgId: v.optional(v.string()),
+          providerIfsc: v.optional(v.string()),
+          active: v.optional(v.string()),
+          mobRegFormat: v.optional(v.string()),
+          featureSupported: v.optional(v.string()),
+          supportsDebitCard: v.optional(v.boolean()),
+          supportsWalletPin: v.optional(v.boolean()),
+        })
+      )
+    ),
     // Account selection
     selectedAccountRef: v.optional(v.string()),
     selectedAccountMasked: v.optional(v.string()),
     selectedAccountIfsc: v.optional(v.string()),
+    selectedAccountType: v.optional(v.string()),
+    selectedAccountHolderName: v.optional(v.string()),
+    selectedAccountAeba: v.optional(v.string()),
+    selectedAccountMbeba: v.optional(v.string()),
+    selectedAccountCredsAllowed: v.optional(
+      v.array(
+        v.object({
+          type: v.string(),
+          subType: v.string(),
+          dType: v.optional(v.string()),
+          dLength: v.optional(v.string()),
+        })
+      )
+    ),
+    availableAccounts: v.optional(
+      v.array(
+        v.object({
+          accountRef: v.string(),
+          maskedAccountNumber: v.optional(v.string()),
+          accountType: v.optional(v.string()),
+          accountHolderName: v.optional(v.string()),
+          ifsc: v.optional(v.string()),
+          mmid: v.optional(v.string()),
+          aeba: v.optional(v.string()),
+          mbeba: v.optional(v.string()),
+          aadhaarNo: v.optional(v.string()),
+          credsAllowed: v.optional(
+            v.array(
+              v.object({
+                type: v.string(),
+                subType: v.string(),
+                dType: v.optional(v.string()),
+                dLength: v.optional(v.string()),
+              })
+            )
+          ),
+          verificationMethods: v.optional(v.array(v.string())),
+        })
+      )
+    ),
     // Verification method
     verificationMethod: v.optional(v.union(v.literal('debit_card'), v.literal('mno'))),
     // IPS PIN
@@ -773,6 +841,9 @@ export default defineSchema({
     // Alias
     aliasAddr: v.optional(v.string()),
     aliasId: v.optional(v.id('ipsAliasDirectory')),
+    aliasRegistrationRequestMsgId: v.optional(v.string()),
+    aliasRegistrationRequestedAt: v.optional(v.number()),
+    aliasRegistrationConfirmedAt: v.optional(v.number()),
     // Error tracking
     lastErrorCode: v.optional(v.string()),
     lastErrorMessage: v.optional(v.string()),
@@ -788,7 +859,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_userId', ['userId'])
-    .index('by_status', ['status']),
+    .index('by_status', ['status'])
+    .index('by_aliasId', ['aliasId']),
 
   ipsDeviceBindings: defineTable({
     userId: v.id('users'),

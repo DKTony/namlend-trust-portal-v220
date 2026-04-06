@@ -1,13 +1,13 @@
 # NamLend Trust - Services Documentation
 
-**Doc Revision**: 2026-02-23 (updated post-Batch 2)  
-**Status**: Service layer implemented across all domains. Settlement service hardened (Feb 2026). **Milestone C Batch 1 (2026-02-23)**: loans + approvals domain fully migrated to Convex. **Milestone C Batch 2 (2026-02-23)**: `notificationService` and `financeService` — last active UI consumers migrated; both services now have zero active UI imports. Batch 3 (IPS/Settlement/Audit/Workflow/Credit) pending.
+**Doc Revision**: 2026-04-06
+**Status**: Service layer implemented across all domains. IPS/IPP user-facing flows now run through Convex hooks and `api.ips.*`; older service wrappers remain only as legacy/reference unless explicitly noted.
 
 ---
 
 ## Service Index (src/services)
 
-Legend: ✅ Migrated / deprecated (zero active UI consumers) | 🔜 Batch 3 pending | ⚠️ Legacy (Supabase, active consumers remain)
+Legend: ✅ Migrated / deprecated (zero active UI consumers) | ⚠️ Legacy / reference | 🔜 Pending non-IPP migration work
 
 | Service                    | Purpose                          | Migration Status | Notes                                                                                                                       |
 | -------------------------- | -------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -18,8 +18,8 @@ Legend: ✅ Migrated / deprecated (zero active UI consumers) | 🔜 Batch 3 pend
 | `disbursementService.ts`   | Disbursement state machine       | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
 | `paymentService.ts`        | Payment processing               | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
 | `paymentGateway.ts`        | Provider routing + instructions  | ✅ Batch 2       | **Zero active UI consumers** — safe to delete after Batch 3 verification                                                    |
-| `ipsService.ts`            | IPS payment integration          | 🔜 Batch 3       | Calls `ips-adapter` Edge Function                                                                                           |
-| `ipsOnboardingService.ts`  | IPP onboarding                   | 🔜 Batch 3       | RPC + adapter endpoints                                                                                                     |
+| `ipsService.ts`            | IPS payment integration          | ⚠️ Legacy        | Portal UI uses Convex hooks (`useIPSPayment`, `useUserVPAs`) and `api.ips.*`; file retained as reference                    |
+| `ipsOnboardingService.ts`  | IPP onboarding                   | ⚠️ Legacy        | Portal UI uses `useIPPOnboarding` and Convex onboarding mutations directly                                                  |
 | `collectionsService.ts`    | Collections workflow             | ✅ Batch 2       | **Zero active UI consumers** — `CollectionsDashboard` uses Convex directly (N3). Safe to delete after Batch 3 verification  |
 | `reconciliationService.ts` | Bank transaction matching        | 🔜 Batch 3       | Manual and auto matching                                                                                                    |
 | `notificationService.ts`   | In-app notifications             | ✅ Batch 2       | **Deprecated** — `NotificationCenter` inlined type + helper; zero UI imports remain                                         |
@@ -123,7 +123,7 @@ Key exports:
 
 Notes:
 
-- IPS/IPP payments are handled by `ipsService.ts`, not the gateway.
+- IPS/IPP payments in the portal are handled by Convex hooks and `api.ips.*`, not by `src/services/ipsService.ts`.
 
 ---
 
@@ -144,7 +144,13 @@ Key exports:
 
 Notes:
 
-- Calls the `ips-adapter` Edge Function (mock mode by default).
+- No active portal UI imports remain.
+- The live portal path is:
+  - `useIPSPayment`
+  - `useUserVPAs`
+  - `convex/ips/*`
+  - `convex/actions/ipsAdapter.ts`
+- This file should be treated as legacy/reference only.
 
 ---
 
@@ -161,6 +167,12 @@ Key exports:
 - `getUsersPendingOnboarding()`
 - `adminInitiateOnboarding()`
 - Adapter calls: list providers, list accounts, register mobile, map alias, set credentials
+
+Notes:
+
+- No active portal UI imports remain.
+- The live portal onboarding path is `useIPPOnboarding` backed by `api.ips.ipsOnboarding.*`.
+- This file should be treated as legacy/reference only.
 
 ---
 

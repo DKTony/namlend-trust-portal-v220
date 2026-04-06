@@ -249,7 +249,7 @@ Phase 3 (target):  TB is primary — outstandingBalance derived from TB, not Con
 
 **Verdict**: ✅ Still Valid — CRITICAL for production
 
-Architecture is correct — mock adapter in `convex/actions/ipsAdapter.ts` with environment-driven switching. Blocked on Bank of Namibia PSP registration and mTLS certificates, not code.
+Architecture is correct — `convex/actions/ipsAdapter.ts` provides the live application path with environment-driven transport switching (`json_mock`, `xml_sandbox`, `xml_production`). Remaining blockers are Bank of Namibia PSP registration, credentials, and mTLS/certificate operations, not core application wiring.
 
 **Effort**: ~4 hours (code) + external dependency | **Risk**: High (regulatory)
 

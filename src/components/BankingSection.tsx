@@ -18,9 +18,11 @@ export function BankingSection() {
   const {
     // State
     loading,
-    setLoading,
     onboardingData,
     sovProviders,
+    availableAccounts,
+    selectedAccount,
+    availableVerificationMethods,
     activeTab,
     setActiveTab,
 
@@ -33,6 +35,10 @@ export function BankingSection() {
     // Form inputs
     selectedProvider,
     setSelectedProvider,
+    selectedAccountRef,
+    setSelectedAccountRef,
+    verificationMethod,
+    setVerificationMethod,
     mobileNumber,
     setMobileNumber,
     otpCode,
@@ -74,8 +80,7 @@ export function BankingSection() {
           variant="outline"
           size="sm"
           onClick={() => {
-            setLoading(true);
-            fetchOnboardingStatus();
+            void fetchOnboardingStatus();
           }}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -135,6 +140,13 @@ export function BankingSection() {
         selectedProvider={selectedProvider}
         onSelectedProviderChange={setSelectedProvider}
         sovProviders={sovProviders}
+        selectedAccountRef={selectedAccountRef}
+        onSelectedAccountRefChange={setSelectedAccountRef}
+        availableAccounts={availableAccounts}
+        selectedAccount={selectedAccount}
+        verificationMethod={verificationMethod}
+        onVerificationMethodChange={setVerificationMethod}
+        availableVerificationMethods={availableVerificationMethods}
         onboardingData={onboardingData}
         otpCode={otpCode}
         onOtpCodeChange={setOtpCode}

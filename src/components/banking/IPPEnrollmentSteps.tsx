@@ -59,9 +59,10 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
             {
               icon: CreditCard,
               label: 'Link Account',
-              states: ['SOV_SELECTED', 'ACCOUNTS_LISTED'],
+              states: ['SOV_SELECTED'],
               action: 'select_account',
               completedStates: [
+                'ACCOUNTS_LISTED',
                 'VERIFICATION_PENDING',
                 'VERIFIED',
                 'IPS_PIN_SETTING',
@@ -74,8 +75,11 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
             {
               icon: Shield,
               label: 'Verify Account',
-              states: ['VERIFICATION_PENDING'],
-              action: 'verify_otp',
+              states: ['ACCOUNTS_LISTED', 'VERIFICATION_PENDING'],
+              action:
+                onboardingData?.state === 'VERIFICATION_PENDING'
+                  ? 'verify_otp'
+                  : 'start_verification',
               completedStates: [
                 'VERIFIED',
                 'IPS_PIN_SETTING',
@@ -100,8 +104,19 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
             {
               icon: UserCheck,
               label: 'Create VPA',
-              states: ['IPS_PIN_SET', 'ALIAS_REGISTRATION_PENDING'],
+              states: ['IPS_PIN_SET'],
               action: 'create_alias',
+              completedStates: [
+                'ALIAS_REGISTRATION_PENDING',
+                'ALIAS_REGISTERED',
+                'READY_FOR_IPP_PAYMENTS',
+              ],
+            },
+            {
+              icon: UserCheck,
+              label: 'Register Alias',
+              states: ['ALIAS_REGISTRATION_PENDING'],
+              action: 'register_alias',
               completedStates: ['ALIAS_REGISTERED', 'READY_FOR_IPP_PAYMENTS'],
             },
           ].map((step, index) => {

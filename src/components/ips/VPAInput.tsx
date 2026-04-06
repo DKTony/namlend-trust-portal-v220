@@ -53,7 +53,7 @@ export function VPAInput({
   className,
 }: VPAInputProps) {
   const [validationState, setValidationState] = useState<
-    'idle' | 'validating' | 'valid' | 'invalid'
+    'idle' | 'validating' | 'valid' | 'pending' | 'invalid'
   >('idle');
   const [validationResult, setValidationResult] = useState<IPSAdapterValidateVPAResponse | null>(
     null
@@ -83,17 +83,6 @@ export function VPAInput({
     [onChange, onValidationResult]
   );
 
-  // Auto-validate with debounce
-  useEffect(() => {
-    if (!autoValidate || !value || !isValidVPAFormat(value)) return;
-
-    const timer = setTimeout(() => {
-      handleValidate();
-    }, autoValidateDelay);
-
-    return () => clearTimeout(timer);
-  }, [value, autoValidate, autoValidateDelay]);
-
   // Validate VPA
   const handleValidate = useCallback(async () => {
     if (!value || !isValidVPAFormat(value)) {
@@ -107,19 +96,39 @@ export function VPAInput({
     try {
       const result = await validateVPAMutation.mutateAsync(value);
       setValidationResult(result);
-      setValidationState(result.isValid ? 'valid' : 'invalid');
+      setValidationState(
+        result.validationStatus === 'validated'
+          ? 'valid'
+          : result.validationStatus === 'pending'
+            ? 'pending'
+            : 'invalid'
+      );
       onValidationResult?.(result);
     } catch {
       setValidationState('invalid');
       setValidationResult({
         success: false,
         isValid: false,
+        validationStatus: 'invalid',
         errorMessage: 'Validation failed',
       });
     }
   }, [value, validateVPAMutation, onValidationResult]);
 
+  // Auto-validate with debounce
+  useEffect(() => {
+    if (!autoValidate || !value || !isValidVPAFormat(value)) return;
+
+    const timer = setTimeout(() => {
+      void handleValidate();
+    }, autoValidateDelay);
+
+    return () => clearTimeout(timer);
+  }, [value, autoValidate, autoValidateDelay, handleValidate]);
+
   const provider = value ? getVPAProvider(value) : null;
+  const providerLabel =
+    validationResult?.providerName || validationResult?.providerCode || provider;
   const displayError =
     externalError ||
     formatError ||
@@ -157,6 +166,7 @@ export function VPAInput({
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
             {validationState === 'valid' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+            {validationState === 'pending' && <AlertCircle className="h-4 w-4 text-amber-500" />}
             {validationState === 'invalid' && <XCircle className="h-4 w-4 text-red-500" />}
           </div>
         </div>
@@ -182,15 +192,18 @@ export function VPAInput({
       </div>
 
       {/* Provider badge */}
-      {provider && !displayError && (
+      {providerLabel && !displayError && (
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-xs">
-            {provider.toUpperCase()}
+            {String(providerLabel).toUpperCase()}
           </Badge>
           {validationResult?.accountHolderName && (
             <span className="text-sm text-muted-foreground">
               {validationResult.accountHolderName}
             </span>
+          )}
+          {validationState === 'pending' && (
+            <span className="text-xs text-amber-600">Awaiting IPS directory response</span>
           )}
         </div>
       )}

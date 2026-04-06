@@ -20,6 +20,7 @@ import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
+import { generateMsgId } from '../lib/ipsXmlBuilder';
 
 // ---------------------------------------------------------------------------
 // Valid transitions — enforced by each mutation
@@ -185,6 +186,54 @@ export const completeDeviceBinding = mutation({
       mobileNumber: normalized,
       deviceId: args.deviceId,
     });
+
+    await ctx.scheduler.runAfter(0, internal.actions.ipsOnboardingAdapter.reqListAccPvd, {
+      applicationId: args.applicationId,
+      mobileNumber: normalized,
+    });
+  },
+});
+
+export const requestSovProviders = mutation({
+  args: {
+    applicationId: v.id('ipsOnboardingApplications'),
+  },
+  handler: async (ctx, { applicationId }) => {
+    const userId = await assertAuthenticated(ctx);
+    const app = await ctx.db.get(applicationId);
+    if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
+    await assertOwnerOrStaff(ctx, app.userId);
+
+    if (!app.mobileNumberNormalized) {
+      throw new ConvexError({
+        code: 'MOBILE_REQUIRED',
+        message: 'Bind a device before requesting account providers.',
+      });
+    }
+
+    const now = Date.now();
+    if (app.status === 'DEVICE_BOUND') {
+      await ctx.db.patch(applicationId, {
+        status: 'SOV_SELECTION_PENDING',
+        updatedAt: now,
+      });
+    }
+
+    await ctx.scheduler.runAfter(0, internal.actions.ipsOnboardingAdapter.reqListAccPvd, {
+      applicationId,
+      mobileNumber: app.mobileNumberNormalized,
+    });
+
+    scheduleAuditLog(
+      ctx,
+      'ips_onboarding',
+      applicationId,
+      'SOV_PROVIDERS_REQUESTED',
+      app.status,
+      app.status === 'DEVICE_BOUND' ? 'SOV_SELECTION_PENDING' : app.status
+    );
+
+    return { requested: true, userId };
   },
 });
 
@@ -241,7 +290,7 @@ export const selectAccount = mutation({
   args: {
     applicationId: v.id('ipsOnboardingApplications'),
     accountRef: v.string(),
-    accountMasked: v.string(),
+    accountMasked: v.optional(v.string()),
     accountIfsc: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -251,12 +300,32 @@ export const selectAccount = mutation({
     await assertOwnerOrStaff(ctx, app.userId);
     assertValidTransition(app.status, 'ACCOUNTS_LISTED');
 
+    const cachedAccount = (app.availableAccounts ?? []).find(
+      (account: any) => account.accountRef === args.accountRef
+    ) as
+      | {
+          accountRef: string;
+          maskedAccountNumber?: string;
+          accountType?: string;
+          accountHolderName?: string;
+          ifsc?: string;
+          aeba?: string;
+          mbeba?: string;
+          credsAllowed?: Array<{ type: string; subType: string; dType?: string; dLength?: string }>;
+        }
+      | undefined;
+
     const now = Date.now();
     await ctx.db.patch(args.applicationId, {
       status: 'ACCOUNTS_LISTED',
       selectedAccountRef: args.accountRef,
-      selectedAccountMasked: args.accountMasked,
-      selectedAccountIfsc: args.accountIfsc,
+      selectedAccountMasked: cachedAccount?.maskedAccountNumber ?? args.accountMasked,
+      selectedAccountIfsc: cachedAccount?.ifsc ?? args.accountIfsc,
+      selectedAccountType: cachedAccount?.accountType,
+      selectedAccountHolderName: cachedAccount?.accountHolderName,
+      selectedAccountAeba: cachedAccount?.aeba,
+      selectedAccountMbeba: cachedAccount?.mbeba,
+      selectedAccountCredsAllowed: cachedAccount?.credsAllowed,
       updatedAt: now,
     });
 
@@ -286,6 +355,27 @@ export const startVerification = mutation({
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
     assertValidTransition(app.status, 'VERIFICATION_PENDING');
+
+    const allowedMethods = new Set<string>();
+    const credsAllowed = app.selectedAccountCredsAllowed ?? [];
+    if (app.selectedAccountMbeba === 'Y') {
+      allowedMethods.add('mno');
+    }
+    if (
+      app.selectedAccountAeba === 'Y' ||
+      credsAllowed.some((cred: any) =>
+        ['ATMPIN', 'CARDDETAILS'].includes(String(cred?.subType ?? '').toUpperCase())
+      )
+    ) {
+      allowedMethods.add('debit_card');
+    }
+
+    if (allowedMethods.size && !allowedMethods.has(args.verificationMethod)) {
+      throw new ConvexError({
+        code: 'VERIFICATION_METHOD_NOT_ALLOWED',
+        message: 'This account does not support the selected verification method.',
+      });
+    }
 
     const now = Date.now();
     await ctx.db.patch(args.applicationId, {
@@ -360,8 +450,7 @@ export const submitOtp = mutation({
 export const setupIpsPin = mutation({
   args: {
     applicationId: v.id('ipsOnboardingApplications'),
-    // PIN is NOT stored — only a flag. Actual PIN is encrypted and sent to IPS.
-    pinLength: v.number(), // Client validates 6-digit; we just verify it was provided
+    pin: v.string(),
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
@@ -371,7 +460,7 @@ export const setupIpsPin = mutation({
     // Two-stage transition: VERIFIED → IPS_PIN_SETTING → (action callback) → IPS_PIN_SET
     assertValidTransition(app.status, 'IPS_PIN_SETTING');
 
-    if (args.pinLength !== 6) {
+    if (!/^\d{6}$/.test(args.pin)) {
       throw new ConvexError({
         code: 'INVALID_PIN',
         message: 'IPS PIN must be exactly 6 digits.',
@@ -398,6 +487,7 @@ export const setupIpsPin = mutation({
       applicationId: args.applicationId,
       operation: 'SET',
       deviceId: app.deviceBindingId ? 'bound' : 'unknown',
+      encryptedNewPin: args.pin,
     });
   },
 });
@@ -482,30 +572,41 @@ export const registerAlias = mutation({
       });
     }
 
-    // Create local alias entry + schedule IPN sync (Phase 2 alias directory)
-    const aliasId = await ctx.db.insert('ipsAliasDirectory', {
-      userId,
-      addr: app.aliasAddr,
-      entityType: 'PERSON',
-      idType: app.mobileNumberNormalized ? 'MOBILE' : 'NUMERICID',
-      idValue: app.mobileNumberNormalized ?? userId,
-      status: 'NEW',
-      syncedWithIps: false,
-      isDefault: true,
-      linkedAccountRef: app.selectedAccountRef,
-      linkedBankBic: app.selectedAccountIfsc,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+    let aliasId = app.aliasId;
+    if (!aliasId) {
+      aliasId = await ctx.db.insert('ipsAliasDirectory', {
+        userId,
+        addr: app.aliasAddr,
+        entityType: 'PERSON',
+        idType: app.mobileNumberNormalized ? 'MOBILE' : 'NUMERICID',
+        idValue: app.mobileNumberNormalized ?? userId,
+        status: 'NEW',
+        syncedWithIps: false,
+        isDefault: true,
+        linkedAccountRef: app.selectedAccountRef,
+        linkedBankBic: app.selectedAccountIfsc,
+        accountHolderName: app.selectedAccountHolderName,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    const requestMsgId = generateMsgId();
 
     await ctx.db.patch(args.applicationId, {
       aliasId,
+      aliasRegistrationRequestMsgId: requestMsgId,
+      aliasRegistrationRequestedAt: Date.now(),
+      aliasRegistrationConfirmedAt: undefined,
+      lastErrorCode: undefined,
+      lastErrorMessage: undefined,
       updatedAt: Date.now(),
     });
 
     // Schedule IPN registration
     await ctx.scheduler.runAfter(0, internal.actions.ipsAliasAdapter.reqRegMapper, {
       aliasId,
+      applicationId: args.applicationId,
       operation: 'ADD',
       addr: app.aliasAddr,
       entityType: 'PERSON',
@@ -513,6 +614,7 @@ export const registerAlias = mutation({
       idValue: app.mobileNumberNormalized ?? userId,
       linkedAccountRef: app.selectedAccountRef,
       linkedBankBic: app.selectedAccountIfsc,
+      requestMsgId,
     });
 
     scheduleAuditLog(
@@ -540,11 +642,25 @@ export const confirmOnboarding = mutation({
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
 
-    // Allow finalization from ALIAS_REGISTERED or ALIAS_REGISTRATION_PENDING
-    if (app.status !== 'ALIAS_REGISTERED' && app.status !== 'ALIAS_REGISTRATION_PENDING') {
+    if (app.status !== 'ALIAS_REGISTERED') {
       throw new ConvexError({
         code: 'INVALID_STATE',
-        message: `Cannot finalize from '${app.status}'. Alias must be registered first.`,
+        message: `Cannot finalize from '${app.status}'. Alias must be confirmed first.`,
+      });
+    }
+
+    if (!app.aliasId) {
+      throw new ConvexError({
+        code: 'ALIAS_REQUIRED',
+        message: 'Alias registration must complete before onboarding can be finalized.',
+      });
+    }
+
+    const alias = await ctx.db.get(app.aliasId);
+    if (!alias || alias.status !== 'ACTIVE' || !alias.syncedWithIps) {
+      throw new ConvexError({
+        code: 'ALIAS_NOT_CONFIRMED',
+        message: 'Your payment alias has not been confirmed by IPS yet.',
       });
     }
 
@@ -583,6 +699,21 @@ export const reviewOnboarding = mutation({
 
     const now = Date.now();
     if (decision === 'approved') {
+      if (!app.aliasId) {
+        throw new ConvexError({
+          code: 'ALIAS_REQUIRED',
+          message: 'Alias registration must complete before onboarding can be approved.',
+        });
+      }
+
+      const alias = await ctx.db.get(app.aliasId);
+      if (!alias || alias.status !== 'ACTIVE' || !alias.syncedWithIps) {
+        throw new ConvexError({
+          code: 'ALIAS_NOT_CONFIRMED',
+          message: 'Onboarding cannot be approved until the alias is confirmed by IPS.',
+        });
+      }
+
       await ctx.db.patch(applicationId, {
         status: 'READY_FOR_IPP_PAYMENTS',
         approvedAt: now,
@@ -627,6 +758,7 @@ export const updateOnboardingStatus = internalMutation({
     const updates: Record<string, unknown> = {
       status: args.status,
       updatedAt: Date.now(),
+      ipsPinSet: args.status === 'IPS_PIN_SET' ? true : app.ipsPinSet,
     };
 
     if (args.errorCode) updates.lastErrorCode = args.errorCode;
@@ -646,6 +778,74 @@ export const updateOnboardingStatus = internalMutation({
       'STATUS_UPDATE',
       app.status,
       args.status
+    );
+  },
+});
+
+export const cacheAvailableSovProviders = internalMutation({
+  args: {
+    applicationId: v.id('ipsOnboardingApplications'),
+    providers: v.array(v.any()),
+  },
+  handler: async (ctx, { applicationId, providers }) => {
+    const app = await ctx.db.get(applicationId);
+    if (!app) return;
+
+    await ctx.db.patch(applicationId, {
+      availableSovProviders: providers,
+      status: app.status === 'DEVICE_BOUND' ? 'SOV_SELECTION_PENDING' : app.status,
+      updatedAt: Date.now(),
+      lastErrorCode: undefined,
+      lastErrorMessage: undefined,
+    });
+  },
+});
+
+export const cacheAvailableAccounts = internalMutation({
+  args: {
+    applicationId: v.id('ipsOnboardingApplications'),
+    accounts: v.array(v.any()),
+  },
+  handler: async (ctx, { applicationId, accounts }) => {
+    const app = await ctx.db.get(applicationId);
+    if (!app) return;
+
+    await ctx.db.patch(applicationId, {
+      availableAccounts: accounts,
+      updatedAt: Date.now(),
+      lastErrorCode: undefined,
+      lastErrorMessage: undefined,
+    });
+  },
+});
+
+export const markAliasRegistered = internalMutation({
+  args: {
+    aliasId: v.id('ipsAliasDirectory'),
+  },
+  handler: async (ctx, { aliasId }) => {
+    const app = await ctx.db
+      .query('ipsOnboardingApplications')
+      .withIndex('by_aliasId', (q) => q.eq('aliasId', aliasId))
+      .first();
+
+    if (!app) return;
+
+    await ctx.db.patch(app._id, {
+      status: 'ALIAS_REGISTERED',
+      aliasRegistrationConfirmedAt: Date.now(),
+      updatedAt: Date.now(),
+      lastErrorCode: undefined,
+      lastErrorMessage: undefined,
+    });
+
+    scheduleAuditLog(
+      ctx,
+      'ips_onboarding',
+      app._id,
+      'ALIAS_CONFIRMED',
+      app.status,
+      'ALIAS_REGISTERED'
     );
   },
 });

@@ -1,58 +1,92 @@
 /**
- * IPS XML Builder — constructs and parses IPS XML messages.
+ * IPS XML Builder — constructs and parses IPS XML messages for the supported
+ * NamLend IPP flows.
  *
- * Extends the existing xmlEscape.ts utility (proven in pacs.009 generation)
- * into IPS-specific request/response XML envelopes.
- *
- * All 17 IPS APIs share the same XML structure:
- *   <upi:{ApiName}>
- *     <Head ver="2.0" ts="..." orgId="..." msgId="..." .../>
- *     <Txn ...> (API-specific payload) </Txn>
- *     <Signature> (RSA-SHA256, added by signing layer) </Signature>
- *   </upi:{ApiName}>
- *
- * ACK responses from IPS follow a simpler structure:
- *   <upi:Ack api="{ApiName}" reqMsgId="..." ...>
- *     <Head .../>
- *     <Txn .../>
- *   </upi:Ack>
+ * The IPS wire contract is not a single "Head + Txn-only" envelope. Each API
+ * has its own required top-level elements, so the helpers below emit
+ * spec-shaped request documents for the APIs this product claims to support.
  */
 
 import { xmlEscape } from './xmlEscape';
 
-// ---------------------------------------------------------------------------
-// XML Namespace — configurable per IPS TSD §2.1
-// Default: spec-mandated "http://npci.org/upi/schema/" (UPI heritage)
-// Override via IPS_XML_NAMESPACE env var if BoN issues a Namibian namespace
-// ---------------------------------------------------------------------------
-
 const IPS_XML_NAMESPACE = process.env.IPS_XML_NAMESPACE ?? 'http://npci.org/upi/schema/';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+const IPS_PRODUCT_TYPE = process.env.IPS_PRODUCT_TYPE ?? 'UPI';
+const IPS_DEFAULT_ORG_ID =
+  process.env.IPS_ORG_ID ??
+  process.env.IPS_PARTICIPANT_ORG_ID ??
+  process.env.IPS_BANK_CODE ??
+  '700001';
+const IPS_REFERENCE_URL = process.env.IPS_REFERENCE_URL ?? 'https://namlend.na/ipp';
+const IPS_VALIDATION_PAYER_ADDR =
+  process.env.IPS_VALIDATION_PAYER_ADDR ?? process.env.IPS_COLLECTIONS_VPA ?? 'collections@namlend';
 
 export interface IpsXmlHead {
-  /** API version — typically "2.0" */
   ver: string;
-  /** ISO 8601 timestamp */
   ts: string;
-  /** Organization ID (NamLend's IPSP code) */
   orgId: string;
-  /** Unique message identifier for idempotency */
   msgId: string;
-  /** Transaction ID (may differ from msgId for collect flows) */
+  prodType: string;
+  destinationOrgId?: string;
+  callbackEndpointIP?: string;
+  pageSize?: string;
+  pageSeqNum?: string;
+  pageRecStart?: string;
+  pageRecEnd?: string;
+  pageTotal?: string;
   txnId?: string;
-  /** API name (e.g., "ReqPay", "ReqValAdd") */
   api?: string;
+}
+
+export interface IpsXmlAmount {
+  value: number;
+  curr?: string;
+}
+
+export interface IpsXmlCredential {
+  type: string;
+  subType: string;
+  data: string;
+  code?: string;
+  ki?: string;
+}
+
+export interface IpsXmlAccount {
+  addrType?: 'ACCOUNT' | 'AADHAAR' | 'MOBILE' | 'CARD';
+  ifsc?: string;
+  actype?: string;
+  acnum?: string;
+  mmid?: string;
+  iin?: string;
+  cardDigits?: string;
+}
+
+export interface IpsXmlConsent {
+  name: string;
+  value: string;
+  prevVpa?: string;
+}
+
+export interface IpsXmlRegId {
+  name: 'MOBILE' | 'NUMERICID';
+  value: string;
+  setStatus?: string;
 }
 
 export interface IpsPayerPayee {
   addr: string;
   name?: string;
-  sovPrvd?: string;
-  account?: string;
-  bic?: string;
+  seqNum?: string;
+  type?: 'PERSON' | 'ENTITY';
+  code?: string;
+  cmId?: string;
+  aadhaarConsent?: 'Y' | 'N';
+  device?: Record<string, string | undefined>;
+  account?: IpsXmlAccount;
+  credentials?: IpsXmlCredential[];
+  newCredentials?: IpsXmlCredential[];
+  amount?: IpsXmlAmount;
+  consent?: IpsXmlConsent;
+  regIds?: IpsXmlRegId[];
 }
 
 export interface IpsReqPayPayload {
@@ -66,15 +100,27 @@ export interface IpsReqPayPayload {
   initMode?: string;
   note?: string;
   encryptedPin?: string;
+  customerRef?: string;
+  refId?: string;
+  refUrl?: string;
+  requestStartTs?: string;
+  requestEndTs?: string;
 }
 
 export interface IpsReqValAddPayload {
   addr: string;
+  payerAddr?: string;
+  payerName?: string;
+  mobileNumber?: string;
 }
 
 export interface IpsReqChkTxnPayload {
   orgTxnId: string;
   orgMsgId: string;
+  orgTxnDate?: string;
+  subType?: string;
+  initiationMode?: string;
+  purposeCode?: string;
 }
 
 export interface IpsReqHbtPayload {
@@ -89,6 +135,11 @@ export interface IpsReqRegMapperPayload {
   idValue: string;
   linkedAccountRef?: string;
   linkedBankBic?: string;
+  linkedAccountType?: string;
+  payerName?: string;
+  mobileNumber?: string;
+  deviceId?: string;
+  previousAddr?: string;
 }
 
 export interface IpsReqGetAddPayload {
@@ -96,6 +147,10 @@ export interface IpsReqGetAddPayload {
   addr?: string;
   idType?: 'MOBILE' | 'NUMERICID';
   idValue?: string;
+  payerAddr?: string;
+  payerName?: string;
+  mobileNumber?: string;
+  deviceId?: string;
 }
 
 export interface IpsReqSetCrePayload {
@@ -103,6 +158,12 @@ export interface IpsReqSetCrePayload {
   encryptedNewPin: string;
   encryptedOldPin?: string;
   deviceId: string;
+  addr?: string;
+  payerName?: string;
+  mobileNumber?: string;
+  accountRef?: string;
+  accountIfsc?: string;
+  accountType?: string;
 }
 
 export interface IpsReqRegMobPayload {
@@ -111,11 +172,20 @@ export interface IpsReqRegMobPayload {
   accountRef: string;
   deviceId: string;
   deviceFingerprint?: string;
+  addr?: string;
+  payerName?: string;
+  accountType?: string;
+  cardDigits?: string;
+  expiryDate?: string;
+  credentials?: IpsXmlCredential[];
+  regDetailsType?: string;
 }
 
 export interface IpsReqOtpPayload {
   encryptedOtp: string;
   txnId: string;
+  payerAddr?: string;
+  mobileNumber?: string;
 }
 
 export interface IpsReqBalEnqPayload {
@@ -131,148 +201,263 @@ export interface IpsReqListAccPvdPayload {
 export interface IpsReqListAccountPayload {
   mobileNumber: string;
   providerCode: string;
+  payerAddr?: string;
+  payerName?: string;
+  deviceId?: string;
 }
 
-// Phase 4B: New API payload types
-
 export interface IpsReqRevPayload {
-  /** Original transaction ID to reverse */
   orgTxnId: string;
-  /** Original message ID */
   orgMsgId: string;
-  /** Reversal type */
   revType: 'FULL' | 'PARTIAL';
-  /** Amount to reverse (for partial reversals) */
   amount?: number;
   currency?: string;
-  /** Reason code per IPP FSD §4.14 */
   reasonCode: string;
   reasonDescription?: string;
 }
 
 export interface IpsReqAuthDetailPayload {
-  /** Transaction ID to query auth status for */
   txnId: string;
-  /** API name of the original request */
   orgApi: string;
 }
 
 export interface IpsTxnConfirmationPayload {
-  /** Original transaction ID being confirmed */
   orgTxnId: string;
-  /** Original message ID */
   orgMsgId: string;
-  /** Confirmation status */
   status: 'CREDITED' | 'FAILED' | 'PENDING';
-  /** Beneficiary name (confirmed) */
   beneficiaryName?: string;
-  /** Timestamp of credit to beneficiary account */
   creditTimestamp?: string;
 }
 
 export interface IpsReqListPspPayload {
-  /** Optional filter by region or type */
   pspType?: 'BANK' | 'WALLET' | 'ALL';
 }
 
 export interface IpsReqListKeysPayload {
-  /** PSP code to list key types for */
   pspCode?: string;
 }
 
-/** Parsed inbound IPS XML message */
 export interface IpsXmlParsed {
   apiName: string;
   head: IpsXmlHead;
   txn: Record<string, unknown>;
+  resp?: Record<string, unknown>;
+  payer?: Record<string, unknown>;
+  payee?: Record<string, unknown>;
+  payees?: unknown;
   signature?: string;
+  body: Record<string, unknown>;
   rawXml: string;
 }
 
-/** Parsed IPS ACK response */
 export interface IpsAckParsed {
   api: string;
   reqMsgId: string;
   result: 'SUCCESS' | 'FAILURE';
   errorCode?: string;
   errorDescription?: string;
-  /** NACK-specific: structured error from Err element (IPS TSD §2.4) */
   nackErrors?: Array<{ code: string; type?: string; message?: string }>;
   rawXml: string;
 }
 
-// ---------------------------------------------------------------------------
-// XML Building
-// ---------------------------------------------------------------------------
+function buildAttributes(attrs: Record<string, unknown>): string {
+  return Object.entries(attrs)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([name, value]) => ` ${name}="${xmlEscape(String(value))}"`)
+    .join('');
+}
+
+function buildSelfClosingTag(tag: string, attrs: Record<string, unknown>): string {
+  return `<${tag}${buildAttributes(attrs)} />`;
+}
+
+function wrapXml(tag: string, content = '', attrs?: Record<string, unknown>): string {
+  return `<${tag}${attrs ? buildAttributes(attrs) : ''}>${content}</${tag}>`;
+}
 
 function buildHeadXml(head: IpsXmlHead): string {
-  const attrs = [
-    `ver="${xmlEscape(head.ver)}"`,
-    `ts="${xmlEscape(head.ts)}"`,
-    `orgId="${xmlEscape(head.orgId)}"`,
-    `msgId="${xmlEscape(head.msgId)}"`,
-  ];
-  if (head.txnId) attrs.push(`txnId="${xmlEscape(head.txnId)}"`);
-  if (head.api) attrs.push(`api="${xmlEscape(head.api)}"`);
-  return `<Head ${attrs.join(' ')}/>`;
+  return buildSelfClosingTag('Head', {
+    ver: head.ver,
+    ts: head.ts,
+    orgId: head.orgId,
+    msgId: head.msgId,
+    prodType: head.prodType,
+    destinationOrgId: head.destinationOrgId,
+    callbackEndpointIP: head.callbackEndpointIP,
+    pageSize: head.pageSize,
+    pageSeqNum: head.pageSeqNum,
+    pageRecStart: head.pageRecStart,
+    pageRecEnd: head.pageRecEnd,
+    pageTotal: head.pageTotal,
+  });
 }
 
-function buildPayerPayeeXml(tag: string, pp: IpsPayerPayee): string {
-  const parts: string[] = [];
-  parts.push(`<Addr>${xmlEscape(pp.addr)}</Addr>`);
-  if (pp.name) parts.push(`<Name>${xmlEscape(pp.name)}</Name>`);
-  if (pp.sovPrvd) parts.push(`<SoVPrvd>${xmlEscape(pp.sovPrvd)}</SoVPrvd>`);
-  if (pp.account) parts.push(`<Account>${xmlEscape(pp.account)}</Account>`);
-  if (pp.bic) parts.push(`<Bic>${xmlEscape(pp.bic)}</Bic>`);
-  return `<${tag}>${parts.join('')}</${tag}>`;
+function buildDefaultDevice(
+  mobileNumber?: string,
+  deviceId?: string,
+  overrides?: Record<string, string | undefined>
+): Record<string, string | undefined> {
+  return {
+    MOBILE: mobileNumber,
+    TYPE: 'MOB',
+    ID: deviceId ?? 'WEB-CLIENT',
+    OS: 'web',
+    APP: 'namlend-trust-portal',
+    CAPABILITY: '1000',
+    ...overrides,
+  };
 }
 
-/** Build a ReqPay XML payload */
-function buildReqPayTxn(payload: IpsReqPayPayload): string {
-  const parts: string[] = [];
-  parts.push(`<Type>${xmlEscape(payload.type)}</Type>`);
-  if (payload.subType) parts.push(`<SubType>${xmlEscape(payload.subType)}</SubType>`);
-  parts.push(buildPayerPayeeXml('Payer', payload.payer));
-  parts.push(buildPayerPayeeXml('Payee', payload.payee));
-  parts.push(`<Amount Ccy="${xmlEscape(payload.currency)}">${payload.amount.toFixed(2)}</Amount>`);
-  if (payload.purposeCode) {
-    parts.push(`<PurposeCode>${xmlEscape(payload.purposeCode)}</PurposeCode>`);
-  }
-  if (payload.initMode) {
-    parts.push(`<InitMode>${xmlEscape(payload.initMode)}</InitMode>`);
-  }
-  if (payload.note) {
-    parts.push(`<Note>${xmlEscape(payload.note)}</Note>`);
-  }
-  if (payload.encryptedPin) {
-    parts.push(`<Cred><PIN>${xmlEscape(payload.encryptedPin)}</PIN></Cred>`);
-  }
-  return `<Txn>${parts.join('')}</Txn>`;
+function buildDeviceXml(device?: Record<string, string | undefined>): string {
+  if (!device) return '';
+
+  const tags = Object.entries(device)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([name, value]) => buildSelfClosingTag('Tag', { name, value }));
+
+  return tags.length ? wrapXml('Device', tags.join('')) : '';
 }
 
-/**
- * Build a complete IPS XML request message.
- *
- * @param apiName — e.g. "ReqPay", "ReqValAdd", "ReqRegMapper"
- * @param head — message header fields
- * @param txnXml — pre-built <Txn>...</Txn> inner XML
- * @returns unsigned XML string (signature added separately by signing layer)
- */
-export function buildIpsRequestXml(apiName: string, head: IpsXmlHead, txnXml: string): string {
-  const headWithApi = { ...head, api: apiName };
+function buildAccountXml(account?: IpsXmlAccount): string {
+  if (!account) return '';
+
+  const details = [
+    account.ifsc ? buildSelfClosingTag('Detail', { name: 'IFSC', value: account.ifsc }) : '',
+    account.actype ? buildSelfClosingTag('Detail', { name: 'ACTYPE', value: account.actype }) : '',
+    account.acnum ? buildSelfClosingTag('Detail', { name: 'ACNUM', value: account.acnum }) : '',
+    account.mmid ? buildSelfClosingTag('Detail', { name: 'MMID', value: account.mmid }) : '',
+    account.iin ? buildSelfClosingTag('Detail', { name: 'IIN', value: account.iin }) : '',
+    account.cardDigits
+      ? buildSelfClosingTag('Detail', { name: 'CARDDIGITS', value: account.cardDigits })
+      : '',
+  ].filter(Boolean);
+
+  if (!details.length) return '';
+
+  return wrapXml('Ac', details.join(''), {
+    addrType: account.addrType ?? 'ACCOUNT',
+  });
+}
+
+function buildCredsXml(tag: 'Creds' | 'NewCred', creds?: IpsXmlCredential[]): string {
+  if (!creds?.length) return '';
+
+  const credXml = creds
+    .map((cred) =>
+      wrapXml(
+        'Cred',
+        wrapXml('Data', xmlEscape(cred.data), {
+          code: cred.code ?? 'NPCI',
+          ki: cred.ki ?? process.env.IPS_KEY_ID ?? '20250822',
+        }),
+        {
+          type: cred.type,
+          subType: cred.subType,
+        }
+      )
+    )
+    .join('');
+
+  return wrapXml(tag, credXml);
+}
+
+function buildAmountXml(amount?: IpsXmlAmount): string {
+  if (!amount) return '';
+  return buildSelfClosingTag('Amount', {
+    value: amount.value.toFixed(2),
+    curr: amount.curr ?? 'NAD',
+  });
+}
+
+function buildConsentXml(consent?: IpsXmlConsent): string {
+  if (!consent) return '';
+  return buildSelfClosingTag('Consent', consent);
+}
+
+function buildRegIdDetailsXml(regIds?: IpsXmlRegId[]): string {
+  if (!regIds?.length) return '';
+
+  return wrapXml(
+    'RegIdDetails',
+    regIds
+      .map((regId) =>
+        wrapXml('Id', '', {
+          name: regId.name,
+          value: regId.value,
+          setStatus: regId.setStatus,
+        })
+      )
+      .join('')
+  );
+}
+
+function buildPayerPayeeXml(tag: 'Payer' | 'Payee', participant: IpsPayerPayee): string {
+  const children = [
+    buildDeviceXml(participant.device),
+    buildAccountXml(participant.account),
+    buildCredsXml('Creds', participant.credentials),
+    buildAmountXml(participant.amount),
+    buildCredsXml('NewCred', participant.newCredentials),
+    buildConsentXml(participant.consent),
+    buildRegIdDetailsXml(participant.regIds),
+  ]
+    .filter(Boolean)
+    .join('');
+
+  return wrapXml(tag, children, {
+    addr: participant.addr,
+    name: participant.name,
+    seqNum: participant.seqNum ?? '1',
+    type: participant.type ?? 'PERSON',
+    code: participant.code ?? '0000',
+    cmId: participant.cmId,
+    aadhaarConsent: participant.aadhaarConsent,
+  });
+}
+
+function buildTxnXml(attrs: Record<string, unknown>, children: string[] = []): string {
+  return wrapXml('Txn', children.filter(Boolean).join(''), attrs);
+}
+
+function buildMetaXml(tags: Array<{ name: string; value: string }>): string {
+  return wrapXml('Meta', tags.map((tag) => buildSelfClosingTag('Tag', tag)).join(''));
+}
+
+function buildPayeesXml(payees: IpsPayerPayee[]): string {
+  return wrapXml('Payees', payees.map((payee) => buildPayerPayeeXml('Payee', payee)).join(''));
+}
+
+function buildPayersXml(payers: IpsPayerPayee[]): string {
+  return wrapXml('Payers', payers.map((payer) => buildPayerPayeeXml('Payer', payer)).join(''));
+}
+
+function buildRegDetailsXml(
+  type: string | undefined,
+  details: Array<{ name: string; value: string }>,
+  credentials: IpsXmlCredential[]
+): string {
+  return wrapXml(
+    'RegDetails',
+    [
+      ...details.map((detail) => buildSelfClosingTag('Detail', detail)),
+      buildCredsXml('Creds', credentials),
+    ]
+      .filter(Boolean)
+      .join(''),
+    { type }
+  );
+}
+
+function buildIpsRequestXml(apiName: string, head: IpsXmlHead, sections: string[]): string {
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<upi:${xmlEscape(apiName)} xmlns:upi="${IPS_XML_NAMESPACE}">`,
-    `  ${buildHeadXml(headWithApi)}`,
-    `  ${txnXml}`,
+    `  ${buildHeadXml({ ...head, api: apiName })}`,
+    ...sections.filter(Boolean).map((section) => `  ${section}`),
     `</upi:${xmlEscape(apiName)}>`,
   ].join('\n');
 }
 
-/**
- * Insert an RSA-SHA256 signature into a built XML message.
- * Called after buildIpsRequestXml, before transmission.
- */
 export function insertSignature(xml: string, signatureBase64: string): string {
   const closingTag = xml.lastIndexOf('</upi:');
   if (closingTag === -1) return xml;
@@ -283,9 +468,6 @@ export function insertSignature(xml: string, signatureBase64: string): string {
   ].join('');
 }
 
-/**
- * Build an ACK response XML (sent back to IPS when we receive a callback).
- */
 export function buildAckResponseXml(
   apiName: string,
   reqMsgId: string,
@@ -294,195 +476,453 @@ export function buildAckResponseXml(
   orgId: string,
   errorCode?: string
 ): string {
-  const attrs = [
-    `api="${xmlEscape(apiName)}"`,
-    `reqMsgId="${xmlEscape(reqMsgId)}"`,
-    `result="${xmlEscape(result)}"`,
-    `ts="${xmlEscape(ts)}"`,
-    `orgId="${xmlEscape(orgId)}"`,
-  ];
-  if (errorCode) attrs.push(`errorCode="${xmlEscape(errorCode)}"`);
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<upi:Ack xmlns:upi="${IPS_XML_NAMESPACE}" ${attrs.join(' ')}/>`,
+    `<upi:Ack xmlns:upi="${IPS_XML_NAMESPACE}"${buildAttributes({
+      api: apiName,
+      reqMsgId,
+      result,
+      ts,
+      orgId,
+      errorCode,
+    })}/>`,
   ].join('\n');
 }
 
-// ---------------------------------------------------------------------------
-// Convenience builders for specific APIs
-// ---------------------------------------------------------------------------
-
 export function buildReqPay(head: IpsXmlHead, payload: IpsReqPayPayload): string {
-  return buildIpsRequestXml('ReqPay', head, buildReqPayTxn(payload));
+  const amount = {
+    value: payload.amount,
+    curr: payload.currency,
+  };
+  const payer: IpsPayerPayee = {
+    ...payload.payer,
+    amount,
+    credentials:
+      payload.encryptedPin && !payload.payer.credentials?.length
+        ? [{ type: 'PIN', subType: 'MPIN', data: payload.encryptedPin }]
+        : payload.payer.credentials,
+  };
+  const payee: IpsPayerPayee = {
+    ...payload.payee,
+    amount,
+  };
+
+  return buildIpsRequestXml('ReqPay', head, [
+    buildMetaXml([
+      { name: 'PAYREQSTART', value: payload.requestStartTs ?? head.ts },
+      { name: 'PAYREQEND', value: payload.requestEndTs ?? head.ts },
+    ]),
+    buildTxnXml(
+      {
+        id: head.txnId ?? head.msgId,
+        note: payload.note ?? 'Payment',
+        refId: payload.refId ?? head.msgId,
+        refUrl: payload.refUrl ?? IPS_REFERENCE_URL,
+        ts: head.ts,
+        type: payload.type,
+        custRef: payload.customerRef ?? head.msgId,
+        initiationMode: payload.initMode ?? '00',
+        purpose: payload.purposeCode ?? '00',
+        subType: payload.subType,
+      },
+      []
+    ),
+    buildPayerPayeeXml('Payer', payer),
+    buildPayersXml([payer]),
+    buildPayeesXml([payee]),
+  ]);
 }
 
 export function buildReqValAdd(head: IpsXmlHead, payload: IpsReqValAddPayload): string {
-  const txn = `<Txn><Addr>${xmlEscape(payload.addr)}</Addr></Txn>`;
-  return buildIpsRequestXml('ReqValAdd', head, txn);
+  return buildIpsRequestXml('ReqValAdd', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Validate address',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ValAdd',
+      custRef: head.msgId,
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.payerAddr ?? IPS_VALIDATION_PAYER_ADDR,
+      name: payload.payerName ?? 'NamLend Validation',
+      device: buildDefaultDevice(payload.mobileNumber),
+    }),
+    buildPayerPayeeXml('Payee', {
+      addr: payload.addr,
+      seqNum: '1',
+    }),
+  ]);
 }
 
 export function buildReqChkTxn(head: IpsXmlHead, payload: IpsReqChkTxnPayload): string {
-  const txn = [
-    '<Txn>',
-    `  <OrgTxnId>${xmlEscape(payload.orgTxnId)}</OrgTxnId>`,
-    `  <OrgMsgId>${xmlEscape(payload.orgMsgId)}</OrgMsgId>`,
-    '</Txn>',
-  ].join('\n');
-  return buildIpsRequestXml('ReqChkTxn', head, txn);
+  return buildIpsRequestXml('ReqChkTxn', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Check Txn Status',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ChkTxn',
+      orgMsgId: payload.orgMsgId,
+      orgTxnId: payload.orgTxnId,
+      orgTxnDate: payload.orgTxnDate,
+      custRef: head.msgId,
+      initiationMode: payload.initiationMode ?? '00',
+      subType: payload.subType ?? 'PAY',
+      purpose: payload.purposeCode ?? '00',
+    }),
+  ]);
 }
 
 export function buildReqHbt(head: IpsXmlHead, payload: IpsReqHbtPayload): string {
-  const txn = `<Txn><OrgId>${xmlEscape(payload.orgId)}</OrgId></Txn>`;
-  return buildIpsRequestXml('ReqHbt', head, txn);
+  return buildIpsRequestXml('ReqHbt', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Heartbeat',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'Hbt',
+      custRef: payload.orgId,
+    }),
+  ]);
 }
 
 export function buildReqRegMapper(head: IpsXmlHead, payload: IpsReqRegMapperPayload): string {
-  const parts: string[] = [];
-  parts.push(`<Operation>${xmlEscape(payload.operation)}</Operation>`);
-  parts.push(`<Addr>${xmlEscape(payload.addr)}</Addr>`);
-  parts.push(`<EntityType>${xmlEscape(payload.entityType)}</EntityType>`);
-  parts.push(`<IdType>${xmlEscape(payload.idType)}</IdType>`);
-  parts.push(`<IdValue>${xmlEscape(payload.idValue)}</IdValue>`);
-  if (payload.linkedAccountRef) {
-    parts.push(`<LinkedAccountRef>${xmlEscape(payload.linkedAccountRef)}</LinkedAccountRef>`);
-  }
-  if (payload.linkedBankBic) {
-    parts.push(`<LinkedBankBic>${xmlEscape(payload.linkedBankBic)}</LinkedBankBic>`);
-  }
-  return buildIpsRequestXml('ReqRegMapper', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqRegMapper', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Mapper',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'CMREGISTRATION',
+      custRef: head.msgId,
+      op: payload.operation,
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.addr,
+      name: payload.payerName ?? payload.addr.split('@')[0],
+      type: payload.entityType,
+      device: buildDefaultDevice(
+        payload.mobileNumber ?? (payload.idType === 'MOBILE' ? payload.idValue : undefined),
+        payload.deviceId
+      ),
+      account:
+        payload.linkedAccountRef || payload.linkedBankBic
+          ? {
+              ifsc: payload.linkedBankBic,
+              actype: payload.linkedAccountType ?? 'SAVINGS',
+              acnum: payload.linkedAccountRef,
+            }
+          : undefined,
+      consent: {
+        name: 'CMREGISTRATION',
+        value: 'Y',
+        prevVpa: payload.previousAddr,
+      },
+      regIds: [
+        {
+          name: payload.idType,
+          value: payload.idValue,
+          setStatus: 'ACTIVE',
+        },
+      ],
+    }),
+  ]);
 }
 
 export function buildReqGetAdd(head: IpsXmlHead, payload: IpsReqGetAddPayload): string {
-  const parts: string[] = [];
-  parts.push(`<Operation>${xmlEscape(payload.operation)}</Operation>`);
-  if (payload.addr) parts.push(`<Addr>${xmlEscape(payload.addr)}</Addr>`);
-  if (payload.idType) parts.push(`<IdType>${xmlEscape(payload.idType)}</IdType>`);
-  if (payload.idValue) parts.push(`<IdValue>${xmlEscape(payload.idValue)}</IdValue>`);
-  return buildIpsRequestXml('ReqGetAdd', head, `<Txn>${parts.join('')}</Txn>`);
+  const subType = payload.operation === 'FETCH' ? (payload.addr ? 'VPA' : 'ID') : undefined;
+  return buildIpsRequestXml('ReqGetAdd', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Mapper',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: payload.operation,
+      subType,
+      custRef: head.msgId,
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.payerAddr ?? payload.addr ?? IPS_VALIDATION_PAYER_ADDR,
+      name: payload.payerName ?? 'NamLend User',
+      device: buildDefaultDevice(
+        payload.mobileNumber ?? (payload.idType === 'MOBILE' ? payload.idValue : undefined),
+        payload.deviceId
+      ),
+      consent: {
+        name: 'CMREGISTRATION',
+        value: 'Y',
+      },
+      regIds:
+        payload.idType && payload.idValue
+          ? [
+              {
+                name: payload.idType,
+                value: payload.idValue,
+              },
+            ]
+          : undefined,
+    }),
+  ]);
 }
 
 export function buildReqSetCre(head: IpsXmlHead, payload: IpsReqSetCrePayload): string {
-  const parts: string[] = [];
-  parts.push(`<Operation>${xmlEscape(payload.operation)}</Operation>`);
-  parts.push(`<Cred><NewPIN>${xmlEscape(payload.encryptedNewPin)}</NewPIN>`);
-  if (payload.encryptedOldPin) {
-    parts.push(`<OldPIN>${xmlEscape(payload.encryptedOldPin)}</OldPIN>`);
-  }
-  parts.push(`</Cred>`);
-  parts.push(`<DeviceId>${xmlEscape(payload.deviceId)}</DeviceId>`);
-  return buildIpsRequestXml('ReqSetCre', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqSetCre', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'set credential',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'SetCre',
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.addr ?? IPS_VALIDATION_PAYER_ADDR,
+      name: payload.payerName ?? 'NamLend User',
+      device: buildDefaultDevice(payload.mobileNumber, payload.deviceId),
+      account:
+        payload.accountRef || payload.accountIfsc
+          ? {
+              ifsc: payload.accountIfsc,
+              actype: payload.accountType ?? 'SAVINGS',
+              acnum: payload.accountRef,
+            }
+          : undefined,
+      credentials: payload.encryptedOldPin
+        ? [{ type: 'PIN', subType: 'MPIN', data: payload.encryptedOldPin }]
+        : undefined,
+      newCredentials: [{ type: 'PIN', subType: 'MPIN', data: payload.encryptedNewPin }],
+    }),
+  ]);
 }
 
 export function buildReqRegMob(head: IpsXmlHead, payload: IpsReqRegMobPayload): string {
-  const parts: string[] = [];
-  parts.push(`<MobileNumber>${xmlEscape(payload.mobileNumber)}</MobileNumber>`);
-  parts.push(`<ProviderCode>${xmlEscape(payload.providerCode)}</ProviderCode>`);
-  parts.push(`<AccountRef>${xmlEscape(payload.accountRef)}</AccountRef>`);
-  parts.push(`<DeviceId>${xmlEscape(payload.deviceId)}</DeviceId>`);
-  if (payload.deviceFingerprint) {
-    parts.push(`<DeviceFingerprint>${xmlEscape(payload.deviceFingerprint)}</DeviceFingerprint>`);
-  }
-  return buildIpsRequestXml('ReqRegMob', head, `<Txn>${parts.join('')}</Txn>`);
+  const credentials =
+    payload.credentials && payload.credentials.length
+      ? payload.credentials
+      : [
+          {
+            type: 'OTP',
+            subType: 'SMS',
+            data: payload.deviceFingerprint ?? payload.deviceId,
+          },
+        ];
+
+  const regDetailsType =
+    payload.regDetailsType ??
+    (payload.cardDigits
+      ? 'FORMAT2'
+      : payload.accountType?.toUpperCase().includes('WALLET')
+        ? 'FORMAT7'
+        : 'FORMAT6');
+
+  return buildIpsRequestXml('ReqRegMob', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Mobile registration',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ReqRegMob',
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.addr ?? `${payload.mobileNumber}@${payload.providerCode.toLowerCase()}`,
+      name: payload.payerName ?? payload.mobileNumber,
+      device: buildDefaultDevice(payload.mobileNumber, payload.deviceId, {
+        CAPABILITY: payload.deviceFingerprint ?? '5200000200010004000639292929292',
+      }),
+      account: {
+        ifsc: payload.providerCode,
+        actype: payload.accountType ?? 'SAVINGS',
+        acnum: payload.accountRef,
+      },
+    }),
+    buildRegDetailsXml(
+      regDetailsType,
+      [
+        { name: 'MOBILE', value: payload.mobileNumber },
+        ...(payload.cardDigits ? [{ name: 'CARDDIGITS', value: payload.cardDigits }] : []),
+        ...(payload.expiryDate ? [{ name: 'EXPDATE', value: payload.expiryDate }] : []),
+      ],
+      credentials
+    ),
+  ]);
 }
 
 export function buildReqOtp(head: IpsXmlHead, payload: IpsReqOtpPayload): string {
-  const parts: string[] = [];
-  parts.push(`<EncryptedOtp>${xmlEscape(payload.encryptedOtp)}</EncryptedOtp>`);
-  parts.push(`<TxnId>${xmlEscape(payload.txnId)}</TxnId>`);
-  return buildIpsRequestXml('ReqOtp', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqOtp', head, [
+    buildTxnXml({
+      id: payload.txnId,
+      note: 'Otp Req',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'Otp',
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.payerAddr ?? IPS_VALIDATION_PAYER_ADDR,
+      device: buildDefaultDevice(payload.mobileNumber),
+      credentials: [{ type: 'OTP', subType: 'SMS', data: payload.encryptedOtp }],
+    }),
+  ]);
 }
 
 export function buildReqBalEnq(head: IpsXmlHead, payload: IpsReqBalEnqPayload): string {
-  const parts: string[] = [];
-  parts.push(`<Addr>${xmlEscape(payload.addr)}</Addr>`);
-  parts.push(`<SoVPrvd>${xmlEscape(payload.sovPrvd)}</SoVPrvd>`);
-  parts.push(`<Account>${xmlEscape(payload.account)}</Account>`);
-  return buildIpsRequestXml('ReqBalEnq', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqBalEnq', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Balance Enquiry',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'BalEnq',
+      custRef: head.msgId,
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.addr,
+      account: {
+        ifsc: payload.sovPrvd,
+        acnum: payload.account,
+        actype: 'SAVINGS',
+      },
+    }),
+  ]);
 }
 
 export function buildReqListAccPvd(head: IpsXmlHead, payload: IpsReqListAccPvdPayload): string {
-  const txn = `<Txn><MobileNumber>${xmlEscape(payload.mobileNumber)}</MobileNumber></Txn>`;
-  return buildIpsRequestXml('ReqListAccPvd', head, txn);
+  return buildIpsRequestXml('ReqListAccPvd', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'List Account Providers',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ListAccPvd',
+      custRef: payload.mobileNumber,
+    }),
+  ]);
 }
 
 export function buildReqListAccount(head: IpsXmlHead, payload: IpsReqListAccountPayload): string {
-  const parts: string[] = [];
-  parts.push(`<MobileNumber>${xmlEscape(payload.mobileNumber)}</MobileNumber>`);
-  parts.push(`<ProviderCode>${xmlEscape(payload.providerCode)}</ProviderCode>`);
-  return buildIpsRequestXml('ReqListAccount', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqListAccount', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'List Accounts',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ListAccount',
+    }),
+    buildPayerPayeeXml('Payer', {
+      addr: payload.payerAddr ?? `${payload.mobileNumber}@namlend`,
+      name: payload.payerName ?? payload.mobileNumber,
+      aadhaarConsent: 'N',
+      device: buildDefaultDevice(payload.mobileNumber, payload.deviceId),
+      account: {
+        ifsc: payload.providerCode,
+      },
+    }),
+    buildSelfClosingTag('Link', {
+      type: 'MOBILE',
+      value: payload.mobileNumber,
+    }),
+  ]);
 }
 
-// ---------------------------------------------------------------------------
-// Phase 4B: New API builders
-// ---------------------------------------------------------------------------
-
-/** Build a ReqRev (Reversal) XML payload — IPP FSD §4.14 */
 export function buildReqRev(head: IpsXmlHead, payload: IpsReqRevPayload): string {
-  const parts: string[] = [];
-  parts.push(`<OrgTxnId>${xmlEscape(payload.orgTxnId)}</OrgTxnId>`);
-  parts.push(`<OrgMsgId>${xmlEscape(payload.orgMsgId)}</OrgMsgId>`);
-  parts.push(`<RevType>${xmlEscape(payload.revType)}</RevType>`);
-  if (payload.amount !== undefined) {
-    parts.push(
-      `<Amount Ccy="${xmlEscape(payload.currency ?? 'NAD')}">${payload.amount.toFixed(2)}</Amount>`
-    );
-  }
-  parts.push(`<ReasonCode>${xmlEscape(payload.reasonCode)}</ReasonCode>`);
-  if (payload.reasonDescription) {
-    parts.push(`<ReasonDesc>${xmlEscape(payload.reasonDescription)}</ReasonDesc>`);
-  }
-  return buildIpsRequestXml('ReqRev', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqRev', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: payload.reasonDescription ?? 'Reversal',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'REVERSAL',
+      orgTxnId: payload.orgTxnId,
+      orgMsgId: payload.orgMsgId,
+      subType: payload.revType,
+    }),
+  ]);
 }
 
-/** Build a ReqAuthDetail XML payload — IPP FSD §4.5 */
 export function buildReqAuthDetail(head: IpsXmlHead, payload: IpsReqAuthDetailPayload): string {
-  const parts: string[] = [];
-  parts.push(`<TxnId>${xmlEscape(payload.txnId)}</TxnId>`);
-  parts.push(`<OrgApi>${xmlEscape(payload.orgApi)}</OrgApi>`);
-  return buildIpsRequestXml('ReqAuthDetail', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqAuthDetail', head, [
+    buildTxnXml({
+      id: payload.txnId,
+      note: 'Auth detail',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: payload.orgApi,
+    }),
+  ]);
 }
 
-/** Build a TxnConfirmation XML payload — IPP FSD §4.16 */
 export function buildTxnConfirmation(head: IpsXmlHead, payload: IpsTxnConfirmationPayload): string {
-  const parts: string[] = [];
-  parts.push(`<OrgTxnId>${xmlEscape(payload.orgTxnId)}</OrgTxnId>`);
-  parts.push(`<OrgMsgId>${xmlEscape(payload.orgMsgId)}</OrgMsgId>`);
-  parts.push(`<Status>${xmlEscape(payload.status)}</Status>`);
-  if (payload.beneficiaryName) {
-    parts.push(`<BeneficiaryName>${xmlEscape(payload.beneficiaryName)}</BeneficiaryName>`);
-  }
-  if (payload.creditTimestamp) {
-    parts.push(`<CreditTs>${xmlEscape(payload.creditTimestamp)}</CreditTs>`);
-  }
-  return buildIpsRequestXml('TxnConfirmation', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('TxnConfirmation', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'Txn confirmation',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'TxnConfirmation',
+      orgTxnId: payload.orgTxnId,
+      orgMsgId: payload.orgMsgId,
+    }),
+    wrapXml('TxnConfirmation', '', {
+      note: payload.beneficiaryName ?? 'Txn confirmation',
+      orgStatus:
+        payload.status === 'CREDITED'
+          ? 'SUCCESS'
+          : payload.status === 'FAILED'
+            ? 'FAILURE'
+            : 'PENDING',
+      type: 'PAY',
+    }),
+  ]);
 }
 
-/** Build a ReqListPsp XML payload — IPP FSD §4.9 */
 export function buildReqListPsp(head: IpsXmlHead, payload: IpsReqListPspPayload): string {
-  const parts: string[] = [];
-  if (payload.pspType) {
-    parts.push(`<PspType>${xmlEscape(payload.pspType)}</PspType>`);
-  }
-  return buildIpsRequestXml('ReqListPsp', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqListPsp', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'List PSPs',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ListPsp',
+      custRef: payload.pspType,
+    }),
+  ]);
 }
 
-/** Build a ReqListKeys XML payload — IPP FSD §4.10 */
 export function buildReqListKeys(head: IpsXmlHead, payload: IpsReqListKeysPayload): string {
-  const parts: string[] = [];
-  if (payload.pspCode) {
-    parts.push(`<PspCode>${xmlEscape(payload.pspCode)}</PspCode>`);
-  }
-  return buildIpsRequestXml('ReqListKeys', head, `<Txn>${parts.join('')}</Txn>`);
+  return buildIpsRequestXml('ReqListKeys', head, [
+    buildTxnXml({
+      id: head.txnId ?? head.msgId,
+      note: 'List keys',
+      refId: head.msgId,
+      refUrl: IPS_REFERENCE_URL,
+      ts: head.ts,
+      type: 'ListKeys',
+      custRef: payload.pspCode,
+    }),
+  ]);
 }
 
-// ---------------------------------------------------------------------------
-// XML Parsing (for inbound responses — requires fast-xml-parser in "use node")
-// ---------------------------------------------------------------------------
+function toRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
 
-/**
- * Parse an inbound IPS XML message (Response or Request callback).
- * Must be called from a "use node" action context.
- */
 export function parseIpsXml(rawXml: string): IpsXmlParsed {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { XMLParser } = require('fast-xml-parser');
@@ -495,46 +935,49 @@ export function parseIpsXml(rawXml: string): IpsXmlParsed {
   });
 
   const parsed = parser.parse(rawXml);
-
-  // Find the root element (upi:RespPay, upi:ReqMapperConfirmation, etc.)
-  const rootKeys = Object.keys(parsed).filter(
-    (k) => k.startsWith('upi:') || k.startsWith('Resp') || k.startsWith('Req')
+  const rootKey = Object.keys(parsed).find(
+    (key) => key.startsWith('upi:') || /^Req|^Resp/.test(key)
   );
-  const rootKey = rootKeys[0];
   if (!rootKey) {
     throw new Error(
       `Cannot identify IPS XML root element. Keys: ${Object.keys(parsed).join(', ')}`
     );
   }
 
-  const root = parsed[rootKey];
+  const root = toRecord(parsed[rootKey]);
   const apiName = rootKey.replace('upi:', '');
-
-  // Extract Head attributes
-  const headRaw = root.Head ?? root['@_'] ?? {};
-  const headAttrs = typeof headRaw === 'object' ? headRaw : {};
+  const headRaw = toRecord(root.Head);
 
   const head: IpsXmlHead = {
-    ver: headAttrs['@_ver'] ?? '2.0',
-    ts: headAttrs['@_ts'] ?? '',
-    orgId: headAttrs['@_orgId'] ?? '',
-    msgId: headAttrs['@_msgId'] ?? '',
-    txnId: headAttrs['@_txnId'],
-    api: headAttrs['@_api'] ?? apiName,
+    ver: String(headRaw['@_ver'] ?? '2.0'),
+    ts: String(headRaw['@_ts'] ?? ''),
+    orgId: String(headRaw['@_orgId'] ?? ''),
+    msgId: String(headRaw['@_msgId'] ?? ''),
+    prodType: String(headRaw['@_prodType'] ?? IPS_PRODUCT_TYPE),
+    destinationOrgId: headRaw['@_destinationOrgId'] as string | undefined,
+    callbackEndpointIP: headRaw['@_callbackEndpointIP'] as string | undefined,
+    pageSize: headRaw['@_pageSize'] as string | undefined,
+    pageSeqNum: headRaw['@_pageSeqNum'] as string | undefined,
+    pageRecStart: headRaw['@_pageRecStart'] as string | undefined,
+    pageRecEnd: headRaw['@_pageRecEnd'] as string | undefined,
+    pageTotal: headRaw['@_pageTotal'] as string | undefined,
+    api: apiName,
   };
 
-  // Extract Txn content
-  const txn = root.Txn ?? root.Resp ?? {};
-
-  // Extract Signature if present
-  const signature = root.Signature;
-
-  return { apiName, head, txn, signature, rawXml };
+  return {
+    apiName,
+    head,
+    txn: toRecord(root.Txn),
+    resp: root.Resp ? toRecord(root.Resp) : undefined,
+    payer: root.Payer ? toRecord(root.Payer) : undefined,
+    payee: root.Payee ? toRecord(root.Payee) : undefined,
+    payees: root.Payees,
+    signature: typeof root.Signature === 'string' ? root.Signature : undefined,
+    body: root,
+    rawXml,
+  };
 }
 
-/**
- * Parse an IPS ACK response (received immediately after sending a request).
- */
 export function parseIpsAck(rawXml: string): IpsAckParsed {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { XMLParser } = require('fast-xml-parser');
@@ -546,54 +989,39 @@ export function parseIpsAck(rawXml: string): IpsAckParsed {
   });
 
   const parsed = parser.parse(rawXml);
-  const ackKey = Object.keys(parsed).find((k) => k.includes('Ack'));
+  const ackKey = Object.keys(parsed).find((key) => key.includes('Ack'));
   if (!ackKey) {
     throw new Error(`Cannot parse IPS ACK. Keys: ${Object.keys(parsed).join(', ')}`);
   }
 
-  const ack = parsed[ackKey];
-
-  // Parse NACK Err elements if present (IPS TSD §2.4)
-  let nackErrors: Array<{ code: string; type?: string; message?: string }> | undefined;
-  if (ack.Err || ack['upi:Err']) {
-    const errElements = ack.Err ?? ack['upi:Err'];
-    const errArray = Array.isArray(errElements) ? errElements : [errElements];
-    nackErrors = errArray.map((err: any) => ({
-      code: err['@_code'] ?? err.Code ?? '',
-      type: err['@_type'] ?? err.Type,
-      message: err['@_msg'] ?? err['#text'] ?? err.Msg ?? '',
-    }));
-  }
+  const ack = toRecord(parsed[ackKey]);
+  const errElements = ack.Err ?? ack['upi:Err'];
+  const nackErrors = errElements
+    ? (Array.isArray(errElements) ? errElements : [errElements]).map((err: any) => ({
+        code: err['@_code'] ?? err.Code ?? '',
+        type: err['@_type'] ?? err.Type,
+        message: err['@_msg'] ?? err['#text'] ?? err.Msg ?? '',
+      }))
+    : undefined;
 
   return {
-    api: ack['@_api'] ?? '',
-    reqMsgId: ack['@_reqMsgId'] ?? '',
+    api: String(ack['@_api'] ?? ''),
+    reqMsgId: String(ack['@_reqMsgId'] ?? ''),
     result: (ack['@_result'] ?? 'FAILURE') as 'SUCCESS' | 'FAILURE',
-    errorCode: ack['@_errorCode'] ?? nackErrors?.[0]?.code,
-    errorDescription: ack['@_errorDescription'] ?? nackErrors?.[0]?.message,
+    errorCode: (ack['@_errorCode'] as string | undefined) ?? nackErrors?.[0]?.code,
+    errorDescription: (ack['@_errorDescription'] as string | undefined) ?? nackErrors?.[0]?.message,
     nackErrors,
     rawXml,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Generate ISO 8601 timestamp for IPS messages */
 export function ipsTimestamp(): string {
   return new Date().toISOString();
 }
 
-/**
- * Generate a spec-compliant IPS msgId.
- * Format: 35 digits = 3-digit bank code + 32 hex chars (UUID without hyphens).
- * Per IPS TSD §2.3: msgId must be exactly 35 characters, numeric+hex.
- */
 export function generateMsgId(bankCode?: string): string {
   const code = bankCode ?? process.env.IPS_BANK_CODE ?? '099';
   const padded = code.padStart(3, '0').slice(0, 3);
-  // Generate 32 hex characters from crypto.randomUUID() or fallback
   const uuid =
     typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID().replace(/-/g, '')
@@ -601,13 +1029,13 @@ export function generateMsgId(bankCode?: string): string {
   return `${padded}${uuid}`;
 }
 
-/** Build a standard IPS XML Head from config + msgId */
 export function buildStandardHead(msgId: string, txnId?: string): IpsXmlHead {
   return {
     ver: '2.0',
     ts: ipsTimestamp(),
-    orgId: process.env.IPS_ORG_ID ?? 'NAMLEND',
+    orgId: IPS_DEFAULT_ORG_ID,
     msgId,
+    prodType: IPS_PRODUCT_TYPE,
     txnId: txnId ?? msgId,
   };
 }

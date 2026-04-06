@@ -72,7 +72,7 @@ export default function Payment() {
     }));
 
   const [selectedLoan, setSelectedLoan] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('ips');
   const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);

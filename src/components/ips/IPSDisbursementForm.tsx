@@ -58,7 +58,7 @@ export function IPSDisbursementForm({
 
   const disbursementMutation = useIPSDisbursement();
 
-  const canProceed = payeeVpa && (vpaValidation?.isValid || initialVpa === payeeVpa);
+  const canProceed = payeeVpa && vpaValidation?.validationStatus === 'validated';
 
   const handleConfirm = () => {
     if (canProceed) {
@@ -78,7 +78,7 @@ export function IPSDisbursementForm({
         disbursementId,
         loanId,
         amount,
-        creditorVpa: payeeVpa,
+        sourceVpa: undefined,
         payeeVpa,
         note: `Loan disbursement for ${customerName}`,
       });
@@ -143,6 +143,7 @@ export function IPSDisbursementForm({
               label="Customer's Payment Address (VPA)"
               placeholder="customer@bank"
               showValidateButton={true}
+              autoValidate={Boolean(initialVpa)}
               required
             />
 

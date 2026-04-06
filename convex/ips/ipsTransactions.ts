@@ -128,14 +128,19 @@ export const initiateIpsTransaction = mutation({
       return existing._id;
     }
 
-    // Enforce daily transaction limits per IPP FSD §5.2
-    const useCaseType = deriveUseCaseType(args.txType, args.remittanceInfo, undefined);
+    // Loan disbursements are business-to-person flows per IPP FSD, so they
+    // must not consume the generic P2P limit bucket.
+    const useCaseType =
+      args.disbursementId && args.direction === 'outbound'
+        ? 'B2P'
+        : deriveUseCaseType(args.txType, args.remittanceInfo, undefined);
     await enforceTransactionLimits(ctx, userId, args.amount, useCaseType);
 
     const now = Date.now();
     const txId = await ctx.db.insert('ipsTransactions', {
       ...args,
       userId: userId,
+      useCaseType,
       status: 'pending',
       initiatedAt: now,
       createdAt: now,

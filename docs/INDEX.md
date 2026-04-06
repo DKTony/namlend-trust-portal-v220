@@ -1,6 +1,6 @@
 # NamLend Trust Documentation Index
 
-**Doc Revision**: 2026-03-29
+**Doc Revision**: 2026-04-06
 **Project Version**: 5.2.1 (Execution Hardening)
 **Status**: Production-Ready Digital Lending Platform — Backend on Convex + Financial Ontology Engine
 
@@ -69,10 +69,13 @@
 | Document                                                                                     | Description                    | Status    |
 | -------------------------------------------------------------------------------------------- | ------------------------------ | --------- |
 | [IPP_INTEGRATION.md](./IPP_INTEGRATION.md)                                                   | Main IPP integration guide     | Active    |
+| [IPP/IPP_GAP_ASSESSMENT.md](./IPP/IPP_GAP_ASSESSMENT.md)                                     | Current-state IPP gap review   | Active    |
 | [IPS_IMPLEMENTATION.md](./IPS_IMPLEMENTATION.md)                                             | IPS implementation summary     | Active    |
 | [IPS_PRODUCTION_CHECKLIST.md](./IPS_PRODUCTION_CHECKLIST.md)                                 | Production readiness checklist | Active    |
 | [IPS_TESTING.md](./IPS_TESTING.md)                                                           | IPS-specific test guide        | Active    |
 | [IPP_ONBOARDING_NAMLEND_COMPLETE_HANDOVER.md](./IPP_ONBOARDING_NAMLEND_COMPLETE_HANDOVER.md) | IPP onboarding documentation   | Reference |
+
+> **Live Boundary**: Convex is the active IPP runtime. Supabase IPP surfaces are legacy/reference only unless explicitly labeled otherwise.
 
 #### IPP Reference Documents (`/IPP/` subdirectory)
 

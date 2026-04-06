@@ -1,7 +1,7 @@
 # NamLend ↔ IPP (BoN IPS) Onboarding + Payments Handover
 
-**Doc Revision**: 2026-01-19  
-**Status**: Reference specification. Current implementation uses `ipsOnboardingService` and the mock `ips-adapter` Edge Function.
+**Doc Revision**: 2026-04-06
+**Status**: Reference specification. Current live implementation uses Convex onboarding mutations plus `convex/actions/ipsOnboardingAdapter.ts` and related `api.ips.*` surfaces. Any Supabase service or `ips-adapter` references below are historical context, not the active runtime contract.
 **Version**: 1.0 (consolidated, XSD-aligned)  
 **Generated**: 2025-12-27  
 **Inputs used**: BoN IPS TSD (v0.7), IPP Functional Specification (v10.0), IPN Scheme Rules (v0.3), NamLend repo docs (`ARCHITECTURE.md`, `FLOWS.md`, `SERVICES.md`, `API_REFERENCE.md`, `IPS_IMPLEMENTATION.md`, `IPS_TESTING.md`, `IPS_PRODUCTION_CHECKLIST.md`), and the provided **UPI/IPP XSDs** (Req/Resp schemas).

@@ -11,6 +11,7 @@
  */
 
 import 'dotenv/config';
+import { execFileSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -36,8 +37,22 @@ async function globalSetup() {
 
   // -------------------------------------------------------------------------
   // Convex-first: UI tests use signInViaUI() from fixtures.ts.
-  // No seeding required for Convex — test users are created via Convex Auth.
+  // Seed test users + deterministic IPP aliases so browser flows do not depend
+  // on live external callback availability.
   // -------------------------------------------------------------------------
+  try {
+    console.log('  Seeding Convex test users and IPP aliases...');
+    execFileSync('npx', ['convex', 'run', 'seed:seedTestUsers', '--push'], {
+      stdio: 'pipe',
+      cwd: process.cwd(),
+      env: process.env,
+    });
+    console.log('  ✅ Convex test users and IPP aliases seeded');
+  } catch (error) {
+    console.warn('  ⚠️  Convex seeding failed:', error instanceof Error ? error.message : error);
+    console.warn('      UI tests may fail if test users or aliases are missing.');
+  }
+
   console.log('  ✅ Convex backend configured — UI tests will authenticate via login form');
 
   // -------------------------------------------------------------------------

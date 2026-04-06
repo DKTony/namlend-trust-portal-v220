@@ -1,8 +1,7 @@
 /**
  * IPP Action Dialog Component
- * Renders the action dialog for each IPP onboarding step, including
- * all form content (device binding, SOV selection, account selection,
- * OTP verification, PIN setup, VPA creation, finalization).
+ *
+ * Renders onboarding step inputs from live provider/account discovery data.
  */
 
 import { Button } from '@/components/ui/button';
@@ -23,9 +22,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, CreditCard, CheckCircle, Loader2, Info } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import {
+  Building2,
+  CheckCircle,
+  CreditCard,
+  Info,
+  Loader2,
+  Shield,
+  Smartphone,
+} from 'lucide-react';
 import type { OnboardingData, SovProvider } from '@/hooks/useIPPOnboarding';
 import type { ONBOARDING_STEPS } from '@/hooks/useIPPOnboarding';
+import type { IPPOnboardingAccount, IPPVerificationMethod } from '@/types/ips';
 
 interface IPPActionDialogProps {
   open: boolean;
@@ -35,12 +45,18 @@ interface IPPActionDialogProps {
   actionLoading: boolean;
   onSubmit: () => void;
 
-  // Form state
   mobileNumber: string;
   onMobileNumberChange: (value: string) => void;
   selectedProvider: string;
   onSelectedProviderChange: (value: string) => void;
   sovProviders: SovProvider[];
+  selectedAccountRef: string;
+  onSelectedAccountRefChange: (value: string) => void;
+  availableAccounts: IPPOnboardingAccount[];
+  selectedAccount: IPPOnboardingAccount | null;
+  verificationMethod: IPPVerificationMethod;
+  onVerificationMethodChange: (value: IPPVerificationMethod) => void;
+  availableVerificationMethods: IPPVerificationMethod[];
   onboardingData: OnboardingData | null;
   otpCode: string;
   onOtpCodeChange: (value: string) => void;
@@ -59,6 +75,13 @@ function ActionDialogContent({
   selectedProvider,
   onSelectedProviderChange,
   sovProviders,
+  selectedAccountRef,
+  onSelectedAccountRefChange,
+  availableAccounts,
+  selectedAccount,
+  verificationMethod,
+  onVerificationMethodChange,
+  availableVerificationMethods,
   onboardingData,
   otpCode,
   onOtpCodeChange,
@@ -76,6 +99,13 @@ function ActionDialogContent({
   | 'selectedProvider'
   | 'onSelectedProviderChange'
   | 'sovProviders'
+  | 'selectedAccountRef'
+  | 'onSelectedAccountRefChange'
+  | 'availableAccounts'
+  | 'selectedAccount'
+  | 'verificationMethod'
+  | 'onVerificationMethodChange'
+  | 'availableVerificationMethods'
   | 'onboardingData'
   | 'otpCode'
   | 'onOtpCodeChange'
@@ -92,17 +122,14 @@ function ActionDialogContent({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="mobile">Mobile Number</Label>
-            <div className="flex gap-2">
-              <Input
-                id="mobile"
-                value={mobileNumber}
-                onChange={(e) => onMobileNumberChange(e.target.value)}
-                placeholder="+264 81 123 4567"
-                className="flex-1"
-              />
-            </div>
+            <Input
+              id="mobile"
+              value={mobileNumber}
+              onChange={(e) => onMobileNumberChange(e.target.value)}
+              placeholder="+264 81 123 4567"
+            />
             <p className="text-xs text-muted-foreground">
-              This number will be used for OTP verification and as your payment alias.
+              This number is used for OTP verification and mobile-based alias registration.
             </p>
           </div>
         </div>
@@ -111,11 +138,11 @@ function ActionDialogContent({
     case 'select_sov':
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                Select your bank to link your account with IPP for instant payments.
+                Choose the bank or wallet provider that owns the account you want to link.
               </p>
             </div>
           </div>
@@ -127,15 +154,20 @@ function ActionDialogContent({
               </SelectTrigger>
               <SelectContent>
                 {sovProviders.map((provider) => (
-                  <SelectItem key={provider.provider_code} value={provider.provider_code}>
+                  <SelectItem key={provider.providerCode} value={provider.providerCode}>
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
-                      {provider.provider_name}
+                      {provider.providerName}
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {!sovProviders.length && (
+              <p className="text-xs text-muted-foreground">
+                Provider discovery is still running for this mobile number.
+              </p>
+            )}
           </div>
         </div>
       );
@@ -143,44 +175,120 @@ function ActionDialogContent({
     case 'select_account':
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                  Connecting to {onboardingData?.sov_provider_name || 'your bank'}...
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Accounts from {onboardingData?.sov_provider_name || 'your provider'}
                 </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  In production, you would select from your available accounts. For now, we'll
-                  create a mock account link.
+                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                  Select the account that should be mapped to your IPP alias.
                 </p>
               </div>
             </div>
           </div>
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <CreditCard className="h-5 w-5 text-primary" />
+
+          {availableAccounts.length ? (
+            <RadioGroup value={selectedAccountRef} onValueChange={onSelectedAccountRefChange}>
+              <div className="space-y-3">
+                {availableAccounts.map((account) => (
+                  <label
+                    key={account.accountRef}
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <RadioGroupItem value={account.accountRef} id={account.accountRef} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-primary" />
+                        <span className="font-medium">
+                          {account.maskedAccountNumber ?? account.accountRef}
+                        </span>
+                        {account.accountType && (
+                          <Badge variant="secondary" className="text-xs">
+                            {account.accountType}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {account.accountHolderName ?? 'Account holder not provided'}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {account.verificationMethods?.includes('mno') && <span>MNO OTP</span>}
+                        {account.verificationMethods?.includes('debit_card') && (
+                          <span>Debit card verification</span>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                ))}
               </div>
+            </RadioGroup>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Account discovery is still running for this provider.
+            </p>
+          )}
+        </div>
+      );
+
+    case 'start_verification':
+      return (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="flex items-start gap-3">
+              <Shield className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="font-medium">Savings Account</p>
-                <p className="text-sm text-muted-foreground">****1234 (Mock)</p>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Verify {selectedAccount?.maskedAccountNumber ?? 'your selected account'}
+                </p>
+                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                  Only the methods returned by IPS for this account are shown here.
+                </p>
               </div>
-              <CheckCircle className="h-5 w-5 text-green-600 ml-auto" />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Click Continue to link this account
-          </p>
+
+          <RadioGroup
+            value={verificationMethod}
+            onValueChange={(value) => onVerificationMethodChange(value as IPPVerificationMethod)}
+            className="space-y-3"
+          >
+            {availableVerificationMethods.map((method) => (
+              <label
+                key={method}
+                className="flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+              >
+                <RadioGroupItem value={method} id={`verification-${method}`} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    {method === 'mno' ? (
+                      <Smartphone className="h-4 w-4 text-primary" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 text-primary" />
+                    )}
+                    <span className="font-medium">
+                      {method === 'mno' ? 'Mobile OTP verification' : 'Debit card verification'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {method === 'mno'
+                      ? 'Send an OTP to the mobile number registered on the account.'
+                      : 'Use the issuing bank card-verification flow for this account.'}
+                  </p>
+                </div>
+              </label>
+            ))}
+          </RadioGroup>
         </div>
       );
 
     case 'verify_otp':
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              An OTP has been sent to your registered mobile number. Please enter it below.
+              Enter the OTP sent to your registered mobile number.
             </p>
           </div>
           <div className="space-y-2">
@@ -191,7 +299,7 @@ function ActionDialogContent({
               onChange={(e) => onOtpCodeChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
               maxLength={6}
-              className="text-center text-2xl tracking-widest font-mono"
+              className="text-center font-mono text-2xl tracking-widest"
             />
           </div>
         </div>
@@ -200,10 +308,9 @@ function ActionDialogContent({
     case 'set_pin':
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Important:</strong> Your IPS PIN is used to authorize payments. Keep it secure
-              and never share it.
+              <strong>Important:</strong> Your IPS PIN authorizes payments. Keep it private.
             </p>
           </div>
           <div className="space-y-2">
@@ -235,12 +342,13 @@ function ActionDialogContent({
 
     case 'create_alias': {
       const handle =
-        sovProviders.find((p) => p.provider_code === onboardingData?.sov_provider_code)
-          ?.provider_handle || 'namlend';
+        sovProviders.find((provider) => provider.providerCode === onboardingData?.sov_provider_code)
+          ?.providerHandle ?? 'namlend';
+
       return (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="vpa">Create Your VPA (Virtual Payment Address)</Label>
+            <Label htmlFor="vpa">Create Your VPA</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="vpa"
@@ -251,16 +359,16 @@ function ActionDialogContent({
                 placeholder="yourname"
                 className="flex-1"
               />
-              <span className="text-muted-foreground font-mono">@{handle}</span>
+              <span className="font-mono text-muted-foreground">@{handle}</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              This is your unique payment address. Others can send money to you using this VPA.
+              This is the alias customers and repayment flows will use.
             </p>
           </div>
           {vpaUsername && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
               <p className="text-sm text-green-800 dark:text-green-200">
-                Your VPA will be:{' '}
+                Your VPA will be{' '}
                 <strong>
                   {vpaUsername}@{handle}
                 </strong>
@@ -271,40 +379,62 @@ function ActionDialogContent({
       );
     }
 
+    case 'register_alias':
+      return (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="flex items-start gap-3">
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Register {onboardingData?.long_alias ?? 'your alias'} with IPS
+                </p>
+                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                  This submits the alias to the IPS directory. Enrollment stays pending until the
+                  callback confirms the alias is active and synced.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
     case 'finalize':
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
             <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 dark:text-green-400" />
               <div>
-                <p className="text-sm text-green-800 dark:text-green-200 font-medium">
-                  Almost done!
+                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Alias confirmed by IPS
                 </p>
-                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                  Click Continue to finalize your IPP enrollment and start making instant payments.
+                <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                  Finalize the enrollment now that your account, PIN, and alias are all confirmed.
                 </p>
               </div>
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm">Device bound</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Bank account linked</span>
+              <span className="text-sm">
+                Linked account: {onboardingData?.selected_account_masked ?? 'Selected'}
+              </span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Account verified</span>
+              <span className="text-sm">Verification completed</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm">IPS PIN set</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-sm">VPA: {onboardingData?.long_alias}</span>
             </div>
@@ -329,6 +459,13 @@ export function IPPActionDialog({
   selectedProvider,
   onSelectedProviderChange,
   sovProviders,
+  selectedAccountRef,
+  onSelectedAccountRefChange,
+  availableAccounts,
+  selectedAccount,
+  verificationMethod,
+  onVerificationMethodChange,
+  availableVerificationMethods,
   onboardingData,
   otpCode,
   onOtpCodeChange,
@@ -354,6 +491,13 @@ export function IPPActionDialog({
           selectedProvider={selectedProvider}
           onSelectedProviderChange={onSelectedProviderChange}
           sovProviders={sovProviders}
+          selectedAccountRef={selectedAccountRef}
+          onSelectedAccountRefChange={onSelectedAccountRefChange}
+          availableAccounts={availableAccounts}
+          selectedAccount={selectedAccount}
+          verificationMethod={verificationMethod}
+          onVerificationMethodChange={onVerificationMethodChange}
+          availableVerificationMethods={availableVerificationMethods}
           onboardingData={onboardingData}
           otpCode={otpCode}
           onOtpCodeChange={onOtpCodeChange}
@@ -370,7 +514,7 @@ export function IPPActionDialog({
             Cancel
           </Button>
           <Button onClick={onSubmit} disabled={actionLoading}>
-            {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Continue
           </Button>
         </DialogFooter>

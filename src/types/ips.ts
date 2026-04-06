@@ -38,6 +38,7 @@ export type IPSTransactionStatus =
   | 'unknown';
 
 export type IPSResult = 'SUCCESS' | 'FAILURE' | 'PENDING' | 'PARTIAL' | 'DEEMED';
+export type IPSValidationStatus = 'validated' | 'pending' | 'invalid';
 
 export type VPAType = 'HANDLE' | 'MOBILE_NUMBER' | 'ACCOUNT' | 'AADHAAR' | 'QR';
 
@@ -167,7 +168,8 @@ export interface InitiateIPSDisbursementParams {
   disbursementId: string;
   loanId: string;
   amount: number;
-  creditorVpa: string;
+  sourceVpa?: string;
+  creditorVpa?: string;
   payeeVpa: string;
   note?: string;
 }
@@ -267,12 +269,19 @@ export interface UserVPAsResult {
     id: string;
     vpa_address: string;
     vpa_type: VPAType;
+    provider_code?: string | null;
     provider_name: string | null;
     account_masked: string | null;
     account_holder_name: string | null;
+    ifsc_code?: string | null;
     is_validated: boolean;
     is_default: boolean;
     display_name: string | null;
+    status?: string;
+    source?: 'alias_directory' | 'legacy_registry';
+    synced_with_ips?: boolean;
+    is_usable?: boolean;
+    unavailable_reason?: string | null;
     created_at: string;
   }>;
 }
@@ -351,11 +360,17 @@ export interface IPSAdapterValidateVPARequest {
 export interface IPSAdapterValidateVPAResponse {
   success: boolean;
   error?: string;
-  isValid?: boolean;
+  isValid: boolean;
+  validationStatus: IPSValidationStatus;
   accountHolderName?: string;
-  accountMasked?: string;
   ifscCode?: string;
+  providerCode?: string;
   providerName?: string;
+  resolvedVpa?: string;
+  status?: string;
+  entityType?: string;
+  source?: 'local' | 'ips';
+  cmId?: string;
   errorCode?: string;
   errorMessage?: string;
 }
@@ -526,7 +541,7 @@ export type IPPMerchantState =
 
 export type IPPAliasIdType = 'MOBILE' | 'NUMERICID';
 
-export type IPPAliasStatus = 'NEW' | 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'DEREGISTER' | 'PORTED';
+export type IPPAliasStatus = 'NEW' | 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'DEREGISTERED' | 'PORTED';
 
 // =============================================================================
 // IPP ONBOARDING DATABASE TYPES
@@ -662,6 +677,42 @@ export interface IPPSoVProvider {
   last_fetched_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export type IPPVerificationMethod = 'mno' | 'debit_card';
+
+export interface IPPAccountCredential {
+  type: string;
+  subType: string;
+  dType?: string;
+  dLength?: string;
+}
+
+export interface IPPOnboardingProvider {
+  providerCode: string;
+  providerName: string;
+  providerHandle: string;
+  providerOrgId?: string;
+  providerIfsc?: string;
+  active?: string;
+  mobRegFormat?: string;
+  featureSupported?: string;
+  supportsDebitCard: boolean;
+  supportsWalletPin: boolean;
+}
+
+export interface IPPOnboardingAccount {
+  accountRef: string;
+  maskedAccountNumber?: string;
+  accountType?: string;
+  accountHolderName?: string;
+  ifsc?: string;
+  mmid?: string;
+  aeba?: string;
+  mbeba?: string;
+  aadhaarNo?: string;
+  credsAllowed?: IPPAccountCredential[];
+  verificationMethods?: IPPVerificationMethod[];
 }
 
 export interface IPPKeysCache {

@@ -173,7 +173,7 @@ Role assignment is managed in the admin back-office under **User Management → 
 
 ## Known Limitations (Pre-Production)
 
-1. **IPS payments**: Adapter makes real HTTP calls to `ips.bon.na` but no production credentials configured. Transactions fail gracefully. Set `IPS_CLIENT_ID`, `IPS_CLIENT_SECRET` via `npx convex env set` when credentials are obtained from Bank of Namibia.
+1. **IPS/IPP production transport**: The live application path is implemented on Convex, but BON sandbox/production traffic still depends on external credentials, certificates, and transport setup. See `docs/IPS_PRODUCTION_CHECKLIST.md`.
 
 2. **TigerBeetle ledger**: Running in shadow/simulation mode. Outbox pattern is fully wired but the worker does not connect to a live cluster. Set `TIGERBEETLE_ADDRESS` to enable.
 
@@ -197,7 +197,7 @@ Role assignment is managed in the admin back-office under **User Management → 
 | [FLOWS.md](docs/FLOWS.md)                         | Transaction flow diagrams                       |
 | [AUDIT_REPORT.md](docs/AUDIT_REPORT.md)           | 2026-03-03 integration audit findings and fixes |
 
-## 🚀 Current Status (December 2025)
+## 🚀 Current Status (April 2026)
 
 ### Core Platform ✅
 
@@ -252,18 +252,18 @@ Role assignment is managed in the admin back-office under **User Management → 
 - **Document Management**: Secure upload and management of loan documents
 - **Automated Workflows**: Streamlined approval processes and notifications
 - **Payment Processing**: Settlement detection, payment schedules, quick-pay buttons
-- **IPP/IPN Ready**: Prepared for Namibia's Instant Payment Platform integration
+- **IPP/IPS Live Path**: Convex-backed payment, onboarding, alias validation, and status-check flows implemented for the shipped feature set
 
 ## 💳 Payment Integrations
 
-| Provider        | Status         | Description                                   |
-| --------------- | -------------- | --------------------------------------------- |
-| **IPP/IPN**     | 🔶 Ready       | Bank of Namibia's Instant Payment Platform    |
-| MTC MoMo        | ✅ Implemented | Mobile money payments                         |
-| TN Mobile       | ✅ Implemented | Telecom Namibia mobile money                  |
-| PayToday        | ✅ Implemented | Online payment gateway                        |
-| Bank EFT        | ✅ Implemented | Traditional bank transfers                    |
-| **TigerBeetle** | ✅ Integrated  | Financial ledger for double-entry bookkeeping |
+| Provider        | Status         | Description                                                |
+| --------------- | -------------- | ---------------------------------------------------------- |
+| **IPP/IPS**     | ✅ Implemented | Convex live path; BON production credentials still pending |
+| MTC MoMo        | ✅ Implemented | Mobile money payments                                      |
+| TN Mobile       | ✅ Implemented | Telecom Namibia mobile money                               |
+| PayToday        | ✅ Implemented | Online payment gateway                                     |
+| Bank EFT        | ✅ Implemented | Traditional bank transfers                                 |
+| **TigerBeetle** | ✅ Integrated  | Financial ledger for double-entry bookkeeping              |
 
 > See [docs/IPP_INTEGRATION.md](./docs/IPP_INTEGRATION.md) for IPP integration details.
 > See [docs/TIGERBEETLE_IMPLEMENTATION.md](./docs/TIGERBEETLE_IMPLEMENTATION.md) for ledger integration.
@@ -279,7 +279,7 @@ Role assignment is managed in the admin back-office under **User Management → 
 - **Build Tool**: Vite with optimized production builds
 - **Deployment**: Netlify with automated deployments
 - **Currency**: NAD (Namibian Dollar) with proper formatting
-- **Payments**: IPP/IPN (UPI-based), Mobile Money, Online Gateway, TigerBeetle Ledger
+- **Payments**: IPP/IPS (Convex live path), Mobile Money, Online Gateway, TigerBeetle Ledger
 
 ## 🚀 Quick Start
 

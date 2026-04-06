@@ -31,6 +31,14 @@ export function LinkedAccountsTab({ onboardingData }: LinkedAccountsTabProps) {
               <p className="text-sm text-muted-foreground font-mono">
                 {onboardingData.selected_account_masked}
               </p>
+              {onboardingData.selected_account_holder_name && (
+                <p className="text-xs text-muted-foreground">
+                  {onboardingData.selected_account_holder_name}
+                  {onboardingData.selected_account_type
+                    ? ` • ${onboardingData.selected_account_type}`
+                    : ''}
+                </p>
+              )}
             </div>
             <Badge variant="outline" className="border-green-500 text-green-600">
               Active

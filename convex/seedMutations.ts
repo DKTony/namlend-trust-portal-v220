@@ -160,3 +160,88 @@ export const seedKycDocuments = internalMutation({
     console.log(`[seed] KYC documents seeded for ${email}`);
   },
 });
+
+/** Seed a confirmed IPP alias for a test user so UI/E2E flows do not depend on live callbacks. */
+export const seedConfirmedIpsAlias = internalMutation({
+  args: {
+    email: v.string(),
+    aliasAddr: v.string(),
+    idValue: v.string(),
+    linkedBankBic: v.optional(v.string()),
+    linkedAccountRef: v.optional(v.string()),
+    accountHolderName: v.optional(v.string()),
+    isDefault: v.optional(v.boolean()),
+  },
+  handler: async (
+    ctx,
+    { email, aliasAddr, idValue, linkedBankBic, linkedAccountRef, accountHolderName, isDefault }
+  ) => {
+    const profile = await ctx.db
+      .query('profiles')
+      .filter((q) => q.eq(q.field('email'), email))
+      .first();
+
+    if (!profile) {
+      throw new Error(`No profile found for ${email}`);
+    }
+
+    const now = Date.now();
+    const makeDefault = isDefault ?? true;
+    const existing = await ctx.db
+      .query('ipsAliasDirectory')
+      .withIndex('by_addr', (q) => q.eq('addr', aliasAddr))
+      .first();
+
+    if (makeDefault) {
+      const userAliases = await ctx.db
+        .query('ipsAliasDirectory')
+        .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+        .collect();
+
+      for (const alias of userAliases) {
+        if (alias.addr !== aliasAddr && alias.isDefault) {
+          await ctx.db.patch(alias._id, {
+            isDefault: false,
+            updatedAt: now,
+          });
+        }
+      }
+    }
+
+    const confirmedAlias = {
+      userId: profile.userId,
+      addr: aliasAddr,
+      entityType: 'PERSON' as const,
+      idType: 'NUMERICID' as const,
+      idValue,
+      status: 'ACTIVE' as const,
+      cmId: `CM-E2E-${aliasAddr}`,
+      linkedAccountRef:
+        linkedAccountRef ?? `E2E-${aliasAddr.replace(/[^a-z0-9]/gi, '').toUpperCase()}`,
+      linkedBankBic: linkedBankBic ?? 'FIRNNANX',
+      accountHolderName: accountHolderName ?? email.split('@')[0],
+      syncedWithIps: true,
+      lastSyncAt: now,
+      syncError: undefined,
+      isDefault: makeDefault,
+      updatedAt: now,
+    };
+
+    if (existing) {
+      if (existing.userId !== profile.userId) {
+        throw new Error(`Alias ${aliasAddr} is already owned by another user.`);
+      }
+
+      await ctx.db.patch(existing._id, confirmedAlias);
+      console.log(`[seed] Confirmed IPP alias ${aliasAddr} for ${email}`);
+      return existing._id;
+    }
+
+    const aliasId = await ctx.db.insert('ipsAliasDirectory', {
+      ...confirmedAlias,
+      createdAt: now,
+    });
+    console.log(`[seed] Created confirmed IPP alias ${aliasAddr} for ${email}`);
+    return aliasId;
+  },
+});

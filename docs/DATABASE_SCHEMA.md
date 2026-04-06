@@ -246,7 +246,7 @@ export const getMyLoans = query({
 
 | File                                | Purpose                                   | Replaces                           |
 | ----------------------------------- | ----------------------------------------- | ---------------------------------- |
-| `actions/ipsAdapter.ts`             | IPS outbound transfers + webhook handling | `ips-adapter` edge fn              |
+| `actions/ipsAdapter.ts`             | IPS outbound transfers + webhook handling | legacy `ips-adapter` edge function |
 | `actions/processLoanApplication.ts` | Server-side loan processing               | `process-loan-application` edge fn |
 | `actions/sendNotification.ts`       | Multi-channel notification dispatch       | `send-notification` edge fn        |
 | `actions/sendSms.ts`                | Africa's Talking SMS delivery             | `send-sms` edge fn                 |

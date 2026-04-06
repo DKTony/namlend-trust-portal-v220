@@ -70,6 +70,7 @@ e2e/
 - `e2e/ips-payment-flow.e2e.ts`
 - `e2e/loan-application.e2e.ts`
 - `e2e/navigation-pages.e2e.ts`
+- `e2e/ipp-lifecycle.e2e.ts`
 - `e2e/role-routing.e2e.ts`
 - `e2e/signout.e2e.ts`
 
@@ -82,13 +83,15 @@ e2e/
 - `disbursements-ledger.e2e.ts`
 - `disbursements-rls.e2e.ts`
 - `documents-rls.e2e.ts`
-- `ips-adapter.e2e.ts`
-- `ips-rpc.e2e.ts`
+- `ips-adapter.e2e.ts` (legacy reference)
+- `ips-rpc.e2e.ts` (legacy reference)
 - `tigerbeetle-balance.e2e.ts`
 
 ### Fixtures and Test Users
 
 Fixtures live in `e2e/fixtures.ts` and create isolated Convex auth sessions per test.
+
+For current IPP verification, prefer `e2e/ipp-lifecycle.e2e.ts` and the focused Vitest suite documented in `docs/IPS_TESTING.md`. The older `ips-adapter.e2e.ts` and `ips-rpc.e2e.ts` files are legacy Supabase-era references, not the primary live-path tests.
 
 Test users:
 

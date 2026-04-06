@@ -101,15 +101,17 @@ export function IPPOnboardingCard({
                   ? 'Select Your Bank'
                   : currentStep.action === 'select_account'
                     ? 'Link Account'
-                    : currentStep.action === 'verify_otp'
-                      ? 'Verify with OTP'
-                      : currentStep.action === 'set_pin'
-                        ? 'Set IPS PIN'
-                        : currentStep.action === 'create_alias'
-                          ? 'Create VPA Address'
-                          : currentStep.action === 'finalize'
-                            ? 'Complete Enrollment'
-                            : currentStep.label}
+                    : currentStep.action === 'start_verification'
+                      ? 'Choose Verification Method'
+                      : currentStep.action === 'verify_otp'
+                        ? 'Verify with OTP'
+                        : currentStep.action === 'set_pin'
+                          ? 'Set IPS PIN'
+                          : currentStep.action === 'create_alias'
+                            ? 'Create VPA Address'
+                            : currentStep.action === 'finalize'
+                              ? 'Complete Enrollment'
+                              : currentStep.label}
                 <ChevronRight className="h-5 w-5 ml-2" />
               </Button>
             )}
@@ -132,6 +134,25 @@ export function IPPOnboardingCard({
             </div>
           </div>
         )}
+
+        {onboardingData?.state === 'ALIAS_REGISTRATION_PENDING' &&
+          onboardingData.alias_registration_requested_at && (
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div>
+                  <p className="font-medium text-amber-800 dark:text-amber-200">
+                    Alias registration is pending IPS confirmation
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Requested at{' '}
+                    {new Date(onboardingData.alias_registration_requested_at).toLocaleString()}. You
+                    cannot finish enrollment until the directory callback confirms the alias.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* VPA Display when ready */}
         {isReady && onboardingData?.long_alias && (

@@ -22,6 +22,37 @@ The v3.x versions (Dec 2025) document combined releases that include mobile app 
 
 ---
 
+## [2.8.13] - 2026-04-06 (IPP Final Review, Docs Sync, and Verification)
+
+### Fixed
+
+- **Onboarding approval loophole** (`convex/ips/ipsOnboarding.ts`)
+  - `reviewOnboarding` now enforces the same alias-confirmation gate as `confirmOnboarding`
+  - staff approval can no longer move an application to `READY_FOR_IPP_PAYMENTS` unless the alias is `ACTIVE` and `syncedWithIps`
+
+### Changed
+
+- **Final IPP review completed**
+  - Re-reviewed callback correlation, alias/VPA privacy and usability rules, onboarding completion gating, disbursement limit classification, and Playwright flow assumptions against the current code
+  - Converted `docs/IPP/IPP_GAP_ASSESSMENT.md` into a current-state discrepancy matrix with `resolved`, `known partial`, and `out of scope by design` outcomes
+
+- **Core NamLend IPP docs synchronized to current platform truth**
+  - Rewrote `docs/IPS_IMPLEMENTATION.md`, `docs/IPS_TESTING.md`, and `docs/IPS_PRODUCTION_CHECKLIST.md`
+  - Updated `docs/IPP_INTEGRATION.md`, `docs/INDEX.md`, `docs/SERVICES.md`, `docs/FLOW_VALIDATION_MATRIX.md`, and `README.md`
+  - Root docs now consistently describe Convex as the live IPP path and Supabase IPP surfaces as legacy/reference only
+
+### Verified
+
+- `npx tsc --noEmit`
+- `npx vitest run src/tests/ipsXmlBuilder.test.ts src/tests/ipsResponseParsers.test.ts src/tests/ipsCallbackCorrelation.test.ts src/tests/ipsTransactionLimits.test.ts src/tests/ippSupportMatrix.test.ts`
+- `npx playwright test e2e/ipp-lifecycle.e2e.ts --project=chromium`
+
+### Notes
+
+- BON sandbox/production credentials, certificates, mTLS, and HSM-backed operational enablement remain external production dependencies rather than code-path gaps
+
+---
+
 ## [2.8.12] - 2026-04-05 (IPS Phase 4A+4B — Sandbox Certification & Missing APIs)
 
 ### Added

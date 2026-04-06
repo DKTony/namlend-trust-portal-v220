@@ -50,6 +50,21 @@ export const seedTestUsers = internalAction({
       throw error;
     }
 
+    console.log('[seed] Seeding confirmed IPP aliases for E2E users...');
+    await ctx.runMutation(internal.seedMutations.seedConfirmedIpsAlias, {
+      email: 'client1@test.namlend.com',
+      aliasAddr: 'client1@namlend',
+      idValue: '1002003001',
+      accountHolderName: 'Client One',
+    });
+    await ctx.runMutation(internal.seedMutations.seedConfirmedIpsAlias, {
+      email: 'client2@test.namlend.com',
+      aliasAddr: 'client2@namlend',
+      idValue: '1002003002',
+      accountHolderName: 'Client Two',
+    });
+    console.log('[seed] IPP aliases seeded successfully');
+
     console.log('[seed] All test users seeded successfully');
   },
 });

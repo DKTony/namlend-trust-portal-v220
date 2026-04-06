@@ -1,7 +1,8 @@
 /**
- * IPS Payment Hook
+ * IPS payment hooks
  *
- * React Query hook for initiating IPS payments (repayments)
+ * These hooks are thin wrappers over the live Convex `ipsTransactions`
+ * mutation, with the VPA roles mapped to the semantics the backend expects.
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,9 +17,9 @@ import type {
 } from '@/types/ips';
 import type { Id } from '@/integrations/convex/api';
 
-/**
- * Hook for initiating IPS repayments (customer paying loan)
- */
+const COLLECTIONS_VPA = import.meta.env.VITE_IPS_COLLECTIONS_VPA ?? 'collections@namlend';
+const DISBURSEMENTS_VPA = import.meta.env.VITE_IPS_DISBURSEMENTS_VPA ?? 'disbursements@namlend';
+
 export function useIPSRepayment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -26,22 +27,30 @@ export function useIPSRepayment() {
 
   return useMutation<InitiateIPSRepaymentResult, Error, InitiateIPSRepaymentParams>({
     mutationFn: async (params) => {
-      const txId = await initiateIpsTx({
-        msgId: params.msgId ?? `repay-${params.loanId}-${Date.now()}`,
+      const msgId = `repay-${params.loanId}-${Date.now()}`;
+      const transactionId = await initiateIpsTx({
+        msgId,
         txType: 'credit_transfer',
         direction: 'inbound',
         amount: params.amount,
         currency: 'NAD',
-        debtorVpa: params.debtorVpa,
-        creditorVpa: params.creditorVpa,
+        debtorVpa: params.payerVpa,
+        creditorVpa: COLLECTIONS_VPA,
         loanId: params.loanId as Id<'loans'>,
-        remittanceInfo: params.remittanceInfo,
+        remittanceInfo: params.note ?? `Loan repayment ${params.loanId}`,
       });
+
       return {
         success: true,
-        transactionId: txId,
         message: 'Payment initiated',
-      } as InitiateIPSRepaymentResult;
+        ips_transaction_id: String(transactionId),
+        msg_id: msgId,
+        amount: params.amount,
+        currency: 'NAD',
+        payer_vpa: params.payerVpa,
+        payee_vpa: COLLECTIONS_VPA,
+        loan_id: params.loanId,
+      };
     },
     onSuccess: (result, variables) => {
       if (result.success) {
@@ -50,7 +59,6 @@ export function useIPSRepayment() {
           description: `Your payment of NAD ${variables.amount.toFixed(2)} is being processed.`,
         });
 
-        // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['loan', variables.loanId] });
         queryClient.invalidateQueries({ queryKey: ['loan-payments', variables.loanId] });
         queryClient.invalidateQueries({ queryKey: ['loan-ips-transactions', variables.loanId] });
@@ -64,7 +72,6 @@ export function useIPSRepayment() {
       }
     },
     onError: (error) => {
-      console.error('IPS repayment error:', error);
       toast({
         title: 'Payment Error',
         description: error.message || 'An unexpected error occurred.',
@@ -74,9 +81,6 @@ export function useIPSRepayment() {
   });
 }
 
-/**
- * Hook for initiating IPS disbursements (admin disbursing loan)
- */
 export function useIPSDisbursement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -84,37 +88,45 @@ export function useIPSDisbursement() {
 
   return useMutation<InitiateIPSDisbursementResult, Error, InitiateIPSDisbursementParams>({
     mutationFn: async (params) => {
-      const txId = await initiateIpsTx({
-        msgId: params.msgId ?? `disb-${params.disbursementId}-${Date.now()}`,
+      const msgId = `disb-${params.disbursementId}-${Date.now()}`;
+      const sourceVpa = params.sourceVpa ?? params.creditorVpa ?? DISBURSEMENTS_VPA;
+      const transactionId = await initiateIpsTx({
+        msgId,
         txType: 'credit_transfer',
         direction: 'outbound',
         amount: params.amount,
         currency: 'NAD',
-        creditorVpa: params.creditorVpa,
+        debtorVpa: sourceVpa,
+        creditorVpa: params.payeeVpa,
         disbursementId: params.disbursementId as Id<'disbursements'>,
         loanId: params.loanId as Id<'loans'>,
-        remittanceInfo: params.remittanceInfo,
+        remittanceInfo: params.note ?? `Loan disbursement ${params.disbursementId}`,
       });
+
       return {
         success: true,
-        transactionId: txId,
         message: 'Disbursement initiated',
-      } as InitiateIPSDisbursementResult;
+        ips_transaction_id: String(transactionId),
+        msg_id: msgId,
+        amount: params.amount,
+        currency: 'NAD',
+        payer_vpa: sourceVpa,
+        payee_vpa: params.payeeVpa,
+        loan_id: params.loanId,
+        disbursement_id: params.disbursementId,
+      };
     },
     onSuccess: (result, variables) => {
       if (result.success) {
         toast({
           title: 'Disbursement Initiated',
-          description: `Disbursement of NAD ${result.amount?.toFixed(2)} is being processed via IPS.`,
+          description: `Disbursement of NAD ${variables.amount.toFixed(2)} is being processed via IPS.`,
         });
 
-        // Invalidate related queries
         queryClient.invalidateQueries({ queryKey: ['disbursement', variables.disbursementId] });
         queryClient.invalidateQueries({ queryKey: ['disbursements'] });
         queryClient.invalidateQueries({ queryKey: ['pending-disbursements'] });
-        if (result.loan_id) {
-          queryClient.invalidateQueries({ queryKey: ['loan', result.loan_id] });
-        }
+        queryClient.invalidateQueries({ queryKey: ['loan', variables.loanId] });
       } else {
         toast({
           title: 'Disbursement Failed',
@@ -124,7 +136,6 @@ export function useIPSDisbursement() {
       }
     },
     onError: (error) => {
-      console.error('IPS disbursement error:', error);
       toast({
         title: 'Disbursement Error',
         description: error.message || 'An unexpected error occurred.',

@@ -33,6 +33,12 @@ import {
 } from '../lib/ipsXmlBuilder';
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, mapToTransactionStatus, isRetryable } from '../lib/ipsErrorCodes';
+import {
+  parseRespChkTxnDetails,
+  parseRespValAddDetails,
+  type IpsValidationStatus,
+} from '../lib/ipsResponseParsers';
+import { resolveRespChkTxnResolution } from '../lib/ipsCallbackCorrelation';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
 
@@ -54,6 +60,10 @@ const FINANCIAL_APIS = new Set(['ReqPay', 'ReqBalEnq', 'ReqSetCre']);
 
 function getTimeoutForApi(apiName: string): number {
   return FINANCIAL_APIS.has(apiName) ? TIMEOUT_FINANCIAL_MS : TIMEOUT_NON_FINANCIAL_MS;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +116,7 @@ async function sendIpsXml(
   ctx: any,
   apiName: string,
   xml: string,
+  requestMsgId: string,
   transactionId?: string,
   correlationId?: string
 ): Promise<{
@@ -151,6 +162,7 @@ async function sendIpsXml(
     // Log the timeout/network failure
     await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
       transactionId: transactionId ? (transactionId as any) : undefined,
+      requestMsgId,
       method: 'POST',
       endpoint: `/xml/${apiName}`,
       requestBody: { apiName, xmlLength: signedXml.length },
@@ -178,6 +190,7 @@ async function sendIpsXml(
   // Log the outbound call
   await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
     transactionId: transactionId ? (transactionId as any) : undefined,
+    requestMsgId,
     method: 'POST',
     endpoint: `/xml/${apiName}`,
     requestBody: { apiName, xmlLength: signedXml.length },
@@ -345,7 +358,14 @@ export const initiateOutboundTransfer = internalAction({
       };
 
       const xml = buildReqPay(head, payload);
-      const { ack } = await sendIpsXml(ctx, 'ReqPay', xml, args.transactionId, args.msgId);
+      const { ack } = await sendIpsXml(
+        ctx,
+        'ReqPay',
+        xml,
+        args.msgId,
+        args.transactionId,
+        args.msgId
+      );
 
       if (ack.result === 'SUCCESS') {
         // ACK received — transaction is now processing (awaiting async RespPay)
@@ -414,7 +434,12 @@ export const validateVpa = internalAction({
     const mode = await getProtocolMode(ctx);
     if (mode === 'json_mock') {
       // Mock: assume valid
-      return { valid: true, name: 'Mock User', provider: 'mock-bank' };
+      return {
+        valid: true,
+        validationStatus: 'validated' as IpsValidationStatus,
+        accountHolderName: 'Mock User',
+        providerName: 'mock-bank',
+      };
     }
 
     const msgId = generateMsgId();
@@ -422,15 +447,60 @@ export const validateVpa = internalAction({
     const xml = buildReqValAdd(head, { addr: args.addr });
 
     try {
-      const { ack } = await sendIpsXml(ctx, 'ReqValAdd', xml, undefined, args.correlationId);
+      const { ack } = await sendIpsXml(ctx, 'ReqValAdd', xml, msgId, undefined, args.correlationId);
+
+      if (ack.result !== 'SUCCESS') {
+        return {
+          valid: false,
+          validationStatus: 'invalid' as IpsValidationStatus,
+          errorCode: ack.errorCode,
+          errorDescription: ack.errorDescription,
+        };
+      }
+
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        await sleep(250);
+        const callbackLog = await ctx.runQuery(
+          internal.ips.ipsApiLogs.getLatestCallbackApiLogByRequestMsgId,
+          {
+            requestMsgId: msgId,
+          }
+        );
+
+        if (callbackLog?.apiName !== 'RespValAdd' || !callbackLog.rawXml) {
+          continue;
+        }
+
+        const details = parseRespValAddDetails(callbackLog.rawXml);
+        return {
+          valid: details.result === 'SUCCESS',
+          validationStatus:
+            details.result === 'SUCCESS'
+              ? ('validated' as IpsValidationStatus)
+              : ('invalid' as IpsValidationStatus),
+          errorCode: details.errorCode,
+          errorDescription: details.errorDescription,
+          accountHolderName: details.accountHolderName,
+          ifscCode: details.ifscCode,
+          providerCode: details.providerCode,
+          providerName: details.providerName,
+          resolvedAddr: details.addr,
+          entityType: details.entityType,
+          cmId: details.cmId,
+        };
+      }
+
       return {
-        valid: ack.result === 'SUCCESS',
-        errorCode: ack.errorCode,
-        errorDescription: ack.errorDescription,
+        valid: false,
+        validationStatus: 'pending' as IpsValidationStatus,
+        errorCode: 'PENDING_CALLBACK',
+        errorDescription:
+          'IPS accepted the validation request but the detailed response has not arrived yet.',
       };
     } catch (error) {
       return {
         valid: false,
+        validationStatus: 'invalid' as IpsValidationStatus,
         errorCode: 'NETWORK_ERROR',
         errorDescription: error instanceof Error ? error.message : 'Unknown error',
       };
@@ -451,7 +521,7 @@ export const checkTransactionStatus = internalAction({
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
     if (mode === 'json_mock') {
-      return { status: 'processing', respCode: 'MOCK' };
+      return { status: 'PENDING', respCode: 'MOCK', terminal: false };
     }
 
     const msgId = generateMsgId();
@@ -462,12 +532,56 @@ export const checkTransactionStatus = internalAction({
     });
 
     try {
-      const { ack } = await sendIpsXml(ctx, 'ReqChkTxn', xml, args.transactionId, args.orgMsgId);
-      return { status: ack.result, respCode: ack.errorCode };
+      const { ack } = await sendIpsXml(
+        ctx,
+        'ReqChkTxn',
+        xml,
+        msgId,
+        args.transactionId,
+        args.orgMsgId
+      );
+      if (ack.result !== 'SUCCESS') {
+        return {
+          status: 'FAILURE',
+          respCode: ack.errorCode,
+          terminal: true,
+          errorDescription: ack.errorDescription,
+        };
+      }
+
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        await sleep(250);
+        const callbackLog = await ctx.runQuery(
+          internal.ips.ipsApiLogs.getLatestCallbackApiLogByRequestMsgId,
+          {
+            requestMsgId: msgId,
+          }
+        );
+
+        if (callbackLog?.apiName !== 'RespChkTxn' || !callbackLog.rawXml) {
+          continue;
+        }
+
+        const details = parseRespChkTxnDetails(callbackLog.rawXml);
+        return {
+          status: details.result || 'PENDING',
+          respCode: details.primaryRespCode ?? details.errorCode,
+          terminal: details.result === 'SUCCESS' || details.result === 'FAILURE',
+          originalMsgId: details.orgMsgId,
+          originalTxnId: details.orgTxnId,
+        };
+      }
+
+      return {
+        status: 'PENDING',
+        respCode: 'PENDING_CALLBACK',
+        terminal: false,
+      };
     } catch (error) {
       return {
-        status: 'error',
+        status: 'FAILURE',
         respCode: 'NETWORK_ERROR',
+        terminal: true,
         message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -492,7 +606,7 @@ export const heartbeat = internalAction({
     const xml = buildReqHbt(head, { orgId });
 
     try {
-      const { ack, durationMs } = await sendIpsXml(ctx, 'ReqHbt', xml);
+      const { ack, durationMs } = await sendIpsXml(ctx, 'ReqHbt', xml, msgId);
       return {
         healthy: ack.result === 'SUCCESS',
         durationMs,
@@ -529,7 +643,7 @@ export const balanceEnquiry = internalAction({
     const xml = buildReqBalEnq(head, args);
 
     try {
-      const { ack } = await sendIpsXml(ctx, 'ReqBalEnq', xml);
+      const { ack } = await sendIpsXml(ctx, 'ReqBalEnq', xml, msgId);
       return { success: ack.result === 'SUCCESS', errorCode: ack.errorCode };
     } catch (error) {
       return {
@@ -549,6 +663,7 @@ export const handleWebhook = internalAction({
   args: {
     apiName: v.string(),
     msgId: v.string(),
+    requestMsgId: v.optional(v.string()),
     respCode: v.optional(v.string()),
     respDescription: v.optional(v.string()),
     txnData: v.optional(v.any()),
@@ -562,6 +677,7 @@ export const handleWebhook = internalAction({
 
     // Log the inbound callback
     await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
+      requestMsgId: args.requestMsgId,
       method: 'CALLBACK',
       endpoint: `/webhook/ips/${args.apiName}`,
       requestBody: { apiName: args.apiName, msgId: args.msgId, respCode: args.respCode },
@@ -579,10 +695,21 @@ export const handleWebhook = internalAction({
       // VPA validation responses — mostly fire-and-forget
       console.log(`[ips webhook] RespValAdd for ${args.msgId}: ${args.respCode}`);
     } else if (args.apiName === 'RespChkTxn') {
-      await handleRespPay(ctx, args); // Same status update logic
+      await handleRespChkTxn(ctx, args);
+    } else if (args.apiName === 'RespListAccPvd') {
+      await ctx.runAction(internal.actions.ipsOnboardingAdapter.handleRespListAccPvd, {
+        requestMsgId: args.requestMsgId,
+        rawXml: args.rawXml,
+      });
+    } else if (args.apiName === 'RespListAccount') {
+      await ctx.runAction(internal.actions.ipsOnboardingAdapter.handleRespListAccount, {
+        requestMsgId: args.requestMsgId,
+        rawXml: args.rawXml,
+      });
     } else if (args.apiName === 'RespRegMapper') {
       await ctx.runAction(internal.actions.ipsAliasAdapter.handleRespRegMapper, {
         msgId: args.msgId,
+        requestMsgId: args.requestMsgId,
         respCode: args.respCode,
         respDescription: args.respDescription,
         rawXml: args.rawXml,
@@ -591,6 +718,7 @@ export const handleWebhook = internalAction({
     } else if (args.apiName === 'RespGetAdd') {
       await ctx.runAction(internal.actions.ipsAliasAdapter.handleRespGetAdd, {
         msgId: args.msgId,
+        requestMsgId: args.requestMsgId,
         respCode: args.respCode,
         respDescription: args.respDescription,
         rawXml: args.rawXml,
@@ -623,18 +751,19 @@ async function handleRespPay(
   ctx: any,
   args: {
     msgId: string;
+    requestMsgId?: string;
     respCode?: string;
     respDescription?: string;
     txnData?: any;
   }
 ) {
-  // Find the transaction by msgId
+  const lookupMsgId = args.requestMsgId ?? args.msgId;
   const txn = await ctx.runQuery(internal.ips.ipsTransactions.getTransactionByMsgIdInternal, {
-    msgId: args.msgId,
+    msgId: lookupMsgId,
   });
 
   if (!txn) {
-    console.warn(`[ips webhook] Unknown msgId: ${args.msgId}`);
+    console.warn(`[ips webhook] Unknown msgId: ${lookupMsgId}`);
     return;
   }
 
@@ -654,6 +783,84 @@ async function handleRespPay(
 
   console.log(
     `[ips webhook] ${args.msgId} → ${status} (code: ${respCode}, retryable: ${isRetryable(respCode)})`
+  );
+}
+
+async function handleRespChkTxn(
+  ctx: any,
+  args: {
+    msgId: string;
+    requestMsgId?: string;
+    respCode?: string;
+    respDescription?: string;
+    txnData?: any;
+    rawXml?: string;
+  }
+) {
+  const requestMsgId = args.requestMsgId;
+  let transactionId = args.txnData?.transactionId as string | undefined;
+  let originalMsgId: string | undefined;
+  let outboundTransactionId: string | undefined;
+
+  if (requestMsgId) {
+    const outboundLog = await ctx.runQuery(
+      internal.ips.ipsApiLogs.getLatestOutboundApiLogByRequestMsgId,
+      {
+        requestMsgId,
+      }
+    );
+    outboundTransactionId = outboundLog?.transactionId;
+    transactionId = transactionId ?? outboundTransactionId;
+    originalMsgId = outboundLog?.correlationId;
+  }
+
+  if (args.rawXml) {
+    const details = parseRespChkTxnDetails(args.rawXml);
+    const resolution = resolveRespChkTxnResolution({
+      details,
+      transactionIdFromPayload: transactionId,
+      transactionIdFromOutboundLog: outboundTransactionId,
+      originalMsgIdFromOutboundLog: originalMsgId,
+      respCode: args.respCode,
+      respDescription: args.respDescription,
+    });
+    transactionId = resolution.transactionId;
+    originalMsgId = resolution.originalMsgId;
+
+    if (!transactionId && originalMsgId) {
+      const originalTxn = await ctx.runQuery(
+        internal.ips.ipsTransactions.getTransactionByMsgIdInternal,
+        {
+          msgId: originalMsgId,
+        }
+      );
+      transactionId = originalTxn?._id;
+    }
+
+    if (transactionId) {
+      await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
+        transactionId,
+        status: resolution.status,
+        rawResponse: {
+          ...(args.txnData ?? {}),
+          chkTxnResult: details.result,
+          originalMsgId: details.orgMsgId,
+          originalTxnId: details.orgTxnId,
+        },
+        errorCode: resolution.status === 'completed' ? undefined : resolution.resolvedRespCode,
+        errorDescription:
+          resolution.status === 'completed' ? undefined : resolution.resolvedRespDescription,
+      });
+
+      console.log(
+        `[ips webhook] ${args.msgId} → ${resolution.status} via RespChkTxn (code: ${resolution.resolvedRespCode ?? 'UNKNOWN'})`
+      );
+      return;
+    }
+  }
+
+  console.warn(
+    `[ips webhook] Unable to correlate RespChkTxn ${args.msgId} (requestMsgId=${requestMsgId ?? 'n/a'}, originalMsgId=${originalMsgId ?? 'n/a'})`
   );
 }
 
@@ -709,7 +916,14 @@ export const initiateReversal = internalAction({
       };
 
       const xml = buildReqRev(head, payload);
-      const { ack } = await sendIpsXml(ctx, 'ReqRev', xml, args.transactionId, args.orgMsgId);
+      const { ack } = await sendIpsXml(
+        ctx,
+        'ReqRev',
+        xml,
+        msgId,
+        args.transactionId,
+        args.orgMsgId
+      );
 
       if (ack.result === 'SUCCESS') {
         await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
@@ -772,7 +986,14 @@ export const initiateCollectRequest = internalAction({
       };
 
       const xml = buildReqPay(head, payload);
-      const { ack } = await sendIpsXml(ctx, 'ReqPay', xml, args.transactionId, args.msgId);
+      const { ack } = await sendIpsXml(
+        ctx,
+        'ReqPay',
+        xml,
+        args.msgId,
+        args.transactionId,
+        args.msgId
+      );
 
       if (ack.result === 'SUCCESS') {
         await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
@@ -828,7 +1049,7 @@ export const queryAuthDetail = internalAction({
     });
 
     try {
-      const { ack } = await sendIpsXml(ctx, 'ReqAuthDetail', xml, undefined, args.txnId);
+      const { ack } = await sendIpsXml(ctx, 'ReqAuthDetail', xml, msgId, undefined, args.txnId);
       return {
         authStatus: ack.result === 'SUCCESS' ? 'AUTHENTICATED' : 'FAILED',
         errorCode: ack.errorCode,
@@ -879,6 +1100,7 @@ export const sendTxnConfirmation = internalAction({
         ctx,
         'TxnConfirmation',
         xml,
+        msgId,
         args.transactionId,
         args.orgMsgId
       );
@@ -937,7 +1159,7 @@ export const resolveDeemedTransaction = internalAction({
       transactionId: args.transactionId,
     });
 
-    if (result.status === 'SUCCESS' || result.status === 'FAILURE') {
+    if (result.terminal && (result.status === 'SUCCESS' || result.status === 'FAILURE')) {
       const finalStatus: string = result.status === 'SUCCESS' ? 'completed' : 'failed';
       await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
         transactionId: args.transactionId,

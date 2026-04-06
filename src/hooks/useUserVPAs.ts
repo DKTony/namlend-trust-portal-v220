@@ -1,10 +1,14 @@
 /**
- * User VPAs Hook — Convex-native.
- * React hooks for managing user's VPA (Virtual Payment Address) records via Convex vpaRegistry table.
+ * User VPA hooks backed by the live Convex IPP implementation.
+ *
+ * `ipsAliasDirectory` is the primary source; `vpaRegistry` is only surfaced as
+ * a compatibility fallback through `api.ips.ipsVpa.*`.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
 import type {
   UserVPAsResult,
   UpsertVPAParams,
@@ -12,163 +16,188 @@ import type {
   IPSAdapterValidateVPAResponse,
 } from '@/types/ips';
 
-/**
- * Hook for fetching user's saved VPAs.
- * VPA registry query will be wired when a dedicated Convex query is added.
- * For now returns empty list — IPS VPA features require BON PSP registration.
- */
-export function useUserVPAs(_userId?: string) {
-  const result: UserVPAsResult = useMemo(() => ({ success: true, vpas: [] }), []);
-  return { data: result, isLoading: false, error: null };
+export function useUserVPAs() {
+  const raw = useQuery(api.ips.ipsVpa.getMySavedVpas, {});
+
+  const data = useMemo<UserVPAsResult>(() => {
+    if (!raw) {
+      return { success: true, vpas: [] };
+    }
+    return raw;
+  }, [raw]);
+
+  return {
+    data,
+    isLoading: raw === undefined,
+    error: null,
+  };
 }
 
-/**
- * Hook for adding/updating a VPA
- */
 export function useUpsertVPA() {
   const { toast } = useToast();
+  const upsertVpa = useMutation(api.ips.ipsVpa.upsertVpa);
   const [isPending, setIsPending] = useState(false);
 
   const mutate = useCallback(
     async (params: UpsertVPAParams) => {
       setIsPending(true);
       try {
-        // VPA upsert would go through Convex mutation — for now toast success
+        const result = (await upsertVpa({
+          vpaAddress: params.vpaAddress,
+          displayName: params.displayName,
+          setDefault: params.setDefault,
+        })) as UpsertVPAResult;
+
         toast({
           title: 'VPA Saved',
-          description: `Payment address ${params.vpaAddress} has been saved.`,
+          description: result.message ?? `${params.vpaAddress} has been saved.`,
         });
-        return { success: true, vpa_address: params.vpaAddress } as UpsertVPAResult;
+
+        return result;
       } catch (error: any) {
+        const message = error?.data?.message ?? error?.message ?? 'Could not save payment address.';
         toast({
           title: 'Failed to Save VPA',
-          description: error.message || 'Could not save payment address.',
+          description: message,
           variant: 'destructive',
         });
-        return { success: false, message: error.message } as UpsertVPAResult;
+        return { success: false, error: message, message } as UpsertVPAResult;
       } finally {
         setIsPending(false);
       }
     },
-    [toast]
+    [toast, upsertVpa]
   );
 
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
-/**
- * Hook for deleting a VPA
- */
 export function useDeleteVPA() {
   const { toast } = useToast();
+  const deleteVpa = useMutation(api.ips.ipsVpa.deleteVpa);
   const [isPending, setIsPending] = useState(false);
 
   const mutate = useCallback(
-    async (_vpaId: string) => {
+    async (vpaId: string, source?: 'alias_directory' | 'legacy_registry') => {
       setIsPending(true);
       try {
+        const result = await deleteVpa({ vpaId, source });
         toast({ title: 'VPA Removed', description: 'Payment address has been removed.' });
-        return { success: true };
+        return result;
       } catch (error: any) {
+        const message =
+          error?.data?.message ?? error?.message ?? 'Could not remove payment address.';
         toast({
           title: 'Failed to Remove VPA',
-          description: error.message,
+          description: message,
           variant: 'destructive',
         });
-        return { success: false, error: error.message };
+        return { success: false, error: message };
       } finally {
         setIsPending(false);
       }
     },
-    [toast]
+    [deleteVpa, toast]
   );
 
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
-/**
- * Hook for setting a VPA as default
- */
 export function useSetDefaultVPA() {
   const { toast } = useToast();
+  const setDefaultVpa = useMutation(api.ips.ipsVpa.setDefaultVpa);
   const [isPending, setIsPending] = useState(false);
 
   const mutate = useCallback(
-    async (_vpaId: string) => {
+    async (vpaId: string, source?: 'alias_directory' | 'legacy_registry') => {
       setIsPending(true);
       try {
+        const result = await setDefaultVpa({ vpaId, source });
         toast({
           title: 'Default VPA Updated',
           description: 'Your default payment address has been updated.',
         });
-        return { success: true };
+        return result;
       } catch (error: any) {
+        const message =
+          error?.data?.message ?? error?.message ?? 'Could not update default address.';
         toast({
           title: 'Failed to Update Default',
-          description: error.message,
+          description: message,
           variant: 'destructive',
         });
-        return { success: false, error: error.message };
+        return { success: false, error: message };
       } finally {
         setIsPending(false);
       }
     },
-    [toast]
+    [setDefaultVpa, toast]
   );
 
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
-/**
- * Hook for validating a VPA
- */
 export function useValidateVPA() {
   const { toast } = useToast();
+  const validateVpa = useAction(api.ips.ipsVpa.validateVpa);
   const [isPending, setIsPending] = useState(false);
 
   const mutate = useCallback(
     async (vpa: string) => {
       setIsPending(true);
       try {
-        // VPA validation would go through IPS adapter action
-        // For now, do basic format validation
-        const isValid = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/.test(vpa);
-        const result: IPSAdapterValidateVPAResponse = {
-          success: true,
-          isValid,
-          errorMessage: isValid ? undefined : 'Invalid VPA format. Expected format: user@provider',
-        };
-        if (isValid) {
-          toast({ title: 'VPA Valid', description: `${vpa} is a valid payment address.` });
+        const result = (await validateVpa({ vpa })) as IPSAdapterValidateVPAResponse;
+
+        if (result.validationStatus === 'validated') {
+          toast({
+            title: 'VPA Valid',
+            description:
+              (result.accountHolderName ?? result.providerName)
+                ? `${result.accountHolderName ?? result.resolvedVpa ?? vpa} is available.`
+                : `${result.resolvedVpa ?? vpa} is valid.`,
+          });
+        } else if (result.validationStatus === 'pending') {
+          toast({
+            title: 'Validation Pending',
+            description:
+              result.errorMessage ??
+              'IPS accepted the request, but the directory response has not arrived yet.',
+          });
         } else {
           toast({
-            title: 'Invalid VPA',
-            description: result.errorMessage || 'Not valid.',
+            title: 'Unable to Validate VPA',
+            description: result.errorMessage ?? 'The payment address could not be validated.',
             variant: 'destructive',
           });
         }
+
         return result;
       } catch (error: any) {
-        toast({ title: 'Validation Error', description: error.message, variant: 'destructive' });
+        const message = error?.data?.message ?? error?.message ?? 'Validation failed.';
+        toast({ title: 'Validation Error', description: message, variant: 'destructive' });
         return {
           success: false,
+          isValid: false,
+          validationStatus: 'invalid',
           error: 'UNEXPECTED_ERROR',
-          errorMessage: error.message,
-        } as IPSAdapterValidateVPAResponse;
+          errorCode: 'UNEXPECTED_ERROR',
+          errorMessage: message,
+        } satisfies IPSAdapterValidateVPAResponse;
       } finally {
         setIsPending(false);
       }
     },
-    [toast]
+    [toast, validateVpa]
   );
 
   return { mutate, mutateAsync: mutate, isPending, isLoading: isPending };
 }
 
-/**
- * Get the default VPA from a list of VPAs
- */
-export function getDefaultVPA(vpas: UserVPAsResult['vpas']): any {
-  if (!vpas || vpas.length === 0) return undefined;
-  return vpas.find((vpa: any) => vpa.is_default) || vpas[0];
+export function getDefaultVPA(vpas: UserVPAsResult['vpas']) {
+  if (!vpas?.length) return undefined;
+  return (
+    vpas.find((vpa) => vpa.is_default && vpa.is_usable !== false) ??
+    vpas.find((vpa) => vpa.is_usable !== false) ??
+    vpas[0]
+  );
 }

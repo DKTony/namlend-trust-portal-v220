@@ -1,269 +1,165 @@
-# IPS (Instant Payment System) Implementation
+# IPS Implementation
 
-**Last Updated**: 2026-04-05
-**Aligned With**: IPS/IPP Phase 4A+4B (Sandbox Certification + Missing APIs) — v5.2.3
-**Status**: Current ✅
-
----
-
-## Current Implementation Status
-
-> **Protocol Status**: The IPS adapter supports both **JSON mock mode** (development) and **async XML over HTTPS** (sandbox/production). Protocol mode is controlled by the `IPS_PROTOCOL_MODE` business rule (`json_mock` | `xml_sandbox` | `xml_production`).
-
-> **Phase Completion**:
->
-> - ✅ Phase 1: XML protocol foundation (ipsXmlBuilder, ipsSigningProvider, RSA-SHA256 signing)
-> - ✅ Phase 2: Alias Directory integration (ipsAliasAdapter, ipsAliasDirectory, phone normalization)
-> - ✅ Phase 3: IPS-mandated onboarding flow (10-step state machine, 6 onboarding APIs)
-> - ✅ Phase 4A: Sandbox certification fixes (msgId format, namespace, limits, timeouts, mTLS, PIN encryption, NACK parsing, idempotency)
-> - ✅ Phase 4B: Missing core APIs (reversal, collect/request-to-pay, auth detail, txn confirmation, ListPsp, ListKeys, deemed resolution)
-> - ⬜ Phase 5A: Production features (eFRM, 3-way reconciliation, settlement transport, dispute framework, HSM)
-> - ⬜ Phase 5B: Extended capabilities (merchant P2M, bulk G2P/B2P, USSD, ATM cash-out)
+**Doc Revision**: 2026-04-06
+**Authoritative Runtime**: Convex
+**Status**: Active
 
 ---
 
-## Architecture
+## Summary
 
-```
-NamLend UI
-  ↓ (useMutation — step-specific: completeDeviceBinding, selectSovProvider, etc.)
-api.ips.ipsOnboarding.* (Convex mutations — state machine enforcement)
-  → Validates transition, patches ipsOnboardingApplications
-  → ctx.scheduler → internal.actions.ipsOnboardingAdapter.*
+NamLend's live IPP/IPS path is now the Convex implementation. The current runtime contract is defined by:
 
-api.ips.ipsTransactions.initiateIpsTransaction (Convex mutation)
-  → Inserts ipsTransactions (status: "pending")
-  → ctx.scheduler → internal.actions.ipsAdapter.processOutbound
+- `src/constants/ippSupportMatrix.ts` for supported flows
+- `docs/IPP_INTEGRATION.md` for live-vs-legacy boundary and behavioral rules
+- `docs/IPP/IPS_TSD_v0.7.md` plus `docs/IPP/XSD's/` for wire-format truth
+- `docs/IPP/IPP_FSD_v10.0.md` for workflow and business-rule truth
 
-ipsAdapter.processOutbound (Convex Action — XML or mock)
-  → Builds XML via ipsXmlBuilder → signs via ipsSigningProvider
-  → POSTs to IPS /xml endpoint → parses ACK
-  → Logs to ipsApiLogs (direction: OUTBOUND, contentType: xml)
-  → ctx.runMutation → patches ipsTransactions.status
+Supabase IPP surfaces remain in-repo only as legacy reference material.
 
-IPS Switch (Bank of Namibia) → POST /webhook/ips
-  → convex/http.ts parses XML → verifies RSA-SHA256 signature
-  → Routes by API name (RespPay, RespRegMapper, RespGetAdd, etc.)
-  → Returns XML ACK response
-  → ctx.runMutation → updates relevant records
+---
+
+## Live Architecture
+
+```text
+React hooks/components
+  -> api.ips.* queries, mutations, actions
+  -> Convex tables (ipsTransactions, ipsApiLogs, ipsAliasDirectory, ipsOnboardingApplications)
+  -> XML request builders/parsers
+  -> outbound IPS HTTP actions
+  -> /webhook/ips callback handling in convex/http.ts
 ```
 
----
+Primary runtime surfaces:
 
-## Convex Tables Used
+- `convex/ips/ipsTransactions.ts`
+- `convex/ips/ipsVpa.ts`
+- `convex/ips/ipsOnboarding.ts`
+- `convex/actions/ipsAdapter.ts`
+- `convex/actions/ipsAliasAdapter.ts`
+- `convex/actions/ipsOnboardingAdapter.ts`
+- `convex/lib/ipsXmlBuilder.ts`
+- `convex/lib/ipsResponseParsers.ts`
+- `convex/lib/ipsCallbackCorrelation.ts`
 
-| Table                       | Purpose                                                                   |
-| --------------------------- | ------------------------------------------------------------------------- |
-| `ipsTransactions`           | Each IPS payment attempt. `msgId` is the idempotency key.                 |
-| `ipsApiLogs`                | Full request/response log (direction, contentType, rawXml, correlationId) |
-| `ipsAlerts`                 | Anomaly and failure alerts (severity: info/warning/critical)              |
-| `ipsOnboardingApplications` | IPP onboarding (IPS-mandated 14-state FSM + legacy state compatibility)   |
-| `ipsDeviceBindings`         | Device binding records for IPP authentication                             |
-| `ipsAliasDirectory`         | IPN-synced alias registry (addr, entityType, cmId, syncedWithIps)         |
-| `vpaRegistry`               | Legacy Virtual Payment Addresses (being replaced by ipsAliasDirectory)    |
+Legacy compatibility only:
 
-## Transaction Types
-
-| `txType`          | Direction | Use Case                      |
-| ----------------- | --------- | ----------------------------- |
-| `credit_transfer` | outbound  | Loan disbursement to borrower |
-| `credit_transfer` | inbound   | Repayment from borrower       |
-| `request_to_pay`  | outbound  | Repayment request             |
-| `reversal`        | either    | Transaction reversal          |
-
-## Transaction Status FSM
-
-```
-pending → processing → completed
-                    ↘ failed
-                    ↘ reversed
-                    ↘ timeout
-```
+- `supabase/functions/ips-adapter`
+- SQL/RPC-era IPP notes under `supabase/migrations`
+- `vpaRegistry` as a fallback bridge while older saved records remain
 
 ---
 
-## Webhook Security (Implemented)
+## Supported Flows
 
-The `/webhook/ips` endpoint in `convex/http.ts` supports both legacy JSON and XML protocol:
+The live Convex path currently supports the shipped flow set:
 
-**XML Protocol (Phase 1+)**:
+| Flow                               | Status | Notes                                                        |
+| ---------------------------------- | ------ | ------------------------------------------------------------ |
+| `ReqPay / RespPay`                 | live   | Repayment and disbursement initiation                        |
+| `ReqValAdd / RespValAdd`           | live   | Alias/VPA validation                                         |
+| `ReqChkTxn / RespChkTxn`           | live   | Deemed and deferred status reconciliation                    |
+| `ReqRegMob`                        | live   | Device binding and verification kickoff                      |
+| `ReqListAccPvd / RespListAccPvd`   | live   | SoV provider discovery                                       |
+| `ReqListAccount / RespListAccount` | live   | Linked account discovery                                     |
+| `ReqOtp`                           | live   | OTP verification                                             |
+| `ReqSetCre`                        | live   | IPS PIN setup/change plumbing                                |
+| `ReqGetAdd / RespGetAdd`           | live   | Alias lookup with `resolved` / `pending` / `failed` outcomes |
+| `ReqRegMapper / RespRegMapper`     | live   | Alias registration lifecycle                                 |
 
-1. Raw body read as text
-2. XML parsed to identify API name (from root element, e.g. `RespPay`, `RespRegMapper`)
-3. RSA-SHA256 signature verification via `ipsSigningProvider.verify()`
-4. Routed to appropriate internal action handler by API name
-5. Returns XML ACK response
+Not part of the current shipped flow set:
 
-**Legacy JSON (backward compatible)**:
-
-1. `X-IPS-Signature` or `X-Signature` header checked
-2. `verifyHmacSha256(IPS_WEBHOOK_SECRET, rawBody, signature)` using Web Crypto API
-3. Returns `401` if verification fails when secret is configured
-4. Falls back to warn-only mode if `IPS_WEBHOOK_SECRET` is not set (development)
-
----
-
-## Adapter Architecture
-
-### Action Files
-
-| File                                     | APIs                                                                                                               | Purpose                                |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| `convex/actions/ipsAdapter.ts`           | ReqPay, ReqValAdd, ReqChkTxn, ReqHbt, ReqBalEnq, ReqRev, ReqAuthDetail, TxnConfirmation, Collect, DeemedResolution | Core payment + utility + Phase 4B APIs |
-| `convex/actions/ipsAliasAdapter.ts`      | ReqRegMapper, ReqGetAdd, RespRegMapper, RespGetAdd, MapperConfirmation                                             | Alias Directory (IPN Central Mapper)   |
-| `convex/actions/ipsOnboardingAdapter.ts` | ReqRegMob, ReqListAccPvd, ReqListAccount, ReqOtp, ReqSetCre, ReqListPsp, ReqListKeys                               | Onboarding flow APIs                   |
-
-### Library Files
-
-| File                                 | Purpose                                                                |
-| ------------------------------------ | ---------------------------------------------------------------------- |
-| `convex/lib/ipsXmlBuilder.ts`        | XML request builders + response parsers for all IPS APIs (18 builders) |
-| `convex/lib/ipsSigningProvider.ts`   | `IpsSigningProvider` interface + factory (software or HSM)             |
-| `convex/lib/ipsSoftwareSigner.ts`    | RSA-SHA256 signing + RSA-OAEP PIN encryption (Node.js `crypto`)        |
-| `convex/lib/ipsErrorCodes.ts`        | 100+ IPS error codes → retryable flag + user-friendly messages         |
-| `convex/lib/ipsPhoneNormalize.ts`    | Namibian mobile normalization (+264/0 → 9-digit)                       |
-| `convex/lib/ipsTransactionLimits.ts` | Daily transaction limit enforcement per IPP FSD §5.2                   |
-
-### Protocol Mode
-
-Controlled by business rule `IPS_PROTOCOL_MODE` (evaluated via `convex/lib/ruleEvaluator.ts`):
-
-| Mode             | Behaviour                                        |
-| ---------------- | ------------------------------------------------ |
-| `json_mock`      | Simulated responses, no HTTP calls (development) |
-| `xml_sandbox`    | Signed XML to IPS sandbox endpoint               |
-| `xml_production` | Signed XML to production IPS switch              |
-
-### XML Message Flow
-
-```
-Outbound: buildXml() → sign(RSA-SHA256) → POST /xml → parse ACK → log to ipsApiLogs
-Inbound:  receive XML → verify signature → parse → route by API name → return XML ACK
-```
+- merchant/P2M-first product surfaces
+- bulk G2P/B2P operator tooling
+- mobile app migration work outside this repo
 
 ---
 
-## Onboarding Flow (IPS-Mandated)
+## Current Behavioral Contract
 
-The onboarding state machine follows the IPN Product Rules v0.5:
+### Alias and VPA validation
 
-```
-NOT_STARTED → DEVICE_BINDING_REQUIRED → DEVICE_BOUND
-  → SOV_SELECTION_PENDING → SOV_SELECTED → ACCOUNTS_LISTED
-  → VERIFICATION_PENDING → VERIFIED
-  → IPS_PIN_SETTING → IPS_PIN_SET
-  → ALIAS_REGISTRATION_PENDING → ALIAS_REGISTERED
-  → READY_FOR_IPP_PAYMENTS
-```
+- Validation is authenticated. Anonymous address probing is rejected.
+- Local alias resolution succeeds immediately only when the alias is both:
+  - `ACTIVE`
+  - `syncedWithIps === true`
+- Non-usable aliases return non-terminal or invalid outcomes instead of false success.
+- Frontend validation is tri-state:
+  - `pending`
+  - `validated`
+  - `invalid`
 
-Each transition has a **dedicated mutation** in `convex/ips/ipsOnboarding.ts`:
+### Onboarding
 
-| Mutation                | Transition                                    | IPS API        |
-| ----------------------- | --------------------------------------------- | -------------- |
-| `completeDeviceBinding` | DEVICE_BINDING_REQUIRED → DEVICE_BOUND        | ReqRegMob      |
-| `selectSovProvider`     | DEVICE_BOUND → SOV_SELECTED                   | ReqListAccount |
-| `selectAccount`         | SOV_SELECTED → ACCOUNTS_LISTED                | —              |
-| `startVerification`     | ACCOUNTS_LISTED → VERIFICATION_PENDING        | ReqRegMob      |
-| `submitOtp`             | VERIFICATION_PENDING → VERIFIED               | ReqOtp         |
-| `setupIpsPin`           | VERIFIED → IPS_PIN_SET                        | ReqSetCre      |
-| `createHandle`          | IPS_PIN_SET → ALIAS_REGISTRATION_PENDING      | —              |
-| `registerAlias`         | ALIAS_REGISTRATION_PENDING → ALIAS_REGISTERED | ReqRegMapper   |
-| `confirmOnboarding`     | ALIAS_REGISTERED → READY_FOR_IPP_PAYMENTS     | —              |
+The onboarding state machine is enforced in `convex/ips/ipsOnboarding.ts`.
 
-### Frontend Integration
+Key rule:
 
-`src/hooks/useIPPOnboarding.ts` drives the onboarding UI:
+- no path may move an application to `READY_FOR_IPP_PAYMENTS` unless the alias is confirmed by IPS
+- this applies to both end-user completion and staff approval paths
 
-- Reactive via `useQuery(api.ips.ipsOnboarding.getMyOnboarding)`
-- Calls step-specific mutations directly (not the legacy `advanceOnboardingStep`)
-- Maps legacy `step_1_identity`..`step_7_approved` states for existing records
-- Surfaces ConvexError messages from backend to toast notifications
+### Transaction status and callbacks
+
+- `ReqChkTxn` requests persist correlation back to the original payment/disbursement
+- `RespChkTxn` updates the original transaction, not just the check request
+- ACK-only acceptance is not treated as a terminal business success
+
+### Limit handling
+
+- loan disbursements are classified into the B2P bucket
+- repayments and disbursements do not share the same daily-use-case limit bucket
 
 ---
 
-## Phase 4 Implementation (2026-04-05)
+## Protocol Modes
 
-### Phase 4A — Sandbox Certification Fixes
+`IPS_PROTOCOL_MODE` controls transport behavior:
 
-| Fix                    | Spec Reference | Description                                                                                          |
-| ---------------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
-| **msgId format**       | IPS TSD §2.3   | 35-char: 3-digit bank code (`IPS_BANK_CODE`) + 32 hex UUID. `generateMsgId()` in `ipsXmlBuilder.ts`  |
-| **XML namespace**      | IPS TSD §2.1   | Configurable via `IPS_XML_NAMESPACE` env var, defaults to `http://npci.org/upi/schema/`              |
-| **Transaction limits** | IPP FSD §5.2   | P2P N$10k/10txn, P2M N$10k/100txn, ATM N$2k/2txn, G2P N$25k/50txn per day. `ipsTransactionLimits.ts` |
-| **Timeouts**           | IPS TSD §2.5   | 10s non-financial, 30s financial. AbortController on all `sendIpsXml()` calls                        |
-| **PIN encryption**     | IPS TSD §3.3   | RSA-OAEP + SHA-256 via `encryptPin()` when `IPS_HSM_PUBLIC_KEY` is configured                        |
-| **mTLS**               | IPS TSD §3.1   | Client cert via `IPS_CLIENT_CERT`/`IPS_CLIENT_KEY`/`IPS_CA_CERT` env vars                            |
-| **Idempotent retry**   | IPS TSD §2.3   | Duplicate msgId returns existing transaction (no duplicate insert)                                   |
-| **NACK parsing**       | IPS TSD §2.4   | Structured error extraction from `Err` elements in NACK responses                                    |
+| Mode             | Purpose                          |
+| ---------------- | -------------------------------- |
+| `json_mock`      | Development and local simulation |
+| `xml_sandbox`    | BON sandbox / certification path |
+| `xml_production` | Production transport path        |
 
-### Phase 4B — Missing Core APIs
-
-| API                   | Spec Reference | Action                     | Purpose                                                        |
-| --------------------- | -------------- | -------------------------- | -------------------------------------------------------------- |
-| **ReqRev/RespRev**    | IPP FSD §4.14  | `initiateReversal`         | Full/partial transaction reversal                              |
-| **ReqPay (COLLECT)**  | IPP FSD §4.3   | `initiateCollectRequest`   | Creditor-initiated payment request (loan repayment collection) |
-| **ReqAuthDetail**     | IPP FSD §4.5   | `queryAuthDetail`          | Transaction authentication status query                        |
-| **TxnConfirmation**   | IPP FSD §4.16  | `sendTxnConfirmation`      | Payee confirmation after crediting beneficiary                 |
-| **ReqListPsp**        | IPP FSD §4.9   | `reqListPsp`               | List participating PSPs                                        |
-| **ReqListKeys**       | IPP FSD §4.10  | `reqListKeys`              | List alias key types                                           |
-| **Deemed resolution** | IPS TSD §2.6   | `resolveDeemedTransaction` | Exponential backoff ChkTxn for timed-out transactions          |
+The live application contract is still Convex in all three modes. The mode changes transport behavior, not the product-facing integration boundary.
 
 ---
 
-## Production Requirements
+## Verified Today
 
-To enable XML protocol mode:
+Current verification covers:
 
-1. **Certificates from Bank of Namibia**: RSA signing key + BoN public certificate
-2. **Convex env vars**:
-   ```bash
-   npx convex env set IPS_BASE_URL https://ips.bon.na/api/v2
-   npx convex env set IPS_ORG_ID NAMLEND
-   npx convex env set IPS_SIGNING_PRIVATE_KEY <PEM-encoded RSA key>
-   npx convex env set IPS_BON_PUBLIC_CERT <PEM-encoded BoN cert>
-   npx convex env set IPS_KEY_ID <key-identifier>
-   npx convex env set IPS_SIGNING_MODE software  # or "hsm" in Phase 5A
-   npx convex env set IPS_BANK_CODE 099  # 3-digit participant code from BoN
-   npx convex env set IPS_HSM_PUBLIC_KEY <PEM-encoded BoN HSM public key>
-   npx convex env set IPS_CLIENT_CERT <PEM-encoded client certificate for mTLS>
-   npx convex env set IPS_CLIENT_KEY <PEM-encoded client private key for mTLS>
-   npx convex env set IPS_CA_CERT <PEM-encoded CA certificate for mTLS>
-   ```
-3. **Toggle protocol mode**: Set `IPS_PROTOCOL_MODE` business rule to `xml_sandbox` or `xml_production`
-4. **Register aliases** in IPN Central Mapper for NamLend's routing codes
+- XML builder coverage
+- response parser coverage
+- callback correlation coverage
+- use-case limit classification coverage
+- support-matrix drift coverage
+- Playwright end-to-end lifecycle coverage:
+  - application
+  - approval
+  - IPS disbursement
+  - IPS repayment
+  - admin verification
+
+See [IPS_TESTING.md](./IPS_TESTING.md) for the exact commands and test files.
 
 ---
 
-## ISO 20022 Messages
+## Known Partials
 
-| Message  | Standard  | Use                                                |
-| -------- | --------- | -------------------------------------------------- |
-| pacs.008 | ISO 20022 | Customer credit transfer (payment initiation)      |
-| pacs.002 | ISO 20022 | Payment status report (acceptance/rejection)       |
-| pacs.009 | ISO 20022 | Financial institution credit transfer (settlement) |
-
----
-
-## Known Issues
-
-### IPS Disbursement Type Bug (Fixed 2026-04-04)
-
-The `InitiateIPSDisbursementParams` interface in `src/types/ips.ts` was missing required fields (`amount`, `loanId`, `creditorVpa`). The `IPSDisbursementForm` component passed `disbursementId` and `payeeVpa` but not the other fields needed by the `initiateIpsTransaction` mutation, causing an `ArgumentValidationError: Object is missing the required field 'amount'`.
-
-**Fix applied to:**
-
-- `src/types/ips.ts` — Added `loanId`, `amount`, `creditorVpa` to `InitiateIPSDisbursementParams`
-- `src/components/ips/IPSDisbursementForm.tsx` — Passes all required fields to `disbursementMutation.mutateAsync()`
-
-**Status:** Fixed locally, pending Netlify deployment.
+- BON-managed production dependencies are still external:
+  - participant credentials
+  - certificates
+  - mTLS
+  - HSM/public-key material
+- Full frontend surfacing for every supported IPS callback remains selective; the backend handles more detail than every UI currently exposes.
+- Legacy fallback records in `vpaRegistry` still exist and are intentionally not being expanded.
 
 ---
 
-## See Also
+## Related Documents
 
-- [API_REFERENCE.md](./API_REFERENCE.md#module-apiips-ipsipp-domain--mock-adapter) — IPS Convex API
-- [FLOWS.md](./FLOWS.md#3-disbursement-flow) — IPS disbursement and payment flows
-- [IPS_PRODUCTION_CHECKLIST.md](./IPS_PRODUCTION_CHECKLIST.md) — Production readiness items
-- [IPS_TESTING.md](./IPS_TESTING.md) — Test coverage
-- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) — IPP onboarding integration
-- [/docs/IPP/](./IPP/) — Bank of Namibia official IPS/IPP specifications
+- [IPP_INTEGRATION.md](./IPP_INTEGRATION.md)
+- [IPS_TESTING.md](./IPS_TESTING.md)
+- [IPS_PRODUCTION_CHECKLIST.md](./IPS_PRODUCTION_CHECKLIST.md)
+- [IPP/IPP_GAP_ASSESSMENT.md](./IPP/IPP_GAP_ASSESSMENT.md)

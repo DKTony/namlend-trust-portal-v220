@@ -1,7 +1,7 @@
 # NamLend Trust - Technical Context & Handover
 
-**Doc Revision**: 2026-03-19
-**Status**: Backend migrated to Convex (Feb 2026). All milestone A–D work complete. Frontend service rewiring complete (Batch 1–3 + Milestone D). IPS adapter runs in mock mode. TigerBeetle uses Convex outbox worker with simulated posting.
+**Doc Revision**: 2026-04-06
+**Status**: Backend migrated to Convex (Feb 2026). All milestone A–D work complete. Frontend service rewiring complete (Batch 1–3 + Milestone D). IPP/IPS now runs through the live Convex path, with transport mode selectable between mock, sandbox XML, and production XML. TigerBeetle uses Convex outbox worker with simulated posting.
 **Live URL**: <https://namlend-trust-portal-v220.netlify.app>
 **Convex Deployment**: Convex Cloud (auto-deploy via `npx convex deploy`)
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-NamLend Trust is a React SPA backed by **Convex** (reactive document-relational database, migrated from Supabase in Feb 2026) that delivers a full loan lifecycle: application intake, approval workflow, disbursement, repayment scheduling, collections, notifications, and admin operations. The codebase also includes IPS/IPP integration scaffolding (Convex mock adapter), settlement/backoffice workflows, and a TigerBeetle shadow ledger via Convex outbox pattern.
+NamLend Trust is a React SPA backed by **Convex** (reactive document-relational database, migrated from Supabase in Feb 2026) that delivers a full loan lifecycle: application intake, approval workflow, disbursement, repayment scheduling, collections, notifications, and admin operations. The codebase also includes live Convex-based IPS/IPP integration, settlement/backoffice workflows, and a TigerBeetle shadow ledger via Convex outbox pattern.
 
 **What is implemented in code**
 
@@ -19,14 +19,14 @@ NamLend Trust is a React SPA backed by **Convex** (reactive document-relational 
 - Payment processing with schedules, overdue marking, settlement detection, and reconciliation tools.
 - Collections workflow including activity logging, promise-to-pay (`createPromiseToPay`), and reschedule requests.
 - Notification pipeline: in-app (Convex), SMS/WhatsApp queued via `notificationQueue` + Convex actions.
-- IPS/IPP onboarding wizard, VPA registry, and transaction status monitoring (mock adapter via Convex action).
+- IPS/IPP onboarding wizard, alias/VPA management, and transaction status monitoring through Convex `api.ips.*` plus IPS callback handling.
 - Settlement schema (13 tables) + processing + admin reconciliation UI (NISS/SWIFT transport not implemented).
 - TigerBeetle outbox in Convex DB; cron worker posts to TB every 30s (simulated cluster connection).
 - All `src/services/` files are legacy dead code — 23 deleted in Milestone D, 4 remain with active consumers.
 
 **Key gaps (production blockers)**
 
-- IPS adapter is mock; production IPS API, mTLS, and switch connectivity are not wired.
+- BON sandbox/production connectivity, certificates, mTLS, and HSM-backed operational enablement are still external production blockers.
 - TigerBeetle cron worker simulates TB posting; real cluster connectivity is pending.
 - ~~Admin route guard is admin-only~~ — **RESOLVED (2026-03-04)**: `/admin/*` uses `requireLoanOfficer` guard; both `loan_officer` and `admin` roles can access.
 - ~~Credit scoring UI not shown~~ — **RESOLVED (2026-03-04)**: `creditScore`, `debtToIncomeRatio`, and `recommendation` displayed in `Loan360View` and `LoanReviewPanel`. `submitLoan` schedules `processLoanApplication` action automatically.

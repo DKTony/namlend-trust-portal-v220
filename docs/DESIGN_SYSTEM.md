@@ -197,13 +197,17 @@ The application uses a mobile-first responsive approach with breakpoints:
 
 ### Key Components
 
-#### DashboardSidebar (`src/components/DashboardSidebar.tsx`)
+#### ThemedSidebar (`src/components/Layout/ThemedSidebar.tsx`)
 
-- **Width**: `w-72` (288px)
-- **Background**: `bg-zinc-950` (Obsidian)
-- **Mobile Behavior**: Slide-in from left with backdrop blur overlay
-- **Navigation Items**: Icon + label with active state indicator (left border)
-- **User Profile Section**: Bottom-aligned with email and role display
+- **Width**: `w-80` (320px) — drawer-style slide-out panel
+- **Z-index**: `z-[70]` — above all page content
+- **Background**: Theme-aware (glass: `bg-white/10 backdrop-blur-xl`, lux: `bg-[#080808]`, neo: `bg-zinc-900`/`bg-white`)
+- **Mobile Behavior**: Slide-in from left with backdrop blur overlay, hamburger toggle
+- **Navigation Items**: Icon + label with active state indicator and 3D tilt effect on hover
+- **User Profile Section**: Bottom-aligned with name, email, role badge, and sign-out button
+- **Variants**: `client` (dashboard tabs) | `admin` (direct route links)
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md#layouts) for routing integration. See [UI_DESIGN.md](./UI_DESIGN.md#sidebar-navigation) for theme-specific styling details.
 
 #### StatCard (`src/components/StatCard.tsx`)
 
@@ -238,15 +242,15 @@ text-3xl md:text-4xl        /* Larger on desktop */
 
 ## 8. Component Files Reference
 
-| Component            | File                                  | Purpose                       |
-| -------------------- | ------------------------------------- | ----------------------------- |
-| **Auth Page**        | `src/pages/Auth.tsx`                  | Split-screen authentication   |
-| **Dashboard**        | `src/pages/Dashboard.tsx`             | Client dashboard with sidebar |
-| **DashboardSidebar** | `src/components/DashboardSidebar.tsx` | Collapsible navigation        |
-| **StatCard**         | `src/components/StatCard.tsx`         | Metric display cards          |
-| **Card**             | `src/components/ui/card.tsx`          | Base card with rounded-3xl    |
-| **Button**           | `src/components/ui/button.tsx`        | Styled buttons                |
-| **Input**            | `src/components/ui/input.tsx`         | Form inputs                   |
+| Component         | File                                      | Purpose                       |
+| ----------------- | ----------------------------------------- | ----------------------------- |
+| **Auth Page**     | `src/pages/Auth.tsx`                      | Split-screen authentication   |
+| **Dashboard**     | `src/pages/Dashboard.tsx`                 | Client dashboard with sidebar |
+| **ThemedSidebar** | `src/components/Layout/ThemedSidebar.tsx` | Drawer-style navigation       |
+| **StatCard**      | `src/components/StatCard.tsx`             | Metric display cards          |
+| **Card**          | `src/components/ui/card.tsx`              | Base card with rounded-3xl    |
+| **Button**        | `src/components/ui/button.tsx`            | Styled buttons                |
+| **Input**         | `src/components/ui/input.tsx`             | Form inputs                   |
 
 ---
 

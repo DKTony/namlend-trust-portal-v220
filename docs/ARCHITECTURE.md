@@ -377,8 +377,19 @@ await createLoan({ principal: 50000, interestRate: 18, termMonths: 24 });
 
 ### Layouts
 
-- Client and admin dashboards share a sidebar-driven layout.
-- Mobile uses collapsible sidebar and stacked cards.
+All authenticated client pages use `DashboardLayout` (`src/components/Layout/DashboardLayout.tsx`) which provides:
+
+- `ThemedSidebar` — drawer-style sidebar (`w-80`, `z-[70]`) with role-based menu items and 3D tilt effect
+- Sticky header with page title and notification center
+- Scrollable main content area (`max-w-7xl`)
+
+Pages on their own routes (`/budget`, `/kyc`, `/payment`, `/loan-application`, `/loans/:id`) each implement a `handleTabChange` function that routes sidebar tab clicks: internal tabs stay local, everything else navigates to `/dashboard` with `location.state.tab` for cross-page tab switching.
+
+The public `Header` component (`src/components/Header.tsx`) is used ONLY on unauthenticated pages (landing page `Index.tsx`). **Do not use `Header` on any authenticated page.**
+
+Admin uses a routed layout at `/admin/*` with grouped sidebar navigation (direct links, not tab state).
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for component styling. See [UI_DESIGN.md](./UI_DESIGN.md) for theme-specific sidebar styling.
 
 ---
 

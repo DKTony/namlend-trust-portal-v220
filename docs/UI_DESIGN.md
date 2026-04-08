@@ -351,90 +351,62 @@ className={`
 
 ## Sidebar Navigation
 
-The Sidebar is a sophisticated responsive navigation component with two modes:
+Component: `src/components/Layout/ThemedSidebar.tsx`. Route integration: [ARCHITECTURE.md](./ARCHITECTURE.md#layouts).
 
-### Desktop: Vertical Rail (Expandable Dock)
+The sidebar is a drawer-style slide-out panel (not a hover-expand dock). It overlays page content when open.
 
-**Collapsed State (w-20):**
+### Desktop & Mobile: Drawer Panel
 
-- Icon-only display
-- Fixed width container
-- Active indicator dot
+**Panel Dimensions:**
 
-**Expanded State (w-64, on hover):**
-
-- Full labels visible
-- Profile section with avatar
-- Smooth width transition
-
-```typescript
-onMouseEnter={() => setIsHovered(true)}
-onMouseLeave={() => setIsHovered(false)}
-className={`
-  hidden md:flex flex-col fixed top-0 left-0 h-full z-50
-  transition-all duration-300 ease-in-out
-  ${isHovered ? 'w-64' : 'w-20'}
-`}
-```
+- **Width**: `w-80` (320px), fixed position, full height
+- **Z-index**: `z-[70]` — above all page content including sticky headers
+- **Animation**: `transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]`
+- **Backdrop**: Click-to-close overlay behind the panel
 
 **Theme-Specific Container Styling:**
 
 ```typescript
-${theme === 'glass' ? 'rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20' : ''}
-${theme === 'lux' ? 'bg-[#080808] border-r border-amber-500/20' : ''}
-${theme === 'neo' ? (isDark ? 'bg-zinc-900 border-r-2 border-white' : 'bg-white border-r-2 border-black') : ''}
+// Glass theme
+'rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20';
+// Lux theme
+'bg-[#080808] border-r border-amber-500/20';
+// Neo theme (dark/light)
+isDark ? 'bg-zinc-900 border-r-2 border-white' : 'bg-white border-r-2 border-black';
 ```
 
-**Menu Item Animation:**
+**Menu Item Interaction:**
 
-```typescript
-{/* Label slides in on hover */}
-<span className={`
-  font-medium whitespace-nowrap transition-all duration-300 absolute
-  ${isGlass ? 'left-14' : 'left-20'}
-  ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'}
-`}>
-  {item.label}
-</span>
-```
+- 3D tilt effect on hover via `onMouseMove` transform calculations
+- Active state: accent-colored left border + background highlight
+- Each item has `data-testid="sidebar-nav-{id}"` for E2E testing
 
-### Mobile: Bottom Navigation Bar
+### Mobile Toggle
 
-**Fixed bottom bar with core navigation:**
-
-```typescript
-<div className={`
-  md:hidden fixed bottom-0 left-0 w-full z-50 px-4 py-2
-  flex justify-between items-center
-  ${theme === 'glass' ? 'bg-white/10 backdrop-blur-xl border-t border-white/10' :
-    theme === 'lux' ? 'bg-[#0a0a0a] border-t border-amber-500/20' :
-    'bg-white border-t-2 border-black'}
-`}>
-```
-
-**Features:**
-
-- Shows first 4 menu items + logout
-- Theme-aware background
-- Active state uses `accentClass`
+- Hamburger menu button in the sticky header triggers `onOpen`
+- Panel slides in from left; backdrop click or X button triggers `onClose`
 
 ### Role-Based Navigation
 
 ```typescript
+// Client variant — tabs routed via handleTabChange in each page
 const clientMenuItems = [
-  { icon: <LayoutDashboard />, label: 'Dashboard', id: 'dashboard' },
-  { icon: <PieChart />, label: 'Budget', id: 'budget' },
-  // ... client-specific items
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'budget', label: 'Budget & Finance', icon: PieChart },
+  { id: 'loans', label: 'My Loans', icon: CreditCard },
+  { id: 'applications', label: 'Applications', icon: ClipboardList },
+  // ...
 ];
 
+// Admin variant — direct route links (/admin/*)
 const adminMenuItems = [
-  { icon: <LayoutDashboard />, label: 'Overview', id: 'admin-dashboard' },
-  { icon: <ClipboardCheck />, label: 'Approvals', id: 'admin-approvals' },
-  // ... admin-specific items
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
+  // ...
 ];
-
-const menuItems = role === 'admin' ? adminMenuItems : clientMenuItems;
 ```
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md#themedsidebar-srccomponentslayoutthemedsidebartsx) for component specifications.
 
 ---
 

@@ -1,6 +1,6 @@
 # NamLend Trust Documentation Index
 
-**Doc Revision**: 2026-04-06
+**Doc Revision**: 2026-04-08
 **Project Version**: 5.2.1 (Execution Hardening)
 **Status**: Production-Ready Digital Lending Platform — Backend on Convex + Financial Ontology Engine
 
@@ -144,7 +144,7 @@
 | **Architects/Leads**   | ARCHITECTURAL_REVIEW.md → ARCHITECTURE.md → TECHNICAL_DEBT.md         |
 | **AI/LLM Agents**      | CLAUDE.MD (root) → AGENTS.md → convexmigratehandover.md → GLOSSARY.md |
 | **Backend Engineers**  | DATABASE_SCHEMA.md → SERVICES.md → context.md                         |
-| **Frontend Engineers** | DESIGN_SYSTEM.md → FLOWS.md → FUNCTIONALITY_MAP.md                    |
+| **Frontend Engineers** | DESIGN_SYSTEM.md → UI_DESIGN.md → FLOWS.md → FUNCTIONALITY_MAP.md     |
 | **DevOps/SRE**         | SECURITY.md → TESTING.md → DEPLOYMENT docs                            |
 | **Integration Work**   | IPP*INTEGRATION.md → TIGERBEETLE*\*.md                                |
 

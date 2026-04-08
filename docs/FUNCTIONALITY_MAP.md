@@ -81,9 +81,12 @@ See [AUDIT_REPORT.md](./AUDIT_REPORT.md) for the full end-to-end integration aud
 
 ## See Also
 
-- [INDEX.md](./INDEX.md) - Documentation index
-- [FLOWS.md](./FLOWS.md) - Transaction flow diagrams
-- [SERVICES.md](./SERVICES.md) - Service layer details
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
-- [AUDIT_REPORT.md](./AUDIT_REPORT.md) - End-to-end integration audit (2026-03-03)
+- [INDEX.md](./INDEX.md) — Documentation index
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture and route/layout structure
+- [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) — Component design specifications (Neo-Fintech)
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (67+ tables)
+- [FLOWS.md](./FLOWS.md) — Transaction flow diagrams and state machines
+- [SERVICES.md](./SERVICES.md) — Service layer details and migration status
+- [TESTING.md](./TESTING.md) — E2E test coverage for these features
+- [AUDIT_REPORT.md](./AUDIT_REPORT.md) — End-to-end integration audit (2026-03-03)
+- [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation

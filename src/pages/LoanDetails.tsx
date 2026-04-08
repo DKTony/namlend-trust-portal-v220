@@ -18,7 +18,6 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import {
-  ArrowLeft,
   Wallet,
   Zap,
   Calendar,
@@ -31,7 +30,7 @@ import {
   History,
   FileText,
 } from 'lucide-react';
-import Header from '@/components/Header';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { formatNAD } from '@/utils/currency';
 import { IPSPaymentModal, IPSHistoryList } from '@/components/ips';
 import { useTheme } from '@/context/ThemeContext';
@@ -69,11 +68,17 @@ export default function LoanDetails() {
   const navigate = useNavigate();
   const { styles } = useTheme();
 
-  // Convex reactive queries — replace imperative Supabase fetching
-  const rawLoan = useQuery(api.loans.getLoan, id ? { loanId: id as Id<'loans'> } : 'skip');
+  // Validate ID format before passing to Convex (prevents ArgumentValidationError on invalid URLs)
+  const isValidConvexId = id ? /^[a-zA-Z0-9_-]{10,}$/.test(id) : false;
+
+  // Convex reactive queries — skip if ID is missing or malformed
+  const rawLoan = useQuery(
+    api.loans.getLoan,
+    isValidConvexId ? { loanId: id as Id<'loans'> } : 'skip'
+  );
   const rawPayments = useQuery(
     api.payments.getPaymentsByLoan,
-    id ? { loanId: id as Id<'loans'> } : 'skip'
+    isValidConvexId ? { loanId: id as Id<'loans'> } : 'skip'
   );
 
   // Map Convex loan document to Loan shape
@@ -110,14 +115,33 @@ export default function LoanDetails() {
     reference_number: p.referenceNumber ?? '',
   }));
 
-  const loading = rawLoan === undefined;
+  const loading = isValidConvexId && rawLoan === undefined;
   const [showIPSModal, setShowIPSModal] = useState(false);
+  const [activeTab] = useState('loans');
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'loans') {
+      navigate('/dashboard', { state: { tab: 'loans' } });
+      return;
+    }
+    if (tab === 'budget') {
+      navigate('/budget');
+      return;
+    }
+    if (tab === 'documents') {
+      navigate('/kyc');
+      return;
+    }
+    navigate('/dashboard', { state: { tab } });
+  };
 
   if (authLoading || loading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', styles.background)}>
-        <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
-      </div>
+      <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -127,13 +151,8 @@ export default function LoanDetails() {
 
   if (!loan) {
     return (
-      <div className={cn('min-h-screen', styles.background)}>
-        <Header />
-        <main className="container mx-auto px-4 py-8 max-w-4xl">
-          <ThemedButton variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </ThemedButton>
+      <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
+        <div className="max-w-4xl">
           <ThemedCard>
             <div className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
@@ -146,8 +165,8 @@ export default function LoanDetails() {
               </ThemedButton>
             </div>
           </ThemedCard>
-        </main>
-      </div>
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -161,21 +180,9 @@ export default function LoanDetails() {
     loan.outstanding_balance || loan.total_repayment - (loan.total_paid || 0);
 
   return (
-    <div className={cn('min-h-screen', styles.background)}>
-      <Header />
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+    <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
+      <div className="max-w-4xl">
         <div className="mb-6">
-          <ThemedButton
-            variant="ghost"
-            onClick={() => navigate('/dashboard')}
-            className="mb-4"
-            data-testid="back-to-dashboard"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </ThemedButton>
-
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
               <h1 className={cn('text-3xl font-bold', styles.textClass)} data-testid="loan-amount">
@@ -477,7 +484,7 @@ export default function LoanDetails() {
             });
           }}
         />
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

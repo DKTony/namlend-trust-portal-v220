@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import { useTheme } from '@/context/ThemeContext';
@@ -26,6 +26,13 @@ import {
   X,
 } from 'lucide-react';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import StatCard from '@/components/shared/StatCard';
 import { formatNAD } from '@/utils/currency';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -104,7 +111,21 @@ export default function Dashboard() {
     });
 
   // UI State
-  const [activeTab, setActiveTab] = useState('overview');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    const incoming = location.state?.tab;
+    if (!incoming) return 'overview';
+    return incoming === 'dashboard' ? 'overview' : incoming;
+  });
+
+  // Accept tab from cross-page navigation (e.g., from BudgetTracker)
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab === 'dashboard' ? 'overview' : location.state.tab);
+      // Clean up state to prevent re-triggering on refresh
+      window.history.replaceState({}, '');
+    }
+  }, [location.state?.tab]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Data is loading if any query hasn't returned yet
@@ -315,10 +336,15 @@ export default function Dashboard() {
                     <h3 className={cn('text-xl font-bold', styles.textClass)}>
                       {t('chart.title')}
                     </h3>
-                    <select className="bg-muted border-none text-sm font-medium text-muted-foreground rounded-lg px-3 py-1 cursor-pointer hover:text-foreground">
-                      <option>{t('chart.last6Months')}</option>
-                      <option>{t('chart.thisYear')}</option>
-                    </select>
+                    <Select defaultValue="6months">
+                      <SelectTrigger className="w-auto h-8 text-sm font-medium bg-muted border-none text-muted-foreground hover:text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6months">{t('chart.last6Months')}</SelectItem>
+                        <SelectItem value="year">{t('chart.thisYear')}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
                     {/* CSS-only Mock Chart */}
@@ -382,12 +408,13 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ) : (
-                      <button
+                      <ThemedButton
+                        variant="secondary"
                         onClick={() => navigate('/loan-application')}
-                        className="w-full bg-background text-primary py-3 rounded-xl font-bold text-sm hover:bg-muted transition-colors flex justify-center items-center gap-2"
+                        className="w-full bg-background text-primary hover:bg-muted font-bold"
                       >
                         {t('needFunds.applyNow')} <ArrowUpRight size={16} />
-                      </button>
+                      </ThemedButton>
                     )}
                   </div>
                 </div>
@@ -397,25 +424,27 @@ export default function Dashboard() {
                     {t('quickActions.title')}
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
+                    <ThemedButton
+                      variant="ghost"
                       onClick={() => setShowPaymentModal(true)}
                       disabled={!activeLoan}
-                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center disabled:opacity-50 flex flex-col items-center justify-center gap-2"
+                      className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
                     >
                       <Wallet className="text-muted-foreground" size={24} />
                       <span className="text-xs font-medium text-foreground">
                         {t('quickActions.makePayment')}
                       </span>
-                    </button>
-                    <button
+                    </ThemedButton>
+                    <ThemedButton
+                      variant="ghost"
                       onClick={() => navigate('/kyc')}
-                      className="p-4 rounded-2xl bg-muted hover:bg-muted/80 transition-colors text-center flex flex-col items-center justify-center gap-2"
+                      className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
                     >
                       <FileText className="text-muted-foreground" size={24} />
                       <span className="text-xs font-medium text-foreground">
                         {t('quickActions.documents')}
                       </span>
-                    </button>
+                    </ThemedButton>
                   </div>
                 </ThemedCard>
               </div>

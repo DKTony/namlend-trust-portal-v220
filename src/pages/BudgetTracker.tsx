@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { ThemedCard } from '@/components/ui/ThemedCard';
@@ -180,6 +181,7 @@ export const BudgetTracker: React.FC = () => {
   const { styles } = useTheme();
   const isMobile = useIsMobile();
   const { t } = useTranslation('budget');
+  const navigate = useNavigate();
 
   const [transactions, setTransactions] = useState<UnifiedTransaction[]>(INITIAL_TRANSACTIONS);
   const [budgets, setBudgets] = useState<BudgetLimit[]>(INITIAL_BUDGETS);
@@ -187,6 +189,21 @@ export const BudgetTracker: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('budget');
+
+  const handleTabChange = (tab: string) => {
+    // Internal BudgetTracker tabs — stay on this page
+    if (['budget', 'transactions', 'savings'].includes(tab)) {
+      setActiveTab(tab);
+      return;
+    }
+    // Documents tab routes to KYC page
+    if (tab === 'documents') {
+      navigate('/kyc');
+      return;
+    }
+    // All other sidebar tabs live on /dashboard
+    navigate('/dashboard', { state: { tab } });
+  };
 
   // Add Funds dialog state
   const [addFundsGoalId, setAddFundsGoalId] = useState<string | null>(null);
@@ -430,7 +447,7 @@ export const BudgetTracker: React.FC = () => {
   };
 
   return (
-    <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab} title={t('title')}>
+    <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
       <div
         className="p-6 lg:p-10 flex flex-col gap-8 animate-fade-in-up"
         data-testid="budget-tracker-page"

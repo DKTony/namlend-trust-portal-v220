@@ -24,7 +24,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import {
-  ArrowLeft,
   CreditCard,
   Smartphone,
   Building2,
@@ -35,7 +34,7 @@ import {
   Zap,
   Wallet,
 } from 'lucide-react';
-import Header from '@/components/Header';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { formatNAD } from '@/utils/currency';
 import { IPSPaymentModal } from '@/components/ips';
 import { useTheme } from '@/context/ThemeContext';
@@ -76,6 +75,20 @@ export default function Payment() {
   const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeTab] = useState('payments');
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'payments') return;
+    if (tab === 'budget') {
+      navigate('/budget');
+      return;
+    }
+    if (tab === 'documents') {
+      navigate('/kyc');
+      return;
+    }
+    navigate('/dashboard', { state: { tab } });
+  };
 
   // Auto-select first loan when data loads
   useEffect(() => {
@@ -174,19 +187,8 @@ export default function Payment() {
 
   if (activeLoans.length === 0) {
     return (
-      <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
-        <Header />
-
-        <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
-          <ThemedButton
-            variant="ghost"
-            onClick={() => navigate('/dashboard')}
-            className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('backToDashboard')}
-          </ThemedButton>
-
+      <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+        <div className="max-w-2xl">
           <ThemedCard className="flex flex-col items-center justify-center py-12">
             <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>
@@ -199,26 +201,15 @@ export default function Payment() {
               {t('noActiveLoans.returnButton')}
             </ThemedButton>
           </ThemedCard>
-        </main>
-      </div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
-      <Header />
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+    <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+      <div className="max-w-4xl">
         <div className="mb-8">
-          <ThemedButton
-            variant="ghost"
-            onClick={() => navigate('/dashboard')}
-            className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('backToDashboard')}
-          </ThemedButton>
-
           <h1 className={cn('text-3xl font-bold mb-2', styles.textClass)}>{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
@@ -543,7 +534,7 @@ export default function Payment() {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

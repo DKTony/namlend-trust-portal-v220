@@ -5,12 +5,11 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, FileText, Check } from 'lucide-react';
-import Header from '@/components/Header';
+import { FileText, Check } from 'lucide-react';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -28,10 +27,20 @@ export default function KYC() {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
+  const [activeTab] = useState('documents');
 
   // Convex mutations for KYC upload
   const generateUploadUrl = useMutation(api.users.generateKycUploadUrl);
   const recordKycDocument = useMutation(api.users.recordKycDocument);
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'documents') return;
+    if (tab === 'budget') {
+      navigate('/budget');
+      return;
+    }
+    navigate('/dashboard', { state: { tab } });
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -85,19 +94,8 @@ export default function KYC() {
   };
 
   return (
-    <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
-      <Header />
-
-      <main className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
-        <ThemedButton
-          variant="ghost"
-          onClick={() => navigate('/dashboard')}
-          className="mb-4 pl-0 hover:bg-transparent hover:text-primary justify-start"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('backToDashboard')}
-        </ThemedButton>
-
+    <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+      <div className="max-w-2xl">
         <div className="mb-8">
           <h1 className={cn('text-3xl font-bold mb-2', styles.textClass)}>{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
@@ -110,27 +108,29 @@ export default function KYC() {
                 <span className={cn('flex items-center gap-2 font-bold', styles.textClass)}>
                   <FileText className="h-5 w-5" />
                   {t(`${doc.translationKey}.label`)}
-                  {doc.required && <span className="text-red-500">*</span>}
+                  {doc.required && <span className="text-destructive">*</span>}
                 </span>
-                {uploadedDocs.includes(doc.type) && <Check className="h-5 w-5 text-green-600" />}
+                {uploadedDocs.includes(doc.type) && (
+                  <Check className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+                )}
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 {t(`${doc.translationKey}.description`)}
               </p>
 
               <div className="space-y-4">
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <h4 className="font-medium text-sm text-blue-800 dark:text-blue-300 mb-1">
+                <div className="p-3 bg-primary/5 dark:bg-primary/10 rounded-lg">
+                  <h4 className="font-medium text-sm text-primary mb-1">
                     {t('uploadInstructions')}
                   </h4>
-                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                  <p className="text-xs text-primary/80">
                     {t(`${doc.translationKey}.instructions`)}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor={doc.type}>
-                    {t('chooseFile')} {doc.required && <span className="text-red-500">*</span>}
+                    {t('chooseFile')} {doc.required && <span className="text-destructive">*</span>}
                   </Label>
                   <ThemedInput
                     id={doc.type}
@@ -143,9 +143,9 @@ export default function KYC() {
                 </div>
 
                 {uploadedDocs.includes(doc.type) && (
-                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm text-green-700 dark:text-green-300">
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
+                    <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                    <span className="text-sm text-emerald-700 dark:text-emerald-300">
                       {t('uploadedSuccess')}
                     </span>
                   </div>
@@ -155,7 +155,7 @@ export default function KYC() {
           ))}
         </div>
 
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div className="mt-8 p-4 bg-primary/5 dark:bg-primary/10 rounded-lg">
           <h3 className="font-medium mb-2 text-foreground">{t('requirements.title')}</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• {t('requirements.clear')}</li>
@@ -164,7 +164,7 @@ export default function KYC() {
             <li>• {t('requirements.verification')}</li>
           </ul>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

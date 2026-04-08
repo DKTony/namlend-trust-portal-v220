@@ -16,7 +16,7 @@ import {
 } from '@/utils/creditScoring';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { Calculator, FileText, DollarSign, Loader2 } from 'lucide-react';
-import Header from '@/components/Header';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { useLoanForm } from '@/hooks/useLoanForm';
@@ -34,6 +34,20 @@ export default function LoanApplication() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [activeTab] = useState('applications');
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'applications') return;
+    if (tab === 'budget') {
+      navigate('/budget');
+      return;
+    }
+    if (tab === 'documents') {
+      navigate('/kyc');
+      return;
+    }
+    navigate('/dashboard', { state: { tab } });
+  };
   const [loading, setLoading] = useState(false);
   const createLoanMutation = useConvexMutation(api.loans.createLoan);
   const submitLoanMutation = useConvexMutation(api.loans.submitLoan);
@@ -58,15 +72,12 @@ export default function LoanApplication() {
   // Show loading state while checking eligibility
   if (eligibilityLoading) {
     return (
-      <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
-        <Header />
-        <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className={cn('h-8 w-8 animate-spin mb-4', styles.textClass)} />
-            <p className="text-muted-foreground">{t('checkingEligibility')}</p>
-          </div>
-        </main>
-      </div>
+      <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className={cn('h-8 w-8 animate-spin mb-4', styles.textClass)} />
+          <p className="text-muted-foreground">{t('checkingEligibility')}</p>
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -226,10 +237,8 @@ export default function LoanApplication() {
   const progress = (step / 3) * 100;
 
   return (
-    <div className={cn('min-h-screen transition-colors duration-500', styles.background)}>
-      <Header />
-
-      <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+    <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+      <div className="max-w-4xl">
         <LoanApplicationHeader
           step={step}
           progress={progress}
@@ -336,7 +345,7 @@ export default function LoanApplication() {
             <LoanSummaryPanel loanDetails={loanDetails} styles={styles} />
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

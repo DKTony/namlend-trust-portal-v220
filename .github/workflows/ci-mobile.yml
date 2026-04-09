@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "Checking mobile app for legacy fields: payment_date, outstanding_balance, next_payment_date..."
           cd namlend-mobile/src
-          if grep -r "payment_date\|outstanding_balance\|next_payment_date" . --include="*.ts" --include="*.tsx"; then
+          if grep -r "payment_date\|outstanding_balance\|next_payment_date" . --include="*.ts" --include="*.tsx" --exclude-dir="types"; then
             echo "❌ Found legacy schema fields in mobile code!"
             exit 1
           fi

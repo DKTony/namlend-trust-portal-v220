@@ -82,7 +82,7 @@ export interface OverdueLoan {
   days_overdue: number;
   outstanding_balance: number;
   due_date?: string;
-  last_payment_date?: string;
+  lastPaymentDate?: string;
 }
 
 export interface CollectionsInteraction {

@@ -35,7 +35,7 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  let [fontsLoaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     'Inter-Regular': Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
     'Inter-SemiBold': Inter_600SemiBold,
@@ -90,28 +90,34 @@ const AppInitializer: React.FC = () => {
     }
   }, []);
 
-  const navigationTheme = React.useMemo(() => ({
-    ...(mode === 'dark' ? DarkTheme : DefaultTheme),
-    colors: {
-      ...(mode === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
-      background: colors.background,
-      card: colors.surface,
-      text: colors.textPrimary,
-      border: colors.divider,
-      primary: colors.primary,
-    },
-  }), [mode, colors]);
-
-  const linking = React.useMemo(() => ({
-    prefixes: [],
-    config: {
-      screens: {
-        Auth: 'auth',
-        Client: 'client',
-        Approver: 'approver',
+  const navigationTheme = React.useMemo(
+    () => ({
+      ...(mode === 'dark' ? DarkTheme : DefaultTheme),
+      colors: {
+        ...(mode === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+        background: colors.background,
+        card: colors.surface,
+        text: colors.textPrimary,
+        border: colors.divider,
+        primary: colors.primary,
       },
-    },
-  }), []);
+    }),
+    [mode, colors]
+  );
+
+  const linking = React.useMemo(
+    () => ({
+      prefixes: [],
+      config: {
+        screens: {
+          Auth: 'auth',
+          Client: 'client',
+          Approver: 'approver',
+        },
+      },
+    }),
+    []
+  );
 
   if (SHOW_SANITY) {
     return (
@@ -137,4 +143,4 @@ const AppInitializer: React.FC = () => {
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     </ErrorBoundary>
   );
-}
+};

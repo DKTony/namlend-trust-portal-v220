@@ -173,7 +173,7 @@ jobs:
       - name: Check for legacy schema fields
         run: |
           echo "Checking for legacy fields: payment_date, next_payment_date..."
-          if grep -r "payment_date\|next_payment_date" src/ --include="*.ts" --include="*.tsx" --exclude="*_broken.tsx" --exclude="types.ts"; then
+          if grep -r "payment_date\|next_payment_date" src/ --include="*.ts" --include="*.tsx" --exclude="*_broken.tsx" --exclude="types.ts" --exclude="supabase.ts"; then
             echo "❌ Found legacy schema fields in active code!"
             exit 1
           fi

@@ -14,13 +14,13 @@
 export const safeExposeWindow = (name: string, value: unknown, logMessage?: string) => {
   // Triple gate: DEV environment + explicit debug flag + window exists
   if (
-    import.meta.env.DEV && 
-    import.meta.env.VITE_DEBUG_TOOLS === 'true' && 
+    import.meta.env.DEV &&
+    import.meta.env.VITE_DEBUG_TOOLS === 'true' &&
     typeof window !== 'undefined'
   ) {
-    // @ts-ignore - Intentionally adding to window for debugging
+    // @ts-expect-error - Intentionally adding to window for debugging
     window[name] = value;
-    
+
     if (logMessage) {
       console.log(logMessage);
     } else {

@@ -1,10 +1,11 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { createHmac } from "https://deno.land/std@0.190.0/crypto/mod.ts";
+import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { createHmac } from 'https://deno.land/std@0.190.0/crypto/mod.ts';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-paytoday-signature, x-mtc-signature, x-tn-signature",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-paytoday-signature, x-mtc-signature, x-tn-signature',
 };
 
 interface PaymentWebhookPayload {
@@ -31,23 +32,19 @@ async function verifySignature(
   try {
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
-      "raw",
+      'raw',
       encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
+      { name: 'HMAC', hash: 'SHA-256' },
       false,
-      ["sign"]
+      ['sign']
     );
-    
-    const signatureBuffer = await crypto.subtle.sign(
-      "HMAC",
-      key,
-      encoder.encode(payload)
-    );
-    
+
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+
     const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
-    
+
     return signature === expectedSignature;
   } catch {
     return false;
@@ -55,40 +52,45 @@ async function verifySignature(
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
     const rawBody = await req.text();
     const payload: PaymentWebhookPayload = JSON.parse(rawBody);
-    
+
     // Determine provider from headers or payload
-    const provider = payload.provider || 
-      (req.headers.get("x-paytoday-signature") ? "paytoday" :
-       req.headers.get("x-mtc-signature") ? "mtc_momo" :
-       req.headers.get("x-tn-signature") ? "tn_mobile" : "unknown");
+    const provider =
+      payload.provider ||
+      (req.headers.get('x-paytoday-signature')
+        ? 'paytoday'
+        : req.headers.get('x-mtc-signature')
+          ? 'mtc_momo'
+          : req.headers.get('x-tn-signature')
+            ? 'tn_mobile'
+            : 'unknown');
 
     // Get provider-specific signature and secret
     let signature: string | null = null;
     let secret: string | null = null;
 
     switch (provider) {
-      case "paytoday":
-        signature = req.headers.get("x-paytoday-signature");
-        secret = Deno.env.get("PAYTODAY_WEBHOOK_SECRET") ?? null;
+      case 'paytoday':
+        signature = req.headers.get('x-paytoday-signature');
+        secret = Deno.env.get('PAYTODAY_WEBHOOK_SECRET') ?? null;
         break;
-      case "mtc_momo":
-        signature = req.headers.get("x-mtc-signature");
-        secret = Deno.env.get("MTC_MOMO_WEBHOOK_SECRET") ?? null;
+      case 'mtc_momo':
+        signature = req.headers.get('x-mtc-signature');
+        secret = Deno.env.get('MTC_MOMO_WEBHOOK_SECRET') ?? null;
         break;
-      case "tn_mobile":
-        signature = req.headers.get("x-tn-signature");
-        secret = Deno.env.get("TN_MOBILE_WEBHOOK_SECRET") ?? null;
+      case 'tn_mobile':
+        signature = req.headers.get('x-tn-signature');
+        secret = Deno.env.get('TN_MOBILE_WEBHOOK_SECRET') ?? null;
         break;
     }
 
@@ -100,17 +102,21 @@ serve(async (req) => {
       // No secret configured - check environment to determine behavior
       // ENVIRONMENT=production explicitly marks production
       // ENVIRONMENT=staging or ENVIRONMENT=development allows missing secrets with warning
-      const environment = Deno.env.get("ENVIRONMENT") ?? "production";
-      const isStrictMode = environment === "production";
-      
+      const environment = Deno.env.get('ENVIRONMENT') ?? 'production';
+      const isStrictMode = environment === 'production';
+
       if (isStrictMode) {
-        console.error(`SECURITY: Webhook secret not configured for provider ${provider} in production`);
+        console.error(
+          `SECURITY: Webhook secret not configured for provider ${provider} in production`
+        );
         return new Response(
-          JSON.stringify({ success: false, error: "Webhook secret not configured" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+          JSON.stringify({ success: false, error: 'Webhook secret not configured' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         );
       }
-      console.warn(`[${environment}]: Webhook signature verification skipped for ${provider} - no secret configured`);
+      console.warn(
+        `[${environment}]: Webhook signature verification skipped for ${provider} - no secret configured`
+      );
     }
 
     // Log webhook receipt
@@ -130,35 +136,35 @@ serve(async (req) => {
       .single();
 
     if (logError) {
-      console.error("Error logging webhook:", logError);
+      console.error('Error logging webhook:', logError);
     }
 
     // If signature is invalid, log but don't process
     if (!signatureValid) {
-      console.warn("Invalid webhook signature for provider:", provider);
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid signature" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+      console.warn('Invalid webhook signature for provider:', provider);
+      return new Response(JSON.stringify({ success: false, error: 'Invalid signature' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
     // Process the webhook
-    let processingResult: Record<string, unknown> = {};
+    const processingResult: Record<string, unknown> = {};
     let processingError: string | null = null;
 
     try {
       // Map provider status to our status
       const statusMap: Record<string, string> = {
-        'success': 'completed',
-        'successful': 'completed',
-        'completed': 'completed',
-        'paid': 'completed',
-        'failed': 'failed',
-        'failure': 'failed',
-        'cancelled': 'cancelled',
-        'canceled': 'cancelled',
-        'pending': 'pending',
-        'processing': 'processing',
+        success: 'completed',
+        successful: 'completed',
+        completed: 'completed',
+        paid: 'completed',
+        failed: 'failed',
+        failure: 'failed',
+        cancelled: 'cancelled',
+        canceled: 'cancelled',
+        pending: 'pending',
+        processing: 'processing',
       };
 
       const normalizedStatus = statusMap[payload.status?.toLowerCase()] || 'pending';
@@ -173,7 +179,8 @@ serve(async (req) => {
           webhook_data: payload,
           completed_at: normalizedStatus === 'completed' ? new Date().toISOString() : null,
           failed_at: normalizedStatus === 'failed' ? new Date().toISOString() : null,
-          failure_reason: normalizedStatus === 'failed' ? (payload.metadata?.error as string) : null,
+          failure_reason:
+            normalizedStatus === 'failed' ? (payload.metadata?.error as string) : null,
         })
         .eq('reference_number', payload.reference)
         .select('id, loan_id, user_id, amount')
@@ -198,12 +205,12 @@ serve(async (req) => {
             .single();
 
           if (paymentError) {
-            console.error("Error updating payment record:", paymentError);
+            console.error('Error updating payment record:', paymentError);
           }
 
           // P0-003 FIX: Use payments.id (not payment_transactions.id) for schedule application
           const paymentId = paymentRecord?.id || transaction.id;
-          
+
           // Apply payment to schedule using RPC with correct payment ID
           const { data: applyResult, error: applyError } = await supabase.rpc(
             'apply_payment_to_schedule',
@@ -214,7 +221,7 @@ serve(async (req) => {
           );
 
           if (applyError) {
-            console.error("Error applying payment to schedule:", applyError);
+            console.error('Error applying payment to schedule:', applyError);
           } else {
             processingResult.schedule_update = applyResult;
           }
@@ -258,14 +265,13 @@ serve(async (req) => {
         result: processingResult,
         error: processingError,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
-
   } catch (error) {
-    console.error("Error in payment-webhook function:", error);
-    return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    console.error('Error in payment-webhook function:', error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });

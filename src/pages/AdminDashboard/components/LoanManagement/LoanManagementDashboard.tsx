@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { useToast } from '@/hooks/use-toast';
 import {
   FileText,
@@ -74,38 +75,40 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Loan Management</h2>
+      <ResponsiveActionBar
+        title={<h2 className="text-2xl font-bold tracking-tight">Loan Management</h2>}
+        description={
           <p className="text-muted-foreground">
             Review applications, manage portfolio, and process loan decisions
           </p>
-        </div>
-        <div className="flex space-x-2">
-          {hasNewItems && (
+        }
+        actions={
+          <>
+            {hasNewItems && (
+              <ThemedButton
+                variant="primary"
+                className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 animate-pulse"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                New Items Available
+              </ThemedButton>
+            )}
             <ThemedButton
-              variant="primary"
-              className="h-9 px-3 text-xs bg-blue-600 hover:bg-blue-700 animate-pulse"
-              onClick={handleRefresh}
+              variant={showFilters ? 'primary' : 'secondary'}
+              className="h-9 px-3 text-xs"
+              onClick={() => setShowFilters(!showFilters)}
             >
-              <RefreshCw className="mr-2 h-3.5 w-3.5" />
-              New Items Available
+              <Filter className="mr-2 h-3.5 w-3.5" />
+              Filters
             </ThemedButton>
-          )}
-          <ThemedButton
-            variant={showFilters ? 'primary' : 'secondary'}
-            className="h-9 px-3 text-xs"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="mr-2 h-3.5 w-3.5" />
-            Filters
-          </ThemedButton>
-          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-            <Download className="mr-2 h-3.5 w-3.5" />
-            Export
-          </ThemedButton>
-        </div>
-      </div>
+            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+              <Download className="mr-2 h-3.5 w-3.5" />
+              Export
+            </ThemedButton>
+          </>
+        }
+      />
 
       {/* Portfolio Overview Cards */}
       <LoanPortfolioOverview />
@@ -225,27 +228,18 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Pending Review
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Approved
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex items-center gap-2">
-            <XCircle className="h-4 w-4" />
-            Rejected
-          </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            All Loans
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          desktopColumns={4}
+          items={[
+            { value: 'pending', label: 'Pending Review', shortLabel: 'Pending', icon: Clock },
+            { value: 'approved', label: 'Approved', icon: CheckCircle },
+            { value: 'rejected', label: 'Rejected', icon: XCircle },
+            { value: 'all', label: 'All Loans', shortLabel: 'All', icon: FileText },
+          ]}
+        />
 
         {/* Search and Filter Bar */}
-        <div className="flex space-x-4 items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
@@ -263,7 +257,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className={cn(
-              'px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+              'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-48',
               styles.inputClass
             )}
             data-testid="filter-status-select"

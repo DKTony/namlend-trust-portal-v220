@@ -23,6 +23,7 @@ interface GroupedSidebarProps {
   onOpen?: () => void;
   title?: string;
   subtitle?: string;
+  displayMode?: 'drawer' | 'rail' | 'sidebar';
 }
 
 const STORAGE_KEY = 'admin-sidebar-groups';
@@ -54,6 +55,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   onOpen: propOnOpen,
   title = 'NamLend Admin',
   subtitle = 'Admin Portal',
+  displayMode = 'drawer',
 }) => {
   const { styles, isDark } = useTheme();
   const { config: brandingConfig } = useBrandingSafe();
@@ -119,6 +121,186 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   const displayTitle = title !== 'NamLend Admin' ? title : brandingConfig.general.company_name;
   const displaySubtitle = subtitle || 'Admin Portal';
 
+  const renderBrand = (compact = false) => (
+    <div className={cn('flex items-center gap-3', compact ? 'mb-4 justify-center' : 'mb-8 mt-2')}>
+      {brandingConfig.assets.logo_url ? (
+        <img
+          src={brandingConfig.assets.logo_url}
+          alt={displayTitle}
+          style={{
+            width: Math.min(brandingConfig.assets.logo_width, compact ? 36 : 48),
+            height: Math.min(brandingConfig.assets.logo_height, compact ? 36 : 48),
+          }}
+          className="object-contain"
+        />
+      ) : (
+        <div
+          className={cn(
+            compact ? 'h-10 w-10' : 'w-10 h-10',
+            'rounded-xl flex items-center justify-center shadow-lg',
+            styles.accentClass
+          )}
+        >
+          <ShieldCheck size={compact ? 20 : 24} className="text-white" />
+        </div>
+      )}
+      {!compact &&
+        (brandingConfig.assets.show_company_name_with_logo || !brandingConfig.assets.logo_url) && (
+          <div className="min-w-0">
+            <h1 className={cn('font-bold text-xl truncate', styles.textClass)}>{displayTitle}</h1>
+            <p className={cn('text-xs opacity-60 truncate', styles.textClass)}>{displaySubtitle}</p>
+          </div>
+        )}
+    </div>
+  );
+
+  const renderNavGroups = (compact = false) => (
+    <div
+      className={cn(
+        'flex-1 flex flex-col gap-1 overflow-y-auto scrollbar-none',
+        compact && 'gap-2'
+      )}
+    >
+      {groups.map((group) => {
+        const isCollapsed = !!collapsed[group.id];
+        const hasActiveItem = group.items.some((item) => location.pathname === item.path);
+
+        return (
+          <div key={group.id}>
+            {!compact && group.items.length > 1 && (
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className={cn(
+                  'w-full flex min-h-9 items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors',
+                  hasActiveItem ? 'text-sky-400' : `${styles.textClass} opacity-50 hover:opacity-70`
+                )}
+              >
+                {group.label}
+                <ChevronDown
+                  size={14}
+                  className={cn('transition-transform duration-200', isCollapsed && '-rotate-90')}
+                />
+              </button>
+            )}
+
+            {(!isCollapsed || compact) && (
+              <div className={cn('flex flex-col gap-0.5', compact && 'gap-2')}>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <NavLink
+                      key={item.id}
+                      to={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex min-h-11 items-center rounded-xl transition-all duration-300 group relative overflow-hidden',
+                          compact ? 'justify-center p-3' : 'gap-4 px-4 py-3',
+                          isActive
+                            ? `${styles.accentClass} shadow-md`
+                            : `hover:bg-white/5 ${styles.textClass} opacity-70 hover:opacity-100`
+                        )
+                      }
+                      data-testid={`sidebar-nav-${item.id}`}
+                      title={item.label}
+                      aria-label={item.label}
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <div
+                            className={cn(
+                              'relative z-10 flex items-center',
+                              compact ? 'justify-center' : 'gap-4'
+                            )}
+                          >
+                            <Icon size={20} />
+                            {!compact && <span className="font-medium text-sm">{item.label}</span>}
+                          </div>
+                          {!isActive && !compact && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                          )}
+                          {isActive && styles.variant === 'lux' && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/20 to-amber-500/0 animate-pulse pointer-events-none" />
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderUserFooter = (compact = false) => (
+    <div
+      className={cn(
+        'mt-auto flex items-center gap-3 backdrop-blur-md',
+        compact ? 'justify-center rounded-xl p-2' : 'p-4 rounded-2xl',
+        styles.variant === 'glass' ? 'bg-white/10' : 'bg-black/5 dark:bg-white/5'
+      )}
+    >
+      <div
+        className={cn(
+          'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
+          styles.accentClass
+        )}
+      >
+        {userName?.charAt(0).toUpperCase() || 'U'}
+      </div>
+      {!compact && (
+        <>
+          <div className="overflow-hidden flex-1">
+            <p className={cn('text-sm font-semibold truncate', styles.textClass)}>{userName}</p>
+            <p className={cn('text-xs opacity-60 truncate', styles.textClass)}>{userEmail}</p>
+          </div>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className={cn('ml-auto p-2 rounded-lg hover:bg-white/10', styles.textClass)}
+              data-testid="sidebar-signout"
+              aria-label="Sign Out"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  if (displayMode !== 'drawer') {
+    const compact = displayMode === 'rail';
+
+    return (
+      <aside
+        className={cn(
+          'hidden h-dvh shrink-0 border-r border-border/60 p-3 md:flex',
+          compact ? 'w-20' : 'w-72 p-4'
+        )}
+        data-testid={compact ? 'admin-sidebar-rail' : 'admin-sidebar-desktop'}
+      >
+        <div
+          className={cn(
+            'relative flex h-full w-full flex-col overflow-hidden',
+            compact ? 'rounded-2xl p-2' : 'rounded-3xl p-5',
+            styles.cardClass,
+            isDark ? 'border-white/10' : 'border-black/5'
+          )}
+        >
+          {renderBrand(compact)}
+          {renderNavGroups(compact)}
+          {renderUserFooter(compact)}
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <>
       {/* Menu trigger */}
@@ -158,7 +340,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
             ? `perspective(1000px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg) translateX(0)`
             : 'translateX(-120%)',
         }}
-        className="fixed left-0 top-0 h-screen w-80 p-6 z-[70] transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+        className="fixed left-0 top-0 h-dvh w-[min(20rem,calc(100vw-0.75rem))] p-3 sm:p-6 z-[70] transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
         data-testid="sidebar-drawer"
       >
         <div
@@ -186,142 +368,9 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
             <X size={20} />
           </button>
 
-          {/* Branding header */}
-          <div className="flex items-center gap-3 mb-8 mt-2">
-            {brandingConfig.assets.logo_url ? (
-              <img
-                src={brandingConfig.assets.logo_url}
-                alt={displayTitle}
-                style={{
-                  width: Math.min(brandingConfig.assets.logo_width, 48),
-                  height: Math.min(brandingConfig.assets.logo_height, 48),
-                }}
-                className="object-contain"
-              />
-            ) : (
-              <div
-                className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center shadow-lg',
-                  styles.accentClass
-                )}
-              >
-                <ShieldCheck size={24} className="text-white" />
-              </div>
-            )}
-            {(brandingConfig.assets.show_company_name_with_logo ||
-              !brandingConfig.assets.logo_url) && (
-              <div>
-                <h1 className={cn('font-bold text-xl', styles.textClass)}>{displayTitle}</h1>
-                <p className={cn('text-xs opacity-60', styles.textClass)}>{displaySubtitle}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Nav groups */}
-          <div className="flex-1 flex flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
-            {groups.map((group) => {
-              const isCollapsed = !!collapsed[group.id];
-              const hasActiveItem = group.items.some((item) => location.pathname === item.path);
-
-              return (
-                <div key={group.id}>
-                  {/* Group header — skip for single-item "overview" group */}
-                  {group.items.length > 1 && (
-                    <button
-                      onClick={() => toggleGroup(group.id)}
-                      className={cn(
-                        'w-full flex items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors',
-                        hasActiveItem
-                          ? 'text-sky-400'
-                          : `${styles.textClass} opacity-50 hover:opacity-70`
-                      )}
-                    >
-                      {group.label}
-                      <ChevronDown
-                        size={14}
-                        className={cn(
-                          'transition-transform duration-200',
-                          isCollapsed && '-rotate-90'
-                        )}
-                      />
-                    </button>
-                  )}
-
-                  {/* Group items */}
-                  {!isCollapsed && (
-                    <div className="flex flex-col gap-0.5">
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <NavLink
-                            key={item.id}
-                            to={item.path}
-                            onClick={() => setIsOpen(false)}
-                            className={({ isActive }) =>
-                              cn(
-                                'flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
-                                isActive
-                                  ? `${styles.accentClass} shadow-md`
-                                  : `hover:bg-white/5 ${styles.textClass} opacity-70 hover:opacity-100`
-                              )
-                            }
-                            data-testid={`sidebar-nav-${item.id}`}
-                          >
-                            {({ isActive }) => (
-                              <>
-                                <div className="relative z-10 flex items-center gap-4">
-                                  <Icon size={20} />
-                                  <span className="font-medium text-sm">{item.label}</span>
-                                </div>
-                                {!isActive && (
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                                )}
-                                {isActive && styles.variant === 'lux' && (
-                                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/20 to-amber-500/0 animate-pulse pointer-events-none" />
-                                )}
-                              </>
-                            )}
-                          </NavLink>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* User footer */}
-          <div
-            className={cn(
-              'mt-auto p-4 rounded-2xl flex items-center gap-3 backdrop-blur-md',
-              styles.variant === 'glass' ? 'bg-white/10' : 'bg-black/5 dark:bg-white/5'
-            )}
-          >
-            <div
-              className={cn(
-                'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold',
-                styles.accentClass
-              )}
-            >
-              {userName?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div className="overflow-hidden flex-1">
-              <p className={cn('text-sm font-semibold truncate', styles.textClass)}>{userName}</p>
-              <p className={cn('text-xs opacity-60 truncate', styles.textClass)}>{userEmail}</p>
-            </div>
-            {onSignOut && (
-              <button
-                onClick={onSignOut}
-                className={cn('ml-auto p-2 rounded-lg hover:bg-white/10', styles.textClass)}
-                data-testid="sidebar-signout"
-                aria-label="Sign Out"
-                title="Sign Out"
-              >
-                <LogOut size={16} />
-              </button>
-            )}
-          </div>
+          {renderBrand(false)}
+          {renderNavGroups(false)}
+          {renderUserFooter(false)}
         </div>
       </div>
     </>

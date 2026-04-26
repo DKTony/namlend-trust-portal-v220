@@ -15,11 +15,14 @@ import { GroupedSidebar } from '@/components/Layout/GroupedSidebar';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
 import { getAdminNavGroups } from '@/config/adminNav';
+import { AdaptiveShell } from '@/components/adaptive';
+import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { RefreshCw, BarChart3, AlertCircle } from 'lucide-react';
 
 const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoanOfficer, signOut } = useAuth();
   const { styles } = useTheme();
+  const layout = useAdaptiveLayout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -50,58 +53,69 @@ const AdminLayout: React.FC = () => {
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
   const userEmail = user?.email;
 
-  return (
-    <div className={cn('flex h-screen transition-colors duration-500', styles.background)}>
-      <GroupedSidebar
-        groups={navGroups}
-        userName={userName}
-        userEmail={userEmail}
-        onSignOut={signOut}
-        isOpen={sidebarOpen}
-        onOpen={() => setSidebarOpen(true)}
-        onClose={() => setSidebarOpen(false)}
-      />
+  const sidebarProps = {
+    groups: navGroups,
+    userName,
+    userEmail,
+    onSignOut: signOut,
+  };
 
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {/* Header */}
-        <header
-          className={cn(
-            'border-b p-4 flex items-center justify-between pl-14 sm:pl-16 backdrop-blur-md sticky top-0 z-20',
-            styles.cardClass,
-            'rounded-none border-x-0 border-t-0'
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <h1 className={cn('text-xl font-semibold hidden sm:block', styles.textClass)}>
-              Admin Dashboard
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemedButton
-              variant="secondary"
-              className="h-9 px-3 text-xs"
-              onClick={() => setRefreshKey((k) => k + 1)}
-            >
-              <RefreshCw className="mr-2 h-3.5 w-3.5" />
-              Refresh
-            </ThemedButton>
-            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-              <BarChart3 className="mr-2 h-3.5 w-3.5" />
-              Reports
-            </ThemedButton>
-            <NotificationBell />
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {isAdmin && <SystemHealthDashboard key={`health-${refreshKey}`} />}
-            <Outlet />
-          </div>
-        </main>
+  const header = (
+    <header
+      className={cn(
+        'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
+        layout.isCompact && 'pl-14',
+        styles.cardClass,
+        'rounded-none border-x-0 border-t-0'
+      )}
+    >
+      <div className="min-w-0">
+        <h1 className={cn('truncate text-base font-semibold sm:text-xl', styles.textClass)}>
+          Admin Dashboard
+        </h1>
       </div>
-    </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <ThemedButton
+          variant="secondary"
+          className="h-9 px-2 text-xs sm:px-3"
+          onClick={() => setRefreshKey((k) => k + 1)}
+          aria-label="Refresh admin data"
+        >
+          <RefreshCw className={cn('h-3.5 w-3.5', !layout.isCompact && 'mr-2')} />
+          {!layout.isCompact && 'Refresh'}
+        </ThemedButton>
+        <ThemedButton
+          variant="secondary"
+          className="hidden h-9 px-3 text-xs sm:inline-flex"
+          aria-label="Reports"
+        >
+          <BarChart3 className="mr-2 h-3.5 w-3.5" />
+          Reports
+        </ThemedButton>
+        <NotificationBell />
+      </div>
+    </header>
+  );
+
+  return (
+    <AdaptiveShell
+      className={cn('transition-colors duration-500', styles.background)}
+      sidebar={<GroupedSidebar {...sidebarProps} displayMode="sidebar" />}
+      rail={<GroupedSidebar {...sidebarProps} displayMode="rail" />}
+      mobileNavigation={
+        <GroupedSidebar
+          {...sidebarProps}
+          displayMode="drawer"
+          isOpen={sidebarOpen}
+          onOpen={() => setSidebarOpen(true)}
+          onClose={() => setSidebarOpen(false)}
+        />
+      }
+      header={header}
+    >
+      {isAdmin && <SystemHealthDashboard key={`health-${refreshKey}`} />}
+      <Outlet />
+    </AdaptiveShell>
   );
 };
 

@@ -67,6 +67,7 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
       data-testid={dataTestId}
       className={cn(
         'relative p-6 transition-all duration-500 ease-out',
+        'touch-no-hover',
         styles.cardClass,
         styles.textClass,
         styles.radius,

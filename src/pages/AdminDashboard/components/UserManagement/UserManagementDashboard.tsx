@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import {
   Users,
   Search,
@@ -169,28 +170,30 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">User Management</h2>
+      <ResponsiveActionBar
+        title={<h2 className="text-2xl font-bold tracking-tight">User Management</h2>}
+        description={
           <p className="text-muted-foreground">
             Comprehensive user administration, role management, and access control
           </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={() => setShowFiltersModal(true)}>
-            <Filter className="mr-2 h-4 w-4" />
-            Advanced Filters
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportUsers}>
-            <Download className="mr-2 h-4 w-4" />
-            Export Users
-          </Button>
-          <Button size="sm" onClick={() => setShowAddUserModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setShowFiltersModal(true)}>
+              <Filter className="mr-2 h-4 w-4" />
+              Advanced Filters
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportUsers}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Users
+            </Button>
+            <Button size="sm" onClick={() => setShowAddUserModal(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          </>
+        }
+      />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -266,43 +269,28 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            All Users
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Roles
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Permissions
-          </TabsTrigger>
-          <TabsTrigger value="bulk" className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" />
-            Bulk Operations
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Audit Log
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Activity Monitor
-          </TabsTrigger>
-          <TabsTrigger value="import" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Import Users
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          desktopColumns={8}
+          compactIconOnly
+          items={[
+            { value: 'users', label: 'All Users', shortLabel: 'Users', icon: Users },
+            { value: 'roles', label: 'Roles', icon: Shield },
+            { value: 'permissions', label: 'Permissions', shortLabel: 'Perms', icon: Settings },
+            { value: 'bulk', label: 'Bulk Operations', shortLabel: 'Bulk', icon: UserCheck },
+            { value: 'audit', label: 'Audit Log', shortLabel: 'Audit', icon: Activity },
+            { value: 'analytics', label: 'Analytics', icon: BarChart3 },
+            {
+              value: 'activity',
+              label: 'Activity Monitor',
+              shortLabel: 'Activity',
+              icon: Activity,
+            },
+            { value: 'import', label: 'Import Users', shortLabel: 'Import', icon: Download },
+          ]}
+        />
 
         {/* Search and Filter Bar */}
-        <div className="flex space-x-4 items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
@@ -316,7 +304,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-44"
           >
             <option value="all">All Roles</option>
             <option value="admin">Admin</option>
@@ -327,7 +315,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-44"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>

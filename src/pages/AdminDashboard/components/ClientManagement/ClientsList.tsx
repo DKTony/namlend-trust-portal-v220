@@ -2,18 +2,18 @@ import React from 'react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
-import { 
-  Eye, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  DollarSign, 
-  User, 
+import {
+  Eye,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  DollarSign,
+  User,
   AlertTriangle,
   CheckCircle,
   Clock,
-  Star
+  Star,
 } from 'lucide-react';
 import { useClientsList } from '../../hooks/useClientsList';
 import { useTheme } from '@/context/ThemeContext';
@@ -41,11 +41,7 @@ interface ClientsListProps {
   onClientSelect: (clientId: string) => void;
 }
 
-const ClientsList: React.FC<ClientsListProps> = ({
-  status,
-  searchTerm,
-  onClientSelect
-}) => {
+const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientSelect }) => {
   const { clients, loading, error, refetch } = useClientsList(status, searchTerm);
   const { styles } = useTheme();
 
@@ -57,27 +53,36 @@ const ClientsList: React.FC<ClientsListProps> = ({
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+      active:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      inactive:
+        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      suspended:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     };
 
     const icons = {
       active: <CheckCircle className="h-3 w-3 mr-1" />,
       inactive: <Clock className="h-3 w-3 mr-1" />,
       suspended: <AlertTriangle className="h-3 w-3 mr-1" />,
-      pending: <Clock className="h-3 w-3 mr-1" />
+      pending: <Clock className="h-3 w-3 mr-1" />,
     };
 
     return (
-      <ThemedBadge className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <ThemedBadge
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </ThemedBadge>
@@ -87,8 +92,9 @@ const ClientsList: React.FC<ClientsListProps> = ({
   const getRiskBadge = (riskLevel: string) => {
     const variants = {
       low: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      high: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      medium:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      high: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     return (
@@ -101,9 +107,12 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
   const getKycBadge = (kycStatus: string) => {
     const variants = {
-      verified: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      rejected: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      verified:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      rejected:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     return (
@@ -153,12 +162,11 @@ const ClientsList: React.FC<ClientsListProps> = ({
       <ThemedCard>
         <div className="text-center py-8">
           <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className={cn("text-lg font-medium mb-2", styles.textClass)}>No clients found</h3>
+          <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>No clients found</h3>
           <p className="text-muted-foreground">
-            {searchTerm 
+            {searchTerm
               ? `No clients match "${searchTerm}"`
-              : `No ${status === 'all' ? '' : status} clients at this time`
-            }
+              : `No ${status === 'all' ? '' : status} clients at this time`}
           </p>
         </div>
       </ThemedCard>
@@ -168,12 +176,12 @@ const ClientsList: React.FC<ClientsListProps> = ({
   return (
     <div className="space-y-4">
       {clients.map((client) => (
-        <ThemedCard 
-          key={client.id} 
+        <ThemedCard
+          key={client.id}
           className="hover:shadow-md transition-shadow duration-200 cursor-pointer"
           onClick={() => onClientSelect(client.id)}
         >
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {/* Client Avatar */}
             <div className="flex-shrink-0">
               <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
@@ -183,35 +191,36 @@ const ClientsList: React.FC<ClientsListProps> = ({
 
             {/* Client Details */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <h3 className={cn("text-lg font-semibold flex items-center", styles.textClass)}>
+              <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h3 className={cn('text-lg font-semibold flex items-center', styles.textClass)}>
                     {client.fullName}
-                    {client.isPremium && (
-                      <Star className="h-4 w-4 text-yellow-500 ml-2" />
-                    )}
+                    {client.isPremium && <Star className="h-4 w-4 text-yellow-500 ml-2" />}
                   </h3>
                   {getStatusBadge(client.status)}
                   {getRiskBadge(client.riskLevel)}
                   {getKycBadge(client.kycStatus)}
                 </div>
-                <div className="text-right shrink-0">
-                  <div 
-                    className={cn("text-xl sm:text-2xl font-bold truncate tabular-nums", styles.textClass)}
+                <div className="shrink-0 text-left lg:text-right">
+                  <div
+                    className={cn(
+                      'text-xl sm:text-2xl font-bold truncate tabular-nums',
+                      styles.textClass
+                    )}
                     title={formatCurrency(client.totalValue)}
                   >
                     {formatCurrency(client.totalValue)}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Portfolio Value
-                  </div>
+                  <div className="text-sm text-muted-foreground">Portfolio Value</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-2 min-w-0">
                   <Mail className="h-4 w-4 shrink-0" />
-                  <span className="truncate" title={client.email}>{client.email}</span>
+                  <span className="truncate" title={client.email}>
+                    {client.email}
+                  </span>
                 </div>
                 {client.phone && (
                   <div className="flex items-center space-x-2 shrink-0">
@@ -225,14 +234,16 @@ const ClientsList: React.FC<ClientsListProps> = ({
                 </div>
                 <div className="flex items-center space-x-2 shrink-0">
                   <DollarSign className="h-4 w-4 shrink-0" />
-                  <span>{client.totalLoans} loan{client.totalLoans !== 1 ? 's' : ''}</span>
+                  <span>
+                    {client.totalLoans} loan{client.totalLoans !== 1 ? 's' : ''}
+                  </span>
                 </div>
               </div>
 
               {/* Additional Details */}
               <div className="mt-3 pt-3 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-4">
+                <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                     {client.address && (
                       <div className="flex items-center space-x-1 text-muted-foreground">
                         <MapPin className="h-3 w-3" />
@@ -248,10 +259,10 @@ const ClientsList: React.FC<ClientsListProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col space-y-2">
+            <div className="grid grid-cols-1 gap-2 sm:w-40">
               <ThemedButton
                 variant="secondary"
-                className="h-9 px-3 text-xs"
+                className="h-9 w-full px-3 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClientSelect(client.id);
@@ -262,7 +273,7 @@ const ClientsList: React.FC<ClientsListProps> = ({
               </ThemedButton>
               <ThemedButton
                 variant="ghost"
-                className="h-9 px-3 text-xs"
+                className="h-9 w-full px-3 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   // Handle contact action

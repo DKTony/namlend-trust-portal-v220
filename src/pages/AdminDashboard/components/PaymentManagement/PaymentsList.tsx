@@ -167,8 +167,8 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
       <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
           <Card key={i} className="animate-pulse bg-card">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="h-12 w-12 bg-muted rounded-full"></div>
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-muted rounded w-1/4"></div>
@@ -267,20 +267,20 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
 
                 {/* Payment Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3 min-w-0">
+                  <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <h3
                         className="text-lg font-semibold text-foreground truncate tabular-nums"
                         title={formatCurrency(payment.amount)}
                       >
                         {formatCurrency(payment.amount)}
                       </h3>
-                      <div className="shrink-0 flex space-x-2">
+                      <div className="flex shrink-0 flex-wrap gap-2">
                         {getStatusBadge(payment.status)}
                         {getPaymentMethodBadge(payment.paymentMethod)}
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-2">
+                    <div className="shrink-0 text-left lg:ml-2 lg:text-right">
                       <div className="text-sm font-medium text-foreground">
                         Ref: {payment.reference}
                       </div>
@@ -313,14 +313,15 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
 
                   {/* Additional Details */}
                   <div className="mt-3 pt-3 border-t border-border">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-muted-foreground">
                         Created: {formatDate(payment.createdAt)}
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                           variant="outline"
                           size="sm"
+                          className="w-full sm:w-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedPayment({
@@ -344,7 +345,7 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
                             size="sm"
                             data-testid={`complete-payment-${payment.id}`}
                             disabled={completingPaymentId === payment.id}
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white sm:w-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCompletePayment(payment.id);
@@ -362,6 +363,7 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
                           <Button
                             variant="outline"
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRetryPayment({

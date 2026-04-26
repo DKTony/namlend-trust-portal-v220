@@ -568,11 +568,11 @@ export default function ApprovalManagementDashboard() {
 
                 {/* Only show action buttons if request is not already approved/rejected */}
                 {selectedRequest.status !== 'approved' && selectedRequest.status !== 'rejected' ? (
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
                       disabled={processing}
-                      className="flex-1"
+                      className="w-full flex-1"
                       data-testid="approvals-approve-btn"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -582,7 +582,7 @@ export default function ApprovalManagementDashboard() {
                       variant="destructive"
                       onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
                       disabled={processing}
-                      className="flex-1"
+                      className="w-full flex-1"
                       data-testid="approvals-reject-btn"
                     >
                       <XCircle className="h-4 w-4 mr-2" />
@@ -618,6 +618,7 @@ export default function ApprovalManagementDashboard() {
                         }
                       }}
                       disabled={processing}
+                      className="w-full sm:w-auto"
                       data-testid="approvals-requestinfo-btn"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2" />

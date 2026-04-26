@@ -22,6 +22,29 @@ async function waitForLoginForm(page: Page): Promise<void> {
   await emailInput.waitFor({ state: 'visible', timeout: 15000 });
 }
 
+export async function waitForAppShell(page: Page, timeout = 20000): Promise<void> {
+  const shellSelectors = [
+    '[data-testid="sidebar-trigger"]',
+    '[data-testid="sidebar-desktop"]',
+    '[data-testid="sidebar-rail"]',
+    '[data-testid="admin-sidebar-desktop"]',
+    '[data-testid="admin-sidebar-rail"]',
+  ];
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeout) {
+    for (const selector of shellSelectors) {
+      const shell = page.locator(selector).first();
+      if (await shell.isVisible({ timeout: 300 }).catch(() => false)) {
+        return;
+      }
+    }
+    await page.waitForTimeout(100);
+  }
+
+  throw new Error(`Timed out waiting for adaptive app shell at ${page.url()}`);
+}
+
 export async function login(page: Page, preferAdmin: boolean = true): Promise<'admin' | 'client'> {
   await page.goto(`${baseURL}/auth`);
   await page.waitForLoadState('domcontentloaded');
@@ -65,8 +88,8 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
     ]);
 
     if (outcome === 'success') {
-      // Wait for app shell to render (sidebar visible = authenticated)
-      await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
+      // Wait for app shell to render (drawer trigger, rail, or permanent sidebar).
+      await waitForAppShell(page, 20000);
       return c.role;
     }
 
@@ -96,27 +119,29 @@ export async function gotoAuthenticated(
 
   await page.goto(`${baseURL}${path}`);
   await page.waitForLoadState('domcontentloaded');
+  const targetPath = path.split('?')[0];
 
   const waitStart = Date.now();
   while (Date.now() - waitStart < timeout) {
-    const currentUrl = page.url();
+    const currentUrl = new URL(page.url());
+    const currentPath = currentUrl.pathname;
+
+    // If redirected to /auth, session expired. Check the pathname instead of
+    // the full URL so /auth?redirect=/dashboard is not treated as /dashboard.
+    if (currentPath === '/auth') {
+      throw new Error(
+        `Session expired — redirected to /auth after navigation to ${path}. Re-login required.`
+      );
+    }
 
     // If we're on the target path, check for app shell
-    if (currentUrl.includes(path.replace(/^\//, ''))) {
-      const sidebar = page.getByTestId('sidebar-trigger');
+    if (currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)) {
       try {
-        await sidebar.waitFor({ state: 'visible', timeout: 3000 });
+        await waitForAppShell(page, 3000);
         return;
       } catch {
         await page.waitForTimeout(200);
       }
-    }
-
-    // If redirected to /auth, session expired — need to re-login
-    if (currentUrl.includes('/auth')) {
-      throw new Error(
-        `Session expired — redirected to /auth after navigation to ${path}. Re-login required.`
-      );
     }
 
     await page.waitForTimeout(200);

@@ -3,14 +3,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Eye, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  Shield, 
-  User, 
+import {
+  Eye,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Shield,
+  User,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -19,7 +19,7 @@ import {
   Edit,
   Trash2,
   UserX,
-  UserCog
+  UserCog,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,7 +61,7 @@ const UsersList: React.FC<UsersListProps> = ({
   filterStatus,
   selectedUsers,
   onUserSelect,
-  onBulkSelect
+  onBulkSelect,
 }) => {
   const {
     users,
@@ -80,18 +80,25 @@ const UsersList: React.FC<UsersListProps> = ({
     name: string;
     email: string;
   } | null>(null);
-  
+
   // Sync external filters into the hook's internal state
   useEffect(() => {
     setHookSearchTerm(searchTerm || '');
     setHookFilterRole(filterRole || 'all');
     setHookFilterStatus(filterStatus || 'all');
-  }, [searchTerm, filterRole, filterStatus, setHookSearchTerm, setHookFilterRole, setHookFilterStatus]);
-  
+  }, [
+    searchTerm,
+    filterRole,
+    filterStatus,
+    setHookSearchTerm,
+    setHookFilterRole,
+    setHookFilterStatus,
+  ]);
+
   // Deduplicate by id to avoid duplicate keys and repeated rows when data comes from joins
   const uniqueUsers = React.useMemo(() => {
     const seen = new Set<string>();
-    return ((filteredUsers ?? users) ?? []).filter((u) => {
+    return (filteredUsers ?? users ?? []).filter((u) => {
       if (seen.has(u.id)) return false;
       seen.add(u.id);
       return true;
@@ -102,27 +109,37 @@ const UsersList: React.FC<UsersListProps> = ({
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+      active:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      inactive:
+        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      suspended:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     };
 
     const icons = {
       active: <CheckCircle className="h-3 w-3 mr-1" />,
       inactive: <Clock className="h-3 w-3 mr-1" />,
       suspended: <AlertTriangle className="h-3 w-3 mr-1" />,
-      pending: <Clock className="h-3 w-3 mr-1" />
+      pending: <Clock className="h-3 w-3 mr-1" />,
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -131,28 +148,38 @@ const UsersList: React.FC<UsersListProps> = ({
 
   const getRoleBadge = (role: string) => {
     const variants = {
-      admin: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      loan_officer: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      client: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      support: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800'
+      admin:
+        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      loan_officer:
+        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      client:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      support:
+        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
     };
 
     const icons = {
       admin: <Shield className="h-3 w-3 mr-1" />,
       loan_officer: <User className="h-3 w-3 mr-1" />,
       client: <User className="h-3 w-3 mr-1" />,
-      support: <Settings className="h-3 w-3 mr-1" />
+      support: <Settings className="h-3 w-3 mr-1" />,
     };
 
     const labels = {
       admin: 'Admin',
       loan_officer: 'Loan Officer',
       client: 'Client',
-      support: 'Support'
+      support: 'Support',
     };
 
     return (
-      <Badge variant="outline" className={variants[role as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[role as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[role as keyof typeof icons]}
         <span>{labels[role as keyof typeof labels] || role}</span>
       </Badge>
@@ -162,7 +189,7 @@ const UsersList: React.FC<UsersListProps> = ({
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
     if (checked) {
-      onBulkSelect(uniqueUsers?.map(user => user.id) || []);
+      onBulkSelect(uniqueUsers?.map((user) => user.id) || []);
     } else {
       onBulkSelect([]);
     }
@@ -172,21 +199,26 @@ const UsersList: React.FC<UsersListProps> = ({
     if (checked) {
       onBulkSelect([...selectedUsers, userId]);
     } else {
-      onBulkSelect(selectedUsers.filter(id => id !== userId));
+      onBulkSelect(selectedUsers.filter((id) => id !== userId));
       setSelectAll(false);
     }
   };
 
-  const handleUserAction = (action: string, userId: string, userName?: string, userEmail?: string) => {
+  const handleUserAction = (
+    action: string,
+    userId: string,
+    userName?: string,
+    userEmail?: string
+  ) => {
     switch (action) {
       case 'view':
         onUserSelect(userId);
         break;
       case 'manage_roles':
-        setSelectedUserForRoles({ 
-          id: userId, 
+        setSelectedUserForRoles({
+          id: userId,
           name: userName || 'Unknown User',
-          email: userEmail || ''
+          email: userEmail || '',
         });
         setRoleModalOpen(true);
         break;
@@ -265,10 +297,7 @@ const UsersList: React.FC<UsersListProps> = ({
             <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No users found</h3>
             <p className="text-muted-foreground">
-              {searchTerm 
-                ? `No users match "${searchTerm}"`
-                : `No users match the current filters`
-              }
+              {searchTerm ? `No users match "${searchTerm}"` : `No users match the current filters`}
             </p>
           </div>
         </CardContent>
@@ -282,23 +311,23 @@ const UsersList: React.FC<UsersListProps> = ({
       {uniqueUsers.length > 0 && (
         <Card className="bg-muted/30">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  checked={selectAll}
-                  onCheckedChange={handleSelectAll}
-                />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
+                <Checkbox checked={selectAll} onCheckedChange={handleSelectAll} />
                 <span className="text-sm font-medium text-foreground">
                   Select All ({uniqueUsers.length} users)
                 </span>
                 {selectedUsers.length > 0 && (
-                  <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
+                  >
                     {selectedUsers.length} selected
                   </Badge>
                 )}
               </div>
               {selectedUsers.length > 0 && (
-                <div className="flex space-x-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button variant="outline" size="sm">
                     Bulk Edit
                   </Button>
@@ -314,12 +343,9 @@ const UsersList: React.FC<UsersListProps> = ({
 
       {/* Users List */}
       {uniqueUsers.map((user) => (
-        <Card 
-          key={user.id} 
-          className="hover:shadow-md transition-shadow duration-200"
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+        <Card key={user.id} className="hover:shadow-md transition-shadow duration-200">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* Selection Checkbox */}
               <Checkbox
                 checked={selectedUsers.includes(user.id)}
@@ -335,33 +361,35 @@ const UsersList: React.FC<UsersListProps> = ({
 
               {/* User Details */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3 min-w-0">
+                <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <h3 className="text-lg font-semibold text-foreground flex items-center truncate">
-                      <span className="truncate" title={user.fullName}>{user.fullName}</span>
+                      <span className="truncate" title={user.fullName}>
+                        {user.fullName}
+                      </span>
                       {user.isVerified && (
                         <CheckCircle className="h-4 w-4 text-green-500 ml-2 shrink-0" />
                       )}
                     </h3>
-                    <div className="flex items-center space-x-2 shrink-0">
+                    <div className="flex shrink-0 flex-wrap gap-2">
                       {getStatusBadge(user.status)}
                       {getRoleBadge(user.role)}
                     </div>
                   </div>
-                  <div className="text-right shrink-0 ml-2">
+                  <div className="shrink-0 text-left lg:ml-2 lg:text-right">
                     <div className="text-sm font-medium text-foreground tabular-nums">
                       {user.loginCount} logins
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Total Sessions
-                    </div>
+                    <div className="text-xs text-muted-foreground">Total Sessions</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-2 min-w-0">
                     <Mail className="h-4 w-4 shrink-0" />
-                    <span className="truncate" title={user.email}>{user.email}</span>
+                    <span className="truncate" title={user.email}>
+                      {user.email}
+                    </span>
                   </div>
                   {user.phone && (
                     <div className="flex items-center space-x-2 shrink-0">
@@ -376,15 +404,17 @@ const UsersList: React.FC<UsersListProps> = ({
                   {user.department && (
                     <div className="flex items-center space-x-2 min-w-0">
                       <MapPin className="h-4 w-4 shrink-0" />
-                      <span className="truncate" title={user.department}>{user.department}</span>
+                      <span className="truncate" title={user.department}>
+                        {user.department}
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Additional Details */}
                 <div className="mt-3 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                       <div className="text-muted-foreground">
                         Permissions: {user.permissions.length} assigned
                       </div>
@@ -397,38 +427,49 @@ const UsersList: React.FC<UsersListProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col gap-2 sm:w-36">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full"
                   onClick={() => handleUserAction('view', user.id, user.fullName, user.email)}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View
                 </Button>
-                
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="w-full">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleUserAction('manage_roles', user.id, user.fullName, user.email)}>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleUserAction('manage_roles', user.id, user.fullName, user.email)
+                      }
+                    >
                       <UserCog className="h-4 w-4 mr-2" />
                       Manage Roles
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleUserAction('edit', user.id, user.fullName, user.email)}>
+                    <DropdownMenuItem
+                      onClick={() => handleUserAction('edit', user.id, user.fullName, user.email)}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit User
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleUserAction('suspend', user.id, user.fullName, user.email)}>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleUserAction('suspend', user.id, user.fullName, user.email)
+                      }
+                    >
                       <UserX className="h-4 w-4 mr-2" />
                       Suspend User
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleUserAction('delete', user.id, user.fullName, user.email)}
                       className="text-red-600"
                     >

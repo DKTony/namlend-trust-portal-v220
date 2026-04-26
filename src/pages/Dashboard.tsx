@@ -219,7 +219,7 @@ export default function Dashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <StatCard
                 label={t('stats.totalBalance')}
                 value={
@@ -309,7 +309,7 @@ export default function Dashboard() {
             {/* KYC Verified Success Badge */}
             {!eligibilityLoading && isEligible && (
               <ThemedCard className="border-green-500/20 bg-gradient-to-r from-green-500/5 to-transparent">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
                     <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center">
                       <CheckCircle className="h-5 w-5 text-green-500" />
@@ -591,7 +591,7 @@ export default function Dashboard() {
       case 'applications':
         return (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className={cn('text-2xl font-bold', styles.textClass)}>
                 {t('applications.title')}
               </h2>
@@ -661,7 +661,7 @@ export default function Dashboard() {
                   {payments.map((payment) => (
                     <div
                       key={payment._id}
-                      className="p-4 flex justify-between items-center hover:bg-muted/50 transition-colors"
+                      className="flex flex-col gap-3 p-4 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">

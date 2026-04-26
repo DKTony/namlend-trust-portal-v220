@@ -1,8 +1,9 @@
 import { Page } from '@playwright/test';
+import { waitForAppShell } from './auth';
 
 export async function ensureAdminReady(page: Page): Promise<void> {
   await page.waitForURL(/\/admin/, { timeout: 30000 });
-  await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 30000 });
+  await waitForAppShell(page, 30000);
 }
 
 /**
@@ -38,11 +39,18 @@ const NAV_ROUTES: Record<string, string> = {
 export async function openAdminTab(page: Page, tabId: string): Promise<void> {
   await ensureAdminReady(page);
 
-  // Open the drawer first; navigation items live inside it.
-  const sidebarTrigger = page.getByTestId('sidebar-trigger');
-  await sidebarTrigger.click();
-
   const nav = page.getByTestId(`sidebar-nav-${tabId}`);
+  if (
+    !(await nav
+      .first()
+      .isVisible({ timeout: 1500 })
+      .catch(() => false))
+  ) {
+    // Compact layout keeps navigation inside the drawer.
+    const sidebarTrigger = page.getByTestId('sidebar-trigger');
+    await sidebarTrigger.click();
+  }
+
   await nav.waitFor({ state: 'visible', timeout: 20000 });
   await nav.scrollIntoViewIfNeeded();
 

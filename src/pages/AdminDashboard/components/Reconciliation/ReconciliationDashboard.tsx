@@ -4,8 +4,9 @@
  */
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdaptiveTabs } from '@/components/adaptive';
 import {
   FileText,
   FileSpreadsheet,
@@ -143,52 +144,42 @@ export function ReconciliationDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="overview" className="flex items-center gap-1">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Settlement Runs</span>
-          </TabsTrigger>
-          <TabsTrigger value="pacs009" className="flex items-center gap-1">
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">MNSB (pacs.009)</span>
-          </TabsTrigger>
-          <TabsTrigger value="ntsl" className="flex items-center gap-1">
-            <FileSpreadsheet className="h-4 w-4" />
-            <span className="hidden sm:inline">NTSL</span>
-          </TabsTrigger>
-          <TabsTrigger value="rawdata" className="flex items-center gap-1">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Raw Data</span>
-          </TabsTrigger>
-          <TabsTrigger value="adjustments" className="flex items-center gap-1">
-            <FileWarning className="h-4 w-4" />
-            <span className="hidden sm:inline">Adjustments</span>
-          </TabsTrigger>
-          <TabsTrigger value="pending-adj" className="flex items-center gap-1">
-            <FileClock className="h-4 w-4" />
-            <span className="hidden sm:inline">Pending Response</span>
-          </TabsTrigger>
-          <TabsTrigger value="pending-status" className="flex items-center gap-1">
-            <FileQuestion className="h-4 w-4" />
-            <span className="hidden sm:inline">Pending Status</span>
-          </TabsTrigger>
-          <TabsTrigger value="timeouts" className="flex items-center gap-1">
-            <FileX className="h-4 w-4" />
-            <span className="hidden sm:inline">Timeouts</span>
-          </TabsTrigger>
-          <TabsTrigger value="acks" className="flex items-center gap-1">
-            {stats?.runs?.failed ? (
-              <XCircle className="h-4 w-4 text-red-500" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">Acknowledgements</span>
-          </TabsTrigger>
-          <TabsTrigger value="ips" className="flex items-center gap-1">
-            <FileSpreadsheet className="h-4 w-4 text-green-500" />
-            <span className="hidden sm:inline">IPS Transactions</span>
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          desktopColumns={5}
+          compactIconOnly
+          items={[
+            { value: 'overview', label: 'Settlement Runs', shortLabel: 'Runs', icon: FileText },
+            {
+              value: 'pacs009',
+              label: 'MNSB (pacs.009)',
+              shortLabel: 'MNSB',
+              icon: FileSpreadsheet,
+            },
+            { value: 'ntsl', label: 'NTSL', icon: FileSpreadsheet },
+            { value: 'rawdata', label: 'Raw Data', shortLabel: 'Raw', icon: FileText },
+            { value: 'adjustments', label: 'Adjustments', shortLabel: 'Adjust', icon: FileWarning },
+            {
+              value: 'pending-adj',
+              label: 'Pending Response',
+              shortLabel: 'Pending',
+              icon: FileClock,
+            },
+            {
+              value: 'pending-status',
+              label: 'Pending Status',
+              shortLabel: 'Status',
+              icon: FileQuestion,
+            },
+            { value: 'timeouts', label: 'Timeouts', icon: FileX },
+            {
+              value: 'acks',
+              label: 'Acknowledgements',
+              shortLabel: 'Acks',
+              icon: stats?.runs?.failed ? XCircle : CheckCircle,
+            },
+            { value: 'ips', label: 'IPS Transactions', shortLabel: 'IPS', icon: FileSpreadsheet },
+          ]}
+        />
 
         <TabsContent value="overview" className="space-y-4">
           <SettlementRunsList />

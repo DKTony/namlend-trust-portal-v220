@@ -326,25 +326,28 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
               : ''
           }`}
         >
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* Selection Checkbox */}
-              <Checkbox
-                checked={selectedLoans.includes(application.id)}
-                onCheckedChange={(checked) => onLoanSelect(application.id, checked as boolean)}
-              />
+              <div className="flex items-center justify-between sm:block">
+                <Checkbox
+                  checked={selectedLoans.includes(application.id)}
+                  onCheckedChange={(checked) => onLoanSelect(application.id, checked as boolean)}
+                />
+                <span className="text-xs text-muted-foreground sm:hidden">Select</span>
+              </div>
 
               {/* Application Details */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3">
+                <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <h3 className="text-lg font-semibold text-foreground">
                       {application.applicantName}
                     </h3>
                     {getStatusBadge(application.status)}
                     {getRiskBadge(application.riskScore)}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="shrink-0 text-left lg:text-right">
                     <div
                       className="text-xl sm:text-2xl font-bold text-foreground truncate tabular-nums"
                       title={formatCurrency(application.amount)}
@@ -410,8 +413,13 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col space-y-2">
-                <Button variant="outline" size="sm" onClick={() => handleReview(application.id)}>
+              <div className="grid grid-cols-1 gap-2 sm:w-40">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => handleReview(application.id)}
+                >
                   <Eye className="h-4 w-4 mr-2" />
                   Review
                 </Button>
@@ -420,7 +428,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     <Button
                       variant="default"
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
                       disabled={actionLoading}
                       onClick={async () => {
                         const success = await approveLoan(application.id);
@@ -435,7 +443,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20"
                       disabled={actionLoading}
                       onClick={async () => {
                         const success = await rejectLoan(application.id);
@@ -453,7 +461,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                   <Button
                     variant="default"
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => handleDisburse(application)}
                     data-testid={`disburse-loan-${application.id}`}
                   >

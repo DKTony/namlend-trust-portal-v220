@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import {
   Users,
   Search,
@@ -43,55 +44,58 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Client Management</h2>
+      <ResponsiveActionBar
+        title={<h2 className="text-2xl font-bold tracking-tight">Client Management</h2>}
+        description={
           <p className="text-muted-foreground">
             Manage client relationships, profiles, and communications
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-            <Filter className="mr-2 h-3.5 w-3.5" />
-            Filters
-          </ThemedButton>
-          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-            <Download className="mr-2 h-3.5 w-3.5" />
-            Export
-          </ThemedButton>
-          <ThemedButton className="h-9 px-3 text-xs">
-            <Plus className="mr-2 h-3.5 w-3.5" />
-            Add Client
-          </ThemedButton>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+              <Filter className="mr-2 h-3.5 w-3.5" />
+              Filters
+            </ThemedButton>
+            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+              <Download className="mr-2 h-3.5 w-3.5" />
+              Export
+            </ThemedButton>
+            <ThemedButton className="h-9 px-3 text-xs">
+              <Plus className="mr-2 h-3.5 w-3.5" />
+              Add Client
+            </ThemedButton>
+          </>
+        }
+      />
 
       {/* Client Portfolio Overview */}
       <ClientPortfolioOverview />
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            All Clients
-          </TabsTrigger>
-          <TabsTrigger value="active" className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" />
-            Active Clients
-          </TabsTrigger>
-          <TabsTrigger value="communications" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Communications
-          </TabsTrigger>
-          <TabsTrigger value="support" className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            Support Tickets
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          desktopColumns={4}
+          items={[
+            { value: 'overview', label: 'All Clients', shortLabel: 'All', icon: Users },
+            { value: 'active', label: 'Active Clients', shortLabel: 'Active', icon: UserCheck },
+            {
+              value: 'communications',
+              label: 'Communications',
+              shortLabel: 'Messages',
+              icon: MessageSquare,
+            },
+            {
+              value: 'support',
+              label: 'Support Tickets',
+              shortLabel: 'Support',
+              icon: AlertCircle,
+            },
+          ]}
+        />
 
         {/* Search and Filter Bar */}
-        <div className="flex space-x-4 items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
@@ -105,7 +109,7 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-56"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>

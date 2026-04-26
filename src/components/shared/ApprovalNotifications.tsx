@@ -348,7 +348,7 @@ export function NotificationBell() {
 
       <PopoverContent
         className={cn(
-          'w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl',
+          'w-[calc(100vw-2rem)] max-w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl',
           isDark ? 'bg-zinc-950/80 border-white/10' : 'bg-white/80 border-black/5',
           'rounded-3xl'
         )}

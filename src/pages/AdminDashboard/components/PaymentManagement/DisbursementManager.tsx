@@ -197,8 +197,8 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
       <div className="space-y-4">
         {disbursements?.map((disbursement) => (
           <Card key={disbursement.id} className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 {/* Disbursement Icon */}
                 <div className="flex-shrink-0">
                   <div
@@ -228,14 +228,14 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
                 {/* Disbursement Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
+                  <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <h3 className="text-lg font-semibold text-foreground">
                         {formatCurrency(disbursement.amount)}
                       </h3>
                       {getStatusBadge(disbursement.status)}
                     </div>
-                    <div className="text-right">
+                    <div className="shrink-0 text-left lg:text-right">
                       <div className="text-sm font-medium text-foreground">
                         Loan: {disbursement.loan_id.slice(-6)}
                       </div>
@@ -262,14 +262,15 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
                   {/* Actions - View Only (Disbursement actions moved to Loan Management) */}
                   <div className="mt-3 pt-3 border-t border-border">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-xs text-muted-foreground">
                         Created: {formatDate(disbursement.created_at)}
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                           variant="outline"
                           size="sm"
+                          className="w-full sm:w-auto"
                           onClick={() => {
                             setSelectedDisbursementDetails({
                               id: disbursement.id,

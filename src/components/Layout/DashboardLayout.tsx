@@ -4,9 +4,10 @@ import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import ThemedSidebar, { MenuItem } from './ThemedSidebar';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
-import { RefreshCw, BarChart3 } from 'lucide-react';
+import { AdaptiveShell } from '@/components/adaptive';
+import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
+import { CreditCard, FileText, LayoutDashboard, User, Wallet } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -33,8 +34,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   userName,
   userEmail,
 }) => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { styles } = useTheme();
+  const layout = useAdaptiveLayout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const displayTitle = title || (variant === 'admin' ? 'Admin Dashboard' : 'Dashboard');
@@ -42,53 +44,107 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     userName || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
   const finalUserEmail = userEmail || user?.email;
 
-  return (
-    <div className={cn('flex h-screen transition-colors duration-500', styles.background)}>
-      {/* Sidebar */}
-      <ThemedSidebar
-        currentPage={activeTab}
-        onNavigate={onTabChange}
-        variant={variant}
-        userName={finalUserName}
-        userEmail={finalUserEmail}
-        onSignOut={signOut}
-        menuItems={menuItems}
-        isOpen={sidebarOpen}
-        onOpen={() => setSidebarOpen(true)}
-        onClose={() => setSidebarOpen(false)}
-        title={variant === 'admin' ? 'NamLend Admin' : 'NamLend'}
-      />
+  const fallbackClientMenuItems: MenuItem[] = [
+    { icon: LayoutDashboard, label: 'Overview', id: 'dashboard' },
+    { icon: Wallet, label: 'Loans', id: 'loans' },
+    { icon: FileText, label: 'Apply', id: 'applications' },
+    { icon: CreditCard, label: 'Payments', id: 'payments' },
+    { icon: User, label: 'Profile', id: 'profile' },
+  ];
+  const navItems = menuItems || fallbackClientMenuItems;
+  const bottomItems = navItems.filter((item) =>
+    ['dashboard', 'overview', 'loans', 'applications', 'payments', 'profile'].includes(item.id)
+  );
+  const isActive = (id: string) =>
+    activeTab === id || (activeTab === 'overview' && id === 'dashboard');
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {/* Header */}
-        <header
-          className={cn(
-            'border-b p-4 flex items-center justify-between pl-14 sm:pl-16 backdrop-blur-md sticky top-0 z-20',
-            styles.cardClass,
-            'rounded-none border-x-0 border-t-0'
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <h1 className={cn('text-xl font-semibold hidden sm:block', styles.textClass)}>
-              {displayTitle}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {headerActions}
+  const sidebarProps = {
+    currentPage: activeTab,
+    onNavigate: onTabChange,
+    variant,
+    userName: finalUserName,
+    userEmail: finalUserEmail,
+    onSignOut: signOut,
+    menuItems,
+    title: variant === 'admin' ? 'NamLend Admin' : 'NamLend',
+  };
 
-            {showNotifications && (
-              <>{variant === 'admin' ? <NotificationBell /> : <NotificationCenter />}</>
-            )}
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-6">{children}</div>
-        </main>
+  const header = (
+    <header
+      className={cn(
+        'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
+        layout.isCompact && 'pl-14',
+        styles.cardClass,
+        'rounded-none border-x-0 border-t-0'
+      )}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <h1 className={cn('truncate text-base font-semibold sm:text-xl', styles.textClass)}>
+          {displayTitle}
+        </h1>
       </div>
-    </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {headerActions}
+        {showNotifications && (
+          <>{variant === 'admin' ? <NotificationBell /> : <NotificationCenter />}</>
+        )}
+      </div>
+    </header>
+  );
+
+  const bottomNavigation =
+    variant === 'client' ? (
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-2 pb-safe pt-2 backdrop-blur-xl md:hidden">
+        <div
+          className="mx-auto grid max-w-md gap-1"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(bottomItems.length, 5)}, minmax(0, 1fr))`,
+          }}
+        >
+          {bottomItems.slice(0, 5).map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onTabChange(item.id)}
+                className={cn(
+                  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium transition-colors',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="max-w-full truncate">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    ) : undefined;
+
+  return (
+    <AdaptiveShell
+      className={cn('transition-colors duration-500', styles.background)}
+      sidebar={<ThemedSidebar {...sidebarProps} displayMode="sidebar" />}
+      rail={<ThemedSidebar {...sidebarProps} displayMode="rail" />}
+      mobileNavigation={
+        <ThemedSidebar
+          {...sidebarProps}
+          displayMode="drawer"
+          isOpen={sidebarOpen}
+          onOpen={() => setSidebarOpen(true)}
+          onClose={() => setSidebarOpen(false)}
+        />
+      }
+      header={header}
+      bottomNavigation={bottomNavigation}
+    >
+      {children}
+    </AdaptiveShell>
   );
 };
 

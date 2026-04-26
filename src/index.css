@@ -151,6 +151,8 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
+    overflow-x: hidden;
   }
 
   /* Theme variant data attributes */
@@ -199,5 +201,34 @@ All colors MUST be HSL.
   
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+
+  .min-h-dvh {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .h-dvh {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .pb-safe {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  .pt-safe {
+    padding-top: calc(1rem + env(safe-area-inset-top));
+  }
+
+  .adaptive-container {
+    container-type: inline-size;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .touch-no-hover {
+      transform: none !important;
+      box-shadow: inherit;
+    }
   }
 }

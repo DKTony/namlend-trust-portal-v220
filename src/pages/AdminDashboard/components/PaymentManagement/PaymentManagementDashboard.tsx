@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import {
   CreditCard,
   Search,
   Filter,
   Download,
-  Plus,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  DollarSign,
   TrendingUp,
   Users,
   RefreshCw,
@@ -42,9 +38,8 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
   >('all');
 
   // Realtime updates
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [, setRefreshKey] = useState(0);
   const [hasNewPayments, setHasNewPayments] = useState(false);
-  const { toast } = useToast();
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -56,67 +51,64 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <ResponsiveActionBar
+        description={
           <p className="text-muted-foreground">Manage payments, disbursements, and collections</p>
-        </div>
-        <div className="flex space-x-2">
-          {hasNewPayments && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleRefresh}
-              className="bg-blue-600 hover:bg-blue-700 animate-pulse"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              New Payments Available
+        }
+        actions={
+          <>
+            {hasNewPayments && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleRefresh}
+                className="bg-blue-600 hover:bg-blue-700 animate-pulse"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                New Payments Available
+              </Button>
+            )}
+            <Button variant="outline" size="sm">
+              <Filter className="mr-2 h-4 w-4" />
+              Advanced Filters
             </Button>
-          )}
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Advanced Filters
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </>
+        }
+      />
 
       {/* Payment Overview */}
       <PaymentOverview />
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            All Payments
-          </TabsTrigger>
-          <TabsTrigger value="disbursements" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Disbursements
-          </TabsTrigger>
-          <TabsTrigger value="settled" className="flex items-center gap-2">
-            <BadgeCheck className="h-4 w-4" />
-            Settled Loans
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Overdue
-          </TabsTrigger>
-          <TabsTrigger value="collections" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Collections
-          </TabsTrigger>
-          <TabsTrigger value="reconciliation" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            Reconciliation
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          desktopColumns={6}
+          items={[
+            { value: 'overview', label: 'All Payments', shortLabel: 'Payments', icon: CreditCard },
+            {
+              value: 'disbursements',
+              label: 'Disbursements',
+              shortLabel: 'Disburse',
+              icon: TrendingUp,
+            },
+            { value: 'settled', label: 'Settled Loans', shortLabel: 'Settled', icon: BadgeCheck },
+            { value: 'overdue', label: 'Overdue', icon: AlertTriangle },
+            { value: 'collections', label: 'Collections', icon: Users },
+            {
+              value: 'reconciliation',
+              label: 'Reconciliation',
+              shortLabel: 'Recon',
+              icon: CheckCircle,
+            },
+          ]}
+        />
 
         {/* Search and Filter Bar */}
-        <div className="flex space-x-4 items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <input
@@ -130,7 +122,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+            className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-48"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>

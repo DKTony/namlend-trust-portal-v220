@@ -20,15 +20,15 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   backLink,
   actions,
   icon,
-  className
+  className,
 }) => {
   const { styles } = useTheme();
   const navigate = useNavigate();
 
   return (
-    <div className={cn("mb-6", className)}>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <div className={cn('mb-6', className)}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
           {backLink && (
             <ThemedButton
               variant="ghost"
@@ -45,22 +45,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               {icon}
             </div>
           )}
-          <div>
-            <h1 className={cn("text-2xl font-bold tracking-tight", styles.textClass)}>
-              {title}
-            </h1>
-            {description && (
-              <p className="text-muted-foreground mt-1">
-                {description}
-              </p>
-            )}
+          <div className="min-w-0">
+            <h1 className={cn('text-2xl font-bold tracking-tight', styles.textClass)}>{title}</h1>
+            {description && <p className="text-muted-foreground mt-1">{description}</p>}
           </div>
         </div>
-        {actions && (
-          <div className="flex items-center gap-2 shrink-0">
-            {actions}
-          </div>
-        )}
+        {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
+import { assertAliasAvailable, assertAliasUsable, validateIpsHandle } from '../lib/ipsAliasRules';
 
 const aliasStatus = v.union(
   v.literal('NEW'),
@@ -45,10 +46,24 @@ export const getAliasByAddr = query({
   args: { addr: v.string() },
   handler: async (ctx, { addr }) => {
     await assertAuthenticated(ctx);
-    return ctx.db
+    const alias = await ctx.db
       .query('ipsAliasDirectory')
       .withIndex('by_addr', (q) => q.eq('addr', addr))
       .first();
+    if (!alias) return null;
+
+    try {
+      await assertOwnerOrStaff(ctx, alias.userId);
+      return alias;
+    } catch {
+      return {
+        addr: alias.addr,
+        entityType: alias.entityType,
+        status: alias.status,
+        syncedWithIps: alias.syncedWithIps,
+        isDefault: false,
+      };
+    }
   },
 });
 
@@ -128,6 +143,15 @@ export const registerLocalAlias = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    const [handlePart, providerPart] = args.addr.split('@');
+    if (!handlePart || !providerPart) {
+      throw new ConvexError({
+        code: 'INVALID_VPA',
+        message: 'Payment address must be in handle@provider format.',
+      });
+    }
+    const { handle } = validateIpsHandle(handlePart);
+    const normalizedAddr = `${handle}@${providerPart.toLowerCase()}`;
 
     // Normalize mobile number if idType is MOBILE
     let normalizedIdValue = args.idValue;
@@ -151,15 +175,10 @@ export const registerLocalAlias = mutation({
     // Check for duplicate alias address
     const existing = await ctx.db
       .query('ipsAliasDirectory')
-      .withIndex('by_addr', (q) => q.eq('addr', args.addr))
+      .withIndex('by_addr', (q) => q.eq('addr', normalizedAddr))
       .first();
 
-    if (existing && existing.status !== 'DEREGISTERED') {
-      throw new ConvexError({
-        code: 'ALIAS_EXISTS',
-        message: `Alias '${args.addr}' is already registered.`,
-      });
-    }
+    assertAliasAvailable(existing);
 
     // Check if idValue is already registered by another user (mobile uniqueness)
     if (args.idType === 'MOBILE') {
@@ -189,7 +208,7 @@ export const registerLocalAlias = mutation({
     const now = Date.now();
     const aliasId = await ctx.db.insert('ipsAliasDirectory', {
       userId,
-      addr: args.addr,
+      addr: normalizedAddr,
       entityType: args.entityType,
       idType: args.idType,
       idValue: normalizedIdValue,
@@ -209,7 +228,7 @@ export const registerLocalAlias = mutation({
     await ctx.scheduler.runAfter(0, internal.actions.ipsAliasAdapter.reqRegMapper, {
       aliasId,
       operation: 'ADD',
-      addr: args.addr,
+      addr: normalizedAddr,
       entityType: args.entityType,
       idType: args.idType,
       idValue: normalizedIdValue,
@@ -267,7 +286,7 @@ export const updateAliasFromIpn = internalMutation({
 export const deregisterAlias = mutation({
   args: { aliasId: v.id('ipsAliasDirectory') },
   handler: async (ctx, { aliasId }) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
     await assertOwnerOrStaff(ctx, alias.userId);
@@ -346,11 +365,12 @@ export const setDefaultAlias = mutation({
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
     await assertOwnerOrStaff(ctx, alias.userId);
+    assertAliasUsable(alias);
 
     // Clear existing default
     const userAliases = await ctx.db
       .query('ipsAliasDirectory')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .withIndex('by_userId', (q) => q.eq('userId', alias.userId))
       .collect();
 
     const now = Date.now();

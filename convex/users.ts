@@ -8,6 +8,7 @@
 
 import { v, ConvexError } from 'convex/values';
 import { query, mutation, internalQuery } from './_generated/server';
+import type { Id } from './_generated/dataModel';
 import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
@@ -190,20 +191,28 @@ export const assignRole = mutation({
       .withIndex('by_userId', (q) => q.eq('userId', targetUserId))
       .first();
 
+    const previousRole = existing?.role ?? 'none';
+    let roleDocId: Id<'userRoles'>;
     if (existing) {
       await ctx.db.patch(existing._id, { role, assignedBy: adminId });
+      roleDocId = existing._id;
     } else {
-      await ctx.db.insert('userRoles', {
+      roleDocId = await ctx.db.insert('userRoles', {
         userId: targetUserId,
         role,
         assignedBy: adminId,
         createdAt: Date.now(),
       });
     }
+
+    // Privilege changes are compliance-relevant: write the auditLogs trail
+    // (mirrors removeRole), not just the domain event.
+    scheduleAuditLog(ctx, 'userRole', roleDocId, 'ASSIGN_ROLE', previousRole, role);
+
     emitRelationship(
       ctx,
       { type: 'users', id: targetUserId },
-      { type: 'userRoles', id: existing?._id ?? targetUserId },
+      { type: 'userRoles', id: roleDocId },
       'has_role',
       { role }
     );

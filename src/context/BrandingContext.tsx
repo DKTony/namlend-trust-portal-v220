@@ -13,13 +13,10 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import {
-  BrandingConfig,
-  BrandingContextType,
-  DEFAULT_BRANDING,
-} from '@/types/branding';
-import { BrandingService } from '@/services/brandingService';
+import { BrandingConfig, BrandingContextType, DEFAULT_BRANDING } from '@/types/branding';
 import { debugLog } from '@/utils/debug';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '@/integrations/convex/api';
 
 // ============================================================================
 // CONSTANTS
@@ -37,8 +34,24 @@ interface CachedBranding {
   timestamp: number;
 }
 
+interface PublicConfigItem {
+  key: string;
+  value: unknown;
+}
+
 interface BrandingProviderProps {
   children: ReactNode;
+}
+
+function parsePublicBrandingConfig(items: PublicConfigItem[]): BrandingConfig {
+  const parsed = { ...DEFAULT_BRANDING };
+  for (const item of items) {
+    const section = item.key.replace('branding.', '') as keyof BrandingConfig;
+    if (section in parsed && item.value) {
+      (parsed as Record<string, unknown>)[section] = item.value;
+    }
+  }
+  return parsed;
 }
 
 // ============================================================================
@@ -55,6 +68,9 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
   const [config, setConfig] = useState<BrandingConfig>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const brandingConfigs = useConvexQuery(api.systemConfig.getPublicConfig, {
+    category: 'branding',
+  });
 
   /**
    * Apply branding settings to the document (favicon, title, CSS variables)
@@ -86,18 +102,12 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
 
     // Apply custom colors via CSS variables
     if (branding.colors.use_custom_colors) {
-      document.documentElement.style.setProperty(
-        '--brand-primary',
-        branding.colors.primary_color
-      );
+      document.documentElement.style.setProperty('--brand-primary', branding.colors.primary_color);
       document.documentElement.style.setProperty(
         '--brand-secondary',
         branding.colors.secondary_color
       );
-      document.documentElement.style.setProperty(
-        '--brand-accent',
-        branding.colors.accent_color
-      );
+      document.documentElement.style.setProperty('--brand-accent', branding.colors.accent_color);
     } else {
       // Remove custom properties to use defaults
       document.documentElement.style.removeProperty('--brand-primary');
@@ -115,14 +125,7 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
     metaDesc.content = branding.meta.meta_description;
   }, []);
 
-  /**
-   * Load branding configuration from cache or server
-   */
-  const loadBranding = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    // Try to load from cache first for instant display
+  useEffect(() => {
     try {
       const cached = localStorage.getItem(BRANDING_CACHE_KEY);
       if (cached) {
@@ -136,41 +139,38 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
           setConfig(cachedConfig);
           applyBrandingToDocument(cachedConfig);
           setLoading(false);
-          // Continue to fetch fresh data in background
         }
       }
     } catch (e) {
       debugLog('⚠️ Failed to load cached branding', e);
     }
+  }, [applyBrandingToDocument]);
 
-    // Fetch fresh branding from server
+  useEffect(() => {
+    if (brandingConfigs === undefined) return;
+
     try {
-      const result = await BrandingService.getPublicBranding();
+      setError(null);
+      const freshConfig =
+        brandingConfigs.length > 0 ? parsePublicBrandingConfig(brandingConfigs) : DEFAULT_BRANDING;
 
-      if (result.success && result.data) {
-        setConfig(result.data);
-        applyBrandingToDocument(result.data);
+      setConfig(freshConfig);
+      applyBrandingToDocument(freshConfig);
 
-        // Update cache
-        const cacheData: CachedBranding = {
-          config: result.data,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(cacheData));
-        debugLog('🎨 Branding loaded and cached');
-      } else if (result.error) {
-        debugLog('⚠️ Branding load returned error, using defaults', result.error);
-        setError(result.error);
-      }
+      const cacheData: CachedBranding = {
+        config: freshConfig,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(cacheData));
+      debugLog('🎨 Branding loaded from Convex public config and cached');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       debugLog('❌ Error loading branding', errorMessage);
       setError(errorMessage);
-      // Keep using defaults or cached values
     } finally {
       setLoading(false);
     }
-  }, [applyBrandingToDocument]);
+  }, [applyBrandingToDocument, brandingConfigs]);
 
   /**
    * Refresh branding from server (used after admin updates)
@@ -178,18 +178,20 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
   const refreshBranding = useCallback(async () => {
     debugLog('🔄 Refreshing branding');
     localStorage.removeItem(BRANDING_CACHE_KEY);
-    await loadBranding();
-  }, [loadBranding]);
+    if (brandingConfigs !== undefined) {
+      const freshConfig =
+        brandingConfigs.length > 0 ? parsePublicBrandingConfig(brandingConfigs) : DEFAULT_BRANDING;
+      setConfig(freshConfig);
+      applyBrandingToDocument(freshConfig);
+    }
+  }, [applyBrandingToDocument, brandingConfigs]);
 
   /**
    * Update branding locally (for preview before save)
    * Does NOT persist to server - used for real-time preview in settings
    */
   const updateBrandingLocally = useCallback(
-    (
-      section: keyof BrandingConfig,
-      values: Partial<BrandingConfig[keyof BrandingConfig]>
-    ) => {
+    (section: keyof BrandingConfig, values: Partial<BrandingConfig[keyof BrandingConfig]>) => {
       setConfig((prev) => {
         const updated = {
           ...prev,
@@ -203,11 +205,6 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
     [applyBrandingToDocument]
   );
 
-  // Load branding on mount
-  useEffect(() => {
-    loadBranding();
-  }, [loadBranding]);
-
   const contextValue: BrandingContextType = {
     config,
     loading,
@@ -216,11 +213,7 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
     updateBrandingLocally,
   };
 
-  return (
-    <BrandingContext.Provider value={contextValue}>
-      {children}
-    </BrandingContext.Provider>
-  );
+  return <BrandingContext.Provider value={contextValue}>{children}</BrandingContext.Provider>;
 };
 
 // ============================================================================

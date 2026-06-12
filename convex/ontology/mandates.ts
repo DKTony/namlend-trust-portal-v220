@@ -15,10 +15,9 @@
  */
 
 import { v } from 'convex/values';
-import { mutation, query, internalMutation } from '../_generated/server';
-import { internal } from '../_generated/api';
+import { mutation, query, internalMutation, internalQuery } from '../_generated/server';
 import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff } from '../lib/auth';
+import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
@@ -62,12 +61,16 @@ export const createMandate = mutation({
     const mandateRef = generateMandateRef();
     const correlationId = generateCorrelationId();
 
-    // Validate loan exists if linked
+    let debtorUserId = userId;
+
+    // Validate loan exists if linked, and bind the mandate to the loan owner.
     if (args.loanId) {
       const loan = await ctx.db.get(args.loanId);
       if (!loan) {
         throw new ConvexError({ code: 'NOT_FOUND', message: 'Linked loan not found' });
       }
+      await assertOwnerOrStaff(ctx, loan.userId);
+      debtorUserId = loan.userId;
     }
 
     // Validate amount is positive
@@ -87,7 +90,7 @@ export const createMandate = mutation({
       mandateRef,
       mandateType: args.mandateType,
       status: 'draft',
-      debtorUserId: userId,
+      debtorUserId,
       debtorAccountRef: args.debtorAccountRef,
       debtorName: args.debtorName,
       creditorEntityType: args.creditorEntityType,
@@ -141,7 +144,7 @@ export const createMandate = mutation({
     // Ontology: user -> authorized -> mandate
     emitRelationship(
       ctx,
-      { type: 'users', id: userId },
+      { type: 'users', id: debtorUserId },
       { type: 'mandates', id: mandateId },
       'authorized'
     );
@@ -655,7 +658,7 @@ export const getDueMandates = query({
  * Check if a loan has an active mandate.
  * Used by disbursement flow for soft-check.
  */
-export const hasActiveMandate = query({
+export const hasActiveMandate = internalQuery({
   args: {
     loanId: v.id('loans'),
   },

@@ -81,7 +81,9 @@ export const useUsersList = (): UseUsersListReturn => {
     return rawUsers.map((u) => {
       const role = (u.role ?? 'client') as User['role'];
       return {
-        id: String(u._id),
+        // Must be the users-table id (u.userId), NOT the profile doc _id — this id is
+        // cast to Id<'users'> by role assignment, deactivation, and status updates.
+        id: String(u.userId),
         fullName: u.fullName || 'Unknown User',
         email: u.email || 'No email',
         phone: u.phone,

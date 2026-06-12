@@ -1,8 +1,8 @@
 # NamLend Trust - Security Documentation
 
-**Last Updated**: 2026-03-04
-**Aligned With**: Post-quality-sweep codebase
-**Status**: Current ✅
+**Last Updated**: 2026-04-28
+**Aligned With**: Convex-first architecture review
+**Status**: Current with documented review items
 
 ---
 
@@ -65,13 +65,26 @@ Convex does **not** use Row-Level Security. Access is enforced by guard function
 
 Review `convex/lib/auth.ts` when adding new tables or functions.
 
+### Current Authorization Review Items
+
+The following functions need object-level authorization review because they authenticate callers but do not clearly enforce owner-or-staff access on the returned or linked record:
+
+- `approvalWorkflow.getApprovalRequest`
+- `ipsTransactions.getTransaction`
+- `ipsTransactions.getTransactionByMsgId`
+- `ipsAliasDirectory.getAliasByAddr`
+- `ipsAlerts.createAlert`
+- `mandates.createMandate`
+
+See [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md) for severity and remediation guidance.
+
 ---
 
 ## Convex Action Security (Replaces Edge Functions)
 
 - Auth guards called at start of any action that accesses user data.
-- `payment-webhook` in `convex/http.ts` uses HMAC verification; fails closed if secrets are missing.
-- `convex/actions/ipsAdapter.ts` runs in mock mode until production IPS credentials are configured.
+- `payment-webhook` and `webhook/ips` in `convex/http.ts` verify signatures when their secrets/certificates are configured. Current code warns and skips verification when secrets are missing; production configuration must fail closed through environment policy and deployment checks.
+- `convex/actions/ipsAdapter.ts` supports mock/XML modes. Production must explicitly configure `IPS_PROTOCOL_MODE`, mTLS certificates, and BoN connectivity.
 - Secrets are set via `npx convex env set KEY value` — never in `VITE_*` env vars.
 - Actions are the only place that can make external HTTP calls (`fetch()`). Never in mutations or queries.
 
@@ -81,14 +94,14 @@ Review `convex/lib/auth.ts` when adding new tables or functions.
 
 - Debug tooling is gated by `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS`.
 - Do not ship Convex secrets in `VITE_*` environment variables — only `VITE_CONVEX_URL` is safe.
-- `supabaseAdmin` reference in legacy code is deprecated and gated by `VITE_ALLOW_LOCAL_ADMIN` (DEV only).
+- Supabase client usage remains in legacy scoring/test utility paths. Do not add new Supabase client paths to production UI.
 
 ---
 
 ## Audit and Logging
 
 - Financial operations schedule audit log entries via `scheduleAuditLog()` from `convex/lib/audit.ts`.
-- Audit logs are written asynchronously via `ctx.scheduler.runAfter()` to avoid blocking mutations.
+- Audit logs are written asynchronously via `ctx.scheduler.runAfter()` to avoid blocking mutations. This requires monitoring because the financial mutation can commit before the audit write succeeds.
 - Sensitive access is tracked in `viewLogs` Convex table.
 - Do not log PII, financial details, or credentials in client errors.
 - Settlement state transitions log via `scheduleAuditLog()` in Convex mutations (added 2026-02-18).
@@ -102,12 +115,14 @@ Review `convex/lib/auth.ts` when adding new tables or functions.
 
 ## Security Checklist (Handover)
 
-1. Confirm auth guards (`assertAuthenticated`, `assertStaff`, `assertAdmin`) protect all new Convex queries/mutations.
+1. Confirm auth guards (`assertAuthenticated`, `assertOwner`, `assertOwnerOrStaff`, `assertStaff`, `assertAdmin`) protect all new Convex queries/mutations.
 2. Verify Convex environment secrets are set via `npx convex env set` (not in `.env` files).
 3. Ensure `VITE_DEBUG_TOOLS` and `VITE_RUN_DEV_SCRIPTS` are false in production.
 4. Rotate provider webhook secrets (`PAYTODAY_WEBHOOK_SECRET`, etc.) in production environments.
 5. Run `npx convex dev` after schema changes — types regenerate automatically in `convex/_generated/`.
 6. Verify no Convex secrets exposed as `VITE_*` environment variables.
+7. Verify IPS and payment webhooks cannot deploy to production with missing signature secrets/certificates.
+8. Replace hard-delete test cleanup for financial data with isolated fixtures or archival cleanup.
 
 ---
 

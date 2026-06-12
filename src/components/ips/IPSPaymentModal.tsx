@@ -81,13 +81,14 @@ export function IPSPaymentModal({
     selectedVpaId === 'new'
       ? newVpa
       : savedVpas.find((v) => v.id === selectedVpaId)?.vpa_address || '';
+  const selectedSavedVpa =
+    selectedVpaId === 'new' ? undefined : savedVpas.find((v) => v.id === selectedVpaId);
 
   const canProceedToVpa = isValidAmount;
   const canProceedToConfirm =
     selectedVpa &&
-    (selectedVpaId !== 'new'
-      ? savedVpas.find((v) => v.id === selectedVpaId)?.is_usable !== false
-      : vpaValidation?.validationStatus === 'validated');
+    selectedSavedVpa?.source === 'alias_directory' &&
+    selectedSavedVpa.is_usable !== false;
 
   const handleAmountSelect = (value: number) => {
     setAmount(value.toString());
@@ -116,6 +117,8 @@ export function IPSPaymentModal({
         loanId,
         amount: parsedAmount,
         payerVpa: selectedVpa,
+        payerAliasId:
+          selectedSavedVpa?.source === 'alias_directory' ? selectedSavedVpa.id : undefined,
       });
 
       setResult(paymentResult);
@@ -283,11 +286,16 @@ export function IPSPaymentModal({
                   ))}
 
                   <div
-                    className="flex items-center space-x-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50"
+                    className="flex items-center space-x-3 rounded-lg border p-3 cursor-not-allowed opacity-60"
                     onClick={() => setSelectedVpaId('new')}
                   >
                     <RadioGroupItem value="new" id="new-vpa" />
-                    <span className="font-medium">Use a different address</span>
+                    <div>
+                      <span className="font-medium">Use a different address</span>
+                      <p className="text-xs text-muted-foreground">
+                        Register and confirm an IPS alias before using it for repayment.
+                      </p>
+                    </div>
                   </div>
                 </RadioGroup>
               )}
@@ -351,7 +359,7 @@ export function IPSPaymentModal({
             <div>
               <p className="font-medium">Processing Payment</p>
               <p className="text-sm text-muted-foreground">
-                Please wait while we process your payment...
+                Please wait while we submit your IPS payment request...
               </p>
             </div>
           </div>
@@ -364,9 +372,10 @@ export function IPSPaymentModal({
               <>
                 <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
                 <div>
-                  <p className="text-xl font-semibold text-green-600">Payment Successful!</p>
+                  <p className="text-xl font-semibold text-green-600">Payment Initiated</p>
                   <p className="text-muted-foreground mt-1">
-                    Your payment of {formatNAD(parsedAmount)} has been processed.
+                    Your payment request for {formatNAD(parsedAmount)} was accepted for IPS
+                    processing.
                   </p>
                 </div>
                 {result.ips_transaction_id && (

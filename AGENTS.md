@@ -2,96 +2,109 @@
 
 ## Project Overview
 
-NamLend Trust is a digital lending platform serving the Namibian market. This codebase implements a full-stack loan management system with React frontend and Supabase backend.
+NamLend Trust is a digital lending platform serving the Namibian market. The active web platform is a React/Vite frontend backed by Convex Auth, Convex database tables, Convex queries/mutations/actions, Convex HTTP routes, and Convex scheduled jobs.
+
+Supabase remains in the repository for legacy/reference material and selected migration-debt paths. Do not use Supabase/RLS/RPC patterns for new application work.
 
 ## Critical Constraints
 
-### Regulatory Requirements (NON-NEGOTIABLE)
+### Regulatory Requirements
 
-- **Maximum APR: 32%** - Never create loans exceeding this limit
-- **Currency: NAD** (Namibian Dollar) - Format as `N$ X,XXX.XX`
-- **Data Retention: 7 years** - Never delete financial records
-- **KYC Compliance** - All users must complete identity verification
+- **Maximum APR: 32%** - Never create or approve loans exceeding this limit.
+- **Currency: NAD** - Format as `N$ X,XXX.XX`.
+- **Data Retention: 7 years** - Never hard-delete production financial records.
+- **KYC Compliance** - Client lending flows must respect verified KYC requirements.
 
 ### Security Requirements
 
-- **Row-Level Security (RLS)** - Every table with user data MUST have RLS policies
-- **Audit Trails** - All financial operations must be logged to `audit_logs`
-- **Role-Based Access** - Respect the three roles: `client`, `loan_officer`, `admin`
-- **Never expose** PII, financial data, or credentials in logs or errors
+- **Convex auth guards** - Every public Convex query/mutation touching user data must call the correct guard from `convex/lib/auth.ts`.
+- **Object-level authorization** - Authenticated is not enough; enforce owner, owner-or-staff, staff, or admin access as appropriate.
+- **Audit trails** - Financial operations must schedule audit/event writes through Convex audit helpers.
+- **Role-based access** - Respect `client`, `loan_officer`, and `admin`.
+- **No sensitive logging** - Do not expose PII, financial data, credentials, or raw provider payloads in client logs/errors.
 
 ## Technology Stack
 
-```
-Frontend: React 18.3.1, TypeScript, TailwindCSS, shadcn/ui
-Backend: Supabase (PostgreSQL 15+, Auth, Edge Functions)
+```bash
+Frontend: React 18.3.1, TypeScript, Vite, TailwindCSS, shadcn/ui
+Backend: Convex, Convex Auth, Convex HTTP router, Convex scheduled jobs
+Legacy: Supabase migrations/functions/client retained for reference and selected migration-debt paths
 Testing: Playwright E2E, Vitest unit tests
-Deployment: Netlify (frontend), Supabase Cloud (backend)
+Deployment: Netlify frontend, Convex backend
 ```
 
 ## Key Commands
 
 ```bash
 # Development
-npm run dev              # Start dev server on port 5173
-npm run build            # Production build
-npm run typecheck        # TypeScript validation
-npm run lint             # ESLint check
+npm run dev
+npm run build
+npm run typecheck
+npm run lint
 
 # Testing
-npm run test:e2e         # Run Playwright E2E tests
-npx playwright test --ui # Interactive test runner
+npm run test:unit
+npm run test:e2e
+npx playwright test --ui
 
-# Database
-npx supabase start       # Start local Supabase
-npx supabase db push     # Apply migrations
-npx supabase gen types typescript --local > src/types/supabase.ts
+# Convex
+npx convex dev
+npx convex deploy
 ```
 
-## File Structure Guidelines
+`npm run typecheck` runs `tsc -b` and is the release gate for TypeScript.
 
-```
+## Active File Structure
+
+```text
 src/
-├── components/     # Reusable UI components (use shadcn/ui)
+├── components/     # Reusable UI components and adaptive primitives
 ├── pages/          # Route components
-├── services/       # Business logic & API calls
 ├── hooks/          # Custom React hooks
+├── context/        # React Context providers
+├── integrations/   # Convex client/API re-export; legacy Supabase client
 ├── types/          # TypeScript type definitions
-├── constants/      # Regulatory & app constants
-└── context/        # React Context providers
+└── constants/      # Regulatory and app constants
+
+convex/
+├── schema.ts       # Source of truth for active data model
+├── *.ts            # Domain queries/mutations
+├── actions/        # External IO
+├── scheduled/      # Cron workers
+├── ontology/       # Financial Ontology Engine modules
+└── lib/            # Auth, audit, events, rules, IPS helpers
 
 supabase/
-├── migrations/     # Database migrations (timestamped)
-├── functions/      # Edge Functions (Deno)
-└── config.toml     # Local Supabase config
-
-e2e/
-├── api/            # API/RPC tests
-├── helpers/        # Test utilities
-└── *.e2e.ts        # UI flow tests
+├── migrations/     # Legacy/reference SQL migrations
+└── functions/      # Legacy/reference Edge Functions
 ```
 
 ## Code Style Preferences
 
-- Use `async/await` over Promise chains
-- Use Zod for runtime validation
-- Use TanStack Query for server state
-- Format currency with `N$` prefix and 2 decimal places
-- Use existing services in `src/services/` - don't create new ones
-- Follow Neo-Fintech design system (zinc/black with blue accents)
+- Use `async/await` over Promise chains.
+- Use Convex validators and server-side checks for runtime boundaries.
+- Use TanStack Query only where appropriate for non-Convex client state; Convex `useQuery` is the default server-state path.
+- Format currency with `N$` prefix and 2 decimal places.
+- Do not add new business logic to `src/services/`; new backend behavior belongs in `convex/`.
+- Follow the Neo-Fintech design system and adaptive UI guidance.
 
 ## Before Making Changes
 
-1. Check if similar functionality exists in `src/services/`
-2. Verify APR calculations don't exceed 32%
-3. Ensure RLS policies cover new tables
-4. Add audit logging for financial operations
-5. Test on mobile viewport (mobile-first design)
+1. Check whether the relevant Convex module already exists.
+2. Verify APR calculations do not exceed 32%.
+3. Confirm the correct auth guard and object-level authorization.
+4. Add or preserve audit logging for financial operations.
+5. Avoid hard deletes for financial/compliance records.
+6. Test relevant mobile/adaptive viewport behavior for UI changes.
 
-## Important Files Reference
+## Important Files
 
-- `src/constants/regulatory.ts` - APR limits, currency settings
-- `src/services/approvalWorkflow.ts` - Loan approval logic
-- `src/services/disbursementService.ts` - Fund disbursement
-- `docs/DATABASE_SCHEMA.md` - Complete schema reference
-- `docs/ARCHITECTURE.md` - System architecture
+- `convex/schema.ts` - Active schema source of truth
+- `convex/lib/auth.ts` - Authorization guards
+- `convex/lib/audit.ts` - Audit/event bridge helpers
+- `convex/loans.ts` - Loan lifecycle
+- `convex/payments.ts` - Payment processing
+- `convex/disbursements.ts` - Disbursement lifecycle
+- `docs/ARCHITECTURE.md` - Current architecture
+- `docs/ARCHITECTURAL_REVIEW.md` - Current flaws, risks, and remediation roadmap
+- `docs/SERVICES.md` - Service layer and legacy island inventory

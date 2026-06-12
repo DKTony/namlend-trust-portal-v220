@@ -944,6 +944,38 @@ const IPS_ERROR_ENTRIES: IpsErrorEntry[] = [
 
   // Reversal codes
   {
+    code: '21',
+    description: 'No action taken (full reversal)',
+    classification: 'TD',
+    isRetryable: true,
+    userMessage: 'The reversal status is pending confirmation.',
+    category: 'reversal',
+  },
+  {
+    code: '32',
+    description: 'Partial reversal',
+    classification: 'TD',
+    isRetryable: true,
+    userMessage: 'The reversal completed only partially and needs confirmation.',
+    category: 'reversal',
+  },
+  {
+    code: 'RB',
+    description: 'Credit reversal timeout',
+    classification: 'TD',
+    isRetryable: true,
+    userMessage: 'The credit reversal timed out and will be checked.',
+    category: 'timeout',
+  },
+  {
+    code: 'RR',
+    description: 'Debit reversal timeout',
+    classification: 'TD',
+    isRetryable: true,
+    userMessage: 'The debit reversal timed out and will be checked.',
+    category: 'timeout',
+  },
+  {
     code: '96',
     description: 'Reversal failure',
     classification: 'BD',
@@ -1151,7 +1183,7 @@ export function mapToTransactionStatus(
   if (!entry) return 'failed';
 
   if (entry.category === 'timeout') return 'timeout';
-  if (entry.category === 'reversal') return 'reversed';
   if (entry.isRetryable) return 'processing'; // TD errors may resolve on retry
+  if (entry.category === 'reversal') return 'reversed';
   return 'failed';
 }

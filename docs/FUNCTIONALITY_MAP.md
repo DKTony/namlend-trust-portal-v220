@@ -1,11 +1,11 @@
 # NamLend Trust - Functionality Map
 
-**Last Updated**: 2026-04-05
-**Aligned With**: Financial Ontology Engine + IPS Phase 4 (v5.2.3)
-**Status**: Current ✅
+**Last Updated**: 2026-04-28
+**Aligned With**: Financial Ontology Engine + architecture review
+**Status**: Current with documented legacy islands
 **Purpose**: Feature to Convex API and database wiring map (current codebase).
 
-> All backend references are Convex (`convex/schema.ts` tables, `api.*` functions). The `src/services/` directory is legacy dead code — 23 files deleted in Milestone D, 4 remain with active consumers. See [SERVICES.md](./SERVICES.md) for migration status.
+> Most backend references are Convex (`convex/schema.ts` tables, `api.*` functions). Remaining Supabase references are legacy scoring/test utility debt, not active role-assignment or branding paths. See [SERVICES.md](./SERVICES.md) and [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md).
 
 ---
 
@@ -35,6 +35,7 @@
 | System Config        | Admin Settings tabs                                    | `api.systemConfig.*`                                                                                                                                                                              | `systemConfiguration`                                                       | ✅ Implemented                                                                                                                                                     |
 | Workflow Engine      | `WorkflowManagementDashboard`                          | `api.approvalWorkflow.listWorkflowDefinitions`, `api.approvalWorkflow.createWorkflowDefinition`                                                                                                   | `workflowDefinitions`, `workflowInstances`                                  | ✅ Implemented                                                                                                                                                     |
 | Credit Policy        | `CreditPolicyConfig`                                   | `api.systemConfig.*`                                                                                                                                                                              | `systemConfiguration`                                                       | ✅ Implemented                                                                                                                                                     |
+| Branding             | `BrandingContext`, Branding Settings                   | `api.systemConfig.getPublicConfig`, `api.systemConfig.setConfig`                                                                                                                                  | `systemConfiguration`                                                       | ✅ Convex-backed config; asset storage hardening still needed                                                                                                      |
 
 ---
 
@@ -45,6 +46,9 @@
 - **Budget Tracker**: Uses inline mock data; no Convex tables for budget/savings data yet.
 - **Reconciliation**: Convex `reconciliation.ts` has queries; UI stub functions (`ReconciliationDashboard`) use mock data for some operations.
 - **TigerBeetle**: Outbox pattern implemented end-to-end; cron worker simulates TB cluster posting (no live cluster connection yet).
+- **Branding**: Runtime branding config is Convex-backed through `systemConfiguration`; asset persistence still needs Convex storage before production white-label use.
+- **Role assignment**: Admin UI uses `api.users.assignRole`; the legacy Supabase role-assignment helper has been removed.
+- **Authorization review items**: selected Convex functions need object-level owner/staff checks documented in [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md).
 - **`/admin/*` route**: `requireLoanOfficer` guard — both `loan_officer` and `admin` roles can access. Admin-only features (user management, system config delete) are gated inside UI components by `isAdmin` check.
 - **Collections activity history**: `CollectionsWorkqueue.loadActivities` is a placeholder — expanded activity history per loan not yet wired to `api.collections.listInteractionsByLoan`.
 
@@ -84,9 +88,9 @@ See [AUDIT_REPORT.md](./AUDIT_REPORT.md) for the full end-to-end integration aud
 - [INDEX.md](./INDEX.md) — Documentation index
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture and route/layout structure
 - [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) — Component design specifications (Neo-Fintech)
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (67+ tables)
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (66 application tables plus Convex Auth tables)
 - [FLOWS.md](./FLOWS.md) — Transaction flow diagrams and state machines
-- [SERVICES.md](./SERVICES.md) — Service layer details and migration status
+- [SERVICES.md](./SERVICES.md) — Service layer and legacy island inventory
 - [TESTING.md](./TESTING.md) — E2E test coverage for these features
 - [AUDIT_REPORT.md](./AUDIT_REPORT.md) — End-to-end integration audit (2026-03-03)
 - [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation

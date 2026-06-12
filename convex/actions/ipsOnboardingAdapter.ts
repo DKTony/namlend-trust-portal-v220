@@ -38,6 +38,7 @@ import {
 } from '../lib/ipsXmlBuilder';
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
+import { assertIpsProductionReady, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
 
@@ -56,6 +57,7 @@ async function sendSignedXml(
   ack: { result: 'SUCCESS' | 'FAILURE'; errorCode?: string; errorDescription?: string };
   durationMs: number;
 }> {
+  assertIpsProductionReady(await getProtocolMode(ctx));
   const signer = createSigningProvider();
   const signature = await signer.sign(xml);
   const signedXml = insertSignature(xml, signature);
@@ -203,15 +205,17 @@ function extractAccountsFromXml(rawXml: string) {
 // Protocol mode detection
 // ---------------------------------------------------------------------------
 
-async function getProtocolMode(ctx: any): Promise<string> {
+async function getProtocolMode(ctx: any): Promise<IpsProtocolMode> {
   try {
-    return await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
+    const mode = await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
       ruleCode: 'IPS_PROTOCOL_MODE',
       fallback: 'json_mock',
     });
+    if (mode === 'xml_sandbox' || mode === 'xml_production') return mode;
   } catch {
-    return 'json_mock';
+    // Fall through to mock mode.
   }
+  return 'json_mock';
 }
 
 // ---------------------------------------------------------------------------
@@ -646,6 +650,16 @@ export const reqSetCre = internalAction({
     // XML protocol — encrypt PIN server-side using BoN HSM public key
     const hsmPublicKey = process.env.IPS_HSM_PUBLIC_KEY ?? '';
     if (!hsmPublicKey) {
+      if (mode === 'xml_production') {
+        await updateStatus(
+          ctx,
+          args.applicationId,
+          'IPS_PIN_SETTING',
+          'IPS_HSM_PUBLIC_KEY_MISSING',
+          'IPS production PIN setup requires HSM/CL key configuration.'
+        );
+        return { success: false, error: 'IPS_HSM_PUBLIC_KEY_MISSING' };
+      }
       console.warn(
         `[onboarding] ReqSetCre in ${mode} mode — IPS_HSM_PUBLIC_KEY not configured, using local PIN set`
       );

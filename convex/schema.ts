@@ -89,6 +89,44 @@ export const ipsTransactionStatus = v.union(
   v.literal('timeout')
 );
 
+export const ippDisputeCaseType = v.union(
+  v.literal('refund'),
+  v.literal('chargeback'),
+  v.literal('pre_arbitration'),
+  v.literal('arbitration'),
+  v.literal('tcc'),
+  v.literal('ret'),
+  v.literal('drc'),
+  v.literal('rrc'),
+  v.literal('complaint')
+);
+
+export const ippDisputeStatus = v.union(
+  v.literal('opened'),
+  v.literal('awaiting_response'),
+  v.literal('accepted'),
+  v.literal('rejected'),
+  v.literal('represented'),
+  v.literal('escalated'),
+  v.literal('resolved'),
+  v.literal('deemed_accepted'),
+  v.literal('closed')
+);
+
+export const ippRiskSeverity = v.union(
+  v.literal('low'),
+  v.literal('medium'),
+  v.literal('high'),
+  v.literal('critical')
+);
+
+export const ippListingStatus = v.union(
+  v.literal('active'),
+  v.literal('appealed'),
+  v.literal('revoked'),
+  v.literal('expired')
+);
+
 /** Loan credit recommendation */
 export const loanRecommendation = v.union(
   v.literal('approve'),
@@ -673,6 +711,14 @@ export default defineSchema({
     userId: v.optional(v.id('users')),
     disbursementId: v.optional(v.id('disbursements')),
     paymentId: v.optional(v.id('paymentTransactions')),
+    clientRequestId: v.optional(v.string()),
+    purposeCode: v.optional(v.string()),
+    initiationMode: v.optional(v.string()),
+    channel: v.optional(v.string()),
+    limitScopeKey: v.optional(v.string()),
+    ackAt: v.optional(v.number()),
+    callbackAt: v.optional(v.number()),
+    transport: v.optional(v.any()),
     externalRef: v.optional(v.string()),
     rawRequest: v.optional(v.any()),
     rawResponse: v.optional(v.any()),
@@ -688,7 +734,9 @@ export default defineSchema({
     .index('by_msgId', ['msgId'])
     .index('by_status', ['status'])
     .index('by_loanId', ['loanId'])
-    .index('by_userId', ['userId']),
+    .index('by_userId', ['userId'])
+    .index('by_clientRequestId', ['clientRequestId'])
+    .index('by_settlementDate_status', ['settlementDate', 'status']),
 
   vpaRegistry: defineTable({
     userId: v.id('users'),
@@ -738,6 +786,63 @@ export default defineSchema({
     metadata: v.optional(v.any()),
     createdAt: v.number(),
   }).index('by_isResolved', ['isResolved']),
+
+  ippRiskEvents: defineTable({
+    transactionId: v.optional(v.id('ipsTransactions')),
+    userId: v.optional(v.id('users')),
+    aliasId: v.optional(v.id('ipsAliasDirectory')),
+    score: v.number(),
+    severity: ippRiskSeverity,
+    decision: v.union(
+      v.literal('pass'),
+      v.literal('alert'),
+      v.literal('block'),
+      v.literal('simulation')
+    ),
+    triggeredRules: v.array(v.string()),
+    reason: v.string(),
+    status: v.union(v.literal('open'), v.literal('reviewing'), v.literal('resolved')),
+    alertId: v.optional(v.id('ipsAlerts')),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+    resolvedBy: v.optional(v.id('users')),
+  })
+    .index('by_transactionId', ['transactionId'])
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status'])
+    .index('by_severity', ['severity']),
+
+  ippHandleListings: defineTable({
+    userId: v.optional(v.id('users')),
+    aliasId: v.optional(v.id('ipsAliasDirectory')),
+    addr: v.string(),
+    listingType: v.union(v.literal('hotlist'), v.literal('blacklist')),
+    status: ippListingStatus,
+    source: v.union(
+      v.literal('manual'),
+      v.literal('fraud_rule'),
+      v.literal('operator_instruction'),
+      v.literal('sanctions'),
+      v.literal('court_order')
+    ),
+    reasonCode: v.optional(v.string()),
+    reasonDescription: v.string(),
+    evidence: v.optional(v.any()),
+    effectiveAt: v.number(),
+    expiresAt: v.optional(v.number()),
+    reviewDueAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    revokedBy: v.optional(v.id('users')),
+    createdBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_addr_status', ['addr', 'status'])
+    .index('by_userId_status', ['userId', 'status'])
+    .index('by_aliasId', ['aliasId'])
+    .index('by_status', ['status'])
+    .index('by_reviewDueAt', ['reviewDueAt']),
 
   ipsOnboardingApplications: defineTable({
     userId: v.id('users'),
@@ -844,6 +949,16 @@ export default defineSchema({
     aliasRegistrationRequestMsgId: v.optional(v.string()),
     aliasRegistrationRequestedAt: v.optional(v.number()),
     aliasRegistrationConfirmedAt: v.optional(v.number()),
+    aliasAvailabilityStatus: v.optional(
+      v.union(
+        v.literal('pending'),
+        v.literal('available'),
+        v.literal('unavailable'),
+        v.literal('failed')
+      )
+    ),
+    aliasAvailabilityCheckedAt: v.optional(v.number()),
+    aliasAvailabilityRequestMsgId: v.optional(v.string()),
     // Error tracking
     lastErrorCode: v.optional(v.string()),
     lastErrorMessage: v.optional(v.string()),
@@ -1100,7 +1215,11 @@ export default defineSchema({
     createdBy: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_status', ['status']),
+  })
+    .index('by_runId', ['runId'])
+    .index('by_status', ['status'])
+    .index('by_originalTxId', ['originalTxId'])
+    .index('by_responseRequiredBy', ['responseRequiredBy']),
 
   settlementTimeoutTransactions: defineTable({
     runId: v.optional(v.id('settlementRuns')),
@@ -1115,7 +1234,10 @@ export default defineSchema({
     resolvedBy: v.optional(v.id('users')),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_status', ['status']),
+  })
+    .index('by_status', ['status'])
+    .index('by_runId', ['runId'])
+    .index('by_originalTxId', ['originalTxId']),
 
   settlementAcknowledgements: defineTable({
     msgId: v.string(),
@@ -1133,6 +1255,54 @@ export default defineSchema({
     .index('by_msgId', ['msgId'])
     .index('by_batchId', ['batchId'])
     .index('by_runId', ['runId']),
+
+  ippDisputeCases: defineTable({
+    caseId: v.string(),
+    originalTxId: v.optional(v.id('ipsTransactions')),
+    runId: v.optional(v.id('settlementRuns')),
+    caseType: ippDisputeCaseType,
+    status: ippDisputeStatus,
+    amount: v.number(),
+    currency: v.string(),
+    reasonCode: v.optional(v.string()),
+    reasonDescription: v.string(),
+    sourceParticipantId: v.optional(v.id('settlementParticipants')),
+    targetParticipantId: v.optional(v.id('settlementParticipants')),
+    raisedByUserId: v.optional(v.id('users')),
+    assignedTo: v.optional(v.id('users')),
+    responseDueAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
+    resolutionNotes: v.optional(v.string()),
+    settlementAdjustmentId: v.optional(v.id('settlementAdjustments')),
+    evidence: v.optional(v.any()),
+    retentionUntil: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_caseId', ['caseId'])
+    .index('by_originalTxId', ['originalTxId'])
+    .index('by_runId', ['runId'])
+    .index('by_status', ['status'])
+    .index('by_responseDueAt', ['responseDueAt']),
+
+  ippTransactionReceipts: defineTable({
+    transactionId: v.id('ipsTransactions'),
+    userId: v.optional(v.id('users')),
+    receiptNumber: v.string(),
+    terminalStatus: ipsTransactionStatus,
+    amount: v.number(),
+    currency: v.string(),
+    direction: v.string(),
+    payerAlias: v.optional(v.string()),
+    payeeAlias: v.optional(v.string()),
+    reason: v.optional(v.string()),
+    notificationId: v.optional(v.id('notifications')),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+  })
+    .index('by_transactionId', ['transactionId'])
+    .index('by_userId', ['userId'])
+    .index('by_receiptNumber', ['receiptNumber']),
 
   // ==========================================================================
   // TIGERBEETLE (Shadow Ledger + Outbox)
@@ -1159,10 +1329,15 @@ export default defineSchema({
     processedAt: v.optional(v.number()),
     tbTransferIds: v.optional(v.array(v.string())),
     lastError: v.optional(v.string()),
+    // Deterministic idempotency key for money-movement entries. Each money movement
+    // maps to exactly one ledger row; duplicate enqueues (double-click, webhook/IPS
+    // replay, retry) are no-ops. See convex/lib/outbox.ts:enqueueOutboxIdempotent.
+    idempotencyKey: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index('by_status', ['status'])
-    .index('by_sourceId', ['sourceId']),
+    .index('by_sourceId', ['sourceId'])
+    .index('by_idempotencyKey', ['idempotencyKey']),
 
   tigerBeetleAccounts: defineTable({
     entityType: v.string(), // LOAN_PRINCIPAL | LOAN_INTEREST | LOAN_FEE | etc.
@@ -1202,6 +1377,37 @@ export default defineSchema({
     resolvedAt: v.optional(v.number()),
     createdAt: v.number(),
   }),
+
+  /**
+   * Durable record of loan post-submission processing failures (scoring, DTI,
+   * recommendation, approval-request creation). Makes background failures
+   * observable and retryable instead of silently swallowed. See
+   * convex/loanProcessing.ts and convex/actions/processLoanApplication.ts.
+   */
+  loanProcessingFailures: defineTable({
+    loanId: v.id('loans'),
+    stage: v.union(
+      v.literal('scoring'),
+      v.literal('recordScore'),
+      v.literal('approvalRequest'),
+      v.literal('notification'),
+      v.literal('unknown')
+    ),
+    status: v.union(
+      v.literal('open'),
+      v.literal('retrying'),
+      v.literal('resolved'),
+      v.literal('dead_letter')
+    ),
+    attemptCount: v.number(),
+    lastErrorCode: v.optional(v.string()),
+    lastErrorMessage: v.optional(v.string()),
+    nextRetryAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_loanId', ['loanId'])
+    .index('by_status', ['status']),
 
   // ==========================================================================
   // AUDIT & COMPLIANCE (7-year retention — no hard deletes)
@@ -1263,6 +1469,38 @@ export default defineSchema({
     fileUrl: v.optional(v.string()),
     status: v.union(v.literal('pending'), v.literal('completed'), v.literal('failed')),
   }),
+
+  ippComplianceEvidence: defineTable({
+    evidenceType: v.union(
+      v.literal('incident'),
+      v.literal('dispute'),
+      v.literal('hotlist'),
+      v.literal('blacklist'),
+      v.literal('settlement'),
+      v.literal('timeout'),
+      v.literal('audit')
+    ),
+    entityType: v.string(),
+    entityId: v.string(),
+    summary: v.string(),
+    severity: v.optional(v.union(v.literal('info'), v.literal('warning'), v.literal('critical'))),
+    status: v.union(
+      v.literal('open'),
+      v.literal('reported'),
+      v.literal('resolved'),
+      v.literal('archived')
+    ),
+    reportDueAt: v.optional(v.number()),
+    reportedAt: v.optional(v.number()),
+    retentionUntil: v.number(),
+    metadata: v.optional(v.any()),
+    createdBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_entity', ['entityType', 'entityId'])
+    .index('by_status', ['status'])
+    .index('by_evidenceType', ['evidenceType']),
 
   // ==========================================================================
   // RECONCILIATION

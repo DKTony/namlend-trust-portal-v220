@@ -17,10 +17,8 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, mutation, query } from '../_generated/server';
-import { ConvexError } from 'convex/values';
+import { internalMutation, mutation, query, internalQuery } from '../_generated/server';
 import { assertStaff, assertAdmin } from '../lib/auth';
-import { relationshipStatus } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called by scheduler / system)
@@ -288,7 +286,7 @@ export const getRelationshipGraph = query({
 /**
  * Check if a specific relationship exists (boolean).
  */
-export const hasRelationship = query({
+export const hasRelationship = internalQuery({
   args: {
     sourceEntityType: v.string(),
     sourceEntityId: v.string(),
@@ -297,7 +295,6 @@ export const hasRelationship = query({
     relationshipType: v.string(),
   },
   handler: async (ctx, args) => {
-    // No auth guard — lightweight check usable by other queries
     const matches = await ctx.db
       .query('relationships')
       .withIndex('by_source_type', (q) =>

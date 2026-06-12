@@ -1,11 +1,24 @@
 -- ============================================================================
--- E2E UI Test Data Seeding Script
+-- E2E UI Test Data Seeding Script  (LEGACY Supabase schema — Convex is the
+-- active backend; retained only for disposable test databases)
 -- ============================================================================
--- This script creates test data specifically for Backoffice UI tests
--- Run this before executing UI tests to ensure proper test data exists
+-- This script creates test data specifically for Backoffice UI tests.
+--
+-- ⚠️ RETENTION SAFETY: the cleanup deletes below hard-delete financial records,
+-- which is FORBIDDEN against any shared/staging/production database. The guard
+-- aborts unless the session is explicitly marked ephemeral. To run:
+--     SET app.ephemeral_test = 'true';
 -- ============================================================================
 
--- Clean up any existing UI test data first
+-- GUARD: abort unless explicitly opted into an ephemeral test database.
+DO $$
+BEGIN
+  IF current_setting('app.ephemeral_test', true) IS DISTINCT FROM 'true' THEN
+    RAISE EXCEPTION 'Refusing to hard-delete financial records: this is not an ephemeral test DB. Set "SET app.ephemeral_test = ''true'';" only against a disposable database.';
+  END IF;
+END $$;
+
+-- Clean up any existing UI test data first (ephemeral DB only — see guard above)
 DELETE FROM disbursements WHERE reference LIKE 'UI-TEST-%';
 DELETE FROM loans WHERE purpose LIKE 'UI Test%';
 DELETE FROM kyc_documents WHERE file_path LIKE 'test/%';

@@ -40,21 +40,22 @@ export const getTimeout = query({
 
 export const recordTimeout = mutation({
   args: {
-    runId: v.id('settlementRuns'),
+    runId: v.optional(v.id('settlementRuns')),
+    originalTxId: v.string(),
     participantId: v.id('settlementParticipants'),
-    transactionRef: v.string(),
+    counterpartyId: v.id('settlementParticipants'),
     amount: v.number(),
-    timeoutReason: v.string(),
-    originalTimestamp: v.number(),
+    timeoutReason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
+    const now = Date.now();
 
     const timeoutId = await ctx.db.insert('settlementTimeoutTransactions', {
       ...args,
       status: 'pending',
-      detectedAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     scheduleAuditLog(
@@ -88,8 +89,7 @@ export const resolveTimeoutTransaction = mutation({
 
     await ctx.db.patch(timeoutId, {
       status: 'resolved',
-      resolution,
-      resolutionNotes,
+      resolutionNotes: `${resolution}: ${resolutionNotes}`,
       resolvedAt: Date.now(),
       updatedAt: Date.now(),
     });

@@ -16,9 +16,49 @@ This changelog contains two version tracks:
 | **Web Platform**      | v2.8.5  | Main React web application (this repo's primary focus)         |
 | **Combined Platform** | v3.x    | Web + Mobile app releases (includes `namlend-mobile/` changes) |
 
-**Current production web version: v2.8.7** (February 2026)
+**Current documented web version: v2.8.14** (April 2026)
 
 The v3.x versions (Dec 2025) document combined releases that include mobile app optimizations. For web-only changes, refer to the v2.8.x entries.
+
+---
+
+## [2.8.14] - 2026-04-28 (Adaptive UI Shell and Responsive Operations)
+
+### Added
+
+- **Adaptive layout primitives**
+  - `useAdaptiveLayout()` for compact, medium, expanded, and wide viewport state
+  - `AdaptiveShell`, `AdaptiveTabs`, `ResponsiveActionBar`, `AdaptiveDialog`, and `AdaptiveCollection`
+
+- **Adaptive Playwright coverage**
+  - Added `e2e/adaptive-layout.e2e.ts`
+  - Covers `360x740`, `390x844`, `768x1024`, `1024x768`, `1366x900`, and `1536x864`
+  - Validates public, client, and admin routes for horizontal overflow and reachable shell navigation
+
+### Changed
+
+- **Client shell**
+  - Compact phones now use drawer navigation plus bottom navigation for core client flows
+  - Tablets use an icon rail
+  - Desktop and wide screens use a permanent sidebar and dense content layout
+
+- **Admin shell**
+  - Compact admin screens use grouped drawer navigation
+  - Tablet screens use a grouped rail
+  - Desktop screens use a permanent grouped sidebar
+
+- **Dense operational screens**
+  - Loan applications, clients, payments, disbursements, users, approvals, and reconciliation screens now stack cards/actions on compact screens and expand into denser layouts on desktop
+
+- **Mobile-safe shared UI**
+  - Dialogs, alert dialogs, drawers, sheets, page headers, buttons, themed cards, and notification panels now have safer compact-screen sizing and overflow behavior
+  - Landing mobile navigation now has an accessible/testable hamburger trigger and navigation landmark
+
+### Verified
+
+- `npm run build`
+- `npm run lint` (existing warnings only)
+- `BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/adaptive-layout.e2e.ts`
 
 ---
 

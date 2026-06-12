@@ -3,8 +3,8 @@
  * Require admin approval; all state changes audited.
  */
 
-import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { assertAdmin, assertStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 
@@ -30,6 +30,18 @@ export const listPendingAdjustments = query({
   },
 });
 
+export const listAdjustmentsByStatus = query({
+  args: { status: v.string() },
+  handler: async (ctx, { status }) => {
+    await assertStaff(ctx);
+    return ctx.db
+      .query('settlementAdjustments')
+      .withIndex('by_status', (q: any) => q.eq('status', status))
+      .order('desc')
+      .collect();
+  },
+});
+
 export const getAdjustment = query({
   args: { adjustmentId: v.id('settlementAdjustments') },
   handler: async (ctx, { adjustmentId }) => {
@@ -40,25 +52,41 @@ export const getAdjustment = query({
 
 export const createAdjustment = mutation({
   args: {
-    runId: v.id('settlementRuns'),
-    participantId: v.id('settlementParticipants'),
-    adjustmentType: v.union(v.literal('debit'), v.literal('credit')),
+    runId: v.optional(v.id('settlementRuns')),
+    originalTxId: v.optional(v.id('ipsTransactions')),
+    adjustmentType: v.string(),
+    sourceParticipantId: v.id('settlementParticipants'),
+    targetParticipantId: v.id('settlementParticipants'),
     amount: v.number(),
-    reason: v.string(),
-    referenceId: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    reasonCode: v.optional(v.string()),
+    reasonDescription: v.optional(v.string()),
+    responseRequiredBy: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    const staffId = await assertAdmin(ctx);
 
     if (args.amount <= 0) {
-      throw new Error('Adjustment amount must be positive');
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: 'Adjustment amount must be positive.',
+      });
+    }
+    if (args.sourceParticipantId === args.targetParticipantId) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: 'Adjustment source and target participants must differ.',
+      });
     }
 
+    const now = Date.now();
     const adjustmentId = await ctx.db.insert('settlementAdjustments', {
       ...args,
+      currency: args.currency ?? 'NAD',
       status: 'pending',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdBy: staffId,
+      createdAt: now,
+      updatedAt: now,
     });
 
     scheduleAuditLog(
@@ -66,9 +94,9 @@ export const createAdjustment = mutation({
       'settlementAdjustments',
       adjustmentId,
       'create_adjustment',
-      null,
+      'none',
       'pending',
-      args.reason
+      args.reasonDescription
     );
 
     return adjustmentId;
@@ -84,16 +112,22 @@ export const approveAdjustment = mutation({
     await assertAdmin(ctx);
 
     const adj = await ctx.db.get(adjustmentId);
-    if (!adj) throw new Error('Adjustment not found');
+    if (!adj) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'Adjustment not found.' });
+    }
     if (adj.status !== 'pending') {
-      throw new Error(`Cannot approve adjustment in status: ${adj.status}`);
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: `Cannot approve adjustment in status '${adj.status}'.`,
+      });
     }
 
+    const now = Date.now();
     await ctx.db.patch(adjustmentId, {
       status: 'approved',
-      approvedAt: Date.now(),
-      notes,
-      updatedAt: Date.now(),
+      respondedAt: now,
+      responseNotes: notes,
+      updatedAt: now,
     });
 
     scheduleAuditLog(
@@ -117,15 +151,22 @@ export const rejectAdjustment = mutation({
     await assertAdmin(ctx);
 
     const adj = await ctx.db.get(adjustmentId);
-    if (!adj) throw new Error('Adjustment not found');
+    if (!adj) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'Adjustment not found.' });
+    }
     if (adj.status !== 'pending') {
-      throw new Error(`Cannot reject adjustment in status: ${adj.status}`);
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: `Cannot reject adjustment in status '${adj.status}'.`,
+      });
     }
 
+    const now = Date.now();
     await ctx.db.patch(adjustmentId, {
       status: 'rejected',
-      notes: reason,
-      updatedAt: Date.now(),
+      respondedAt: now,
+      responseNotes: reason,
+      updatedAt: now,
     });
 
     scheduleAuditLog(
@@ -137,5 +178,56 @@ export const rejectAdjustment = mutation({
       'rejected',
       reason
     );
+  },
+});
+
+export const listApprovedAdjustmentsInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db
+      .query('settlementAdjustments')
+      .withIndex('by_status', (q: any) => q.eq('status', 'approved'))
+      .collect();
+    return rows.filter((row) => !row.settledInRunId);
+  },
+});
+
+export const listPendingAdjustmentResponsesInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db
+      .query('settlementAdjustments')
+      .withIndex('by_status', (q: any) => q.eq('status', 'pending'))
+      .collect();
+  },
+});
+
+export const markAdjustmentsSettledInternal = internalMutation({
+  args: {
+    runId: v.id('settlementRuns'),
+    adjustmentIds: v.array(v.id('settlementAdjustments')),
+  },
+  handler: async (ctx, { runId, adjustmentIds }) => {
+    const now = Date.now();
+    for (const adjustmentId of adjustmentIds) {
+      const adjustment = await ctx.db.get(adjustmentId);
+      if (!adjustment || adjustment.status !== 'approved' || adjustment.settledInRunId) continue;
+
+      await ctx.db.patch(adjustmentId, {
+        status: 'settled',
+        settledInRunId: runId,
+        updatedAt: now,
+      });
+
+      scheduleAuditLog(
+        ctx,
+        'settlementAdjustments',
+        adjustmentId,
+        'settle_adjustment',
+        'approved',
+        'settled',
+        `Included in settlement run ${runId}`
+      );
+    }
   },
 });

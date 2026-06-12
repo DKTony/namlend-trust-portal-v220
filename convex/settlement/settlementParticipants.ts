@@ -3,7 +3,7 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
+import { query, mutation, internalQuery } from '../_generated/server';
 import { assertStaff, assertAdmin } from '../lib/auth';
 
 export const listParticipants = query({
@@ -19,6 +19,16 @@ export const getParticipant = query({
   handler: async (ctx, { participantId }) => {
     await assertStaff(ctx);
     return ctx.db.get(participantId);
+  },
+});
+
+export const listActiveParticipantsInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db
+      .query('settlementParticipants')
+      .collect()
+      .then((rows) => rows.filter((row) => row.status === 'active'));
   },
 });
 

@@ -1,4 +1,5 @@
 import {
+  getLimitsForType,
   resolveTransactionUseCaseType,
   summarizeTransactionsForUseCaseType,
 } from '../../convex/lib/ipsTransactionLimits';
@@ -38,5 +39,10 @@ describe('ipsTransactionLimits', () => {
       count: 1,
       amount: 5_000,
     });
+  });
+
+  it('applies FSD v10 B2P/G2P per-recipient amount limits with unlimited count', () => {
+    expect(getLimitsForType('B2P')).toEqual({ maxDailyAmount: 10_000, maxDailyCount: null });
+    expect(getLimitsForType('G2P')).toEqual({ maxDailyAmount: 10_000, maxDailyCount: null });
   });
 });

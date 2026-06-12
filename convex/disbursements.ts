@@ -28,6 +28,8 @@ import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { getJsonRule } from './lib/ruleEvaluator';
 import { txStatus } from './schema';
 import { internal } from './_generated/api';
+import { assertKycVerifiedForUser } from './lib/kyc';
+import { enqueueOutboxIdempotent } from './lib/outbox';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -74,7 +76,7 @@ export const adminListDisbursements = query({
 /**
  * Initiate a disbursement for an approved loan.
  * Replaces `initiate_disbursement` RPC.
- * Atomically enqueues a TigerBeetle DISBURSEMENT outbox entry.
+ * Ledger outbox is posted only when the disbursement is completed.
  */
 export const initiateDisbursement = mutation({
   args: {
@@ -97,6 +99,7 @@ export const initiateDisbursement = mutation({
     const staffId = await assertStaff(ctx);
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+    await assertKycVerifiedForUser(ctx, loan.userId, 'initiate disbursement');
 
     if (loan.status !== 'approved') {
       throw new ConvexError({
@@ -105,10 +108,10 @@ export const initiateDisbursement = mutation({
       });
     }
 
-    if (args.amount <= 0 || args.amount > loan.principal) {
+    if (args.amount <= 0 || Math.abs(args.amount - loan.principal) > 0.01) {
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
-        message: `Disbursement amount must be between 0 and loan principal (${loan.principal}).`,
+        message: `Partial disbursement is disabled. Amount must equal loan principal (${loan.principal}).`,
       });
     }
 
@@ -119,6 +122,12 @@ export const initiateDisbursement = mutation({
       .withIndex('by_loanId_status', (q) => q.eq('loanId', args.loanId).eq('status', 'pending'))
       .first();
     if (existingPending) return existingPending._id;
+
+    const existingProcessing = await ctx.db
+      .query('disbursements')
+      .withIndex('by_loanId_status', (q) => q.eq('loanId', args.loanId).eq('status', 'processing'))
+      .first();
+    if (existingProcessing) return existingProcessing._id;
 
     // --- MANDATE SOFT-CHECK (Ontology Phase 2) ---
     // Warn if no active mandate exists for this loan.
@@ -181,22 +190,6 @@ export const initiateDisbursement = mutation({
       initiatedBy: staffId,
       createdAt: now,
       updatedAt: now,
-    });
-
-    // Atomically enqueue TigerBeetle outbox entry
-    await ctx.db.insert('tigerBeetleOutbox', {
-      eventType: 'DISBURSEMENT',
-      sourceTable: 'disbursements',
-      sourceId: disbursementId,
-      payload: {
-        loan_id: args.loanId,
-        amount: Math.round(args.amount * 100), // cents
-        disbursement_id: disbursementId,
-        transfer_code: 1001, // LOAN_PRINCIPAL_RECEIVABLE
-      },
-      status: 'pending',
-      retryCount: 0,
-      createdAt: now,
     });
 
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'INITIATE', 'none', 'pending');
@@ -292,20 +285,54 @@ export const completeDisbursement = mutation({
       });
     }
 
+    const loan = await ctx.db.get(d.loanId);
+    if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+    await assertKycVerifiedForUser(ctx, loan.userId, 'complete disbursement');
+
+    // STALE-DISBURSEMENT GUARDS: the loan must still be approvable-to-fund at
+    // completion time, not just at initiation. A loan rejected or batch-moved after
+    // initiation must not receive funds or a ledger entry; a legacy pending row
+    // created before partial-disbursement was disabled must not complete partially.
+    if (loan.status !== 'approved') {
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: `Loan is no longer 'approved' (current: '${loan.status}'). Fail or reverse this disbursement instead of completing it.`,
+      });
+    }
+    if (Math.abs(d.amount - loan.principal) > 0.01) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: `Disbursement amount ${d.amount} does not equal loan principal ${loan.principal}. Partial disbursement is disabled — fail this disbursement and initiate a full one.`,
+      });
+    }
+
+    const now = Date.now();
     await ctx.db.patch(disbursementId, {
       status: 'completed',
       referenceNumber: referenceNumber ?? d.referenceNumber,
-      processedAt: Date.now(),
-      updatedAt: Date.now(),
+      processedAt: now,
+      updatedAt: now,
+    });
+
+    await enqueueOutboxIdempotent(ctx, {
+      idempotencyKey: `disbursement:${disbursementId}`,
+      eventType: 'DISBURSEMENT',
+      sourceTable: 'disbursements',
+      sourceId: disbursementId,
+      payload: {
+        loan_id: d.loanId,
+        amount: Math.round(d.amount * 100),
+        disbursement_id: disbursementId,
+        transfer_code: 1001,
+      },
     });
 
     // Update loan to funded
-    const loan = await ctx.db.get(d.loanId);
     if (loan && loan.status === 'approved') {
       await ctx.db.patch(d.loanId, {
         status: 'funded',
-        disbursedAt: Date.now(),
-        updatedAt: Date.now(),
+        disbursedAt: now,
+        updatedAt: now,
       });
       scheduleAuditLog(ctx, 'loan', d.loanId, 'FUND', 'approved', 'funded');
 
@@ -401,7 +428,8 @@ export const reverseDisbursement = mutation({
     });
 
     // Enqueue TigerBeetle reversal
-    await ctx.db.insert('tigerBeetleOutbox', {
+    await enqueueOutboxIdempotent(ctx, {
+      idempotencyKey: `disbursement:reverse:${disbursementId}`,
       eventType: 'IPS_REVERSE',
       sourceTable: 'disbursements',
       sourceId: disbursementId,
@@ -409,11 +437,9 @@ export const reverseDisbursement = mutation({
         disbursement_id: disbursementId,
         loan_id: d.loanId,
         amount: Math.round(d.amount * 100),
+        direction: 'outbound',
         reason,
       },
-      status: 'pending',
-      retryCount: 0,
-      createdAt: Date.now(),
     });
 
     scheduleAuditLog(

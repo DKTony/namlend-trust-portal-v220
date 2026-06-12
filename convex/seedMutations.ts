@@ -245,3 +245,53 @@ export const seedConfirmedIpsAlias = internalMutation({
     return aliasId;
   },
 });
+
+/** Seed settlement participants required for IPP inter-participant clearing E2E flows. */
+export const seedSettlementParticipants = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const participants = [
+      {
+        routingCode: 'NAMLEND',
+        swiftBic: 'NAMLNANX',
+        name: 'NamLend Trust',
+        participantType: 'sponsored' as const,
+        nissAccountRef: 'NISS-NAMLEND-E2E',
+        isOperator: true,
+      },
+      {
+        routingCode: 'FNB',
+        swiftBic: 'FIRNNANX',
+        name: 'First National Bank Namibia',
+        participantType: 'direct' as const,
+        nissAccountRef: 'NISS-FNB-E2E',
+        isOperator: false,
+      },
+    ];
+
+    for (const participant of participants) {
+      const existing = await ctx.db
+        .query('settlementParticipants')
+        .withIndex('by_routingCode', (q) => q.eq('routingCode', participant.routingCode))
+        .first();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, {
+          ...participant,
+          status: 'active',
+          updatedAt: now,
+        });
+        console.log(`[seed] Updated settlement participant ${participant.routingCode}`);
+      } else {
+        await ctx.db.insert('settlementParticipants', {
+          ...participant,
+          status: 'active',
+          createdAt: now,
+          updatedAt: now,
+        });
+        console.log(`[seed] Created settlement participant ${participant.routingCode}`);
+      }
+    }
+  },
+});

@@ -12,6 +12,11 @@ import { httpAction } from './_generated/server';
 import { internal } from './_generated/api';
 import { auth } from './auth';
 import { buildAckResponseXml } from './lib/ipsXmlBuilder';
+import {
+  assertIpsProductionReady,
+  requireProductionWebhookCert,
+  type IpsProtocolMode,
+} from './lib/ipsProductionConfig';
 
 // ---------------------------------------------------------------------------
 // Signature verification helpers
@@ -128,6 +133,19 @@ function isXml(body: string): boolean {
   );
 }
 
+async function getProtocolMode(ctx: any): Promise<IpsProtocolMode> {
+  try {
+    const mode = await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
+      ruleCode: 'IPS_PROTOCOL_MODE',
+      fallback: 'json_mock',
+    });
+    if (mode === 'xml_sandbox' || mode === 'xml_production') return mode;
+  } catch {
+    // Fall through to mock mode.
+  }
+  return 'json_mock';
+}
+
 const http = httpRouter();
 
 // Mount Convex Auth endpoints
@@ -186,6 +204,7 @@ async function handleIpsXmlCallback(
 ): Promise<Response> {
   const orgId = process.env.IPS_ORG_ID ?? 'NAMLEND';
   const ts = new Date().toISOString();
+  const mode = await getProtocolMode(ctx);
 
   // Extract key fields from XML (lightweight — no parser needed)
   const apiName = extractApiName(rawBody);
@@ -206,6 +225,24 @@ async function handleIpsXmlCallback(
     );
     return new Response(ackXml, {
       status: 400,
+      headers: { 'Content-Type': 'application/xml' },
+    });
+  }
+
+  try {
+    requireProductionWebhookCert(mode);
+    assertIpsProductionReady(mode);
+  } catch (error) {
+    const ackXml = buildAckResponseXml(
+      apiName,
+      msgId,
+      'FAILURE',
+      ts,
+      orgId,
+      'PRODUCTION_CONFIG_MISSING'
+    );
+    return new Response(ackXml, {
+      status: 503,
       headers: { 'Content-Type': 'application/xml' },
     });
   }
@@ -278,6 +315,7 @@ async function handleIpsJsonCallback(
   // HMAC-SHA256 signature verification
   const ipsSecret = process.env.IPS_WEBHOOK_SECRET;
   const signature = request.headers.get('X-IPS-Signature') ?? request.headers.get('X-Signature');
+  const mode = await getProtocolMode(ctx);
 
   if (ipsSecret) {
     if (!signature) {
@@ -294,6 +332,11 @@ async function handleIpsJsonCallback(
         headers: { 'Content-Type': 'application/json' },
       });
     }
+  } else if (mode === 'xml_production' || process.env.NODE_ENV === 'production') {
+    return new Response(JSON.stringify({ error: 'Webhook signature secret is not configured' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } else {
     console.warn(
       '[webhook/ips] IPS_WEBHOOK_SECRET not configured — skipping signature verification'
@@ -381,6 +424,15 @@ http.route({
         });
       }
     } else {
+      if (process.env.NODE_ENV === 'production') {
+        return new Response(
+          JSON.stringify({ error: 'Webhook signature secret is not configured' }),
+          {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
       console.warn(
         '[webhook/payment] PAYMENT_WEBHOOK_SECRET not configured — skipping signature verification'
       );

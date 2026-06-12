@@ -4,12 +4,12 @@
  *   record_payment, process_payment, complete_payment, fail_payment,
  *   reverse_payment, get_payment_schedule, mark_schedule_paid, get_overdue_payments
  *
- * Financial mutations enqueue TigerBeetle REPAYMENT outbox entries atomically.
+ * Completed financial state enqueues TigerBeetle REPAYMENT outbox entries atomically.
  * FINANCIAL SAFETY: retry: false on all useMutation calls (frontend).
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from './_generated/server';
+import { query, mutation, internalMutation } from './_generated/server';
 import { internal } from './_generated/api';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
@@ -17,6 +17,8 @@ import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { paymentTxStatus } from './schema';
+import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
+import { enqueueOutboxIdempotent } from './lib/outbox';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -124,7 +126,7 @@ export const getOverduePayments = query({
 /**
  * Record a new payment against a loan.
  * Replaces `record_payment` RPC.
- * Atomically enqueues TigerBeetle REPAYMENT outbox entry.
+ * Creates pending operational state. Ledger posting occurs on completion.
  */
 export const recordPayment = mutation({
   args: {
@@ -138,7 +140,7 @@ export const recordPayment = mutation({
     externalTransactionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertOwnerOrStaff(ctx, loan.userId);
@@ -154,6 +156,14 @@ export const recordPayment = mutation({
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
         message: 'Payment amount must be positive.',
+      });
+    }
+
+    const splitTotal = (args.principalPaid ?? 0) + (args.interestPaid ?? 0) + (args.feesPaid ?? 0);
+    if (splitTotal > 0 && Math.abs(splitTotal - args.amount) > 0.01) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: 'Payment split must equal the total payment amount.',
       });
     }
 
@@ -180,7 +190,7 @@ export const recordPayment = mutation({
     const now = Date.now();
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: args.loanId,
-      userId,
+      userId: loan.userId,
       amount: args.amount,
       principalPaid: args.principalPaid,
       interestPaid: args.interestPaid,
@@ -192,38 +202,6 @@ export const recordPayment = mutation({
       paymentDate: now,
       createdAt: now,
       updatedAt: now,
-    });
-
-    // Atomically enqueue REPAYMENT outbox entry
-    await ctx.db.insert('tigerBeetleOutbox', {
-      eventType: 'REPAYMENT',
-      sourceTable: 'paymentTransactions',
-      sourceId: paymentId,
-      payload: {
-        loan_id: args.loanId,
-        payment_id: paymentId,
-        amount: Math.round(args.amount * 100),
-        principal_amount: Math.round((args.principalPaid ?? 0) * 100),
-        interest_amount: Math.round((args.interestPaid ?? 0) * 100),
-        fee_amount: Math.round((args.feesPaid ?? 0) * 100),
-        transfers: [
-          {
-            debit_type: 'LOAN_PRINCIPAL_RECEIVABLE',
-            credit_type: 'BANK_SETTLEMENT',
-            amount: Math.round((args.principalPaid ?? 0) * 100),
-            code: 2001,
-          },
-          {
-            debit_type: 'LOAN_INTEREST_RECEIVABLE',
-            credit_type: 'INTEREST_INCOME',
-            amount: Math.round((args.interestPaid ?? 0) * 100),
-            code: 5001,
-          },
-        ],
-      },
-      status: 'pending',
-      retryCount: 0,
-      createdAt: now,
     });
 
     scheduleAuditLog(ctx, 'payment', paymentId, 'RECORD', 'none', 'pending');
@@ -254,8 +232,9 @@ export const completePayment = mutation({
     paymentId: v.id('paymentTransactions'),
     principalPaid: v.optional(v.number()),
     interestPaid: v.optional(v.number()),
+    feesPaid: v.optional(v.number()),
   },
-  handler: async (ctx, { paymentId, principalPaid, interestPaid }) => {
+  handler: async (ctx, { paymentId, principalPaid, interestPaid, feesPaid }) => {
     await assertStaff(ctx);
     const payment = await ctx.db.get(paymentId);
     if (!payment) throw new ConvexError({ code: 'NOT_FOUND', message: 'Payment not found.' });
@@ -269,28 +248,57 @@ export const completePayment = mutation({
       });
     }
 
+    const resolvedInterestPaid = interestPaid ?? payment.interestPaid ?? 0;
+    const resolvedFeesPaid = feesPaid ?? payment.feesPaid ?? 0;
+    const resolvedPrincipalPaid =
+      principalPaid ??
+      payment.principalPaid ??
+      payment.amount - resolvedInterestPaid - resolvedFeesPaid;
+    const now = Date.now();
+
+    const outboxPayload = buildRepaymentOutboxPayload({
+      loanId: payment.loanId,
+      paymentId,
+      amount: payment.amount,
+      principalPaid: resolvedPrincipalPaid,
+      interestPaid: resolvedInterestPaid,
+      feesPaid: resolvedFeesPaid,
+    });
+
     await ctx.db.patch(paymentId, {
       status: 'completed',
-      principalPaid: principalPaid ?? payment.principalPaid,
-      interestPaid: interestPaid ?? payment.interestPaid,
-      updatedAt: Date.now(),
+      principalPaid: resolvedPrincipalPaid,
+      interestPaid: resolvedInterestPaid,
+      feesPaid: resolvedFeesPaid,
+      paymentDate: payment.paymentDate ?? now,
+      updatedAt: now,
+    });
+
+    await enqueueOutboxIdempotent(ctx, {
+      idempotencyKey: `repayment:payment:${paymentId}`,
+      eventType: 'REPAYMENT',
+      sourceTable: 'paymentTransactions',
+      sourceId: paymentId,
+      payload: outboxPayload,
     });
 
     // Update loan balance
     // When no principal/interest split is provided, treat the full payment as principal reduction
-    const pp = principalPaid ?? payment.principalPaid ?? payment.amount;
     const loan = await ctx.db.get(payment.loanId);
     if (loan) {
-      const newBalance = Math.max(0, (loan.outstandingBalance ?? loan.principal) - pp);
+      const newBalance = Math.max(
+        0,
+        (loan.outstandingBalance ?? loan.principal) - resolvedPrincipalPaid
+      );
       const newTotalPaid = (loan.totalPaid ?? 0) + payment.amount;
       const updates: Record<string, unknown> = {
         outstandingBalance: newBalance,
         totalPaid: newTotalPaid,
-        updatedAt: Date.now(),
+        updatedAt: now,
       };
       if (newBalance === 0) {
         updates.status = 'paid_off';
-        updates.completedAt = Date.now();
+        updates.completedAt = now;
         scheduleAuditLog(ctx, 'loan', payment.loanId, 'PAID_OFF', loan.status, 'paid_off');
         ctx.scheduler
           .runAfter(0, internal.notifications.createNotification, {
@@ -334,6 +342,193 @@ export const completePayment = mutation({
       { type: 'loans', id: payment.loanId },
       'settled_against'
     );
+  },
+});
+
+export const applyPaymentWebhook = internalMutation({
+  args: {
+    gateway: v.string(),
+    status: v.union(v.literal('completed'), v.literal('failed')),
+    externalTransactionId: v.optional(v.string()),
+    referenceNumber: v.optional(v.string()),
+    failureReason: v.optional(v.string()),
+    amount: v.optional(v.number()),
+    currency: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.externalTransactionId && !args.referenceNumber) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: 'Webhook must include an external transaction ID or reference number.',
+      });
+    }
+
+    let payment = args.externalTransactionId
+      ? await ctx.db
+          .query('paymentTransactions')
+          .withIndex('by_externalTransactionId', (q) =>
+            q.eq('externalTransactionId', args.externalTransactionId)
+          )
+          .first()
+      : null;
+
+    if (!payment && args.referenceNumber) {
+      payment = await ctx.db
+        .query('paymentTransactions')
+        .withIndex('by_referenceNumber', (q) => q.eq('referenceNumber', args.referenceNumber))
+        .first();
+    }
+
+    if (!payment) {
+      return { ok: false, reason: 'not_found' as const };
+    }
+
+    const now = Date.now();
+    if (args.status === 'completed') {
+      if (payment.status === 'completed') {
+        return { ok: true, paymentId: payment._id, idempotent: true };
+      }
+      if (!['pending', 'processing'].includes(payment.status)) {
+        return { ok: false, paymentId: payment._id, reason: 'invalid_state' as const };
+      }
+
+      // FINANCIAL RECONCILIATION: a signature-valid webhook must still match the
+      // local payment financially. A confirmed amount/currency that disagrees with
+      // the recorded payment must never complete it — flag for manual review instead.
+      if (args.amount !== undefined && Math.abs(args.amount - payment.amount) > 0.01) {
+        scheduleAuditLog(
+          ctx,
+          'payment',
+          payment._id,
+          'WEBHOOK_AMOUNT_MISMATCH',
+          payment.status,
+          payment.status,
+          `Gateway ${args.gateway} reported ${args.amount}, local payment is ${payment.amount}`
+        );
+        return { ok: false, paymentId: payment._id, reason: 'amount_mismatch' as const };
+      }
+      if (args.currency !== undefined && args.currency.toUpperCase() !== 'NAD') {
+        scheduleAuditLog(
+          ctx,
+          'payment',
+          payment._id,
+          'WEBHOOK_CURRENCY_MISMATCH',
+          payment.status,
+          payment.status,
+          `Gateway ${args.gateway} reported currency ${args.currency}, expected NAD`
+        );
+        return { ok: false, paymentId: payment._id, reason: 'currency_mismatch' as const };
+      }
+
+      const resolvedInterestPaid = payment.interestPaid ?? 0;
+      const resolvedFeesPaid = payment.feesPaid ?? 0;
+      const resolvedPrincipalPaid =
+        payment.principalPaid ?? payment.amount - resolvedInterestPaid - resolvedFeesPaid;
+      const outboxPayload = buildRepaymentOutboxPayload({
+        loanId: payment.loanId,
+        paymentId: payment._id,
+        amount: payment.amount,
+        principalPaid: resolvedPrincipalPaid,
+        interestPaid: resolvedInterestPaid,
+        feesPaid: resolvedFeesPaid,
+      });
+
+      await ctx.db.patch(payment._id, {
+        status: 'completed',
+        principalPaid: resolvedPrincipalPaid,
+        interestPaid: resolvedInterestPaid,
+        feesPaid: resolvedFeesPaid,
+        paymentDate: payment.paymentDate ?? now,
+        metadata: {
+          ...(payment.metadata ?? {}),
+          gateway: args.gateway,
+          webhookStatus: args.status,
+        },
+        updatedAt: now,
+      });
+
+      await enqueueOutboxIdempotent(ctx, {
+        idempotencyKey: `repayment:payment:${payment._id}`,
+        eventType: 'REPAYMENT',
+        sourceTable: 'paymentTransactions',
+        sourceId: payment._id,
+        payload: outboxPayload,
+      });
+
+      const loan = await ctx.db.get(payment.loanId);
+      if (loan) {
+        const newBalance = Math.max(
+          0,
+          (loan.outstandingBalance ?? loan.principal) - resolvedPrincipalPaid
+        );
+        const updates: Record<string, unknown> = {
+          outstandingBalance: newBalance,
+          totalPaid: (loan.totalPaid ?? 0) + payment.amount,
+          updatedAt: now,
+        };
+        if (newBalance === 0) {
+          updates.status = 'paid_off';
+          updates.completedAt = now;
+          scheduleAuditLog(ctx, 'loan', payment.loanId, 'PAID_OFF', loan.status, 'paid_off');
+        } else if (loan.status === 'funded') {
+          updates.status = 'active';
+        }
+        await ctx.db.patch(payment.loanId, updates);
+      }
+
+      scheduleAuditLog(
+        ctx,
+        'payment',
+        payment._id,
+        'COMPLETE_WEBHOOK',
+        payment.status,
+        'completed'
+      );
+      emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_COMPLETED, 'paymentTransactions', payment._id, {
+        loanId: payment.loanId,
+        amount: payment.amount,
+        gateway: args.gateway,
+      });
+      emitRelationship(
+        ctx,
+        { type: 'paymentTransactions', id: payment._id },
+        { type: 'loans', id: payment.loanId },
+        'settled_against'
+      );
+      return { ok: true, paymentId: payment._id, idempotent: false };
+    }
+
+    if (payment.status === 'failed') {
+      return { ok: true, paymentId: payment._id, idempotent: true };
+    }
+    if (!['pending', 'processing'].includes(payment.status)) {
+      return { ok: false, paymentId: payment._id, reason: 'invalid_state' as const };
+    }
+
+    await ctx.db.patch(payment._id, {
+      status: 'failed',
+      metadata: {
+        ...(payment.metadata ?? {}),
+        gateway: args.gateway,
+        webhookStatus: args.status,
+        failureReason: args.failureReason,
+      },
+      updatedAt: now,
+    });
+    scheduleAuditLog(
+      ctx,
+      'payment',
+      payment._id,
+      'FAIL_WEBHOOK',
+      payment.status,
+      'failed',
+      args.failureReason
+    );
+    emitDomainEvent(ctx, DOMAIN_EVENTS.PAYMENT_FAILED, 'paymentTransactions', payment._id, {
+      reason: args.failureReason,
+      gateway: args.gateway,
+    });
+    return { ok: true, paymentId: payment._id, idempotent: false };
   },
 });
 

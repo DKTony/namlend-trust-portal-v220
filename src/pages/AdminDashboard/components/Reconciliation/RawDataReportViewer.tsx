@@ -46,6 +46,32 @@ function parseRawDataReport(reportData: Record<string, unknown>): RawDataReportE
     if (Array.isArray(reportData.transactions)) {
       return reportData.transactions as RawDataReportEntry[];
     }
+    if (Array.isArray(reportData.rows)) {
+      return reportData.rows.map((row, index) => {
+        const record = row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
+        const metadata =
+          record.metadata && typeof record.metadata === 'object'
+            ? (record.metadata as Record<string, unknown>)
+            : {};
+        const sourceParticipant = String(record.sourceParticipantId ?? '');
+        const targetParticipant = String(record.targetParticipantId ?? '');
+        const debtorVpa = String(metadata.debtorVpa ?? '');
+        const creditorVpa = String(metadata.creditorVpa ?? '');
+
+        return {
+          txId: String(metadata.msgId ?? record.sourceTxId ?? `raw-row-${index + 1}`),
+          timestamp: String(metadata.completedAt ?? metadata.createdAt ?? new Date().toISOString()),
+          remitterParticipant: [sourceParticipant, debtorVpa].filter(Boolean).join(' '),
+          beneficiaryParticipant: [targetParticipant, creditorVpa].filter(Boolean).join(' '),
+          amount: Number(record.amount ?? 0),
+          currency: 'NAD',
+          productType: String(metadata.useCaseType ?? record.category ?? 'IPP'),
+          status: 'SUCCESS',
+          interchangeAmount: 0,
+          switchingFee: 0,
+        };
+      });
+    }
     return [];
   } catch {
     return [];

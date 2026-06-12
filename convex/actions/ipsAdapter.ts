@@ -33,6 +33,7 @@ import {
 } from '../lib/ipsXmlBuilder';
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, mapToTransactionStatus, isRetryable } from '../lib/ipsErrorCodes';
+import { assertIpsProductionReady, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 import {
   parseRespChkTxnDetails,
   parseRespValAddDetails,
@@ -41,10 +42,6 @@ import {
 import { resolveRespChkTxnResolution } from '../lib/ipsCallbackCorrelation';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
-
-// Legacy JSON config (kept for json_mock mode)
-const IPS_CLIENT_ID = process.env.IPS_CLIENT_ID;
-const IPS_CLIENT_SECRET = process.env.IPS_CLIENT_SECRET;
 
 // ---------------------------------------------------------------------------
 // Timeout configuration — per IPS TSD §2.5
@@ -93,9 +90,7 @@ function getMtlsAgent(): any | undefined {
 // Protocol mode detection
 // ---------------------------------------------------------------------------
 
-type ProtocolMode = 'json_mock' | 'xml_sandbox' | 'xml_production';
-
-async function getProtocolMode(ctx: any): Promise<ProtocolMode> {
+async function getProtocolMode(ctx: any): Promise<IpsProtocolMode> {
   try {
     const rule = await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
       ruleCode: 'IPS_PROTOCOL_MODE',
@@ -123,6 +118,7 @@ async function sendIpsXml(
   ack: import('../lib/ipsXmlBuilder').IpsAckParsed;
   durationMs: number;
 }> {
+  assertIpsProductionReady(await getProtocolMode(ctx));
   const signer = createSigningProvider();
 
   // Sign the XML body
@@ -218,28 +214,108 @@ async function sendIpsXml(
 // Legacy JSON helpers (json_mock mode)
 // ---------------------------------------------------------------------------
 
-let _accessToken: string | null = null;
-let _tokenExpiry = 0;
+function mockSettlementDate(timestamp = Date.now()): string {
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
 
-async function getAccessToken(): Promise<string> {
-  if (_accessToken && Date.now() < _tokenExpiry) {
-    return _accessToken;
+function resolveJsonMockOutcome(values: Array<string | undefined>) {
+  const scenario = values.filter(Boolean).join(' ').toLowerCase();
+  if (scenario.includes('timeout')) {
+    return {
+      terminalStatus: 'timeout' as const,
+      errorCode: 'MOCK_TIMEOUT',
+      errorDescription: 'Mock IPS timeout requested by test input.',
+    };
   }
+  if (scenario.includes('fail') || scenario.includes('decline')) {
+    return {
+      terminalStatus: 'failed' as const,
+      errorCode: 'MOCK_DECLINED',
+      errorDescription: 'Mock IPS decline requested by test input.',
+    };
+  }
+  return {
+    terminalStatus: 'completed' as const,
+    errorCode: undefined,
+    errorDescription: undefined,
+  };
+}
 
-  const response = await fetch(`${IPS_BASE_URL}/oauth/token`, {
+async function completeJsonMockTransaction(
+  ctx: any,
+  args: {
+    transactionId: string;
+    msgId: string;
+    amount: number;
+    debtorVpa?: string;
+    creditorVpa?: string;
+    remittanceInfo?: string;
+    type: 'PAY' | 'COLLECT';
+  }
+) {
+  const startTime = Date.now();
+  const outcome = resolveJsonMockOutcome([args.debtorVpa, args.creditorVpa, args.remittanceInfo]);
+  const responseBody = {
+    mock: true,
+    mode: 'json_mock',
+    type: args.type,
+    msgId: args.msgId,
+    amount: args.amount,
+    currency: 'NAD',
+    debtorVpa: args.debtorVpa,
+    creditorVpa: args.creditorVpa,
+    respCode: outcome.terminalStatus === 'completed' ? '00' : outcome.errorCode,
+    status: outcome.terminalStatus,
+  };
+
+  await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
+    transactionId: args.transactionId as any,
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: IPS_CLIENT_ID ?? '',
-      client_secret: IPS_CLIENT_SECRET ?? '',
-    }),
+    endpoint: `/json-mock/${args.type === 'COLLECT' ? 'collect' : 'credit-transfer'}`,
+    requestBody: {
+      msgId: args.msgId,
+      amount: args.amount,
+      debtorVpa: args.debtorVpa,
+      creditorVpa: args.creditorVpa,
+    },
+    responseStatus: outcome.terminalStatus === 'completed' ? 200 : 202,
+    responseBody,
+    durationMs: Date.now() - startTime,
+    direction: 'OUTBOUND' as const,
+    contentType: 'json' as const,
+    apiName: args.type === 'COLLECT' ? 'ReqPay.COLLECT.mock' : 'ReqPay.PAY.mock',
+    correlationId: args.msgId,
   });
 
-  const data = await response.json();
-  _accessToken = data.access_token;
-  _tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-  return _accessToken!;
+  await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
+    transactionId: args.transactionId as any,
+    status: 'processing',
+    rawResponse: {
+      mock: true,
+      ackResult: 'SUCCESS',
+      type: args.type,
+      msgId: args.msgId,
+    },
+  });
+
+  if (outcome.terminalStatus === 'completed') {
+    await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
+      transactionId: args.transactionId as any,
+      status: 'completed',
+      settlementDate: mockSettlementDate(),
+      rawResponse: responseBody,
+    });
+    return { success: true, data: responseBody };
+  }
+
+  await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
+    transactionId: args.transactionId as any,
+    status: outcome.terminalStatus,
+    rawResponse: responseBody,
+    errorCode: outcome.errorCode,
+    errorDescription: outcome.errorDescription,
+  });
+  return { success: false, error: outcome.errorDescription, data: responseBody };
 }
 
 async function sendJsonMock(
@@ -253,67 +329,15 @@ async function sendJsonMock(
     remittanceInfo?: string;
   }
 ): Promise<{ success: boolean; data?: any; error?: any }> {
-  const startTime = Date.now();
-  try {
-    const response = await fetch(`${IPS_BASE_URL}/credit-transfer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${await getAccessToken()}`,
-      },
-      body: JSON.stringify({
-        msgId: args.msgId,
-        amount: args.amount,
-        currency: 'NAD',
-        creditorVpa: args.creditorVpa,
-        debtorVpa: args.debtorVpa,
-        remittanceInfo: args.remittanceInfo,
-      }),
-    });
-
-    const responseBody = await response.json();
-    const durationMs = Date.now() - startTime;
-
-    await ctx.runMutation(internal.ips.ipsApiLogs.logApiCall, {
-      transactionId: args.transactionId as any,
-      method: 'POST',
-      endpoint: '/credit-transfer',
-      requestBody: { msgId: args.msgId, amount: args.amount },
-      responseStatus: response.status,
-      responseBody,
-      durationMs,
-      direction: 'OUTBOUND' as const,
-      contentType: 'json' as const,
-    });
-
-    if (!response.ok) {
-      await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
-        transactionId: args.transactionId as any,
-        status: 'failed',
-        rawResponse: responseBody,
-        errorCode: String(response.status),
-        errorDescription: responseBody?.message ?? 'IPS API error',
-      });
-      return { success: false, error: responseBody };
-    }
-
-    await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
-      transactionId: args.transactionId as any,
-      status: 'processing',
-      rawResponse: responseBody,
-    });
-
-    return { success: true, data: responseBody };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Network error';
-    await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
-      transactionId: args.transactionId as any,
-      status: 'failed',
-      errorCode: 'NETWORK_ERROR',
-      errorDescription: msg,
-    });
-    return { success: false, error: msg };
-  }
+  return completeJsonMockTransaction(ctx, {
+    transactionId: args.transactionId,
+    msgId: args.msgId,
+    amount: args.amount,
+    debtorVpa: args.debtorVpa,
+    creditorVpa: args.creditorVpa,
+    remittanceInfo: args.remittanceInfo,
+    type: 'PAY',
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -328,6 +352,8 @@ export const initiateOutboundTransfer = internalAction({
     creditorVpa: v.string(),
     debtorVpa: v.string(),
     remittanceInfo: v.optional(v.string()),
+    purposeCode: v.optional(v.string()),
+    initiationMode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
@@ -345,6 +371,7 @@ export const initiateOutboundTransfer = internalAction({
     }
 
     // XML protocol mode
+    assertIpsProductionReady(mode);
     try {
       const head = buildStandardHead(args.msgId);
       const payload: IpsReqPayPayload = {
@@ -355,6 +382,8 @@ export const initiateOutboundTransfer = internalAction({
         amount: args.amount,
         currency: 'NAD',
         note: args.remittanceInfo,
+        purposeCode: args.purposeCode,
+        initMode: args.initiationMode,
       };
 
       const xml = buildReqPay(head, payload);
@@ -741,6 +770,8 @@ export const handleWebhook = internalAction({
       // Inbound confirmation from payee PSP
       console.log(`[ips webhook] TxnConfirmation for ${args.msgId}: ${args.respCode}`);
       await handleRespPay(ctx, args);
+    } else if (args.apiName === 'RespTxnConfirmation') {
+      console.log(`[ips webhook] RespTxnConfirmation for ${args.msgId}: ${args.respCode}`);
     } else {
       console.log(`[ips webhook] Unhandled API: ${args.apiName} for ${args.msgId}`);
     }
@@ -755,6 +786,7 @@ async function handleRespPay(
     respCode?: string;
     respDescription?: string;
     txnData?: any;
+    apiName?: string;
   }
 ) {
   const lookupMsgId = args.requestMsgId ?? args.msgId;
@@ -780,6 +812,29 @@ async function handleRespPay(
       respCode === '00' ? undefined : (args.respDescription ?? errorEntry.userMessage),
     settlementDate: args.txnData?.settlementDate,
   });
+
+  if ((status === 'processing' && isRetryable(respCode)) || status === 'timeout') {
+    await (ctx.scheduler as any).runAfter(
+      5000,
+      internal.actions.ipsAdapter.resolveDeemedTransaction,
+      {
+        transactionId: txn._id,
+        orgTxnId: txn.endToEndId ?? txn.msgId,
+        orgMsgId: txn.msgId,
+        attemptNumber: 1,
+      }
+    );
+  }
+
+  if (status === 'completed' && args.apiName === 'RespPay' && txn.direction === 'inbound') {
+    await (ctx.scheduler as any).runAfter(0, internal.actions.ipsAdapter.sendTxnConfirmation, {
+      transactionId: txn._id,
+      orgTxnId: txn.endToEndId ?? txn.msgId,
+      orgMsgId: txn.msgId,
+      status: 'CREDITED',
+      beneficiaryName: process.env.IPS_BENEFICIARY_NAME ?? 'NamLend Trust',
+    });
+  }
 
   console.log(
     `[ips webhook] ${args.msgId} → ${status} (code: ${respCode}, retryable: ${isRetryable(respCode)})`
@@ -868,11 +923,88 @@ async function handleRespChkTxn(
 // Handle Payment Gateway Webhook (PayToday, MTC MoMo, TN Mobile)
 // ---------------------------------------------------------------------------
 
+function webhookString(payload: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+  return undefined;
+}
+
+function webhookNumber(payload: Record<string, unknown>, keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim() && !Number.isNaN(Number(value))) {
+      return Number(value);
+    }
+  }
+  return undefined;
+}
+
+function normalizePaymentWebhookStatus(status: string | undefined) {
+  const normalized = status?.trim().toLowerCase();
+  if (!normalized) return null;
+  if (['completed', 'complete', 'success', 'successful', 'paid', 'settled'].includes(normalized)) {
+    return 'completed' as const;
+  }
+  if (['failed', 'failure', 'declined', 'cancelled', 'canceled', 'expired'].includes(normalized)) {
+    return 'failed' as const;
+  }
+  return null;
+}
+
+interface PaymentWebhookResult {
+  ok: boolean;
+  paymentId?: string;
+  idempotent?: boolean;
+  reason?: string;
+}
+
 export const handlePaymentWebhook = internalAction({
   args: { payload: v.any() },
-  handler: async (ctx, { payload }) => {
-    const gateway = payload.gateway as string;
-    console.log(`[payment webhook] Received from ${gateway}:`, payload);
+  // Explicit return type breaks the circular type inference between this action
+  // and internal.payments.applyPaymentWebhook (TS7022/TS7023).
+  handler: async (ctx, { payload }): Promise<PaymentWebhookResult> => {
+    const body = payload as Record<string, unknown>;
+    const gateway = webhookString(body, ['gateway', 'provider', 'source']) ?? 'unknown';
+    const status = normalizePaymentWebhookStatus(
+      webhookString(body, ['status', 'payment_status', 'transactionStatus', 'result'])
+    );
+
+    if (!status) {
+      throw new Error('Unsupported payment webhook status.');
+    }
+
+    const result: PaymentWebhookResult = await ctx.runMutation(
+      internal.payments.applyPaymentWebhook,
+      {
+        gateway,
+        status,
+        externalTransactionId: webhookString(body, [
+          'externalTransactionId',
+          'external_transaction_id',
+          'transactionId',
+          'transaction_id',
+          'providerTransactionId',
+        ]),
+        referenceNumber: webhookString(body, [
+          'referenceNumber',
+          'reference_number',
+          'reference',
+          'merchantReference',
+        ]),
+        failureReason: webhookString(body, ['failureReason', 'failure_reason', 'error', 'message']),
+        // Financial reconciliation inputs — applyPaymentWebhook rejects completion
+        // when these disagree with the local payment record.
+        amount: webhookNumber(body, ['amount', 'amountPaid', 'amount_paid', 'totalAmount']),
+        currency: webhookString(body, ['currency', 'currencyCode', 'currency_code']),
+      }
+    );
+
+    console.log(`[payment webhook] ${gateway} ${status}: ${result.ok ? 'applied' : result.reason}`);
+    return result;
   },
 });
 
@@ -962,18 +1094,24 @@ export const initiateCollectRequest = internalAction({
     payeeVpa: v.string(),
     note: v.optional(v.string()),
     expiryMinutes: v.optional(v.number()),
+    purposeCode: v.optional(v.string()),
+    initiationMode: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const mode = await getProtocolMode(ctx);
     if (mode === 'json_mock') {
-      await ctx.runMutation(internal.ips.ipsTransactions.updateIpsTransactionStatusInternal, {
+      return completeJsonMockTransaction(ctx, {
         transactionId: args.transactionId,
-        status: 'processing',
-        rawResponse: { mock: true, type: 'COLLECT' },
+        msgId: args.msgId,
+        amount: args.amount,
+        debtorVpa: args.payerVpa,
+        creditorVpa: args.payeeVpa,
+        remittanceInfo: args.note,
+        type: 'COLLECT',
       });
-      return { success: true, mode: 'json_mock' };
     }
 
+    assertIpsProductionReady(mode);
     try {
       const head = buildStandardHead(args.msgId);
       const payload: IpsReqPayPayload = {
@@ -983,6 +1121,8 @@ export const initiateCollectRequest = internalAction({
         amount: args.amount,
         currency: 'NAD',
         note: args.note ?? 'Loan repayment collection',
+        purposeCode: args.purposeCode,
+        initMode: args.initiationMode,
       };
 
       const xml = buildReqPay(head, payload);

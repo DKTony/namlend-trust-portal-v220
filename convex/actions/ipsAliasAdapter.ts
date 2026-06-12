@@ -28,6 +28,7 @@ import {
 import { createSigningProvider } from '../lib/ipsSigningProvider';
 import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
 import { parseRespGetAddDetails } from '../lib/ipsResponseParsers';
+import { assertIpsProductionReady, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
 
@@ -45,6 +46,7 @@ async function sendSignedXml(
   ack: import('../lib/ipsXmlBuilder').IpsAckParsed;
   durationMs: number;
 }> {
+  assertIpsProductionReady(await getProtocolMode(ctx));
   const signer = createSigningProvider();
   const signature = await signer.sign(xml);
   const signedXml = insertSignature(xml, signature);
@@ -88,15 +90,17 @@ async function sendSignedXml(
 // Check protocol mode (same as ipsAdapter)
 // ---------------------------------------------------------------------------
 
-async function getProtocolMode(ctx: any): Promise<string> {
+async function getProtocolMode(ctx: any): Promise<IpsProtocolMode> {
   try {
-    return await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
+    const mode = await ctx.runQuery(internal.lib.ruleEvaluator.getStringRuleQuery, {
       ruleCode: 'IPS_PROTOCOL_MODE',
       fallback: 'json_mock',
     });
+    if (mode === 'xml_sandbox' || mode === 'xml_production') return mode;
   } catch {
-    return 'json_mock';
+    // Fall through to mock mode.
   }
+  return 'json_mock';
 }
 
 // ---------------------------------------------------------------------------
@@ -322,6 +326,46 @@ export const reqGetAdd = internalAction({
         lookupStatus: 'failed' as const,
       };
     }
+  },
+});
+
+export const checkAliasAvailabilityForOnboarding = internalAction({
+  args: {
+    applicationId: v.id('ipsOnboardingApplications'),
+    addr: v.string(),
+    requestMsgId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const result: any = await ctx.runAction(internal.actions.ipsAliasAdapter.reqGetAdd, {
+      operation: 'CHECK',
+      addr: args.addr,
+      correlationId: args.requestMsgId ?? args.applicationId,
+    });
+
+    if (result.lookupStatus === 'pending') {
+      await ctx.runMutation(internal.ips.ipsOnboarding.updateAliasAvailabilityStatus, {
+        applicationId: args.applicationId,
+        status: 'pending',
+        requestMsgId: args.requestMsgId,
+        errorCode: result.errorCode,
+        errorMessage: result.errorDescription,
+      });
+      return result;
+    }
+
+    await ctx.runMutation(internal.ips.ipsOnboarding.updateAliasAvailabilityStatus, {
+      applicationId: args.applicationId,
+      status: result.available
+        ? 'available'
+        : result.ackSuccess === false
+          ? 'failed'
+          : 'unavailable',
+      requestMsgId: args.requestMsgId,
+      errorCode: result.errorCode,
+      errorMessage: result.errorDescription,
+    });
+
+    return result;
   },
 });
 

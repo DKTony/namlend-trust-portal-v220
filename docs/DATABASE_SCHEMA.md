@@ -1,9 +1,9 @@
 # NamLend Trust - Database Schema Summary
 
-**Last Updated**: 2026-03-29
+**Last Updated**: 2026-04-28
 **Aligned With**: Financial Ontology Engine (v5.2.1)
-**Status**: Current ✅
-**Last verified against schema**: 2026-03-29 (convex/schema.ts)
+**Status**: Current with legacy integration caveats
+**Last verified against schema**: 2026-04-28 (`convex/schema.ts`)
 **Database**: Convex (document-relational)
 **Previous Database**: PostgreSQL 15+ (Supabase) — migrated February 2026
 **Backend Version**: v5.2.1 (Execution Hardening)
@@ -12,7 +12,7 @@
 
 ## Source of Truth
 
-- **Schema is defined in** `convex/schema.ts` (67+ tables including 12 ontology tables).
+- **Schema is defined in** `convex/schema.ts` (66 application tables plus Convex Auth tables from `@convex-dev/auth`).
 - Generated types live in `convex/_generated/` and are auto-generated on `npx convex dev` or deploy.
 - Re-exported for frontend use via `src/integrations/convex/api.ts`.
 
@@ -26,7 +26,7 @@ npx convex deploy
 
 ### Migration Context
 
-The backend was migrated from Supabase (PostgreSQL + RLS + Edge Functions) to Convex in February 2026. The previous PostgreSQL schema (33 migrations, `supabase/migrations/`) is retained for reference but is **no longer the active backend**. All new development targets `convex/schema.ts`.
+The backend was migrated from Supabase (PostgreSQL + RLS + Edge Functions) to Convex in February 2026. The previous PostgreSQL schema (`supabase/migrations/`) is retained for reference and for legacy cleanup context. It is not the active lending/payment database, but selected frontend utility paths still call Supabase for branding and role-assignment helper operations. All new backend development targets `convex/schema.ts`.
 
 | Aspect            | Before (Supabase)              | After (Convex)                         |
 | ----------------- | ------------------------------ | -------------------------------------- |
@@ -256,10 +256,13 @@ export const getMyLoans = query({
 
 Defined in `convex/crons.ts`:
 
-| Job                 | Schedule         | Handler                                           | Replaces                            |
-| ------------------- | ---------------- | ------------------------------------------------- | ----------------------------------- |
-| `tb-outbox-worker`  | Every 30 seconds | `scheduled/tigerBeetleOutboxWorker.processOutbox` | `tigerbeetle-outbox-worker` edge fn |
-| `daily-maintenance` | 02:00 UTC daily  | `scheduled/dailyTasks.runDailyTasks`              | `scheduled-tasks` edge fn + pg_cron |
+| Job                   | Schedule         | Handler                                                | Replaces / Purpose                     |
+| --------------------- | ---------------- | ------------------------------------------------------ | -------------------------------------- |
+| `tb-outbox-worker`    | Every 30 seconds | `scheduled/tigerBeetleOutboxWorker.processOutbox`      | Shadow TigerBeetle outbox processing   |
+| `daily-maintenance`   | 02:00 UTC daily  | `scheduled/dailyTasks.runDailyTasks`                   | Overdue, promise-to-pay, notifications |
+| `mandate-executor`    | 06:00 UTC daily  | `scheduled/mandateExecutor.processDueMandates`         | Due mandate processing                 |
+| `eod-snapshot`        | 23:30 UTC daily  | `scheduled/snapshotGenerator.generateEndOfDaySnapshot` | Portfolio snapshot generation          |
+| `rail-health-monitor` | Every 5 minutes  | `scheduled/railHealthMonitor.checkRailHealth`          | Payment rail health checks             |
 
 Daily maintenance runs three sub-tasks:
 
@@ -274,6 +277,7 @@ Daily maintenance runs three sub-tasks:
 - **7-year retention** — Financial data and audit logs MUST NOT be hard-deleted (Namibian law).
 - Audit and state transition tables are **append-only** by design.
 - Convex has no built-in TTL or auto-delete; records persist until explicitly removed.
+- Current E2E/API cleanup helpers still contain hard deletes for test data. Those are test-environment discrepancies and should be replaced with archival or isolated test datasets before production-like validation.
 
 ---
 
@@ -419,6 +423,6 @@ erDiagram
 - [INDEX.md](./INDEX.md) - Documentation index
 - [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture with Convex flow diagrams
-- [SERVICES.md](./SERVICES.md) - Service layer reference (legacy Supabase services)
+- [SERVICES.md](./SERVICES.md) - Service layer and active legacy island inventory
 - [SECURITY.md](./SECURITY.md) - Security implementation (now auth guards, not RLS)
 - [TYPE_SAFETY_REMEDIATION.md](./TYPE_SAFETY_REMEDIATION.md) - TypeScript types for tables

@@ -5,7 +5,8 @@
  *
  * Claim/process/retry logic is identical to the Deno edge function:
  *   - Fetch pending + failed entries whose retry window has elapsed
- *   - POST to TigerBeetle HTTP API at localhost:3001 (shadow mode)
+ *   - POST to TigerBeetle HTTP API when TIGERBEETLE_HTTP_URL is configured
+ *   - Otherwise complete the shadow-ledger record in deterministic simulation mode
  *   - On success: mark completed, record shadow transfer
  *   - On failure: mark failed with exponential backoff (max 5 retries → dead_letter)
  */
@@ -14,8 +15,8 @@ import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
 import { Id } from '../_generated/dataModel';
 
-// TigerBeetle HTTP API (shadow mode — records but doesn't control flow)
-const TB_BASE_URL = 'http://127.0.0.1:3001';
+// Optional TigerBeetle HTTP API. Convex remains authoritative; this is shadow evidence.
+const TB_BASE_URL = process.env.TIGERBEETLE_HTTP_URL ?? process.env.TB_BASE_URL;
 
 // Account codes from Chart of Accounts (mirror of the edge function constants)
 const GLOBAL_ACCOUNT_IDS: Record<string, string> = {
@@ -38,6 +39,81 @@ interface OutboxEntry {
   retryCount: number;
 }
 
+interface ProcessedTransfer {
+  id: string;
+  amountCents: number;
+  code: number;
+}
+
+function transferCodeFor(entry: OutboxEntry): number {
+  const payloadCode = Number(entry.payload.transfer_code);
+  if (Number.isFinite(payloadCode) && payloadCode > 0) return payloadCode;
+  if (entry.eventType === 'IPS_INITIATE') return 3001;
+  if (entry.eventType === 'IPS_REVERSE') return 3003;
+  if (entry.eventType === 'IPS_COMPLETE') return 3002;
+  if (entry.eventType === 'LATE_FEE') return 5002;
+  return 0;
+}
+
+function ipsAccountsFor(eventType: string, direction: unknown) {
+  const inbound = direction === 'inbound';
+  if (eventType === 'IPS_INITIATE') {
+    return inbound
+      ? {
+          debit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_INBOUND,
+          credit_account_id: GLOBAL_ACCOUNT_IDS.COLLECTIONS_CLEARING,
+        }
+      : {
+          debit_account_id: GLOBAL_ACCOUNT_IDS.DISBURSEMENT_CLEARING,
+          credit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_OUTBOUND,
+        };
+  }
+
+  if (eventType === 'IPS_REVERSE') {
+    return inbound
+      ? {
+          debit_account_id: GLOBAL_ACCOUNT_IDS.COLLECTIONS_CLEARING,
+          credit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_INBOUND,
+        }
+      : {
+          debit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_OUTBOUND,
+          credit_account_id: GLOBAL_ACCOUNT_IDS.DISBURSEMENT_CLEARING,
+        };
+  }
+
+  return inbound
+    ? {
+        debit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_INBOUND,
+        credit_account_id: GLOBAL_ACCOUNT_IDS.COLLECTIONS_CLEARING,
+      }
+    : {
+        debit_account_id: GLOBAL_ACCOUNT_IDS.IPS_PENDING_OUTBOUND,
+        credit_account_id: GLOBAL_ACCOUNT_IDS.BANK_SETTLEMENT,
+      };
+}
+
+async function postTigerBeetle(path: string, body: Record<string, unknown>) {
+  if (!TB_BASE_URL) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('TigerBeetle HTTP URL is required in production.');
+    }
+    return { simulated: true };
+  }
+
+  const response = await fetch(`${TB_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`TigerBeetle HTTP ${response.status} for ${path}: ${text.slice(0, 300)}`);
+  }
+
+  return { simulated: false };
+}
+
 /**
  * Convert a Convex document ID to a TigerBeetle-compatible bigint string.
  * Hashes the string ID to a 128-bit number.
@@ -52,36 +128,46 @@ function idToTBId(id: string): string {
   return hash.toString();
 }
 
-async function processEntry(entry: OutboxEntry): Promise<string[]> {
+function assertTransferAmountAndCode(amount: unknown, code: unknown, label: string) {
+  const amountNumber = Number(amount);
+  const codeNumber = Number(code);
+  if (!Number.isInteger(amountNumber) || amountNumber <= 0) {
+    throw new Error(`${label} has invalid amount.`);
+  }
+  if (!Number.isInteger(codeNumber) || codeNumber <= 0) {
+    throw new Error(`${label} has invalid TigerBeetle code.`);
+  }
+  return { amountCents: amountNumber, code: codeNumber };
+}
+
+async function processEntry(entry: OutboxEntry): Promise<ProcessedTransfer[]> {
   const { eventType, payload } = entry;
-  const transferIds: string[] = [];
+  const transfersPosted: ProcessedTransfer[] = [];
 
   switch (eventType) {
     case 'CREATE_ACCOUNT': {
       // POST account creation to TigerBeetle
-      await fetch(`${TB_BASE_URL}/accounts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: idToTBId(entry.sourceId) }),
-      });
+      await postTigerBeetle('/accounts', { id: idToTBId(entry.sourceId) });
       break;
     }
 
     case 'DISBURSEMENT': {
       const transferId = idToTBId(entry.sourceId);
-      await fetch(`${TB_BASE_URL}/transfers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: transferId,
-          debit_account_id: GLOBAL_ACCOUNT_IDS.DISBURSEMENT_CLEARING,
-          credit_account_id: idToTBId(payload.loan_id as string),
-          amount: payload.amount,
-          code: payload.transfer_code ?? 1001,
-          ledger: 1,
-        }),
+      const transferCode = Number(payload.transfer_code ?? 1001);
+      const { amountCents, code } = assertTransferAmountAndCode(
+        payload.amount,
+        transferCode,
+        'DISBURSEMENT'
+      );
+      await postTigerBeetle('/transfers', {
+        id: transferId,
+        debit_account_id: GLOBAL_ACCOUNT_IDS.DISBURSEMENT_CLEARING,
+        credit_account_id: idToTBId(payload.loan_id as string),
+        amount: amountCents,
+        code,
+        ledger: 1,
       });
-      transferIds.push(transferId);
+      transfersPosted.push({ id: transferId, amountCents, code });
       break;
     }
 
@@ -90,26 +176,30 @@ async function processEntry(entry: OutboxEntry): Promise<string[]> {
         (payload.transfers as Array<{
           debit_type: string;
           credit_type: string;
-          amount: string;
+          amount: number;
           code: number;
         }>) ?? [];
+      if (transfers.length === 0) {
+        throw new Error('REPAYMENT payload must include at least one transfer.');
+      }
 
       for (let i = 0; i < transfers.length; i++) {
         const t = transfers[i];
+        const { amountCents, code } = assertTransferAmountAndCode(
+          t.amount,
+          t.code,
+          `REPAYMENT transfer ${i}`
+        );
         const transferId = idToTBId(`${entry.sourceId}:${i}`);
-        await fetch(`${TB_BASE_URL}/transfers`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: transferId,
-            debit_account_id: GLOBAL_ACCOUNT_IDS[t.debit_type] ?? t.debit_type,
-            credit_account_id: GLOBAL_ACCOUNT_IDS[t.credit_type] ?? t.credit_type,
-            amount: t.amount,
-            code: t.code,
-            ledger: 1,
-          }),
+        await postTigerBeetle('/transfers', {
+          id: transferId,
+          debit_account_id: GLOBAL_ACCOUNT_IDS[t.debit_type] ?? t.debit_type,
+          credit_account_id: GLOBAL_ACCOUNT_IDS[t.credit_type] ?? t.credit_type,
+          amount: amountCents,
+          code,
+          ledger: 1,
         });
-        transferIds.push(transferId);
+        transfersPosted.push({ id: transferId, amountCents, code });
       }
       break;
     }
@@ -119,23 +209,25 @@ async function processEntry(entry: OutboxEntry): Promise<string[]> {
     case 'IPS_REVERSE':
     case 'LATE_FEE': {
       const transferId = idToTBId(entry.sourceId);
-      await fetch(`${TB_BASE_URL}/transfers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: transferId,
-          amount: payload.amount,
-          code: eventType === 'IPS_INITIATE' ? 3001 : eventType === 'IPS_REVERSE' ? 3003 : 3002,
-          ledger: 1,
-          flags:
-            eventType === 'IPS_INITIATE'
-              ? 'pending'
-              : eventType === 'IPS_REVERSE'
-                ? 'void_pending'
-                : 'post_pending',
-        }),
+      const { amountCents, code } = assertTransferAmountAndCode(
+        payload.amount,
+        transferCodeFor(entry),
+        eventType
+      );
+      await postTigerBeetle('/transfers', {
+        id: transferId,
+        ...ipsAccountsFor(eventType, payload.direction),
+        amount: amountCents,
+        code,
+        ledger: 1,
+        flags:
+          eventType === 'IPS_INITIATE'
+            ? 'pending'
+            : eventType === 'IPS_REVERSE'
+              ? 'void_pending'
+              : 'post_pending',
       });
-      transferIds.push(transferId);
+      transfersPosted.push({ id: transferId, amountCents, code });
       break;
     }
 
@@ -143,7 +235,7 @@ async function processEntry(entry: OutboxEntry): Promise<string[]> {
       throw new Error(`Unknown event type: ${eventType}`);
   }
 
-  return transferIds;
+  return transfersPosted;
 }
 
 export const processOutbox = internalAction({
@@ -169,22 +261,22 @@ export const processOutbox = internalAction({
 
     for (const entry of entries) {
       try {
-        const transferIds = await processEntry(entry);
+        const transfersPosted = await processEntry(entry);
 
         await ctx.runMutation(internal.tigerbeetle.outbox.completeEntry, {
           entryId: entry._id,
-          tbTransferIds: transferIds,
+          tbTransferIds: transfersPosted.map((transfer) => transfer.id),
         });
 
         // Record shadow transfers
-        for (const transferId of transferIds) {
-          const tbId = BigInt(transferId);
+        for (const transfer of transfersPosted) {
+          const tbId = BigInt(transfer.id);
           await ctx.runMutation(internal.tigerbeetle.transfers.recordShadowTransfer, {
             tbTransferIdHigh: Number(tbId >> 64n),
             tbTransferIdLow: Number(tbId & 0xffffffffffffffffn),
-            amount: Number(entry.payload.amount ?? 0) / 100,
+            amount: transfer.amountCents / 100,
             tbLedger: 1,
-            tbCode: Number(entry.payload.transfer_code ?? 0),
+            tbCode: transfer.code,
             sourceTable: entry.sourceTable,
             sourceId: entry.sourceId,
             outboxId: entry._id,

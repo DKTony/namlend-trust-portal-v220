@@ -169,6 +169,7 @@ export default function useBrandingConfig(): UseBrandingConfigReturn {
           value: config[section],
           category: 'branding',
           description: `Branding ${section} configuration`,
+          isPublic: true,
         });
       }
       setOriginalConfig(config);

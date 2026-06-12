@@ -17,6 +17,7 @@ import { ConvexError } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { GenericQueryCtx, GenericMutationCtx } from 'convex/server';
 import { DataModel, Id } from '../_generated/dataModel';
+import { internalQuery } from '../_generated/server';
 
 type AnyCtx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 
@@ -119,3 +120,10 @@ export async function assertOwner(
   }
   return userId;
 }
+
+export const assertAdminForAction = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return assertAdmin(ctx);
+  },
+});

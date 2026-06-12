@@ -36,3 +36,9 @@ dist/
 test-results/
 playwright-report/
 .playwright-mcp/
+
+# TypeScript incremental build artifacts (tsc -b)
+*.tsbuildinfo
+
+# Local tool/test output
+output/

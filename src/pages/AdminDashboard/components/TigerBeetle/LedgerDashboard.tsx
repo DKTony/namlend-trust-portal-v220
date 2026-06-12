@@ -110,6 +110,11 @@ export function LedgerDashboard() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">TigerBeetle Ledger</h2>
           <p className="text-muted-foreground">Financial ledger status and reconciliation</p>
+          <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
+            Shadow ledger — Convex is the authoritative balance. Reconciliation here verifies Convex
+            ↔ outbox ↔ shadow-transfer consistency, not real-world settlement. Figures do not imply
+            funds have settled at the bank/rail.
+          </p>
         </div>
         {/* Convex queries are reactive — data auto-refreshes */}
       </div>

@@ -1,10 +1,10 @@
 # AI Agent Guidelines for NamLend Trust
 
-**Doc Revision**: 2026-03-03
-**Status**: Active
+**Doc Revision**: 2026-04-28
+**Status**: Active, aligned with Convex-first architecture
 **Audience**: AI/LLM agents (Claude, GPT, Copilot, etc.)
 
-> ⚠️ **Backend is Convex (migrated Feb 2026).** All new server logic goes in `convex/`. The `src/services/` directory is legacy dead code — do NOT add to it or follow its patterns. See [ARCHITECTURE.md](./ARCHITECTURE.md) and [CLAUDE.MD](../CLAUDE.MD) for full context.
+> ⚠️ **Backend is Convex (migrated Feb 2026).** All new server logic goes in `convex/`. `src/services/` contains a small active utility/legacy inventory, including Supabase-backed branding; do NOT add new backend logic there or follow old service patterns. See [ARCHITECTURE.md](./ARCHITECTURE.md), [SERVICES.md](./SERVICES.md), and [CLAUDE.MD](../CLAUDE.MD) for full context.
 
 ---
 
@@ -89,7 +89,7 @@ export const getMyLoans = query({
   },
 });
 
-// ❌ WRONG — never add new logic to src/services/ (legacy dead code)
+// ❌ WRONG — never add new backend logic to src/services/ (legacy/service utility island)
 // src/services/loanService.ts — DO NOT USE
 ```
 
@@ -290,10 +290,10 @@ console.log('User data:', user);
 console.log('Processing user:', user.id);
 ```
 
-### 5. Writing to `src/services/`
+### 5. Adding Backend Logic to `src/services/`
 
 ```typescript
-// ❌ WRONG — src/services/ is legacy dead code
+// ❌ WRONG — src/services/ is not the active backend layer
 // src/services/myNewService.ts  ← DO NOT CREATE
 
 // ✅ CORRECT — add a query/mutation in convex/
@@ -377,18 +377,18 @@ When adding features:
 
 ### File Locations
 
-| Type                      | Location                                    |
-| ------------------------- | ------------------------------------------- |
-| **Backend (ACTIVE)**      | `convex/`                                   |
-| Components                | `src/components/`                           |
-| Pages                     | `src/pages/`                                |
-| Hooks                     | `src/hooks/`                                |
-| Types                     | `src/types/`                                |
-| Constants                 | `src/constants/`                            |
-| E2E Tests                 | `e2e/`                                      |
-| **Legacy Services**       | `src/services/` ⚠️ (dead code — do not use) |
-| **Legacy Migrations**     | `supabase/migrations/` ⚠️ (INACTIVE)        |
-| **Legacy Edge Functions** | `supabase/functions/` ⚠️ (INACTIVE)         |
+| Type                      | Location                                                        |
+| ------------------------- | --------------------------------------------------------------- |
+| **Backend (ACTIVE)**      | `convex/`                                                       |
+| Components                | `src/components/`                                               |
+| Pages                     | `src/pages/`                                                    |
+| Hooks                     | `src/hooks/`                                                    |
+| Types                     | `src/types/`                                                    |
+| Constants                 | `src/constants/`                                                |
+| E2E Tests                 | `e2e/`                                                          |
+| **Service Utilities**     | `src/services/` ⚠️ (active utility + legacy island inventory)   |
+| **Legacy Migrations**     | `supabase/migrations/` ⚠️ (reference/legacy cleanup context)    |
+| **Legacy Edge Functions** | `supabase/functions/` ⚠️ (reference plus legacy helper context) |
 
 ### Key Constants
 
@@ -453,6 +453,6 @@ api.settlement.*          // Settlement runs + reports (convex/settlement/)
 - [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) — Financial Ontology Engine implementation report (domain events, projections, rules-as-data)
 - [Raw_Thoughts.md](./Raw_Thoughts.md) — Strategic vision: three certainties, five primitives, design principles
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — System architecture (Convex)
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (67+ tables)
-- [SERVICES.md](./SERVICES.md) — Service migration status
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) — Convex schema reference (66 application tables plus Convex Auth tables)
+- [SERVICES.md](./SERVICES.md) — Current service utility and legacy island inventory
 - [convexmigratehandover.md](./convexmigratehandover.md) — Convex migration handover notes

@@ -46,7 +46,6 @@ function normalizeAliasRecord(alias: any) {
 }
 
 function normalizeLegacyRecord(record: any) {
-  const usable = record.status === 'active';
   return {
     id: String(record._id),
     vpa_address: record.vpa,
@@ -56,14 +55,14 @@ function normalizeLegacyRecord(record: any) {
     account_masked: maskReference(record.accountNumber) ?? null,
     account_holder_name: null,
     ifsc_code: record.bankBic ?? null,
-    is_validated: usable,
+    is_validated: false,
     is_default: Boolean(record.isDefault),
     display_name: record.vpa,
     status: record.status,
     source: 'legacy_registry' as const,
     synced_with_ips: false,
-    is_usable: usable,
-    unavailable_reason: usable ? null : 'Legacy VPA is inactive and cannot be used for payments.',
+    is_usable: false,
+    unavailable_reason: 'Legacy saved VPA must be re-registered and confirmed by IPS.',
     created_at: new Date(record.createdAt).toISOString(),
   };
 }

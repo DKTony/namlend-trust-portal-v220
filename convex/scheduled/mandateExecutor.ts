@@ -22,6 +22,20 @@ export const processDueMandates = internalAction({
   handler: async (ctx) => {
     const now = Date.now();
 
+    // KILL-SWITCH: mandate auto-debit is disabled until the execution lifecycle
+    // (completion-driven ledger posting) is fully modeled and tested. Defaults OFF.
+    // Re-enable by seeding businessRule MANDATE_AUTODEBIT_ENABLED=true.
+    const autoDebitEnabled = await ctx.runQuery(internal.lib.ruleEvaluator.getBooleanRuleQuery, {
+      ruleCode: 'MANDATE_AUTODEBIT_ENABLED',
+      fallback: false,
+    });
+    if (!autoDebitEnabled) {
+      console.log(
+        '[mandate-executor] Auto-debit disabled (MANDATE_AUTODEBIT_ENABLED=false). Skipping.'
+      );
+      return;
+    }
+
     // Step 1: Find and expire mandates past their expiry date
     const activeMandates = await ctx.runQuery(
       internal.ontology.mandateExecutions.getActiveMandatesInternal,

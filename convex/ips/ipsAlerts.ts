@@ -4,7 +4,7 @@
 
 import { v } from 'convex/values';
 import { query, mutation } from '../_generated/server';
-import { assertStaff, assertAuthenticated } from '../lib/auth';
+import { assertStaff } from '../lib/auth';
 
 export const getActiveAlerts = query({
   args: {},
@@ -27,7 +27,7 @@ export const createAlert = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await assertAuthenticated(ctx);
+    await assertStaff(ctx);
     return ctx.db.insert('ipsAlerts', {
       ...args,
       isResolved: false,

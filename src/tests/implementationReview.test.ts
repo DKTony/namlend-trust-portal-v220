@@ -109,7 +109,16 @@ describe('Tier 2 — Supabase Hook Migration', () => {
 
 describe('Tier 5 — Financial Safety', () => {
   const payments = readSrc('convex/payments.ts');
+  const loans = readSrc('convex/loans.ts');
+  const disbursements = readSrc('convex/disbursements.ts');
+  const mandates = readSrc('convex/ontology/mandates.ts');
+  const relationships = readSrc('convex/ontology/relationships.ts');
+  const mandateExecutions = readSrc('convex/ontology/mandateExecutions.ts');
   const approvalWorkflow = readSrc('convex/approvalWorkflow.ts');
+  const approvalReadiness = readSrc('convex/lib/approvalReadiness.ts');
+  const ipsAlerts = readSrc('convex/ips/ipsAlerts.ts');
+  const http = readSrc('convex/http.ts');
+  const ipsAdapter = readSrc('convex/actions/ipsAdapter.ts');
 
   it('completePayment has idempotency guard', () => {
     // Must check for already-completed status before proceeding
@@ -134,9 +143,67 @@ describe('Tier 5 — Financial Safety', () => {
     expect(payments).toMatch(/by_referenceNumber.*\n.*filter.*loanId/s);
   });
 
-  it('recordPayment enqueues TigerBeetle outbox entry', () => {
-    expect(payments).toContain("eventType: 'REPAYMENT'");
-    expect(payments).toContain('tigerBeetleOutbox');
+  it('completePayment, not recordPayment, enqueues TigerBeetle repayment outbox entry', () => {
+    const recordPaymentBlock =
+      payments.match(/export const recordPayment[\s\S]*?export const completePayment/)?.[0] ?? '';
+    const completePaymentBlock =
+      payments.match(/export const completePayment[\s\S]*?export const failPayment/)?.[0] ?? '';
+    expect(recordPaymentBlock).not.toContain("eventType: 'REPAYMENT'");
+    expect(completePaymentBlock).toContain("eventType: 'REPAYMENT'");
+    expect(completePaymentBlock).toContain('buildRepaymentOutboxPayload');
+  });
+
+  it('loan lifecycle enforces KYC at submission and scoring before approval', () => {
+    // KYC is gated at submit (Option B — drafts allowed, not gated at createLoan).
+    expect(loans).toContain('assertKycVerifiedForUser');
+    // Approval readiness (KYC + scoring + DTI + recommendation) lives in ONE shared
+    // helper used by every approval writer — not duplicated inline.
+    expect(approvalReadiness).toContain('assertLoanReadyForApproval');
+    expect(approvalReadiness).toContain('assertKycVerifiedForUser');
+    expect(approvalReadiness).toContain('SCORING_REQUIRED');
+    expect(approvalReadiness).toContain('RECOMMENDATION_REJECTED');
+  });
+
+  it('both approval paths delegate to the shared approveLoanCore (no bypass)', () => {
+    expect(loans).toContain('approveLoanCore');
+    expect(approvalWorkflow).toContain('approveLoanCore');
+    // The workflow path must NOT patch the loan to approved directly.
+    expect(approvalWorkflow).not.toContain("ctx.db.patch(loanId, { status: 'approved'");
+  });
+
+  it('disbursement rejects partial amounts and requires KYC', () => {
+    expect(disbursements).toContain('Partial disbursement is disabled');
+    expect(disbursements).toContain('assertKycVerifiedForUser');
+  });
+
+  it('approval request reads resolve loan ownership or require staff', () => {
+    expect(approvalWorkflow).toContain('assertOwnerOrStaff');
+    expect(approvalWorkflow).toContain("request.entityType === 'loan'");
+    expect(approvalWorkflow).toContain('await assertStaff(ctx)');
+  });
+
+  it('mandate and relationship probes are not public unauthenticated queries', () => {
+    expect(mandates).toContain('hasActiveMandate = internalQuery');
+    expect(relationships).toContain('hasRelationship = internalQuery');
+    expect(mandates).toContain('assertOwnerOrStaff');
+  });
+
+  it('IPS alerts are staff-only and mandate debits never post the ledger at initiation', () => {
+    expect(ipsAlerts).toContain('await assertStaff(ctx)');
+    // Mandate auto-debit is disabled (cron gated by MANDATE_AUTODEBIT_ENABLED) and
+    // executeMandateDebit must not enqueue any ledger entry at initiation — posting
+    // is deferred to the future completion lifecycle.
+    const mandateExecutor = readSrc('convex/scheduled/mandateExecutor.ts');
+    expect(mandateExecutor).toContain('MANDATE_AUTODEBIT_ENABLED');
+    expect(mandateExecutions).not.toContain("insert('tigerBeetleOutbox'");
+    expect(mandateExecutions).not.toContain('enqueueOutboxIdempotent(');
+  });
+
+  it('payment webhooks fail closed and do not log raw provider payloads', () => {
+    expect(http).toContain('PAYMENT_WEBHOOK_SECRET');
+    expect(http).toContain("process.env.NODE_ENV === 'production'");
+    expect(ipsAdapter).toContain('internal.payments.applyPaymentWebhook');
+    expect(ipsAdapter).not.toContain('Received from ${gateway}:');
   });
 
   it('completePayment schedules audit log', () => {

@@ -172,6 +172,7 @@ export interface InitiateIPSDisbursementParams {
   creditorVpa?: string;
   payeeVpa: string;
   note?: string;
+  clientRequestId?: string;
 }
 
 export interface InitiateIPSDisbursementResult {
@@ -195,7 +196,9 @@ export interface InitiateIPSRepaymentParams {
   loanId: string;
   amount: number;
   payerVpa: string;
+  payerAliasId?: string;
   note?: string;
+  clientRequestId?: string;
 }
 
 export interface InitiateIPSRepaymentResult {

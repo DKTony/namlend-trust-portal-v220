@@ -4,12 +4,244 @@
  * All queries are reactive (auto-update on data changes).
  */
 
-import { useQuery as useConvexQuery, useAction } from 'convex/react';
+import { useAction, useMutation, useQuery as useConvexQuery } from 'convex/react';
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import type { SettlementRunState } from '@/types/settlement';
+
+const noopRefetch = () => undefined;
+
+function docId(row: any): string {
+  return String(row?.id ?? row?._id ?? '');
+}
+
+function toIso(value: any): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'number') return new Date(value).toISOString();
+  return String(value);
+}
+
+function toDateOnly(value: any): string {
+  const iso = toIso(value);
+  return iso ? iso.slice(0, 10) : new Date().toISOString().slice(0, 10);
+}
+
+function parseRunSlug(value?: string) {
+  const match = value?.match(/SR-(\d{8})-(SW\d)/i);
+  if (!match) return null;
+  const [, compactDate, windowId] = match;
+  return {
+    settlementDate: `${compactDate.slice(0, 4)}-${compactDate.slice(4, 6)}-${compactDate.slice(6, 8)}`,
+    windowId: windowId.toUpperCase(),
+  };
+}
+
+function mapRun(run: any) {
+  if (!run) return run;
+  return {
+    ...run,
+    id: docId(run),
+    run_id: run.run_id ?? run.runId,
+    window_id: run.window_id ?? run.windowId,
+    settlement_date: run.settlement_date ?? run.settlementDate,
+    scheme_version: run.scheme_version ?? run.schemeVersion,
+    amendment_seq: run.amendment_seq ?? run.amendmentSeq,
+    transaction_count: run.transaction_count ?? run.transactionCount ?? 0,
+    total_principal: run.total_principal ?? run.totalPrincipal ?? 0,
+    total_interchange: run.total_interchange ?? run.totalInterchange ?? 0,
+    total_switching_fee: run.total_switching_fee ?? run.totalSwitchingFee ?? 0,
+    net_instruction_count: run.net_instruction_count ?? run.netInstructionCount ?? 0,
+    cutoff_at: toIso(run.cutoff_at ?? run.cutoffAt),
+    netting_completed_at: toIso(run.netting_completed_at ?? run.nettingCompletedAt),
+    generated_at: toIso(run.generated_at ?? run.generatedAt),
+    dispatched_at: toIso(run.dispatched_at ?? run.dispatchedAt),
+    settled_at: toIso(run.settled_at ?? run.settledAt),
+    closed_at: toIso(run.closed_at ?? run.closedAt),
+    created_by: run.created_by ?? run.createdBy ?? null,
+    created_at: toIso(run.created_at ?? run.createdAt),
+    updated_at: toIso(run.updated_at ?? run.updatedAt),
+  };
+}
+
+function mapBatch(batch: any) {
+  if (!batch) return batch;
+  return {
+    ...batch,
+    id: docId(batch),
+    run_id: String(batch.run_id ?? batch.runId ?? ''),
+    batch_type: batch.batch_type ?? batch.batchType,
+    msg_id: batch.msg_id ?? batch.msgId,
+    file_name: batch.file_name ?? batch.fileName,
+    file_content: batch.file_content ?? batch.fileContent ?? null,
+    file_checksum: batch.file_checksum ?? batch.fileChecksum ?? null,
+    file_size: batch.file_size ?? batch.fileSize ?? null,
+    instruction_count: batch.instruction_count ?? batch.instructionCount ?? 0,
+    total_amount: batch.total_amount ?? batch.totalAmount ?? 0,
+    dispatched_at: toIso(batch.dispatched_at ?? batch.dispatchedAt),
+    validated_at: toIso(batch.validated_at ?? batch.validatedAt),
+    accepted_at: toIso(batch.accepted_at ?? batch.acceptedAt),
+    failed_at: toIso(batch.failed_at ?? batch.failedAt),
+    failure_reason: batch.failure_reason ?? batch.failureReason ?? null,
+    created_at: toIso(batch.created_at ?? batch.createdAt),
+    updated_at: toIso(batch.updated_at ?? batch.updatedAt),
+  };
+}
+
+function mapReport(report: any) {
+  if (!report) return report;
+  const parsedRun = parseRunSlug(report.file_name ?? report.fileName);
+  return {
+    ...report,
+    id: docId(report),
+    run_id: String(report.run_id ?? report.runId ?? ''),
+    run_date:
+      report.run_date ??
+      parsedRun?.settlementDate ??
+      toDateOnly(report.created_at ?? report.createdAt),
+    window_id: report.window_id ?? parsedRun?.windowId ?? 'SW1',
+    participant_id: report.participant_id ?? report.participantId ?? null,
+    participant_name: report.participant_name ?? report.participantName ?? null,
+    report_type: report.report_type ?? report.reportType,
+    file_name: report.file_name ?? report.fileName,
+    file_content: report.file_content ?? report.fileContent ?? null,
+    file_checksum: report.file_checksum ?? report.fileChecksum ?? null,
+    file_size: report.file_size ?? report.fileSize ?? null,
+    report_data: report.report_data ?? report.reportData ?? null,
+    distributed_at: toIso(report.distributed_at ?? report.distributedAt),
+    distribution_channel: report.distribution_channel ?? report.distributionChannel ?? null,
+    created_at: toIso(report.created_at ?? report.createdAt),
+  };
+}
+
+function mapParticipant(participant: any) {
+  if (!participant) return participant;
+  return {
+    ...participant,
+    id: docId(participant),
+    routing_code: participant.routing_code ?? participant.routingCode,
+    swift_bic: participant.swift_bic ?? participant.swiftBic,
+    participant_type: participant.participant_type ?? participant.participantType,
+    sponsor_id: participant.sponsor_id ?? participant.sponsorId ?? null,
+    niss_account_ref: participant.niss_account_ref ?? participant.nissAccountRef ?? null,
+    is_operator: participant.is_operator ?? participant.isOperator ?? false,
+    created_at: toIso(participant.created_at ?? participant.createdAt),
+    updated_at: toIso(participant.updated_at ?? participant.updatedAt),
+  };
+}
+
+function participantLabel(id: any) {
+  return id ? String(id).slice(-10) : 'Unknown';
+}
+
+function mapNetInstruction(instruction: any) {
+  if (!instruction) return instruction;
+  const sourceId = instruction.source_participant_id ?? instruction.sourceParticipantId;
+  const targetId = instruction.target_participant_id ?? instruction.targetParticipantId;
+  return {
+    ...instruction,
+    id: docId(instruction),
+    run_id: String(instruction.run_id ?? instruction.runId ?? ''),
+    instruction_id: instruction.instruction_id ?? instruction.instructionId,
+    source_participant_id: String(sourceId ?? ''),
+    target_participant_id: String(targetId ?? ''),
+    source: instruction.source ?? participantLabel(sourceId),
+    source_bic: instruction.source_bic ?? participantLabel(sourceId),
+    target: instruction.target ?? participantLabel(targetId),
+    target_bic: instruction.target_bic ?? participantLabel(targetId),
+    category_group: instruction.category_group ?? instruction.categoryGroup,
+    batch_type: instruction.batch_type ?? instruction.batchType,
+    end_to_end_id: instruction.end_to_end_id ?? instruction.endToEndId ?? null,
+    created_at: toIso(instruction.created_at ?? instruction.createdAt),
+  };
+}
+
+function mapExposure(exposure: any) {
+  if (!exposure) return exposure;
+  const participantId = exposure.participant_id ?? exposure.participantId;
+  return {
+    ...exposure,
+    id: docId(exposure),
+    run_id: String(exposure.run_id ?? exposure.runId ?? ''),
+    participant_id: String(participantId ?? ''),
+    participant: exposure.participant ?? participantLabel(participantId),
+    gross_payables: exposure.gross_payables ?? exposure.grossPayables ?? 0,
+    gross_receivables: exposure.gross_receivables ?? exposure.grossReceivables ?? 0,
+    net_position: exposure.net_position ?? exposure.netPosition ?? 0,
+    switching_fee_payable: exposure.switching_fee_payable ?? exposure.switchingFeePayable ?? 0,
+    interchange_net: exposure.interchange_net ?? exposure.interchangeNet ?? 0,
+    calculated_at: toIso(exposure.calculated_at ?? exposure.calculatedAt),
+  };
+}
+
+function mapAcknowledgement(ack: any) {
+  if (!ack) return ack;
+  return {
+    ...ack,
+    id: docId(ack),
+    msg_id: ack.msg_id ?? ack.msgId,
+    ack_type: ack.ack_type ?? ack.ackType,
+    batch_id: String(ack.batch_id ?? ack.batchId ?? ''),
+    run_id: String(ack.run_id ?? ack.runId ?? ''),
+    raw_payload: ack.raw_payload ?? ack.rawPayload ?? null,
+    error_code: ack.error_code ?? ack.errorCode ?? null,
+    error_description: ack.error_description ?? ack.errorDescription ?? null,
+    received_at: toIso(ack.received_at ?? ack.receivedAt),
+    processed_at: toIso(ack.processed_at ?? ack.processedAt),
+    created_at: toIso(ack.created_at ?? ack.createdAt),
+  };
+}
+
+function mapAdjustment(adjustment: any) {
+  if (!adjustment) return adjustment;
+  return {
+    ...adjustment,
+    id: docId(adjustment),
+    run_id: String(adjustment.run_id ?? adjustment.runId ?? ''),
+    original_tx_id: String(adjustment.original_tx_id ?? adjustment.originalTxId ?? ''),
+    adjustment_type: adjustment.adjustment_type ?? adjustment.adjustmentType,
+    source_participant_id: String(
+      adjustment.source_participant_id ?? adjustment.sourceParticipantId ?? ''
+    ),
+    target_participant_id: String(
+      adjustment.target_participant_id ?? adjustment.targetParticipantId ?? ''
+    ),
+    source_participant: participantLabel(
+      adjustment.source_participant_id ?? adjustment.sourceParticipantId
+    ),
+    target_participant: participantLabel(
+      adjustment.target_participant_id ?? adjustment.targetParticipantId
+    ),
+    reason_code: adjustment.reason_code ?? adjustment.reasonCode ?? null,
+    reason_description: adjustment.reason_description ?? adjustment.reasonDescription ?? null,
+    response_required_by: toIso(adjustment.response_required_by ?? adjustment.responseRequiredBy),
+    responded_at: toIso(adjustment.responded_at ?? adjustment.respondedAt),
+    response_notes: adjustment.response_notes ?? adjustment.responseNotes ?? null,
+    settled_in_run_id: String(adjustment.settled_in_run_id ?? adjustment.settledInRunId ?? ''),
+    created_at: toIso(adjustment.created_at ?? adjustment.createdAt),
+    updated_at: toIso(adjustment.updated_at ?? adjustment.updatedAt),
+  };
+}
+
+function mapTimeout(timeout: any) {
+  if (!timeout) return timeout;
+  return {
+    ...timeout,
+    id: docId(timeout),
+    run_id: String(timeout.run_id ?? timeout.runId ?? ''),
+    original_tx_id: String(timeout.original_tx_id ?? timeout.originalTxId ?? ''),
+    participant_id: String(timeout.participant_id ?? timeout.participantId ?? ''),
+    counterparty_id: String(timeout.counterparty_id ?? timeout.counterpartyId ?? ''),
+    participant: participantLabel(timeout.participant_id ?? timeout.participantId),
+    counterparty: participantLabel(timeout.counterparty_id ?? timeout.counterpartyId),
+    timeout_reason: timeout.timeout_reason ?? timeout.timeoutReason ?? null,
+    resolution_notes: timeout.resolution_notes ?? timeout.resolutionNotes ?? null,
+    resolved_at: toIso(timeout.resolved_at ?? timeout.resolvedAt),
+    created_at: toIso(timeout.created_at ?? timeout.createdAt),
+    updated_at: toIso(timeout.updated_at ?? timeout.updatedAt),
+  };
+}
 
 // ============================================================================
 // SETTLEMENT RUNS
@@ -27,7 +259,13 @@ export function useSettlementRuns(params?: {
     dateTo: params?.dateTo,
     limit: params?.limit,
   });
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return {
+    data: (data ?? []).map(mapRun),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 export function useSettlementRunDetails(runId: string | undefined) {
@@ -35,7 +273,35 @@ export function useSettlementRunDetails(runId: string | undefined) {
     api.settlement.settlementRuns.getSettlementRunDetails,
     runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? null, isLoading: data === undefined, error: null };
+  const mapped = data
+    ? {
+        ...data,
+        run: mapRun((data as any).run),
+        obligations: ((data as any).obligations ?? []).map((obligation: any) => ({
+          ...obligation,
+          id: docId(obligation),
+          run_id: String(obligation.run_id ?? obligation.runId ?? ''),
+          source_participant_id: String(
+            obligation.source_participant_id ?? obligation.sourceParticipantId ?? ''
+          ),
+          target_participant_id: String(
+            obligation.target_participant_id ?? obligation.targetParticipantId ?? ''
+          ),
+          source_tx_id: String(obligation.source_tx_id ?? obligation.sourceTxId ?? ''),
+          fee_rule_id: String(obligation.fee_rule_id ?? obligation.feeRuleId ?? ''),
+          created_at: toIso(obligation.created_at ?? obligation.createdAt),
+        })),
+        batches: ((data as any).batches ?? []).map(mapBatch),
+        net_instructions: (
+          (data as any).net_instructions ??
+          (data as any).netInstructions ??
+          []
+        ).map(mapNetInstruction),
+        exposures: ((data as any).exposures ?? []).map(mapExposure),
+        acknowledgements: ((data as any).acknowledgements ?? []).map(mapAcknowledgement),
+      }
+    : null;
+  return { data: mapped, isLoading: data === undefined, isError: false, error: null };
 }
 
 // ============================================================================
@@ -47,7 +313,8 @@ export function usePacs009BatchDetails(batchId: string | undefined) {
     api.settlement.settlementBatches.getBatch,
     batchId ? { batchId: batchId as Id<'settlementPacs009Batches'> } : 'skip'
   );
-  return { data: data ?? null, isLoading: data === undefined, error: null };
+  const mapped = data ? { batch: mapBatch(data), instructions: [] } : null;
+  return { data: mapped, isLoading: data === undefined, isError: false, error: null };
 }
 
 export function usePacs009Batches(runId: string | undefined) {
@@ -55,7 +322,13 @@ export function usePacs009Batches(runId: string | undefined) {
     api.settlement.settlementBatches.listBatchesByRun,
     runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return {
+    data: (data ?? []).map(mapBatch),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 // ============================================================================
@@ -67,11 +340,28 @@ export function useSettlementReports(params?: {
   reportType?: string;
   participantId?: string;
 }) {
-  const data = useConvexQuery(
+  const byRun = useConvexQuery(
     api.settlement.settlementReports.listReportsByRun,
     params?.runId ? { runId: params.runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  const recent = useConvexQuery(
+    api.settlement.settlementReports.listRecentReports,
+    params?.runId ? 'skip' : { reportType: params?.reportType, limit: 50 }
+  );
+  const data = params?.runId ? byRun : recent;
+  const mapped = (data ?? [])
+    .map(mapReport)
+    .filter((report: any) => !params?.reportType || report.report_type === params.reportType)
+    .filter(
+      (report: any) => !params?.participantId || report.participant_id === params.participantId
+    );
+  return {
+    data: mapped,
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 export function useReportContent(reportId: string | undefined) {
@@ -79,7 +369,12 @@ export function useReportContent(reportId: string | undefined) {
     api.settlement.settlementReports.getReport,
     reportId ? { reportId: reportId as Id<'settlementReports'> } : 'skip'
   );
-  return { data: data ?? null, isLoading: data === undefined, error: null };
+  return {
+    data: data ? mapReport(data) : null,
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+  };
 }
 
 // ============================================================================
@@ -91,18 +386,28 @@ export function useSettlementAdjustments(params?: { status?: string; runId?: str
     api.settlement.settlementAdjustments.listAdjustmentsByRun,
     params?.runId ? { runId: params.runId as Id<'settlementRuns'> } : 'skip'
   );
+  const byStatus = useConvexQuery(
+    api.settlement.settlementAdjustments.listAdjustmentsByStatus,
+    !params?.runId && params?.status ? { status: params.status } : 'skip'
+  );
   const pending = useConvexQuery(
     api.settlement.settlementAdjustments.listPendingAdjustments,
-    !params?.runId ? {} : 'skip'
+    !params?.runId && !params?.status ? {} : 'skip'
   );
-  const data = params?.runId ? byRun : pending;
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  const data = params?.runId ? byRun : params?.status ? byStatus : pending;
+  return {
+    data: (data ?? []).map(mapAdjustment),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 export function useUpdateAdjustmentStatus() {
   const { toast } = useToast();
-  const approveAction = useAction(api.settlement.settlementAdjustments.approveAdjustment as any);
-  const rejectAction = useAction(api.settlement.settlementAdjustments.rejectAdjustment as any);
+  const approveAction = useMutation(api.settlement.settlementAdjustments.approveAdjustment as any);
+  const rejectAction = useMutation(api.settlement.settlementAdjustments.rejectAdjustment as any);
 
   const mutate = useCallback(
     async ({
@@ -147,13 +452,20 @@ export function useUpdateAdjustmentStatus() {
 
 export function useTimeoutTransactions(status?: string) {
   const data = useConvexQuery(api.settlement.settlementTimeouts.listPendingTimeouts, {});
-  const filtered = status && data ? data.filter((t: any) => t.status === status) : data;
-  return { data: filtered ?? [], isLoading: data === undefined, error: null };
+  const mapped = (data ?? []).map(mapTimeout);
+  const filtered = status && mapped ? mapped.filter((t: any) => t.status === status) : mapped;
+  return {
+    data: filtered ?? [],
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 export function useResolveTimeout() {
   const { toast } = useToast();
-  const resolveAction = useAction(
+  const resolveAction = useMutation(
     api.settlement.settlementTimeouts.resolveTimeoutTransaction as any
   );
 
@@ -170,8 +482,8 @@ export function useResolveTimeout() {
       try {
         await resolveAction({
           timeoutId: timeoutId as Id<'settlementTimeoutTransactions'>,
-          resolution: status,
-          notes,
+          resolution: status === 'written_off' ? 'written_off' : 'reprocessed',
+          resolutionNotes: notes,
         });
         toast({
           title: 'Timeout Resolved',
@@ -209,7 +521,13 @@ export function useSettlementStatistics(dateFrom?: string, dateTo?: string) {
 
 export function useSettlementParticipants() {
   const data = useConvexQuery(api.settlement.settlementParticipants.listParticipants, {});
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return {
+    data: (data ?? []).map(mapParticipant),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 // ============================================================================
@@ -221,7 +539,13 @@ export function useAcknowledgements(runId: string | undefined) {
     api.settlement.settlementAcknowledgements.listAcknowledgementsByRun,
     runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return {
+    data: (data ?? []).map(mapAcknowledgement),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+    refetch: noopRefetch,
+  };
 }
 
 // ============================================================================
@@ -329,7 +653,7 @@ export function useSettlementObligations(runId: string | undefined) {
     api.settlement.settlementObligations.listObligationsByRun,
     runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return { data: data ?? [], isLoading: data === undefined, isError: false, error: null };
 }
 
 export function useNetInstructions(runId: string | undefined) {
@@ -337,7 +661,12 @@ export function useNetInstructions(runId: string | undefined) {
     api.settlement.settlementNetting.listNetInstructionsByRun,
     runId ? { runId: runId as Id<'settlementRuns'> } : 'skip'
   );
-  return { data: data ?? [], isLoading: data === undefined, error: null };
+  return {
+    data: (data ?? []).map(mapNetInstruction),
+    isLoading: data === undefined,
+    isError: false,
+    error: null,
+  };
 }
 
 export function useSettlementWindows() {

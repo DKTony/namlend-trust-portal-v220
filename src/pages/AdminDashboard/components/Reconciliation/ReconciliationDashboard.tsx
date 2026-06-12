@@ -18,6 +18,7 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
 import { useSettlementStatistics } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
@@ -34,6 +35,7 @@ import { TimeoutReportViewer } from './TimeoutReportViewer';
 import { AcknowledgementsViewer } from './AcknowledgementsViewer';
 import { IPSTransactionsViewer } from './IPSTransactionsViewer';
 import { IPSHealthWidget } from './IPSHealthWidget';
+import { IPPOperationsControlCenter } from './IPPOperationsControlCenter';
 
 export function ReconciliationDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -178,6 +180,7 @@ export function ReconciliationDashboard() {
               icon: stats?.runs?.failed ? XCircle : CheckCircle,
             },
             { value: 'ips', label: 'IPS Transactions', shortLabel: 'IPS', icon: FileSpreadsheet },
+            { value: 'ipp-ops', label: 'IPP Operations', shortLabel: 'Ops', icon: ShieldAlert },
           ]}
         />
 
@@ -219,6 +222,10 @@ export function ReconciliationDashboard() {
 
         <TabsContent value="ips" className="space-y-4">
           <IPSTransactionsViewer />
+        </TabsContent>
+
+        <TabsContent value="ipp-ops" className="space-y-4">
+          <IPPOperationsControlCenter />
         </TabsContent>
       </Tabs>
     </div>

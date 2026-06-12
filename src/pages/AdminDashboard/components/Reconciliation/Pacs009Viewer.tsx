@@ -66,7 +66,11 @@ function parsePacs009Xml(xmlContent: string): {
       msgId: grpHdr?.querySelector('MsgId')?.textContent || '',
       creDtTm: grpHdr?.querySelector('CreDtTm')?.textContent || '',
       nbOfTxs: parseInt(grpHdr?.querySelector('NbOfTxs')?.textContent || '0'),
-      ctrlSum: parseFloat(grpHdr?.querySelector('CtrlSum')?.textContent || '0'),
+      ctrlSum: parseFloat(
+        grpHdr?.querySelector('CtrlSum')?.textContent ||
+          grpHdr?.querySelector('TtlIntrBkSttlmAmt')?.textContent ||
+          '0'
+      ),
       sttlmDt:
         grpHdr?.querySelector('SttlmInf SttlmDt')?.textContent ||
         grpHdr?.querySelector('IntrBkSttlmDt')?.textContent ||
@@ -77,8 +81,14 @@ function parsePacs009Xml(xmlContent: string): {
       endToEndId: txn.querySelector('PmtId EndToEndId')?.textContent || '',
       amount: parseFloat(txn.querySelector('IntrBkSttlmAmt')?.textContent || '0'),
       currency: txn.querySelector('IntrBkSttlmAmt')?.getAttribute('Ccy') || 'NAD',
-      dbtrBic: txn.querySelector('DbtrAgt FinInstnId BICFI')?.textContent || '',
-      cdtrBic: txn.querySelector('CdtrAgt FinInstnId BICFI')?.textContent || '',
+      dbtrBic:
+        txn.querySelector('DbtrAgt FinInstnId BICFI')?.textContent ||
+        txn.querySelector('Dbtr FinInstnId BIC')?.textContent ||
+        '',
+      cdtrBic:
+        txn.querySelector('CdtrAgt FinInstnId BICFI')?.textContent ||
+        txn.querySelector('Cdtr FinInstnId BIC')?.textContent ||
+        '',
     }));
     return { groupHeader, transactions };
   } catch {

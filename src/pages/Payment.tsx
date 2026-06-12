@@ -44,6 +44,7 @@ import { cn } from '@/lib/utils';
 interface Loan {
   id: string;
   amount: number;
+  outstanding_balance: number;
   monthly_payment: number;
   status: string;
   created_at: string;
@@ -59,16 +60,23 @@ export default function Payment() {
   const rawLoans = useQuery(api.loans.getMyLoans, {});
   const recordPaymentMutation = useMutation(api.payments.recordPayment);
 
-  // Filter to active/disbursed loans and map to Loan shape
+  // Filter to loans that can be repaid via the server-side IPP repayment state machine.
   const activeLoans: Loan[] = (rawLoans ?? [])
-    .filter((l) => ['active', 'disbursed'].includes(l.status))
-    .map((l) => ({
-      id: l._id,
-      amount: l.principal ?? l.amount ?? 0,
-      monthly_payment: l.monthlyPayment ?? 0,
-      status: l.status,
-      created_at: l.createdAt ? new Date(l.createdAt).toISOString() : '',
-    }));
+    .filter((l) => ['active', 'disbursed', 'funded'].includes(l.status))
+    .map((l) => {
+      const principal = l.principal ?? l.amount ?? 0;
+      const outstandingBalance = l.outstandingBalance ?? principal;
+      const scheduledPayment =
+        l.monthlyPayment && l.monthlyPayment > 0 ? l.monthlyPayment : outstandingBalance;
+      return {
+        id: l._id,
+        amount: principal,
+        outstanding_balance: outstandingBalance,
+        monthly_payment: scheduledPayment,
+        status: l.status,
+        created_at: l.createdAt ? new Date(l.createdAt).toISOString() : '',
+      };
+    });
 
   const [selectedLoan, setSelectedLoan] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('ips');
@@ -145,12 +153,16 @@ export default function Payment() {
     try {
       const rpcPaymentMethod = paymentMethodToRpc[paymentMethod] || paymentMethod;
 
-      // Use Convex mutation for payment recording with audit trail + TigerBeetle outbox
+      // Use Convex mutation for payment recording with audit trail + TigerBeetle outbox.
+      // The split must sum to `amount` (server-validated): the entered amount goes to
+      // principal, the processing fee is carried explicitly on top.
+      const principalAmount = parseFloat(paymentAmount);
       const paymentId = await recordPaymentMutation({
         loanId: selectedLoan as Id<'loans'>,
-        amount: parseFloat(paymentAmount),
-        method: rpcPaymentMethod,
+        amount: principalAmount + processingFee,
+        principalPaid: principalAmount,
         feesPaid: processingFee,
+        method: rpcPaymentMethod,
       });
 
       toast({
@@ -426,6 +438,7 @@ export default function Payment() {
                   disabled={loading || !paymentMethod || !paymentAmount || !selectedLoan}
                   className="w-full"
                   size="lg"
+                  data-testid="payment-submit-button"
                 >
                   {loading ? t('processing') : t('payButton', { amount: formatNAD(totalAmount) })}
                 </Button>
@@ -439,7 +452,7 @@ export default function Payment() {
               isOpen={showIPSModal}
               onClose={() => setShowIPSModal(false)}
               loanId={selectedLoan}
-              outstandingBalance={selectedLoanDetails.amount}
+              outstandingBalance={selectedLoanDetails.outstanding_balance}
               monthlyPayment={selectedLoanDetails.monthly_payment}
               onSuccess={() => {
                 setShowIPSModal(false);

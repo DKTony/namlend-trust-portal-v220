@@ -27,6 +27,10 @@ export const processLoanApplication = internalAction({
   handler: async (ctx, args) => {
     console.log(`[processLoanApplication] Starting for loan ${args.loanId}`);
 
+    // Coarse stage tracker so a failure record points at where processing broke.
+    let stage: 'scoring' | 'recordScore' | 'approvalRequest' | 'notification' | 'unknown' =
+      'scoring';
+
     try {
       // 1. Fetch profile for credit scoring inputs
       const profile = await ctx.runQuery(internal.users.getProfileByUserId, {
@@ -34,7 +38,13 @@ export const processLoanApplication = internalAction({
       });
 
       if (!profile) {
-        console.error(`[processLoanApplication] Profile not found for user ${args.userId}`);
+        // Durable failure instead of a silent return — a missing profile must be visible.
+        await ctx.runMutation(internal.loanProcessing.recordProcessingFailure, {
+          loanId: args.loanId,
+          stage: 'scoring',
+          errorMessage: `Profile not found for user ${args.userId}`,
+          errorCode: 'PROFILE_NOT_FOUND',
+        });
         return;
       }
 
@@ -68,6 +78,7 @@ export const processLoanApplication = internalAction({
       }
 
       // 4. Record credit score in loan record
+      stage = 'recordScore';
       await ctx.runMutation(internal.loans.recordCreditScore, {
         loanId: args.loanId,
         creditScore,
@@ -77,6 +88,7 @@ export const processLoanApplication = internalAction({
       });
 
       // 5. Create approval request for back-office
+      stage = 'approvalRequest';
       await ctx.runMutation(internal.approvalWorkflow.createSystemApprovalRequest, {
         entityType: 'loan',
         entityId: args.loanId,
@@ -93,7 +105,13 @@ export const processLoanApplication = internalAction({
         },
       });
 
+      // Core processing succeeded — clear any prior failure record for this loan.
+      await ctx.runMutation(internal.loanProcessing.resolveProcessingFailure, {
+        loanId: args.loanId,
+      });
+
       // 6. Send notification to applicant
+      stage = 'notification';
       if (profile.phone) {
         await ctx.runAction(internal.actions.sendNotification.sendNotification, {
           userId: args.userId,
@@ -112,8 +130,28 @@ export const processLoanApplication = internalAction({
         });
       }
     } catch (error) {
-      console.error('[processLoanApplication] Error:', error);
-      // Non-fatal — loan was already created and user notified via RPC response
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[processLoanApplication] Error at stage '${stage}':`, error);
+
+      // Durable, observable failure — never swallow.
+      const result = await ctx.runMutation(internal.loanProcessing.recordProcessingFailure, {
+        loanId: args.loanId,
+        stage,
+        errorMessage,
+      });
+
+      // Auto-retry core processing (scoring/recordScore/approvalRequest) with
+      // exponential backoff until dead-lettered. Notification failures are not
+      // retried here (they have their own delivery queue) and re-running the full
+      // action could duplicate side effects.
+      if (stage !== 'notification' && !result.deadLettered) {
+        const delayMs = 30_000 * Math.pow(4, result.attemptCount - 1);
+        await ctx.scheduler.runAfter(
+          delayMs,
+          internal.actions.processLoanApplication.processLoanApplication,
+          args
+        );
+      }
     }
   },
 });

@@ -56,6 +56,16 @@ export const seedTestUsers = internalAction({
       aliasAddr: 'client1@namlend',
       idValue: '1002003001',
       accountHolderName: 'Client One',
+      isDefault: false,
+    });
+    await ctx.runMutation(internal.seedMutations.seedConfirmedIpsAlias, {
+      email: 'client1@test.namlend.com',
+      aliasAddr: 'client1@fnb',
+      idValue: '1002003001',
+      linkedBankBic: 'FIRNNANX',
+      linkedAccountRef: 'E2E-CLIENT1-FNB',
+      accountHolderName: 'Client One',
+      isDefault: true,
     });
     await ctx.runMutation(internal.seedMutations.seedConfirmedIpsAlias, {
       email: 'client2@test.namlend.com',
@@ -64,6 +74,10 @@ export const seedTestUsers = internalAction({
       accountHolderName: 'Client Two',
     });
     console.log('[seed] IPP aliases seeded successfully');
+
+    console.log('[seed] Seeding settlement participants...');
+    await ctx.runMutation(internal.seedMutations.seedSettlementParticipants, {});
+    console.log('[seed] Settlement participants seeded successfully');
 
     console.log('[seed] All test users seeded successfully');
   },

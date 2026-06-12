@@ -84,3 +84,11 @@ export const getStringRuleQuery = internalQuery({
     return getStringRule(ctx, ruleCode, fallback);
   },
 });
+
+/** Internal query wrapper for getBooleanRule (used by scheduled actions for feature flags) */
+export const getBooleanRuleQuery = internalQuery({
+  args: { ruleCode: v.string(), fallback: v.boolean() },
+  handler: async (ctx, { ruleCode, fallback }) => {
+    return getBooleanRule(ctx, ruleCode, fallback);
+  },
+});

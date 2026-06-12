@@ -215,7 +215,7 @@ export function IPSDisbursementForm({
             <div>
               <p className="font-medium">Processing Disbursement</p>
               <p className="text-sm text-muted-foreground">
-                Sending {formatNAD(amount)} to {payeeVpa}...
+                Submitting an IPS disbursement request for {formatNAD(amount)} to {payeeVpa}...
               </p>
             </div>
           </div>
@@ -229,10 +229,10 @@ export function IPSDisbursementForm({
                 <>
                   <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
                   <p className="text-xl font-semibold text-green-600 mt-2">
-                    Disbursement Successful!
+                    Disbursement Initiated
                   </p>
                   <p className="text-muted-foreground mt-1">
-                    {formatNAD(amount)} has been sent to {payeeVpa}
+                    The IPS request for {formatNAD(amount)} to {payeeVpa} was accepted.
                   </p>
                 </>
               ) : (

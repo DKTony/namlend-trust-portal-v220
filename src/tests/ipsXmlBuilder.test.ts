@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildReqChkTxn,
+  buildReqAuthDetail,
   buildReqGetAdd,
   buildReqListAccPvd,
   buildReqListAccount,
+  buildReqListKeys,
+  buildReqListPsp,
   buildReqPay,
   buildReqRegMapper,
   buildReqRegMob,
+  buildReqRev,
   buildReqSetCre,
   buildReqValAdd,
   buildStandardHead,
+  buildTxnConfirmation,
   parseIpsXml,
 } from '../../convex/lib/ipsXmlBuilder';
 
@@ -96,6 +101,44 @@ describe('ipsXmlBuilder', () => {
           idValue: '0811234567',
         }),
         expected: ['<upi:ReqRegMapper', '<Consent', '<RegIdDetails>'],
+      },
+      {
+        xml: buildReqRev(head, {
+          orgTxnId: 'ORG-TXN-1',
+          orgMsgId: 'ORG-MSG-1',
+          revType: 'FULL',
+          reasonCode: 'RRC',
+          reasonDescription: 'Refund required',
+        }),
+        expected: ['<upi:ReqRev', 'orgTxnId="ORG-TXN-1"', 'subType="FULL"'],
+      },
+      {
+        xml: buildReqAuthDetail(head, {
+          txnId: 'TXN-AUTH-1',
+          orgApi: 'ReqPay',
+        }),
+        expected: ['<upi:ReqAuthDetail', 'id="TXN-AUTH-1"', 'type="ReqPay"'],
+      },
+      {
+        xml: buildTxnConfirmation(head, {
+          orgTxnId: 'ORG-TXN-1',
+          orgMsgId: 'ORG-MSG-1',
+          status: 'CREDITED',
+          beneficiaryName: 'NamLend Trust',
+        }),
+        expected: ['<upi:TxnConfirmation', 'orgTxnId="ORG-TXN-1"', 'orgStatus="SUCCESS"'],
+      },
+      {
+        xml: buildReqListPsp(head, {
+          pspType: 'ALL',
+        }),
+        expected: ['<upi:ReqListPsp', 'type="ListPsp"', 'custRef="ALL"'],
+      },
+      {
+        xml: buildReqListKeys(head, {
+          pspCode: 'FIRNNANX',
+        }),
+        expected: ['<upi:ReqListKeys', 'type="ListKeys"', 'custRef="FIRNNANX"'],
       },
     ];
 

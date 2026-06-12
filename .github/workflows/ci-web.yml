@@ -45,7 +45,7 @@ jobs:
         run: npm run lint
       
       - name: Run TypeScript compiler
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
   unit-tests:
     name: Unit Tests
@@ -187,10 +187,10 @@ jobs:
       - name: Check no new Supabase service imports
         run: |
           echo "Verifying no new legacy service imports..."
-          LEGACY_COUNT=$(grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v brandingService | grep -v creditScoring | grep -v scoringRules | grep -v api-client | wc -l)
+          LEGACY_COUNT=$(grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v creditScoring | grep -v scoringRules | grep -v api-client | wc -l)
           if [ "$LEGACY_COUNT" -gt 0 ]; then
             echo "❌ Found $LEGACY_COUNT legacy service imports. Migrate to Convex."
-            grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v brandingService | grep -v creditScoring | grep -v scoringRules | grep -v api-client
+            grep -rn "from '@/services/" src/ --include="*.ts" --include="*.tsx" | grep -v creditScoring | grep -v scoringRules | grep -v api-client
             exit 1
           fi
           echo "✅ No legacy service imports found"

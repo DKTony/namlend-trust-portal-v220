@@ -1,11 +1,12 @@
 # NamLend Trust - System Architecture
 
-**Last Updated**: 2026-03-29
+**Last Updated**: 2026-04-28
 **Aligned With**: Financial Ontology Engine (v5.2.1)
-**Status**: Current ✅
-**Previous Backend**: Supabase (PostgreSQL + RLS + Edge Functions) — retained for reference in `supabase/` (INACTIVE).
+**Status**: Current with documented legacy islands
+**Primary Backend**: Convex (database, auth, server functions, HTTP router, scheduled jobs)
+**Legacy Boundary**: Supabase is retained for reference and still used by selected frontend utility paths.
 
-> Backend fully migrated to Convex (Feb 2026). Financial Ontology Engine implemented (Mar 2026). Frontend service migration complete. IPS adapter and TigerBeetle posting are mock/simulated.
+> Backend financial workflows are Convex-first. Supabase is not the active lending/payment backend, but it is not fully inactive: branding configuration/assets and role-assignment helper paths still call Supabase RPC, Storage, or Edge Function APIs. IPS transport and TigerBeetle posting remain production-hardening items.
 
 ---
 
@@ -29,33 +30,33 @@
 
 ## System Overview
 
-NamLend Trust is a React SPA backed by **Convex** (reactive document-relational database with built-in server functions). The system integrates with multiple payment channels and exposes admin workflows for approvals, disbursements, collections, reconciliation, IPS, and settlement.
+NamLend Trust is a React SPA backed primarily by **Convex** (reactive document-relational database with built-in server functions). The system integrates with multiple payment channels and exposes admin workflows for approvals, disbursements, collections, reconciliation, IPS, settlement, ontology administration, and operational reporting.
 
-The backend was migrated from Supabase to Convex in February 2026. The frontend React SPA remains the same; only the data layer and server logic changed.
+The backend migrated from Supabase to Convex in February 2026. The current implementation is Convex-first, but a small set of legacy Supabase utilities remains in the web layer and must be treated as active migration debt, not historical-only code.
 
 ---
 
 ## Migration Summary: Supabase → Convex
 
-| Aspect                | Before (Supabase)                          | After (Convex)                                           |
-| --------------------- | ------------------------------------------ | -------------------------------------------------------- |
-| **Database**          | PostgreSQL 15+ (relational, SQL)           | Document-relational (TypeScript, no SQL)                 |
-| **Schema**            | 33 SQL migrations                          | `convex/schema.ts` (67+ tables incl. 12 ontology tables) |
-| **Access control**    | 40+ RLS policies (SQL)                     | 5 guard functions in `convex/lib/auth.ts`                |
-| **Server logic**      | 35+ RPCs + 18 Edge Functions (Deno)        | Queries, Mutations, Actions (TypeScript)                 |
-| **Auth**              | GoTrue (JWT-based)                         | `@convex-dev/auth` (Password provider, session-based)    |
-| **Transactions**      | Explicit `BEGIN/COMMIT`                    | Every mutation is automatically atomic (serializable)    |
-| **Reactivity**        | Postgres LISTEN/NOTIFY + Realtime (opt-in) | Native — every `useQuery()` auto-subscribes              |
-| **Scheduling**        | pg_cron + Edge Function timers             | Built-in `cronJobs()` + `ctx.scheduler`                  |
-| **Type safety**       | Generated from SQL                         | End-to-end — schema → functions → client                 |
-| **Client connection** | `supabase.from()` / `supabase.rpc()`       | `useQuery(api.module.fn)` / `useMutation(api.module.fn)` |
+| Aspect                | Before (Supabase)                          | After (Convex)                                                                             |
+| --------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| **Database**          | PostgreSQL 15+ (relational, SQL)           | Document-relational (TypeScript, no SQL)                                                   |
+| **Schema**            | 33 SQL migrations                          | `convex/schema.ts` (66 app tables + Convex Auth tables)                                    |
+| **Access control**    | 40+ RLS policies (SQL)                     | 5 guard functions in `convex/lib/auth.ts`                                                  |
+| **Server logic**      | 35+ RPCs + 18 Edge Functions (Deno)        | Queries, Mutations, Actions (TypeScript)                                                   |
+| **Auth**              | GoTrue (JWT-based)                         | `@convex-dev/auth` (Password provider, session-based)                                      |
+| **Transactions**      | Explicit `BEGIN/COMMIT`                    | Every mutation is automatically atomic (serializable)                                      |
+| **Reactivity**        | Postgres LISTEN/NOTIFY + Realtime (opt-in) | Native — every `useQuery()` auto-subscribes                                                |
+| **Scheduling**        | pg_cron + Edge Function timers             | Built-in `cronJobs()` + `ctx.scheduler`                                                    |
+| **Type safety**       | Generated from SQL                         | End-to-end — schema → functions → client                                                   |
+| **Client connection** | `supabase.from()` / `supabase.rpc()`       | `useQuery(api.module.fn)` / `useMutation(api.module.fn)` with documented legacy exceptions |
 
 ### Key Architectural Wins
 
 1. **Automatic Reactivity** — Every `useQuery()` auto-updates when data changes. No manual subscriptions.
 2. **ACID Transactions** — Every mutation is automatically serializable. No partial state possible.
 3. **End-to-End Types** — Schema generates TypeScript types consumed directly by the frontend.
-4. **Simplified Security** — 40+ RLS policies compressed into 5 auditable guard functions.
+4. **Simplified Security Model** — RLS was replaced by explicit guard functions in `convex/lib/auth.ts`; every public Convex query/mutation must enforce the correct guard.
 5. **No Connection Management** — No JWT refresh, no session listeners, no client configuration.
 
 ---
@@ -91,6 +92,7 @@ flowchart TB
         SMS["Africa's Talking<br/>(SMS)"]
         WhatsApp["Meta Cloud API<br/>(WhatsApp)"]
         PayProviders["Payment Providers<br/>(PayToday, MTC, TN)"]
+        SupabaseLegacy["Supabase Legacy<br/>(branding + role helper paths)"]
     end
 
     subgraph Ledger["Financial Ledger"]
@@ -110,6 +112,7 @@ flowchart TB
     Actions -->|Mock| IPS
     Actions --> SMS
     Actions --> WhatsApp
+    WebApp -.->|legacy utility calls| SupabaseLegacy
     PayProviders -->|Webhooks| HttpRouter
     HttpRouter --> Actions
 
@@ -334,7 +337,18 @@ SMS / WhatsApp
           |
           v
     communicationLogs + notificationQueue
+
+Supabase legacy islands
+          |
+          v
+    src/services/creditScoring.ts deprecated adapter paths
+    src/utils/rpc.ts and src/utils/testUtils.ts
+          |
+          v
+    Supabase RPC / legacy test APIs
 ```
+
+The Supabase paths above are active technical debt. They should not be used as patterns for new work, and they should be migrated or removed before Supabase credentials are retired.
 
 ---
 
@@ -379,17 +393,19 @@ await createLoan({ principal: 50000, interestRate: 18, termMonths: 24 });
 
 All authenticated client pages use `DashboardLayout` (`src/components/Layout/DashboardLayout.tsx`) which provides:
 
-- `ThemedSidebar` — drawer-style sidebar (`w-80`, `z-[70]`) with role-based menu items and 3D tilt effect
+- `AdaptiveShell` — viewport-aware shell that switches compact drawer, medium rail, and desktop sidebar modes
+- `ThemedSidebar` — client navigation with drawer/rail/sidebar display modes and role-based menu items
 - Sticky header with page title and notification center
 - Scrollable main content area (`max-w-7xl`)
+- Compact client bottom navigation for the core flows: overview, loans, applications, payments, and profile where available
 
 Pages on their own routes (`/budget`, `/kyc`, `/payment`, `/loan-application`, `/loans/:id`) each implement a `handleTabChange` function that routes sidebar tab clicks: internal tabs stay local, everything else navigates to `/dashboard` with `location.state.tab` for cross-page tab switching.
 
 The public `Header` component (`src/components/Header.tsx`) is used ONLY on unauthenticated pages (landing page `Index.tsx`). **Do not use `Header` on any authenticated page.**
 
-Admin uses a routed layout at `/admin/*` with grouped sidebar navigation (direct links, not tab state).
+Admin uses a routed layout at `/admin/*` with grouped sidebar navigation (direct links, not tab state). `AdminLayout` also uses `AdaptiveShell`: compact screens get a grouped drawer, medium screens get a rail, and desktop/wide screens get a permanent grouped sidebar.
 
-See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for component styling. See [UI_DESIGN.md](./UI_DESIGN.md) for theme-specific sidebar styling.
+See [ADAPTIVE_UI.md](./ADAPTIVE_UI.md) for the adaptive shell contract and viewport matrix. See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for component styling. See [UI_DESIGN.md](./UI_DESIGN.md) for theme-specific sidebar styling.
 
 ---
 
@@ -442,7 +458,7 @@ All server logic lives in the `convex/` directory as TypeScript functions:
 
 ```
 convex/
-├── schema.ts                 # 55+ table definitions (SOURCE OF TRUTH)
+├── schema.ts                 # 66 application tables + Convex Auth tables (SOURCE OF TRUTH)
 ├── auth.ts                   # Auth config + afterUserCreatedOrUpdated callback
 ├── auth.config.ts            # Convex Auth provider configuration
 ├── http.ts                   # HTTP router (webhooks, auth routes)
@@ -534,31 +550,31 @@ All admin queries use `assertStaff(ctx)` or `assertAdmin(ctx)` guards in the Con
 - Error monitoring is client-side via `errorMonitoring.ts` and `SystemHealthDashboard`.
 - Debug tooling is gated to prevent PII exposure in production.
 - Every Convex query/mutation validates auth via guard functions before any DB access.
-- Audit logs are written via `ctx.scheduler.runAfter()` to avoid blocking mutations.
-- TigerBeetle outbox worker includes exponential backoff on failures (max 10 retries).
+- Audit logs are written via `ctx.scheduler.runAfter()` to avoid blocking mutations. This improves availability, but audit persistence is asynchronous and must be monitored as a separate reliability surface.
+- TigerBeetle outbox worker includes exponential backoff on failures, but the current worker posts to a hardcoded local shadow endpoint rather than a production TigerBeetle cluster.
 
 ---
 
 ## Known Architectural Gaps
 
-### Critical (Pre-Production Blockers) — ALL RESOLVED
+### High Risk
 
-1. ~~**Auth callback ↔ schema mismatch**~~ — **RESOLVED** (Feb 2026): Auth callback now inserts only schema-valid fields. See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#resolved-schema-issues-feb-2026-remediation).
-2. ~~**`promiseToPay.status` mismatch**~~ — **RESOLVED** (Feb 2026): Code changed from `"fulfilled"` to `"kept"`.
-3. ~~**Missing `paymentSchedules.by_status` index**~~ — **RESOLVED** (Feb 2026): Index added to `schema.ts`.
+1. **Authorization guard coverage requires audit** — most Convex APIs call guards, but several read/write functions authenticate without clearly enforcing owner-or-staff authorization on returned or linked records. Current examples to review: `approvalWorkflow.getApprovalRequest`, `ipsTransactions.getTransaction`, `ipsTransactions.getTransactionByMsgId`, `ipsAliasDirectory.getAliasByAddr`, `ipsAlerts.createAlert`, and `mandates.createMandate`.
+2. **Supabase legacy paths remain in utilities/tests** — runtime branding and role assignment are Convex-backed, but `creditScoring.ts`, `rpc.ts`, and legacy test utilities still retain Supabase adapters.
+3. **TigerBeetle is shadow/simulated** — financial mutations enqueue outbox records, but posting is not a production ledger authority.
+4. **IPS production readiness is incomplete** — XML protocol support exists, but production use depends on `IPS_PROTOCOL_MODE`, mTLS/certificate configuration, BoN connectivity, and operational runbooks.
 
 ### Medium Risk
 
-4. ~~**Internal mutations exposed publicly**~~ — **RESOLVED** (Feb 2026): `markFunded` and `updateLoanBalance` in `loans.ts` converted from `mutation` to `internalMutation`. Analytics queries capped with `.take(10000)` safety limits.
-5. **IPS adapter supports mock and XML modes** — XML protocol (Phases 1-3) implemented; toggle via `IPS_PROTOCOL_MODE` business rule. Production mTLS/HSM not yet wired (Phase 4).
-6. **TigerBeetle outbox worker simulates posting** — No live TB cluster integration.
-7. **`/admin/*` route guard** — loan_officer AND admin access allowed via `requireLoanOfficer` guard.
+5. **Audit logging is asynchronous** — financial mutations can commit before audit writes complete. This is intentional for availability, but it requires monitoring of scheduled audit failures and event-journal coverage.
+6. **Data retention is not consistently reflected in tests** — several E2E/API utilities still hard-delete financial records for cleanup, conflicting with the 7-year retention rule.
+7. **Documentation and agent instructions drift can recur** — root and scoped `AGENTS.md` files previously described Supabase/RLS/RPC as primary architecture. This documentation pass realigns them, but they must be kept aligned with this document.
+8. **Quality gate gaps** — `npm run typecheck` is documented but missing from `package.json`; lint passes with warnings; docs lint fails broadly in imported IPP/reference documents.
 
 ### Low Risk
 
-8. ~~**Legacy Supabase services**~~ — **RESOLVED (2026-03-04)**: `src/services/` migration complete. 4 files remain with active consumers: `api-client.ts` (Convex-compatible http client), `brandingService.ts`, `creditScoring.ts` (client-side scoring), `scoringRules.ts`. These are not Supabase services — they are active utilities. See [SERVICES.md](./SERVICES.md) for details.
-9. **Convex has no built-in file storage** — KYC document uploads need a storage solution (Convex file storage or external).
-10. **No CI/CD pipeline** — GitHub Actions not configured for Convex deploy.
+9. **Bundle and styling warnings** — production build passes, but Tailwind reports ambiguous arbitrary easing utilities and the generated bundle has large shared UI/chart chunks.
+10. **Historical docs remain mixed with active docs** — `docs_old/` and some root docs are useful references, but active docs must clearly label legacy Supabase content.
 
 ---
 
@@ -617,19 +633,21 @@ convex/scheduled/    # 3 new cron workers (mandateExecutor, snapshotGenerator, r
 
 ## Legacy Supabase Reference
 
-The previous Supabase backend is retained in the repository for reference:
+The previous Supabase backend is retained in the repository for reference, and a few web utility paths still call it:
 
 ```
 supabase/
-├── migrations/        # 33 PostgreSQL migrations (INACTIVE)
-├── functions/         # 18 Deno Edge Functions (INACTIVE)
-└── config.toml        # Local Supabase config (INACTIVE)
+├── migrations/        # PostgreSQL migrations (legacy/reference)
+├── functions/         # Deno Edge Functions (legacy/reference; some helper names still referenced)
+└── config.toml        # Local Supabase config (legacy/reference)
 
-src/services/          # 4 active utility files (api-client, brandingService, creditScoring, scoringRules)
-src/integrations/supabase/  # Supabase client + types (LEGACY — retained for reference)
+src/services/creditScoring.ts         # mixed pure scoring + deprecated Supabase adapter paths
+src/utils/rpc.ts                      # legacy Supabase RPC wrapper
+src/utils/testUtils.ts                # legacy Supabase test helpers
+src/integrations/supabase/            # legacy client + generated types used by those paths/tests
 ```
 
-These files document the previous architecture and can be used as reference during frontend service migration. They should NOT be used for new development.
+Do not use Supabase patterns for new application work. New server-side behavior belongs in `convex/`, and existing Supabase utility paths should be retired or explicitly documented until migration is complete.
 
 ---
 
@@ -639,7 +657,7 @@ These files document the previous architecture and can be used as reference duri
 - [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md) - Financial Ontology Engine implementation report
 - [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md) - Modularization plan & domain event bus roadmap
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database tables and relationships (Convex)
-- [SERVICES.md](./SERVICES.md) - Service layer implementation details (legacy Supabase)
+- [SERVICES.md](./SERVICES.md) - Service layer and legacy island inventory
 - [FLOWS.md](./FLOWS.md) - User flow documentation
 - [IPP_INTEGRATION.md](./IPP_INTEGRATION.md) - IPS/IPP integration details
 - [TIGERBEETLE_IMPLEMENTATION.md](./TIGERBEETLE_IMPLEMENTATION.md) - Financial ledger setup

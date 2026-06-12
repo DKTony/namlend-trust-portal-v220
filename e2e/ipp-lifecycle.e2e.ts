@@ -7,6 +7,7 @@
  *   Phase 3: Admin disburses funds via IPS rail
  *   Phase 4: Client makes full payment via IPS
  *   Phase 5: Admin verifies payment completion
+ *   Phase 6: Admin verifies settlement/reconciliation evidence
  *
  * This is a serial test — each phase depends on the previous one.
  */
@@ -18,8 +19,8 @@ import { ensureAdminReady, openAdminTab } from './helpers/admin';
 
 // Unique prefix to identify test artifacts for cleanup
 const TEST_RUN_ID = `IPP-E2E-${Date.now()}`;
-const LOAN_AMOUNT = '5000';
-const VPA_ADDRESS = 'client1@namlend';
+const LOAN_AMOUNT = '1350';
+const VPA_ADDRESS = 'client1@fnb';
 
 // Shared state across serial tests
 let createdLoanId: string | null = null;
@@ -324,7 +325,26 @@ test.describe('IPP Full Lifecycle', () => {
     // Wait for processing and for the parent modal to close on success
     await expect(page.getByText(/Processing Disbursement/i)).toBeVisible({ timeout: 5_000 });
     await expect(modal).toBeHidden({ timeout: 30_000 });
-    console.log('Phase 3: IPS disbursement initiated and modal closed');
+
+    // The critical path requires actual funding, not only request initiation.
+    const allLoansTab = page.getByRole('tab', { name: /All Loans/i });
+    if (await allLoansTab.isVisible({ timeout: 5_000 }).catch(() => false)) {
+      await allLoansTab.click();
+    }
+
+    if (createdLoanId) {
+      const loanCard = page.locator(`[data-testid="loan-card-${createdLoanId}"]`);
+      await expect(loanCard).toBeVisible({ timeout: 15_000 });
+      await expect
+        .poll(async () => (await loanCard.textContent()) ?? '', {
+          timeout: 30_000,
+          intervals: [1000, 2000, 3000],
+          message: 'Loan should move from approved to funded after IPS completion',
+        })
+        .toMatch(/funded|active/i);
+    }
+
+    console.log('Phase 3: IPS disbursement completed and loan is funded');
   });
 
   // =========================================================================
@@ -353,13 +373,10 @@ test.describe('IPP Full Lifecycle', () => {
     // Check for "no active loans" state
     const noLoans = page.getByText(/no active loans|you don't have any active/i).first();
     const hasNoLoans = await noLoans.isVisible({ timeout: 5_000 }).catch(() => false);
-    if (hasNoLoans) {
-      test.skip(
-        true,
-        'No active/disbursed loans found for client. Disbursement may not have completed.'
-      );
-      return;
-    }
+    expect(
+      hasNoLoans,
+      'Client must have an active/funded loan after IPP disbursement; repayment cannot be skipped'
+    ).toBe(false);
 
     // Payment page should show loan selector and payment form.
     // IPS is the default method, but we still assert the tab renders.
@@ -382,7 +399,7 @@ test.describe('IPP Full Lifecycle', () => {
     }
 
     // Click the Pay button to open IPS modal
-    const payButton = page.getByRole('button', { name: /Pay|Make Payment/i }).first();
+    const payButton = page.getByTestId('payment-submit-button');
     await expect(payButton).toBeVisible({ timeout: 10_000 });
     await expect(payButton).toBeEnabled();
     await payButton.click();
@@ -503,13 +520,22 @@ test.describe('IPP Full Lifecycle', () => {
       if (createdLoanId) {
         const loanCard = page.locator(`[data-testid="loan-card-${createdLoanId}"]`);
         const cardVisible = await loanCard.isVisible({ timeout: 10_000 }).catch(() => false);
-        if (cardVisible) {
-          // Check the status — should be disbursed or settled depending on the payment
-          const statusText = await loanCard.textContent();
-          console.log(
-            `Phase 5: Loan ${createdLoanId} card text includes: ${statusText?.substring(0, 200)}`
-          );
-        }
+        expect(cardVisible, `Loan card ${createdLoanId} should be visible in All Loans`).toBe(true);
+
+        await expect
+          .poll(async () => (await loanCard.textContent()) ?? '', {
+            timeout: 30_000,
+            intervals: [1000, 2000, 3000],
+            message: 'Loan should be paid off after the full IPP repayment completes',
+          })
+          .toMatch(/paid[_\s-]?off/i);
+
+        const statusText = await loanCard.textContent();
+        expect(statusText ?? '').not.toMatch(/\bapproved\b/i);
+        expect(statusText ?? '').not.toMatch(/\bdisburse\b/i);
+        console.log(
+          `Phase 5: Loan ${createdLoanId} card text includes: ${statusText?.substring(0, 200)}`
+        );
       }
     }
 
@@ -526,5 +552,48 @@ test.describe('IPP Full Lifecycle', () => {
     await page.screenshot({ path: 'test-results/ipp-lifecycle-phase5-admin-verification.png' });
 
     console.log('Phase 5: Admin verification complete. Full IPP lifecycle test passed.');
+  });
+
+  // =========================================================================
+  // Phase 6: Admin verifies settlement/reconciliation evidence
+  // =========================================================================
+  test('Phase 6: Admin verifies IPP settlement and raw-data reports', async ({ page }) => {
+    const role = await login(page, true);
+    if (role !== 'admin') {
+      test.skip(true, 'Admin credentials not available');
+      return;
+    }
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await ensureAdminReady(page);
+
+    await openAdminTab(page, 'reconciliation');
+    await page.waitForTimeout(2000);
+
+    await page.getByRole('button', { name: /New Settlement Run/i }).click();
+    await expect(page.getByText(/Create New Settlement Run/i)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('button', { name: /Create & Process/i }).click();
+
+    await expect(page.getByText(/Create New Settlement Run/i)).toBeHidden({ timeout: 60_000 });
+    await expect(page.getByText(/Settled/i).first()).toBeVisible({ timeout: 60_000 });
+
+    await page.getByRole('tab', { name: /Raw Data/i }).click();
+    await expect(page.getByRole('heading', { name: /Raw Data Reports/i })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByText(/raw_data\.json/i).first()).toBeVisible({ timeout: 30_000 });
+
+    const rawReportRow = page.locator('tr', { hasText: /raw_data\.json/i }).first();
+    await rawReportRow.getByRole('button').first().click();
+    await expect(page.getByRole('dialog', { name: /Raw Data Report/i })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByPlaceholder(/Search by transaction ID or participant/i).fill(VPA_ADDRESS);
+    await expect(page.getByText(VPA_ADDRESS).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/N\$ ?1,350\.00/i).first()).toBeVisible({ timeout: 10_000 });
+
+    await page.screenshot({ path: 'test-results/ipp-lifecycle-phase6-settlement-recon.png' });
+    console.log('Phase 6: Settlement run and raw-data reconciliation evidence verified.');
   });
 });

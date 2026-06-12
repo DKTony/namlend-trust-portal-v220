@@ -9,10 +9,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import type { Id } from '@/types/convex';
 type AppRole = 'admin' | 'loan_officer' | 'client';
-import { assignRoleWithServiceRole } from '@/utils/serviceRoleAssignment';
 import { useToast } from '@/hooks/use-toast';
 
 interface AssignRoleModalProps {
@@ -50,6 +50,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
 
   // Convex reactive query for user list
   const allUsers = useConvexQuery(api.users.listUsers, open ? {} : 'skip');
+  const assignRole = useConvexMutation(api.users.assignRole);
 
   useEffect(() => {
     if (!open || !allUsers) return;
@@ -61,15 +62,15 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
         const name = `${u.fullName ?? ''} ${u.email ?? ''}`.toLowerCase();
         return (
           name.includes(searchLower) ||
-          String(u._id ?? '')
+          String(u.userId ?? '')
             .toLowerCase()
             .includes(searchLower)
         );
       })
       .slice(0, 20)
       .map((u) => ({
-        user_id: String(u._id ?? ''),
-        id: String(u._id ?? ''),
+        user_id: String(u.userId ?? ''),
+        id: String(u.userId ?? ''),
         first_name: u.fullName?.split(' ')[0] ?? null,
         last_name: u.fullName?.split(' ').slice(1).join(' ') ?? null,
         email: u.email ?? null,
@@ -82,16 +83,8 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
   const handleAssign = async (userId: string) => {
     if (!role) return;
     try {
-      const res = await assignRoleWithServiceRole(userId, role);
-      if (!res.success) {
-        toast({
-          title: 'Assignment failed',
-          description: res.error ?? 'Unknown error',
-          variant: 'destructive',
-        });
-        return;
-      }
-      toast({ title: 'Role assigned', description: `Assigned ${role} to ${userId}` });
+      await assignRole({ targetUserId: userId as Id<'users'>, role });
+      toast({ title: 'Role assigned', description: `Assigned ${role} to selected user` });
       onAssigned?.();
     } catch (e) {
       toast({

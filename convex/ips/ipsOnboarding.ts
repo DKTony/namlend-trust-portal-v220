@@ -21,6 +21,9 @@ import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/aut
 import { scheduleAuditLog } from '../lib/audit';
 import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
 import { generateMsgId } from '../lib/ipsXmlBuilder';
+import { getStringRule } from '../lib/ruleEvaluator';
+import { assertAliasAvailable, validateIpsHandle } from '../lib/ipsAliasRules';
+import { assertRawPinAllowed, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 
 // ---------------------------------------------------------------------------
 // Valid transitions — enforced by each mutation
@@ -60,6 +63,12 @@ function assertValidTransition(currentStatus: string, targetStatus: string) {
       message: `Cannot transition from '${currentStatus}' to '${targetStatus}'.`,
     });
   }
+}
+
+async function getProtocolMode(ctx: any): Promise<IpsProtocolMode> {
+  const mode = await getStringRule(ctx, 'IPS_PROTOCOL_MODE', 'json_mock');
+  if (mode === 'xml_sandbox' || mode === 'xml_production') return mode;
+  return 'json_mock';
 }
 
 // ---------------------------------------------------------------------------
@@ -450,7 +459,8 @@ export const submitOtp = mutation({
 export const setupIpsPin = mutation({
   args: {
     applicationId: v.id('ipsOnboardingApplications'),
-    pin: v.string(),
+    pin: v.optional(v.string()),
+    encryptedPinPayload: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
@@ -459,11 +469,24 @@ export const setupIpsPin = mutation({
     await assertOwnerOrStaff(ctx, app.userId);
     // Two-stage transition: VERIFIED → IPS_PIN_SETTING → (action callback) → IPS_PIN_SET
     assertValidTransition(app.status, 'IPS_PIN_SETTING');
+    const mode = await getProtocolMode(ctx);
 
-    if (!/^\d{6}$/.test(args.pin)) {
+    if (args.pin) {
+      assertRawPinAllowed(mode);
+    }
+
+    if (mode === 'json_mock' && (!args.pin || !/^\d{6}$/.test(args.pin))) {
       throw new ConvexError({
         code: 'INVALID_PIN',
         message: 'IPS PIN must be exactly 6 digits.',
+      });
+    }
+
+    const credentialPayload = args.encryptedPinPayload ?? args.pin;
+    if (!credentialPayload) {
+      throw new ConvexError({
+        code: 'PIN_CREDENTIAL_REQUIRED',
+        message: 'Encrypted IPS PIN credential payload is required.',
       });
     }
 
@@ -487,7 +510,7 @@ export const setupIpsPin = mutation({
       applicationId: args.applicationId,
       operation: 'SET',
       deviceId: app.deviceBindingId ? 'bound' : 'unknown',
-      encryptedNewPin: args.pin,
+      encryptedNewPin: credentialPayload,
     });
   },
 });
@@ -508,16 +531,11 @@ export const createHandle = mutation({
     await assertOwnerOrStaff(ctx, app.userId);
     assertValidTransition(app.status, 'ALIAS_REGISTRATION_PENDING');
 
-    if (!args.vpaUsername || args.vpaUsername.length < 3) {
-      throw new ConvexError({
-        code: 'INVALID_VPA',
-        message: 'VPA username must be at least 3 characters.',
-      });
-    }
+    const { handle: vpaUsername } = validateIpsHandle(args.vpaUsername);
 
     // Build full alias address
     const handle = app.sovProviderCode?.toLowerCase() ?? 'namlend';
-    const addr = `${args.vpaUsername}@${handle}`;
+    const addr = `${vpaUsername}@${handle}`;
 
     // Check alias availability via local registry
     const existingAlias = await ctx.db
@@ -525,20 +543,32 @@ export const createHandle = mutation({
       .withIndex('by_addr', (q) => q.eq('addr', addr))
       .first();
 
-    if (existingAlias && existingAlias.status !== 'DEREGISTERED') {
-      throw new ConvexError({
-        code: 'ALIAS_TAKEN',
-        message: `The address '${addr}' is already taken. Please choose another.`,
-      });
-    }
+    assertAliasAvailable(existingAlias);
 
     const now = Date.now();
+    const mode = await getProtocolMode(ctx);
+    const requestMsgId = mode === 'json_mock' ? undefined : generateMsgId();
     await ctx.db.patch(args.applicationId, {
       status: 'ALIAS_REGISTRATION_PENDING',
       aliasAddr: addr,
       selectedVpa: addr, // backward compat
+      aliasAvailabilityStatus: mode === 'json_mock' ? 'available' : 'pending',
+      aliasAvailabilityRequestMsgId: requestMsgId,
+      aliasAvailabilityCheckedAt: mode === 'json_mock' ? now : undefined,
       updatedAt: now,
     });
+
+    if (mode !== 'json_mock') {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.actions.ipsAliasAdapter.checkAliasAvailabilityForOnboarding,
+        {
+          applicationId: args.applicationId,
+          addr,
+          requestMsgId,
+        }
+      );
+    }
 
     scheduleAuditLog(
       ctx,
@@ -571,6 +601,20 @@ export const registerAlias = mutation({
         message: 'Alias must be created before registration.',
       });
     }
+
+    const mode = await getProtocolMode(ctx);
+    if (mode !== 'json_mock' && app.aliasAvailabilityStatus !== 'available') {
+      throw new ConvexError({
+        code: 'ALIAS_CHECK_REQUIRED',
+        message: 'Alias availability must be confirmed by IPS before registration.',
+      });
+    }
+
+    const existingAlias = await ctx.db
+      .query('ipsAliasDirectory')
+      .withIndex('by_addr', (q) => q.eq('addr', app.aliasAddr!))
+      .first();
+    assertAliasAvailable(existingAlias);
 
     let aliasId = app.aliasId;
     if (!aliasId) {
@@ -847,6 +891,34 @@ export const markAliasRegistered = internalMutation({
       app.status,
       'ALIAS_REGISTERED'
     );
+  },
+});
+
+export const updateAliasAvailabilityStatus = internalMutation({
+  args: {
+    applicationId: v.id('ipsOnboardingApplications'),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('available'),
+      v.literal('unavailable'),
+      v.literal('failed')
+    ),
+    requestMsgId: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const app = await ctx.db.get(args.applicationId);
+    if (!app) return;
+
+    await ctx.db.patch(args.applicationId, {
+      aliasAvailabilityStatus: args.status,
+      aliasAvailabilityRequestMsgId: args.requestMsgId ?? app.aliasAvailabilityRequestMsgId,
+      aliasAvailabilityCheckedAt: Date.now(),
+      lastErrorCode: args.errorCode,
+      lastErrorMessage: args.errorMessage,
+      updatedAt: Date.now(),
+    });
   },
 });
 

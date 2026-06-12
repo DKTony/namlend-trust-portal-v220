@@ -76,6 +76,29 @@ export const getAllConfig = query({
 });
 
 /**
+ * Get public configuration values. No auth guard because only records explicitly
+ * marked isPublic=true are returned.
+ */
+export const getPublicConfig = query({
+  args: {
+    category: v.optional(v.string()),
+  },
+  handler: async (ctx, { category }) => {
+    let results = await ctx.db.query('systemConfiguration').collect();
+    const now = Date.now();
+
+    results = results.filter((c) => {
+      if (!c.isPublic || c.deletedAt) return false;
+      if (c.effectiveTo !== undefined && c.effectiveTo <= now) return false;
+      if (category && c.category !== category) return false;
+      return true;
+    });
+
+    return results;
+  },
+});
+
+/**
  * Get configuration value as a typed result.
  * Returns the currently effective value, or null if not found.
  */

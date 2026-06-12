@@ -47,6 +47,32 @@ interface NTSLReportData {
 
 function parseNTSLReport(reportData: Record<string, unknown>): NTSLReportData | null {
   try {
+    if (Array.isArray(reportData.rows)) {
+      const transactions = reportData.rows.map((row, index) => {
+        const record = row && typeof row === 'object' ? (row as Record<string, unknown>) : {};
+        return {
+          txId: String(record.instructionId ?? `ntsl-row-${index + 1}`),
+          counterparty: `${String(record.sourceParticipantId ?? '')} -> ${String(record.targetParticipantId ?? '')}`,
+          amount: Number(record.amount ?? 0),
+          type: 'debit' as const,
+          category: String(record.categoryGroup ?? record.batchType ?? 'principal_and_interchange'),
+        };
+      });
+      const total = transactions.reduce((sum, txn) => sum + txn.amount, 0);
+      return {
+        participant: 'All Participants',
+        participantBic: 'MULTI',
+        settlementDate: new Date().toISOString().slice(0, 10),
+        windowId: 'SW1',
+        credits: 0,
+        debits: total,
+        netPosition: -total,
+        interchangeOwed: 0,
+        interchangePaid: 0,
+        switchingFee: 0,
+        transactions,
+      };
+    }
     return reportData as unknown as NTSLReportData;
   } catch {
     return null;

@@ -1,7 +1,7 @@
 # NamLend Trust - Testing Documentation
 
-**Last Updated**: 2026-04-04
-**Aligned With**: Post-payment-lifecycle codebase (v5.2.2)
+**Last Updated**: 2026-04-28
+**Aligned With**: Adaptive UI codebase (v5.2.2+)
 **Status**: Current ✅
 **Original Doc Revision**: 2026-01-19
 
@@ -13,7 +13,15 @@
 - **Unit**: Vitest (`^4.0.18`) in `src/tests/` — run with `npm run test:unit` (137 passing tests)
 - **Interactive**: Playwright MCP browser testing via `.claude/commands/test-portal.md` skill
 
-### Recent Updates (2026-04-04)
+### Recent Updates (2026-04-28)
+
+- ✅ Added adaptive layout regression suite: `e2e/adaptive-layout.e2e.ts`
+- ✅ Viewport matrix covers phone, tablet, laptop, and desktop sizes
+- ✅ Public route checks verify no horizontal overflow and landing mobile navigation reachability
+- ✅ Client and admin protected routes verify adaptive shell navigation is reachable at all target breakpoints
+- ✅ E2E auth/admin helpers updated for drawer, rail, and permanent sidebar shells
+
+### Previous Updates (2026-04-04)
 
 - ✅ Full lifecycle browser test validated: application → approval → disbursement → payment → settlement
 - ✅ Payment completion flow verified: two-phase (client records → admin confirms)
@@ -64,6 +72,7 @@ e2e/
 - `e2e/admin-approvals-actions.e2e.ts`
 - `e2e/admin-approvals.e2e.ts`
 - `e2e/admin-currency.e2e.ts`
+- `e2e/adaptive-layout.e2e.ts`
 - `e2e/assign-role-modal.spec.ts`
 - `e2e/backoffice-disbursement.e2e.ts`
 - `e2e/dashboard-nav.e2e.ts`
@@ -112,6 +121,36 @@ Notes:
 
 - Playwright is configured to run only `*.e2e.ts` (`playwright.config.ts`). Any `*.spec.ts` files under `e2e/` are currently excluded (e.g. `assign-role-modal.spec.ts`).
 - Base URL defaults to `http://localhost:8080` and can be overridden with `BASE_URL`.
+
+### Adaptive Layout Regression
+
+Run the adaptive suite when changing shells, route layout, tabs, action bars, dialogs, drawers, or dense admin collections:
+
+```bash
+BASE_URL=http://127.0.0.1:8080 npx playwright test e2e/adaptive-layout.e2e.ts
+```
+
+Target viewports:
+
+- `360x740`
+- `390x844`
+- `768x1024`
+- `1024x768`
+- `1366x900`
+- `1536x864`
+
+Routes covered:
+
+- Public: `/`, `/auth`
+- Client: `/dashboard`, `/loan-application`, `/kyc`, `/budget`
+- Admin: `/admin/overview`, `/admin/loans`, `/admin/clients`, `/admin/payments`, `/admin/users`, `/admin/reconciliation`
+
+Expected checks:
+
+- No page-level horizontal overflow.
+- Landing mobile hamburger opens and exposes `Mobile navigation`.
+- Authenticated app shell is reachable whether it renders as drawer, rail, or permanent sidebar.
+- Admin dense pages render without layout overflow across the matrix.
 
 ---
 
@@ -210,6 +249,7 @@ Coverage targets are not enforced in CI. Update this document after adding or re
 - [INDEX.md](./INDEX.md) - Documentation index
 - [QUICK_START.md](./QUICK_START.md) - Quick reference for common commands
 - [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md) - Test infrastructure debt items
+- [ADAPTIVE_UI.md](./ADAPTIVE_UI.md) - Adaptive UI contract and viewport matrix
 - [IPS_TESTING.md](./IPS_TESTING.md) - IPS-specific testing guide
 - [E2E_AUTH_PERSISTENCE_FIX.md](./E2E_AUTH_PERSISTENCE_FIX.md) - Auth testing details
 

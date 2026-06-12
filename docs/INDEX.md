@@ -1,8 +1,8 @@
 # NamLend Trust Documentation Index
 
-**Doc Revision**: 2026-04-08
+**Doc Revision**: 2026-04-28
 **Project Version**: 5.2.1 (Execution Hardening)
-**Status**: Production-Ready Digital Lending Platform — Backend on Convex + Financial Ontology Engine
+**Status**: Convex-first digital lending platform with documented production-hardening gaps
 
 ---
 
@@ -28,31 +28,32 @@
 | ------------------------------------------------------------------------ | ------------------------------------------------------------- | ------ |
 | [ARCHITECTURE.md](./ARCHITECTURE.md)                                     | System architecture overview                                  | Active |
 | [ONTOLOGY_ENGINE.md](./ONTOLOGY_ENGINE.md)                               | Financial Ontology Engine implementation report (v5.2.1)      | Active |
-| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                               | Convex schema reference (67+ tables incl. 12 ontology)        | Active |
-| [SERVICES.md](./SERVICES.md)                                             | Service layer + migration status table                        | Active |
+| [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)                               | Convex schema reference (66 app tables + Convex Auth tables)  | Active |
+| [SERVICES.md](./SERVICES.md)                                             | Service layer and active legacy island inventory              | Active |
 | [convexmigratehandover.md](./convexmigratehandover.md)                   | Convex migration handover — batch status, field maps, gotchas | Active |
 | [FLOWS.md](./FLOWS.md)                                                   | User flows and state machines                                 | Active |
 | [FLOW_VALIDATION_PLAN.md](./FLOW_VALIDATION_PLAN.md)                     | End-to-end flow validation approach                           | Active |
 | [FLOW_VALIDATION_MATRIX.md](./FLOW_VALIDATION_MATRIX.md)                 | Action-level flow conformance tracker                         | Active |
 | [FLOW_FIX_PR_TASKS_2026-02-15.md](./FLOW_FIX_PR_TASKS_2026-02-15.md)     | Owner/severity backlog for static flow gaps                   | Active |
 | [FUNCTIONALITY_MAP.md](./FUNCTIONALITY_MAP.md)                           | Feature implementation status                                 | Active |
-| [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md)                     | Modularization plan & domain event bus roadmap                | Active |
+| [ARCHITECTURAL_REVIEW.md](./ARCHITECTURAL_REVIEW.md)                     | Current architecture findings, risks, and remediation roadmap | Active |
 | [FOLLOWUP_ASSESSMENT_2026-03-19.md](./FOLLOWUP_ASSESSMENT_2026-03-19.md) | Remaining work quantification (ground-truth audit)            | Active |
 | [API_REFERENCE.md](./API_REFERENCE.md)                                   | RPC functions and API endpoints                               | Active |
 
 ### UI/UX & Design
 
-| Document                                         | Description                          | Status    |
-| ------------------------------------------------ | ------------------------------------ | --------- |
-| [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)           | Neo-Fintech design system guidelines | Active    |
-| [UI_DESIGN.md](./UI_DESIGN.md)                   | UI component specifications          | Reference |
-| [UI_UX_AUDIT_REPORT.md](./UI_UX_AUDIT_REPORT.md) | UX audit findings                    | Reference |
+| Document                                         | Description                                                 | Status    |
+| ------------------------------------------------ | ----------------------------------------------------------- | --------- |
+| [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)           | Neo-Fintech design system guidelines                        | Active    |
+| [ADAPTIVE_UI.md](./ADAPTIVE_UI.md)               | Adaptive shell, responsive primitives, viewport test matrix | Active    |
+| [UI_DESIGN.md](./UI_DESIGN.md)                   | UI component specifications                                 | Reference |
+| [UI_UX_AUDIT_REPORT.md](./UI_UX_AUDIT_REPORT.md) | UX audit findings                                           | Reference |
 
 ### Security & Operations
 
 | Document                                                   | Description                                 | Status |
 | ---------------------------------------------------------- | ------------------------------------------- | ------ |
-| [SECURITY.md](./SECURITY.md)                               | Security implementation (RLS, auth, audit)  | Active |
+| [SECURITY.md](./SECURITY.md)                               | Convex auth guards, webhook security, audit | Active |
 | [TESTING.md](./TESTING.md)                                 | E2E testing guide with Playwright           | Active |
 | [E2E_TEST_FIX_2026_03_22.md](./E2E_TEST_FIX_2026_03_22.md) | Loan application E2E test fix & KYC seeding | Active |
 | [TECHNICAL_DEBT.md](./TECHNICAL_DEBT.md)                   | Outstanding technical debt items            | Active |
@@ -138,15 +139,15 @@
 
 ### By Audience
 
-| Audience               | Key Documents                                                         |
-| ---------------------- | --------------------------------------------------------------------- |
-| **New Developers**     | INDEX.md → ARCHITECTURE.md → SERVICES.md → TESTING.md                 |
-| **Architects/Leads**   | ARCHITECTURAL_REVIEW.md → ARCHITECTURE.md → TECHNICAL_DEBT.md         |
-| **AI/LLM Agents**      | CLAUDE.MD (root) → AGENTS.md → convexmigratehandover.md → GLOSSARY.md |
-| **Backend Engineers**  | DATABASE_SCHEMA.md → SERVICES.md → context.md                         |
-| **Frontend Engineers** | DESIGN_SYSTEM.md → UI_DESIGN.md → FLOWS.md → FUNCTIONALITY_MAP.md     |
-| **DevOps/SRE**         | SECURITY.md → TESTING.md → DEPLOYMENT docs                            |
-| **Integration Work**   | IPP*INTEGRATION.md → TIGERBEETLE*\*.md                                |
+| Audience               | Key Documents                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------- |
+| **New Developers**     | INDEX.md → ARCHITECTURE.md → SERVICES.md → TESTING.md                              |
+| **Architects/Leads**   | ARCHITECTURAL_REVIEW.md → ARCHITECTURE.md → TECHNICAL_DEBT.md                      |
+| **AI/LLM Agents**      | CLAUDE.MD (root) → AGENTS.md → convexmigratehandover.md → GLOSSARY.md              |
+| **Backend Engineers**  | DATABASE_SCHEMA.md → SERVICES.md → context.md                                      |
+| **Frontend Engineers** | DESIGN_SYSTEM.md → ADAPTIVE_UI.md → UI_DESIGN.md → FLOWS.md → FUNCTIONALITY_MAP.md |
+| **DevOps/SRE**         | SECURITY.md → TESTING.md → DEPLOYMENT docs                                         |
+| **Integration Work**   | IPP*INTEGRATION.md → TIGERBEETLE*\*.md                                             |
 
 ### By Status
 
@@ -172,20 +173,20 @@ See [GLOSSARY.md](./GLOSSARY.md) for standardized definitions of:
 
 ## Related Files (Outside `/docs/`)
 
-| Location                | Purpose                                         |
-| ----------------------- | ----------------------------------------------- |
-| `/CLAUDE.MD`            | AI agent context (root-level, start here)       |
-| `/README.md`            | Project setup and overview                      |
-| `/convex/`              | **Active backend** (schema, queries, mutations) |
-| `/e2e/`                 | Playwright E2E test files                       |
-| `/supabase/migrations/` | INACTIVE — legacy SQL migrations (reference)    |
-| `/supabase/functions/`  | INACTIVE — legacy Edge Functions (reference)    |
+| Location                | Purpose                                                               |
+| ----------------------- | --------------------------------------------------------------------- |
+| `/CLAUDE.MD`            | AI agent context (root-level, start here)                             |
+| `/README.md`            | Project setup and overview                                            |
+| `/convex/`              | **Active backend** (schema, queries, mutations)                       |
+| `/e2e/`                 | Playwright E2E test files                                             |
+| `/supabase/migrations/` | Legacy SQL migrations (reference)                                     |
+| `/supabase/functions/`  | Legacy Edge Functions (reference; some helper names still referenced) |
 
 ---
 
 ## Maintenance
 
-- **Last audited**: 2026-03-19
+- **Last audited**: 2026-04-28
 - **Maintainer**: Development team
 - **Update frequency**: With major releases
 

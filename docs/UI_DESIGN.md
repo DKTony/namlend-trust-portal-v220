@@ -1,6 +1,6 @@
 # UI Design System Documentation
 
-**Doc Revision**: 2026-01-19  
+**Doc Revision**: 2026-04-28  
 **Status**: Active - Theme variants implemented via `src/context/ThemeContext.tsx` (default: `neo`).
 
 > **Purpose**: This document provides a comprehensive, reproducible guide to the NamLend Trust UI design system. Use this to instruct AI assistants or developers to replicate this methodology in other applications.
@@ -353,13 +353,13 @@ className={`
 
 Component: `src/components/Layout/ThemedSidebar.tsx`. Route integration: [ARCHITECTURE.md](./ARCHITECTURE.md#layouts).
 
-The sidebar is a drawer-style slide-out panel (not a hover-expand dock). It overlays page content when open.
+The sidebar adapts by viewport class. It is a drawer on phones, an icon rail on tablets, and a permanent sidebar on desktop.
 
-### Desktop & Mobile: Drawer Panel
+### Compact Drawer
 
 **Panel Dimensions:**
 
-- **Width**: `w-80` (320px), fixed position, full height
+- **Width**: `w-[min(20rem,calc(100vw-0.75rem))]`, fixed position, full height
 - **Z-index**: `z-[70]` — above all page content including sticky headers
 - **Animation**: `transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]`
 - **Backdrop**: Click-to-close overlay behind the panel
@@ -380,6 +380,13 @@ isDark ? 'bg-zinc-900 border-r-2 border-white' : 'bg-white border-r-2 border-bla
 - 3D tilt effect on hover via `onMouseMove` transform calculations
 - Active state: accent-colored left border + background highlight
 - Each item has `data-testid="sidebar-nav-{id}"` for E2E testing
+
+### Medium Rail and Desktop Sidebar
+
+- **Medium**: icon-only rail, `w-20`, labels available through title/aria-label.
+- **Expanded/Wide**: permanent sidebar, `w-72`, full labels and grouped content.
+- **Client compact shell**: also shows bottom navigation for core flows.
+- **Admin compact shell**: uses grouped drawer navigation so all operational modules remain reachable.
 
 ### Mobile Toggle
 
@@ -505,27 +512,31 @@ The app uses a **fixed, pointer-events-none** container for background effects:
 
 ## Responsive Design Strategy
 
-### Breakpoint System
+### Adaptive Size Classes
 
-Uses Tailwind's default breakpoints:
+Use `useAdaptiveLayout()` for app-shell decisions and Tailwind utilities for component-level styling.
 
-- `sm`: 640px
-- `md`: 768px (primary mobile/desktop breakpoint)
-- `lg`: 1024px
-- `xl`: 1280px
+| Class      | Width Range | Behavior                                               |
+| ---------- | ----------- | ------------------------------------------------------ |
+| `compact`  | `< 640px`   | Drawer navigation, bottom nav, card lists              |
+| `medium`   | `640-1023`  | Icon rail, tablet grids                                |
+| `expanded` | `1024-1439` | Permanent sidebar, dense desktop layout                |
+| `wide`     | `>= 1440`   | Permanent sidebar with constrained `max-w-7xl` content |
 
 ### Layout Patterns
 
 **Main Content Area:**
 
 ```tsx
-<main className="min-h-screen relative z-10 w-full md:pl-20 transition-all duration-300">
-  <div className="max-w-7xl mx-auto">{/* Page content */}</div>
-</main>
+<AdaptiveShell sidebar={...} rail={...} mobileNavigation={...} bottomNavigation={...}>
+  <RouteContent />
+</AdaptiveShell>
 ```
 
-- Mobile: Full width, bottom nav accounts for padding
-- Desktop: Left padding for sidebar (20 = 80px)
+- Compact: full-width content with bottom padding for safe-area bottom navigation
+- Medium: rail plus content
+- Desktop: permanent sidebar plus dense content
+- All shell surfaces use `min-h-dvh h-dvh` instead of fixed `h-screen`
 
 **Grid Responsiveness:**
 
@@ -537,25 +548,26 @@ Uses Tailwind's default breakpoints:
 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 ```
 
-**Conditional Visibility:**
+**Adaptive Primitives:**
 
 ```tsx
-{/* Desktop only */}
-<div className="hidden md:flex ...">
+<AdaptiveTabs items={tabs} compactIconOnly />
 
-{/* Mobile only */}
-<div className="md:hidden ...">
+<ResponsiveActionBar title={...} actions={...} />
 
-{/* Large screens only */}
-<div className="hidden lg:block ...">
+<AdaptiveDialog open={open} onOpenChange={setOpen}>
+  <DetailForm />
+</AdaptiveDialog>
 ```
 
 ### Spacing Adjustments
 
 ```tsx
-{/* Padding varies by breakpoint */}
-<div className="p-6 lg:p-10 flex flex-col gap-8 pb-24 pt-16 lg:pt-10">
+{/* Phone-first spacing, denser desktop expansion */}
+<div className="space-y-4 sm:space-y-6 lg:grid lg:grid-cols-3 lg:gap-6">
 ```
+
+See [ADAPTIVE_UI.md](./ADAPTIVE_UI.md) for route coverage and E2E viewport requirements.
 
 ---
 

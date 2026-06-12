@@ -5,9 +5,9 @@
  *   P2P:    N$10,000/day, max 10 transactions
  *   P2M:    N$10,000/day, max 100 transactions
  *   ATM:    N$2,000/day,  max 2 transactions
- *   G2P/B2P: N$25,000/day, max 50 transactions
+ *   G2P/B2P: N$10,000/day per individual recipient, unlimited count
  *
- * Limits are checked in the initiateIpsTransaction mutation BEFORE inserting
+ * Limits are checked in the server-side initiation mutations before inserting
  * the transaction, ensuring atomicity with Convex's serializable isolation.
  */
 
@@ -24,8 +24,8 @@ export type IpsUseCaseType = 'P2P' | 'P2M' | 'ATM' | 'G2P' | 'B2P';
 export interface TransactionLimitConfig {
   /** Maximum daily aggregate amount in NAD */
   maxDailyAmount: number;
-  /** Maximum number of transactions per day */
-  maxDailyCount: number;
+  /** Maximum number of transactions per day; null means scheme-unlimited. */
+  maxDailyCount: number | null;
 }
 
 /** Spec-mandated limits per use case type */
@@ -33,8 +33,8 @@ const TRANSACTION_LIMITS: Record<IpsUseCaseType, TransactionLimitConfig> = {
   P2P: { maxDailyAmount: 10_000, maxDailyCount: 10 },
   P2M: { maxDailyAmount: 10_000, maxDailyCount: 100 },
   ATM: { maxDailyAmount: 2_000, maxDailyCount: 2 },
-  G2P: { maxDailyAmount: 25_000, maxDailyCount: 50 },
-  B2P: { maxDailyAmount: 25_000, maxDailyCount: 50 },
+  G2P: { maxDailyAmount: 10_000, maxDailyCount: null },
+  B2P: { maxDailyAmount: 10_000, maxDailyCount: null },
 };
 
 interface TransactionUseCaseSnapshot {
@@ -161,7 +161,7 @@ export async function enforceTransactionLimits(
   );
 
   // Check count limit
-  if (dailyCount >= limits.maxDailyCount) {
+  if (limits.maxDailyCount !== null && dailyCount >= limits.maxDailyCount) {
     throw new ConvexError({
       code: 'IPS_LIMIT_EXCEEDED',
       message: `Daily transaction count limit reached for ${useCaseType}: ${dailyCount}/${limits.maxDailyCount} transactions.`,

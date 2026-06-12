@@ -5,6 +5,7 @@
 import { v } from 'convex/values';
 import { query, internalMutation, internalQuery } from '../_generated/server';
 import { assertStaff } from '../lib/auth';
+import { redactIpsPayload, redactIpsXml, sha256Hex } from '../lib/ipsAliasRules';
 
 export const logApiCall = internalMutation({
   args: {
@@ -27,8 +28,21 @@ export const logApiCall = internalMutation({
     correlationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const rawXmlSha256 = args.rawXml ? await sha256Hex(args.rawXml) : undefined;
+    const requestBody =
+      args.requestBody || rawXmlSha256
+        ? redactIpsPayload({
+            ...(args.requestBody ?? {}),
+            ...(rawXmlSha256 ? { rawXmlSha256 } : {}),
+          })
+        : undefined;
+
     await ctx.db.insert('ipsApiLogs', {
       ...args,
+      requestBody,
+      responseBody: redactIpsPayload(args.responseBody),
+      rawXml: args.rawXml ? redactIpsXml(args.rawXml) : undefined,
+      errorMessage: args.errorMessage ? redactIpsXml(args.errorMessage) : undefined,
       createdAt: Date.now(),
     });
   },

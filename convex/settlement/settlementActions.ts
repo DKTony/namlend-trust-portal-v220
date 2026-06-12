@@ -19,6 +19,7 @@ import { v } from 'convex/values';
 import { ConvexError } from 'convex/values';
 import { xmlEscape } from '../lib/xmlEscape';
 import { Id } from '../_generated/dataModel';
+import { sha256Hex } from '../lib/ipsAliasRules';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called from Actions via ctx.runMutation)
@@ -171,6 +172,31 @@ export const insertPacs009Batch = internalMutation({
   },
 });
 
+export const insertSettlementReport = internalMutation({
+  args: {
+    runId: v.id('settlementRuns'),
+    reportType: v.union(
+      v.literal('raw_data'),
+      v.literal('ntsl'),
+      v.literal('adjustment'),
+      v.literal('pending_adjustment_response'),
+      v.literal('pending_status'),
+      v.literal('timeout')
+    ),
+    fileName: v.string(),
+    fileContent: v.string(),
+    fileChecksum: v.string(),
+    fileSize: v.number(),
+    reportData: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    return ctx.db.insert('settlementReports', {
+      ...args,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 /** Mark settlement as settled (idempotency guard). */
 export const markSettled = internalMutation({
   args: { runId: v.id('settlementRuns') },
@@ -211,9 +237,7 @@ export const createSettlementRun = action({
     schemeVersion: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
-    // Auth check — only admins can create settlement runs
-    // Note: Actions can't call assertAdmin() directly (no ctx.db) — use runQuery
-    // In practice, UI buttons are admin-only and this is called server-side
+    await ctx.runQuery(internal.lib.auth.assertAdminForAction, {});
 
     const now = Date.now();
     const runId = await ctx.runMutation(internal.settlement.settlementActions.createRunRecord, {
@@ -279,6 +303,7 @@ export const processSettlementRun = action({
     netInstructionCount: number;
     batchCount: number;
   }> => {
+    await ctx.runQuery(internal.lib.auth.assertAdminForAction, {});
     console.log(`[settlement] Processing run ${runId}`);
 
     // --- Stage 1: cutoff_reached → prepare_inputs ---
@@ -295,8 +320,12 @@ export const processSettlementRun = action({
       toState: 'prepare_inputs',
     });
 
-    // --- Stage 2: Ingest IPS transactions ---
-    const obligations = await ingestIpsTransactions(ctx, runId);
+    // --- Stage 2: Ingest IPS transactions and approved operational adjustments ---
+    const [transactionObligations, adjustmentBatch] = await Promise.all([
+      ingestIpsTransactions(ctx, runId),
+      ingestSettlementAdjustments(ctx, runId),
+    ]);
+    const obligations = [...transactionObligations, ...adjustmentBatch.obligations];
     console.log(`[settlement] Ingested ${obligations.length} obligations`);
 
     await ctx.runMutation(internal.settlement.settlementActions.insertObligations, {
@@ -340,6 +369,16 @@ export const processSettlementRun = action({
     // --- Stage 4: Generate pacs.009 XML batches ---
     const batches = await generatePacs009Batches(ctx, runId, instructions);
     console.log(`[settlement] Generated ${batches.length} pacs.009 batches`);
+    await generateSettlementReports(ctx, runId, obligations, instructions);
+    if (adjustmentBatch.adjustmentIds.length) {
+      await ctx.runMutation(
+        internal.settlement.settlementAdjustments.markAdjustmentsSettledInternal,
+        {
+          runId,
+          adjustmentIds: adjustmentBatch.adjustmentIds,
+        }
+      );
+    }
 
     return {
       obligationCount: obligations.length,
@@ -356,6 +395,7 @@ export const processSettlementRun = action({
 export const markSettlementSettled = action({
   args: { runId: v.id('settlementRuns') },
   handler: async (ctx, { runId }) => {
+    await ctx.runQuery(internal.lib.auth.assertAdminForAction, {});
     await ctx.runMutation(internal.settlement.settlementActions.markSettled, { runId });
     console.log(`[settlement] Run ${runId} marked as settled`);
   },
@@ -366,18 +406,18 @@ export const markSettlementSettled = action({
 // ---------------------------------------------------------------------------
 
 interface ObligationInput {
-  sourceParticipantId: string;
-  targetParticipantId: string;
+  sourceParticipantId: Id<'settlementParticipants'>;
+  targetParticipantId: Id<'settlementParticipants'>;
   category: 'principal' | 'interchange' | 'switching_fee' | 'penalty' | 'adjustment';
   amount: number;
-  sourceTxId?: string;
+  sourceTxId?: Id<'ipsTransactions'>;
   metadata?: Record<string, unknown>;
 }
 
 interface NetInstruction {
   instructionId: string;
-  sourceParticipantId: string;
-  targetParticipantId: string;
+  sourceParticipantId: Id<'settlementParticipants'>;
+  targetParticipantId: Id<'settlementParticipants'>;
   amount: number;
   categoryGroup: string;
   batchType: 'main' | 'switching_fee';
@@ -385,12 +425,17 @@ interface NetInstruction {
 }
 
 interface Exposure {
-  participantId: string;
+  participantId: Id<'settlementParticipants'>;
   grossPayables: number;
   grossReceivables: number;
   netPosition: number;
   switchingFeePayable: number;
   interchangeNet: number;
+}
+
+interface AdjustmentIngestion {
+  obligations: ObligationInput[];
+  adjustmentIds: Id<'settlementAdjustments'>[];
 }
 
 /**
@@ -401,15 +446,173 @@ async function ingestIpsTransactions(
   ctx: ActionCtx,
   runId: Id<'settlementRuns'>
 ): Promise<ObligationInput[]> {
-  // In production: query IPS transactions for the settlement window date
-  // and convert them to bilateral obligations.
-  // For now, return an empty array — actual data comes from ipsTransactions table.
   const run = await ctx.runQuery(api.settlement.settlementRuns.getSettlementRun, { runId });
   if (!run) return [];
 
-  // Query completed IPS transactions for the settlement date
-  // Obligations = each tx creates a principal obligation from debtor to creditor
-  return [];
+  const [transactions, participants] = await Promise.all([
+    ctx.runQuery(internal.ips.ipsTransactions.getTransactionsForSettlementInternal, {
+      settlementDate: run.settlementDate,
+    }),
+    ctx.runQuery(internal.settlement.settlementParticipants.listActiveParticipantsInternal, {}),
+  ]);
+
+  const sponsorParticipant = resolveSponsorParticipant(participants);
+  if (!sponsorParticipant) {
+    throw new ConvexError({
+      code: 'SETTLEMENT_SPONSOR_MISSING',
+      message:
+        'No active sponsor settlement participant found. Configure IPS_SPONSOR_PARTICIPANT_CODE or seed a sponsored participant.',
+    });
+  }
+
+  const obligations: ObligationInput[] = [];
+  for (const tx of transactions) {
+    if (tx.status !== 'completed' || tx.currency !== run.currency || tx.amount <= 0) continue;
+    if (isHeldForDispute(tx)) continue;
+
+    const counterparty =
+      tx.direction === 'outbound'
+        ? resolveParticipant(participants, tx.creditorBic, tx.creditorVpa)
+        : resolveParticipant(participants, tx.debtorBic, tx.debtorVpa);
+
+    const sourceParticipantId =
+      tx.direction === 'outbound'
+        ? sponsorParticipant._id
+        : (counterparty?._id ?? sponsorParticipant._id);
+    const targetParticipantId =
+      tx.direction === 'outbound'
+        ? (counterparty?._id ?? sponsorParticipant._id)
+        : sponsorParticipant._id;
+
+    if (sourceParticipantId === targetParticipantId) continue;
+
+    obligations.push({
+      sourceParticipantId,
+      targetParticipantId,
+      category: 'principal',
+      amount: Math.round(tx.amount * 100) / 100,
+      sourceTxId: tx._id,
+      metadata: {
+        msgId: tx.msgId,
+        direction: tx.direction,
+        useCaseType: tx.useCaseType,
+        debtorVpa: tx.debtorVpa,
+        creditorVpa: tx.creditorVpa,
+        loanId: tx.loanId,
+        disbursementId: tx.disbursementId,
+        paymentId: tx.paymentId,
+        completedAt: tx.completedAt,
+        sponsoredFallback: !counterparty,
+      },
+    });
+  }
+
+  return obligations;
+}
+
+async function ingestSettlementAdjustments(
+  ctx: ActionCtx,
+  runId: Id<'settlementRuns'>
+): Promise<AdjustmentIngestion> {
+  const run = await ctx.runQuery(api.settlement.settlementRuns.getSettlementRun, { runId });
+  if (!run) return { obligations: [], adjustmentIds: [] };
+
+  const adjustments = await ctx.runQuery(
+    internal.settlement.settlementAdjustments.listApprovedAdjustmentsInternal,
+    {}
+  );
+
+  const obligations: ObligationInput[] = [];
+  const adjustmentIds: Id<'settlementAdjustments'>[] = [];
+
+  for (const adjustment of adjustments) {
+    if (
+      adjustment.amount <= 0 ||
+      adjustment.currency !== run.currency ||
+      adjustment.sourceParticipantId === adjustment.targetParticipantId
+    ) {
+      continue;
+    }
+
+    obligations.push({
+      sourceParticipantId: adjustment.sourceParticipantId,
+      targetParticipantId: adjustment.targetParticipantId,
+      category: 'adjustment',
+      amount: Math.round(adjustment.amount * 100) / 100,
+      sourceTxId: adjustment.originalTxId,
+      metadata: {
+        adjustmentId: adjustment._id,
+        adjustmentType: adjustment.adjustmentType,
+        reasonCode: adjustment.reasonCode,
+        reasonDescription: adjustment.reasonDescription,
+      },
+    });
+    adjustmentIds.push(adjustment._id);
+  }
+
+  return { obligations, adjustmentIds };
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function isHeldForDispute(tx: { metadata?: unknown }): boolean {
+  const metadata = metadataRecord(tx.metadata);
+  if (!metadata.disputeCaseId) return false;
+
+  const status =
+    typeof metadata.disputeCaseStatus === 'string' ? metadata.disputeCaseStatus : 'opened';
+  return ['opened', 'awaiting_response', 'represented', 'escalated'].includes(status);
+}
+
+function normalizeParticipantKey(value?: string): string | undefined {
+  return value?.replace(/[^a-z0-9]/gi, '').toUpperCase() || undefined;
+}
+
+function providerTokenFromVpa(vpa?: string): string | undefined {
+  const provider = vpa?.split('@')[1];
+  return normalizeParticipantKey(provider);
+}
+
+function resolveSponsorParticipant(participants: Array<any>) {
+  const configured = normalizeParticipantKey(
+    process.env.IPS_SPONSOR_PARTICIPANT_CODE ??
+      process.env.IPS_SPONSOR_PARTICIPANT_ID ??
+      process.env.IPS_SPONSOR_BIC
+  );
+
+  if (configured) {
+    const match = participants.find((participant) =>
+      [participant.routingCode, participant.swiftBic, participant.name, String(participant._id)]
+        .map(normalizeParticipantKey)
+        .includes(configured)
+    );
+    if (match) return match;
+  }
+
+  return (
+    participants.find((participant) => participant.participantType === 'sponsored') ??
+    participants.find((participant) => participant.isOperator) ??
+    participants[0]
+  );
+}
+
+function resolveParticipant(participants: Array<any>, bic?: string, vpa?: string) {
+  const keys = [normalizeParticipantKey(bic), providerTokenFromVpa(vpa)].filter(Boolean);
+  if (!keys.length) return undefined;
+
+  return participants.find((participant) => {
+    const participantKeys = [
+      participant.routingCode,
+      participant.swiftBic,
+      participant.name,
+      String(participant._id),
+    ].map(normalizeParticipantKey);
+    return keys.some((key) => participantKeys.includes(key));
+  });
 }
 
 /**
@@ -423,7 +626,7 @@ function computeBilateralNetting(obligations: ObligationInput[]): {
 } {
   // Group by (source, target) pair
   const netMap = new Map<string, number>();
-  const participantSet = new Set<string>();
+  const participantSet = new Set<Id<'settlementParticipants'>>();
 
   for (const ob of obligations) {
     if (ob.category === 'switching_fee') continue; // handled separately
@@ -447,9 +650,12 @@ function computeBilateralNetting(obligations: ObligationInput[]): {
   for (const [key, netAmount] of netMap.entries()) {
     if (Math.abs(netAmount) < 0.01) continue; // zero net — skip
 
-    const [aId, bId] = key.split(':');
-    const source = netAmount > 0 ? aId : bId;
-    const target = netAmount > 0 ? bId : aId;
+    const [aId, bId] = key.split(':') as [
+      Id<'settlementParticipants'>,
+      Id<'settlementParticipants'>,
+    ];
+    const source: Id<'settlementParticipants'> = netAmount > 0 ? aId : bId;
+    const target: Id<'settlementParticipants'> = netAmount > 0 ? bId : aId;
 
     instructions.push({
       instructionId: `NI-${seq++}`,
@@ -534,9 +740,7 @@ async function generatePacs009Batches(
     const fileName = `${xmlEscape(run.runId)}_${batchType}_pacs009.xml`;
     const xml = buildPacs009Xml(msgId, run, instList as NetInstruction[], batchType);
     const fileSize = new TextEncoder().encode(xml).length;
-
-    // Compute SHA-256 checksum (simplified — in production use crypto.subtle)
-    const checksum = `sha256:${fileSize}`;
+    const checksum = `sha256:${await sha256Hex(xml)}`;
 
     const batchId = await ctx.runMutation(
       internal.settlement.settlementActions.insertPacs009Batch,
@@ -557,6 +761,90 @@ async function generatePacs009Batches(
   }
 
   return batchIds;
+}
+
+async function generateSettlementReports(
+  ctx: ActionCtx,
+  runId: Id<'settlementRuns'>,
+  obligations: ObligationInput[],
+  instructions: NetInstruction[]
+) {
+  const run = await ctx.runQuery(api.settlement.settlementRuns.getSettlementRun, { runId });
+  if (!run) return;
+
+  const rawRows = obligations.map((obligation) => ({
+    sourceParticipantId: obligation.sourceParticipantId,
+    targetParticipantId: obligation.targetParticipantId,
+    category: obligation.category,
+    amount: obligation.amount,
+    sourceTxId: obligation.sourceTxId,
+    metadata: obligation.metadata,
+  }));
+
+  const ntslRows = instructions.map((instruction) => ({
+    instructionId: instruction.instructionId,
+    sourceParticipantId: instruction.sourceParticipantId,
+    targetParticipantId: instruction.targetParticipantId,
+    amount: instruction.amount,
+    categoryGroup: instruction.categoryGroup,
+    batchType: instruction.batchType,
+    endToEndId: instruction.endToEndId,
+  }));
+
+  const adjustmentRows = obligations
+    .filter((obligation) => obligation.category === 'adjustment')
+    .map((obligation) => ({
+      sourceParticipantId: obligation.sourceParticipantId,
+      targetParticipantId: obligation.targetParticipantId,
+      amount: obligation.amount,
+      sourceTxId: obligation.sourceTxId,
+      metadata: obligation.metadata,
+    }));
+  const pendingAdjustmentRows = await ctx.runQuery(
+    internal.settlement.settlementAdjustments.listPendingAdjustmentResponsesInternal,
+    {}
+  );
+  const timeoutRows = obligations.filter((obligation) => obligation.metadata?.timeout === true);
+  const pendingRows = obligations.filter((obligation) => obligation.metadata?.pending === true);
+
+  await writeSettlementReport(ctx, runId, run.runId, 'raw_data', rawRows);
+  await writeSettlementReport(ctx, runId, run.runId, 'ntsl', ntslRows);
+  await writeSettlementReport(ctx, runId, run.runId, 'adjustment', adjustmentRows);
+  await writeSettlementReport(
+    ctx,
+    runId,
+    run.runId,
+    'pending_adjustment_response',
+    pendingAdjustmentRows
+  );
+  await writeSettlementReport(ctx, runId, run.runId, 'timeout', timeoutRows);
+  await writeSettlementReport(ctx, runId, run.runId, 'pending_status', pendingRows);
+}
+
+async function writeSettlementReport(
+  ctx: ActionCtx,
+  runId: Id<'settlementRuns'>,
+  runSlug: string,
+  reportType:
+    | 'raw_data'
+    | 'ntsl'
+    | 'adjustment'
+    | 'pending_adjustment_response'
+    | 'pending_status'
+    | 'timeout',
+  rows: unknown[]
+) {
+  const fileContent = JSON.stringify({ reportType, rows }, null, 2);
+  const fileChecksum = `sha256:${await sha256Hex(fileContent)}`;
+  await ctx.runMutation(internal.settlement.settlementActions.insertSettlementReport, {
+    runId,
+    reportType,
+    fileName: `${runSlug}_${reportType}.json`,
+    fileContent,
+    fileChecksum,
+    fileSize: new TextEncoder().encode(fileContent).length,
+    reportData: { rows },
+  });
 }
 
 /**

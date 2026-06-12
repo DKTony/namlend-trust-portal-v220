@@ -18,7 +18,6 @@ import { assertStaff } from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitRelationship } from '../lib/relationshipEmitter';
-import { mandateExecutionStatus } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called by cron / system)
@@ -38,6 +37,7 @@ export const executeMandateDebit = internalMutation({
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) return null;
     if (mandate.status !== 'active') return null;
+    if (!mandate.loanId) return null;
 
     // Check if max executions already reached
     if (mandate.maxExecutions && mandate.executionCount >= mandate.maxExecutions) {
@@ -90,30 +90,13 @@ export const executeMandateDebit = internalMutation({
       updatedAt: Date.now(),
     });
 
-    // Enqueue TigerBeetle outbox entry for the debit
-    await ctx.db.insert('tigerBeetleOutbox', {
-      eventType: 'REPAYMENT',
-      sourceTable: 'paymentTransactions',
-      sourceId: paymentId,
-      payload: {
-        loan_id: mandate.loanId,
-        payment_id: paymentId,
-        mandate_id: mandateId,
-        amount: mandate.amount,
-        execution_number: executionNumber,
-        transfers: [
-          {
-            debit_type: 'LOAN_PRINCIPAL_RECEIVABLE',
-            credit_type: 'BANK_SETTLEMENT',
-            amount: mandate.amount,
-          },
-        ],
-      },
-      status: 'pending',
-      retryCount: 0,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // NOTE: No ledger (tigerBeetleOutbox) entry is enqueued here. Repayment posting
+    // must occur only on confirmed completion, not at initiation — see the
+    // outbox money-movement map. When the mandate-execution completion lifecycle is
+    // wired (completeExecution driven by payment confirmation), the REPAYMENT outbox
+    // row is enqueued there via buildRepaymentOutboxPayload + enqueueOutboxIdempotent.
+    // Auto-debit is currently disabled (MANDATE_AUTODEBIT_ENABLED=false), so this
+    // mutation is inert in production.
 
     // Emit relationship: mandate -> executed_via -> execution
     emitRelationship(

@@ -15,9 +15,10 @@ import { APR_LIMIT, isValidAPR } from './lib/regulatory';
 import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
-import { getNumericRule } from './lib/ruleEvaluator';
+import { approveLoanCore } from './lib/approvalReadiness';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { loanStatus, loanRecommendation } from './schema';
+import { assertKycVerifiedForUser } from './lib/kyc';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -142,6 +143,8 @@ export const createLoan = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    // KYC is enforced at submission and beyond (not at draft creation) so applicants
+    // can build a draft while verification is in progress. See submitLoan / approveLoanCore.
 
     // --- REGULATORY GATE ---
     if (!isValidAPR(args.interestRate)) {
@@ -292,6 +295,7 @@ export const submitLoan = mutation({
     const loan = await ctx.db.get(loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertOwnerOrStaff(ctx, loan.userId);
+    await assertKycVerifiedForUser(ctx, loan.userId, 'submit a loan application');
 
     if (loan.status !== 'draft') {
       throw new ConvexError({
@@ -372,59 +376,9 @@ export const approveLoan = mutation({
   },
   handler: async (ctx, { loanId, notes }) => {
     const staffId = await assertStaff(ctx);
-    const loan = await ctx.db.get(loanId);
-    if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-
-    if (!['under_review', 'submitted'].includes(loan.status)) {
-      throw new ConvexError({
-        code: 'INVALID_STATE',
-        message: `Loan cannot be approved from status '${loan.status}'.`,
-      });
-    }
-
-    // Validate credit score and DTI against data-driven business rules (if scored)
-    if (loan.creditScore !== undefined) {
-      const minScore = await getNumericRule(ctx, 'MIN_CREDIT_SCORE', 580);
-      if (loan.creditScore < minScore) {
-        throw new ConvexError({
-          code: 'CREDIT_CHECK_FAILED',
-          message: `Credit score ${loan.creditScore} is below minimum threshold of ${minScore}.`,
-        });
-      }
-    }
-    if (loan.debtToIncomeRatio !== undefined) {
-      const maxDTI = await getNumericRule(ctx, 'MAX_DTI_RATIO', 0.43);
-      if (loan.debtToIncomeRatio > maxDTI) {
-        throw new ConvexError({
-          code: 'DTI_CHECK_FAILED',
-          message: `Debt-to-income ratio ${loan.debtToIncomeRatio} exceeds maximum of ${maxDTI}.`,
-        });
-      }
-    }
-
-    await ctx.db.patch(loanId, {
-      status: 'approved',
-      updatedAt: Date.now(),
-    });
-
-    await ctx.db.insert('loanApprovals', {
-      loanId,
-      reviewedBy: staffId,
-      decision: 'approved',
-      notes,
-      stage: loan.currentStage ?? 'officer_review',
-      createdAt: Date.now(),
-    });
-
-    scheduleAuditLog(ctx, 'loan', loanId, 'APPROVE', loan.status, 'approved', notes);
-    emitDomainEvent(
-      ctx,
-      DOMAIN_EVENTS.LOAN_APPROVED,
-      'loans',
-      loanId,
-      { approvedBy: staffId },
-      { actorId: staffId, actorType: 'user' }
-    );
+    // All readiness invariants (KYC, scoring, DTI, recommendation, state) and the
+    // canonical transition live in approveLoanCore — shared with processApprovalRequest.
+    await approveLoanCore(ctx, { loanId, actorUserId: staffId, source: 'direct', notes });
   },
 });
 
@@ -608,15 +562,19 @@ export const batchUpdateLoanStatus = mutation({
     newStatus: loanStatus,
   },
   handler: async (ctx, { loanIds, newStatus }) => {
-    const adminId = await assertAdmin(ctx);
+    await assertAdmin(ctx);
     const now = Date.now();
 
-    // Block terminal/financial statuses — these require dedicated mutations with ledger housekeeping
-    const BATCH_BLOCKED = ['paid_off', 'written_off', 'funded'];
-    if (BATCH_BLOCKED.includes(newStatus)) {
+    // Batch update may only move loans between non-financial workflow states.
+    // Any transition that implies approval-readiness or money movement
+    // (approved/active/funded/paid_off/written_off) must go through its dedicated,
+    // invariant-enforcing mutation (approveLoanCore, disbursement, payment). This
+    // prevents the batch panel from bypassing KYC / scoring / DTI / ledger housekeeping.
+    const BATCH_ALLOWED = ['draft', 'submitted', 'under_review', 'rejected'];
+    if (!BATCH_ALLOWED.includes(newStatus)) {
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
-        message: `Status '${newStatus}' requires the dedicated mutation, not batch update.`,
+        message: `Status '${newStatus}' cannot be set via batch update; use the dedicated mutation with its readiness/ledger checks.`,
       });
     }
 

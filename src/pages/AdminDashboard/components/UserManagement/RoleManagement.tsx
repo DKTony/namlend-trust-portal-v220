@@ -10,7 +10,6 @@ import {
   Users,
   Plus,
   Edit,
-  Trash2,
   Settings,
   Eye,
   Lock,
@@ -26,13 +25,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 type AppRole = 'admin' | 'loan_officer' | 'client';
-import { assignRoleWithServiceRole } from '@/utils/serviceRoleAssignment';
 import AssignRoleModal from './AssignRoleModal';
 
 interface Role {
@@ -207,7 +204,6 @@ const RoleManagement: React.FC = () => {
     permissions: [] as string[],
   });
   const { toast } = useToast();
-  const [loadingCounts, setLoadingCounts] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedAppRole, setSelectedAppRole] = useState<AppRole | null>(null);
   const [viewUsersOpen, setViewUsersOpen] = useState(false);
@@ -251,7 +247,6 @@ const RoleManagement: React.FC = () => {
           return { ...r, userCount: count, updatedAt: new Date().toISOString() };
         })
       );
-      setLoadingCounts(false);
     }
   }, [adminUsers, officerUsers, clientUsers]);
 
@@ -321,31 +316,6 @@ const RoleManagement: React.FC = () => {
     });
   };
 
-  const handleAssignToUser = async (roleName: string) => {
-    const userId = typeof window !== 'undefined' ? window.prompt('Enter target user UUID') : null;
-    if (!userId) return;
-    try {
-      const appRole = nameToAppRole(roleName);
-      const res = await assignRoleWithServiceRole(userId, appRole);
-      if (res.success) {
-        toast({ title: 'Role assigned', description: `Assigned ${appRole} to ${userId}` });
-        refreshRoleCounts();
-      } else {
-        toast({
-          title: 'Assignment failed',
-          description: res.error || 'Unknown error',
-          variant: 'destructive',
-        });
-      }
-    } catch (e) {
-      toast({
-        title: 'Assignment error',
-        description: e instanceof Error ? e.message : String(e),
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleViewUsers = async (roleName: string) => {
     try {
       setViewUsersRole(roleName);
@@ -354,16 +324,22 @@ const RoleManagement: React.FC = () => {
       setViewUsersData([]);
 
       const appRole = nameToAppRole(roleName);
-      const res = await getProfilesWithRoles({ role: appRole, limit: 50, offset: 0 });
-      if (res.success) {
-        setViewUsersData(res.results || []);
-      } else {
-        toast({
-          title: 'Load users failed',
-          description: res.error || 'Unknown error',
-          variant: 'destructive',
-        });
-      }
+      const users =
+        appRole === 'admin' ? adminUsers : appRole === 'loan_officer' ? officerUsers : clientUsers;
+
+      setViewUsersData(
+        (users ?? []).map((user) => {
+          const [firstName = '', ...rest] = (user.fullName ?? '').split(' ');
+          return {
+            user_id: String(user.userId),
+            first_name: firstName || null,
+            last_name: rest.join(' ') || null,
+            email: user.email ?? null,
+            phone_number: user.phone ?? null,
+            account_status: user.status ?? 'active',
+          };
+        })
+      );
     } catch (e) {
       toast({
         title: 'Load error',

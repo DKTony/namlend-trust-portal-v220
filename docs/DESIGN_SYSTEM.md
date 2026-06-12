@@ -1,10 +1,10 @@
 # NamLend Trust - Design System Specification
 
-**Doc Revision**: 2026-03-19  
+**Doc Revision**: 2026-04-28  
 **Status**: Implemented with Tailwind + CSS variables. Google Fonts are loaded in `index.html` (Inter, Playfair Display, Space Grotesk).
 
-**Version**: 2.2.0  
-**Last Updated**: 2026-03-19  
+**Version**: 2.3.0  
+**Last Updated**: 2026-04-28  
 **Theme**: Neo-Fintech / "The Black Card Aesthetic"  
 **Status**: ✅ Implemented with Full Dark Mode Support
 
@@ -179,30 +179,38 @@ module.exports = {
 
 ---
 
-## 7. Responsive Layout System ✅ Implemented
+## 7. Adaptive Layout System ✅ Implemented
 
 ### Mobile-First Architecture
 
-The application uses a mobile-first responsive approach with breakpoints:
+The application uses shared viewport size classes from `useAdaptiveLayout()` instead of device detection:
 
-- **Mobile**: `< 768px` - Single column, stacked layouts
-- **Tablet**: `md:` (768px+) - Two column grids
-- **Desktop**: `lg:` (1024px+) - Full sidebar + content layout
+| Class      | Width Range | Shell Behavior                                      |
+| ---------- | ----------- | --------------------------------------------------- |
+| `compact`  | `< 640px`   | Drawer navigation, client bottom nav, stacked cards |
+| `medium`   | `640-1023`  | Icon rail plus content                              |
+| `expanded` | `1024-1439` | Permanent sidebar and dense grids                   |
+| `wide`     | `>= 1440`   | Permanent sidebar with constrained content width    |
+
+The hook also exposes `isCompactHeight`, `isTouch`, and `canHover` so touch-first screens never depend on hover-only affordances.
 
 ### Dashboard Layout
 
-- **Desktop**: Fixed sidebar (`w-72`) + scrollable main content
-- **Mobile**: Collapsible slide-out sidebar with overlay backdrop
-- **Mobile Header**: Compact header with hamburger menu toggle
+- **Phone**: Compact header, drawer navigation, safe-area padding, and bottom navigation for core client flows.
+- **Tablet**: Icon rail plus scrollable content.
+- **Desktop**: Permanent grouped sidebar plus dense content, grids, and inline action bars.
+- **Shell sizing**: Uses `dvh`-safe helpers instead of fixed `h-screen` assumptions.
 
 ### Key Components
 
 #### ThemedSidebar (`src/components/Layout/ThemedSidebar.tsx`)
 
-- **Width**: `w-80` (320px) — drawer-style slide-out panel
+- **Drawer Width**: `w-[min(20rem,calc(100vw-0.75rem))]` to prevent phone overflow
 - **Z-index**: `z-[70]` — above all page content
 - **Background**: Theme-aware (glass: `bg-white/10 backdrop-blur-xl`, lux: `bg-[#080808]`, neo: `bg-zinc-900`/`bg-white`)
-- **Mobile Behavior**: Slide-in from left with backdrop blur overlay, hamburger toggle
+- **Compact Behavior**: Slide-in drawer with backdrop blur overlay and hamburger toggle
+- **Medium Behavior**: Icon rail
+- **Desktop Behavior**: Permanent sidebar
 - **Navigation Items**: Icon + label with active state indicator and 3D tilt effect on hover
 - **User Profile Section**: Bottom-aligned with name, email, role badge, and sign-out button
 - **Variants**: `client` (dashboard tabs) | `admin` (direct route links)
@@ -215,11 +223,15 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#layouts) for routing integration. See [U
 - **Variants**: `black`, `green`, `blue`, `amber`, `red`
 - **Structure**: Label, value, optional subValue, icon with colored background
 
-#### Mobile Header
+#### Adaptive Primitives
 
-- **Height**: Standard mobile header height
-- **Content**: Logo + hamburger menu button
-- **Visibility**: `lg:hidden` (only on mobile/tablet)
+| Component             | File                                              | Purpose                                                          |
+| --------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `AdaptiveShell`       | `src/components/adaptive/AdaptiveShell.tsx`       | Switches drawer, rail, sidebar, and bottom nav                   |
+| `AdaptiveTabs`        | `src/components/adaptive/AdaptiveTabs.tsx`        | Scrollable compact tabs, grid desktop tabs                       |
+| `ResponsiveActionBar` | `src/components/adaptive/ResponsiveActionBar.tsx` | Stacked compact headers/actions, inline desktop actions          |
+| `AdaptiveDialog`      | `src/components/adaptive/AdaptiveDialog.tsx`      | Drawer on compact screens, dialog on wider screens               |
+| `AdaptiveCollection`  | `src/components/adaptive/AdaptiveCollection.tsx`  | Card collections on compact screens with optional wide rendering |
 
 ### Responsive Patterns Used
 
@@ -227,30 +239,33 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#layouts) for routing integration. See [U
 /* Grid stacking */
 grid-cols-1 md:grid-cols-2 lg:grid-cols-3
 
-/* Sidebar visibility */
-lg:static lg:translate-x-0  /* Desktop: always visible */
-fixed -translate-x-full     /* Mobile: hidden by default */
+/* Shell sizing */
+min-h-dvh h-dvh             /* Mobile browser chrome safe */
 
-/* Content padding */
-p-4 md:p-8                  /* Tighter on mobile */
+/* Safe area padding */
+pb-safe pt-safe             /* Notch/home-indicator safe */
 
-/* Typography scaling */
-text-3xl md:text-4xl        /* Larger on desktop */
+/* Dense tabs */
+overflow-x-auto md:grid     /* Scroll on phone, grid on desktop */
 ```
+
+See [ADAPTIVE_UI.md](./ADAPTIVE_UI.md) for the full viewport contract, affected screens, and Playwright matrix.
 
 ---
 
 ## 8. Component Files Reference
 
-| Component         | File                                      | Purpose                       |
-| ----------------- | ----------------------------------------- | ----------------------------- |
-| **Auth Page**     | `src/pages/Auth.tsx`                      | Split-screen authentication   |
-| **Dashboard**     | `src/pages/Dashboard.tsx`                 | Client dashboard with sidebar |
-| **ThemedSidebar** | `src/components/Layout/ThemedSidebar.tsx` | Drawer-style navigation       |
-| **StatCard**      | `src/components/StatCard.tsx`             | Metric display cards          |
-| **Card**          | `src/components/ui/card.tsx`              | Base card with rounded-3xl    |
-| **Button**        | `src/components/ui/button.tsx`            | Styled buttons                |
-| **Input**         | `src/components/ui/input.tsx`             | Form inputs                   |
+| Component         | File                                        | Purpose                        |
+| ----------------- | ------------------------------------------- | ------------------------------ |
+| **Auth Page**     | `src/pages/Auth.tsx`                        | Split-screen authentication    |
+| **Dashboard**     | `src/pages/Dashboard.tsx`                   | Client dashboard with sidebar  |
+| **AdaptiveShell** | `src/components/adaptive/AdaptiveShell.tsx` | Adaptive app shell             |
+| **AdaptiveTabs**  | `src/components/adaptive/AdaptiveTabs.tsx`  | Responsive tab lists           |
+| **ThemedSidebar** | `src/components/Layout/ThemedSidebar.tsx`   | Drawer/rail/sidebar navigation |
+| **StatCard**      | `src/components/StatCard.tsx`               | Metric display cards           |
+| **Card**          | `src/components/ui/card.tsx`                | Base card with rounded-3xl     |
+| **Button**        | `src/components/ui/button.tsx`              | Styled buttons                 |
+| **Input**         | `src/components/ui/input.tsx`               | Form inputs                    |
 
 ---
 
@@ -313,4 +328,4 @@ Colored badges use explicit dark mode variants for proper contrast:
 
 ---
 
-_Design System Version: 2.2.0_
+_Design System Version: 2.3.0_

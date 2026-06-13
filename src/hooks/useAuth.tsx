@@ -115,8 +115,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Session is a lightweight wrapper (consumers rarely use session directly)
   const session: Session | null = user ? { access_token: 'convex-managed', user } : null;
 
-  const isAdmin = userRole === 'admin';
-  const isLoanOfficer = userRole === 'loan_officer' || userRole === 'admin';
+  // `tenant_admin` is the multi-tenant successor to `admin`; both are treated as admin
+  // during the additive Phase-0 transition (matches the widened backend guards).
+  const isAdmin = userRole === 'admin' || userRole === 'tenant_admin';
+  const isLoanOfficer =
+    userRole === 'loan_officer' || userRole === 'admin' || userRole === 'tenant_admin';
 
   // ---------------------------------------------------------------------------
   // Auth actions

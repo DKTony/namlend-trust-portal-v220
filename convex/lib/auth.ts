@@ -57,11 +57,19 @@ async function getIdentityWithRole(ctx: AnyCtx) {
 // ---------------------------------------------------------------------------
 
 /**
- * Asserts the caller has the 'admin' role.
+ * Tenant-admin role set. `tenant_admin` is the multi-tenant successor to `admin`; both are
+ * accepted during the additive Phase-0 transition so existing `admin` users are unaffected.
+ */
+const ADMIN_ROLES = ['admin', 'tenant_admin'];
+/** Staff = any admin role plus loan_officer. */
+const STAFF_ROLES = ['admin', 'tenant_admin', 'loan_officer'];
+
+/**
+ * Asserts the caller has a tenant-admin role (`admin` or `tenant_admin`).
  */
 export async function assertAdmin(ctx: AnyCtx): Promise<Id<'users'>> {
   const { userId, role } = await getIdentityWithRole(ctx);
-  if (role !== 'admin') {
+  if (!role || !ADMIN_ROLES.includes(role)) {
     throw new ConvexError({
       code: 'FORBIDDEN',
       message: 'This action requires admin privileges.',
@@ -71,11 +79,11 @@ export async function assertAdmin(ctx: AnyCtx): Promise<Id<'users'>> {
 }
 
 /**
- * Asserts the caller is loan_officer OR admin.
+ * Asserts the caller is loan_officer OR a tenant-admin role.
  */
 export async function assertStaff(ctx: AnyCtx): Promise<Id<'users'>> {
   const { userId, role } = await getIdentityWithRole(ctx);
-  if (role !== 'loan_officer' && role !== 'admin') {
+  if (!role || !STAFF_ROLES.includes(role)) {
     throw new ConvexError({
       code: 'FORBIDDEN',
       message: 'This action requires staff privileges.',
@@ -94,7 +102,7 @@ export async function assertOwnerOrStaff(
 ): Promise<Id<'users'>> {
   const { userId, role } = await getIdentityWithRole(ctx);
   const isOwner = userId === resourceUserId;
-  const isStaff = role === 'loan_officer' || role === 'admin';
+  const isStaff = !!role && STAFF_ROLES.includes(role);
   if (!isOwner && !isStaff) {
     throw new ConvexError({
       code: 'FORBIDDEN',
@@ -102,6 +110,62 @@ export async function assertOwnerOrStaff(
     });
   }
   return userId;
+}
+
+// ---------------------------------------------------------------------------
+// Tenant-scoped role assertions (multi-tenant — Phase 0 additive)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the caller's userId, role, and bound institution (if any).
+ */
+async function getTenantIdentity(ctx: AnyCtx) {
+  const userId = await assertAuthenticated(ctx);
+  const roleDoc = await ctx.db
+    .query('userRoles')
+    .withIndex('by_userId', (q) => q.eq('userId', userId))
+    .first();
+  return {
+    userId,
+    role: (roleDoc?.role as string | undefined) ?? null,
+    institutionId: roleDoc?.institutionId ?? null,
+  };
+}
+
+/**
+ * Asserts the caller holds one of `roles` AND, if their account is already bound to a
+ * tenant, that it matches `institutionId`. Tolerant of an unbound account during the
+ * Phase-0/1 transition (binding becomes mandatory once tenancy is enforced in Phase 1).
+ */
+export async function assertTenantRole(
+  ctx: AnyCtx,
+  institutionId: Id<'institutions'>,
+  roles: string[]
+): Promise<Id<'users'>> {
+  const { userId, role, institutionId: bound } = await getTenantIdentity(ctx);
+  if (!role || !roles.includes(role)) {
+    throw new ConvexError({
+      code: 'FORBIDDEN',
+      message: 'You do not have the required role for this action.',
+    });
+  }
+  if (bound && bound !== institutionId) {
+    throw new ConvexError({
+      code: 'FORBIDDEN',
+      message: 'You do not have access to this tenant.',
+    });
+  }
+  return userId;
+}
+
+/** Tenant admin within a specific institution. */
+export function assertTenantAdmin(ctx: AnyCtx, institutionId: Id<'institutions'>) {
+  return assertTenantRole(ctx, institutionId, ADMIN_ROLES);
+}
+
+/** Tenant staff (admin or loan_officer) within a specific institution. */
+export function assertTenantStaff(ctx: AnyCtx, institutionId: Id<'institutions'>) {
+  return assertTenantRole(ctx, institutionId, STAFF_ROLES);
 }
 
 /**

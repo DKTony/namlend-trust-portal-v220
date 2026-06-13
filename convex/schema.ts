@@ -297,13 +297,27 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index('by_userId', ['userId']),
 
-  /** Role assignments — one row per user (client | loan_officer | admin) */
+  /**
+   * Role assignments — one row per user.
+   * `tenant_admin` is the multi-tenant successor to `admin`; both are accepted by the
+   * staff/admin guards during the additive transition (Phase 0). `institutionId` binds
+   * tenant users to their tenant (optional during transition; required once tenancy is
+   * enforced in Phase 1). Platform staff are NOT in this table — see `platformAdmins`.
+   */
   userRoles: defineTable({
     userId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
+    institutionId: v.optional(v.id('institutions')),
     assignedBy: v.optional(v.id('users')),
     createdAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
   /** KYC document uploads — linked to Convex File Storage */
   kycDocuments: defineTable({
@@ -1852,6 +1866,139 @@ export default defineSchema({
     updatedBy: v.optional(v.id('users')),
     createdAt: v.number(),
   }).index('by_institution_key', ['institutionId', 'key']),
+
+  // ==========================================================================
+  // PLATFORM CONTROL PLANE (multi-tenant SaaS) — Phase 0 (additive, inert)
+  // See docs/architecture/multi-tenant-platform-blueprint.md
+  // ==========================================================================
+
+  /**
+   * Platform staff — cross-tenant, OUTSIDE the tenant role model (`userRoles`).
+   * This is the only source of truth for who may access the Platform Console.
+   */
+  platformAdmins: defineTable({
+    userId: v.id('users'),
+    platformRole: v.union(v.literal('platform_owner'), v.literal('platform_support')),
+    status: v.union(v.literal('active'), v.literal('suspended')),
+    createdBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+    lastReviewedAt: v.optional(v.number()),
+  }).index('by_userId', ['userId']),
+
+  /** Commercial plan/tier catalog — each plan grants a default set of feature keys. */
+  plans: defineTable({
+    planCode: v.string(),
+    name: v.string(),
+    status: v.union(v.literal('active'), v.literal('retired')),
+    defaultFeatures: v.array(v.string()), // featureKeys (validated against the code manifest)
+    limits: v.optional(v.any()), // e.g. { maxOperators, maxActiveLoans }
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+  }).index('by_planCode', ['planCode']),
+
+  /** Active commercial relationship: which plan a tenant is on, and its status. */
+  tenantSubscriptions: defineTable({
+    institutionId: v.id('institutions'),
+    planCode: v.string(),
+    status: v.union(
+      v.literal('trial'),
+      v.literal('active'),
+      v.literal('suspended'),
+      v.literal('expired'),
+      v.literal('cancelled')
+    ),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    billingRef: v.optional(v.string()),
+    createdBy: v.optional(v.id('users')),
+    reason: v.optional(v.string()),
+  }).index('by_institutionId', ['institutionId']),
+
+  /**
+   * Resolved/overridable per-tenant feature grants. The owner console writes these;
+   * both planes read them. Temporal (trials/expiry) and rollout-aware.
+   */
+  tenantEntitlements: defineTable({
+    institutionId: v.id('institutions'),
+    featureKey: v.string(),
+    source: v.union(
+      v.literal('plan'),
+      v.literal('addon'),
+      v.literal('trial'),
+      v.literal('manual_override'),
+      v.literal('removal')
+    ),
+    enabled: v.boolean(),
+    rolloutState: v.union(
+      v.literal('off'),
+      v.literal('internal'),
+      v.literal('pilot'),
+      v.literal('enabled'),
+      v.literal('deprecated')
+    ),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    reason: v.optional(v.string()),
+    changedBy: v.optional(v.id('users')),
+    changedAt: v.number(),
+  })
+    .index('by_institution_feature', ['institutionId', 'featureKey'])
+    .index('by_institutionId', ['institutionId']),
+
+  /**
+   * DB mirror of the feature catalog for owner display/sell/rollout.
+   * AUTHORITY RULE: a row here is valid only if `featureKey` exists in the code
+   * manifest (`src/config/features.ts`); the DB may not invent enforceable features.
+   */
+  featuresCatalog: defineTable({
+    featureKey: v.string(),
+    name: v.string(),
+    category: v.string(),
+    console: v.union(v.literal('platform'), v.literal('backoffice'), v.literal('client')),
+    supportStatus: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_featureKey', ['featureKey']),
+
+  /**
+   * Platform-owned regulatory guardrails — non-negotiable constraints a tenant may
+   * tighten but never relax (APR cap, retention, KYC minimums), optionally per-jurisdiction.
+   */
+  platformGuardrails: defineTable({
+    code: v.string(), // "APR_CAP", "RETENTION_YEARS", "KYC_MIN", ...
+    jurisdiction: v.optional(v.string()),
+    valueType: v.union(
+      v.literal('number'),
+      v.literal('string'),
+      v.literal('boolean'),
+      v.literal('json')
+    ),
+    value: v.string(),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    updatedBy: v.optional(v.id('users')),
+  }).index('by_code', ['code']),
+
+  /**
+   * Audit of platform-support access to tenant scope — heavier than tenant-admin audit
+   * because support crosses tenant boundaries (POPIA / OWASP multi-tenant guidance).
+   */
+  supportAccessAudit: defineTable({
+    actorUserId: v.id('users'),
+    platformRole: v.string(),
+    institutionId: v.optional(v.id('institutions')),
+    accessType: v.union(v.literal('L0'), v.literal('L1'), v.literal('L2'), v.literal('L3')),
+    reason: v.optional(v.string()),
+    approvedBy: v.optional(v.id('users')),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    viewedResources: v.optional(v.array(v.string())),
+    impersonatedUserId: v.optional(v.id('users')),
+    ticketRef: v.optional(v.string()),
+  })
+    .index('by_actor', ['actorUserId'])
+    .index('by_institution', ['institutionId']),
 
   // ==========================================================================
   // ONTOLOGY ENGINE — Payment Rail Abstraction (Phase 5)

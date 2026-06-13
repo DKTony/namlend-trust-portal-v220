@@ -114,10 +114,13 @@ export const getOverduePayments = query({
   handler: async (ctx, { limit }) => {
     await assertStaff(ctx);
     const now = Date.now();
-    const scheduled = await ctx.db
-      .query('paymentSchedules')
-      .withIndex('by_status', (q) => q.eq('status', 'scheduled'))
-      .collect();
+    const scheduled = applyTenantScope(
+      await ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'scheduled'))
+        .collect(),
+      await tenantReadScope(ctx)
+    );
     return scheduled.filter((s) => s.dueDate < now).slice(0, limit ?? 100);
   },
 });
@@ -592,6 +595,7 @@ export const createPaymentSchedule = mutation({
     for (const installment of schedule) {
       await ctx.db.insert('paymentSchedules', {
         loanId,
+        institutionId: loan.institutionId,
         ...installment,
         status: 'scheduled',
         createdAt: now,

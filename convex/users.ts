@@ -10,7 +10,7 @@ import { v, ConvexError } from 'convex/values';
 import { query, mutation, internalQuery } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { tenantReadScope, applyTenantScope } from './lib/tenancy';
+import { tenantReadScope, applyTenantScope, resolveWriteInstitution } from './lib/tenancy';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
@@ -122,6 +122,7 @@ export const updateMyProfile = mutation({
     if (!profile) {
       await ctx.db.insert('profiles', {
         userId,
+        institutionId: await resolveWriteInstitution(ctx, { userId }),
         email: '',
         ...args,
         kycStatus: 'pending',
@@ -157,6 +158,7 @@ export const ensureProfile = mutation({
 
     const profileId = await ctx.db.insert('profiles', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       email: args.email,
       fullName: args.fullName,
       kycStatus: 'pending',
@@ -330,6 +332,7 @@ export const recordKycDocument = mutation({
 
     const docId = await ctx.db.insert('kycDocuments', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       documentType: args.documentType,
       fileStorageId: args.fileStorageId,
       status: 'pending',

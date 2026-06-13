@@ -6,6 +6,12 @@
 import { v } from 'convex/values';
 import { query, mutation } from './_generated/server';
 import { assertStaff, assertAdmin } from './lib/auth';
+import {
+  resolveWriteInstitution,
+  tenantReadScope,
+  applyTenantScope,
+  assertSameTenant,
+} from './lib/tenancy';
 import { scheduleAuditLog } from './lib/audit';
 
 // ---------------------------------------------------------------------------
@@ -20,10 +26,13 @@ export const listBankTransactions = query({
   },
   handler: async (ctx, { status, source, limit }) => {
     await assertStaff(ctx);
-    let results = await ctx.db
-      .query('bankTransactions')
-      .order('desc')
-      .take(limit ?? 100);
+    let results = applyTenantScope(
+      await ctx.db
+        .query('bankTransactions')
+        .order('desc')
+        .take(limit ?? 100),
+      await tenantReadScope(ctx)
+    );
 
     if (status) results = results.filter((t) => t.status === status);
     if (source) results = results.filter((t) => (t as Record<string, unknown>).source === source);
@@ -35,7 +44,9 @@ export const getBankTransaction = query({
   args: { transactionId: v.id('bankTransactions') },
   handler: async (ctx, { transactionId }) => {
     await assertStaff(ctx);
-    return ctx.db.get(transactionId);
+    const txn = await ctx.db.get(transactionId);
+    assertSameTenant(await tenantReadScope(ctx), txn?.institutionId);
+    return txn;
   },
 });
 
@@ -55,6 +66,7 @@ export const importBankTransactions = mutation({
   },
   handler: async (ctx, { transactions }) => {
     await assertAdmin(ctx);
+    const institutionId = await resolveWriteInstitution(ctx);
 
     let imported = 0;
     let duplicates = 0;
@@ -73,6 +85,7 @@ export const importBankTransactions = mutation({
 
       await ctx.db.insert('bankTransactions', {
         ...txn,
+        institutionId,
         source: txn.source ?? 'manual',
         status: 'unmatched',
         importedAt: Date.now(),
@@ -94,10 +107,13 @@ export const listReconciliationRuns = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     await assertStaff(ctx);
-    return ctx.db
-      .query('reconciliationRuns')
-      .order('desc')
-      .take(limit ?? 50);
+    return applyTenantScope(
+      await ctx.db
+        .query('reconciliationRuns')
+        .order('desc')
+        .take(limit ?? 50),
+      await tenantReadScope(ctx)
+    );
   },
 });
 
@@ -107,6 +123,7 @@ export const getReconciliationRun = query({
     await assertStaff(ctx);
     const run = await ctx.db.get(runId);
     if (!run) return null;
+    assertSameTenant(await tenantReadScope(ctx), run.institutionId);
 
     const transactions = await ctx.db
       .query('bankTransactions')
@@ -128,6 +145,7 @@ export const createReconciliationRun = mutation({
     const now = Date.now();
     return ctx.db.insert('reconciliationRuns', {
       ...args,
+      institutionId: await resolveWriteInstitution(ctx),
       status: 'pending',
       matchedCount: 0,
       unmatchedCount: 0,
@@ -240,12 +258,15 @@ export const getReconciliationStats = query({
   handler: async (ctx, { runId }) => {
     await assertStaff(ctx);
 
-    const transactions = runId
-      ? await ctx.db
-          .query('bankTransactions')
-          .withIndex('by_runId', (q) => q.eq('runId', runId))
-          .collect()
-      : await ctx.db.query('bankTransactions').take(10000);
+    const transactions = applyTenantScope(
+      runId
+        ? await ctx.db
+            .query('bankTransactions')
+            .withIndex('by_runId', (q) => q.eq('runId', runId))
+            .collect()
+        : await ctx.db.query('bankTransactions').take(10000),
+      await tenantReadScope(ctx)
+    );
 
     return {
       total: transactions.length,

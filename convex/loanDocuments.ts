@@ -50,6 +50,7 @@ export const recordDocument = mutation({
     return ctx.db.insert('loanDocuments', {
       loanId: args.loanId,
       userId,
+      institutionId: loan.institutionId,
       documentType: args.documentType,
       fileName: args.fileName,
       fileStorageId: args.fileStorageId,

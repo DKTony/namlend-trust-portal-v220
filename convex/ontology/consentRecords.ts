@@ -22,6 +22,7 @@ import { v } from 'convex/values';
 import { mutation, query, internalQuery } from '../_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff } from '../lib/auth';
+import { resolveWriteInstitution } from '../lib/tenancy';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitRelationship } from '../lib/relationshipEmitter';
@@ -66,6 +67,7 @@ export const grantConsent = mutation({
 
     const consentId = await ctx.db.insert('consentRecords', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       consentType: args.consentType,
       status: 'granted',
       description: args.description,

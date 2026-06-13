@@ -278,6 +278,7 @@ export default defineSchema({
   /** Extended user profile — NamLend-specific fields beyond authTables.users */
   profiles: defineTable({
     userId: v.id('users'),
+    institutionId: v.optional(v.id('institutions')),
     email: v.string(),
     fullName: v.optional(v.string()),
     phone: v.optional(v.string()),
@@ -295,7 +296,9 @@ export default defineSchema({
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
   /**
    * Role assignments — one row per user.
@@ -322,6 +325,7 @@ export default defineSchema({
   /** KYC document uploads — linked to Convex File Storage */
   kycDocuments: defineTable({
     userId: v.id('users'),
+    institutionId: v.optional(v.id('institutions')),
     documentType: v.string(),
     documentNumber: v.optional(v.string()),
     fileStorageId: v.optional(v.id('_storage')),
@@ -330,7 +334,9 @@ export default defineSchema({
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
   // ==========================================================================
   // LENDING CORE
@@ -379,6 +385,7 @@ export default defineSchema({
 
   /** Loan supporting documents via Convex File Storage */
   loanDocuments: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     documentType: v.string(),
@@ -392,6 +399,7 @@ export default defineSchema({
 
   /** Approval decisions on each loan — immutable after write */
   loanApprovals: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     reviewedBy: v.optional(v.id('users')),
     decision: v.union(
@@ -481,6 +489,7 @@ export default defineSchema({
     .index('by_institutionId', ['institutionId']),
 
   paymentSchedules: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     installmentNumber: v.number(),
     dueDate: v.number(),
@@ -582,6 +591,7 @@ export default defineSchema({
   // ==========================================================================
 
   notifications: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     type: v.optional(v.string()),
     channel: v.optional(
@@ -655,6 +665,7 @@ export default defineSchema({
 
   /** User notification preferences per channel/category */
   notificationPreferences: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     channel: v.string(),
     category: v.string(),
@@ -664,6 +675,7 @@ export default defineSchema({
   }).index('by_userId', ['userId']),
 
   communicationLogs: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     channel: v.string(),
     direction: v.union(v.literal('inbound'), v.literal('outbound')),
@@ -687,6 +699,7 @@ export default defineSchema({
    * Idempotency enforced via by_msgId index + uniqueness check in mutation.
    */
   ipsTransactions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     msgId: v.string(), // idempotency key — unique per transaction
     txType: v.union(
       v.literal('credit_transfer'),
@@ -753,6 +766,7 @@ export default defineSchema({
     .index('by_settlementDate_status', ['settlementDate', 'status']),
 
   vpaRegistry: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     vpa: v.string(),
     vpaType: v.union(v.literal('collection'), v.literal('disbursement'), v.literal('personal')),
@@ -767,6 +781,7 @@ export default defineSchema({
     .index('by_vpa', ['vpa']),
 
   ipsApiLogs: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     transactionId: v.optional(v.id('ipsTransactions')),
     method: v.string(),
     endpoint: v.string(),
@@ -1468,6 +1483,7 @@ export default defineSchema({
   }).index('by_entityId', ['entityType', 'entityId']),
 
   complianceReports: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     reportType: v.union(
       v.literal('monthly_approvals'),
       v.literal('user_activity'),
@@ -1521,6 +1537,7 @@ export default defineSchema({
   // ==========================================================================
 
   reconciliationRuns: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     runDate: v.optional(v.string()),
     periodStart: v.optional(v.string()),
     periodEnd: v.optional(v.string()),
@@ -1543,6 +1560,7 @@ export default defineSchema({
   }),
 
   bankTransactions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     runId: v.optional(v.id('reconciliationRuns')),
     externalId: v.optional(v.string()),
     transactionDate: v.string(),
@@ -1578,6 +1596,7 @@ export default defineSchema({
   // ==========================================================================
 
   collectionsInteractions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.optional(v.id('users')),
     agentId: v.optional(v.id('users')),
@@ -1600,6 +1619,7 @@ export default defineSchema({
   }).index('by_loanId', ['loanId']),
 
   overdueReminders: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     channel: v.string(),
@@ -1615,6 +1635,7 @@ export default defineSchema({
   }).index('by_loanId', ['loanId']),
 
   promiseToPay: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     amount: v.number(),
@@ -1788,6 +1809,7 @@ export default defineSchema({
    * Mandate execution records — each time a mandate is exercised against a debtor.
    */
   mandateExecutions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     mandateId: v.id('mandates'),
     executionNumber: v.number(),
     amount: v.number(),
@@ -1810,6 +1832,7 @@ export default defineSchema({
    * POPIA-aligned consent records — what the person agreed to, when, and how.
    */
   consentRecords: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     consentType: consentType,
     status: consentStatus,

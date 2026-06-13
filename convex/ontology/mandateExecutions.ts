@@ -56,6 +56,7 @@ export const executeMandateDebit = internalMutation({
     // Create execution record
     const executionId = await ctx.db.insert('mandateExecutions', {
       mandateId,
+      institutionId: mandate.institutionId,
       executionNumber,
       amount: mandate.amount,
       status: 'pending',

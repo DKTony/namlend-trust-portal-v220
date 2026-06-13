@@ -423,6 +423,7 @@ export const rejectLoan = mutation({
       loanId,
       reviewedBy: staffId,
       decision: 'rejected',
+      institutionId: loan.institutionId,
       notes: notes ?? reason,
       stage: loan.currentStage ?? 'officer_review',
       createdAt: Date.now(),

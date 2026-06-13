@@ -13,7 +13,7 @@ import type { Id } from '../_generated/dataModel';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { enqueueOutboxIdempotent } from '../lib/outbox';
-import { resolveWriteInstitution } from '../lib/tenancy';
+import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from '../lib/tenancy';
 import { ipsTransactionStatus } from '../schema';
 import {
   enforceTransactionLimits,
@@ -550,17 +550,20 @@ export const adminListIpsTransactions = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     if (status) {
-      return ctx.db
+      const rows = await ctx.db
         .query('ipsTransactions')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
+      return applyTenantScope(rows, scope);
     }
-    return ctx.db
+    const rows = await ctx.db
       .query('ipsTransactions')
       .order('desc')
       .take(limit ?? 100);
+    return applyTenantScope(rows, scope);
   },
 });
 
@@ -660,6 +663,7 @@ export const initiateIpsRepayment = mutation({
       endToEndId: msgId,
       remittanceInfo: `Loan repayment ${args.loanId}`,
       loanId: args.loanId,
+      institutionId: loan.institutionId,
       userId: loan.userId,
       paymentId,
       clientRequestId: args.clientRequestId,
@@ -814,6 +818,7 @@ export const initiateIpsDisbursement = mutation({
       endToEndId: msgId,
       remittanceInfo: `Loan disbursement ${args.disbursementId}`,
       loanId: disbursement.loanId,
+      institutionId: disbursement.institutionId,
       userId: disbursement.userId,
       disbursementId: args.disbursementId,
       clientRequestId: args.clientRequestId,
@@ -966,6 +971,10 @@ export const initiateIpsTransaction = mutation({
       loanId: linkedLoanId,
       disbursementId: linkedDisbursementId,
       userId: ownerUserId,
+      institutionId: await resolveWriteInstitution(ctx, {
+        loanId: linkedLoanId ?? undefined,
+        userId: ownerUserId ?? undefined,
+      }),
       useCaseType,
       status: 'pending',
       initiatedAt: now,

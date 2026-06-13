@@ -12,6 +12,7 @@ import { action, mutation, query } from '../_generated/server';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { assertAuthenticated } from '../lib/auth';
+import { resolveWriteInstitution } from '../lib/tenancy';
 import { getAliasAvailabilityReason, isAliasUsable } from '../lib/ipsResponseParsers';
 
 function maskReference(value?: string) {
@@ -171,6 +172,7 @@ export const upsertVpa = mutation({
 
     const vpaId = await ctx.db.insert('vpaRegistry', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       vpa: normalizedVpa,
       vpaType: 'personal',
       isDefault: args.setDefault ?? !hasDefault,

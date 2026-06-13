@@ -102,6 +102,7 @@ export async function approveLoanCore(
     loanId: opts.loanId,
     reviewedBy: opts.actorUserId,
     decision: 'approved',
+    institutionId: loan.institutionId,
     notes: opts.notes,
     stage: loan.currentStage ?? 'officer_review',
     createdAt: now,

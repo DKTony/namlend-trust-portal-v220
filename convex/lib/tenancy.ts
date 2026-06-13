@@ -79,33 +79,56 @@ async function soleInstitution(ctx: AnyCtx): Promise<Id<'institutions'> | null> 
   return two.length === 1 ? two[0]._id : null;
 }
 
+/** Look up a user's bound tenant from their userRoles row. */
+async function institutionForUser(
+  ctx: AnyCtx,
+  userId: Id<'users'>
+): Promise<Id<'institutions'> | null> {
+  const roleDoc = await ctx.db
+    .query('userRoles')
+    .withIndex('by_userId', (q) => q.eq('userId', userId))
+    .first();
+  return roleDoc?.institutionId ?? null;
+}
+
 /**
  * Resolve the `institutionId` to stamp on a new row.
- * Priority: parent loan → caller's bound tenant → sole tenant (transition).
+ * Priority: parent loan → parent mandate → target user's tenant → caller's tenant → sole tenant.
  * Returns `undefined` (leave column null; backfill handles) only when not enforcing and
  * nothing resolves; throws `TENANT_CONTEXT_REQUIRED` when enforcing and unresolved.
  */
 export async function resolveWriteInstitution(
   ctx: MutCtx,
-  opts: { loanId?: Id<'loans'> } = {}
+  opts: { loanId?: Id<'loans'>; mandateId?: Id<'mandates'>; userId?: Id<'users'> } = {}
 ): Promise<Id<'institutions'> | undefined> {
   // 1. Parent loan — works for user AND system writes (webhooks/crons have no caller).
   if (opts.loanId) {
     const loan = await ctx.db.get(opts.loanId);
     if (loan?.institutionId) return loan.institutionId;
   }
-  // 2. Caller's bound tenant (best-effort; system writes have no auth).
+  // 2. Parent mandate.
+  if (opts.mandateId) {
+    const mandate = await ctx.db.get(opts.mandateId);
+    if (mandate?.institutionId) return mandate.institutionId;
+    if (mandate?.loanId) {
+      const loan = await ctx.db.get(mandate.loanId);
+      if (loan?.institutionId) return loan.institutionId;
+    }
+  }
+  // 3. The target user the row belongs to (e.g. a notification for a borrower).
+  if (opts.userId) {
+    const inst = await institutionForUser(ctx, opts.userId);
+    if (inst) return inst;
+  }
+  // 4. Caller's bound tenant (best-effort; system writes have no auth).
   try {
-    const userId = await assertAuthenticated(ctx);
-    const roleDoc = await ctx.db
-      .query('userRoles')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .first();
-    if (roleDoc?.institutionId) return roleDoc.institutionId;
+    const callerId = await assertAuthenticated(ctx);
+    const inst = await institutionForUser(ctx, callerId);
+    if (inst) return inst;
   } catch {
     // unauthenticated system context — fall through
   }
-  // 3. Sole-tenant transition fallback.
+  // 5. Sole-tenant transition fallback.
   const sole = await soleInstitution(ctx);
   if (sole) return sole;
 

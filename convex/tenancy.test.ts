@@ -228,3 +228,81 @@ describe('backfill', () => {
     expect(r2.stamped?.loans).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 1b — representative isolation across derivation classes
+// ---------------------------------------------------------------------------
+
+describe('Phase 1b isolation', () => {
+  test('user-owned: listUsers shows only the caller tenant when enforcing', async () => {
+    const t = convexTest(schema, modules);
+    const instA = await seedInstitution(t, 'UA');
+    const instB = await seedInstitution(t, 'UB');
+    const staffA = await seedUser(t, { role: 'tenant_admin', institutionId: instA });
+    await seedUser(t, { role: 'client', institutionId: instA });
+    await seedUser(t, { role: 'client', institutionId: instB });
+
+    const before = await asUser(t, staffA).query(api.users.listUsers, {});
+    expect(before.length).toBe(3); // inert → all
+
+    await enableEnforcement(t);
+    const after = await asUser(t, staffA).query(api.users.listUsers, {});
+    expect(after.length).toBe(2); // staffA + clientA only
+    expect(after.every((u) => u.institutionId === instA)).toBe(true);
+  });
+
+  test('loan-child: collections queue shows only the caller tenant when enforcing', async () => {
+    const t = convexTest(schema, modules);
+    const instA = await seedInstitution(t, 'CA');
+    const instB = await seedInstitution(t, 'CB');
+    const staffA = await seedUser(t, { role: 'tenant_admin', institutionId: instA });
+    const borrowerA = await seedUser(t, { role: 'client', institutionId: instA });
+    const borrowerB = await seedUser(t, { role: 'client', institutionId: instB });
+    const loanA = await seedLoanFor(t, borrowerA, instA);
+    const loanB = await seedLoanFor(t, borrowerB, instB);
+    await t.run(async (ctx) => {
+      const base = {
+        installmentNumber: 1,
+        dueDate: Date.now() - 86_400_000,
+        principalDue: 100,
+        interestDue: 10,
+        totalDue: 110,
+        status: 'overdue' as const,
+        createdAt: Date.now(),
+      };
+      await ctx.db.insert('paymentSchedules', { ...base, loanId: loanA, institutionId: instA });
+      await ctx.db.insert('paymentSchedules', { ...base, loanId: loanB, institutionId: instB });
+    });
+
+    await enableEnforcement(t);
+    const queue = await asUser(t, staffA).query(api.collections.getCollectionsQueue, {});
+    expect(queue.length).toBe(1);
+    expect(queue[0].institutionId).toBe(instA);
+  });
+
+  test('staff-created: bank transactions list scopes by tenant when enforcing', async () => {
+    const t = convexTest(schema, modules);
+    const instA = await seedInstitution(t, 'BA');
+    const instB = await seedInstitution(t, 'BB');
+    const staffA = await seedUser(t, { role: 'tenant_admin', institutionId: instA });
+    await t.run(async (ctx) => {
+      const base = {
+        amount: 100,
+        transactionDate: '2026-01-01',
+        transactionType: 'credit' as const,
+        source: 'manual',
+        status: 'unmatched' as const,
+        importedAt: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await ctx.db.insert('bankTransactions', { ...base, externalId: 'A1', institutionId: instA });
+      await ctx.db.insert('bankTransactions', { ...base, externalId: 'B1', institutionId: instB });
+    });
+
+    await enableEnforcement(t);
+    const rows = await asUser(t, staffA).query(api.reconciliation.listBankTransactions, {});
+    expect(rows.length).toBe(1);
+    expect(rows[0].institutionId).toBe(instA);
+  });
+});

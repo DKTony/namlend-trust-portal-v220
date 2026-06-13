@@ -7,6 +7,7 @@ import { v } from 'convex/values';
 import { ConvexError } from 'convex/values';
 import { query, mutation } from './_generated/server';
 import { assertStaff } from './lib/auth';
+import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
@@ -47,11 +48,12 @@ export const getCollectionsQueue = query({
     await assertStaff(ctx);
 
     // Fetch overdue payment schedules to build queue
-    const overdue = await ctx.db
+    const overdueRaw = await ctx.db
       .query('paymentSchedules')
       .withIndex('by_status', (q) => q.eq('status', 'overdue'))
       .order('asc')
       .take(limit ?? 100);
+    const overdue = applyTenantScope(overdueRaw, await tenantReadScope(ctx));
 
     const now = Date.now();
     const MS_PER_DAY = 86_400_000;
@@ -129,6 +131,7 @@ export const recordInteraction = mutation({
 
     const interactionId = await ctx.db.insert('collectionsInteractions', {
       ...args,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       promiseFulfilled: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -177,7 +180,10 @@ export const listPromisesToPay = query({
   handler: async (ctx, { loanId, status }) => {
     await assertStaff(ctx);
 
-    let results = await ctx.db.query('promiseToPay').collect();
+    let results = applyTenantScope(
+      await ctx.db.query('promiseToPay').collect(),
+      await tenantReadScope(ctx)
+    );
     if (loanId) results = results.filter((p) => p.loanId === loanId);
     if (status) results = results.filter((p) => p.status === status);
     return results;
@@ -202,6 +208,7 @@ export const createPromiseToPay = mutation({
     const ptpId = await ctx.db.insert('promiseToPay', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: loan.institutionId,
       amount: args.promiseAmount,
       promiseDate: args.promiseDate,
       status: 'pending',
@@ -277,7 +284,10 @@ export const listOverdueReminders = query({
   },
   handler: async (ctx, { loanId, sent }) => {
     await assertStaff(ctx);
-    let results = await ctx.db.query('overdueReminders').collect();
+    let results = applyTenantScope(
+      await ctx.db.query('overdueReminders').collect(),
+      await tenantReadScope(ctx)
+    );
     if (loanId) results = results.filter((r) => r.loanId === loanId);
     if (sent !== undefined) results = results.filter((r) => r.sent === sent);
     return results;
@@ -305,8 +315,9 @@ export const getCollectionsStats = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
 
-    const [overdue, ptps, interactions] = await Promise.all([
+    const [overdueRaw, ptpsRaw, interactionsRaw] = await Promise.all([
       ctx.db
         .query('paymentSchedules')
         .withIndex('by_status', (q) => q.eq('status', 'overdue'))
@@ -314,6 +325,9 @@ export const getCollectionsStats = query({
       ctx.db.query('promiseToPay').collect(),
       ctx.db.query('collectionsInteractions').collect(),
     ]);
+    const overdue = applyTenantScope(overdueRaw, scope);
+    const ptps = applyTenantScope(ptpsRaw, scope);
+    const interactions = applyTenantScope(interactionsRaw, scope);
 
     const now = Date.now();
     const MS_PER_DAY = 86_400_000;

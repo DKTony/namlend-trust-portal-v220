@@ -12,12 +12,34 @@ import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
 
+/** All tenant-owned tables carrying an `institutionId` (financial core + Phase 1b). */
 const CORE_TABLES = [
+  // Phase 1a financial core
   'loans',
   'paymentTransactions',
   'disbursements',
   'approvalRequests',
   'mandates',
+  // Phase 1b — client/PII, lending child, collections, IPS, reconciliation
+  'profiles',
+  'kycDocuments',
+  'loanDocuments',
+  'loanApprovals',
+  'paymentSchedules',
+  'notifications',
+  'notificationPreferences',
+  'communicationLogs',
+  'vpaRegistry',
+  'consentRecords',
+  'ipsApiLogs',
+  'ipsTransactions',
+  'collectionsInteractions',
+  'promiseToPay',
+  'overdueReminders',
+  'complianceReports',
+  'bankTransactions',
+  'reconciliationRuns',
+  'mandateExecutions',
 ] as const;
 
 type CoreTable = (typeof CORE_TABLES)[number];

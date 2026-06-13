@@ -7,8 +7,19 @@ Pooled multi-tenancy isolates by `institutionId`. This inventory is the scope of
 > **Phase 1a — DONE (flag-gated):** the 5 "Ready" tables below now have stamp-on-write +
 > scope-on-read via the tenant access layer (`convex/lib/tenancy.ts`) + an idempotent backfill
 > (`convex/platform/backfill.ts`), all behind the `TENANCY_ENFORCEMENT` businessRule (default
-> off → inert). Negative-isolation tests in `convex/tenancy.test.ts`. The remaining tables below
-> are **Phase 1b**.
+> off → inert). Negative-isolation tests in `convex/tenancy.test.ts`.
+>
+> **Phase 1b — DONE (flag-gated):** all remaining tenant-owned tables (profiles, kycDocuments,
+> loanDocuments, loanApprovals, paymentSchedules, notifications, notificationPreferences,
+> communicationLogs, vpaRegistry, consentRecords, ipsApiLogs, ipsTransactions,
+> collectionsInteractions, promiseToPay, overdueReminders, complianceReports, bankTransactions,
+> reconciliationRuns, mandateExecutions) now carry `institutionId`, are stamped on write
+> (parent-loan / parent-mandate / target-user / caller derivation in `resolveWriteInstitution`),
+> and staff bulk reads are scoped (collections queue/PTP/reminders/stats, reconciliation
+> lists/stats, IPS tx list, overdue payments, listUsers). Backfill covers all of them. Same
+> inert flag. `by_institutionId` indexes for these tables are deferred to the compound-index
+> perf pass (1b uses filter-after-fetch). **Data-plane isolation is now complete** —
+> Phase 3 (console split) is unblocked.
 
 ## Ready — `institutionId` present **and** indexed (5) — ✅ enforced in Phase 1a
 

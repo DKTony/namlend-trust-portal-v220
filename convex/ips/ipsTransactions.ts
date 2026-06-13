@@ -13,6 +13,7 @@ import type { Id } from '../_generated/dataModel';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
 import { scheduleAuditLog } from '../lib/audit';
 import { enqueueOutboxIdempotent } from '../lib/outbox';
+import { resolveWriteInstitution } from '../lib/tenancy';
 import { ipsTransactionStatus } from '../schema';
 import {
   enforceTransactionLimits,
@@ -631,6 +632,7 @@ export const initiateIpsRepayment = mutation({
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       method: 'ips',
       status: 'pending',

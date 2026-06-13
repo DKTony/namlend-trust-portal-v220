@@ -18,6 +18,12 @@ import { v } from 'convex/values';
 import { mutation, query, internalMutation, internalQuery } from '../_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import {
+  resolveWriteInstitution,
+  tenantReadScope,
+  applyTenantScope,
+  assertSameTenant,
+} from '../lib/tenancy';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
@@ -98,6 +104,7 @@ export const createMandate = mutation({
       creditorAccountRef: args.creditorAccountRef,
       creditorName: args.creditorName,
       loanId: args.loanId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       currency: args.currency ?? 'NAD',
       frequency: args.frequency,
@@ -571,10 +578,11 @@ export const getMandatesByLoan = query({
   },
   handler: async (ctx, { loanId }) => {
     await assertStaff(ctx);
-    return ctx.db
+    const rows = await ctx.db
       .query('mandates')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
       .collect();
+    return applyTenantScope(rows, await tenantReadScope(ctx));
   },
 });
 
@@ -587,10 +595,12 @@ export const getMandateByRef = query({
   },
   handler: async (ctx, { mandateRef }) => {
     await assertStaff(ctx);
-    return ctx.db
+    const mandate = await ctx.db
       .query('mandates')
       .withIndex('by_mandateRef', (q) => q.eq('mandateRef', mandateRef))
       .first();
+    assertSameTenant(await tenantReadScope(ctx), mandate?.institutionId);
+    return mandate;
   },
 });
 

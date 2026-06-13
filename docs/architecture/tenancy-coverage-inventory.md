@@ -4,7 +4,13 @@ Pooled multi-tenancy isolates by `institutionId`. This inventory is the scope of
 (tenancy hardening)** — it is **not** done in Phase 0 (which is inert). Verified against
 `convex/schema.ts`.
 
-## Ready — `institutionId` present **and** indexed (5)
+> **Phase 1a — DONE (flag-gated):** the 5 "Ready" tables below now have stamp-on-write +
+> scope-on-read via the tenant access layer (`convex/lib/tenancy.ts`) + an idempotent backfill
+> (`convex/platform/backfill.ts`), all behind the `TENANCY_ENFORCEMENT` businessRule (default
+> off → inert). Negative-isolation tests in `convex/tenancy.test.ts`. The remaining tables below
+> are **Phase 1b**.
+
+## Ready — `institutionId` present **and** indexed (5) — ✅ enforced in Phase 1a
 
 | Table                 | Field    | Index                 |
 | --------------------- | -------- | --------------------- |

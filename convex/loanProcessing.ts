@@ -81,7 +81,7 @@ export const recordProcessingFailure = internalMutation({
     if (deadLettered) {
       const admin = await ctx.db
         .query('userRoles')
-        .filter((q) => q.eq(q.field('role'), 'admin'))
+        .filter((q) => q.or(q.eq(q.field('role'), 'admin'), q.eq(q.field('role'), 'tenant_admin')))
         .first();
       if (admin) {
         await ctx.scheduler

@@ -10,6 +10,7 @@ import { v, ConvexError } from 'convex/values';
 import { query, mutation, internalQuery } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
+import { tenantReadScope, applyTenantScope } from './lib/tenancy';
 import { scheduleAuditLog } from './lib/audit';
 import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
@@ -63,6 +64,7 @@ export const listUsers = query({
   },
   handler: async (ctx, { role, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
 
     const profiles = await ctx.db
       .query('profiles')
@@ -75,14 +77,22 @@ export const listUsers = query({
           .query('userRoles')
           .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
           .first();
-        return { ...profile, role: roleDoc?.role ?? 'client' };
+        return {
+          ...profile,
+          role: roleDoc?.role ?? 'client',
+          institutionId: roleDoc?.institutionId,
+        };
       })
     );
 
+    // Tenant scope (profiles have no own institutionId — derive from the role row).
+    // No-op while enforcement is off; null-institution rows treated as the caller's tenant.
+    const scoped = applyTenantScope(result, scope);
+
     if (role) {
-      return result.filter((u) => u.role === role);
+      return scoped.filter((u) => u.role === role);
     }
-    return result;
+    return scoped;
   },
 });
 

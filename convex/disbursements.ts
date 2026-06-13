@@ -30,6 +30,7 @@ import { txStatus } from './schema';
 import { internal } from './_generated/api';
 import { assertKycVerifiedForUser } from './lib/kyc';
 import { enqueueOutboxIdempotent } from './lib/outbox';
+import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -55,17 +56,20 @@ export const adminListDisbursements = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     if (status) {
-      return ctx.db
+      const rows = await ctx.db
         .query('disbursements')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
+      return applyTenantScope(rows, scope);
     }
-    return ctx.db
+    const rows = await ctx.db
       .query('disbursements')
       .order('desc')
       .take(limit ?? 100);
+    return applyTenantScope(rows, scope);
   },
 });
 
@@ -179,6 +183,7 @@ export const initiateDisbursement = mutation({
     const disbursementId = await ctx.db.insert('disbursements', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       method: args.method,
       status: 'pending',

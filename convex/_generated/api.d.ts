@@ -80,6 +80,7 @@ import type * as ontology_relationships from '../ontology/relationships.js';
 import type * as ontology_snapshots from '../ontology/snapshots.js';
 import type * as payments from '../payments.js';
 import type * as platform_admins from '../platform/admins.js';
+import type * as platform_backfill from '../platform/backfill.js';
 import type * as platform_entitlements from '../platform/entitlements.js';
 import type * as platform_plans from '../platform/plans.js';
 import type * as platform_seed from '../platform/seed.js';
@@ -185,6 +186,7 @@ declare const fullApi: ApiFromModules<{
   'ontology/snapshots': typeof ontology_snapshots;
   payments: typeof payments;
   'platform/admins': typeof platform_admins;
+  'platform/backfill': typeof platform_backfill;
   'platform/entitlements': typeof platform_entitlements;
   'platform/plans': typeof platform_plans;
   'platform/seed': typeof platform_seed;

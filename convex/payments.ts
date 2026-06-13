@@ -19,6 +19,7 @@ import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { paymentTxStatus } from './schema';
 import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
 import { enqueueOutboxIdempotent } from './lib/outbox';
+import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -72,6 +73,8 @@ export const adminListPayments = query({
         .order('desc')
         .take(limit ?? 100);
     }
+
+    results = applyTenantScope(results, await tenantReadScope(ctx));
 
     // Enrich with profile names for admin display
     const enriched = await Promise.all(
@@ -191,6 +194,7 @@ export const recordPayment = mutation({
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       principalPaid: args.principalPaid,
       interestPaid: args.interestPaid,

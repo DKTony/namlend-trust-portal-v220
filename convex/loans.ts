@@ -16,6 +16,12 @@ import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
 import { emitRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
 import { approveLoanCore } from './lib/approvalReadiness';
+import {
+  resolveWriteInstitution,
+  tenantReadScope,
+  applyTenantScope,
+  assertSameTenant,
+} from './lib/tenancy';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { loanStatus, loanRecommendation } from './schema';
 import { assertKycVerifiedForUser } from './lib/kyc';
@@ -48,6 +54,8 @@ export const getLoan = query({
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
     await assertOwnerOrStaff(ctx, loan.userId);
+    // Defense-in-depth: a staff member from another tenant cannot fetch this loan by id.
+    assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
     return loan;
   },
 });
@@ -80,6 +88,10 @@ export const adminListLoans = query({
       results = results.filter((l) => l.userId === userId);
     }
 
+    // Tenant scope (no-op while TENANCY_ENFORCEMENT is off; null-institution legacy rows
+    // are treated as belonging to the caller's tenant during the backfill transition).
+    results = applyTenantScope(results, await tenantReadScope(ctx));
+
     // Enrich with profile names for admin display
     const enriched = await Promise.all(
       results.map(async (loan) => {
@@ -105,6 +117,7 @@ export const getLoanWithHistory = query({
     await assertStaff(ctx);
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
+    assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
 
     const approvals = await ctx.db
       .query('loanApprovals')
@@ -232,8 +245,10 @@ export const createLoan = mutation({
     }
 
     const now = Date.now();
+    const institutionId = await resolveWriteInstitution(ctx);
     const loanId = await ctx.db.insert('loans', {
       userId,
+      institutionId,
       principal: args.principal,
       interestRate: args.interestRate,
       termMonths: args.termMonths,

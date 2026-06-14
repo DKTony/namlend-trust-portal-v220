@@ -7,7 +7,7 @@
 import { v, ConvexError } from 'convex/values';
 import { query, mutation } from '../_generated/server';
 import { assertAuthenticated } from '../lib/auth';
-import { assertPlatformOwner, getPlatformRole } from '../lib/platformAuth';
+import { assertPlatformOwner, assertPlatformSupport, getPlatformRole } from '../lib/platformAuth';
 
 /** The caller's platform role, or null if they are not platform staff. Frontend gate. */
 export const getMyPlatformRole = query({
@@ -18,11 +18,11 @@ export const getMyPlatformRole = query({
   },
 });
 
-/** List platform staff (owner/support only). */
-export const listPlatformAdmins = mutation({
+/** List platform staff (platform staff read). */
+export const listPlatformAdmins = query({
   args: {},
   handler: async (ctx) => {
-    await assertPlatformOwner(ctx);
+    await assertPlatformSupport(ctx);
     return ctx.db.query('platformAdmins').collect();
   },
 });

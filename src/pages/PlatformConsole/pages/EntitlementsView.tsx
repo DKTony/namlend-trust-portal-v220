@@ -1,25 +1,39 @@
 /**
- * Entitlements — read-only inspection of a tenant's resolved feature set (Phase 3).
+ * Entitlements (Phase 4) — inspect AND dispatch a tenant's feature set.
  *
- * Pick a tenant, see (a) the resolved feature set the backend would enforce
- * (`getResolvedEntitlements`) and (b) the raw override rows (`getTenantEntitlements`) that
- * produced it. Both reads are platform-staff gated. The dispatch lever
- * (`setTenantEntitlement`, owner-guarded) gets its UI in Phase 4.
+ * Pick a tenant (deep-linkable via ?tenant=), see the resolved feature set
+ * (`getResolvedEntitlements`) and the raw override rows (`getTenantEntitlements`). Owners can
+ * flip an add-on on/off per tenant via `setTenantEntitlement` — the "deploy a feature to a
+ * tenant" lever. Reads are platform-staff; the mutation is owner-guarded on the backend.
  */
 
 import React, { useEffect, useState } from 'react';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '@/integrations/convex/api';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { handleMutationError } from '@/lib/mutationError';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { getFeature } from '@/config/features';
+import { Switch } from '@/components/ui/switch';
+import { FEATURES, getFeature } from '@/config/features';
 import { cn } from '@/lib/utils';
 import type { Doc } from '@/types/convex';
 
-const EntitlementsView: React.FC = () => {
-  const tenants = useQuery(api.ontology.institutions.listInstitutions, {});
-  const [selectedId, setSelectedId] = useState<string>('');
+/** Backoffice add-ons an owner can dispatch per tenant (core/always-on can't be revoked). */
+const DISPATCHABLE = FEATURES.filter((f) => f.console === 'backoffice' && !f.alwaysOn);
 
-  // Default to the first tenant once the list loads.
+const EntitlementsView: React.FC = () => {
+  const { isPlatformOwner } = useAuth();
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tenants = useQuery(api.ontology.institutions.listInstitutions, {});
+  const setTenantEntitlement = useMutation(api.platform.entitlements.setTenantEntitlement);
+
+  const [selectedId, setSelectedId] = useState<string>(searchParams.get('tenant') ?? '');
+  const [pending, setPending] = useState<string | null>(null);
+
+  // Default to the first tenant once the list loads (unless one is deep-linked).
   useEffect(() => {
     if (!selectedId && tenants && tenants.length > 0) setSelectedId(tenants[0]._id);
   }, [tenants, selectedId]);
@@ -34,13 +48,47 @@ const EntitlementsView: React.FC = () => {
     selected ? { institutionId: selected._id } : 'skip'
   );
 
+  const onSelect = (id: string) => {
+    setSelectedId(id);
+    setSearchParams(id ? { tenant: id } : {}, { replace: true });
+  };
+
+  const dispatch = async (featureKey: string, enabled: boolean) => {
+    if (!selected) return;
+    setPending(featureKey);
+    try {
+      await setTenantEntitlement({
+        institutionId: selected._id,
+        featureKey,
+        source: 'manual_override',
+        enabled,
+        rolloutState: enabled ? 'enabled' : 'off',
+        reason: `Platform Console dispatch (${enabled ? 'enabled' : 'disabled'})`,
+      });
+      toast({
+        title: enabled ? 'Feature enabled' : 'Feature disabled',
+        description: `${getFeature(featureKey)?.name ?? featureKey} for ${selected.name}.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Dispatch failed',
+        description: handleMutationError(err, 'Could not update the entitlement.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const resolvedSet = new Set(resolved ?? []);
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Entitlements</h2>
           <p className="text-sm text-muted-foreground">
-            Resolved feature set per tenant and the override rows behind it.
+            Resolved feature set per tenant, the override rows behind it, and the dispatch lever.
           </p>
         </div>
         <label className="text-sm">
@@ -48,7 +96,7 @@ const EntitlementsView: React.FC = () => {
           <select
             className="rounded-md border bg-background px-2 py-1.5 text-sm"
             value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
+            onChange={(e) => onSelect(e.target.value)}
           >
             {((tenants ?? []) as Doc<'institutions'>[]).map((t: Doc<'institutions'>) => (
               <option key={t._id} value={t._id}>
@@ -63,12 +111,40 @@ const EntitlementsView: React.FC = () => {
         <ThemedCard>
           <p className="text-sm text-muted-foreground">
             {tenants && tenants.length === 0
-              ? 'No tenants yet — seed the control plane first.'
+              ? 'No tenants yet — provision one first.'
               : 'Select a tenant to inspect its entitlements.'}
           </p>
         </ThemedCard>
       ) : (
         <>
+          {isPlatformOwner && (
+            <ThemedCard className="space-y-3">
+              <h3 className="text-sm font-semibold">Dispatch add-ons</h3>
+              <p className="text-xs text-muted-foreground">
+                Toggling writes a manual override for this tenant. Effective immediately once
+                entitlement enforcement is on.
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {DISPATCHABLE.map((f) => (
+                  <div
+                    key={f.key}
+                    className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{f.name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                    </div>
+                    <Switch
+                      checked={resolvedSet.has(f.key)}
+                      disabled={pending === f.key || resolved === undefined}
+                      onCheckedChange={(v) => dispatch(f.key, v)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </ThemedCard>
+          )}
+
           <ThemedCard className="space-y-3">
             <h3 className="text-sm font-semibold">
               Resolved features {resolved ? `(${resolved.length})` : ''}

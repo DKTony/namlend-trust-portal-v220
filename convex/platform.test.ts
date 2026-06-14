@@ -222,3 +222,96 @@ describe('inertness (Phase 0)', () => {
     expect(role?.institutionId).toBeTruthy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — tenant provisioning + subscription management
+// ---------------------------------------------------------------------------
+
+describe('tenant provisioning (Phase 4)', () => {
+  test('owner provisions a tenant with a plan; listTenants reflects it', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    await asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+      planCode: 'starter',
+      name: 'Starter',
+      defaultFeatures: ['loans', 'collections'],
+    });
+
+    const instId = await asUser(t, owner).mutation(api.platform.tenants.provisionTenant, {
+      name: 'New Co',
+      shortCode: 'NEWCO',
+      planCode: 'starter',
+    });
+    expect(instId).toBeTruthy();
+
+    const tenants = await asUser(t, owner).query(api.platform.tenants.listTenants, {});
+    const row = tenants.find((x) => x._id === instId);
+    expect(row?.planCode).toBe('starter');
+    expect(row?.subscriptionStatus).toBe('active');
+    expect(row?.featureCount).toBeGreaterThan(0);
+  });
+
+  test('non-owner cannot provision a tenant', async () => {
+    const t = convexTest(schema, modules);
+    const tenantAdmin = await seedTenantUser(t, { role: 'tenant_admin' });
+    await expect(
+      asUser(t, tenantAdmin).mutation(api.platform.tenants.provisionTenant, {
+        name: 'X',
+        shortCode: 'XCO',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+  });
+
+  test('setTenantSubscription closes the old sub and opens the new; unknown plan rejected', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    const inst = await seedInstitution(t);
+    await asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+      planCode: 'p1',
+      name: 'P1',
+      defaultFeatures: ['loans'],
+    });
+    await asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+      planCode: 'p2',
+      name: 'P2',
+      defaultFeatures: ['loans', 'collections'],
+    });
+
+    await asUser(t, owner).mutation(api.platform.tenants.setTenantSubscription, {
+      institutionId: inst,
+      planCode: 'p1',
+      status: 'active',
+    });
+    await asUser(t, owner).mutation(api.platform.tenants.setTenantSubscription, {
+      institutionId: inst,
+      planCode: 'p2',
+      status: 'active',
+    });
+
+    const sub = await asUser(t, owner).query(api.platform.tenants.getTenantSubscription, {
+      institutionId: inst,
+    });
+    expect(sub?.planCode).toBe('p2');
+
+    // Exactly one currently-open subscription (the old one was closed, not deleted).
+    const open = await t.run(async (ctx) => {
+      const all = await ctx.db
+        .query('tenantSubscriptions')
+        .withIndex('by_institutionId', (q) => q.eq('institutionId', inst))
+        .collect();
+      return all.filter((s) => s.effectiveTo === undefined);
+    });
+    expect(open.length).toBe(1);
+    expect(open[0].planCode).toBe('p2');
+
+    await expect(
+      asUser(t, owner).mutation(api.platform.tenants.setTenantSubscription, {
+        institutionId: inst,
+        planCode: 'ghost',
+        status: 'active',
+      })
+    ).rejects.toMatchObject({ data: { code: 'VALIDATION_ERROR' } });
+  });
+});

@@ -84,6 +84,7 @@ import type * as platform_backfill from '../platform/backfill.js';
 import type * as platform_entitlements from '../platform/entitlements.js';
 import type * as platform_plans from '../platform/plans.js';
 import type * as platform_seed from '../platform/seed.js';
+import type * as platform_tenants from '../platform/tenants.js';
 import type * as projections_portfolioProjection from '../projections/portfolioProjection.js';
 import type * as reconciliation from '../reconciliation.js';
 import type * as scheduled_dailyTasks from '../scheduled/dailyTasks.js';
@@ -190,6 +191,7 @@ declare const fullApi: ApiFromModules<{
   'platform/entitlements': typeof platform_entitlements;
   'platform/plans': typeof platform_plans;
   'platform/seed': typeof platform_seed;
+  'platform/tenants': typeof platform_tenants;
   'projections/portfolioProjection': typeof projections_portfolioProjection;
   reconciliation: typeof reconciliation;
   'scheduled/dailyTasks': typeof scheduled_dailyTasks;

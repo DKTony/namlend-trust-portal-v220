@@ -13,14 +13,12 @@ import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
 
 // Platform-only pages
 const PlatformOverview = React.lazy(() => import('./pages/PlatformOverview'));
+const TenantsView = React.lazy(() => import('./pages/TenantsView'));
 const PlansView = React.lazy(() => import('./pages/PlansView'));
 const EntitlementsView = React.lazy(() => import('./pages/EntitlementsView'));
 const PlatformSupport = React.lazy(() => import('./pages/PlatformSupport'));
 
 // Reused backoffice dashboards (same components, mounted in the owner console)
-const InstitutionsDashboard = React.lazy(
-  () => import('../AdminDashboard/components/Institutions/InstitutionsDashboard')
-);
 const BusinessRulesDashboard = React.lazy(
   () => import('../AdminDashboard/components/BusinessRules/BusinessRulesDashboard')
 );
@@ -73,7 +71,7 @@ export function platformRoutes() {
         path="tenants"
         element={
           <PageSuspense>
-            <InstitutionsDashboard />
+            <TenantsView />
           </PageSuspense>
         }
       />

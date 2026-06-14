@@ -4,7 +4,6 @@
  */
 
 import {
-  TrendingUp,
   FileText,
   UserCheck,
   DollarSign,
@@ -13,11 +12,8 @@ import {
   CheckSquare,
   Users,
   BarChart3,
-  Database,
   Settings,
   Palette,
-  Building2,
-  Route,
   Package,
   GitBranch,
   ShieldCheck,
@@ -65,7 +61,6 @@ const allGroups: NavGroup[] = [
     adminOnly: true,
     items: [
       { id: 'analytics', label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
-      { id: 'ledger', label: 'TigerBeetle Ledger', path: '/admin/ledger', icon: Database },
       {
         id: 'reconciliation',
         label: 'Reconciliation',
@@ -75,19 +70,11 @@ const allGroups: NavGroup[] = [
     ],
   },
   {
-    id: 'platform',
-    label: 'Platform',
+    id: 'configuration',
+    label: 'Configuration',
     adminOnly: true,
     items: [
-      { id: 'institutions', label: 'Institutions', path: '/admin/institutions', icon: Building2 },
       { id: 'products', label: 'Products', path: '/admin/products', icon: Package },
-      { id: 'payment-rails', label: 'Payment Rails', path: '/admin/payment-rails', icon: Route },
-      {
-        id: 'business-rules',
-        label: 'Business Rules',
-        path: '/admin/business-rules',
-        icon: Settings,
-      },
       { id: 'workflows', label: 'Workflows', path: '/admin/workflows', icon: GitBranch },
       { id: 'mandates', label: 'Mandates', path: '/admin/mandates', icon: FileSignature },
       { id: 'consent', label: 'POPIA Consent', path: '/admin/consent', icon: ShieldCheck },
@@ -103,18 +90,6 @@ const allGroups: NavGroup[] = [
         label: 'Credit Policy',
         path: '/admin/settings/credit-policy',
         icon: Settings,
-      },
-      {
-        id: 'tigerbeetle-config',
-        label: 'TB Config',
-        path: '/admin/settings/tigerbeetle',
-        icon: Database,
-      },
-      {
-        id: 'settlement-config',
-        label: 'Settlement',
-        path: '/admin/settings/settlement',
-        icon: DollarSign,
       },
       { id: 'branding', label: 'Branding', path: '/admin/settings/branding', icon: Palette },
     ],

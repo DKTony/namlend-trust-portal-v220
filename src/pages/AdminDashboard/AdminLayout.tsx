@@ -15,6 +15,7 @@ import { GroupedSidebar } from '@/components/Layout/GroupedSidebar';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
 import { getAdminNavGroups } from '@/config/adminNav';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { AdaptiveShell } from '@/components/adaptive';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { RefreshCw, BarChart3, AlertCircle } from 'lucide-react';
@@ -23,6 +24,8 @@ const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoanOfficer, signOut } = useAuth();
   const { styles } = useTheme();
   const layout = useAdaptiveLayout();
+  // Tenant entitlements drive backoffice nav filtering — inert until the owner enforces.
+  const { enforced, hasFeature } = useEntitlements();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -49,7 +52,7 @@ const AdminLayout: React.FC = () => {
     );
   }
 
-  const navGroups = getAdminNavGroups(isAdmin);
+  const navGroups = getAdminNavGroups(isAdmin, { enforced, hasFeature });
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
   const userEmail = user?.email;
 

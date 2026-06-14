@@ -15,6 +15,7 @@ const Index = React.lazy(() => import('@/pages/Index'));
 const Auth = React.lazy(() => import('@/pages/Auth'));
 const Dashboard = React.lazy(() => import('@/pages/Dashboard'));
 const AdminLayout = React.lazy(() => import('@/pages/AdminDashboard/AdminLayout'));
+const PlatformLayout = React.lazy(() => import('@/pages/PlatformConsole/PlatformLayout'));
 const LoanApplication = React.lazy(() => import('@/pages/LoanApplication'));
 const Payment = React.lazy(() => import('@/pages/Payment'));
 const LoanDetails = React.lazy(() => import('@/pages/LoanDetails'));
@@ -23,6 +24,7 @@ const BudgetTracker = React.lazy(() => import('@/pages/BudgetTracker'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
 import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import { adminRoutes } from '@/pages/AdminDashboard/adminRoutes';
+import { platformRoutes } from '@/pages/PlatformConsole/platformRoutes';
 import { ThemeProvider } from '@/components/system/ThemeProvider';
 import { ThemeProvider as EnhancedThemeProvider } from '@/context/ThemeContext';
 import { BrandingProvider } from '@/context/BrandingContext';
@@ -120,6 +122,16 @@ const App = () => (
                             }
                           >
                             {adminRoutes()}
+                          </Route>
+                          <Route
+                            path="/platform"
+                            element={
+                              <ProtectedRoute requirePlatform>
+                                <PlatformLayout />
+                              </ProtectedRoute>
+                            }
+                          >
+                            {platformRoutes()}
                           </Route>
                           <Route
                             path="/loan-application"

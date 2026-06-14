@@ -11,6 +11,7 @@ import { getCallerInstitution } from '../lib/tenancy';
 import { resolveEntitlements } from '../lib/entitlements';
 import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 import { ALWAYS_ON_FEATURES, isValidFeatureKey } from '../lib/features';
+import { getBooleanRule } from '../lib/ruleEvaluator';
 
 /** Resolve the caller's tenant feature set (or always-on only if unbound). Frontend gate. */
 export const resolveMyEntitlements = query({
@@ -19,6 +20,18 @@ export const resolveMyEntitlements = query({
     const tenant = await getCallerInstitution(ctx);
     if (!tenant.institutionId) return [...ALWAYS_ON_FEATURES];
     return [...(await resolveEntitlements(ctx, tenant.institutionId))];
+  },
+});
+
+/**
+ * Whether tenant entitlement enforcement is switched on (the `ENTITLEMENT_ENFORCEMENT`
+ * kill-switch, default false → inert). The Backoffice nav reads this so feature-based
+ * hiding stays dormant until the owner flips the flag in Phase 2 — no later code change.
+ */
+export const isEntitlementEnforcementOn = query({
+  args: {},
+  handler: async (ctx) => {
+    return getBooleanRule(ctx, 'ENTITLEMENT_ENFORCEMENT', false);
   },
 });
 

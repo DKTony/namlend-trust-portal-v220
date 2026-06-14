@@ -1,0 +1,122 @@
+/**
+ * Platform Overview — the owner console landing page (read-only, Phase 3).
+ *
+ * Composes existing platform-staff reads (tenant registry, plans, entitlement-enforcement
+ * flag) into an at-a-glance health card plus orientation. Provisioning/management actions
+ * arrive in Phase 4.
+ */
+
+import React from 'react';
+import { useQuery } from 'convex/react';
+import { Link } from 'react-router-dom';
+import { api } from '@/integrations/convex/api';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { FEATURES } from '@/config/features';
+import { Building2, Package, ToggleLeft, ToggleRight, ArrowRight } from 'lucide-react';
+
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <ThemedCard className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="mt-1 text-2xl font-semibold">{value}</p>
+        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      <div className="text-primary">{icon}</div>
+    </ThemedCard>
+  );
+}
+
+const PlatformOverview: React.FC = () => {
+  const tenants = useQuery(api.ontology.institutions.listInstitutions, {});
+  const plans = useQuery(api.platform.plans.listPlans, {});
+  const entitlementEnforced = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
+
+  const tenantCount = tenants?.length ?? '—';
+  const planCount = plans?.length ?? '—';
+  const platformFeatureCount = FEATURES.filter((f) => f.console === 'platform').length;
+  const backofficeFeatureCount = FEATURES.filter((f) => f.console === 'backoffice').length;
+
+  return (
+    <div className="space-y-6 p-4 sm:p-6">
+      <div>
+        <h2 className="text-xl font-semibold">Platform Overview</h2>
+        <p className="text-sm text-muted-foreground">
+          Application-owner control plane — tenants, plans, entitlements, and infrastructure.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Tenants"
+          value={tenantCount}
+          hint="Institutions on the platform"
+          icon={<Building2 className="h-6 w-6" />}
+        />
+        <StatCard
+          label="Plans"
+          value={planCount}
+          hint={`${backofficeFeatureCount} backoffice · ${platformFeatureCount} platform features`}
+          icon={<Package className="h-6 w-6" />}
+        />
+        <StatCard
+          label="Entitlement Enforcement"
+          value={
+            entitlementEnforced === undefined ? '—' : entitlementEnforced ? 'On' : 'Off (inert)'
+          }
+          hint={
+            entitlementEnforced
+              ? 'Tenants see only entitled features'
+              : 'Flip in Phase 2 to enforce feature gating'
+          }
+          icon={
+            entitlementEnforced ? (
+              <ToggleRight className="h-6 w-6" />
+            ) : (
+              <ToggleLeft className="h-6 w-6" />
+            )
+          }
+        />
+      </div>
+
+      <ThemedCard>
+        <h3 className="text-sm font-semibold">Quick links</h3>
+        <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[
+            { to: '/platform/tenants', label: 'Manage tenant registry' },
+            { to: '/platform/plans', label: 'Review plans & feature catalog' },
+            { to: '/platform/entitlements', label: 'Inspect tenant entitlements' },
+            { to: '/platform/guardrails', label: 'Platform guardrails (business rules)' },
+          ].map((l) => (
+            <li key={l.to}>
+              <Link
+                to={l.to}
+                className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50"
+              >
+                <span>{l.label}</span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </ThemedCard>
+
+      <p className="text-xs text-muted-foreground">
+        Read-only console (Phase 3). Tenant provisioning, plan editing, and entitlement dispatch UIs
+        arrive in Phase 4; backend dispatch mutations already exist and are owner-guarded.
+      </p>
+    </div>
+  );
+};
+
+export default PlatformOverview;

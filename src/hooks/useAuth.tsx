@@ -61,6 +61,14 @@ interface AuthContextType {
   userRole: string | null;
   isAdmin: boolean;
   isLoanOfficer: boolean;
+  // Platform (control-plane) identity — orthogonal to the tenant role above.
+  // Sourced from `platformAdmins`, NOT `userRoles`, so a tenant_admin can never
+  // self-escalate into platform scope.
+  platformRole: 'platform_owner' | 'platform_support' | null;
+  isPlatformOwner: boolean;
+  isPlatformSupport: boolean;
+  isPlatformStaff: boolean;
+  platformRoleLoading: boolean;
   refreshUser: () => Promise<User | null>;
   signUp: (
     email: string,
@@ -92,6 +100,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch role and profile from Convex once authenticated
   const roleData = useQuery(api.users.getMyRole, isAuthenticated ? {} : 'skip');
   const profileData = useQuery(api.users.getMyProfile, isAuthenticated ? {} : 'skip');
+  // Platform role — a cheap indexed `platformAdmins.by_userId` lookup that returns null
+  // for every non-platform user (i.e. everyone, until the owner runs the Phase-0 seed).
+  const platformRoleData = useQuery(
+    api.platform.admins.getMyPlatformRole,
+    isAuthenticated ? {} : 'skip'
+  );
 
   const userRole = typeof roleData === 'string' ? roleData : null;
   const roleLoading = isAuthenticated && roleData === undefined;
@@ -120,6 +134,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = userRole === 'admin' || userRole === 'tenant_admin';
   const isLoanOfficer =
     userRole === 'loan_officer' || userRole === 'admin' || userRole === 'tenant_admin';
+
+  // Platform identity (control plane). `getMyPlatformRole` already filters to active staff,
+  // returning null otherwise, so the booleans are a direct read.
+  const platformRole =
+    platformRoleData === 'platform_owner' || platformRoleData === 'platform_support'
+      ? platformRoleData
+      : null;
+  const platformRoleLoading = isAuthenticated && platformRoleData === undefined;
+  const isPlatformOwner = platformRole === 'platform_owner';
+  const isPlatformSupport = platformRole === 'platform_support';
+  const isPlatformStaff = platformRole !== null;
 
   // ---------------------------------------------------------------------------
   // Auth actions
@@ -221,6 +246,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         userRole,
         isAdmin,
         isLoanOfficer,
+        platformRole,
+        isPlatformOwner,
+        isPlatformSupport,
+        isPlatformStaff,
+        platformRoleLoading,
         refreshUser,
         signUp,
         signIn,

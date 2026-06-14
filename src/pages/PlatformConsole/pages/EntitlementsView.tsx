@@ -18,16 +18,24 @@ import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Switch } from '@/components/ui/switch';
 import { FEATURES, getFeature } from '@/config/features';
 import { cn } from '@/lib/utils';
-import type { Doc } from '@/types/convex';
+import type { Doc, Id } from '@/types/convex';
 
 /** Backoffice add-ons an owner can dispatch per tenant (core/always-on can't be revoked). */
 const DISPATCHABLE = FEATURES.filter((f) => f.console === 'backoffice' && !f.alwaysOn);
+
+/** Shape returned by the platform-gated listTenants query (subset used by the selector). */
+interface TenantOption {
+  _id: Id<'institutions'>;
+  name: string;
+  shortCode: string;
+}
 
 const EntitlementsView: React.FC = () => {
   const { isPlatformOwner } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tenants = useQuery(api.ontology.institutions.listInstitutions, {});
+  // Platform-gated tenant read (a pure platform_owner is not tenant staff).
+  const tenants = useQuery(api.platform.tenants.listTenants, {}) as TenantOption[] | undefined;
   const setTenantEntitlement = useMutation(api.platform.entitlements.setTenantEntitlement);
 
   const [selectedId, setSelectedId] = useState<string>(searchParams.get('tenant') ?? '');
@@ -38,7 +46,7 @@ const EntitlementsView: React.FC = () => {
     if (!selectedId && tenants && tenants.length > 0) setSelectedId(tenants[0]._id);
   }, [tenants, selectedId]);
 
-  const selected = tenants?.find((t: Doc<'institutions'>) => t._id === selectedId);
+  const selected = tenants?.find((t: TenantOption) => t._id === selectedId);
   const resolved = useQuery(
     api.platform.entitlements.getResolvedEntitlements,
     selected ? { institutionId: selected._id } : 'skip'
@@ -98,7 +106,7 @@ const EntitlementsView: React.FC = () => {
             value={selectedId}
             onChange={(e) => onSelect(e.target.value)}
           >
-            {((tenants ?? []) as Doc<'institutions'>[]).map((t: Doc<'institutions'>) => (
+            {(tenants ?? []).map((t: TenantOption) => (
               <option key={t._id} value={t._id}>
                 {t.name} ({t.shortCode})
               </option>

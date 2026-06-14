@@ -127,7 +127,7 @@ const PlatformSupport: React.FC = () => {
   const admins = useQuery(api.platform.admins.listPlatformAdmins, {}) as
     | Doc<'platformAdmins'>[]
     | undefined;
-  const users = (useQuery(api.users.listUsers, {}) ?? []) as UserRow[];
+  const users = (useQuery(api.platform.admins.listUserDirectory, {}) ?? []) as UserRow[];
   const suspend = useMutation(api.platform.admins.suspendPlatformAdmin);
 
   const emailById = useMemo(() => {

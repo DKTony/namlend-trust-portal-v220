@@ -27,6 +27,20 @@ export const listPlatformAdmins = query({
   },
 });
 
+/**
+ * Minimal user directory ({ userId, email }) for the Support assign-staff picker — a
+ * platform-gated read so a pure platform_owner (not tenant staff) can use it without the
+ * tenant-scoped `users.listUsers` (which is assertStaff-gated).
+ */
+export const listUserDirectory = query({
+  args: {},
+  handler: async (ctx) => {
+    await assertPlatformSupport(ctx);
+    const profiles = await ctx.db.query('profiles').take(1000);
+    return profiles.map((p) => ({ userId: p.userId, email: p.email ?? '' }));
+  },
+});
+
 /** Assign or update a platform role (owner only). */
 export const assignPlatformAdmin = mutation({
   args: {

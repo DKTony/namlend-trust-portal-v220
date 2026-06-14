@@ -38,7 +38,9 @@ function StatCard({
 }
 
 const PlatformOverview: React.FC = () => {
-  const tenants = useQuery(api.ontology.institutions.listInstitutions, {});
+  // Platform-gated tenant read — a pure platform_owner is NOT tenant staff, so we must not
+  // use the assertStaff-gated listInstitutions here.
+  const tenants = useQuery(api.platform.tenants.listTenants, {});
   const plans = useQuery(api.platform.plans.listPlans, {});
   const entitlementEnforced = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
 
@@ -112,8 +114,8 @@ const PlatformOverview: React.FC = () => {
       </ThemedCard>
 
       <p className="text-xs text-muted-foreground">
-        Read-only console (Phase 3). Tenant provisioning, plan editing, and entitlement dispatch UIs
-        arrive in Phase 4; backend dispatch mutations already exist and are owner-guarded.
+        Owner console. Provision tenants, edit plans, and dispatch entitlements from the sections
+        above. Enforcement is inert until the kill-switch flags are flipped at go-live.
       </p>
     </div>
   );

@@ -36,8 +36,8 @@ const PLAN_DEFS: Array<{ planCode: string; name: string; features: string[] }> =
 ];
 
 export const seedControlPlane = internalMutation({
-  args: { ownerEmail: v.optional(v.string()) },
-  handler: async (ctx, { ownerEmail }) => {
+  args: { ownerEmail: v.optional(v.string()), backofficeEmail: v.optional(v.string()) },
+  handler: async (ctx, { ownerEmail, backofficeEmail }) => {
     const now = Date.now();
     const report: Record<string, unknown> = {};
 
@@ -179,6 +179,38 @@ export const seedControlPlane = internalMutation({
         }
       } else {
         report.platformOwnerAssigned = `no_profile_for_${ownerEmail}`;
+      }
+    }
+
+    // 8. Elevate a backoffice operator to tenant_admin by email (test/provisioning helper).
+    //    Mirrors the owner block; only touches an existing profile's role; idempotent.
+    if (backofficeEmail) {
+      const profile = await ctx.db
+        .query('profiles')
+        .filter((q) => q.eq(q.field('email'), backofficeEmail))
+        .first();
+      if (profile) {
+        const roleRow = await ctx.db
+          .query('userRoles')
+          .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+          .first();
+        if (roleRow) {
+          await ctx.db.patch(roleRow._id, {
+            role: 'tenant_admin',
+            institutionId: roleRow.institutionId ?? institutionId,
+          });
+          report.backofficeAssigned = backofficeEmail;
+        } else {
+          await ctx.db.insert('userRoles', {
+            userId: profile.userId,
+            role: 'tenant_admin',
+            institutionId,
+            createdAt: now,
+          });
+          report.backofficeAssigned = `${backofficeEmail}_new_role`;
+        }
+      } else {
+        report.backofficeAssigned = `no_profile_for_${backofficeEmail}`;
       }
     }
 

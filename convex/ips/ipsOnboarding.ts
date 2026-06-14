@@ -18,6 +18,7 @@ import { query, mutation, internalMutation } from '../_generated/server';
 import { internal } from '../_generated/api';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { scheduleAuditLog } from '../lib/audit';
 import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
 import { generateMsgId } from '../lib/ipsXmlBuilder';
@@ -93,6 +94,7 @@ export const adminListOnboarding = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     const all = await ctx.db
       .query('ipsOnboardingApplications')
       .order('desc')
@@ -110,6 +112,7 @@ export const startOnboarding = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
 
     const existing = await ctx.db
       .query('ipsOnboardingApplications')
@@ -738,6 +741,7 @@ export const reviewOnboarding = mutation({
   },
   handler: async (ctx, { applicationId, decision, rejectionReason }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     const app = await ctx.db.get(applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
 

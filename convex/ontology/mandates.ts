@@ -24,6 +24,7 @@ import {
   applyTenantScope,
   assertSameTenant,
 } from '../lib/tenancy';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
@@ -63,6 +64,7 @@ export const createMandate = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const now = Date.now();
     const mandateRef = generateMandateRef();
     const correlationId = generateCorrelationId();
@@ -179,6 +181,7 @@ export const submitMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -229,6 +232,7 @@ export const authorizeMandate = mutation({
   },
   handler: async (ctx, { mandateId, authorizedVia }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -295,6 +299,7 @@ export const suspendMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -340,6 +345,7 @@ export const reactivateMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -396,6 +402,7 @@ export const revokeMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -578,6 +585,7 @@ export const getMandatesByLoan = query({
   },
   handler: async (ctx, { loanId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const rows = await ctx.db
       .query('mandates')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
@@ -627,6 +635,7 @@ export const listMandates = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
 
     if (status) {
       return ctx.db

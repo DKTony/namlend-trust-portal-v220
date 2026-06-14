@@ -16,6 +16,7 @@ import { v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { ConvexError } from 'convex/values';
 import { assertAuthenticated, assertStaff, assertAdmin } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
@@ -40,6 +41,7 @@ export const createProduct = mutation({
   },
   handler: async (ctx, args) => {
     const adminId = await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'products');
     const now = Date.now();
 
     // Uniqueness check
@@ -106,6 +108,7 @@ export const updateProduct = mutation({
   },
   handler: async (ctx, args) => {
     const adminId = await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'products');
     const product = await ctx.db.get(args.productId);
     if (!product) {
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Product not found.' });
@@ -173,6 +176,7 @@ export const createVersion = mutation({
   },
   handler: async (ctx, args) => {
     const adminId = await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'products');
     const now = Date.now();
 
     const product = await ctx.db.get(args.productId);

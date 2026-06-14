@@ -12,6 +12,7 @@ import { GenericMutationCtx } from 'convex/server';
 import { query } from './_generated/server';
 import { DataModel } from './_generated/dataModel';
 import { assertStaff } from './lib/auth';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
 
 // ---------------------------------------------------------------------------
 // Portfolio Overview
@@ -36,6 +37,7 @@ export const getPortfolioSummary = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     // If no date filters, try projected metrics first (O(1) reads)
     if (!dateFrom && !dateTo) {
@@ -139,6 +141,7 @@ export const getRevenueMetrics = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const payments = await ctx.db.query('paymentTransactions').take(10000);
 
@@ -172,6 +175,7 @@ export const getRiskMetrics = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const [loans, overdueSchedules] = await Promise.all([
       ctx.db.query('loans').take(10000),
@@ -214,6 +218,7 @@ export const getClientMetrics = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const [profiles, loans] = await Promise.all([
       ctx.db.query('profiles').take(10000),
@@ -255,6 +260,7 @@ export const getMonthlyTrends = query({
   },
   handler: async (ctx, { months }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const lookback = months ?? 12;
     const now = Date.now();
@@ -304,6 +310,7 @@ export const getIpsAnalytics = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const transactions = await ctx.db.query('ipsTransactions').take(10000);
 

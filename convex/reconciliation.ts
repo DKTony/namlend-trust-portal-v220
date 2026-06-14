@@ -12,6 +12,7 @@ import {
   applyTenantScope,
   assertSameTenant,
 } from './lib/tenancy';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
 import { scheduleAuditLog } from './lib/audit';
 
 // ---------------------------------------------------------------------------
@@ -26,6 +27,7 @@ export const listBankTransactions = query({
   },
   handler: async (ctx, { status, source, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     let results = applyTenantScope(
       await ctx.db
         .query('bankTransactions')
@@ -44,6 +46,7 @@ export const getBankTransaction = query({
   args: { transactionId: v.id('bankTransactions') },
   handler: async (ctx, { transactionId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     const txn = await ctx.db.get(transactionId);
     assertSameTenant(await tenantReadScope(ctx), txn?.institutionId);
     return txn;
@@ -66,6 +69,7 @@ export const importBankTransactions = mutation({
   },
   handler: async (ctx, { transactions }) => {
     await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     const institutionId = await resolveWriteInstitution(ctx);
 
     let imported = 0;
@@ -107,6 +111,7 @@ export const listReconciliationRuns = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     return applyTenantScope(
       await ctx.db
         .query('reconciliationRuns')
@@ -121,6 +126,7 @@ export const getReconciliationRun = query({
   args: { runId: v.id('reconciliationRuns') },
   handler: async (ctx, { runId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     const run = await ctx.db.get(runId);
     if (!run) return null;
     assertSameTenant(await tenantReadScope(ctx), run.institutionId);
@@ -142,6 +148,7 @@ export const createReconciliationRun = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
     const now = Date.now();
     return ctx.db.insert('reconciliationRuns', {
       ...args,
@@ -169,6 +176,7 @@ export const matchTransaction = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
 
     const txn = await ctx.db.get(args.transactionId);
     if (!txn) throw new Error('Bank transaction not found');
@@ -204,6 +212,7 @@ export const disputeTransaction = mutation({
   },
   handler: async (ctx, { transactionId, reason }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
 
     await ctx.db.patch(transactionId, {
       status: 'disputed',
@@ -230,6 +239,7 @@ export const excludeTransaction = mutation({
   },
   handler: async (ctx, { transactionId, reason }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
 
     await ctx.db.patch(transactionId, {
       status: 'excluded',
@@ -257,6 +267,7 @@ export const getReconciliationStats = query({
   args: { runId: v.optional(v.id('reconciliationRuns')) },
   handler: async (ctx, { runId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'tenantReconciliation');
 
     const transactions = applyTenantScope(
       runId

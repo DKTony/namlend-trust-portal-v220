@@ -18,6 +18,7 @@ import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { DataModel, Id } from '../_generated/dataModel';
 import { ALWAYS_ON_FEATURES, isValidFeatureKey } from './features';
 import { getBooleanRule } from './ruleEvaluator';
+import { getCallerInstitution } from './tenancy';
 
 type AnyCtx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 
@@ -104,4 +105,26 @@ export async function assertFeatureEnabled(
       message: `Feature '${featureKey}' is not enabled for this tenant.`,
     });
   }
+}
+
+/**
+ * Caller-scoped feature gate — the one-liner used at the entry of gated backoffice functions:
+ * `await assertCallerFeatureEnabled(ctx, 'collections')` right after the auth assertion.
+ *
+ * Inert by default: returns immediately (no institution lookup) unless `ENTITLEMENT_ENFORCEMENT`
+ * is on, so it is a no-op in production until the owner flips the flag (Phase 2 go-live).
+ * When enforcing, it resolves the caller's tenant and fails closed: an unresolved tenant or an
+ * unentitled one is denied. Correct because the operating tenant must own the feature, and staff
+ * are bound to their institution by the time enforcement is switched on (post-seed).
+ */
+export async function assertCallerFeatureEnabled(ctx: AnyCtx, featureKey: string): Promise<void> {
+  if (!(await getBooleanRule(ctx, 'ENTITLEMENT_ENFORCEMENT', false))) return; // INERT
+  const { institutionId } = await getCallerInstitution(ctx);
+  if (!institutionId) {
+    throw new ConvexError({
+      code: 'FEATURE_NOT_ENABLED',
+      message: `Feature '${featureKey}' is not enabled for this tenant.`,
+    });
+  }
+  await assertFeatureEnabled(ctx, institutionId, featureKey);
 }

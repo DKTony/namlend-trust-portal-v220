@@ -16,6 +16,7 @@ import { emitRelationship } from './lib/relationshipEmitter';
 import { emitDomainEvent } from './lib/domainEvents';
 import { approveLoanCore } from './lib/approvalReadiness';
 import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
 import { approvalRequestStatus } from './schema';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
@@ -401,6 +402,7 @@ export const createWorkflowDefinition = mutation({
   },
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'workflows');
     const now = Date.now();
     const id = await ctx.db.insert('workflowDefinitions', {
       name: args.name,
@@ -431,6 +433,7 @@ export const listWorkflowDefinitions = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'workflows');
     return ctx.db.query('workflowDefinitions').collect();
   },
 });

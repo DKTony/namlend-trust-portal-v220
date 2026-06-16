@@ -13,18 +13,17 @@
  * and optional IPS API scheduling.
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
-import { assertCallerFeatureEnabled } from '../lib/entitlements';
+import { internalMutation, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
+import { assertAliasAvailable, validateIpsHandle } from '../lib/ipsAliasRules';
+import { isValidNamibianMobile, normalizeNamibianMobile } from '../lib/ipsPhoneNormalize';
+import { assertRawPinAllowed, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 import { generateMsgId } from '../lib/ipsXmlBuilder';
 import { getStringRule } from '../lib/ruleEvaluator';
-import { assertAliasAvailable, validateIpsHandle } from '../lib/ipsAliasRules';
-import { assertRawPinAllowed, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 
 // ---------------------------------------------------------------------------
 // Valid transitions — enforced by each mutation
@@ -260,7 +259,7 @@ export const selectSovProvider = mutation({
     providerName: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -306,7 +305,7 @@ export const selectAccount = mutation({
     accountIfsc: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -362,7 +361,7 @@ export const startVerification = mutation({
     verificationMethod: v.union(v.literal('debit_card'), v.literal('mno')),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -426,7 +425,7 @@ export const submitOtp = mutation({
     otpCode: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -466,7 +465,7 @@ export const setupIpsPin = mutation({
     encryptedPinPayload: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -528,7 +527,7 @@ export const createHandle = mutation({
     vpaUsername: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -684,7 +683,7 @@ export const confirmOnboarding = mutation({
     applicationId: v.id('ipsOnboardingApplications'),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);
@@ -946,7 +945,7 @@ export const advanceOnboardingStep = mutation({
     selectedVpa: v.optional(v.string()),
   },
   handler: async (ctx, { applicationId, stepData, selectedVpa }) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const app = await ctx.db.get(applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
     await assertOwnerOrStaff(ctx, app.userId);

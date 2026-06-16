@@ -5,9 +5,9 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from './_generated/server';
-import { assertStaff, assertAdmin } from './lib/auth';
+import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
+import { assertAdminOrPlatformOwner, assertStaffOrPlatformSupport } from './lib/platformAuth';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -21,7 +21,7 @@ import { scheduleAuditLog } from './lib/audit';
 export const getConfig = query({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     const entries = await ctx.db
       .query('systemConfiguration')
       .withIndex('by_key', (q) => q.eq('key', key))
@@ -53,7 +53,7 @@ export const getAllConfig = query({
     includeHistory: v.optional(v.boolean()),
   },
   handler: async (ctx, { category, includeHistory }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     let results = await ctx.db.query('systemConfiguration').collect();
 
     // Exclude soft-deleted entries
@@ -108,7 +108,7 @@ export const getConfigValue = query({
     asOf: v.optional(v.number()),
   },
   handler: async (ctx, { key, asOf }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     const entries = await ctx.db
       .query('systemConfiguration')
       .withIndex('by_key', (q) => q.eq('key', key))
@@ -148,7 +148,7 @@ export const setConfig = mutation({
     isPublic: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    await assertAdmin(ctx);
+    await assertAdminOrPlatformOwner(ctx);
 
     const now = Date.now();
 
@@ -231,7 +231,7 @@ export const setConfig = mutation({
 export const deleteConfig = mutation({
   args: { key: v.string() },
   handler: async (ctx, { key }) => {
-    await assertAdmin(ctx);
+    await assertAdminOrPlatformOwner(ctx);
 
     const existing = await ctx.db
       .query('systemConfiguration')
@@ -265,7 +265,7 @@ export const deleteConfig = mutation({
 export const seedDefaultConfig = mutation({
   args: {},
   handler: async (ctx) => {
-    await assertAdmin(ctx);
+    await assertAdminOrPlatformOwner(ctx);
 
     const defaults = [
       {

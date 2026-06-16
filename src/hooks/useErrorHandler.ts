@@ -1,18 +1,13 @@
-import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  errorLogger, 
-  ErrorCategory, 
+import {
+  ErrorCategory,
+  errorLogger,
   ErrorSeverity,
-  handleAuthError,
-  handleDatabaseError,
-  handleValidationError,
-  handleBusinessLogicError,
-  handleNetworkError,
-  trackUserAction,
   measurePerformance,
-  retryWithBackoff
+  retryWithBackoff,
+  trackUserAction,
 } from '@/utils/errorHandler';
+import { useCallback } from 'react';
 
 interface UseErrorHandlerReturn {
   handleError: (error: unknown, context?: Record<string, unknown>) => void;
@@ -65,92 +60,101 @@ export const useErrorHandler = (): UseErrorHandlerReturn => {
         ...context,
         originalError: error,
         errorCode: err?.code,
-        errorName: err?.name
+        errorName: err?.name,
       },
-      stack: err?.stack
+      stack: err?.stack,
     });
   }, []);
 
-  const showErrorToast = useCallback((message: string, title?: string) => {
-    toast({
-      title: title || 'Error',
-      description: message,
-      variant: 'destructive'
-    });
-  }, [toast]);
+  const showErrorToast = useCallback(
+    (message: string, title?: string) => {
+      toast({
+        title: title || 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+    [toast]
+  );
 
-  const showSuccessToast = useCallback((message: string, title?: string) => {
-    toast({
-      title: title || 'Success',
-      description: message,
-      variant: 'default'
-    });
-  }, [toast]);
+  const showSuccessToast = useCallback(
+    (message: string, title?: string) => {
+      toast({
+        title: title || 'Success',
+        description: message,
+        variant: 'default',
+      });
+    },
+    [toast]
+  );
 
   const trackAction = useCallback((action: string, data?: Record<string, unknown>) => {
     trackUserAction(action, data);
   }, []);
 
-  const handleAsyncOperation = useCallback(async <T>(
-    operation: () => Promise<T>,
-    operationName: string,
-    options: {
-      showSuccessToast?: boolean;
-      successMessage?: string;
-      showErrorToast?: boolean;
-      retries?: number;
-    } = {}
-  ): Promise<T | null> => {
-    const {
-      showSuccessToast: showSuccess = false,
-      successMessage = 'Operation completed successfully',
-      showErrorToast: showError = true,
-      retries = 0
-    } = options;
+  const handleAsyncOperation = useCallback(
+    async <T>(
+      operation: () => Promise<T>,
+      operationName: string,
+      options: {
+        showSuccessToast?: boolean;
+        successMessage?: string;
+        showErrorToast?: boolean;
+        retries?: number;
+      } = {}
+    ): Promise<T | null> => {
+      const {
+        showSuccessToast: showSuccess = false,
+        successMessage = 'Operation completed successfully',
+        showErrorToast: showError = true,
+        retries = 0,
+      } = options;
 
-    try {
-      trackAction(`start_${operationName}`);
+      try {
+        trackAction(`start_${operationName}`);
 
-      const result = await measurePerformance(operationName, async () => {
-        if (retries > 0) {
-          return await retryWithBackoff(operation, retries);
-        } else {
-          return await operation();
+        const result = await measurePerformance(operationName, async () => {
+          if (retries > 0) {
+            return await retryWithBackoff(operation, retries);
+          } else {
+            return await operation();
+          }
+        });
+
+        trackAction(`complete_${operationName}`, { success: true });
+
+        if (showSuccess) {
+          showSuccessToast(successMessage);
         }
-      });
 
-      trackAction(`complete_${operationName}`, { success: true });
+        return result;
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error';
+        trackAction(`error_${operationName}`, { error: errMsg });
 
-      if (showSuccess) {
-        showSuccessToast(successMessage);
+        handleError(error, {
+          operation: operationName,
+          retries,
+          timestamp: new Date().toISOString(),
+        });
+
+        if (showError) {
+          const userFriendlyMessage = getUserFriendlyErrorMessage(error, operationName);
+          showErrorToast(userFriendlyMessage);
+        }
+
+        return null;
       }
-
-      return result;
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : 'Unknown error';
-      trackAction(`error_${operationName}`, { error: errMsg });
-      
-      handleError(error, { 
-        operation: operationName,
-        retries,
-        timestamp: new Date().toISOString()
-      });
-
-      if (showError) {
-        const userFriendlyMessage = getUserFriendlyErrorMessage(error, operationName);
-        showErrorToast(userFriendlyMessage);
-      }
-
-      return null;
-    }
-  }, [handleError, showErrorToast, showSuccessToast, trackAction]);
+    },
+    [handleError, showErrorToast, showSuccessToast, trackAction]
+  );
 
   return {
     handleError,
     handleAsyncOperation,
     trackAction,
     showErrorToast,
-    showSuccessToast
+    showSuccessToast,
   };
 };
 

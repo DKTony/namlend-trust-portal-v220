@@ -1,7 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { handleComponentError, getRecentUserActions } from '@/utils/errorHandler';
+import { getRecentUserActions, handleComponentError } from '@/utils/errorHandler';
 import { captureException } from '@/utils/sentry';
+import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -42,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
     // Log error with recent user actions for context
     const recentActions = getRecentUserActions();
     handleComponentError('ErrorBoundary', error, {
-      ...errorInfo,
+      componentStack: errorInfo.componentStack ?? undefined,
       recentUserActions: recentActions,
     });
 

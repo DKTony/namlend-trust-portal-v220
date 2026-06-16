@@ -1,7 +1,7 @@
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: ReactNode;

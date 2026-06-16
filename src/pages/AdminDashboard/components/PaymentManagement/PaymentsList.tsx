@@ -1,41 +1,26 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import PaymentDetailsModal from '@/components/modals/PaymentDetailsModal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { handleMutationError } from '@/lib/mutationError';
+import { formatNAD } from '@/utils/currency';
+import { useMutation } from 'convex/react';
 import {
-  Eye,
-  CreditCard,
-  Calendar,
-  User,
   AlertTriangle,
+  Calendar,
   CheckCircle,
   Clock,
-  XCircle,
+  CreditCard,
+  Eye,
   RefreshCw,
+  User,
+  XCircle,
 } from 'lucide-react';
-import { usePaymentsList } from '../../hooks/usePaymentsList';
-import { formatNAD } from '@/utils/currency';
-import { useToast } from '@/hooks/use-toast';
-import { handleMutationError } from '@/lib/mutationError';
-import { useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import React, { useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
-import PaymentDetailsModal from '@/components/modals/PaymentDetailsModal';
-
-interface Payment {
-  id: string;
-  clientId: string;
-  clientName: string;
-  loanId: string;
-  amount: number;
-  dueDate: string;
-  paidAt?: string;
-  status: 'pending' | 'completed' | 'failed' | 'overdue' | 'partial';
-  paymentMethod: 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order';
-  reference: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { usePaymentsList } from '../../hooks/usePaymentsList';
 
 interface PaymentsListProps {
   status: 'all' | 'pending' | 'completed' | 'failed' | 'overdue';

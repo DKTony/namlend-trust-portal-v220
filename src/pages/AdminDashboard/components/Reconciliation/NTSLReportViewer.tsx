@@ -2,8 +2,16 @@
  * NTSL (Net Settlement Report) Viewer Component
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -12,18 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Eye, Download, FileSpreadsheet } from 'lucide-react';
-import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
+import { useReportContent, useSettlementReports } from '@/hooks/useSettlement';
+import { Download, Eye, FileSpreadsheet } from 'lucide-react';
+import { useState } from 'react';
 
 interface NTSLReportData {
   participant: string;

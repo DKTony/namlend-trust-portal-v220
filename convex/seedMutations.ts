@@ -3,8 +3,8 @@
  * Separate file because mutations cannot live in 'use node' files.
  */
 
-import { internalMutation } from './_generated/server';
 import { v } from 'convex/values';
+import { internalMutation } from './_generated/server';
 
 /** Elevate a user's role by email. */
 export const elevateRole = internalMutation({

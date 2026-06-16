@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import {
-  Users,
-  Search,
-  Filter,
-  Download,
-  Plus,
-  MessageSquare,
   AlertCircle,
+  Download,
+  Filter,
+  MessageSquare,
+  Plus,
+  Search,
   UserCheck,
+  Users,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 // Sub-components
+import ClientProfileModal from '@/components/modals/ClientProfileModal';
 import ClientPortfolioOverview from './ClientPortfolioOverview';
 import ClientsList from './ClientsList';
 import CommunicationCenter from './CommunicationCenter';
 import SupportTickets from './SupportTickets';
-import ClientProfileModal from '@/components/modals/ClientProfileModal';
 
 interface ClientManagementDashboardProps {
   onClientSelect?: (clientId: string) => void;

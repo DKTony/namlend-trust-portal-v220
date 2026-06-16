@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { Label } from '@/components/ui/label';
-import { toast } from '@/hooks/use-toast';
-import { FileText, Check } from 'lucide-react';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useTheme } from '@/context/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import { useMutation } from 'convex/react';
+import { Check, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 const documents = [
   { type: 'id_card', translationKey: 'documents.idCard', required: true },

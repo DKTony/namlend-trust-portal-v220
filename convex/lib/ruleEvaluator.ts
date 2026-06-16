@@ -12,8 +12,8 @@
 
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { internalQuery } from '../_generated/server';
 import { DataModel } from '../_generated/dataModel';
+import { internalQuery } from '../_generated/server';
 
 type Ctx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 

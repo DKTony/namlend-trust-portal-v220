@@ -3,15 +3,19 @@
  * Provides a comprehensive view of overdue loans with risk buckets
  */
 
-import React, { useState, useMemo } from 'react';
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
-import { type Id } from '@/integrations/convex/api';
-import { api } from '@/integrations/convex/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -20,40 +24,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Phone,
-  MessageSquare,
-  Mail,
-  Calendar,
-  Clock,
-  AlertTriangle,
-  Search,
-  RefreshCw,
-  Loader2,
-  User,
-  DollarSign,
-  TrendingUp,
-  FileText,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  ChevronRight,
-  HandshakeIcon,
-} from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
 import { useToast } from '@/hooks/use-toast';
+import { api, type Id } from '@/integrations/convex/api';
 import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  FileText,
+  HandshakeIcon,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Phone,
+  RefreshCw,
+  Search,
+  User,
+  XCircle,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Local view models — typed to match actual Convex query return shapes (N3)
@@ -155,7 +152,7 @@ const OUTCOMES = [
 
 export function CollectionsDashboard() {
   const { toast } = useToast();
-  const [refreshing, setRefreshing] = useState(false);
+  const refreshing = false;
   const [selectedBucket, setSelectedBucket] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
@@ -214,8 +211,6 @@ export function CollectionsDashboard() {
   // Map Convex nested stats → flat StatsView (N3)
   const stats: StatsView | null = useMemo(() => {
     if (!rawStats) return null;
-    const MS_PER_DAY = 86_400_000;
-    const now = Date.now();
     const overdue = rawStats.overdue;
     // Derive bucket counts from rawQueue when available
     const q = rawQueue ?? [];

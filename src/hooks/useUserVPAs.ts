@@ -5,16 +5,16 @@
  * a compatibility fallback through `api.ips.ipsVpa.*`.
  */
 
-import { useCallback, useMemo, useState } from 'react';
-import { useAction, useMutation, useQuery } from 'convex/react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
 import type {
-  UserVPAsResult,
+  IPSAdapterValidateVPAResponse,
   UpsertVPAParams,
   UpsertVPAResult,
-  IPSAdapterValidateVPAResponse,
+  UserVPAsResult,
 } from '@/types/ips';
+import { useAction, useMutation, useQuery } from 'convex/react';
+import { useCallback, useMemo, useState } from 'react';
 
 export function useUserVPAs() {
   const raw = useQuery(api.ips.ipsVpa.getMySavedVpas, {});
@@ -146,7 +146,7 @@ export function useValidateVPA() {
     async (vpa: string) => {
       setIsPending(true);
       try {
-        const result = (await validateVpa({ vpa })) as IPSAdapterValidateVPAResponse;
+        const result = (await validateVpa({ vpa })) as unknown as IPSAdapterValidateVPAResponse;
 
         if (result.validationStatus === 'validated') {
           toast({

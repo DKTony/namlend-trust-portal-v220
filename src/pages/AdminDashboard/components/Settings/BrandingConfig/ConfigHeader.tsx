@@ -3,8 +3,6 @@
  * Part of BrandingConfig split
  */
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +14,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Palette, Save, RotateCcw, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, EyeOff, Loader2, Palette, RotateCcw, Save } from 'lucide-react';
 
 interface ConfigHeaderProps {
   hasChanges: boolean;

@@ -1,10 +1,9 @@
-import React from 'react';
+import { Badge } from '@/components/ui/badge';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Database, AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
-import { useTigerBeetleBalance } from '@/hooks/useTigerBeetleBalance';
 import { formatNAD } from '@/constants/regulatory';
+import { useTigerBeetleBalance } from '@/hooks/useTigerBeetleBalance';
+import { AlertCircle, Database, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 
 interface TigerBeetleBalanceProps {
   loanId: string;
@@ -19,7 +18,7 @@ export function TigerBeetleBalance({
   compact = false,
   className = '',
 }: TigerBeetleBalanceProps) {
-  const { data: balance, isLoading, error, dataUpdatedAt } = useTigerBeetleBalance(loanId);
+  const { data: balance, isLoading, error } = useTigerBeetleBalance(loanId);
 
   if (isLoading) {
     return (
@@ -100,7 +99,7 @@ export function TigerBeetleBalance({
 
           {/* Last Updated */}
           <div className="text-xs text-muted-foreground text-right">
-            Updated: {new Date(dataUpdatedAt).toLocaleTimeString()}
+            Updated: {new Date().toLocaleTimeString()}
           </div>
         </div>
       </CardContent>

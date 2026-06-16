@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Route, Plus, RefreshCw, Activity, Clock, DollarSign } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from 'convex/react';
+import { Activity, Clock, DollarSign, Plus, RefreshCw, Route } from 'lucide-react';
+import { useState } from 'react';
 
 const STATUS_STYLES = {
   active:
@@ -25,13 +26,34 @@ const HEALTH_STYLES = {
   unhealthy: 'text-red-600 dark:text-red-400',
 } as const;
 
+interface PaymentRailRow {
+  _id: string;
+  displayName: string;
+  railCode: string;
+  status: string;
+  lastHealthStatus?: string;
+  settlementLatencyMinutes?: number;
+  costModel: {
+    fixedFeeNAD?: number;
+    percentageFee?: number;
+  };
+  supportedDirections: string[];
+  availability: {
+    businessHoursOnly: boolean;
+    startTime?: string;
+    endTime?: string;
+  };
+}
+
 export function PaymentRailsDashboard() {
-  const rails = useQuery(api.ontology.paymentRails.listRails);
+  const rails = useQuery(api.ontology.paymentRails.listRails, {}) as PaymentRailRow[] | undefined;
   const seedRails = useMutation(api.ontology.paymentRails.seedDefaultRails);
   const { toast } = useToast();
+  const { isPlatformSupport } = useAuth();
   const [seeding, setSeeding] = useState(false);
 
   const handleSeed = async () => {
+    if (isPlatformSupport) return;
     setSeeding(true);
     try {
       await seedRails();
@@ -62,7 +84,12 @@ export function PaymentRailsDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleSeed} disabled={seeding}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSeed}
+            disabled={seeding || isPlatformSupport}
+          >
             <RefreshCw className={cn('h-4 w-4 mr-2', seeding && 'animate-spin')} />
             Seed Default Rails
           </Button>
@@ -83,7 +110,7 @@ export function PaymentRailsDashboard() {
             <p className="text-sm text-muted-foreground mb-4">
               Seed the default rails (EFT, IPS Real-Time, Mobile Money) to enable disbursements.
             </p>
-            <Button onClick={handleSeed} disabled={seeding}>
+            <Button onClick={handleSeed} disabled={seeding || isPlatformSupport}>
               <Plus className="h-4 w-4 mr-2" />
               Seed Default Rails
             </Button>
@@ -91,7 +118,7 @@ export function PaymentRailsDashboard() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {rails.map((rail) => {
+          {rails.map((rail: PaymentRailRow) => {
             const statusStyle =
               STATUS_STYLES[rail.status as keyof typeof STATUS_STYLES] ?? STATUS_STYLES.offline;
             const healthStyle =
@@ -156,7 +183,7 @@ export function PaymentRailsDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Directions</span>
                     <div className="flex gap-1">
-                      {rail.supportedDirections.map((d) => (
+                      {rail.supportedDirections.map((d: string) => (
                         <Badge key={d} variant="secondary" className="text-xs px-1.5 py-0">
                           {d}
                         </Badge>

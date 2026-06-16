@@ -1,6 +1,6 @@
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface LandingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost';
@@ -8,12 +8,12 @@ interface LandingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
 }
 
-const LandingButton: React.FC<LandingButtonProps> = ({ 
-  variant = 'primary', 
-  children, 
-  className = '', 
+const LandingButton: React.FC<LandingButtonProps> = ({
+  variant = 'primary',
+  children,
+  className = '',
   fullWidth = false,
-  ...props 
+  ...props
 }) => {
   const { styles, theme } = useTheme();
 
@@ -26,11 +26,10 @@ const LandingButton: React.FC<LandingButtonProps> = ({
     variantClass = `bg-transparent hover:bg-black/5 dark:hover:bg-white/5 ${styles.textClass}`;
   }
 
-  const physicsClass = theme === 'neo' 
-    ? '' 
-    : 'active:scale-95 transition-transform duration-200';
+  const physicsClass = theme === 'neo' ? '' : 'active:scale-95 transition-transform duration-200';
 
-  const radiusClass = theme === 'glass' ? 'rounded-2xl' : theme === 'lux' ? 'rounded-lg' : 'rounded-md';
+  const radiusClass =
+    theme === 'glass' ? 'rounded-2xl' : theme === 'lux' ? 'rounded-lg' : 'rounded-md';
 
   return (
     <button

@@ -1,12 +1,11 @@
-import React from 'react';
-import HeroSection from '@/components/sections/HeroSection';
-import FeaturesSection from '@/components/sections/FeaturesSection';
 import LoanCalculator from '@/components/finance/LoanCalculator';
-import Footer from '@/components/sections/Footer';
-import LandingNavbar from '@/components/landing/LandingNavbar';
-import SectionDivider from '@/components/landing/SectionDivider';
 import BackgroundLayer from '@/components/landing/BackgroundLayer';
+import LandingNavbar from '@/components/landing/LandingNavbar';
 import LandingThemeToggle from '@/components/landing/LandingThemeToggle';
+import SectionDivider from '@/components/landing/SectionDivider';
+import FeaturesSection from '@/components/sections/FeaturesSection';
+import Footer from '@/components/sections/Footer';
+import HeroSection from '@/components/sections/HeroSection';
 
 const Index = () => {
   return (

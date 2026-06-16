@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -16,27 +16,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { toast } from '@/hooks/use-toast';
+import { useFetchActiveLoans } from '@/hooks/useFetchActiveLoans';
+import type { Id } from '@/integrations/convex/api';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
+import { useMutation as useConvexMutation } from 'convex/react';
 import {
-  CreditCard,
-  Smartphone,
-  Building2,
-  MapPin,
-  Shield,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  Wallet,
   ArrowRight,
+  Building2,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  MapPin,
   Receipt,
-  Banknote,
-  ChevronRight,
+  Shield,
+  Smartphone,
+  Wallet,
   Zap,
 } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
+import { useEffect, useState } from 'react';
 // Inline type (previously from paymentService)
 interface ProcessPaymentResult {
   success: boolean;
@@ -50,10 +51,6 @@ interface ProcessPaymentResult {
   reference_number?: string;
   overpayment?: number;
 }
-import { useFetchActiveLoans, type LoanWithDetails } from '@/hooks/useFetchActiveLoans';
-import { useMutation as useConvexMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '@/integrations/convex/api';
 
 // Payment method validation rules - replaces sequential if-statements
 const PAYMENT_VALIDATION_RULES: Record<string, (details: Record<string, string>) => boolean> = {

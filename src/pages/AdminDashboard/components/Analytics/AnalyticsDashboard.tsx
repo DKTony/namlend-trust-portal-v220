@@ -1,25 +1,24 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  PieChart, 
-  Download, 
+import {
+  BarChart3,
   Calendar,
-  Filter,
+  DollarSign,
+  Download,
   FileText,
-  Users,
-  DollarSign
+  Filter,
+  PieChart,
+  TrendingUp,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 // Sub-components
-import PortfolioAnalytics from './PortfolioAnalytics';
-import PerformanceMetrics from './PerformanceMetrics';
-import RiskAnalysis from './RiskAnalysis';
-import ReportGenerator from './ReportGenerator';
 import ComplianceReports from './ComplianceReports';
+import PerformanceMetrics from './PerformanceMetrics';
+import PortfolioAnalytics from './PortfolioAnalytics';
+import ReportGenerator from './ReportGenerator';
+import RiskAnalysis from './RiskAnalysis';
 
 const AnalyticsDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('portfolio');
@@ -65,8 +64,12 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Total Portfolio Value</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">N$2.4M</p>
-                <p className="text-xs text-green-600 dark:text-green-400 truncate">+12% vs last month</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                  N$2.4M
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 truncate">
+                  +12% vs last month
+                </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
             </div>
@@ -77,7 +80,9 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Active Loans</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">156</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                  156
+                </p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 truncate">+8 this month</p>
               </div>
               <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -89,7 +94,9 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Portfolio Health</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">94.2%</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                  94.2%
+                </p>
                 <p className="text-xs text-green-600 dark:text-green-400 truncate">Excellent</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
@@ -101,7 +108,9 @@ const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">Risk Score</p>
-                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">2.1</p>
+                <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
+                  2.1
+                </p>
                 <p className="text-xs text-green-600 dark:text-green-400 truncate">Low Risk</p>
               </div>
               <BarChart3 className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />

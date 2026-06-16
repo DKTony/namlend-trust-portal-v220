@@ -3,8 +3,18 @@
  * Transaction-level data for settlement windows
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -13,20 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, Download, FileText, Search } from 'lucide-react';
-import { useSettlementReports, useReportContent } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
+import { useReportContent, useSettlementReports } from '@/hooks/useSettlement';
+import { Download, Eye, FileText, Search } from 'lucide-react';
+import { useState } from 'react';
 
 interface RawDataReportEntry {
   txId: string;

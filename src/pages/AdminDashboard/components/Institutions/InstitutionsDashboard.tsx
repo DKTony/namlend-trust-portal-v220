@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Building2, Plus, Settings, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from 'convex/react';
+import { Building2, Plus, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
 export function InstitutionsDashboard() {
-  const institutions = useQuery(api.ontology.institutions.listInstitutions);
+  const institutions = useQuery(api.ontology.institutions.listInstitutions, {});
   const seedNamLend = useMutation(api.ontology.institutions.seedNamLendTrust);
   const { toast } = useToast();
   const [seeding, setSeeding] = useState(false);
@@ -17,7 +17,7 @@ export function InstitutionsDashboard() {
   const handleSeed = async () => {
     setSeeding(true);
     try {
-      await seedNamLend();
+      await seedNamLend({});
       toast({ title: 'Seeded', description: 'NamLend Trust institution created.' });
     } catch (err) {
       toast({
@@ -78,7 +78,7 @@ export function InstitutionsDashboard() {
             <Card key={inst._id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{inst.displayName}</CardTitle>
+                  <CardTitle className="text-base">{inst.name}</CardTitle>
                   <Badge
                     variant="outline"
                     className={
@@ -94,11 +94,11 @@ export function InstitutionsDashboard() {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Code</span>
-                  <span className="font-mono">{inst.institutionCode}</span>
+                  <span className="font-mono">{inst.shortCode}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Type</span>
-                  <span>{inst.institutionType}</span>
+                  <span>{inst.type}</span>
                 </div>
                 {inst.registrationNumber && (
                   <div className="flex justify-between">
@@ -106,10 +106,10 @@ export function InstitutionsDashboard() {
                     <span>{inst.registrationNumber}</span>
                   </div>
                 )}
-                {inst.country && (
+                {inst.metadata?.country && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Country</span>
-                    <span>{inst.country}</span>
+                    <span>{inst.metadata.country}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

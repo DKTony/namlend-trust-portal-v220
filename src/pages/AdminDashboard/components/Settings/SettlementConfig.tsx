@@ -3,24 +3,6 @@
  * Allows admins to configure settlement, IPS, and reconciliation settings
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,24 +14,38 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  ArrowRightLeft,
-  DollarSign,
-  FileText,
-  AlertTriangle,
-  Save,
-  RotateCcw,
-  Info,
-  Loader2,
-  Building2,
-  Send,
-  FileCheck,
-  Shield,
-} from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertTriangle,
+  ArrowRightLeft,
+  Building2,
+  DollarSign,
+  FileCheck,
+  Loader2,
+  RotateCcw,
+  Save,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 // Types
 interface SettlementConfigGeneral {
@@ -106,23 +102,6 @@ interface SettlementConfig {
   transport: SettlementConfigTransport;
   reports: SettlementConfigReports;
   exposure: SettlementConfigExposure;
-}
-
-interface ConfigItem {
-  config_key: string;
-  category: string;
-  config_value:
-    | SettlementConfigGeneral
-    | SettlementConfigNetting
-    | SettlementConfigPacs009
-    | SettlementConfigTransport
-    | SettlementConfigReports
-    | SettlementConfigExposure
-    | IPSConfigConnection
-    | IPSConfigTransactions
-    | IPSConfigVpa
-    | ReconciliationConfigGeneral
-    | ReconciliationConfigVariance;
 }
 
 interface IPSConfigConnection {
@@ -257,6 +236,7 @@ const DEFAULT_RECON: ReconciliationConfig = {
 
 export function SettlementConfig() {
   const { toast } = useToast();
+  const { isPlatformSupport } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settlement, setSettlement] = useState<SettlementConfig>(DEFAULT_SETTLEMENT);
@@ -308,10 +288,12 @@ export function SettlementConfig() {
     key: string,
     value: string | number | boolean
   ) => {
+    if (isPlatformSupport) return;
     setSettlement((p) => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
   const updateI = (section: keyof IPSConfig, key: string, value: string | number | boolean) => {
+    if (isPlatformSupport) return;
     setIPS((p) => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
@@ -320,11 +302,13 @@ export function SettlementConfig() {
     key: string,
     value: string | number | boolean
   ) => {
+    if (isPlatformSupport) return;
     setRecon((p) => ({ ...p, [section]: { ...p[section], [key]: value } }));
     setHasChanges(true);
   };
 
   const handleSave = async () => {
+    if (isPlatformSupport) return;
     setSaving(true);
     try {
       for (const [k, v] of Object.entries(settlement))
@@ -347,6 +331,7 @@ export function SettlementConfig() {
   };
 
   const handleReset = () => {
+    if (isPlatformSupport) return;
     setSettlement(DEFAULT_SETTLEMENT);
     setIPS(DEFAULT_IPS);
     setRecon(DEFAULT_RECON);
@@ -383,7 +368,7 @@ export function SettlementConfig() {
           )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled={isPlatformSupport}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset
               </Button>
@@ -397,11 +382,13 @@ export function SettlementConfig() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                <AlertDialogAction onClick={handleReset} disabled={isPlatformSupport}>
+                  Reset
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={handleSave} disabled={saving || !hasChanges}>
+          <Button onClick={handleSave} disabled={saving || !hasChanges || isPlatformSupport}>
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (

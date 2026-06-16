@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, ShieldCheck, Mail, Lock, ArrowRight, User, Phone, FileText } from 'lucide-react';
-import { z } from 'zod';
-import { useTheme } from '@/context/ThemeContext';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
+import { useTheme } from '@/context/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { ArrowRight, FileText, Loader2, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { z } from 'zod';
 
 // Email validation schema
 const emailSchema = z

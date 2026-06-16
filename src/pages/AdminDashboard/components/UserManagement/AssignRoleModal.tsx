@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import React, { useEffect, useMemo, useState } from 'react';
 type AppRole = 'admin' | 'loan_officer' | 'client';
-import { useToast } from '@/hooks/use-toast';
 
 interface AssignRoleModalProps {
   open: boolean;

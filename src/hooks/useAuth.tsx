@@ -14,10 +14,10 @@
  *   user_roles RPC                   → useQuery(api.users.getMyRole)
  */
 
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { useConvexAuth, useQuery, useMutation } from 'convex/react';
-import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '@/integrations/convex/api';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { createContext, ReactNode, useCallback, useContext } from 'react';
 
 // ---------------------------------------------------------------------------
 // Compatible User/Session types (replaces Supabase types)
@@ -176,13 +176,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = useCallback(
     async (email: string, password: string, userData?: UserMetadata) => {
       try {
-        await authActions.signIn('password', {
+        const signUpArgs: {
+          email: string;
+          flow: 'signUp';
+          name?: string;
+          password: string;
+          phone?: string;
+        } = {
           email,
           password,
           flow: 'signUp',
-          name: userData?.full_name as string | undefined,
-          phone: userData?.phone as string | undefined,
-        });
+        };
+        if (userData?.full_name) signUpArgs.name = userData.full_name;
+        if (userData?.phone) signUpArgs.phone = userData.phone;
+        await authActions.signIn('password', signUpArgs);
         return { error: null };
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Sign up failed');

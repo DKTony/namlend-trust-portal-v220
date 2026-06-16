@@ -1,2 +1,1 @@
-export { IPPOnboardingDashboard } from './IPPOnboardingDashboard';
-export { default } from './IPPOnboardingDashboard';
+export { IPPOnboardingDashboard, default } from './IPPOnboardingDashboard';

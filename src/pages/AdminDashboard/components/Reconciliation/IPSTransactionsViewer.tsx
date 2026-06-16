@@ -3,20 +3,9 @@
  * View and reconcile IPS/IPP transactions
  */
 
-import React, { useState, useMemo } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -26,16 +15,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { formatNAD } from '@/constants/regulatory';
+import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   Loader2,
   RefreshCw,
   Search,
-  Zap,
-  CheckCircle,
   XCircle,
-  Clock,
-  AlertTriangle,
+  Zap,
 } from 'lucide-react';
-import { formatNAD } from '@/constants/regulatory';
+import React, { useMemo, useState } from 'react';
 
 interface IPSTransaction {
   id: string;
@@ -58,6 +58,8 @@ interface IPSTransaction {
   payment_id: string | null;
 }
 
+type ConvexIpsStatus = 'completed' | 'failed' | 'pending' | 'processing' | 'reversed' | 'timeout';
+
 const STATUS_BADGES: Record<
   string,
   { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }
@@ -78,7 +80,7 @@ export function IPSTransactionsViewer() {
 
   // Convex reactive query
   const rawTransactions = useConvexQuery(api.ips.ipsTransactions.adminListIpsTransactions, {
-    ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+    ...(statusFilter !== 'all' ? { status: statusFilter as ConvexIpsStatus } : {}),
     limit: 100,
   });
 

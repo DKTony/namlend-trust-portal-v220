@@ -3,22 +3,17 @@
  * Allows clients to manage their loans and request services
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -27,23 +22,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Download,
-  FileText,
-  Calendar,
-  Receipt,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  AlertCircle,
-  HelpCircle,
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
+import { useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Download,
+  FileText,
+  HelpCircle,
+  Loader2,
+  Receipt,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 // Inline type (previously from collectionsService)
 interface RescheduleRequest {
   id: string;
@@ -83,7 +83,7 @@ interface Payment {
 export function SelfServicePortal() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [rescheduleRequests, setRescheduleRequests] = useState<RescheduleRequest[]>([]);
+  const rescheduleRequests: RescheduleRequest[] = [];
   const [activeTab, setActiveTab] = useState('statements');
 
   // Reschedule dialog state
@@ -135,8 +135,6 @@ export function SelfServicePortal() {
       console.warn('getRescheduleRequests: placeholder until Convex wired');
     }
   }, [user]);
-
-  const fetchData = () => {}; // Convex is reactive, no manual refetch needed
 
   const generateStatement = (loan: Loan) => {
     // Generate a simple text statement (in production, use PDF library)

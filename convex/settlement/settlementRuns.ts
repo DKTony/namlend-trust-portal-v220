@@ -4,9 +4,8 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAdmin, assertStaff } from '../lib/auth';
+import { query } from '../_generated/server';
+import { assertStaff } from '../lib/auth';
 import { settlementRunState } from '../schema';
 
 export const listSettlementRuns = query({

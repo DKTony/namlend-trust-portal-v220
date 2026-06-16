@@ -12,8 +12,8 @@
  */
 
 import { GenericMutationCtx } from 'convex/server';
-import type { DataModel } from '../_generated/dataModel';
 import { ConvexError } from 'convex/values';
+import type { DataModel } from '../_generated/dataModel';
 
 // ---------------------------------------------------------------------------
 // Use Case Types — maps to spec §5.2 categories

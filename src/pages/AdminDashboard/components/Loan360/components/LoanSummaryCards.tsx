@@ -1,10 +1,10 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { User, Phone, Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
-import { cn } from '@/lib/utils';
 import { TigerBeetleBalance } from '@/components/finance/TigerBeetleBalance';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
+import { AlertCircle, CheckCircle, Mail, Phone, User } from 'lucide-react';
 
 interface LoanSummaryCardsProps {
   loan: {

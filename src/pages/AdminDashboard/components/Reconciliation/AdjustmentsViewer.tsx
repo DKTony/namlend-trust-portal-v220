@@ -3,18 +3,18 @@
  * Settlement adjustments from disputes/chargebacks/corrections
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,18 +23,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Eye, FileWarning, CheckCircle, XCircle } from 'lucide-react';
-import { useSettlementAdjustments, useUpdateAdjustmentStatus } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
+import { useSettlementAdjustments, useUpdateAdjustmentStatus } from '@/hooks/useSettlement';
+import { CheckCircle, Eye, FileWarning, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export function AdjustmentsViewer() {
   const [statusFilter, setStatusFilter] = useState<string>('all');

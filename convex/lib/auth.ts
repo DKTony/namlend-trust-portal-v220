@@ -13,9 +13,9 @@
  *   SERVICE_ROLE edge functions        → internalMutation / internalAction (not callable from client)
  */
 
-import { ConvexError } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
-import { GenericQueryCtx, GenericMutationCtx } from 'convex/server';
+import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { ConvexError } from 'convex/values';
 import { DataModel, Id } from '../_generated/dataModel';
 import { internalQuery } from '../_generated/server';
 

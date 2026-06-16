@@ -18,15 +18,14 @@
  *   admin queries    -> staff only
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalQuery } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff } from '../lib/auth';
-import { resolveWriteInstitution } from '../lib/tenancy';
-import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
+import { ConvexError, v } from 'convex/values';
+import { internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAuthenticated, assertStaff } from '../lib/auth';
+import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
-import { consentType, consentStatus } from '../schema';
+import { resolveWriteInstitution } from '../lib/tenancy';
+import { consentStatus, consentType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Mutations

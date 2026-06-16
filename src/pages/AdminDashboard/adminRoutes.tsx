@@ -3,10 +3,10 @@
  * All routes are lazy-loaded for code splitting.
  */
 
-import React, { Suspense } from 'react';
-import { Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
+import { ProtectedRoute } from '@/components/system/ProtectedRoute';
+import React, { Suspense } from 'react';
+import { Navigate, Route } from 'react-router-dom';
 
 // Lazy-loaded page components
 const OverviewPage = React.lazy(() => import('./pages/OverviewPage'));

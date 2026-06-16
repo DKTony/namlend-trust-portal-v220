@@ -17,8 +17,8 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, mutation, query, internalQuery } from '../_generated/server';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
+import { assertAdmin, assertStaff } from '../lib/auth';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called by scheduler / system)

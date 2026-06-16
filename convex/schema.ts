@@ -4,8 +4,8 @@
  * Replaces PostgreSQL + RLS with typed Convex documents + auth-guard functions.
  */
 
-import { defineSchema, defineTable } from 'convex/server';
 import { authTables } from '@convex-dev/auth/server';
+import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 // ---------------------------------------------------------------------------
@@ -285,11 +285,28 @@ export default defineSchema({
     idNumber: v.optional(v.string()),
     idType: v.optional(v.string()),
     address: v.optional(v.string()),
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
     city: v.optional(v.string()),
     country: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
     dateOfBirth: v.optional(v.string()), // ISO date string
     employmentStatus: v.optional(v.string()),
+    employerName: v.optional(v.string()),
+    employerPhone: v.optional(v.string()),
+    employerContactPerson: v.optional(v.string()),
     monthlyIncome: v.optional(v.number()),
+    bankName: v.optional(v.string()),
+    accountNumber: v.optional(v.string()),
+    branchCode: v.optional(v.string()),
+    branchName: v.optional(v.string()),
+    creditScore: v.optional(v.number()),
+    profileCompletionPercentage: v.optional(v.number()),
+    loanApplicationEligible: v.optional(v.boolean()),
+    idDocumentVerified: v.optional(v.boolean()),
+    bankStatementsVerified: v.optional(v.boolean()),
+    payslipVerified: v.optional(v.boolean()),
+    documentsComplete: v.optional(v.boolean()),
     kycStatus,
     status: v.optional(
       v.union(v.literal('active'), v.literal('deactivated'), v.literal('suspended'))
@@ -348,11 +365,14 @@ export default defineSchema({
    */
   loans: defineTable({
     userId: v.id('users'),
+    id: v.optional(v.string()),
     loanNumber: v.optional(v.string()),
+    amount: v.optional(v.number()),
     principal: v.number(),
     interestRate: v.number(), // APR — validated <= 32% (Namibian law)
     termMonths: v.number(),
     monthlyPayment: v.optional(v.number()),
+    totalRepayment: v.optional(v.number()),
     purpose: v.optional(v.string()),
     status: loanStatus,
     currentStage: v.optional(v.string()),
@@ -463,6 +483,7 @@ export default defineSchema({
     interestPaid: v.optional(v.number()),
     feesPaid: v.optional(v.number()),
     method: v.string(),
+    paymentMethod: v.optional(v.string()),
     status: v.union(
       v.literal('pending'),
       v.literal('processing'),
@@ -475,6 +496,8 @@ export default defineSchema({
     externalTransactionId: v.optional(v.string()),
     ipsTransactionId: v.optional(v.id('ipsTransactions')),
     paymentDate: v.optional(v.number()),
+    dueDate: v.optional(v.number()),
+    paidAt: v.optional(v.number()),
     metadata: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),

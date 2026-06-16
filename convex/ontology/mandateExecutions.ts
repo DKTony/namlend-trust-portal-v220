@@ -12,13 +12,13 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, internalQuery, query } from '../_generated/server';
 import { internal } from '../_generated/api';
-import { assertStaff } from '../lib/auth';
-import { resolveWriteInstitution } from '../lib/tenancy';
-import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
+import { internalMutation, internalQuery, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertStaff } from '../lib/auth';
+import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
+import { resolveWriteInstitution } from '../lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called by cron / system)

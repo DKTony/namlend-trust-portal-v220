@@ -3,40 +3,40 @@
  * Visual representation of AI credit scoring results
  */
 
-import { useState, useEffect } from 'react';
-import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Separator } from '@/components/ui/separator';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Info,
-  Lightbulb,
-  DollarSign,
-  Percent,
-  Clock,
-  RefreshCw,
-  Loader2,
-} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   calculateCreditScore,
-  getLoanRecommendation,
   CREDIT_SCORE_RANGES,
+  getLoanRecommendation,
   type CreditFactors,
   type CreditScore,
   type LoanRecommendation,
 } from '@/utils/creditScoring';
 import { formatNAD } from '@/utils/currency';
-import { cn } from '@/lib/utils';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Info,
+  Lightbulb,
+  Loader2,
+  Minus,
+  Percent,
+  RefreshCw,
+  Shield,
+  TrendingDown,
+  TrendingUp,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface CreditScoreDisplayProps {
   factors: CreditFactors;

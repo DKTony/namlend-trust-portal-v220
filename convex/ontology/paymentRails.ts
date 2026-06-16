@@ -10,12 +10,11 @@
  *   queries                                    - staff-only
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalMutation } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { internalMutation, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
+import { assertAdminOrPlatformOwner, assertStaffOrPlatformSupport } from '../lib/platformAuth';
 import { paymentRailStatus } from '../schema';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +54,7 @@ export const createRail = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const adminId = await assertAdmin(ctx);
+    const adminId = await assertAdminOrPlatformOwner(ctx);
     const now = Date.now();
 
     // Uniqueness check
@@ -130,7 +129,7 @@ export const updateRail = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const adminId = await assertAdmin(ctx);
+    const adminId = await assertAdminOrPlatformOwner(ctx);
     const rail = await ctx.db.get(args.railId);
     if (!rail) {
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Payment rail not found.' });
@@ -237,7 +236,7 @@ export const updateRailHealth = internalMutation({
 export const getRail = query({
   args: { railId: v.id('paymentRails') },
   handler: async (ctx, { railId }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     return ctx.db.get(railId);
   },
 });
@@ -248,7 +247,7 @@ export const getRail = query({
 export const getRailByCode = query({
   args: { railCode: v.string() },
   handler: async (ctx, { railCode }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     return ctx.db
       .query('paymentRails')
       .withIndex('by_railCode', (q) => q.eq('railCode', railCode))
@@ -264,7 +263,7 @@ export const listRails = query({
     status: v.optional(paymentRailStatus),
   },
   handler: async (ctx, { status }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     if (status) {
       return ctx.db
         .query('paymentRails')
@@ -281,7 +280,7 @@ export const listRails = query({
 export const getActiveRails = query({
   args: {},
   handler: async (ctx) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     return ctx.db
       .query('paymentRails')
       .withIndex('by_status', (q) => q.eq('status', 'active'))
@@ -300,7 +299,7 @@ export const getActiveRails = query({
 export const seedDefaultRails = mutation({
   args: {},
   handler: async (ctx) => {
-    await assertAdmin(ctx);
+    await assertAdminOrPlatformOwner(ctx);
     const now = Date.now();
     let created = 0;
 

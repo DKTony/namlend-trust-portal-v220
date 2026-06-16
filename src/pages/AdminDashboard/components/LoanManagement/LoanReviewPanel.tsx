@@ -1,30 +1,29 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id, QueryItem } from '@/types/convex';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import type { Id, QueryItem } from '@/types/convex';
+import { useQuery } from 'convex/react';
 import {
-  User,
-  DollarSign,
-  FileText,
-  Calendar,
-  Phone,
-  Mail,
-  MapPin,
-  Briefcase,
-  CreditCard,
   AlertTriangle,
+  Briefcase,
   CheckCircle,
-  XCircle,
+  CreditCard,
+  DollarSign,
   Download,
   Eye,
+  FileText,
+  Mail,
+  MapPin,
+  Phone,
   TrendingUp,
+  User,
+  XCircle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useMemo, useState } from 'react';
 
 interface LoanReviewPanelProps {
   loanId: string;
@@ -141,7 +140,10 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
         ? new Date(rawLoan._creationTime).toISOString()
         : new Date().toISOString(),
       status: rawLoan.status || propStatus || 'pending',
-      approvedAt: rawLoan.approvedAt ? new Date(rawLoan.approvedAt).toISOString() : undefined,
+      approvedAt:
+        rawLoan.status === 'approved' || rawLoan.status === 'funded'
+          ? new Date(rawLoan.updatedAt).toISOString()
+          : undefined,
       disbursedAt: rawLoan.disbursedAt ? new Date(rawLoan.disbursedAt).toISOString() : undefined,
       documents,
       creditHistory: [] as Array<{ type: string; amount: number; status: string; date: string }>,

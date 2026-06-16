@@ -11,8 +11,8 @@
  * is the boundary that actually blocks unentitled access.
  */
 
-import { ReactNode } from 'react';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { ReactNode } from 'react';
 
 interface FeatureGateProps {
   feature: string;

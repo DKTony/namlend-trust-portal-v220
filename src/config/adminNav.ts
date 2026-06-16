@@ -3,25 +3,25 @@
  * Groups and items for the grouped sidebar component.
  */
 
-import {
-  FileText,
-  UserCheck,
-  DollarSign,
-  CheckCircle2,
-  AlertTriangle,
-  CheckSquare,
-  Users,
-  BarChart3,
-  Settings,
-  Palette,
-  Package,
-  GitBranch,
-  ShieldCheck,
-  FileSignature,
-  LayoutDashboard,
-} from 'lucide-react';
-import type { NavGroup } from '@/types/navigation';
 import { FEATURES, type FeatureDef } from '@/config/features';
+import type { NavGroup } from '@/types/navigation';
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  CheckSquare,
+  DollarSign,
+  FileSignature,
+  FileText,
+  GitBranch,
+  LayoutDashboard,
+  Package,
+  Palette,
+  Settings,
+  ShieldCheck,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 
 const allGroups: NavGroup[] = [
   {

@@ -4,7 +4,7 @@
  */
 
 import { v } from 'convex/values';
-import { query, internalMutation } from '../_generated/server';
+import { internalMutation, query } from '../_generated/server';
 import { assertAdmin } from '../lib/auth';
 
 /** Internal: record a shadow transfer after successful TB post. */

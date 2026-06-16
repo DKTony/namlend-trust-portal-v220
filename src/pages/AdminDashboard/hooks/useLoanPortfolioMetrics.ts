@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 interface LoanPortfolioMetrics {
   pendingCount: number;

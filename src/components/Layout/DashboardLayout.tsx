@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
-import ThemedSidebar, { MenuItem } from './ThemedSidebar';
+import { AdaptiveShell } from '@/components/adaptive';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
-import { AdaptiveShell } from '@/components/adaptive';
+import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 import { CreditCard, FileText, LayoutDashboard, User, Wallet } from 'lucide-react';
+import React, { useState } from 'react';
+import ThemedSidebar, { MenuItem } from './ThemedSidebar';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -41,7 +41,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const displayTitle = title || (variant === 'admin' ? 'Admin Dashboard' : 'Dashboard');
   const finalUserName =
-    userName || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User';
+    userName || String(user?.user_metadata?.first_name ?? user?.email?.split('@')[0] ?? 'User');
   const finalUserEmail = userEmail || user?.email;
 
   const fallbackClientMenuItems: MenuItem[] = [

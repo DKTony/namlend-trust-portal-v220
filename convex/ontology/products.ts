@@ -12,15 +12,14 @@
  *   checkEligibility                      - authenticated
  */
 
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertAdmin } from '../lib/auth';
-import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAdmin, assertAuthenticated, assertStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
-import { emitRelationship } from '../lib/relationshipEmitter';
 import { APR_LIMIT } from '../lib/regulatory';
+import { emitRelationship } from '../lib/relationshipEmitter';
 import { productCategory, productStatus } from '../schema';
 
 // ---------------------------------------------------------------------------

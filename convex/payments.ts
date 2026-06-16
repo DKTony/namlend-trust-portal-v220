@@ -8,18 +8,17 @@
  * FINANCIAL SAFETY: retry: false on all useMutation calls (frontend).
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
-import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
-import { paymentTxStatus } from './schema';
-import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
+import { internalMutation, mutation, query } from './_generated/server';
+import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { enqueueOutboxIdempotent } from './lib/outbox';
-import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
+import { paymentTxStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries

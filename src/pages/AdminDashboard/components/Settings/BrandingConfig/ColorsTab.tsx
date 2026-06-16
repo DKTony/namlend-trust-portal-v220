@@ -3,13 +3,13 @@
  * Part of BrandingConfig split
  */
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Palette } from 'lucide-react';
-import { BrandingConfig } from '@/types/branding';
 import { cn } from '@/lib/utils';
+import { BrandingConfig } from '@/types/branding';
+import { Palette } from 'lucide-react';
 
 interface ColorsTabProps {
   config: BrandingConfig;

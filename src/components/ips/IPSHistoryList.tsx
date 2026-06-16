@@ -4,26 +4,25 @@
  * Displays a list of IPS transactions for a loan or user
  */
 
-import React from 'react';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Wallet,
-} from 'lucide-react';
-import { useLoanIPSTransactions } from '@/hooks/useIPSTransactionStatus';
-import { IPS_STATUS_LABELS, IPS_STATUS_COLORS, isIPSStatusSuccess } from '@/types/ips';
-import type { IPSTransactionStatus, IPSTransactionType } from '@/types/ips';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { formatNAD } from '@/constants/regulatory';
+import { useLoanIPSTransactions } from '@/hooks/useIPSTransactionStatus';
 import { cn } from '@/lib/utils';
+import type { IPSTransactionStatus, IPSTransactionType } from '@/types/ips';
+import { IPS_STATUS_COLORS, IPS_STATUS_LABELS, isIPSStatusSuccess } from '@/types/ips';
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  Wallet,
+  XCircle,
+} from 'lucide-react';
 
 interface IPSHistoryListProps {
   loanId: string;
@@ -67,7 +66,7 @@ export function IPSHistoryList({
     );
   }
 
-  if (isError || !data?.success) {
+  if (isError) {
     return (
       <ThemedCard className={className}>
         {showTitle && (
@@ -85,7 +84,23 @@ export function IPSHistoryList({
     );
   }
 
-  const transactions = data.transactions || [];
+  const transactions = (data ?? []).map((txn) => ({
+    id: String(txn._id),
+    transaction_type: (txn.direction === 'outbound'
+      ? 'DISBURSEMENT'
+      : 'REPAYMENT') as IPSTransactionType,
+    status: txn.status === 'completed' ? 'success' : (txn.status as IPSTransactionStatus),
+    amount: txn.amount,
+    payer_vpa: txn.debtorVpa ?? '',
+    payee_vpa: txn.creditorVpa ?? '',
+    ips_result: txn.rawResponse?.result ?? null,
+    ips_rrn: txn.externalRef ?? txn.endToEndId ?? null,
+    error_message: txn.errorDescription ?? null,
+    initiated_at: txn.initiatedAt
+      ? new Date(txn.initiatedAt).toISOString()
+      : new Date(txn.createdAt).toISOString(),
+    completed_at: txn.completedAt ? new Date(txn.completedAt).toISOString() : null,
+  }));
 
   if (transactions.length === 0) {
     return (

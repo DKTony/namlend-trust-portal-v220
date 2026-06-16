@@ -1,8 +1,8 @@
-import React from 'react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import React from 'react';
 
 interface KPIData {
   title: string;
@@ -69,19 +69,17 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
       {kpiData.map((kpi, index) => (
         <ThemedCard key={index} className="hover:shadow-lg transition-shadow duration-200">
           <div className="pb-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              {kpi.title}
-            </h3>
+            <h3 className="text-sm font-medium text-muted-foreground">{kpi.title}</h3>
           </div>
           <div>
-            <div 
-              className={cn("text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums", styles.textClass)}
+            <div
+              className={cn(
+                'text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums',
+                styles.textClass
+              )}
               title={typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
             >
-              {typeof kpi.value === 'number' 
-                ? kpi.value.toLocaleString() 
-                : kpi.value
-              }
+              {typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
             </div>
             <div className="flex items-center space-x-2 mb-1">
               {getTrendIcon(kpi.trend)}
@@ -89,9 +87,7 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
                 {kpi.trendValue}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {kpi.description}
-            </p>
+            <p className="text-xs text-muted-foreground">{kpi.description}</p>
           </div>
         </ThemedCard>
       ))}

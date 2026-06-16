@@ -12,5 +12,5 @@
  * convex/_generated/api.d.ts and convex/_generated/api.js
  */
 
-export { api } from '../../../convex/_generated/api';
-export { internal } from '../../../convex/_generated/api';
+export { api, internal } from '../../../convex/_generated/api';
+export type { Id } from '../../../convex/_generated/dataModel';

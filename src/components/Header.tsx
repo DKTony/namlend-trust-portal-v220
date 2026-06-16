@@ -1,17 +1,15 @@
-import { useState } from 'react';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { Menu, X, Shield, Phone, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Menu, Shield, X } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationCenter } from './shared/NotificationCenter';
 import SignOutButton from './shared/SignOutButton';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, userRole, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  const isAdmin = userRole === 'admin';
 
   const handleSignIn = () => {
     navigate('/auth');

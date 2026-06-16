@@ -6,24 +6,24 @@
  * create/link pending financial records, and schedule the actual ReqPay action.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation, internalQuery, internalMutation } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { enqueueOutboxIdempotent } from '../lib/outbox';
-import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from '../lib/tenancy';
-import { ipsTransactionStatus } from '../schema';
-import {
-  enforceTransactionLimits,
-  deriveUseCaseType,
-  type IpsUseCaseType,
-} from '../lib/ipsTransactionLimits';
-import { generateMsgId } from '../lib/ipsXmlBuilder';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
 import { assertAliasUsable } from '../lib/ipsAliasRules';
 import { getErrorEntry } from '../lib/ipsErrorCodes';
 import { getPortalFlowDefaults } from '../lib/ipsProductionConfig';
+import {
+  deriveUseCaseType,
+  enforceTransactionLimits,
+  type IpsUseCaseType,
+} from '../lib/ipsTransactionLimits';
+import { generateMsgId } from '../lib/ipsXmlBuilder';
+import { enqueueOutboxIdempotent } from '../lib/outbox';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from '../lib/tenancy';
+import { ipsTransactionStatus } from '../schema';
 
 const SEVEN_YEARS_MS = 7 * 365 * 24 * 60 * 60 * 1000;
 

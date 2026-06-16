@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { IPSDisbursementForm } from '@/components/ips';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,26 +8,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { handleMutationError } from '@/lib/mutationError';
-import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
-import type { Id } from '../../../../../convex/_generated/dataModel';
+import { handleMutationError } from '@/lib/mutationError';
+import { formatNAD } from '@/utils/currency';
+import { useMutation } from 'convex/react';
 import {
-  Loader2,
-  CheckCircle,
   AlertCircle,
-  CreditCard,
-  Smartphone,
   Banknote,
   Building2,
+  CheckCircle,
+  CreditCard,
+  Loader2,
+  Smartphone,
   Zap,
 } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
-import { IPSDisbursementForm } from '@/components/ips';
+import React, { useState } from 'react';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
 type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order' | 'ips';
 

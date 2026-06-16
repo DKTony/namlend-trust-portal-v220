@@ -5,13 +5,13 @@
  * and the same 3D tilt effect from ThemedSidebar.
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useTheme } from '@/context/ThemeContext';
 import { useBrandingSafe } from '@/context/BrandingContext';
+import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { ShieldCheck, Menu, X, LogOut, ChevronDown } from 'lucide-react';
 import type { NavGroup } from '@/types/navigation';
+import { ChevronDown, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 interface GroupedSidebarProps {
   groups: NavGroup[];

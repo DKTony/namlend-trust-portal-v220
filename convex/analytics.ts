@@ -7,10 +7,10 @@
  * reads the pre-computed values (O(1)) instead of scanning full tables.
  */
 
+import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { GenericMutationCtx } from 'convex/server';
-import { query } from './_generated/server';
 import { DataModel } from './_generated/dataModel';
+import { query } from './_generated/server';
 import { assertStaff } from './lib/auth';
 import { assertCallerFeatureEnabled } from './lib/entitlements';
 
@@ -19,10 +19,7 @@ import { assertCallerFeatureEnabled } from './lib/entitlements';
 // ---------------------------------------------------------------------------
 
 /** Read a single projected metric, returning 0 if not yet populated. */
-async function getMetric(
-  db: GenericMutationCtx<DataModel>['db'],
-  metricKey: string
-): Promise<number> {
+async function getMetric(db: GenericQueryCtx<DataModel>['db'], metricKey: string): Promise<number> {
   const row = await db
     .query('portfolioMetrics')
     .withIndex('by_metricKey', (q) => q.eq('metricKey', metricKey))
@@ -271,7 +268,13 @@ export const getMonthlyTrends = query({
       ctx.db.query('paymentTransactions').take(10000),
     ]);
 
-    const trends = [];
+    const trends: Array<{
+      month: string;
+      newLoans: number;
+      disbursedAmount: number;
+      collectionsAmount: number;
+      paymentCount: number;
+    }> = [];
     for (let i = lookback - 1; i >= 0; i--) {
       const periodStart = now - (i + 1) * MS_PER_MONTH;
       const periodEnd = now - i * MS_PER_MONTH;

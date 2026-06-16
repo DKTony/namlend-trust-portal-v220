@@ -4,10 +4,10 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation, internalMutation, internalQuery } from './_generated/server';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { resolveWriteInstitution } from './lib/tenancy';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditEntry } from './lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { resolveWriteInstitution } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -278,7 +278,7 @@ export const updateQueuedNotificationStatus = internalMutation({
     await ctx.db.patch(queueId, {
       status,
       sentAt: status === 'sent' ? Date.now() : undefined,
-      retryCount: item.retryCount + (status === 'failed' ? 1 : 0),
+      retryCount: (item.retryCount ?? 0) + (status === 'failed' ? 1 : 0),
       errorMessage,
       updatedAt: Date.now(),
     });

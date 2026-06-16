@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
 import { APR_LIMIT } from '@/constants/regulatory';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface UserProfile {
   monthly_income: number | null;

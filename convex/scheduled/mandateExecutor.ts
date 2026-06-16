@@ -10,8 +10,8 @@
  * The "soft path" (reminders, PTP) in collections.ts continues to coexist.
  */
 
-import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
+import { internalAction } from '../_generated/server';
 
 /**
  * Process all due mandates.

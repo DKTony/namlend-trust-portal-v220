@@ -4,32 +4,31 @@
  * Displays real-time status of an IPS transaction with polling
  */
 
-import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownLeft,
-} from 'lucide-react';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { formatNAD } from '@/constants/regulatory';
 import { useIPSTransactionStatus } from '@/hooks/useIPSTransactionStatus';
+import { cn } from '@/lib/utils';
+import type { IPSTransactionStatus as IPSStatus } from '@/types/ips';
 import {
-  IPS_STATUS_LABELS,
   IPS_STATUS_COLORS,
+  IPS_STATUS_LABELS,
   isIPSStatusFinal,
   isIPSStatusSuccess,
 } from '@/types/ips';
-import type { IPSTransactionStatus as IPSStatus } from '@/types/ips';
-import { formatNAD } from '@/constants/regulatory';
-import { cn } from '@/lib/utils';
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
 
 interface IPSTransactionStatusProps {
   transactionId: string;

@@ -3,15 +3,14 @@
  * Replaces collectionsService.ts Supabase calls.
  */
 
-import { v } from 'convex/values';
-import { ConvexError } from 'convex/values';
-import { query, mutation } from './_generated/server';
-import { assertStaff } from './lib/auth';
-import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
-import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { assertStaff } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 
 const activityType = v.union(
   v.literal('call_attempt'),
@@ -276,6 +275,7 @@ export const markPromiseFulfilled = mutation({
     emitDomainEvent(ctx, 'collection.promise_fulfilled', 'promiseToPay', ptpId, {
       loanId: ptp.loanId,
       amount: ptp.amount,
+      paymentId,
     });
   },
 });

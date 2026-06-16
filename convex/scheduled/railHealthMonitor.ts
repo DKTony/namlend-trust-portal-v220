@@ -9,8 +9,8 @@
  * transport adapters are connected.
  */
 
-import { internalAction, internalQuery } from '../_generated/server';
 import { internal } from '../_generated/api';
+import { internalAction, internalQuery } from '../_generated/server';
 
 /**
  * Internal query to get rails needing health monitoring.

@@ -1,9 +1,9 @@
-import React from 'react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { DollarSign, TrendingUp, Users, AlertTriangle } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
+import { AlertTriangle, DollarSign, TrendingUp, Users } from 'lucide-react';
+import React from 'react';
 
 interface FinancialMetrics {
   totalClients: number;
@@ -20,9 +20,9 @@ interface FinancialSummaryCardsProps {
   loading?: boolean;
 }
 
-const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ 
-  metrics, 
-  loading = false 
+const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
+  metrics,
+  loading = false,
 }) => {
   const { styles } = useTheme();
   const formatCurrency = (amount: number) => formatNAD(amount);
@@ -34,7 +34,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
       icon: Users,
       color: 'text-blue-600 dark:text-blue-400',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-      format: (val: number) => val.toLocaleString()
+      format: (val: number) => val.toLocaleString(),
     },
     {
       title: 'Total Disbursed',
@@ -42,7 +42,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
       icon: DollarSign,
       color: 'text-green-600 dark:text-green-400',
       bgColor: 'bg-green-50 dark:bg-green-900/20',
-      format: formatCurrency
+      format: formatCurrency,
     },
     {
       title: 'Total Repayments',
@@ -50,7 +50,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
       icon: TrendingUp,
       color: 'text-emerald-600 dark:text-emerald-400',
       bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-      format: formatCurrency
+      format: formatCurrency,
     },
     {
       title: 'Overdue Payments',
@@ -58,8 +58,8 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
       icon: AlertTriangle,
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-900/20',
-      format: (val: number) => val.toLocaleString()
-    }
+      format: (val: number) => val.toLocaleString(),
+    },
   ];
 
   if (loading) {
@@ -88,25 +88,25 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
         return (
           <ThemedCard key={index} className="hover:shadow-lg transition-shadow duration-200">
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-2">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                {card.title}
-              </h3>
+              <h3 className="text-sm font-medium text-muted-foreground">{card.title}</h3>
               <div className={`p-2 rounded-full ${card.bgColor}`}>
                 <Icon className={`h-4 w-4 ${card.color}`} />
               </div>
             </div>
             <div>
-              <div 
-                className={cn("text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums", styles.textClass)} 
+              <div
+                className={cn(
+                  'text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums',
+                  styles.textClass
+                )}
                 title={card.format(card.value)}
               >
                 {card.format(card.value)}
               </div>
               <p className="text-xs text-muted-foreground">
-                {card.title === 'Overdue Payments' && card.value > 0 
-                  ? 'Requires attention' 
-                  : 'Updated in real-time'
-                }
+                {card.title === 'Overdue Payments' && card.value > 0
+                  ? 'Requires attention'
+                  : 'Updated in real-time'}
               </p>
             </div>
           </ThemedCard>

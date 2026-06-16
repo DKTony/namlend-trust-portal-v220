@@ -1,15 +1,22 @@
-import React, { useEffect, Suspense } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as Sonner } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ConvexProvider } from 'convex/react';
-import { ConvexAuthProvider } from '@convex-dev/auth/react';
-import { useConvexAuth } from 'convex/react';
-import { convex } from '@/integrations/convex/client';
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { AuthProvider } from '@/hooks/useAuth';
+import { ThemeBackground } from '@/components/Layout/ThemeBackground';
+import { ThemeSwitcher } from '@/components/Layout/ThemeSwitcher';
 import ErrorBoundary from '@/components/system/ErrorBoundary';
+import { ProtectedRoute } from '@/components/system/ProtectedRoute';
+import { ThemeProvider } from '@/components/system/ThemeProvider';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { BrandingProvider } from '@/context/BrandingContext';
+import { ThemeProvider as EnhancedThemeProvider } from '@/context/ThemeContext';
+import { AuthProvider } from '@/hooks/useAuth';
+import { convex } from '@/integrations/convex/client';
+import { adminRoutes } from '@/pages/AdminDashboard/adminRoutes';
+import { platformRoutes } from '@/pages/PlatformConsole/platformRoutes';
+import { ConvexAuthProvider } from '@convex-dev/auth/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ConvexProvider, useConvexAuth } from 'convex/react';
+import React, { Suspense, useEffect } from 'react';
+import { Route, BrowserRouter as Router, Routes, useLocation, useNavigate } from 'react-router-dom';
 // Route-level code splitting: pages are loaded on demand
 const Index = React.lazy(() => import('@/pages/Index'));
 const Auth = React.lazy(() => import('@/pages/Auth'));
@@ -22,14 +29,6 @@ const LoanDetails = React.lazy(() => import('@/pages/LoanDetails'));
 const KYC = React.lazy(() => import('@/pages/KYC'));
 const BudgetTracker = React.lazy(() => import('@/pages/BudgetTracker'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
-import { ProtectedRoute } from '@/components/system/ProtectedRoute';
-import { adminRoutes } from '@/pages/AdminDashboard/adminRoutes';
-import { platformRoutes } from '@/pages/PlatformConsole/platformRoutes';
-import { ThemeProvider } from '@/components/system/ThemeProvider';
-import { ThemeProvider as EnhancedThemeProvider } from '@/context/ThemeContext';
-import { BrandingProvider } from '@/context/BrandingContext';
-import { ThemeSwitcher } from '@/components/Layout/ThemeSwitcher';
-import { ThemeBackground } from '@/components/Layout/ThemeBackground';
 
 const queryClient = new QueryClient({
   defaultOptions: {

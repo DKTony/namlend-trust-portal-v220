@@ -3,11 +3,9 @@
  * Ledger ID, asset scale, auto-create toggle, and account code ranges grid.
  */
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -15,8 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Activity } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import type { TigerBeetleAccountsConfig } from '@/hooks/useTigerBeetleConfig';
+import { Activity } from 'lucide-react';
 
 interface AccountsTabProps {
   config: TigerBeetleAccountsConfig;

@@ -1,2 +1,1 @@
-export { LedgerDashboard } from './LedgerDashboard';
-export { default } from './LedgerDashboard';
+export { LedgerDashboard, default } from './LedgerDashboard';

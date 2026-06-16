@@ -6,9 +6,9 @@
  * Convex Actions can call external APIs and have no time limit.
  */
 
-import { internalAction } from '../_generated/server';
-import { internal } from '../_generated/api';
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
+import { internalAction } from '../_generated/server';
 
 const AT_API_URL = 'https://api.africastalking.com/version1/messaging';
 const AT_SANDBOX_URL = 'https://api.sandbox.africastalking.com/version1/messaging';
@@ -36,6 +36,12 @@ interface ATRecipient {
   messageId?: string;
   cost?: string;
 }
+
+type SmsSendResult = {
+  success: boolean;
+  error?: string;
+  recipients?: ATRecipient[];
+};
 
 // ---------------------------------------------------------------------------
 // Phone number utilities (ported from smsGateway.ts)
@@ -160,7 +166,7 @@ export const sendSms = internalAction({
     templateCode: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<SmsSendResult> => {
     const validRecipients = args.to.filter(isValidPhoneNumber).map(formatPhoneNumber);
 
     if (validRecipients.length === 0) {
@@ -232,7 +238,7 @@ export const sendTemplateSms = internalAction({
     userId: v.optional(v.id('users')),
     loanId: v.optional(v.id('loans')),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<SmsSendResult> => {
     const tmpl = SMS_TEMPLATES[args.templateCode];
     if (!tmpl) {
       console.error(`[sendTemplateSms] Unknown template: ${args.templateCode}`);

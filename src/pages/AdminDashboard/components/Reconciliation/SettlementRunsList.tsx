@@ -3,19 +3,18 @@
  * Displays all settlement runs with filtering and details view
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -24,29 +23,56 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { Eye, Calendar, RefreshCw, Plus, Play, Loader2 } from 'lucide-react';
-import {
-  useSettlementRuns,
-  useSettlementRunDetails,
-  useCreateSettlementRun,
-  useProcessSettlementRun,
-  useMarkSettlementSettled,
-} from '@/hooks/useSettlement';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { formatNAD } from '@/constants/regulatory';
 import {
-  SETTLEMENT_STATE_LABELS,
+  useCreateSettlementRun,
+  useMarkSettlementSettled,
+  useProcessSettlementRun,
+  useSettlementRunDetails,
+  useSettlementRuns,
+} from '@/hooks/useSettlement';
+import {
   SETTLEMENT_STATE_COLORS,
-  getSettlementProgress,
+  SETTLEMENT_STATE_LABELS,
   formatWindowId,
+  getSettlementProgress,
   type SettlementRunState,
 } from '@/types/settlement';
+import { Calendar, Eye, Loader2, Play, Plus, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+
+interface SettlementBatchView {
+  batch_type: string;
+  id: string;
+  instruction_count: number;
+  msg_id: string;
+  status: string;
+  total_amount: number;
+}
+
+interface NetInstructionView {
+  amount: number;
+  category_group: string;
+  source: string;
+  source_bic: string;
+  target: string;
+  target_bic: string;
+}
+
+interface ParticipantExposureView {
+  gross_payables: number;
+  gross_receivables: number;
+  net_position: number;
+  participant: string;
+  switching_fee_payable: number;
+}
 
 export function SettlementRunsList() {
   const [dateFrom, setDateFrom] = useState('');
@@ -224,49 +250,54 @@ export function SettlementRunsList() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  runs?.map((run) => (
-                    <TableRow key={run.id}>
-                      <TableCell className="font-mono text-sm tabular-nums">{run.run_id}</TableCell>
-                      <TableCell>{run.window_id}</TableCell>
-                      <TableCell className="tabular-nums">
-                        {new Date(run.settlement_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`${SETTLEMENT_STATE_COLORS[run.state]} shrink-0`}
-                          variant="outline"
-                        >
-                          {SETTLEMENT_STATE_LABELS[run.state]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="w-32">
-                        <Progress value={getSettlementProgress(run.state)} className="h-2" />
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {run.transaction_count.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatNAD(run.total_principal)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {run.net_instruction_count}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedRunId(run.id)}
+                  runs?.map((run) => {
+                    const state = run.state as SettlementRunState;
+                    return (
+                      <TableRow key={run.id}>
+                        <TableCell className="font-mono text-sm tabular-nums">
+                          {run.run_id}
+                        </TableCell>
+                        <TableCell>{run.window_id}</TableCell>
+                        <TableCell className="tabular-nums">
+                          {new Date(run.settlement_date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${SETTLEMENT_STATE_COLORS[state]} shrink-0`}
+                            variant="outline"
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {processingRunId === run.id && (
-                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            {SETTLEMENT_STATE_LABELS[state]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="w-32">
+                          <Progress value={getSettlementProgress(state)} className="h-2" />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {run.transaction_count.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatNAD(run.total_principal)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {run.net_instruction_count}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedRunId(run.id)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {processingRunId === run.id && (
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -299,10 +330,10 @@ export function SettlementRunsList() {
                 <div>
                   <p className="text-sm text-muted-foreground">State</p>
                   <Badge
-                    className={SETTLEMENT_STATE_COLORS[runDetails.run.state]}
+                    className={SETTLEMENT_STATE_COLORS[runDetails.run.state as SettlementRunState]}
                     variant="outline"
                   >
-                    {SETTLEMENT_STATE_LABELS[runDetails.run.state]}
+                    {SETTLEMENT_STATE_LABELS[runDetails.run.state as SettlementRunState]}
                   </Badge>
                 </div>
                 <div>
@@ -331,7 +362,7 @@ export function SettlementRunsList() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {runDetails.batches.map((batch) => (
+                        {(runDetails.batches as SettlementBatchView[]).map((batch) => (
                           <TableRow key={batch.id}>
                             <TableCell>
                               {batch.batch_type === 'main' ? 'MNSB Settlement' : 'Switching Fee'}
@@ -367,7 +398,7 @@ export function SettlementRunsList() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {runDetails.net_instructions.map((instr, idx) => (
+                        {(runDetails.net_instructions as NetInstructionView[]).map((instr, idx) => (
                           <TableRow key={idx}>
                             <TableCell>
                               <div>
@@ -411,7 +442,7 @@ export function SettlementRunsList() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {runDetails.exposures.map((exp, idx) => (
+                        {(runDetails.exposures as ParticipantExposureView[]).map((exp, idx) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">{exp.participant}</TableCell>
                             <TableCell className="text-right text-red-600 dark:text-red-400">

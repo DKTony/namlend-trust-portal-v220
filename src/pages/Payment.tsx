@@ -1,17 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/hooks/useAuth';
-import { Navigate, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '@/types/convex';
-import { ThemedCard } from '@/components/ui/ThemedCard';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { IPSPaymentModal } from '@/components/ips';
 import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedInput } from '@/components/ui/ThemedInput';
-import { ThemedBadge } from '@/components/ui/ThemedBadge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -22,24 +16,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import {
-  CreditCard,
-  Smartphone,
-  Building2,
-  MapPin,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-  Zap,
-  Wallet,
-} from 'lucide-react';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { formatNAD } from '@/utils/currency';
-import { IPSPaymentModal } from '@/components/ips';
 import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import type { Id } from '@/types/convex';
+import { formatNAD } from '@/utils/currency';
+import { useMutation, useQuery } from 'convex/react';
+import {
+  AlertCircle,
+  CheckCircle,
+  CreditCard,
+  MapPin,
+  Shield,
+  Smartphone,
+  Zap,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 interface Loan {
   id: string;

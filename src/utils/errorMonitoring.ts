@@ -120,7 +120,9 @@ class ErrorMonitor {
       message,
       category: 'database',
       severity,
-      contextKeys: ['database_error', operation, error.code].filter(Boolean),
+      contextKeys: ['database_error', operation, error.code].filter((key): key is string =>
+        Boolean(key)
+      ),
       metadata: { operation, errorCode: error.code, errorMessage: error.message },
     });
   }

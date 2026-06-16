@@ -3,8 +3,8 @@
  * Shows the current status of a loan application with visual progress
  */
 
-import { CheckCircle, Clock, XCircle, AlertCircle, Banknote, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AlertCircle, Banknote, CheckCircle, Clock, FileCheck, XCircle } from 'lucide-react';
 
 export interface TimelineStep {
   status: string;

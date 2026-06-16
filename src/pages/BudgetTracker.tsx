@@ -4,49 +4,21 @@
  * Client-side budget management with CSV upload, spending tracking, and savings goals
  */
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/context/ThemeContext';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { UnifiedTransaction, BudgetLimit, SavingsGoal } from '@/types/theme';
-import {
-  UploadCloud,
-  FileSpreadsheet,
-  TrendingUp,
-  Target,
-  Plus,
-  Plane,
-  Laptop,
-  Home,
-  AlertCircle,
-  Loader2,
-  Download,
-  Filter,
-  X,
-} from 'lucide-react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  Legend,
-} from 'recharts';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -54,9 +26,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useTheme } from '@/context/ThemeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
+import type {
+  BudgetLimit,
+  SavingsGoal,
+  TransactionCategory,
+  UnifiedTransaction,
+} from '@/types/theme';
 import { formatNAD } from '@/utils/currency';
+import {
+  AlertCircle,
+  Download,
+  FileSpreadsheet,
+  Filter,
+  Home,
+  Laptop,
+  Loader2,
+  Plane,
+  Plus,
+  Target,
+  TrendingUp,
+  UploadCloud,
+  X,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const INITIAL_TRANSACTIONS: UnifiedTransaction[] = [
   {
@@ -141,7 +146,7 @@ const INITIAL_SAVINGS: SavingsGoal[] = [
   },
 ];
 
-function categorizeTransaction(description: string): string {
+function categorizeTransaction(description: string): TransactionCategory {
   const desc = description.toLowerCase();
   if (
     desc.includes('pick n pay') ||
@@ -184,7 +189,7 @@ export const BudgetTracker: React.FC = () => {
   const navigate = useNavigate();
 
   const [transactions, setTransactions] = useState<UnifiedTransaction[]>(INITIAL_TRANSACTIONS);
-  const [budgets, setBudgets] = useState<BudgetLimit[]>(INITIAL_BUDGETS);
+  const [budgets] = useState<BudgetLimit[]>(INITIAL_BUDGETS);
   const [savings, setSavings] = useState<SavingsGoal[]>(INITIAL_SAVINGS);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -1,30 +1,26 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import { api, type Id } from '@/integrations/convex/api';
+import { useMutation } from 'convex/react';
 import {
-  Eye,
+  AlertTriangle,
+  Calendar,
   CheckCircle,
-  XCircle,
   Clock,
   DollarSign,
-  User,
-  Calendar,
-  TrendingUp,
-  AlertTriangle,
-  Briefcase,
+  Eye,
   FileText,
+  User,
+  XCircle,
 } from 'lucide-react';
-import { useLoanApplications, LoanApplication } from '../../hooks/useLoanApplications';
+import React, { useState } from 'react';
 import { useLoanActions } from '../../hooks/useLoanActions';
-import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
+import { LoanApplication, useLoanApplications } from '../../hooks/useLoanApplications';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
-import { useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { type Id } from '@/integrations/convex/api';
-import { useToast } from '@/hooks/use-toast';
 
 interface LoanApplicationsListProps {
   status: 'pending' | 'approved' | 'rejected' | 'all';
@@ -55,7 +51,6 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   priority,
   refreshKey,
 }) => {
-  const navigate = useNavigate();
   const { applications, loading, error, refetch } = useLoanApplications({
     status,
     searchTerm,

@@ -14,27 +14,26 @@
  *   admin queries       -> staff only
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalMutation, internalQuery } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
-import {
-  resolveWriteInstitution,
-  tenantReadScope,
-  applyTenantScope,
-  assertSameTenant,
-} from '../lib/tenancy';
-import { assertCallerFeatureEnabled } from '../lib/entitlements';
+import { ConvexError, v } from 'convex/values';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
-import { emitRelationship } from '../lib/relationshipEmitter';
 import {
-  validateMandateTransition,
-  generateMandateRef,
   calculateNextExecutionDate,
+  generateMandateRef,
+  validateMandateTransition,
   type MandateStatus,
 } from '../lib/mandateStateMachine';
-import { mandateType, mandateStatus, mandateFrequency } from '../schema';
+import { emitRelationship } from '../lib/relationshipEmitter';
+import {
+  applyTenantScope,
+  assertSameTenant,
+  resolveWriteInstitution,
+  tenantReadScope,
+} from '../lib/tenancy';
+import { mandateFrequency, mandateStatus, mandateType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Mutations

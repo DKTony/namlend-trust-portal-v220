@@ -4,17 +4,19 @@
  * Renders onboarding step inputs from live provider/account discovery data.
  */
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -22,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Badge } from '@/components/ui/badge';
+import type { ONBOARDING_STEPS, OnboardingData, SovProvider } from '@/hooks/useIPPOnboarding';
+import type { IPPOnboardingAccount, IPPVerificationMethod } from '@/types/ips';
 import {
   Building2,
   CheckCircle,
@@ -33,9 +35,6 @@ import {
   Shield,
   Smartphone,
 } from 'lucide-react';
-import type { OnboardingData, SovProvider } from '@/hooks/useIPPOnboarding';
-import type { ONBOARDING_STEPS } from '@/hooks/useIPPOnboarding';
-import type { IPPOnboardingAccount, IPPVerificationMethod } from '@/types/ips';
 
 interface IPPActionDialogProps {
   open: boolean;

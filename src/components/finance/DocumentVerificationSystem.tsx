@@ -1,30 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
-import {
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Eye,
-  Download,
-  Clock,
-  Shield,
-  Lock,
-  ChevronRight,
-  Info,
-} from 'lucide-react';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { AlertCircle, CheckCircle, Clock, Eye, Info, Lock, Shield, Upload, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface DocumentRequirement {
   id: string;
@@ -90,7 +75,7 @@ const DOCUMENT_TYPES = {
 export default function DocumentVerificationSystem({ onDocumentUploaded }: DocumentUploadProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [documents, setDocuments] = useState<DocumentRequirement[]>([]);
+  const documents: DocumentRequirement[] = [];
   const [uploading, setUploading] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);

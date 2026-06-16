@@ -1,18 +1,15 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  FileText, 
-  Download, 
-  Calendar, 
-  Filter,
-  BarChart3,
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AlertTriangle,
+  DollarSign,
+  Download,
+  FileText,
   PieChart,
   TrendingUp,
   Users,
-  DollarSign,
-  AlertTriangle
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 const ReportGenerator: React.FC = () => {
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
@@ -25,7 +22,7 @@ const ReportGenerator: React.FC = () => {
       description: 'Comprehensive overview of loan portfolio performance',
       icon: PieChart,
       category: 'Portfolio',
-      estimatedTime: '2-3 minutes'
+      estimatedTime: '2-3 minutes',
     },
     {
       id: 'financial-performance',
@@ -33,7 +30,7 @@ const ReportGenerator: React.FC = () => {
       description: 'Revenue, disbursements, and collection analytics',
       icon: TrendingUp,
       category: 'Financial',
-      estimatedTime: '3-4 minutes'
+      estimatedTime: '3-4 minutes',
     },
     {
       id: 'risk-assessment',
@@ -41,7 +38,7 @@ const ReportGenerator: React.FC = () => {
       description: 'Risk analysis and default probability metrics',
       icon: AlertTriangle,
       category: 'Risk',
-      estimatedTime: '4-5 minutes'
+      estimatedTime: '4-5 minutes',
     },
     {
       id: 'client-analytics',
@@ -49,7 +46,7 @@ const ReportGenerator: React.FC = () => {
       description: 'Client demographics and behavior analysis',
       icon: Users,
       category: 'Clients',
-      estimatedTime: '2-3 minutes'
+      estimatedTime: '2-3 minutes',
     },
     {
       id: 'payment-analysis',
@@ -57,7 +54,7 @@ const ReportGenerator: React.FC = () => {
       description: 'Payment patterns and collection efficiency',
       icon: DollarSign,
       category: 'Payments',
-      estimatedTime: '3-4 minutes'
+      estimatedTime: '3-4 minutes',
     },
     {
       id: 'regulatory-compliance',
@@ -65,15 +62,13 @@ const ReportGenerator: React.FC = () => {
       description: 'Compliance status and regulatory metrics',
       icon: FileText,
       category: 'Compliance',
-      estimatedTime: '5-6 minutes'
-    }
+      estimatedTime: '5-6 minutes',
+    },
   ];
 
   const handleReportSelection = (reportId: string) => {
-    setSelectedReports(prev => 
-      prev.includes(reportId) 
-        ? prev.filter(id => id !== reportId)
-        : [...prev, reportId]
+    setSelectedReports((prev) =>
+      prev.includes(reportId) ? prev.filter((id) => id !== reportId) : [...prev, reportId]
     );
   };
 
@@ -96,7 +91,7 @@ const ReportGenerator: React.FC = () => {
               <input
                 type="date"
                 value={dateRange.from}
-                onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                onChange={(e) => setDateRange((prev) => ({ ...prev, from: e.target.value }))}
                 className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
               />
             </div>
@@ -105,7 +100,7 @@ const ReportGenerator: React.FC = () => {
               <input
                 type="date"
                 value={dateRange.to}
-                onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                onChange={(e) => setDateRange((prev) => ({ ...prev, to: e.target.value }))}
                 className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
               />
             </div>
@@ -118,9 +113,9 @@ const ReportGenerator: React.FC = () => {
         {reportTypes.map((report) => {
           const Icon = report.icon;
           const isSelected = selectedReports.includes(report.id);
-          
+
           return (
-            <Card 
+            <Card
               key={report.id}
               className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
                 isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
@@ -129,30 +124,51 @@ const ReportGenerator: React.FC = () => {
             >
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-full shrink-0 ${
-                    isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-muted'
-                  }`}>
-                    <Icon className={`h-6 w-6 ${
-                      isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
-                    }`} />
+                  <div
+                    className={`p-3 rounded-full shrink-0 ${
+                      isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-muted'
+                    }`}
+                  >
+                    <Icon
+                      className={`h-6 w-6 ${
+                        isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
+                      }`}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-foreground truncate" title={report.name}>{report.name}</h3>
+                      <h3 className="font-semibold text-foreground truncate" title={report.name}>
+                        {report.name}
+                      </h3>
                       {isSelected && (
                         <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center shrink-0 ml-2">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]" title={report.description}>{report.description}</p>
+                    <p
+                      className="text-sm text-muted-foreground mb-3 line-clamp-2 min-h-[2.5rem]"
+                      title={report.description}
+                    >
+                      {report.description}
+                    </p>
                     <div className="flex items-center justify-between text-xs">
                       <span className="bg-muted px-2 py-1 rounded-full text-muted-foreground shrink-0">
                         {report.category}
                       </span>
-                      <span className="text-muted-foreground shrink-0 ml-2">{report.estimatedTime}</span>
+                      <span className="text-muted-foreground shrink-0 ml-2">
+                        {report.estimatedTime}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -172,9 +188,15 @@ const ReportGenerator: React.FC = () => {
                   {selectedReports.length} report{selectedReports.length > 1 ? 's' : ''} selected
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-400">
-                  Estimated generation time: {Math.max(...selectedReports.map(id => 
-                    parseInt(reportTypes.find(r => r.id === id)?.estimatedTime?.split('-')[1] || '0')
-                  ))} minutes
+                  Estimated generation time:{' '}
+                  {Math.max(
+                    ...selectedReports.map((id) =>
+                      parseInt(
+                        reportTypes.find((r) => r.id === id)?.estimatedTime?.split('-')[1] || '0'
+                      )
+                    )
+                  )}{' '}
+                  minutes
                 </p>
               </div>
               <div className="flex space-x-2">
@@ -199,24 +221,41 @@ const ReportGenerator: React.FC = () => {
         <CardContent>
           <div className="space-y-3">
             {[
-              { name: 'Portfolio Summary - December 2024', date: '2025-01-03', status: 'completed' },
+              {
+                name: 'Portfolio Summary - December 2024',
+                date: '2025-01-03',
+                status: 'completed',
+              },
               { name: 'Risk Assessment - Q4 2024', date: '2025-01-02', status: 'completed' },
-              { name: 'Financial Performance - December 2024', date: '2025-01-01', status: 'processing' }
+              {
+                name: 'Financial Performance - December 2024',
+                date: '2025-01-01',
+                status: 'processing',
+              },
             ].map((report, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+              >
                 <div className="flex items-center space-x-3 min-w-0 flex-1 mr-4">
                   <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate" title={report.name}>{report.name}</p>
-                    <p className="text-sm text-muted-foreground tabular-nums">Generated on {report.date}</p>
+                    <p className="font-medium text-foreground truncate" title={report.name}>
+                      {report.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground tabular-nums">
+                      Generated on {report.date}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 shrink-0">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    report.status === 'completed' 
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
-                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
-                  } shrink-0`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      report.status === 'completed'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
+                    } shrink-0`}
+                  >
                     {report.status}
                   </span>
                   {report.status === 'completed' && (

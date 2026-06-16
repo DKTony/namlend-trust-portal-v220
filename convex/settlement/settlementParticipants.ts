@@ -3,8 +3,8 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation, internalQuery } from '../_generated/server';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { internalQuery, mutation, query } from '../_generated/server';
+import { assertAdmin, assertStaff } from '../lib/auth';
 
 export const listParticipants = query({
   args: {},

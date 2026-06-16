@@ -1,29 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import { CheckCircle, Info, Minus, Plus, Settings, Shield, User } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
-import {
-  Shield,
-  User,
-  Settings,
-  Plus,
-  Minus,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-} from 'lucide-react';
 
 type AppRole = 'admin' | 'loan_officer' | 'client';
 interface UserRole {
@@ -130,7 +120,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
 
   useEffect(() => {
     if (userRoleData !== undefined && open && userId) {
-      const role = userRoleData?.role;
+      const role = userRoleData;
       if (role) {
         setCurrentRoles([
           {
@@ -231,8 +221,6 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
     });
   };
 
-  const currentRoleNames = currentRoles.map((r) => r.role);
-
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
@@ -273,7 +261,10 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
                           {config.label}
                         </Badge>
                         <div className="text-sm text-muted-foreground">
-                          Added {formatDate(userRole.created_at)}
+                          Added{' '}
+                          {formatDate(
+                            userRole.created_at ?? userRole.assigned_at ?? new Date().toISOString()
+                          )}
                         </div>
                       </div>
                       <Button

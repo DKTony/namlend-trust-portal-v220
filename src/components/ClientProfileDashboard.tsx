@@ -4,18 +4,18 @@
  * Refactored: header, sidebar, and sections extracted to sub-components.
  */
 
-import { useState, useMemo } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { useProfileEdit } from '@/hooks/useProfileEdit';
 import { ClientProfileHeader } from '@/components/client/ClientProfileHeader';
 import { ClientProfileSidebar } from '@/components/client/ClientProfileSidebar';
-import { OverviewSection } from '@/components/client/sections/OverviewSection';
-import { PersonalSection } from '@/components/client/sections/PersonalSection';
-import { EmploymentSection } from '@/components/client/sections/EmploymentSection';
 import { BankingSectionProfile } from '@/components/client/sections/BankingSection';
 import { DocumentsSection } from '@/components/client/sections/DocumentsSection';
+import { EmploymentSection } from '@/components/client/sections/EmploymentSection';
+import { OverviewSection } from '@/components/client/sections/OverviewSection';
+import { PersonalSection } from '@/components/client/sections/PersonalSection';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfileEdit } from '@/hooks/useProfileEdit';
+import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { useMemo, useState } from 'react';
 
 interface ExtendedProfile {
   id: string;

@@ -10,10 +10,9 @@
  * `retryLoanProcessing` and the staff query.
  */
 
-import { v } from 'convex/values';
-import { ConvexError } from 'convex/values';
-import { internalMutation, mutation, query } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
+import { internalMutation, mutation, query } from './_generated/server';
 import { assertStaff } from './lib/auth';
 
 /** Max automatic attempts before a failure is dead-lettered for manual action. */
@@ -89,7 +88,7 @@ export const recordProcessingFailure = internalMutation({
             userId: admin.userId,
             title: 'Loan processing failed',
             message: `Loan ${args.loanId} failed automated processing at stage '${args.stage}' after ${attemptCount} attempts and needs manual review.`,
-            category: 'system' as const,
+            category: 'general' as const,
             priority: 'high' as const,
             actionUrl: `/admin/loans/${args.loanId}`,
             actionLabel: 'Review Loan',

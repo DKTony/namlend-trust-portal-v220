@@ -3,6 +3,7 @@
  * Items still awaiting final status/closure in back office processes
  */
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,9 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { FileQuestion } from 'lucide-react';
 import { useSettlementReports } from '@/hooks/useSettlement';
+import { FileQuestion } from 'lucide-react';
 
 export function PendingStatusReport() {
   const {

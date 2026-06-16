@@ -4,16 +4,16 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from './_generated/server';
-import { assertStaff, assertAdmin } from './lib/auth';
+import { mutation, query } from './_generated/server';
+import { scheduleAuditLog } from './lib/audit';
+import { assertAdmin, assertStaff } from './lib/auth';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
 import {
-  resolveWriteInstitution,
-  tenantReadScope,
   applyTenantScope,
   assertSameTenant,
+  resolveWriteInstitution,
+  tenantReadScope,
 } from './lib/tenancy';
-import { assertCallerFeatureEnabled } from './lib/entitlements';
-import { scheduleAuditLog } from './lib/audit';
 
 // ---------------------------------------------------------------------------
 // Bank Transactions

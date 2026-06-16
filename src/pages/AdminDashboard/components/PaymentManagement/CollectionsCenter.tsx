@@ -1,32 +1,30 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
-  AlertTriangle, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  MessageSquare,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertTriangle,
+  Calendar,
   DollarSign,
-  Clock,
-  User,
-  Search,
-  Filter,
   FileText,
+  Filter,
+  Mail,
+  Phone,
+  Search,
   Target,
   TrendingUp,
-  Users
+  User,
+  Users,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface CollectionCase {
   id: string;
@@ -46,7 +44,9 @@ interface CollectionCase {
 
 const CollectionsCenter: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [stageFilter, setStageFilter] = useState<'all' | 'early' | 'formal' | 'legal' | 'writeoff'>('all');
+  const [stageFilter, setStageFilter] = useState<'all' | 'early' | 'formal' | 'legal' | 'writeoff'>(
+    'all'
+  );
   const [selectedCases, setSelectedCases] = useState<string[]>([]);
 
   // Mock collections data
@@ -64,7 +64,7 @@ const CollectionsCenter: React.FC = () => {
       nextAction: 'Phone call follow-up',
       nextActionDate: '2025-01-06',
       collectionStrategy: 'standard',
-      recoveryProbability: 75
+      recoveryProbability: 75,
     },
     {
       id: '2',
@@ -79,7 +79,7 @@ const CollectionsCenter: React.FC = () => {
       nextAction: 'Court filing',
       nextActionDate: '2025-01-10',
       collectionStrategy: 'legal',
-      recoveryProbability: 45
+      recoveryProbability: 45,
     },
     {
       id: '3',
@@ -94,7 +94,7 @@ const CollectionsCenter: React.FC = () => {
       nextAction: 'Phone call',
       nextActionDate: '2025-01-05',
       collectionStrategy: 'payment_plan',
-      recoveryProbability: 85
+      recoveryProbability: 85,
     },
     {
       id: '4',
@@ -109,7 +109,7 @@ const CollectionsCenter: React.FC = () => {
       nextAction: 'Final settlement offer',
       nextActionDate: '2025-01-08',
       collectionStrategy: 'settlement',
-      recoveryProbability: 15
+      recoveryProbability: 15,
     },
     {
       id: '5',
@@ -124,27 +124,37 @@ const CollectionsCenter: React.FC = () => {
       nextAction: 'Payment plan follow-up',
       nextActionDate: '2025-01-07',
       collectionStrategy: 'payment_plan',
-      recoveryProbability: 90
-    }
+      recoveryProbability: 90,
+    },
   ];
 
   const getStageColor = (stage: string) => {
     switch (stage) {
-      case 'early': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
-      case 'formal': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
-      case 'legal': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-      case 'writeoff': return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
-      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+      case 'early':
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      case 'formal':
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
+      case 'legal':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      case 'writeoff':
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+      default:
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
   const getStrategyColor = (strategy: string) => {
     switch (strategy) {
-      case 'standard': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
-      case 'payment_plan': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
-      case 'settlement': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
-      case 'legal': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+      case 'standard':
+        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+      case 'payment_plan':
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'settlement':
+        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
+      case 'legal':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default:
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
@@ -154,19 +164,18 @@ const CollectionsCenter: React.FC = () => {
     return 'text-red-600 dark:text-red-400';
   };
 
-  const filteredCases = collectionCases.filter(case_ => {
-    const matchesSearch = case_.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         case_.loanId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         case_.assignedAgent.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredCases = collectionCases.filter((case_) => {
+    const matchesSearch =
+      case_.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      case_.loanId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      case_.assignedAgent.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStage = stageFilter === 'all' || case_.stage === stageFilter;
     return matchesSearch && matchesStage;
   });
 
   const handleSelectCase = (caseId: string) => {
-    setSelectedCases(prev => 
-      prev.includes(caseId) 
-        ? prev.filter(id => id !== caseId)
-        : [...prev, caseId]
+    setSelectedCases((prev) =>
+      prev.includes(caseId) ? prev.filter((id) => id !== caseId) : [...prev, caseId]
     );
   };
 
@@ -185,9 +194,7 @@ const CollectionsCenter: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Collections Center</h2>
-          <p className="text-muted-foreground">
-            Manage collection cases and recovery strategies
-          </p>
+          <p className="text-muted-foreground">Manage collection cases and recovery strategies</p>
         </div>
         <Badge variant="destructive" className="text-sm">
           {filteredCases.length} active cases
@@ -198,11 +205,13 @@ const CollectionsCenter: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Outstanding</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Outstanding
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
               title={`NAD ${collectionCases.reduce((sum, c) => sum + c.totalOwed, 0).toLocaleString()}`}
             >
@@ -216,11 +225,15 @@ const CollectionsCenter: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recovery Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Recovery Rate
+            </CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">68%</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">
+              68%
+            </div>
             <p className="text-xs text-muted-foreground truncate">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +5% from last month
@@ -235,26 +248,24 @@ const CollectionsCenter: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
-              {collectionCases.filter(c => c.stage === 'legal').length}
+              {collectionCases.filter((c) => c.stage === 'legal').length}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Requiring legal action
-            </p>
+            <p className="text-xs text-muted-foreground truncate">Requiring legal action</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Agents</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Agents
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
-              {new Set(collectionCases.map(c => c.assignedAgent)).size}
+              {new Set(collectionCases.map((c) => c.assignedAgent)).size}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Collection agents
-            </p>
+            <p className="text-xs text-muted-foreground truncate">Collection agents</p>
           </CardContent>
         </Card>
       </div>
@@ -272,7 +283,12 @@ const CollectionsCenter: React.FC = () => {
             />
           </div>
         </div>
-        <Select value={stageFilter} onValueChange={(value: 'all' | 'early' | 'formal' | 'legal' | 'writeoff') => setStageFilter(value)}>
+        <Select
+          value={stageFilter}
+          onValueChange={(value: 'all' | 'early' | 'formal' | 'legal' | 'writeoff') =>
+            setStageFilter(value)
+          }
+        >
           <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by stage" />
@@ -293,27 +309,15 @@ const CollectionsCenter: React.FC = () => {
           <span className="text-sm font-medium text-foreground">
             {selectedCases.length} case(s) selected
           </span>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleBulkAction('Assign Agent')}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Assign Agent')}>
             <User className="mr-2 h-4 w-4" />
             Assign Agent
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleBulkAction('Update Stage')}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Update Stage')}>
             <Target className="mr-2 h-4 w-4" />
             Update Stage
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleBulkAction('Generate Reports')}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Generate Reports')}>
             <FileText className="mr-2 h-4 w-4" />
             Generate Reports
           </Button>
@@ -324,15 +328,13 @@ const CollectionsCenter: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>Collection Cases</CardTitle>
-          <CardDescription>
-            Active collection cases requiring attention
-          </CardDescription>
+          <CardDescription>Active collection cases requiring attention</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {filteredCases.map((case_) => (
-              <div 
-                key={case_.id} 
+              <div
+                key={case_.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center space-x-4 min-w-0 flex-1">
@@ -345,57 +347,80 @@ const CollectionsCenter: React.FC = () => {
                   <div className="space-y-2 min-w-0 flex-1">
                     <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                       <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium truncate max-w-[150px] text-foreground" title={case_.clientName}>{case_.clientName}</span>
+                      <span
+                        className="font-medium truncate max-w-[150px] text-foreground"
+                        title={case_.clientName}
+                      >
+                        {case_.clientName}
+                      </span>
                       <Badge variant="outline" className="text-xs shrink-0">
                         {case_.loanId}
                       </Badge>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={`${getStageColor(case_.stage)} shrink-0`}
                       >
                         {case_.stage}
                       </Badge>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={`${getStrategyColor(case_.collectionStrategy)} shrink-0`}
                       >
                         {case_.collectionStrategy.replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground flex-wrap gap-y-1">
-                      <span className="tabular-nums">Owed: NAD {case_.totalOwed.toLocaleString()}</span>
-                      <span className="tabular-nums shrink-0">{case_.daysOverdue} days overdue</span>
-                      <span className="truncate max-w-[150px]" title={case_.assignedAgent}>Agent: {case_.assignedAgent}</span>
-                      <span className={`${getProbabilityColor(case_.recoveryProbability)} tabular-nums shrink-0`}>
+                      <span className="tabular-nums">
+                        Owed: NAD {case_.totalOwed.toLocaleString()}
+                      </span>
+                      <span className="tabular-nums shrink-0">
+                        {case_.daysOverdue} days overdue
+                      </span>
+                      <span className="truncate max-w-[150px]" title={case_.assignedAgent}>
+                        Agent: {case_.assignedAgent}
+                      </span>
+                      <span
+                        className={`${getProbabilityColor(case_.recoveryProbability)} tabular-nums shrink-0`}
+                      >
                         {case_.recoveryProbability}% recovery probability
                       </span>
                     </div>
                     <div className="flex items-center space-x-4 text-sm flex-wrap gap-y-1 text-foreground">
-                      <span className="truncate">Last: {case_.lastAction} <span className="text-muted-foreground shrink-0">({new Date(case_.lastActionDate).toLocaleDateString()})</span></span>
-                      <span className="truncate">Next: {case_.nextAction} <span className="text-muted-foreground shrink-0">({new Date(case_.nextActionDate).toLocaleDateString()})</span></span>
+                      <span className="truncate">
+                        Last: {case_.lastAction}{' '}
+                        <span className="text-muted-foreground shrink-0">
+                          ({new Date(case_.lastActionDate).toLocaleDateString()})
+                        </span>
+                      </span>
+                      <span className="truncate">
+                        Next: {case_.nextAction}{' '}
+                        <span className="text-muted-foreground shrink-0">
+                          ({new Date(case_.nextActionDate).toLocaleDateString()})
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2 ml-4 shrink-0">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCaseAction(case_.id, 'Contact')}
                   >
                     <Phone className="h-4 w-4 mr-1" />
                     Contact
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCaseAction(case_.id, 'Update')}
                   >
                     <FileText className="h-4 w-4 mr-1" />
                     Update
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCaseAction(case_.id, 'Escalate')}
                   >
@@ -442,7 +467,7 @@ const CollectionsCenter: React.FC = () => {
             <CardDescription>Add notes for selected cases</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Textarea 
+            <Textarea
               placeholder="Enter collection notes or updates..."
               className="min-h-[100px]"
             />

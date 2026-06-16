@@ -7,14 +7,13 @@
  * to IPN via the ipsAliasAdapter action (ReqRegMapper).
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation, internalQuery } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { normalizeNamibianMobile, isValidNamibianMobile } from '../lib/ipsPhoneNormalize';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
 import { assertAliasAvailable, assertAliasUsable, validateIpsHandle } from '../lib/ipsAliasRules';
+import { isValidNamibianMobile, normalizeNamibianMobile } from '../lib/ipsPhoneNormalize';
 
 const aliasStatus = v.union(
   v.literal('NEW'),
@@ -361,7 +360,7 @@ export const blockAlias = mutation({
 export const setDefaultAlias = mutation({
   args: { aliasId: v.id('ipsAliasDirectory') },
   handler: async (ctx, { aliasId }) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
     await assertOwnerOrStaff(ctx, alias.userId);

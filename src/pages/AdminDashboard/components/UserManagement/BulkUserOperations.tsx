@@ -1,26 +1,10 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Users,
-  Upload,
-  Download,
-  Mail,
-  UserX,
-  UserCheck,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  Settings,
-  Trash2,
-  Edit,
-  Send,
-} from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -28,8 +12,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  Edit,
+  FileText,
+  Mail,
+  Send,
+  Settings,
+  Shield,
+  Upload,
+  UserCheck,
+  Users,
+} from 'lucide-react';
+import React, { useState } from 'react';
 
 interface BulkOperation {
   id: string;
@@ -369,7 +367,10 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="bulk-action">Action</Label>
-                  <Select value={bulkAction} onValueChange={setBulkAction}>
+                  <Select
+                    value={bulkAction}
+                    onValueChange={(value) => setBulkAction(value as BulkOperation['type'])}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select action" />
                     </SelectTrigger>

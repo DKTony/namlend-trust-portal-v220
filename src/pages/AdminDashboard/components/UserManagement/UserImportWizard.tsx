@@ -1,24 +1,10 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import {
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertTriangle,
-  X,
-  Download,
-  Eye,
-  Users,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  Loader2,
-} from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -26,7 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle,
+  Download,
+  Loader2,
+  Users,
+  X,
+} from 'lucide-react';
+import React, { useState } from 'react';
 
 interface ImportStep {
   id: number;

@@ -1,30 +1,25 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useToast } from '@/hooks/use-toast';
 import { APR_LIMIT, isValidAPR } from '@/constants/regulatory';
-import { useMutation as useConvexMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '@/integrations/convex/api';
-import {
-  calculateCreditScore,
-  getLoanRecommendation,
-  type CreditFactors,
-} from '@/utils/creditScoring';
-import { useKYCEligibility } from '@/hooks/useKYCEligibility';
-import { Calculator, FileText, DollarSign, Loader2 } from 'lucide-react';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { useLoanForm } from '@/hooks/useLoanForm';
-import LoanApplicationHeader from './components/LoanApplicationHeader';
+import type { Id } from '@/integrations/convex/api';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { useMutation as useConvexMutation } from 'convex/react';
+import { Calculator, DollarSign, FileText, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navigate, useNavigate } from 'react-router-dom';
 import KYCEligibilityGate from './components/KYCEligibilityGate';
+import LoanApplicationHeader from './components/LoanApplicationHeader';
 import LoanSummaryPanel from './components/LoanSummaryPanel';
-import LoanDetailsStep from './steps/LoanDetailsStep';
 import FinancialInfoStep from './steps/FinancialInfoStep';
+import LoanDetailsStep from './steps/LoanDetailsStep';
 import ReviewSubmitStep from './steps/ReviewSubmitStep';
 
 export default function LoanApplication() {
@@ -115,63 +110,9 @@ export default function LoanApplication() {
         return;
       }
 
-      // Build credit factors from form data and profile
       const monthlyIncome = parseFloat(formData.monthly_income) || 0;
       const existingDebt = parseFloat(formData.existing_debt || '0');
       const monthlyExpenses = parseFloat(formData.monthly_expenses || '0');
-
-      const creditFactors: CreditFactors = {
-        monthlyIncome,
-        employmentStatus: formData.employment_status || 'unknown',
-        employmentDuration: 12, // Default; profile-based in future
-        existingDebt,
-        monthlyDebtPayments: monthlyExpenses,
-        requestedAmount: loanDetails.amount,
-        requestedTerm: loanDetails.term,
-        hasVerifiedId: !!userProfile,
-        hasVerifiedAddress: false,
-        hasVerifiedEmployment: !!formData.employment_status,
-        previousLoans: 0,
-        paidOnTime: 0,
-        defaults: 0,
-        latePayments: 0,
-      };
-
-      // Calculate credit score using the scoring engine
-      const creditScore = calculateCreditScore(creditFactors);
-      const recommendation = getLoanRecommendation(creditFactors, creditScore);
-
-      // Prepare loan application data for approval workflow
-      const loanApplicationData = {
-        amount: loanDetails.amount,
-        term_months: loanDetails.term,
-        interest_rate: loanDetails.interestRate,
-        monthly_payment: loanDetails.monthlyPayment,
-        total_repayment: loanDetails.totalRepayment,
-        purpose: formData.purpose,
-        employment_status: formData.employment_status,
-        monthly_income: monthlyIncome,
-        monthly_expenses: monthlyExpenses,
-        existing_debt: existingDebt,
-        user_verified: false,
-        credit_score: creditScore.score,
-        credit_score_range: creditScore.scoreRange,
-        risk_level: creditScore.riskLevel,
-        debt_to_income_ratio: creditScore.debtToIncomeRatio,
-        affordability_score: creditScore.affordabilityScore,
-        max_approved_amount: creditScore.maxApprovedAmount,
-        suggested_interest_rate: creditScore.suggestedInterestRate,
-        scoring_factors: creditScore.factors,
-        scoring_recommendations: creditScore.recommendations,
-        loan_recommendation: {
-          approved: recommendation.approved,
-          approved_amount: recommendation.approvedAmount,
-          suggested_term: recommendation.suggestedTerm,
-          reasons: recommendation.reasons,
-          conditions: recommendation.conditions,
-        },
-        submitted_at: new Date().toISOString(),
-      };
 
       // Step 1: Create the canonical loan record in the loans table
       const loanId = (await createLoanMutation({

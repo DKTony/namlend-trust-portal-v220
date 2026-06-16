@@ -1,8 +1,3 @@
-import React, { useState } from 'react';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
-import { ThemedBadge } from '@/components/ui/ThemedBadge';
-import { CheckCircle, XCircle, FileText, X, AlertTriangle, Download, Mail } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,10 +9,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { handleMutationError } from '@/lib/mutationError';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import { AlertTriangle, CheckCircle, Download, FileText, Mail, X, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface BulkActionsPanelProps {
   selectedCount: number;

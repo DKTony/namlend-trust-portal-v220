@@ -8,15 +8,15 @@
  */
 
 import { httpRouter } from 'convex/server';
-import { httpAction } from './_generated/server';
 import { internal } from './_generated/api';
+import { httpAction } from './_generated/server';
 import { auth } from './auth';
-import { buildAckResponseXml } from './lib/ipsXmlBuilder';
 import {
   assertIpsProductionReady,
   requireProductionWebhookCert,
   type IpsProtocolMode,
 } from './lib/ipsProductionConfig';
+import { buildAckResponseXml } from './lib/ipsXmlBuilder';
 
 // ---------------------------------------------------------------------------
 // Signature verification helpers
@@ -199,7 +199,7 @@ http.route({
 
 async function handleIpsXmlCallback(
   ctx: any,
-  request: Request,
+  _request: Request,
   rawBody: string
 ): Promise<Response> {
   const orgId = process.env.IPS_ORG_ID ?? 'NAMLEND';
@@ -356,13 +356,6 @@ async function handleIpsJsonCallback(
   try {
     // Map legacy JSON format to the new handler args
     const msgId = body.msgId as string;
-    const statusMap: Record<string, string> = {
-      ACCP: 'processing',
-      ACSC: '00', // completed
-      RJCT: 'RJCT',
-      PDNG: 'processing',
-    };
-
     await ctx.runAction(internal.actions.ipsAdapter.handleWebhook, {
       apiName: 'RespPay',
       msgId: msgId ?? '',

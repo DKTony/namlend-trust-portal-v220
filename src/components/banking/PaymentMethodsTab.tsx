@@ -3,11 +3,11 @@
  * Lists available payment methods including IPP, Bank EFT, Mobile Money, and Debit Card.
  */
 
-import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Smartphone, CreditCard, Zap } from 'lucide-react';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import type { OnboardingData } from '@/hooks/useIPPOnboarding';
+import { Building2, CreditCard, Smartphone, Zap } from 'lucide-react';
 
 interface PaymentMethodsTabProps {
   isReady: boolean;

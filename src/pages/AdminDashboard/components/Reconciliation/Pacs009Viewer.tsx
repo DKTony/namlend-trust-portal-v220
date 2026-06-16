@@ -3,18 +3,17 @@
  * Displays and parses ISO 20022 pacs.009 settlement batch files
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -23,22 +22,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, FileCode, Download, Copy, Check } from 'lucide-react';
-import {
-  useSettlementRuns,
-  usePacs009Batches,
-  usePacs009BatchDetails,
-} from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
-import { BATCH_TYPE_LABELS } from '@/types/settlement';
+import {
+  usePacs009BatchDetails,
+  usePacs009Batches,
+  useSettlementRuns,
+} from '@/hooks/useSettlement';
+import { BATCH_TYPE_LABELS, type SettlementBatchType } from '@/types/settlement';
+import { Check, Copy, Download, Eye, FileCode } from 'lucide-react';
+import { useState } from 'react';
 
 function parsePacs009Xml(xmlContent: string): {
   groupHeader: {
@@ -108,6 +108,16 @@ function formatXmlForDisplay(xmlContent: string): string {
   } catch {
     return xmlContent;
   }
+}
+
+interface BatchInstructionView {
+  amount: number;
+  category_group: string;
+  instruction_id: string;
+  source: string;
+  source_bic: string;
+  target: string;
+  target_bic: string;
 }
 
 export function Pacs009Viewer() {
@@ -218,7 +228,7 @@ export function Pacs009Viewer() {
                       <TableRow key={batch.id}>
                         <TableCell>
                           <Badge variant="outline" className="shrink-0">
-                            {BATCH_TYPE_LABELS[batch.batch_type]}
+                            {BATCH_TYPE_LABELS[batch.batch_type as SettlementBatchType]}
                           </Badge>
                         </TableCell>
                         <TableCell
@@ -416,31 +426,33 @@ export function Pacs009Viewer() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {batchDetails.instructions?.map((instr, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-mono text-sm">
-                            {instr.instruction_id}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{instr.source}</p>
-                              <p className="text-xs text-muted-foreground">{instr.source_bic}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{instr.target}</p>
-                              <p className="text-xs text-muted-foreground">{instr.target_bic}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{instr.category_group}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatNAD(instr.amount)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {(batchDetails.instructions as BatchInstructionView[] | undefined)?.map(
+                        (instr, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-mono text-sm">
+                              {instr.instruction_id}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{instr.source}</p>
+                                <p className="text-xs text-muted-foreground">{instr.source_bic}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{instr.target}</p>
+                                <p className="text-xs text-muted-foreground">{instr.target_bic}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{instr.category_group}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatNAD(instr.amount)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 </ScrollArea>

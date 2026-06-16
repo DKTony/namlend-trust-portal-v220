@@ -4,13 +4,12 @@
  * React Query hook for polling IPS transaction status
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useCallback } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { type Id } from '@/integrations/convex/api';
-import type { IPSTransactionStatusResult, IPSTransactionStatus } from '@/types/ips';
+import { api, type Id } from '@/integrations/convex/api';
+import type { IPSTransactionStatus, IPSTransactionStatusResult } from '@/types/ips';
 import { isIPSStatusFinal } from '@/types/ips';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { useCallback, useEffect } from 'react';
 
 interface UseIPSTransactionStatusOptions {
   /** Enable polling for pending transactions */

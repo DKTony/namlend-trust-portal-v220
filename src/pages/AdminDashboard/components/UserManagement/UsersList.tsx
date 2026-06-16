@@ -1,33 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Eye,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Shield,
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Settings,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  UserX,
-  UserCog,
-} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Eye,
+  Mail,
+  MapPin,
+  MoreHorizontal,
+  Phone,
+  Settings,
+  Shield,
+  Trash2,
+  User,
+  UserCog,
+  UserX,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useUsersList } from '../../hooks/useUsersList';
 import RoleManagementModal from './RoleManagementModal';
 

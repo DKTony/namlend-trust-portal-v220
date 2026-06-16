@@ -11,7 +11,7 @@
 
 import { v } from 'convex/values';
 import { internalMutation, mutation, query } from './_generated/server';
-import { assertStaff, assertAuthenticated } from './lib/auth';
+import { assertAuthenticated, assertStaff } from './lib/auth';
 import { resolveWriteInstitution } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /** @deprecated Legacy Supabase test/debug script. Zero UI imports. Safe to delete after full Convex migration. */
 import { supabase } from '@/integrations/supabase/client';
-import { errorLogger, trackUserAction } from '@/utils/errorHandler';
+import { ErrorCategory, ErrorSeverity, errorLogger, trackUserAction } from '@/utils/errorHandler';
 
 // Test data interfaces
 export interface TestUser {
@@ -60,7 +60,6 @@ interface TestSummary {
 // Test environment setup
 export class TestEnvironment {
   private testUsers: TestUser[] = [];
-  private testData: unknown[] = [];
 
   constructor() {
     this.setupTestData();
@@ -125,7 +124,7 @@ export class TestEnvironment {
         });
 
         // Test sign up
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email: testUser.email,
           password: testUser.password,
           options: {
@@ -209,8 +208,8 @@ export class TestEnvironment {
 
         errorLogger.logError({
           message: `Authentication test failed for ${testUser.email}`,
-          category: 'authentication',
-          severity: 'high',
+          category: ErrorCategory.AUTHENTICATION,
+          severity: ErrorSeverity.HIGH,
           context: { testUser: testUser.email, error: errMsg },
         });
       }
@@ -323,8 +322,8 @@ export class TestEnvironment {
 
       errorLogger.logError({
         message: `Loan workflow test failed for ${userEmail}`,
-        category: 'business_logic',
-        severity: 'high',
+        category: ErrorCategory.BUSINESS_LOGIC,
+        severity: ErrorSeverity.HIGH,
         context: { userEmail, error: errMsg },
       });
     }
@@ -343,10 +342,7 @@ export class TestEnvironment {
       trackUserAction('test_database_connectivity_start');
 
       // Test basic connection
-      const { data: connectionTest, error: connectionError } = await supabase
-        .from('profiles')
-        .select('count')
-        .limit(1);
+      const { error: connectionError } = await supabase.from('profiles').select('count').limit(1);
 
       results.push({
         test: 'database_connection',
@@ -355,10 +351,7 @@ export class TestEnvironment {
       });
 
       // Test RLS policies
-      const { data: rlsTest, error: rlsError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .limit(1);
+      const { error: rlsError } = await supabase.from('user_roles').select('*').limit(1);
 
       results.push({
         test: 'rls_policies',
@@ -391,8 +384,8 @@ export class TestEnvironment {
 
       errorLogger.logError({
         message: 'Database connectivity test failed',
-        category: 'database',
-        severity: 'critical',
+        category: ErrorCategory.DATABASE,
+        severity: ErrorSeverity.CRITICAL,
         context: { error: errMsg },
       });
     }
@@ -413,10 +406,7 @@ export class TestEnvironment {
       // Test query performance
       const startTime = performance.now();
 
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .limit(100);
+      const { error: profilesError } = await supabase.from('profiles').select('*').limit(100);
 
       const profilesTime = performance.now() - startTime;
 
@@ -431,10 +421,7 @@ export class TestEnvironment {
       // Test loan data query performance
       const loansStartTime = performance.now();
 
-      const { data: loansData, error: loansError } = await supabase
-        .from('loans')
-        .select('*')
-        .limit(50);
+      const { error: loansError } = await supabase.from('loans').select('*').limit(50);
 
       const loansTime = performance.now() - loansStartTime;
 
@@ -460,8 +447,8 @@ export class TestEnvironment {
 
       errorLogger.logError({
         message: 'Performance test failed',
-        category: 'system',
-        severity: 'medium',
+        category: ErrorCategory.SYSTEM,
+        severity: ErrorSeverity.MEDIUM,
         context: { error: errMsg },
       });
     }
@@ -500,8 +487,8 @@ export class TestEnvironment {
       const errMsg = error instanceof Error ? error.message : String(error);
       errorLogger.logError({
         message: 'Test cleanup failed',
-        category: 'system',
-        severity: 'low',
+        category: ErrorCategory.SYSTEM,
+        severity: ErrorSeverity.LOW,
         context: { error: errMsg },
       });
     }

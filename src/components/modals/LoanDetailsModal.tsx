@@ -1,31 +1,31 @@
-import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { formatNAD } from '@/utils/currency';
-import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import {
-  DollarSign,
+  AlertCircle,
+  Briefcase,
   Calendar,
-  TrendingUp,
-  User,
-  FileText,
   CheckCircle,
   Clock,
-  AlertCircle,
-  Percent,
   CreditCard,
-  Briefcase,
+  DollarSign,
+  FileText,
+  Percent,
   ShieldCheck,
+  TrendingUp,
+  User,
   Wallet,
 } from 'lucide-react';
+import React from 'react';
 
 interface LoanRequestData {
   employment_status?: string;
@@ -119,9 +119,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
   const requestData = loan.request_data || {};
   const employmentStatus = requestData.employment_status || 'Not provided';
   const monthlyIncome = requestData.monthly_income || 0;
-  const existingDebt = requestData.existing_debt || 0;
   const creditScore = requestData.credit_score || 'Not assessed';
-  const userVerified = requestData.user_verified || false;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

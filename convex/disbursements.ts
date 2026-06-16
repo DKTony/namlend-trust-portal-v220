@@ -11,26 +11,25 @@
  * FINANCIAL SAFETY: All mutations have retry: false on useMutation (frontend).
  */
 
-import { v } from 'convex/values';
-import { query, mutation } from './_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertStaff, assertOwnerOrStaff } from './lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { internal } from './_generated/api';
+import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
+import { assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
+import { assertKycVerifiedForUser } from './lib/kyc';
+import { enqueueOutboxIdempotent } from './lib/outbox';
 import {
-  selectOptimalRail,
   DEFAULT_RAIL_WEIGHTS,
+  selectOptimalRail,
   type RailCandidate,
   type RailWeights,
 } from './lib/railSelector';
-import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { emitRelationship } from './lib/relationshipEmitter';
 import { getJsonRule } from './lib/ruleEvaluator';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 import { txStatus } from './schema';
-import { internal } from './_generated/api';
-import { assertKycVerifiedForUser } from './lib/kyc';
-import { enqueueOutboxIdempotent } from './lib/outbox';
-import { resolveWriteInstitution, tenantReadScope, applyTenantScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Queries

@@ -6,10 +6,9 @@
  * that the Convex analyzer reads. This file holds the actual runtime logic.
  */
 
-import { convexAuth } from '@convex-dev/auth/server';
 import { Password } from '@convex-dev/auth/providers/Password';
+import { convexAuth } from '@convex-dev/auth/server';
 import { resolveWriteInstitution } from './lib/tenancy';
-import { internal } from './_generated/api';
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [Password],

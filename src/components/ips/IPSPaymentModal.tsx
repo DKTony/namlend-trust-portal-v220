@@ -4,7 +4,9 @@
  * Modal for initiating IPS loan repayments
  */
 
-import React, { useState, useEffect } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,20 +15,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, CheckCircle2, XCircle, AlertTriangle, Wallet } from 'lucide-react';
-import { VPAInput } from './VPAInput';
-import { IPSTransactionStatus } from './IPSTransactionStatus';
-import { useUserVPAs, getDefaultVPA } from '@/hooks/useUserVPAs';
-import { useIPSRepayment } from '@/hooks/useIPSPayment';
-import type { InitiateIPSRepaymentResult, IPSAdapterValidateVPAResponse } from '@/types/ips';
 import { formatNAD } from '@/constants/regulatory';
+import { useIPSRepayment } from '@/hooks/useIPSPayment';
+import { getDefaultVPA, useUserVPAs } from '@/hooks/useUserVPAs';
+import type { InitiateIPSRepaymentResult, IPSAdapterValidateVPAResponse } from '@/types/ips';
+import { AlertTriangle, CheckCircle2, CreditCard, Loader2, Wallet, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { IPSTransactionStatus } from './IPSTransactionStatus';
+import { VPAInput } from './VPAInput';
 
 interface IPSPaymentModalProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ export function IPSPaymentModal({
   const [amount, setAmount] = useState<string>('');
   const [selectedVpaId, setSelectedVpaId] = useState<string>('new');
   const [newVpa, setNewVpa] = useState<string>('');
-  const [vpaValidation, setVpaValidation] = useState<IPSAdapterValidateVPAResponse | null>(null);
+  const [, setVpaValidation] = useState<IPSAdapterValidateVPAResponse | null>(null);
   const [result, setResult] = useState<InitiateIPSRepaymentResult | null>(null);
 
   const { data: vpasData, isLoading: vpasLoading } = useUserVPAs();

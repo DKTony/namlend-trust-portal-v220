@@ -3,9 +3,6 @@
  * Displays the title, info banner, unsaved changes badge, reset and save buttons.
  */
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,16 +14,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Database, Save, RotateCcw, Loader2, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Database, Info, Loader2, RotateCcw, Save } from 'lucide-react';
 
 interface ConfigHeaderProps {
   hasChanges: boolean;
   saving: boolean;
   onSave: () => void;
   onReset: () => void;
+  readOnly?: boolean;
 }
 
-export function ConfigHeader({ hasChanges, saving, onSave, onReset }: ConfigHeaderProps) {
+export function ConfigHeader({ hasChanges, saving, onSave, onReset, readOnly }: ConfigHeaderProps) {
   return (
     <>
       {/* Header */}
@@ -51,7 +52,7 @@ export function ConfigHeader({ hasChanges, saving, onSave, onReset }: ConfigHead
           )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled={readOnly}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset to Default
               </Button>
@@ -66,11 +67,13 @@ export function ConfigHeader({ hasChanges, saving, onSave, onReset }: ConfigHead
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onReset}>Reset</AlertDialogAction>
+                <AlertDialogAction onClick={onReset} disabled={readOnly}>
+                  Reset
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={onSave} disabled={saving || !hasChanges}>
+          <Button onClick={onSave} disabled={saving || !hasChanges || readOnly}>
             {saving ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (

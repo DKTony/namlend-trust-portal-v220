@@ -4,9 +4,9 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { assertAdmin, assertStaff } from '../lib/auth';
+import { mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAdmin, assertStaff } from '../lib/auth';
 
 export const listTimeoutsByRun = query({
   args: { runId: v.id('settlementRuns') },
@@ -63,7 +63,7 @@ export const recordTimeout = mutation({
       'settlementTimeoutTransactions',
       timeoutId,
       'record_timeout',
-      null,
+      'none',
       'pending',
       args.timeoutReason
     );

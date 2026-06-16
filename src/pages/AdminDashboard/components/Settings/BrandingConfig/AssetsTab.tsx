@@ -3,14 +3,14 @@
  * Part of BrandingConfig split
  */
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Image, Globe, Upload, Trash2, Loader2, Building2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { BrandingConfig } from '@/types/branding';
+import { Building2, Globe, Image, Loader2, Trash2, Upload } from 'lucide-react';
 
 interface AssetsTabProps {
   config: BrandingConfig;

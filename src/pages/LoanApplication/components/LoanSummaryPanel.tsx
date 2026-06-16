@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Calculator, Clock } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
+import type { LoanDetails } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
-import type { LoanDetails } from '@/hooks/useLoanForm';
+import { formatNAD } from '@/utils/currency';
+import { Calculator, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface LoanSummaryPanelProps {
   loanDetails: LoanDetails;

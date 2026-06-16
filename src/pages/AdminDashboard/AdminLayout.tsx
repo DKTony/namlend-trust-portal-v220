@@ -4,21 +4,21 @@
  * Replaces the monolithic AdminDashboard tab-based layout.
  */
 
-import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
+import { AdaptiveShell } from '@/components/adaptive';
+import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
 import { GroupedSidebar } from '@/components/Layout/GroupedSidebar';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
-import SystemHealthDashboard from '@/components/dashboards/SystemHealthDashboard';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { getAdminNavGroups } from '@/config/adminNav';
-import { useEntitlements } from '@/hooks/useEntitlements';
-import { AdaptiveShell } from '@/components/adaptive';
+import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
-import { RefreshCw, BarChart3, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
+import { cn } from '@/lib/utils';
+import { AlertCircle, BarChart3, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
 
 const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoanOfficer, signOut } = useAuth();
@@ -53,7 +53,7 @@ const AdminLayout: React.FC = () => {
   }
 
   const navGroups = getAdminNavGroups(isAdmin, { enforced, hasFeature });
-  const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
+  const userName = String(user?.user_metadata?.first_name ?? user?.email?.split('@')[0] ?? 'Admin');
   const userEmail = user?.email;
 
   const sidebarProps = {

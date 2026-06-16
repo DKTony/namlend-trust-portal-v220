@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export type SignOutButtonProps = React.ComponentProps<typeof Button> & {
   redirectTo?: string;

@@ -7,8 +7,15 @@
  */
 
 import { ConvexError, v } from 'convex/values';
-import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import type { Id } from './_generated/dataModel';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
+import { scheduleAuditLog } from './lib/audit';
+import { assertAdmin, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import {
+  dueDaysForIppCase,
+  requiresSettlementAdjustmentForIppCase,
+  scoreIpsRiskSignals,
+} from './lib/ippOperationsRules';
 import {
   ippDisputeCaseType,
   ippDisputeStatus,
@@ -16,17 +23,9 @@ import {
   ippRiskSeverity,
   ipsTransactionStatus,
 } from './schema';
-import { assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { scheduleAuditLog } from './lib/audit';
-import {
-  dueDaysForIppCase,
-  requiresSettlementAdjustmentForIppCase,
-  scoreIpsRiskSignals,
-} from './lib/ippOperationsRules';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_YEARS_MS = 7 * 365 * DAY_MS;
-const FIVE_YEARS_MS = 5 * 365 * DAY_MS;
 
 const terminalIpsStatuses = new Set(['completed', 'failed', 'reversed', 'timeout']);
 
@@ -249,6 +248,8 @@ async function evaluateTransactionRisk(ctx: any, tx: any, trigger: string) {
 
   return { riskEventId, score, severity, decision, triggeredRules };
 }
+
+type IppRiskEvaluation = Awaited<ReturnType<typeof evaluateTransactionRisk>>;
 
 // ---------------------------------------------------------------------------
 // Disputes and adjustments
@@ -645,7 +646,7 @@ export const runRiskScan = mutation({
       .query('ipsTransactions')
       .order('desc')
       .take(args.limit ?? 100);
-    const results = [];
+    const results: IppRiskEvaluation[] = [];
     for (const tx of rows) {
       results.push(await evaluateTransactionRisk(ctx, tx, 'manual_scan'));
     }

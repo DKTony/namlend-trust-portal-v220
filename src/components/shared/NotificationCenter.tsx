@@ -4,20 +4,19 @@
  * Displays in-app notifications with real-time updates and glassmorphism UI
  */
 
-import { useState, useMemo } from 'react';
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, BellRing, Inbox } from 'lucide-react';
 import { ThemedButton } from '@/components/ui/ThemedButton';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
+import { api, type Id } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import { Bell, BellRing, CheckCheck, ExternalLink, Inbox, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { type Id } from '@/integrations/convex/api';
 
 interface Notification {
   id: string;
@@ -65,7 +64,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function NotificationCenter({ className }: NotificationCenterProps) {
   const { user } = useAuth();
-  const { styles, isDark } = useTheme();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -89,13 +88,16 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
     return (rawNotifications as Array<Record<string, unknown>>).map((n) => ({
       id: String(n._id),
       user_id: String(n.userId ?? ''),
-      title: n.title ?? '',
-      message: n.message ?? n.body ?? '',
-      category: n.category ?? 'general',
-      is_read: n.isRead ?? false,
-      action_url: n.actionUrl ?? null,
+      title: String(n.title ?? ''),
+      message: String(n.message ?? n.body ?? ''),
+      category: String(n.category ?? 'general'),
+      is_read: Boolean(n.isRead ?? false),
+      action_url: n.actionUrl ? String(n.actionUrl) : null,
       action_label: String(n.actionLabel ?? ''),
-      created_at: n.createdAt ? new Date(n.createdAt).toISOString() : new Date().toISOString(),
+      created_at:
+        typeof n.createdAt === 'number' || typeof n.createdAt === 'string'
+          ? new Date(n.createdAt).toISOString()
+          : new Date().toISOString(),
     }));
   }, [rawNotifications]);
 
@@ -118,7 +120,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
   // Mark all as read
   const handleMarkAllRead = async () => {
     try {
-      await markAllReadMutation();
+      await markAllReadMutation({});
     } catch (err) {
       console.error('Error marking all notifications read:', err);
     }
@@ -278,8 +280,6 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onClick, isDark }: NotificationItemProps) {
-  const isUrgent = notification.priority === 'urgent' || notification.priority === 'high';
-
   return (
     <button
       className={cn(

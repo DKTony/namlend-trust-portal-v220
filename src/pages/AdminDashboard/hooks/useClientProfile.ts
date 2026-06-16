@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
+import { useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 interface ClientProfile {
   id: string;
@@ -60,7 +60,6 @@ export const useClientProfile = (clientId: string) => {
     if (totalRepaid > 0 && totalBorrowed > 0) {
       creditScore += Math.floor((totalRepaid / totalBorrowed) * 150);
     }
-    if (loans.some((l) => l.status === 'overdue')) creditScore -= 100;
     creditScore = Math.max(300, Math.min(850, creditScore));
 
     let riskLevel: ClientProfile['riskLevel'] = 'low';
@@ -69,7 +68,7 @@ export const useClientProfile = (clientId: string) => {
 
     let status: ClientProfile['status'] = 'inactive';
     if (activeLoanCount > 0) status = 'active';
-    else if (loans.some((l) => l.status === 'pending' || l.status === 'submitted'))
+    else if (loans.some((l) => l.status === 'submitted' || l.status === 'under_review'))
       status = 'pending';
 
     return {

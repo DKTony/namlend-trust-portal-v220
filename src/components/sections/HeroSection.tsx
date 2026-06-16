@@ -1,11 +1,10 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
-import LandingCard from '@/components/landing/LandingCard';
 import LandingButton from '@/components/landing/LandingButton';
-import { Shield, Zap, ArrowRight } from 'lucide-react';
+import LandingCard from '@/components/landing/LandingCard';
+import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Shield, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
   const navigate = useNavigate();

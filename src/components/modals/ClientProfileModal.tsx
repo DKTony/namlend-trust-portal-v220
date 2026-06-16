@@ -1,38 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { api, type Id } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { type Id } from '@/integrations/convex/api';
-import { cn } from '@/lib/utils';
 import {
-  User,
-  Phone,
-  Mail,
-  MapPin,
+  AlertCircle,
   Briefcase,
+  Calendar,
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  CreditCard,
   DollarSign,
   FileText,
-  Calendar,
-  TrendingUp,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Download,
-  Eye,
-  CreditCard,
   History,
+  Phone,
   ShieldCheck,
-  ChevronRight,
+  TrendingUp,
+  User,
 } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 interface ClientProfileModalProps {
   open: boolean;
@@ -93,7 +88,14 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
       }));
   }, [rawLoans, userId]);
 
-  const payments: { id: string; amount: number; status: string; created_at: string }[] = [];
+  const payments: {
+    amount: number;
+    created_at: string;
+    id: string;
+    payment_method?: string;
+    reference_number?: string;
+    status: string;
+  }[] = [];
   const documents: { id: string; name: string; status: string }[] = [];
 
   const activities = useMemo(() => {

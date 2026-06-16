@@ -6,11 +6,10 @@
  * audit trail of every value a rule has ever had.
  */
 
-import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
 import { scheduleAuditEntry } from '../lib/audit';
+import { assertAdminOrPlatformOwner, assertStaffOrPlatformSupport } from '../lib/platformAuth';
 
 const ruleValueType = v.union(
   v.literal('number'),
@@ -27,7 +26,7 @@ const ruleValueType = v.union(
 export const getActiveRule = query({
   args: { ruleCode: v.string() },
   handler: async (ctx, { ruleCode }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     const rules = await ctx.db
       .query('businessRules')
       .withIndex('by_ruleCode', (q) => q.eq('ruleCode', ruleCode))
@@ -40,7 +39,7 @@ export const getActiveRule = query({
 export const getActiveRules = query({
   args: { category: v.string() },
   handler: async (ctx, { category }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     const rules = await ctx.db
       .query('businessRules')
       .withIndex('by_category', (q) => q.eq('category', category))
@@ -53,7 +52,7 @@ export const getActiveRules = query({
 export const listAllRules = query({
   args: {},
   handler: async (ctx) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     const rules = await ctx.db.query('businessRules').collect();
     return rules;
   },
@@ -63,7 +62,7 @@ export const listAllRules = query({
 export const listRuleHistory = query({
   args: { ruleCode: v.string() },
   handler: async (ctx, { ruleCode }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     return ctx.db
       .query('businessRules')
       .withIndex('by_ruleCode', (q) => q.eq('ruleCode', ruleCode))
@@ -86,7 +85,7 @@ export const createRule = mutation({
     value: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAdmin(ctx);
+    const userId = await assertAdminOrPlatformOwner(ctx);
 
     // Check for existing active rule
     const existing = await ctx.db
@@ -129,7 +128,7 @@ export const updateRule = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, { ruleCode, value, description }) => {
-    const userId = await assertAdmin(ctx);
+    const userId = await assertAdminOrPlatformOwner(ctx);
 
     const existing = await ctx.db
       .query('businessRules')
@@ -167,7 +166,7 @@ export const updateRule = mutation({
       entityType: 'businessRules',
       entityId: newRuleId,
       action: 'UPDATE_RULE',
-      previousState: { value: current.value, version: current.version },
+      oldState: { value: current.value, version: current.version },
       newState: { value, version: current.version + 1 },
     });
 
@@ -179,7 +178,7 @@ export const updateRule = mutation({
 export const seedDefaultRules = mutation({
   args: {},
   handler: async (ctx) => {
-    await assertAdmin(ctx);
+    await assertAdminOrPlatformOwner(ctx);
 
     const defaults = [
       {

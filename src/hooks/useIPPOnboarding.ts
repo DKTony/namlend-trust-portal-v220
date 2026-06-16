@@ -6,20 +6,20 @@
  * come from persisted backend state instead of frontend mocks.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery } from 'convex/react';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import {
   IPPOnboardingState,
-  IPP_ONBOARDING_STATE_LABELS,
   IPP_ONBOARDING_STATE_COLORS,
+  IPP_ONBOARDING_STATE_LABELS,
   getIPPOnboardingProgress,
   type IPPOnboardingAccount,
   type IPPOnboardingProvider,
   type IPPVerificationMethod,
 } from '@/types/ips';
+import { useMutation, useQuery } from 'convex/react';
+import { useEffect, useMemo, useState } from 'react';
 
 export const ONBOARDING_STEPS = [
   {

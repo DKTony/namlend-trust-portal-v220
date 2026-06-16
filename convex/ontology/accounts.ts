@@ -16,14 +16,13 @@
  *   listAccounts       - staff
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalMutation } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertStaff, assertAdmin, assertOwnerOrStaff } from '../lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { internalMutation, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAdmin, assertOwnerOrStaff, assertStaff } from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
-import { accountType, accountStatus } from '../schema';
+import { accountStatus, accountType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Account number generation
@@ -356,7 +355,7 @@ export const adminCreateAccount = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    const adminId = await assertAdmin(ctx);
+    await assertAdmin(ctx);
     const now = Date.now();
     const accountNumber = generateAccountNumber(args.accountType);
 

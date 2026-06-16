@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  X,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  DollarSign,
-  FileText,
-  CreditCard,
-  MessageSquare,
-  Edit,
   AlertTriangle,
+  Calendar,
   CheckCircle,
   Clock,
-  Star,
+  CreditCard,
+  DollarSign,
   Download,
+  Edit,
   Eye,
+  FileText,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  Star,
+  User,
+  X,
 } from 'lucide-react';
+import React, { useState } from 'react';
 import { useClientProfile } from '../../hooks/useClientProfile';
 
 interface ClientProfileProps {

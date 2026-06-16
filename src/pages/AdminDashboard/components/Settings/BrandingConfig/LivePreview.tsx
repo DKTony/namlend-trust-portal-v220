@@ -4,8 +4,8 @@
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, ShieldCheck } from 'lucide-react';
 import { BrandingConfig } from '@/types/branding';
+import { Eye, ShieldCheck } from 'lucide-react';
 
 interface LivePreviewProps {
   config: BrandingConfig;

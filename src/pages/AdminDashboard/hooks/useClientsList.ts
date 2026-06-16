@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 interface Client {
   id: string;
@@ -38,7 +38,7 @@ export const useClientsList = (status: string, searchTerm: string) => {
 
       let clientStatus: Client['status'] = 'inactive';
       if (activeLoans.length > 0) clientStatus = 'active';
-      else if (userLoans.some((l) => l.status === 'pending' || l.status === 'submitted'))
+      else if (userLoans.some((l) => l.status === 'submitted' || l.status === 'under_review'))
         clientStatus = 'pending';
 
       let riskLevel: Client['riskLevel'] = 'low';

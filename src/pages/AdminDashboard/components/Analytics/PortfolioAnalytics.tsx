@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -10,26 +9,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
+import { useQuery as useConvexQuery } from 'convex/react';
 import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users,
-  FileText,
   AlertTriangle,
+  BarChart3,
   CheckCircle,
   Clock,
-  RefreshCw,
+  DollarSign,
   Loader2,
-  PieChart,
-  BarChart3,
-  Target,
   Percent,
+  PieChart,
+  RefreshCw,
+  Target,
+  Users,
 } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
-import { cn } from '@/lib/utils';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import React, { useMemo, useState } from 'react';
 
 interface PortfolioAnalyticsProps {
   dateRange?: string;
@@ -48,6 +45,33 @@ interface PortfolioMetrics {
   clientCount: number;
   repaymentRate: number;
   defaultRate: number;
+}
+
+interface RawPortfolioSummary {
+  averageInterestRate?: number;
+  averageTerm?: number;
+  byPurpose?: Record<string, number>;
+  byStatus?: Record<string, number>;
+  loans?: {
+    active?: number;
+    approved?: number;
+    completed?: number;
+    pending?: number;
+    rejected?: number;
+    total?: number;
+  };
+  portfolio?: {
+    averageLoanSize?: number;
+    totalDisbursed?: number;
+    totalOutstanding?: number;
+    totalRepaid?: number;
+  };
+  repaymentRate?: number;
+  totalDisbursed?: number;
+  totalLoans?: number;
+  totalOutstanding?: number;
+  totalRepaid?: number;
+  totalRepayments?: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -73,19 +97,29 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
 
   const metrics: PortfolioMetrics | null = useMemo(() => {
     if (!portfolioRaw) return null;
+    const portfolio = portfolioRaw as unknown as RawPortfolioSummary;
+    const statusCounts = portfolio.byStatus ?? {
+      active: portfolio.loans?.active ?? 0,
+      approved: portfolio.loans?.approved ?? 0,
+      completed: portfolio.loans?.completed ?? 0,
+      pending: portfolio.loans?.pending ?? 0,
+      rejected: portfolio.loans?.rejected ?? 0,
+    };
+
     return {
-      totalLoans: portfolioRaw.totalLoans ?? 0,
-      totalDisbursed: portfolioRaw.totalDisbursed ?? 0,
-      totalOutstanding: portfolioRaw.totalOutstanding ?? 0,
-      totalRepaid: portfolioRaw.totalRepayments ?? portfolioRaw.totalRepaid ?? 0,
-      averageLoanAmount: portfolioRaw.averageLoanSize ?? 0,
-      averageInterestRate: portfolioRaw.averageInterestRate ?? 0,
-      averageTerm: portfolioRaw.averageTerm ?? 0,
-      byStatus: portfolioRaw.byStatus ?? {},
-      byPurpose: portfolioRaw.byPurpose ?? {},
+      totalLoans: portfolio.totalLoans ?? portfolio.loans?.total ?? 0,
+      totalDisbursed: portfolio.totalDisbursed ?? portfolio.portfolio?.totalDisbursed ?? 0,
+      totalOutstanding: portfolio.totalOutstanding ?? portfolio.portfolio?.totalOutstanding ?? 0,
+      totalRepaid:
+        portfolio.totalRepayments ?? portfolio.totalRepaid ?? portfolio.portfolio?.totalRepaid ?? 0,
+      averageLoanAmount: portfolio.portfolio?.averageLoanSize ?? 0,
+      averageInterestRate: portfolio.averageInterestRate ?? 0,
+      averageTerm: portfolio.averageTerm ?? 0,
+      byStatus: statusCounts,
+      byPurpose: portfolio.byPurpose ?? {},
       clientCount: clientRaw?.totalClients ?? 0,
-      repaymentRate: portfolioRaw.repaymentRate ?? 0,
-      defaultRate: riskRaw?.defaultRate ?? 0,
+      repaymentRate: portfolio.repaymentRate ?? 0,
+      defaultRate: riskRaw?.nplRatio ?? 0,
     };
   }, [portfolioRaw, clientRaw, riskRaw]);
 

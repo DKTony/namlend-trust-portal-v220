@@ -4,11 +4,11 @@
  * Version: v2.4.0
  */
 
-import React from 'react';
+import { Badge } from '@/components/ui/badge';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle, Clock, XCircle } from 'lucide-react';
+import React from 'react';
 
 interface WorkflowStageExecution {
   id: string;

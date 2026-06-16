@@ -6,14 +6,14 @@
  * Role assignment requires assertAdmin().
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation, internalQuery } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
-import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { tenantReadScope, applyTenantScope, resolveWriteInstitution } from './lib/tenancy';
+import { internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
+import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -288,7 +288,7 @@ export const deactivateUser = mutation({
     reason: v.optional(v.string()),
   },
   handler: async (ctx, { targetUserId, reason }) => {
-    const adminId = await assertAdmin(ctx);
+    await assertAdmin(ctx);
 
     const profile = await ctx.db
       .query('profiles')

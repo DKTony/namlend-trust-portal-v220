@@ -106,3 +106,21 @@ npm run typecheck
 
 `npm run typecheck` may still fail on the documented legacy/UI baseline. New or touched
 auth/tenant/entitlement/platform/config files must remain type-clean before activation.
+
+## Deferred Follow-ups (accepted for this release)
+
+Tracked in the Notion **Open Issues & Follow-ups** database. Both are accepted as inert/low-risk
+for the control-plane hardening release and are not blockers for shipping (enforcement flags stay
+off), but should be closed before the corresponding capabilities are relied on:
+
+- **P3 — support tiers L2/L3 deferred (L0/L1 + read-gating already enforced).** Shipped and active:
+  L0/L1 audited support sessions (`convex/platform/support.ts`) and
+  `convex/lib/supportAudit.ts::assertTenantSupportReadAccess` — a `platform_support` user must hold an
+  active **L1** session for a tenant to read its entitlements / resolved-entitlements / subscription
+  (`platform_owner` bypasses). Deferred by design (MVP supports L0/L1 only): **L2 break-glass** and
+  **L3 impersonation**, which require an approval + audit workflow not yet built. Low risk:
+  platform-staff-only, owner-granted, enforcement inert. Follow-up: build the L2/L3 approval workflow
+  before offering those tiers.
+- **Accessibility — a11y E2E gate non-blocking.** `e2e/accessibility.e2e.ts` logs axe violations as
+  warnings instead of failing; known serious/critical (e.g. `color-contrast`) violations remain on
+  some routes. Follow-up: triage and re-enable the failing gate.

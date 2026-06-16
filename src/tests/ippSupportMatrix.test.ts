@@ -1,11 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { describe, expect, it } from 'vitest';
 import {
   LIVE_IPP_IMPLEMENTATION,
   QUARANTINED_IPP_SURFACES,
   SUPPORTED_IPP_FLOWS,
 } from '@/constants/ippSupportMatrix';
+import fs from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
 const rootDir = path.resolve(__dirname, '../..');
 const integrationDoc = fs.readFileSync(path.join(rootDir, 'docs/IPP_INTEGRATION.md'), 'utf8');

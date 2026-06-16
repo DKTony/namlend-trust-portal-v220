@@ -10,9 +10,9 @@
  */
 import { convexTest } from 'convex-test';
 import { describe, expect, test } from 'vitest';
-import schema from './schema';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import schema from './schema';
 
 const modules = import.meta.glob('./**/*.*s');
 

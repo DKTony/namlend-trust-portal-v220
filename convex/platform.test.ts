@@ -10,10 +10,10 @@
  */
 import { convexTest } from 'convex-test';
 import { describe, expect, test } from 'vitest';
-import schema from './schema';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { ALWAYS_ON_FEATURES, isValidFeatureKey } from './lib/features';
+import schema from './schema';
 
 const modules = import.meta.glob('./**/*.*s');
 
@@ -64,6 +64,17 @@ async function makePlatformOwner(t: ReturnType<typeof convexTest>, userId: Id<'u
     await ctx.db.insert('platformAdmins', {
       userId,
       platformRole: 'platform_owner',
+      status: 'active',
+      createdAt: Date.now(),
+    });
+  });
+}
+
+async function makePlatformSupport(t: ReturnType<typeof convexTest>, userId: Id<'users'>) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert('platformAdmins', {
+      userId,
+      platformRole: 'platform_support',
       status: 'active',
       createdAt: Date.now(),
     });
@@ -131,6 +142,164 @@ describe('platform guards', () => {
       'platform_owner'
     );
     expect(await asUser(t, tenant).query(api.platform.admins.getMyPlatformRole, {})).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Control-plane guard widening for reused `/platform/*` pages
+// ---------------------------------------------------------------------------
+
+describe('control-plane guard widening', () => {
+  test('pure platform owner can read and mutate business rules and system config', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+
+    await asUser(t, owner).mutation(api.ontology.businessRules.seedDefaultRules, {});
+    const rules = await asUser(t, owner).query(api.ontology.businessRules.listAllRules, {});
+    expect(rules.length).toBeGreaterThan(0);
+
+    await asUser(t, owner).mutation(api.ontology.businessRules.updateRule, {
+      ruleCode: 'APR_LIMIT',
+      value: '31',
+    });
+    const aprRule = await asUser(t, owner).query(api.ontology.businessRules.getActiveRule, {
+      ruleCode: 'APR_LIMIT',
+    });
+    expect(aprRule?.value).toBe('31');
+
+    await asUser(t, owner).mutation(api.systemConfig.setConfig, {
+      key: 'platform.test',
+      value: 'enabled',
+      category: 'platform',
+    });
+    const configs = await asUser(t, owner).query(api.systemConfig.getAllConfig, {
+      category: 'platform',
+    });
+    expect(configs.find((c) => c.key === 'platform.test')?.value).toBe('enabled');
+  });
+
+  test('pure platform support can read but cannot mutate control-plane config', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    const support = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    await makePlatformSupport(t, support);
+
+    await asUser(t, owner).mutation(api.ontology.businessRules.seedDefaultRules, {});
+    await asUser(t, owner).mutation(api.systemConfig.setConfig, {
+      key: 'platform.readonly',
+      value: 'visible',
+      category: 'platform',
+    });
+
+    await expect(
+      asUser(t, support).query(api.ontology.businessRules.listAllRules, {})
+    ).resolves.toHaveLength(5);
+    await expect(
+      asUser(t, support).query(api.systemConfig.getAllConfig, { category: 'platform' })
+    ).resolves.toHaveLength(1);
+
+    await expect(
+      asUser(t, support).mutation(api.ontology.businessRules.updateRule, {
+        ruleCode: 'APR_LIMIT',
+        value: '30',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+    await expect(
+      asUser(t, support).mutation(api.systemConfig.setConfig, {
+        key: 'platform.readonly',
+        value: 'blocked',
+        category: 'platform',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+  });
+
+  test('tenant admin control-plane behavior remains unchanged for now', async () => {
+    const t = convexTest(schema, modules);
+    const tenantAdmin = await seedTenantUser(t, { role: 'tenant_admin' });
+
+    await asUser(t, tenantAdmin).mutation(api.ontology.businessRules.seedDefaultRules, {});
+    await asUser(t, tenantAdmin).mutation(api.systemConfig.setConfig, {
+      key: 'tenant.admin.compat',
+      value: true,
+      category: 'platform',
+    });
+
+    await expect(
+      asUser(t, tenantAdmin).query(api.ontology.businessRules.listAllRules, {})
+    ).resolves.toHaveLength(5);
+    await expect(
+      asUser(t, tenantAdmin).query(api.systemConfig.getAllConfig, { category: 'platform' })
+    ).resolves.toHaveLength(1);
+  });
+
+  test('non-platform, non-staff user is denied control-plane reads', async () => {
+    const t = convexTest(schema, modules);
+    const user = await seedTenantUser(t, { role: 'client' });
+
+    await expect(
+      asUser(t, user).query(api.ontology.businessRules.listAllRules, {})
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+    await expect(asUser(t, user).query(api.systemConfig.getAllConfig, {})).rejects.toMatchObject({
+      data: { code: 'FORBIDDEN' },
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Support audit tightening for tenant-specific platform reads
+// ---------------------------------------------------------------------------
+
+describe('platform support L1 tenant-read enforcement', () => {
+  test('platform support tenant-specific read fails without active L1 session', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const support = await seedTenantUser(t, { role: 'client' });
+    await makePlatformSupport(t, support);
+
+    await expect(
+      asUser(t, support).query(api.platform.tenants.getTenantSubscription, {
+        institutionId: inst,
+      })
+    ).rejects.toMatchObject({ data: { code: 'SUPPORT_SESSION_REQUIRED' } });
+  });
+
+  test('platform support tenant-specific read succeeds with active L1 session', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const support = await seedTenantUser(t, { role: 'client' });
+    await makePlatformSupport(t, support);
+
+    await asUser(t, support).mutation(api.platform.support.startSupportAccessSession, {
+      institutionId: inst,
+      accessType: 'L1',
+      reason: 'subscription diagnostics',
+    });
+
+    await expect(
+      asUser(t, support).query(api.platform.tenants.getTenantSubscription, {
+        institutionId: inst,
+      })
+    ).resolves.toBeNull();
+    await expect(
+      asUser(t, support).query(api.platform.entitlements.getTenantEntitlements, {
+        institutionId: inst,
+      })
+    ).resolves.toEqual([]);
+  });
+
+  test('platform owner tenant-specific read succeeds without support session', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+
+    await expect(
+      asUser(t, owner).query(api.platform.tenants.getTenantSubscription, {
+        institutionId: inst,
+      })
+    ).resolves.toBeNull();
   });
 });
 

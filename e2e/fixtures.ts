@@ -12,6 +12,7 @@ import 'dotenv/config';
 import { test as base, Page } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConvexHttpClient } from 'convex/browser';
+import { requireSafeConvexUrl } from './setupSafety';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -27,7 +28,7 @@ const SUPABASE_URL =
 
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.convex.cloud';
+const CONVEX_URL = requireSafeConvexUrl(process.env);
 
 // ---------------------------------------------------------------------------
 // Test users (same credentials work for both Supabase and Convex Auth)

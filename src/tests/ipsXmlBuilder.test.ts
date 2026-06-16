@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildReqChkTxn,
   buildReqAuthDetail,
+  buildReqChkTxn,
   buildReqGetAdd,
   buildReqListAccPvd,
   buildReqListAccount,

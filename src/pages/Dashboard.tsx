@@ -1,31 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/hooks/useAuth';
-import { useErrorHandler } from '@/hooks/useErrorHandler';
-import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { useTheme } from '@/context/ThemeContext';
-import { useKYCEligibility } from '@/hooks/useKYCEligibility';
-import { useTranslation } from 'react-i18next';
-import {
-  DollarSign,
-  TrendingUp,
-  Calendar,
-  Wallet,
-  CheckCircle,
-  AlertCircle,
-  FileText,
-  CreditCard,
-  Plus,
-  Loader2,
-  Shield,
-  ChevronRight,
-  Menu,
-  ArrowUpRight,
-  X,
-} from 'lucide-react';
+import { BankingSection } from '@/components/BankingSection';
+import ClientProfileDashboard from '@/components/ClientProfileDashboard';
+import { SelfServicePortal } from '@/components/dashboards/SelfServicePortal';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
+import PaymentModal from '@/components/modals/PaymentModal';
+import StatCard from '@/components/shared/StatCard';
+import { HeroCard } from '@/components/ui/HeroCard';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -33,31 +13,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import StatCard from '@/components/shared/StatCard';
-import { formatNAD } from '@/utils/currency';
-import { useIsMobile } from '@/hooks/use-mobile';
-import PaymentModal from '@/components/modals/PaymentModal';
-import { LoanStatusTimeline, generateLoanTimeline } from '@/components/workflow/LoanStatusTimeline';
-import { SelfServicePortal } from '@/components/dashboards/SelfServicePortal';
-import ClientProfileDashboard from '@/components/ClientProfileDashboard';
-import { BankingSection } from '@/components/BankingSection';
-import { NotificationCenter } from '@/components/shared/NotificationCenter';
-import { HeroCard } from '@/components/ui/HeroCard';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { LoanStatusTimeline, generateLoanTimeline } from '@/components/workflow/LoanStatusTimeline';
+import { useTheme } from '@/context/ThemeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useKYCEligibility } from '@/hooks/useKYCEligibility';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
-
-interface Profile {
-  id: string;
-  first_name: string;
-  last_name: string;
-  phone_number: string;
-  id_number: string;
-  employment_status: string;
-  monthly_income: number;
-  verified: boolean;
-}
+import { formatNAD } from '@/utils/currency';
+import { useQuery } from 'convex/react';
+import {
+  ArrowUpRight,
+  Calendar,
+  CheckCircle,
+  CreditCard,
+  DollarSign,
+  FileText,
+  Loader2,
+  Plus,
+  Shield,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 interface LoanApplication {
   id: string;
@@ -74,10 +58,10 @@ interface LoanApplication {
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading, userRole } = useAuth();
-  const { styles, theme } = useTheme();
+  const { user, loading: authLoading } = useAuth();
+  const { styles } = useTheme();
   const navigate = useNavigate();
-  const { handleAsyncOperation, trackAction } = useErrorHandler();
+  const { trackAction } = useErrorHandler();
   const isMobile = useIsMobile();
   const { t } = useTranslation('dashboard');
 
@@ -459,6 +443,7 @@ export default function Dashboard() {
             {loans.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {loans.map((loan) => {
+                  const loanKey = loan.id ?? loan._id;
                   const isSettled = loan.status === 'paid_off';
                   const isActive = ['active', 'disbursed', 'funded'].includes(loan.status);
                   const progressPercent =
@@ -468,7 +453,7 @@ export default function Dashboard() {
 
                   return (
                     <ThemedCard
-                      key={loan.id}
+                      key={loanKey}
                       className={cn(
                         isSettled
                           ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800'

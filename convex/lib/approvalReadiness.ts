@@ -10,10 +10,11 @@
 import { GenericMutationCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { DataModel, Doc, Id } from '../_generated/dataModel';
+import { scheduleAuditLog } from './audit';
+import { assertLoanWithinCreditPolicy } from './creditPolicy';
+import { DOMAIN_EVENTS, emitDomainEvent } from './domainEvents';
 import { assertKycVerifiedForUser } from './kyc';
 import { getNumericRule } from './ruleEvaluator';
-import { scheduleAuditLog } from './audit';
-import { emitDomainEvent, DOMAIN_EVENTS } from './domainEvents';
 
 type MutCtx = GenericMutationCtx<DataModel>;
 
@@ -65,6 +66,8 @@ export async function assertLoanReadyForApproval(ctx: MutCtx, loan: Doc<'loans'>
       message: `Debt-to-income ratio ${loan.debtToIncomeRatio} exceeds maximum of ${maxDTI}.`,
     });
   }
+
+  await assertLoanWithinCreditPolicy(ctx, loan, loan.institutionId, { requireFinancials: true });
 
   if (loan.recommendation === 'reject') {
     throw new ConvexError({

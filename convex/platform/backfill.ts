@@ -9,11 +9,11 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation } from '../_generated/server';
 import { Id } from '../_generated/dataModel';
+import { internalMutation } from '../_generated/server';
 
 /** All tenant-owned tables carrying an `institutionId` (financial core + Phase 1b). */
-const CORE_TABLES = [
+export const CORE_TABLES = [
   // Phase 1a financial core
   'loans',
   'paymentTransactions',

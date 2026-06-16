@@ -7,18 +7,18 @@
  * tenant" lever. Reads are platform-staff; the mutation is owner-guarded on the backend.
  */
 
-import React, { useEffect, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { useSearchParams } from 'react-router-dom';
-import { api } from '@/integrations/convex/api';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { handleMutationError } from '@/lib/mutationError';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Switch } from '@/components/ui/switch';
 import { FEATURES, getFeature } from '@/config/features';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 import type { Doc, Id } from '@/types/convex';
+import { useMutation, useQuery } from 'convex/react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 /** Backoffice add-ons an owner can dispatch per tenant (core/always-on can't be revoked). */
 const DISPATCHABLE = FEATURES.filter((f) => f.console === 'backoffice' && !f.alwaysOn);
@@ -28,6 +28,10 @@ interface TenantOption {
   _id: Id<'institutions'>;
   name: string;
   shortCode: string;
+}
+
+function formatDate(ms?: number) {
+  return ms ? new Date(ms).toLocaleDateString() : 'open-ended';
 }
 
 const EntitlementsView: React.FC = () => {
@@ -54,7 +58,12 @@ const EntitlementsView: React.FC = () => {
   const rows = useQuery(
     api.platform.entitlements.getTenantEntitlements,
     selected ? { institutionId: selected._id } : 'skip'
+  ) as Doc<'tenantEntitlements'>[] | undefined;
+  const subscription = useQuery(
+    api.platform.tenants.getTenantSubscription,
+    selected ? { institutionId: selected._id } : 'skip'
   );
+  const enforcementOn = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
 
   const onSelect = (id: string) => {
     setSelectedId(id);
@@ -63,6 +72,14 @@ const EntitlementsView: React.FC = () => {
 
   const dispatch = async (featureKey: string, enabled: boolean) => {
     if (!selected) return;
+    const feature = getFeature(featureKey);
+    const missingDependencies = (feature?.dependsOn ?? []).filter((key) => !resolvedSet.has(key));
+    if (enabled && missingDependencies.length > 0) {
+      toast({
+        title: 'Dependency warning',
+        description: `${feature?.name ?? featureKey} depends on ${missingDependencies.join(', ')}. Enable dependencies first or expect runtime gaps.`,
+      });
+    }
     setPending(featureKey);
     try {
       await setTenantEntitlement({
@@ -128,27 +145,79 @@ const EntitlementsView: React.FC = () => {
           {isPlatformOwner && (
             <ThemedCard className="space-y-3">
               <h3 className="text-sm font-semibold">Dispatch add-ons</h3>
+              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                <div className="rounded-md border px-3 py-2">
+                  <p className="text-muted-foreground">Enforcement</p>
+                  <p className="mt-1 font-medium">
+                    {enforcementOn === undefined
+                      ? 'Checking…'
+                      : enforcementOn
+                        ? 'On'
+                        : 'Off (inert)'}
+                  </p>
+                </div>
+                <div className="rounded-md border px-3 py-2">
+                  <p className="text-muted-foreground">Active plan</p>
+                  <p className="mt-1 font-medium">
+                    {subscription === undefined
+                      ? 'Loading…'
+                      : (subscription?.planCode ?? 'No active subscription')}
+                  </p>
+                </div>
+                <div className="rounded-md border px-3 py-2">
+                  <p className="text-muted-foreground">Subscription window</p>
+                  <p className="mt-1 font-medium">
+                    {subscription
+                      ? `${subscription.status} · ${formatDate(subscription.effectiveFrom)} to ${formatDate(subscription.effectiveTo)}`
+                      : 'No active/trial row'}
+                  </p>
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Toggling writes a manual override for this tenant. Effective immediately once
-                entitlement enforcement is on.
+                Toggling writes a manual override for this tenant. Unknown feature keys are rejected
+                server-side by the code manifest authority rule.
               </p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {DISPATCHABLE.map((f) => (
-                  <div
-                    key={f.key}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{f.name}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                {DISPATCHABLE.map((f) => {
+                  const missingDependencies = (f.dependsOn ?? []).filter(
+                    (key) => !resolvedSet.has(key)
+                  );
+                  const row = (rows ?? []).find(
+                    (r: Doc<'tenantEntitlements'>) => r.featureKey === f.key && !r.effectiveTo
+                  );
+                  return (
+                    <div
+                      key={f.key}
+                      className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{f.name}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                        {(f.dependsOn?.length ?? 0) > 0 && (
+                          <p
+                            className={cn(
+                              'mt-1 text-xs',
+                              missingDependencies.length > 0
+                                ? 'text-amber-600'
+                                : 'text-muted-foreground'
+                            )}
+                          >
+                            Depends on {f.dependsOn?.join(', ')}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Rollout: {row?.rolloutState ?? 'plan/default'}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={resolvedSet.has(f.key)}
+                        disabled={pending === f.key || resolved === undefined}
+                        onCheckedChange={(v) => dispatch(f.key, v)}
+                        aria-label={`Toggle ${f.name}`}
+                      />
                     </div>
-                    <Switch
-                      checked={resolvedSet.has(f.key)}
-                      disabled={pending === f.key || resolved === undefined}
-                      onCheckedChange={(v) => dispatch(f.key, v)}
-                    />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ThemedCard>
           )}

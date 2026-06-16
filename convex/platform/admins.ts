@@ -4,8 +4,8 @@
  * are managed here by an existing owner.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
 import { assertAuthenticated } from '../lib/auth';
 import { assertPlatformOwner, assertPlatformSupport, getPlatformRole } from '../lib/platformAuth';
 

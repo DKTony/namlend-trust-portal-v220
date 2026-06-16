@@ -7,9 +7,9 @@
  * Overview/Plans/Entitlements/Support are platform-only pages.
  */
 
-import React, { Suspense } from 'react';
-import { Route, Navigate } from 'react-router-dom';
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
+import React, { Suspense } from 'react';
+import { Navigate, Route } from 'react-router-dom';
 
 // Platform-only pages
 const PlatformOverview = React.lazy(() => import('./pages/PlatformOverview'));

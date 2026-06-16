@@ -5,13 +5,14 @@
  * filter nav/routes in Phase 3. `setTenantEntitlement` is the owner's dispatch lever.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { getCallerInstitution } from '../lib/tenancy';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
 import { resolveEntitlements } from '../lib/entitlements';
-import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 import { ALWAYS_ON_FEATURES, isValidFeatureKey } from '../lib/features';
+import { assertPlatformOwner } from '../lib/platformAuth';
 import { getBooleanRule } from '../lib/ruleEvaluator';
+import { assertTenantSupportReadAccess } from '../lib/supportAudit';
+import { getCallerInstitution } from '../lib/tenancy';
 
 /** Resolve the caller's tenant feature set (or always-on only if unbound). Frontend gate. */
 export const resolveMyEntitlements = query({
@@ -39,7 +40,7 @@ export const isEntitlementEnforcementOn = query({
 export const getTenantEntitlements = query({
   args: { institutionId: v.id('institutions') },
   handler: async (ctx, { institutionId }) => {
-    await assertPlatformSupport(ctx);
+    await assertTenantSupportReadAccess(ctx, institutionId, 'tenant_entitlements');
     return ctx.db
       .query('tenantEntitlements')
       .withIndex('by_institutionId', (q) => q.eq('institutionId', institutionId))
@@ -51,7 +52,7 @@ export const getTenantEntitlements = query({
 export const getResolvedEntitlements = query({
   args: { institutionId: v.id('institutions') },
   handler: async (ctx, { institutionId }) => {
-    await assertPlatformSupport(ctx);
+    await assertTenantSupportReadAccess(ctx, institutionId, 'resolved_entitlements');
     return [...(await resolveEntitlements(ctx, institutionId))];
   },
 });

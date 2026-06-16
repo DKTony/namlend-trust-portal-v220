@@ -7,16 +7,16 @@
  * difference is the nav source (platformNav) and the absence of tenant-scoped chrome.
  */
 
-import React, { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
 import { GroupedSidebar } from '@/components/Layout/GroupedSidebar';
 import { AdaptiveShell } from '@/components/adaptive';
+import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
-import { getPlatformNavGroups } from './platformNav';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 import { ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { getPlatformNavGroups } from './platformNav';
 
 const PlatformLayout: React.FC = () => {
   const { user, isPlatformOwner, isPlatformStaff, signOut } = useAuth();

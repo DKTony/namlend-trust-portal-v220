@@ -10,9 +10,9 @@
  * drives what the UI bothers to show.
  */
 
-import { useMemo } from 'react';
-import { useConvexAuth, useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 export interface EntitlementContext {
   /** Resolved feature keys for the caller's tenant (always-on ∪ entitled add-ons). */

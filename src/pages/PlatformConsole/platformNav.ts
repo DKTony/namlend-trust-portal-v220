@@ -8,18 +8,18 @@
  * ledger/settlement infra, and support.
  */
 
+import type { NavGroup } from '@/types/navigation';
 import {
-  LayoutDashboard,
   Building2,
-  Package,
-  SlidersHorizontal,
-  ShieldCheck,
   Database,
   DollarSign,
-  Route,
+  LayoutDashboard,
   LifeBuoy,
+  Package,
+  Route,
+  ShieldCheck,
+  SlidersHorizontal,
 } from 'lucide-react';
-import type { NavGroup } from '@/types/navigation';
 
 const allGroups: NavGroup[] = [
   {

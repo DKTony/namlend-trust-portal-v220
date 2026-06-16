@@ -3,10 +3,10 @@
  * (subscriptions UI, etc.) lands in Phase 4; Phase 0 ships reads + a guarded upsert.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
 import { isValidFeatureKey } from '../lib/features';
+import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 
 /** List plans (platform staff). */
 export const listPlans = query({

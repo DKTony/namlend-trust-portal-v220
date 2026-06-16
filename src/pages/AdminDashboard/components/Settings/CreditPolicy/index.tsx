@@ -4,11 +4,6 @@
  * Refactored into tab sub-components for maintainability.
  */
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,14 +15,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Settings, Save, RotateCcw, Loader2, Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APR_LIMIT as MAX_APR } from '@/constants/regulatory';
-import { LoanLimitsTab } from './LoanLimitsTab';
-import { InterestRatesTab } from './InterestRatesTab';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { useMutation, useQuery } from 'convex/react';
+import { Info, Loader2, RotateCcw, Save, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { EligibilityTab } from './EligibilityTab';
-import { RiskSettingsTab } from './RiskSettingsTab';
 import { FeesTab } from './FeesTab';
+import { InterestRatesTab } from './InterestRatesTab';
+import { LoanLimitsTab } from './LoanLimitsTab';
+import { RiskSettingsTab } from './RiskSettingsTab';
 
 interface CreditPolicy {
   minLoanAmount: number;
@@ -77,16 +79,19 @@ const DEFAULT_POLICY: CreditPolicy = {
 
 export function CreditPolicyConfig() {
   const { toast } = useToast();
+  const remotePolicy = useQuery(api.tenantConfig.getMyCreditPolicy, {});
+  const saveCreditPolicy = useMutation(api.tenantConfig.setMyCreditPolicy);
   const [saving, setSaving] = useState(false);
   const [policy, setPolicy] = useState<CreditPolicy>(DEFAULT_POLICY);
+  const [originalPolicy, setOriginalPolicy] = useState<CreditPolicy>(DEFAULT_POLICY);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    const savedPolicy = localStorage.getItem('namlend_credit_policy');
-    if (savedPolicy) {
-      setPolicy(JSON.parse(savedPolicy));
-    }
-  }, []);
+    if (!remotePolicy) return;
+    setPolicy(remotePolicy.policy);
+    setOriginalPolicy(remotePolicy.policy);
+    setHasChanges(false);
+  }, [remotePolicy]);
 
   const updatePolicy = (key: string, value: number | boolean) => {
     setPolicy((prev) => ({ ...prev, [key]: value }));
@@ -112,16 +117,17 @@ export function CreditPolicyConfig() {
       });
     }
     try {
-      localStorage.setItem('namlend_credit_policy', JSON.stringify(policy));
+      await saveCreditPolicy({ policy });
       toast({
         title: 'Policy Saved',
         description: 'Credit policy configuration has been updated successfully.',
       });
+      setOriginalPolicy(policy);
       setHasChanges(false);
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to save credit policy',
+        description: error instanceof Error ? error.message : 'Failed to save credit policy',
         variant: 'destructive',
       });
     } finally {
@@ -133,6 +139,19 @@ export function CreditPolicyConfig() {
     setPolicy(DEFAULT_POLICY);
     setHasChanges(true);
   };
+
+  const handleDiscard = () => {
+    setPolicy(originalPolicy);
+    setHasChanges(false);
+  };
+
+  if (remotePolicy === undefined) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -155,6 +174,11 @@ export function CreditPolicyConfig() {
             >
               Unsaved Changes
             </Badge>
+          )}
+          {hasChanges && (
+            <Button variant="ghost" size="sm" onClick={handleDiscard}>
+              Discard
+            </Button>
           )}
           <AlertDialog>
             <AlertDialogTrigger asChild>

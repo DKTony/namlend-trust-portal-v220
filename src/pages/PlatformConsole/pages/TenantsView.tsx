@@ -7,14 +7,8 @@
  * real boundary; the owner-only UI gating here is just affordance.
  */
 
-import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { Link } from 'react-router-dom';
-import { api } from '@/integrations/convex/api';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { handleMutationError } from '@/lib/mutationError';
 import { ThemedCard } from '@/components/ui/ThemedCard';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -23,11 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
-import { SlidersHorizontal, Plus } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import { Plus, SlidersHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Id } from '../../../../convex/_generated/dataModel';
 
 interface TenantRow {

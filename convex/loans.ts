@@ -6,25 +6,25 @@
  * AUDIT: Every status change is fire-and-forget logged via scheduleAuditLog().
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertAdmin, assertOwnerOrStaff } from './lib/auth';
-import { APR_LIMIT, isValidAPR } from './lib/regulatory';
-import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
-import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { internalMutation, mutation, query } from './_generated/server';
 import { approveLoanCore } from './lib/approvalReadiness';
+import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
+import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertLoanWithinCreditPolicy } from './lib/creditPolicy';
+import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
+import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
+import { assertKycVerifiedForUser } from './lib/kyc';
+import { APR_LIMIT, isValidAPR } from './lib/regulatory';
+import { emitRelationship } from './lib/relationshipEmitter';
 import {
-  resolveWriteInstitution,
-  tenantReadScope,
   applyTenantScope,
   assertSameTenant,
+  resolveWriteInstitution,
+  tenantReadScope,
 } from './lib/tenancy';
-import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
-import { loanStatus, loanRecommendation } from './schema';
-import { assertKycVerifiedForUser } from './lib/kyc';
+import { loanRecommendation, loanStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -181,6 +181,9 @@ export const createLoan = mutation({
       });
     }
 
+    const institutionId = await resolveWriteInstitution(ctx, { userId });
+    await assertLoanWithinCreditPolicy(ctx, args, institutionId);
+
     // --- PRODUCT VALIDATION (Ontology Phase 6) ---
     // If a productVersionId is provided, validate loan params against product config.
     if (args.productVersionId) {
@@ -245,7 +248,6 @@ export const createLoan = mutation({
     }
 
     const now = Date.now();
-    const institutionId = await resolveWriteInstitution(ctx);
     const loanId = await ctx.db.insert('loans', {
       userId,
       institutionId,

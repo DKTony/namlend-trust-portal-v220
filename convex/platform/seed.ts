@@ -9,7 +9,7 @@
 
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
-import { FEATURES, ALWAYS_ON_FEATURES } from '../lib/features';
+import { ALWAYS_ON_FEATURES, FEATURES } from '../lib/features';
 
 const NAMLEND_CODE = 'NAMLEND';
 

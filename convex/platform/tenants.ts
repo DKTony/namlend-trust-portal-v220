@@ -7,12 +7,13 @@
  * what actually changes a tenant's feature set when enforcement is on.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
-import { resolveEntitlements } from '../lib/entitlements';
-import { institutionType } from '../schema';
+import { ConvexError, v } from 'convex/values';
 import { Id } from '../_generated/dataModel';
+import { mutation, query } from '../_generated/server';
+import { resolveEntitlements } from '../lib/entitlements';
+import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
+import { assertTenantSupportReadAccess } from '../lib/supportAudit';
+import { institutionType } from '../schema';
 
 const DAY_MS = 86_400_000;
 
@@ -160,7 +161,7 @@ export const listTenants = query({
 export const getTenantSubscription = query({
   args: { institutionId: v.id('institutions') },
   handler: async (ctx, { institutionId }) => {
-    await assertPlatformSupport(ctx);
+    await assertTenantSupportReadAccess(ctx, institutionId, 'subscription_status');
     return (await currentSubscription(ctx, institutionId)) ?? null;
   },
 });

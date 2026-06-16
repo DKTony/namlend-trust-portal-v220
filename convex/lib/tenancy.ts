@@ -7,8 +7,8 @@
  * queries). Resolution is tolerant of an unbound account during the transition.
  */
 
-import { ConvexError } from 'convex/values';
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { ConvexError } from 'convex/values';
 import { DataModel, Id } from '../_generated/dataModel';
 import { assertAuthenticated } from './auth';
 import { getBooleanRule } from './ruleEvaluator';

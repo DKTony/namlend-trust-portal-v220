@@ -6,13 +6,21 @@
  * arrive in Phase 4.
  */
 
-import React from 'react';
-import { useQuery } from 'convex/react';
-import { Link } from 'react-router-dom';
-import { api } from '@/integrations/convex/api';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { FEATURES } from '@/config/features';
-import { Building2, Package, ToggleLeft, ToggleRight, ArrowRight } from 'lucide-react';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import {
+  ArrowRight,
+  Building2,
+  Package,
+  ShieldAlert,
+  ShieldCheck,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 function StatCard({
   label,
@@ -43,6 +51,7 @@ const PlatformOverview: React.FC = () => {
   const tenants = useQuery(api.platform.tenants.listTenants, {});
   const plans = useQuery(api.platform.plans.listPlans, {});
   const entitlementEnforced = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
+  const readiness = useQuery(api.platform.readiness.getEnforcementReadiness, {});
 
   const tenantCount = tenants?.length ?? '—';
   const planCount = plans?.length ?? '—';
@@ -58,7 +67,7 @@ const PlatformOverview: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Tenants"
           value={tenantCount}
@@ -89,7 +98,38 @@ const PlatformOverview: React.FC = () => {
             )
           }
         />
+        <StatCard
+          label="Activation Readiness"
+          value={
+            readiness === undefined ? '—' : readiness.readyForEntitlements ? 'Ready' : 'Blocked'
+          }
+          hint={
+            readiness === undefined
+              ? 'Checking readiness'
+              : readiness.readyForEntitlements
+                ? 'No activation blockers detected'
+                : `${readiness.blockers.length} blocker(s)`
+          }
+          icon={
+            readiness?.readyForEntitlements ? (
+              <ShieldCheck className="h-6 w-6" />
+            ) : (
+              <ShieldAlert className="h-6 w-6" />
+            )
+          }
+        />
       </div>
+
+      {readiness && readiness.blockers.length > 0 && (
+        <ThemedCard>
+          <h3 className="text-sm font-semibold">Activation blockers</h3>
+          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+            {readiness.blockers.map((blocker: string) => (
+              <li key={blocker}>{blocker}</li>
+            ))}
+          </ul>
+        </ThemedCard>
+      )}
 
       <ThemedCard>
         <h3 className="text-sm font-semibold">Quick links</h3>

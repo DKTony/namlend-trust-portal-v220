@@ -13,8 +13,8 @@
  * existing behavior changes. Phase 2 flips the switch after the gating tests pass.
  */
 
-import { ConvexError } from 'convex/values';
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
+import { ConvexError } from 'convex/values';
 import { DataModel, Id } from '../_generated/dataModel';
 import { ALWAYS_ON_FEATURES, isValidFeatureKey } from './features';
 import { getBooleanRule } from './ruleEvaluator';

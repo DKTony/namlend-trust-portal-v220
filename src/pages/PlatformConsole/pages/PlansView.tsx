@@ -6,13 +6,8 @@
  * gated by platform role, not sold to tenants); always-on core features are locked on.
  */
 
-import React, { useMemo, useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { handleMutationError } from '@/lib/mutationError';
 import { ThemedCard } from '@/components/ui/ThemedCard';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -21,13 +16,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FEATURES, getFeature } from '@/config/features';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 import type { Doc } from '@/types/convex';
-import { Plus, Pencil } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import { Pencil, Plus } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 /** Features a plan may grant: everything except platform-console capabilities. */
 const SELECTABLE_FEATURES = FEATURES.filter((f) => f.console !== 'platform');

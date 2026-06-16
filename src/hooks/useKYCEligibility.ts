@@ -11,10 +11,10 @@
  *   proof_income  — payslip or employer letter (required)
  */
 
-import { useMemo } from 'react';
-import { useQuery } from 'convex/react';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 const REQUIRED_DOC_TYPES = ['id_card', 'proof_income'] as const;
 

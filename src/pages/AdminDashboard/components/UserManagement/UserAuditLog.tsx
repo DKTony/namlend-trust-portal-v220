@@ -1,31 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Activity,
-  User,
-  Shield,
-  Settings,
-  Mail,
-  Key,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Search,
-  Filter,
-  Download,
-  Eye,
-  Edit,
-  Trash2,
-  UserPlus,
-  UserX,
-  LogIn,
-  LogOut,
-  Loader2,
-} from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -33,9 +10,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery } from 'convex/react';
+import {
+  Activity,
+  AlertTriangle,
+  Download,
+  Edit,
+  Eye,
+  Key,
+  LogIn,
+  LogOut,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  UserPlus,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface AuditLogEntry {
   id: string;
@@ -66,12 +58,12 @@ interface AuditLogEntry {
 }
 
 const UserAuditLog: React.FC = () => {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState('all');
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('7d');
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
+  const fetchAuditLogs = () => undefined;
 
   // Calculate date range for Convex query
   const startDateMs = useMemo(() => {

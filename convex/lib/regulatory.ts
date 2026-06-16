@@ -7,7 +7,7 @@
  * getAPRLimit() reads the data-driven value instead.
  */
 
-import { GenericQueryCtx, GenericMutationCtx } from 'convex/server';
+import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { DataModel } from '../_generated/dataModel';
 import { getNumericRule } from './ruleEvaluator';
 

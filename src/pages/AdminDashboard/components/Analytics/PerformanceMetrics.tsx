@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, TrendingDown, Target, Award, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
+import { useQuery } from 'convex/react';
+import { AlertTriangle, Award, CheckCircle, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 interface MetricCard {
   title: string;
@@ -21,6 +21,7 @@ interface PerformanceMetricsProps {
 }
 
 const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) => {
+  void dateRange;
   const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
   const risk = useQuery(api.analytics.getRiskMetrics);
   const revenue = useQuery(api.analytics.getRevenueMetrics, {});

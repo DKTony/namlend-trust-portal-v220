@@ -6,10 +6,11 @@
 
 import 'dotenv/config';
 import { test, expect, Page } from '@playwright/test';
-import { login } from './helpers/auth';
+import { login, waitForAppShell } from './helpers/auth';
 import { ensureAdminReady, openAdminTab } from './helpers/admin';
 
 const VIEWPORT = { width: 1280, height: 900 };
+const MOBILE_VIEWPORT = { width: 390, height: 844 };
 
 // ─── Helper: verify a page loaded by checking for visible content ───
 async function expectPageContent(page: Page) {
@@ -86,39 +87,29 @@ test.describe('Admin Portal — Routing', () => {
 // ─────────────────────────────────────────────────────
 
 test.describe('Admin Portal — Sidebar', () => {
-  test('Sidebar opens and shows grouped navigation for admin', async ({ page }) => {
+  test('Desktop sidebar shows grouped navigation for admin', async ({ page }) => {
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
     await ensureAdminReady(page);
 
-    // Open sidebar
-    await page.getByTestId('sidebar-trigger').click();
-    await page.getByTestId('sidebar-drawer').waitFor({ state: 'visible', timeout: 5000 });
+    await expect(page.getByTestId('admin-sidebar-desktop')).toBeVisible();
 
     // Check key nav items exist from different groups
     await expect(page.getByTestId('sidebar-nav-overview')).toBeVisible();
     await expect(page.getByTestId('sidebar-nav-loans')).toBeVisible();
     await expect(page.getByTestId('sidebar-nav-users')).toBeVisible();
-    // Admin-only items
+    // Tenant admin items
     await expect(page.getByTestId('sidebar-nav-analytics')).toBeVisible();
-    await expect(page.getByTestId('sidebar-nav-institutions')).toBeVisible();
     await expect(page.getByTestId('sidebar-nav-mandates')).toBeVisible();
     await expect(page.getByTestId('sidebar-nav-consent')).toBeVisible();
     await expect(page.getByTestId('sidebar-nav-credit-policy')).toBeVisible();
-
-    // Close sidebar
-    await page.getByTestId('sidebar-close').click();
-    await page
-      .getByTestId('sidebar-backdrop')
-      .waitFor({ state: 'hidden', timeout: 5000 })
-      .catch(() => {});
   });
 
   test('Sidebar closes after navigation', async ({ page }) => {
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
-    await page.setViewportSize(VIEWPORT);
+    await page.setViewportSize(MOBILE_VIEWPORT);
     await ensureAdminReady(page);
 
     await openAdminTab(page, 'loans');
@@ -143,9 +134,9 @@ test.describe('Admin Portal — Loan Officer Role', () => {
     await page.getByTestId('password-input').fill('Test1234!');
     await page.getByTestId('login-button').click();
 
+    await page.setViewportSize(MOBILE_VIEWPORT);
     await page.waitForURL(/\/admin/, { timeout: 30000 });
     await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 30000 });
-    await page.setViewportSize(VIEWPORT);
 
     // Open sidebar
     await page.getByTestId('sidebar-trigger').click();
@@ -287,6 +278,7 @@ test.describe('Admin Portal — Finance & Ledger', () => {
   });
 
   test('TigerBeetle Ledger page loads', async ({ page }) => {
+    test.skip(true, 'TigerBeetle Ledger is platform/control-plane UI, not tenant /admin UI');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -315,6 +307,7 @@ test.describe('Admin Portal — Finance & Ledger', () => {
 
 test.describe('Admin Portal — Platform / Ontology', () => {
   test('Institutions page loads', async ({ page }) => {
+    test.skip(true, 'Institutions moved to the Platform Console');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -337,6 +330,7 @@ test.describe('Admin Portal — Platform / Ontology', () => {
   });
 
   test('Payment Rails page loads', async ({ page }) => {
+    test.skip(true, 'Payment Rails moved to the Platform Console');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -348,6 +342,7 @@ test.describe('Admin Portal — Platform / Ontology', () => {
   });
 
   test('Business Rules page loads', async ({ page }) => {
+    test.skip(true, 'Business Rules guardrails moved to the Platform Console');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -439,6 +434,7 @@ test.describe('Admin Portal — Settings', () => {
   });
 
   test('TigerBeetle Config page loads', async ({ page }) => {
+    test.skip(true, 'TigerBeetle Config moved to the Platform Console');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -450,6 +446,7 @@ test.describe('Admin Portal — Settings', () => {
   });
 
   test('Settlement Config page loads', async ({ page }) => {
+    test.skip(true, 'Settlement Config moved to the Platform Console');
     const role = await login(page, true);
     if (role !== 'admin') test.skip(true, 'Admin credentials not available');
     await page.setViewportSize(VIEWPORT);
@@ -483,14 +480,10 @@ test.describe('Client Dashboard — Unaffected', () => {
     await page.setViewportSize(VIEWPORT);
 
     await expect(page).toHaveURL(/\/dashboard/);
-    await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
-
-    // The client sidebar should use flat navigation (ThemedSidebar), not grouped
-    await page.getByTestId('sidebar-trigger').click();
-    await page.getByTestId('sidebar-drawer').waitFor({ state: 'visible', timeout: 5000 });
+    await waitForAppShell(page, 20000);
 
     // Client should NOT see admin nav items
-    await expect(page.getByTestId('sidebar-nav-analytics')).toBeHidden();
-    await expect(page.getByTestId('sidebar-nav-institutions')).toBeHidden();
+    await expect(page.getByTestId('sidebar-nav-analytics')).toHaveCount(0);
+    await expect(page.getByTestId('sidebar-nav-institutions')).toHaveCount(0);
   });
 });

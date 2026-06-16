@@ -1,27 +1,27 @@
-import React from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { formatNAD } from '@/utils/currency';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import {
-  DollarSign,
+  AlertCircle,
+  ArrowUpRight,
   Calendar,
-  User,
-  FileText,
   CheckCircle,
   Clock,
-  AlertCircle,
   CreditCard,
-  TrendingUp,
+  DollarSign,
+  FileText,
   Hash,
-  ArrowUpRight,
+  TrendingUp,
+  User,
 } from 'lucide-react';
+import React from 'react';
 
 interface DisbursementDetailsModalProps {
   open: boolean;

@@ -3,13 +3,14 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
+import { mutation, query } from '../_generated/server';
 import { assertStaff } from '../lib/auth';
+import { assertStaffOrPlatformSupport } from '../lib/platformAuth';
 
 export const listReconciliations = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
-    await assertStaff(ctx);
+    await assertStaffOrPlatformSupport(ctx);
     return ctx.db
       .query('tigerBeetleReconciliation')
       .order('desc')

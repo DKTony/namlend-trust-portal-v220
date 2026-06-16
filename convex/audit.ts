@@ -11,7 +11,8 @@
 
 import { v } from 'convex/values';
 import { internalMutation, mutation, query } from './_generated/server';
-import { assertStaff, assertAuthenticated } from './lib/auth';
+import { assertAuthenticated, assertStaff } from './lib/auth';
+import { resolveWriteInstitution } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Internal writes (not callable from browser)
@@ -217,6 +218,7 @@ export const generateComplianceReport = mutation({
       reportType: args.reportType,
       periodStart: args.periodStart,
       periodEnd: args.periodEnd,
+      institutionId: await resolveWriteInstitution(ctx),
       generatedAt: Date.now(),
       generatedBy: userId,
       reportData: { status: 'pending', message: 'Report generation queued' },

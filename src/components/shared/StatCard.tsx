@@ -1,7 +1,7 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
+import React from 'react';
 
 interface StatCardProps {
   label: string;

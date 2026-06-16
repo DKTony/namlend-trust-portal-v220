@@ -11,67 +11,16 @@
 
 import 'dotenv/config';
 import * as fs from 'fs';
-import { test, expect, TEST_USERS } from './fixtures';
-import { baseURL } from './helpers/auth';
-
-const SUPABASE_STORAGE_KEY = 'namlend-auth';
-
-async function waitForShell(page: import('@playwright/test').Page) {
-  await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
-}
-
-async function loginAsClient(page: import('@playwright/test').Page) {
-  await page.goto('/auth');
-  await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-  await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-  await page.click('[data-testid="login-button"]');
-  await page.waitForURL(/\/(dashboard|loans)/);
-  await waitForShell(page);
-
-  await page
-    .waitForFunction(
-      (key) => {
-        const stored = window.localStorage.getItem(key);
-        return stored && stored.includes('access_token');
-      },
-      SUPABASE_STORAGE_KEY,
-      { timeout: 5000 }
-    )
-    .catch(() => {});
-}
-
-async function gotoWithAuth(page: import('@playwright/test').Page, path: string) {
-  await page.goto(path);
-  await page.waitForTimeout(2000);
-
-  if (page.url().includes('/auth')) {
-    await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-    await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL(/\/(dashboard|admin|loans|payment|budget)/, { timeout: 20000 });
-    await waitForShell(page);
-
-    if (!page.url().includes(path.replace(/^\//, ''))) {
-      await page.goto(path);
-      await page.waitForTimeout(2000);
-    }
-  }
-
-  try {
-    await waitForShell(page);
-  } catch {
-    if (page.url().includes('/auth')) {
-      await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
-      await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
-      await page.click('[data-testid="login-button"]');
-      await page.waitForURL(/\/(dashboard|admin|loans|payment|budget)/, { timeout: 20000 });
-    }
-  }
-}
+import { test, expect } from './fixtures';
+import { gotoAuthenticated, login } from './helpers/auth';
 
 async function navigateToBudget(page: import('@playwright/test').Page) {
-  await loginAsClient(page);
-  await gotoWithAuth(page, '/budget');
+  const role = await login(page, false);
+  if (role !== 'client') {
+    test.skip(true, 'Client credentials not available; skipping budget tracker tests.');
+    return;
+  }
+  await gotoAuthenticated(page, '/budget');
   await page.getByTestId('budget-tracker-page').waitFor({ state: 'visible', timeout: 15000 });
 }
 

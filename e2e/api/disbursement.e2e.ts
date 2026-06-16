@@ -5,7 +5,20 @@
 
 import { test, expect } from '../fixtures';
 
+const hasSupabaseCredentials = Boolean(
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+);
+
+test.skip(
+  !hasSupabaseCredentials,
+  'Legacy Supabase disbursement tests require Supabase credentials; skipped in Convex-only E2E.'
+);
+
 test.describe('Disbursement API Tests', () => {
+  test.skip(
+    !hasSupabaseCredentials,
+    'Legacy Supabase disbursement tests require Supabase credentials; skipped in Convex-only E2E.'
+  );
 
   test('admin can disburse approved loan', async ({ adminSupabase, client1Supabase }) => {
     // Create a test loan in 'approved' status
@@ -21,7 +34,7 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test disbursement',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
@@ -30,7 +43,7 @@ test.describe('Disbursement API Tests', () => {
 
     // First create a disbursement for the approved loan
     const { data: disbursementData } = await adminSupabase.rpc('create_disbursement_on_approval', {
-      p_loan_id: testLoanId
+      p_loan_id: testLoanId,
     });
     expect(disbursementData.success).toBe(true);
     const disbursementId = disbursementData.disbursement_id;
@@ -39,7 +52,7 @@ test.describe('Disbursement API Tests', () => {
       p_disbursement_id: disbursementId,
       p_payment_method: 'bank_transfer',
       p_payment_reference: 'TEST-BANK-REF-001',
-      p_notes: 'Test disbursement by admin'
+      p_notes: 'Test disbursement by admin',
     });
 
     expect(error).toBeNull();
@@ -63,7 +76,11 @@ test.describe('Disbursement API Tests', () => {
     await adminSupabase.from('loans').delete().eq('id', testLoanId);
   });
 
-  test('loan_officer can disburse approved loan', async ({ loanOfficerSupabase, adminSupabase, client1Supabase }) => {
+  test('loan_officer can disburse approved loan', async ({
+    loanOfficerSupabase,
+    adminSupabase,
+    client1Supabase,
+  }) => {
     // Create another test loan
     const { data: newLoan } = await adminSupabase
       .from('loans')
@@ -77,22 +94,25 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test loan officer disbursement',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
 
     // Create disbursement for the loan
-    const { data: disbursementData } = await loanOfficerSupabase.rpc('create_disbursement_on_approval', {
-      p_loan_id: newLoan!.id
-    });
+    const { data: disbursementData } = await loanOfficerSupabase.rpc(
+      'create_disbursement_on_approval',
+      {
+        p_loan_id: newLoan!.id,
+      }
+    );
     expect(disbursementData.success).toBe(true);
 
     const { data, error } = await loanOfficerSupabase.rpc('complete_disbursement', {
       p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'mobile_money',
       p_payment_reference: 'TEST-MOBILE-REF-002',
-      p_notes: 'Test disbursement by loan officer'
+      p_notes: 'Test disbursement by loan officer',
     });
 
     expect(error).toBeNull();
@@ -117,7 +137,7 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test unauthorized disbursement',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
@@ -126,7 +146,7 @@ test.describe('Disbursement API Tests', () => {
       p_disbursement_id: newLoan!.id,
       p_payment_method: 'cash',
       p_payment_reference: 'TEST-UNAUTHORIZED',
-      p_notes: 'Unauthorized attempt'
+      p_notes: 'Unauthorized attempt',
     });
 
     expect(data).toBeTruthy();
@@ -161,7 +181,7 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test duplicate disbursement',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
@@ -170,13 +190,13 @@ test.describe('Disbursement API Tests', () => {
 
     // Create and complete disbursement
     const { data: disbursementData } = await adminSupabase.rpc('create_disbursement_on_approval', {
-      p_loan_id: testLoanId
+      p_loan_id: testLoanId,
     });
     await adminSupabase.rpc('complete_disbursement', {
       p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'bank_transfer',
       p_payment_reference: 'TEST-FIRST',
-      p_notes: 'First disbursement'
+      p_notes: 'First disbursement',
     });
 
     // Try to disburse the same loan again
@@ -184,7 +204,7 @@ test.describe('Disbursement API Tests', () => {
       p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'bank_transfer',
       p_payment_reference: 'TEST-DUPLICATE',
-      p_notes: 'Duplicate attempt'
+      p_notes: 'Duplicate attempt',
     });
 
     expect(data).toBeTruthy();
@@ -209,14 +229,14 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test audit trail',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
 
     // Create disbursement for the loan
     const { data: disbursementData } = await adminSupabase.rpc('create_disbursement_on_approval', {
-      p_loan_id: newLoan!.id
+      p_loan_id: newLoan!.id,
     });
     expect(disbursementData.success).toBe(true);
 
@@ -225,7 +245,7 @@ test.describe('Disbursement API Tests', () => {
       p_disbursement_id: disbursementData.disbursement_id,
       p_payment_method: 'debit_order',
       p_payment_reference: 'TEST-AUDIT-REF-003',
-      p_notes: 'Test audit trail creation'
+      p_notes: 'Test audit trail creation',
     });
 
     // Check audit log (audit_logs schema: table_name, record_id, new_values)
@@ -241,7 +261,7 @@ test.describe('Disbursement API Tests', () => {
     expect(auditError).toBeNull();
     expect(auditLogs).toBeTruthy();
     expect(auditLogs!.length).toBeGreaterThan(0);
-    
+
     const auditLog = auditLogs![0];
     expect(auditLog.table_name).toBe('disbursements');
     expect(auditLog.new_values).toBeTruthy();
@@ -266,7 +286,7 @@ test.describe('Disbursement API Tests', () => {
         purpose: 'Test invalid payment method',
         status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: (await adminSupabase.auth.getUser()).data.user?.id
+        approved_by: (await adminSupabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single();
@@ -275,7 +295,7 @@ test.describe('Disbursement API Tests', () => {
       p_disbursement_id: newLoan!.id,
       p_payment_method: 'invalid_method',
       p_payment_reference: 'TEST-INVALID-METHOD',
-      p_notes: 'Test invalid method'
+      p_notes: 'Test invalid method',
     });
 
     expect(data).toBeTruthy();

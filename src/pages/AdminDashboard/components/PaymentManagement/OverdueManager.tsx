@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
-  AlertTriangle, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  MessageSquare,
-  DollarSign,
+} from '@/components/ui/select';
+import {
+  AlertTriangle,
+  Calendar,
   Clock,
-  User,
+  DollarSign,
+  Filter,
+  Mail,
+  MessageSquare,
+  Phone,
   Search,
-  Filter
+  User,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface OverduePayment {
   id: string;
@@ -55,7 +55,7 @@ const OverdueManager: React.FC = () => {
       contactMethod: 'phone',
       paymentPlan: false,
       riskLevel: 'medium',
-      totalOwed: 2750
+      totalOwed: 2750,
     },
     {
       id: '2',
@@ -68,7 +68,7 @@ const OverdueManager: React.FC = () => {
       contactMethod: 'email',
       paymentPlan: true,
       riskLevel: 'high',
-      totalOwed: 2100
+      totalOwed: 2100,
     },
     {
       id: '3',
@@ -78,7 +78,7 @@ const OverdueManager: React.FC = () => {
       daysOverdue: 8,
       originalDueDate: '2024-12-27',
       riskLevel: 'low',
-      totalOwed: 3200
+      totalOwed: 3200,
     },
     {
       id: '4',
@@ -91,7 +91,7 @@ const OverdueManager: React.FC = () => {
       contactMethod: 'sms',
       paymentPlan: true,
       riskLevel: 'high',
-      totalOwed: 5200
+      totalOwed: 5200,
     },
     {
       id: '5',
@@ -104,16 +104,20 @@ const OverdueManager: React.FC = () => {
       contactMethod: 'phone',
       paymentPlan: false,
       riskLevel: 'medium',
-      totalOwed: 1350
-    }
+      totalOwed: 1350,
+    },
   ];
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
-      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
-      case 'high': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
-      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+      case 'low':
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'medium':
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      case 'high':
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default:
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
     }
   };
 
@@ -123,18 +127,17 @@ const OverdueManager: React.FC = () => {
     return 'text-red-600 dark:text-red-400';
   };
 
-  const filteredPayments = overduePayments.filter(payment => {
-    const matchesSearch = payment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.loanId.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredPayments = overduePayments.filter((payment) => {
+    const matchesSearch =
+      payment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.loanId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRisk = riskFilter === 'all' || payment.riskLevel === riskFilter;
     return matchesSearch && matchesRisk;
   });
 
   const handleSelectPayment = (paymentId: string) => {
-    setSelectedPayments(prev => 
-      prev.includes(paymentId) 
-        ? prev.filter(id => id !== paymentId)
-        : [...prev, paymentId]
+    setSelectedPayments((prev) =>
+      prev.includes(paymentId) ? prev.filter((id) => id !== paymentId) : [...prev, paymentId]
     );
   };
 
@@ -158,9 +161,7 @@ const OverdueManager: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Overdue Payments</h2>
-          <p className="text-muted-foreground">
-            Manage and track overdue loan payments
-          </p>
+          <p className="text-muted-foreground">Manage and track overdue loan payments</p>
         </div>
         <Badge variant="destructive" className="text-sm">
           {filteredPayments.length} overdue
@@ -171,11 +172,13 @@ const OverdueManager: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Overdue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Overdue
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
               title={`NAD ${overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}`}
             >
@@ -194,41 +197,41 @@ const OverdueManager: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
-              {overduePayments.filter(p => p.riskLevel === 'high').length}
+              {overduePayments.filter((p) => p.riskLevel === 'high').length}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Require immediate attention
-            </p>
+            <p className="text-xs text-muted-foreground truncate">Require immediate attention</p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Payment Plans</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Payment Plans
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
-              {overduePayments.filter(p => p.paymentPlan).length}
+              {overduePayments.filter((p) => p.paymentPlan).length}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Active payment plans
-            </p>
+            <p className="text-xs text-muted-foreground truncate">Active payment plans</p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Days Overdue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg Days Overdue
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums">
-              {Math.round(overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length)}
+              {Math.round(
+                overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length
+              )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              Days past due
-            </p>
+            <p className="text-xs text-muted-foreground truncate">Days past due</p>
           </CardContent>
         </Card>
       </div>
@@ -246,7 +249,10 @@ const OverdueManager: React.FC = () => {
             />
           </div>
         </div>
-        <Select value={riskFilter} onValueChange={(value: 'all' | 'low' | 'medium' | 'high') => setRiskFilter(value)}>
+        <Select
+          value={riskFilter}
+          onValueChange={(value: 'all' | 'low' | 'medium' | 'high') => setRiskFilter(value)}
+        >
           <SelectTrigger className="w-48 bg-background border-input text-foreground">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by risk" />
@@ -266,27 +272,19 @@ const OverdueManager: React.FC = () => {
           <span className="text-sm font-medium text-foreground">
             {selectedPayments.length} payment(s) selected
           </span>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleBulkAction('Send Reminder')}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Send Reminder')}>
             <Mail className="mr-2 h-4 w-4" />
             Send Reminders
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => handleBulkAction('Create Payment Plans')}
           >
             <Calendar className="mr-2 h-4 w-4" />
             Create Payment Plans
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => handleBulkAction('Escalate')}
-          >
+          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Escalate')}>
             <AlertTriangle className="mr-2 h-4 w-4" />
             Escalate
           </Button>
@@ -304,8 +302,8 @@ const OverdueManager: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredPayments.map((payment) => (
-              <div 
-                key={payment.id} 
+              <div
+                key={payment.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors bg-card"
               >
                 <div className="flex items-center space-x-4">
@@ -319,17 +317,20 @@ const OverdueManager: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium text-foreground">{payment.clientName}</span>
-                      <Badge variant="outline" className="text-xs border-border text-muted-foreground">
+                      <Badge
+                        variant="outline"
+                        className="text-xs border-border text-muted-foreground"
+                      >
                         {payment.loanId}
                       </Badge>
-                      <Badge 
-                        variant="secondary" 
-                        className={getRiskColor(payment.riskLevel)}
-                      >
+                      <Badge variant="secondary" className={getRiskColor(payment.riskLevel)}>
                         {payment.riskLevel} risk
                       </Badge>
                       {payment.paymentPlan && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                        >
                           Payment Plan
                         </Badge>
                       )}
@@ -342,31 +343,33 @@ const OverdueManager: React.FC = () => {
                       </span>
                       <span>Due: {new Date(payment.originalDueDate).toLocaleDateString()}</span>
                       {payment.lastContactDate && (
-                        <span>Last contact: {new Date(payment.lastContactDate).toLocaleDateString()}</span>
+                        <span>
+                          Last contact: {new Date(payment.lastContactDate).toLocaleDateString()}
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleContactClient(payment.id, 'phone')}
                   >
                     <Phone className="h-4 w-4 mr-1" />
                     Call
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleContactClient(payment.id, 'email')}
                   >
                     <Mail className="h-4 w-4 mr-1" />
                     Email
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleContactClient(payment.id, 'sms')}
                   >
@@ -374,8 +377,8 @@ const OverdueManager: React.FC = () => {
                     SMS
                   </Button>
                   {!payment.paymentPlan && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleCreatePaymentPlan(payment.id)}
                     >

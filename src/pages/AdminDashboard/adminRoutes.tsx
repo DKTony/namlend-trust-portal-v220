@@ -3,10 +3,10 @@
  * All routes are lazy-loaded for code splitting.
  */
 
-import React, { Suspense } from 'react';
-import { Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
+import { ProtectedRoute } from '@/components/system/ProtectedRoute';
+import React, { Suspense } from 'react';
+import { Navigate, Route } from 'react-router-dom';
 
 // Lazy-loaded page components
 const OverviewPage = React.lazy(() => import('./pages/OverviewPage'));
@@ -37,34 +37,22 @@ const UserManagementDashboard = React.lazy(
   () => import('./components/UserManagement/UserManagementDashboard')
 );
 
-// Finance & Ledger (admin only)
+// Finance (admin only) — Ledger moved to the Platform Console (/platform/ledger)
 const PortfolioAnalytics = React.lazy(() => import('./components/Analytics/PortfolioAnalytics'));
-const LedgerDashboard = React.lazy(() => import('./components/TigerBeetle/LedgerDashboard'));
 const ReconciliationDashboard = React.lazy(
   () => import('./components/Reconciliation/ReconciliationDashboard')
 );
 
-// Platform / Ontology (admin only)
-const InstitutionsDashboard = React.lazy(
-  () => import('./components/Institutions/InstitutionsDashboard')
-);
+// Configuration (admin only) — Institutions/Business Rules/Payment Rails moved to /platform
 const ProductsDashboard = React.lazy(() => import('./components/Products/ProductsDashboard'));
-const PaymentRailsDashboard = React.lazy(
-  () => import('./components/PaymentRails/PaymentRailsDashboard')
-);
-const BusinessRulesDashboard = React.lazy(
-  () => import('./components/BusinessRules/BusinessRulesDashboard')
-);
 const WorkflowManagementDashboard = React.lazy(
   () => import('./components/WorkflowManagement/WorkflowManagementDashboard')
 );
 const MandatesDashboard = React.lazy(() => import('./components/Mandates/MandatesDashboard'));
 const ConsentDashboard = React.lazy(() => import('./components/Consent/ConsentDashboard'));
 
-// Settings (admin only)
+// Settings (admin only) — TB Config/Settlement moved to /platform
 const CreditPolicyConfig = React.lazy(() => import('./components/Settings/CreditPolicy'));
-const TigerBeetleConfig = React.lazy(() => import('./components/Settings/TigerBeetleConfig'));
-const SettlementConfig = React.lazy(() => import('./components/Settings/SettlementConfig'));
 const BrandingConfigComponent = React.lazy(() => import('./components/Settings/BrandingConfig'));
 
 function PageSuspense({ children }: { children: React.ReactNode }) {
@@ -189,16 +177,6 @@ export function adminRoutes() {
         }
       />
       <Route
-        path="ledger"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <LedgerDashboard />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
-      <Route
         path="reconciliation"
         element={
           <AdminOnly>
@@ -209,43 +187,13 @@ export function adminRoutes() {
         }
       />
 
-      {/* Platform / Ontology (admin only) */}
-      <Route
-        path="institutions"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <InstitutionsDashboard />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
+      {/* Configuration (admin only) — platform-level sections moved to /platform */}
       <Route
         path="products"
         element={
           <AdminOnly>
             <PageSuspense>
               <ProductsDashboard />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
-      <Route
-        path="payment-rails"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <PaymentRailsDashboard />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
-      <Route
-        path="business-rules"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <BusinessRulesDashboard />
             </PageSuspense>
           </AdminOnly>
         }
@@ -288,26 +236,6 @@ export function adminRoutes() {
           <AdminOnly>
             <PageSuspense>
               <CreditPolicyConfig />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
-      <Route
-        path="settings/tigerbeetle"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <TigerBeetleConfig />
-            </PageSuspense>
-          </AdminOnly>
-        }
-      />
-      <Route
-        path="settings/settlement"
-        element={
-          <AdminOnly>
-            <PageSuspense>
-              <SettlementConfig />
             </PageSuspense>
           </AdminOnly>
         }

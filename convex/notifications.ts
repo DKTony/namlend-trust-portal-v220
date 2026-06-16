@@ -4,9 +4,10 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation, internalMutation, internalQuery } from './_generated/server';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
+import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditEntry } from './lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { resolveWriteInstitution } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -162,6 +163,7 @@ export const updateNotificationPreference = mutation({
     } else {
       await ctx.db.insert('notificationPreferences', {
         userId,
+        institutionId: await resolveWriteInstitution(ctx, { userId }),
         channel,
         category,
         enabled,
@@ -214,6 +216,7 @@ export const createNotification = internalMutation({
   handler: async (ctx, args) => {
     return ctx.db.insert('notifications', {
       ...args,
+      institutionId: await resolveWriteInstitution(ctx, { userId: args.userId }),
       isRead: false,
       createdAt: Date.now(),
     });
@@ -275,7 +278,7 @@ export const updateQueuedNotificationStatus = internalMutation({
     await ctx.db.patch(queueId, {
       status,
       sentAt: status === 'sent' ? Date.now() : undefined,
-      retryCount: item.retryCount + (status === 'failed' ? 1 : 0),
+      retryCount: (item.retryCount ?? 0) + (status === 'failed' ? 1 : 0),
       errorMessage,
       updatedAt: Date.now(),
     });

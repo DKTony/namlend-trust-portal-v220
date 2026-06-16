@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useQuery } from 'convex/react';
+import { Card, CardContent } from '@/components/ui/card';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
-import { BadgeCheck, User, Calendar, DollarSign, FileText, RefreshCw, Search } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { BadgeCheck, FileText, RefreshCw, Search, User } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface SettledLoan {
   id: string;

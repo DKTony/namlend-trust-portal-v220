@@ -3,12 +3,12 @@
  * Manages branding configuration state, handlers, and persistence via Convex systemConfig.
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
 import { useBranding } from '@/context/BrandingContext';
-import { BrandingConfig, DEFAULT_BRANDING, BRANDING_CONFIG_KEYS } from '@/types/branding';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { BRANDING_CONFIG_KEYS, BrandingConfig, DEFAULT_BRANDING } from '@/types/branding';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface UseBrandingConfigReturn {
   loading: boolean;

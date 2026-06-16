@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
 import {
   APR_LIMIT,
+  calculateMaxLoanAtAPRLimit,
   CURRENCY_CODE,
   CURRENCY_SYMBOL,
-  isValidAPR,
   formatNAD,
-  calculateMaxLoanAtAPRLimit,
+  isValidAPR,
 } from '@/constants/regulatory';
+import { describe, expect, it } from 'vitest';
 
 describe('Regulatory Constants', () => {
   it('APR_LIMIT is 32% per Namibian law', () => {

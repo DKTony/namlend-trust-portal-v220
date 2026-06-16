@@ -1,33 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
-import {
-  Users,
-  Search,
-  Filter,
-  Download,
-  Plus,
-  Shield,
-  Settings,
-  UserCheck,
-  AlertTriangle,
-  Activity,
-  BarChart3,
-  Loader2,
-  X,
-} from 'lucide-react';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,17 +18,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import {
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  Download,
+  Filter,
+  Loader2,
+  Plus,
+  Search,
+  Settings,
+  Shield,
+  UserCheck,
+  Users,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 // Sub-components
-import UsersList from './UsersList';
-import RoleManagement from './RoleManagement';
-import PermissionMatrix from './PermissionMatrix';
 import BulkUserOperations from './BulkUserOperations';
-import UserAuditLog from './UserAuditLog';
-import UserAnalytics from './UserAnalytics';
+import PermissionMatrix from './PermissionMatrix';
+import RoleManagement from './RoleManagement';
 import UserActivityMonitor from './UserActivityMonitor';
+import UserAnalytics from './UserAnalytics';
+import UserAuditLog from './UserAuditLog';
 import UserImportWizard from './UserImportWizard';
 import UserProfile from './UserProfile';
+import UsersList from './UsersList';
 
 interface UserStats {
   totalUsers: number;
@@ -69,7 +68,6 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showImportWizard, setShowImportWizard] = useState(false);
 
   // Convex reactive queries for stats (N2 — no as any)
   const rawUsers = useQuery(api.users.listUsers, {});

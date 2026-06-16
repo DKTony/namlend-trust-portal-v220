@@ -7,17 +7,17 @@
  *
  * Run: npm run test:unit
  */
-import { describe, it, expect } from 'vitest';
 import {
-  calculateMonthlyInstalment,
-  calculateTotalRepayable,
-  calculateTotalInterest,
-  calculateDTI,
   applyPayment,
+  calculateDaysOverdue,
+  calculateDTI,
+  calculateMonthlyInstalment,
+  calculateTotalInterest,
+  calculateTotalRepayable,
   generatePaymentSchedule,
   validateScheduleIntegrity,
-  calculateDaysOverdue,
 } from '@/utils/loanCalculations';
+import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // calculateMonthlyInstalment

@@ -3,8 +3,9 @@
  * Verifies that all navigation items work and pages render their headers correctly
  */
 import 'dotenv/config';
-import { test, expect, Page } from '@playwright/test';
-import { login, gotoAuthenticated, baseURL } from './helpers/auth';
+import { test, expect } from '@playwright/test';
+import { login, gotoAuthenticated, baseURL, waitForAppShell } from './helpers/auth';
+import { openAdminTab } from './helpers/admin';
 
 test.describe('Client Dashboard Navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,8 +20,7 @@ test.describe('Client Dashboard Navigation', () => {
     // Wait for page content to load
     await page.waitForLoadState('networkidle');
 
-    // Check page renders (sidebar trigger should be visible)
-    await expect(page.getByTestId('sidebar-trigger')).toBeVisible();
+    await waitForAppShell(page, 10000);
 
     // Check for dashboard content - look for typical dashboard elements
     const dashboardContent = page.locator('text=Dashboard').first();
@@ -64,8 +64,7 @@ test.describe('Admin Dashboard Navigation', () => {
     await gotoAuthenticated(page, '/admin');
     await page.waitForLoadState('networkidle');
 
-    // Check sidebar is visible
-    await expect(page.getByTestId('sidebar-trigger')).toBeVisible();
+    await waitForAppShell(page, 10000);
 
     // Check for admin-specific content
     const adminContent = page.locator('text=/overview|dashboard|admin/i').first();
@@ -76,26 +75,15 @@ test.describe('Admin Dashboard Navigation', () => {
     await gotoAuthenticated(page, '/admin');
     await page.waitForLoadState('networkidle');
 
-    // Expand sidebar if collapsed
-    const sidebarTrigger = page.getByTestId('sidebar-trigger');
-    await sidebarTrigger.click();
-    await page.waitForTimeout(300);
-
     // Check for navigation menu items by looking for common admin nav items
-    const navItems = [
-      /overview/i,
-      /loans/i,
-      /clients/i,
-      /payments/i,
-      /users/i,
-    ];
+    const navItems = [/overview/i, /loans/i, /clients/i, /payments/i, /users/i];
 
     for (const navPattern of navItems) {
-      const navItem = page.getByRole('button', { name: navPattern }).or(
-        page.getByRole('link', { name: navPattern })
-      ).or(
-        page.locator(`[data-testid*="nav"]`).filter({ hasText: navPattern })
-      ).first();
+      const navItem = page
+        .getByRole('button', { name: navPattern })
+        .or(page.getByRole('link', { name: navPattern }))
+        .or(page.locator(`[data-testid*="nav"]`).filter({ hasText: navPattern }))
+        .first();
 
       if (await navItem.isVisible({ timeout: 2000 }).catch(() => false)) {
         // Nav item exists
@@ -105,44 +93,15 @@ test.describe('Admin Dashboard Navigation', () => {
   });
 
   test('Admin loan management section renders', async ({ page }) => {
-    await gotoAuthenticated(page, '/admin');
-    await page.waitForLoadState('networkidle');
-
-    // Try to navigate to loans section
-    const sidebarTrigger = page.getByTestId('sidebar-trigger');
-    await sidebarTrigger.click();
-    await page.waitForTimeout(300);
-
-    // Look for loans navigation
-    const loansNav = page.locator('text=/loan/i').first();
-    if (await loansNav.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await loansNav.click();
-      await page.waitForTimeout(500);
-
-      // Verify loan management content loads
-      const loanContent = page.locator('text=/loan|application|pending|approved/i').first();
-      await expect(loanContent).toBeVisible({ timeout: 5000 });
-    }
+    await openAdminTab(page, 'loans');
+    const loanContent = page.locator('text=/loan|application|pending|approved/i').first();
+    await expect(loanContent).toBeVisible({ timeout: 5000 });
   });
 
   test('Admin client management section renders', async ({ page }) => {
-    await gotoAuthenticated(page, '/admin');
-    await page.waitForLoadState('networkidle');
-
-    const sidebarTrigger = page.getByTestId('sidebar-trigger');
-    await sidebarTrigger.click();
-    await page.waitForTimeout(300);
-
-    // Look for clients navigation
-    const clientsNav = page.locator('text=/client/i').first();
-    if (await clientsNav.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await clientsNav.click();
-      await page.waitForTimeout(500);
-
-      // Verify client management content loads
-      const clientContent = page.locator('text=/client|customer|user/i').first();
-      await expect(clientContent).toBeVisible({ timeout: 5000 });
-    }
+    await openAdminTab(page, 'clients');
+    const clientContent = page.locator('text=/client|customer|user/i').first();
+    await expect(clientContent).toBeVisible({ timeout: 5000 });
   });
 });
 

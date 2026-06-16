@@ -7,17 +7,18 @@
  * can go through the approval pipeline.
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from './_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertAdmin, assertOwnerOrStaff } from './lib/auth';
-import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
-import { emitDomainEvent } from './lib/domainEvents';
-import { approveLoanCore } from './lib/approvalReadiness';
-import { approvalRequestStatus } from './schema';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
+import { internalMutation, mutation, query } from './_generated/server';
+import { approveLoanCore } from './lib/approvalReadiness';
+import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
+import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { emitDomainEvent } from './lib/domainEvents';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
+import { approvalRequestStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -53,11 +54,12 @@ export const getApprovalsByEntity = query({
   args: { entityId: v.string() },
   handler: async (ctx, { entityId }) => {
     await assertStaff(ctx);
-    return ctx.db
+    const rows = await ctx.db
       .query('approvalRequests')
       .withIndex('by_entityId', (q) => q.eq('entityId', entityId))
       .order('desc')
       .collect();
+    return applyTenantScope(rows, await tenantReadScope(ctx));
   },
 });
 
@@ -88,17 +90,20 @@ export const adminListApprovals = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     if (status) {
-      return ctx.db
+      const rows = await ctx.db
         .query('approvalRequests')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
+      return applyTenantScope(rows, scope);
     }
-    return ctx.db
+    const rows = await ctx.db
       .query('approvalRequests')
       .order('desc')
       .take(limit ?? 100);
+    return applyTenantScope(rows, scope);
   },
 });
 
@@ -181,6 +186,9 @@ export const submitForApproval = mutation({
       requestType: args.requestType,
       status: 'pending',
       requestedBy: userId,
+      institutionId: await resolveWriteInstitution(ctx, {
+        loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
+      }),
       priority: args.priority,
       notes: args.notes,
       metadata: args.metadata,
@@ -393,6 +401,7 @@ export const createWorkflowDefinition = mutation({
   },
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'workflows');
     const now = Date.now();
     const id = await ctx.db.insert('workflowDefinitions', {
       name: args.name,
@@ -423,6 +432,7 @@ export const listWorkflowDefinitions = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'workflows');
     return ctx.db.query('workflowDefinitions').collect();
   },
 });
@@ -460,7 +470,7 @@ export const createSystemApprovalRequest = internalMutation({
     // If no admin exists yet, skip creating the request gracefully.
     const adminRole = await ctx.db
       .query('userRoles')
-      .filter((q) => q.eq(q.field('role'), 'admin'))
+      .filter((q) => q.or(q.eq(q.field('role'), 'admin'), q.eq(q.field('role'), 'tenant_admin')))
       .first();
     if (!adminRole) return null;
 
@@ -470,6 +480,9 @@ export const createSystemApprovalRequest = internalMutation({
       requestType: args.requestType,
       status: 'pending',
       requestedBy: adminRole.userId,
+      institutionId: await resolveWriteInstitution(ctx, {
+        loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
+      }),
       priority: args.priority,
       metadata: args.details,
       createdAt: now,

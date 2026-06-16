@@ -1,9 +1,9 @@
-import { useTranslation } from 'react-i18next';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
+import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface LoanApplicationHeaderProps {
   step: number;

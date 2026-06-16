@@ -1,6 +1,6 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
+import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface AdaptiveShellProps {
   sidebar?: React.ReactNode;

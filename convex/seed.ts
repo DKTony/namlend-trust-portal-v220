@@ -8,8 +8,8 @@
  *   (creates all 4 test users + assigns roles)
  */
 
-import { internalAction } from './_generated/server';
 import { internal } from './_generated/api';
+import { internalAction } from './_generated/server';
 
 /**
  * Seed all 4 test users. Idempotent — safe to run multiple times.

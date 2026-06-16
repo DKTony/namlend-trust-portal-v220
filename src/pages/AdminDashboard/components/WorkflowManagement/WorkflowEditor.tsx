@@ -4,12 +4,10 @@
  * Version: v2.4.0
  */
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -17,11 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Trash2, Save, GitBranch } from 'lucide-react';
-import { useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { useMutation } from 'convex/react';
+import { ArrowLeft, GitBranch, Plus, Save, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface WorkflowStage {
   stage: number;
@@ -163,14 +162,17 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ workflow, onClose }) =>
         await createWorkflowDef({
           name,
           entityType,
-          description,
           stages: stages.map((s) => ({
-            stage: s.stage,
             name: s.name,
+            order: s.stage,
             requiredRole: s.required_role,
-            requiredApprovals: s.required_approvals,
-            autoAssign: s.auto_assign,
-            timeoutHours: s.timeout_hours,
+            actions: ['review'],
+            conditions: {
+              ...s.conditions,
+              autoAssign: s.auto_assign,
+              requiredApprovals: s.required_approvals,
+              timeoutHours: s.timeout_hours,
+            },
           })),
         });
 

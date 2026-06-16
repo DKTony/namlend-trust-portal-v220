@@ -4,25 +4,14 @@
  * Version: v2.4.0
  */
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import {
-  Settings,
-  Plus,
-  GitBranch,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Edit,
-  Eye,
-  History,
-} from 'lucide-react';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/integrations/convex/api';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { CheckCircle, Clock, Edit, Eye, GitBranch, History, Plus, Settings } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import WorkflowEditor from './WorkflowEditor';
 import WorkflowStats from './WorkflowStats';
 
@@ -34,6 +23,7 @@ interface WorkflowDefinition {
   version: number;
   is_active: boolean;
   stages: {
+    description: string;
     stage: number;
     name: string;
     required_role: string;
@@ -50,7 +40,6 @@ const WorkflowManagementDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
   const [showEditor, setShowEditor] = useState(false);
-  const { toast } = useToast();
 
   // Convex reactive query — no as any (N2)
   const rawWorkflows = useConvexQuery(api.approvalWorkflow.listWorkflowDefinitions);
@@ -66,6 +55,7 @@ const WorkflowManagementDashboard: React.FC = () => {
       version: 1,
       is_active: w.isActive ?? false,
       stages: (w.stages ?? []).map((s) => ({
+        description: '',
         stage: s.order ?? 0,
         name: s.name ?? '',
         required_role: s.requiredRole ?? '',
@@ -276,7 +266,7 @@ const ActiveWorkflowInstances: React.FC<{ selectedWorkflow: WorkflowDefinition |
       id: String(a._id),
       entity_type: a.entityType ?? '',
       entity_id: a.entityId ?? '',
-      current_stage: a.currentStage ?? 1,
+      current_stage: Number(a.metadata?.currentStage ?? 1),
       status: a.status ?? 'in_progress',
       started_at: a.createdAt ? new Date(a.createdAt).toISOString() : '',
       workflow_definitions: { name: a.entityType ?? 'Approval Workflow' },

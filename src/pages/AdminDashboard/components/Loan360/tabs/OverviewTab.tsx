@@ -1,20 +1,20 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import {
-  CreditCard,
-  User,
-  DollarSign,
   ChevronRight,
-  MessageSquare,
-  Phone,
+  CreditCard,
+  DollarSign,
   FileText,
   History,
+  MessageSquare,
+  Phone,
   TrendingUp,
+  User,
 } from 'lucide-react';
-import { formatNAD } from '@/utils/currency';
-import { cn } from '@/lib/utils';
 
 interface OverviewTabProps {
   loan: {

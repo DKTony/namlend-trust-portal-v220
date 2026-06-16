@@ -11,9 +11,9 @@
  */
 import { convexTest } from 'convex-test';
 import { describe, expect, test } from 'vitest';
-import schema from './schema';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import schema from './schema';
 
 // Load all Convex modules for the harness.
 const modules = import.meta.glob('./**/*.*s');
@@ -62,6 +62,7 @@ async function seedLoan(
       totalPaid: 0,
       creditScore: 700,
       debtToIncomeRatio: 0.3,
+      monthlyIncome: 5000,
       recommendation: 'approve',
       createdAt: now,
       updatedAt: now,

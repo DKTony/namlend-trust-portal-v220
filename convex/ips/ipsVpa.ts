@@ -6,13 +6,14 @@
  * the repo finishes migrating away from the legacy registry model.
  */
 
-import { ConvexError, v } from 'convex/values';
 import { getAuthUserId } from '@convex-dev/auth/server';
-import { action, mutation, query } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
+import { action, mutation, query } from '../_generated/server';
 import { assertAuthenticated } from '../lib/auth';
 import { getAliasAvailabilityReason, isAliasUsable } from '../lib/ipsResponseParsers';
+import { resolveWriteInstitution } from '../lib/tenancy';
 
 function maskReference(value?: string) {
   if (!value) return undefined;
@@ -171,6 +172,7 @@ export const upsertVpa = mutation({
 
     const vpaId = await ctx.db.insert('vpaRegistry', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       vpa: normalizedVpa,
       vpaType: 'personal',
       isDefault: args.setDefault ?? !hasDefault,
@@ -310,7 +312,7 @@ export const validateVpa = action({
   args: {
     vpa: v.string(),
   },
-  handler: async (ctx, { vpa }) => {
+  handler: async (ctx, { vpa }): Promise<Record<string, unknown>> => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError({
@@ -331,9 +333,12 @@ export const validateVpa = action({
       };
     }
 
-    const localAlias = await ctx.runQuery(internal.ips.ipsAliasDirectory.getAliasByAddrInternal, {
-      addr: normalizedVpa,
-    });
+    const localAlias: any = await ctx.runQuery(
+      internal.ips.ipsAliasDirectory.getAliasByAddrInternal,
+      {
+        addr: normalizedVpa,
+      }
+    );
 
     if (localAlias && isAliasUsable(localAlias.status, localAlias.syncedWithIps)) {
       return {
@@ -369,7 +374,7 @@ export const validateVpa = action({
       };
     }
 
-    const validation = await ctx.runAction(internal.actions.ipsAdapter.validateVpa, {
+    const validation: any = await ctx.runAction(internal.actions.ipsAdapter.validateVpa, {
       addr: normalizedVpa,
       correlationId: normalizedVpa,
     });

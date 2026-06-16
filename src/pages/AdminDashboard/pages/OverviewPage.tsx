@@ -3,13 +3,13 @@
  * Financial summary cards and metrics — the default admin landing page.
  */
 
-import React, { useMemo } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import React, { useMemo } from 'react';
 import FinancialSummaryCards from '../components/Overview/FinancialSummaryCards';
 
 const OverviewPage: React.FC = () => {
-  const portfolio = useConvexQuery(api.analytics.getPortfolioSummary);
+  const portfolio = useConvexQuery(api.analytics.getPortfolioSummary, {});
   const clientMetrics = useConvexQuery(api.analytics.getClientMetrics);
   const rawLoans = useConvexQuery(api.loans.adminListLoans, {});
 
@@ -17,19 +17,23 @@ const OverviewPage: React.FC = () => {
 
   const metrics = useMemo(() => {
     if (!portfolio) return null;
-    const loans = rawLoans ?? [];
+    const loans = (rawLoans ?? []) as Array<{
+      amount?: number;
+      principal?: number;
+      status: string;
+    }>;
     return {
       totalClients: clientMetrics?.totalClients ?? 0,
-      totalDisbursed: portfolio.totalDisbursed ?? 0,
-      totalRepayments: portfolio.totalRepayments ?? 0,
-      overduePayments: portfolio.overdueCount ?? 0,
-      totalLoans: portfolio.totalLoans ?? loans.length,
+      totalDisbursed: portfolio.portfolio.totalDisbursed ?? 0,
+      totalRepayments: portfolio.portfolio.totalRepaid ?? 0,
+      overduePayments: 0,
+      totalLoans: portfolio.loans.total ?? loans.length,
       pendingAmount: loans
-        .filter((l: any) => l.status === 'pending')
-        .reduce((sum: number, l: any) => sum + (Number(l.amount) || 0), 0),
+        .filter((l) => l.status === 'pending')
+        .reduce((sum, l) => sum + (Number(l.amount ?? l.principal) || 0), 0),
       rejectedAmount: loans
-        .filter((l: any) => l.status === 'rejected')
-        .reduce((sum: number, l: any) => sum + (Number(l.amount) || 0), 0),
+        .filter((l) => l.status === 'rejected')
+        .reduce((sum, l) => sum + (Number(l.amount ?? l.principal) || 0), 0),
     };
   }, [portfolio, clientMetrics, rawLoans]);
 

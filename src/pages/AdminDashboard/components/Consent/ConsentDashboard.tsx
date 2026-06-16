@@ -4,11 +4,8 @@
  * Wired to convex/ontology/consentRecords.ts (listConsents query).
  */
 
-import React, { useState } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -16,7 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ShieldCheck, RefreshCw } from 'lucide-react';
+import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { RefreshCw, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
 
 const STATUS_COLORS: Record<string, string> = {
   granted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',

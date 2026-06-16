@@ -7,17 +7,18 @@
 
 import 'dotenv/config';
 import { test, expect, Page, ConsoleMessage } from '@playwright/test';
-import { login, baseURL } from './helpers/auth';
+import { login, baseURL, waitForAppShell } from './helpers/auth';
 
 /** Open the drawer sidebar and click a nav item by its test-id suffix. */
 async function clickSidebarItem(page: Page, itemId: string) {
-  // Open the sidebar drawer
-  const trigger = page.getByTestId('sidebar-trigger');
-  await trigger.waitFor({ state: 'visible', timeout: 10000 });
-  await trigger.click();
-
-  // Wait for drawer to animate open
   const navItem = page.getByTestId(`sidebar-nav-${itemId}`);
+  if (!(await navItem.isVisible({ timeout: 1000 }).catch(() => false))) {
+    // Compact layout keeps navigation inside the drawer.
+    const trigger = page.getByTestId('sidebar-trigger');
+    await trigger.waitFor({ state: 'visible', timeout: 10000 });
+    await trigger.click();
+  }
+
   await navItem.waitFor({ state: 'visible', timeout: 5000 });
   await navItem.click();
 
@@ -44,7 +45,7 @@ test.describe('Client Dashboard — Tab Navigation', () => {
 
     // Navigate to dashboard
     await page.goto(`${baseURL}/dashboard`);
-    await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
+    await waitForAppShell(page, 20000);
 
     // Wait for dashboard content to load (overview is the default tab)
     await expect(page.locator('main')).not.toBeEmpty({ timeout: 15000 });
@@ -98,7 +99,7 @@ test.describe('Client Dashboard — Tab Navigation', () => {
 
     // Navigate back to dashboard for Documents test
     await page.goto(`${baseURL}/dashboard`);
-    await page.getByTestId('sidebar-trigger').waitFor({ state: 'visible', timeout: 20000 });
+    await waitForAppShell(page, 20000);
 
     // --- Tab: Documents (navigates to /kyc) ---
     await clickSidebarItem(page, 'documents');

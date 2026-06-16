@@ -5,13 +5,13 @@
  */
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
 import useBrandingConfig from '@/hooks/useBrandingConfig';
-import { ConfigHeader } from './ConfigHeader';
-import { LivePreview } from './LivePreview';
-import { GeneralTab } from './GeneralTab';
+import { Loader2 } from 'lucide-react';
 import { AssetsTab } from './AssetsTab';
 import { ColorsTab } from './ColorsTab';
+import { ConfigHeader } from './ConfigHeader';
+import { GeneralTab } from './GeneralTab';
+import { LivePreview } from './LivePreview';
 import { SeoTab } from './SeoTab';
 
 export function BrandingConfigComponent() {

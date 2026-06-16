@@ -10,9 +10,9 @@
  *
  * Run: npm run test:unit
  */
-import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Helpers — read source files for structural assertions

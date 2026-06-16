@@ -5,17 +5,17 @@
  */
 
 import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
 
-import commonEN from './locales/en/common.json';
 import authEN from './locales/en/auth.json';
-import landingEN from './locales/en/landing.json';
-import kycEN from './locales/en/kyc.json';
-import dashboardEN from './locales/en/dashboard.json';
-import paymentEN from './locales/en/payment.json';
 import budgetEN from './locales/en/budget.json';
+import commonEN from './locales/en/common.json';
+import dashboardEN from './locales/en/dashboard.json';
+import kycEN from './locales/en/kyc.json';
+import landingEN from './locales/en/landing.json';
 import loanApplicationEN from './locales/en/loanApplication.json';
+import paymentEN from './locales/en/payment.json';
 
 i18n
   .use(LanguageDetector)

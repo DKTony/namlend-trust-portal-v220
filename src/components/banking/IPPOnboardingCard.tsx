@@ -4,15 +4,14 @@
  * error display, and VPA display.
  */
 
-import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, AlertCircle, Zap, ChevronRight, Wallet } from 'lucide-react';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import type { ONBOARDING_STEPS, OnboardingData } from '@/hooks/useIPPOnboarding';
 import { IPP_ONBOARDING_STATE_LABELS } from '@/types/ips';
-import type { OnboardingData } from '@/hooks/useIPPOnboarding';
-import type { ONBOARDING_STEPS } from '@/hooks/useIPPOnboarding';
+import { AlertCircle, CheckCircle, ChevronRight, Wallet, Zap } from 'lucide-react';
 
 interface IPPOnboardingCardProps {
   onboardingData: OnboardingData | null;

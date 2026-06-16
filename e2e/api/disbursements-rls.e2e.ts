@@ -1,6 +1,6 @@
 /**
  * E2E RLS Tests for Disbursements Table
- * 
+ *
  * Verifies Row-Level Security policies for disbursements:
  * - Clients can only read their own disbursements
  * - Clients cannot create disbursements
@@ -11,10 +11,25 @@
 import { test, expect } from '../fixtures';
 import { createClient } from '@supabase/supabase-js';
 
+const hasSupabaseCredentials = Boolean(
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+);
+
+test.skip(
+  !hasSupabaseCredentials,
+  'Legacy Supabase disbursement RLS tests require Supabase credentials; skipped in Convex-only E2E.'
+);
+
 test.describe('Disbursements Table RLS', () => {
+  test.skip(
+    !hasSupabaseCredentials,
+    'Legacy Supabase disbursement RLS tests require Supabase credentials; skipped in Convex-only E2E.'
+  );
 
   test('Client can read their own disbursements', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Query disbursements with loan relationship (RLS checks via loan.user_id)
@@ -23,17 +38,19 @@ test.describe('Disbursements Table RLS', () => {
       .select('*, loans!inner(user_id)');
 
     expect(error).toBeNull();
-    
+
     // All returned disbursements should belong to the current user via loan
     if (data && data.length > 0) {
-      data.forEach(disbursement => {
+      data.forEach((disbursement) => {
         expect(disbursement.loans.user_id).toBe(user!.id);
       });
     }
   });
 
   test('Client cannot read other user disbursements', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Try to query disbursements for a loan that doesn't belong to this user
@@ -43,17 +60,19 @@ test.describe('Disbursements Table RLS', () => {
       .select('*, loans!inner(user_id)');
 
     expect(error).toBeNull();
-    
+
     // All returned disbursements should only be for this user's loans
     if (data && data.length > 0) {
-      data.forEach(disbursement => {
+      data.forEach((disbursement) => {
         expect(disbursement.loans.user_id).toBe(user!.id);
       });
     }
   });
 
   test('Client cannot create disbursement directly', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Attempt to create a disbursement directly
@@ -137,14 +156,11 @@ test.describe('Disbursements Table RLS', () => {
   });
 
   test('Admin can read all disbursements', async ({ adminSupabase }) => {
-    const { data, error } = await adminSupabase
-      .from('disbursements')
-      .select('*')
-      .limit(10);
+    const { data, error } = await adminSupabase.from('disbursements').select('*').limit(10);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
-    
+
     // Admin should see disbursements from multiple users
     // (assuming test data exists)
   });
@@ -162,7 +178,9 @@ test.describe('Disbursements Table RLS', () => {
       const loan = loans[0];
 
       // Get admin user ID
-      const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+      const {
+        data: { user: adminUser },
+      } = await adminSupabase.auth.getUser();
 
       // Create disbursement (using actual schema: created_by, not user_id/processed_by)
       const { data, error } = await adminSupabase
@@ -184,10 +202,7 @@ test.describe('Disbursements Table RLS', () => {
 
       // Cleanup
       if (data) {
-        await adminSupabase
-          .from('disbursements')
-          .delete()
-          .eq('id', data.id);
+        await adminSupabase.from('disbursements').delete().eq('id', data.id);
       }
     }
   });
@@ -205,7 +220,9 @@ test.describe('Disbursements Table RLS', () => {
       const loan = loans[0];
 
       // Get admin user ID
-      const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+      const {
+        data: { user: adminUser },
+      } = await adminSupabase.auth.getUser();
 
       // Create disbursement (using actual schema)
       const { data: disbursement } = await adminSupabase
@@ -226,9 +243,9 @@ test.describe('Disbursements Table RLS', () => {
       // Update status
       const { data, error } = await adminSupabase
         .from('disbursements')
-        .update({ 
+        .update({
           status: 'completed',
-          payment_reference: 'TEST-REF-' + Date.now()
+          payment_reference: 'TEST-REF-' + Date.now(),
         })
         .eq('id', disbursement!.id)
         .select()
@@ -238,18 +255,12 @@ test.describe('Disbursements Table RLS', () => {
       expect(data?.status).toBe('completed');
 
       // Cleanup
-      await adminSupabase
-        .from('disbursements')
-        .delete()
-        .eq('id', disbursement!.id);
+      await adminSupabase.from('disbursements').delete().eq('id', disbursement!.id);
     }
   });
 
   test('Loan Officer can read all disbursements', async ({ loanOfficerSupabase }) => {
-    const { data, error } = await loanOfficerSupabase
-      .from('disbursements')
-      .select('*')
-      .limit(10);
+    const { data, error } = await loanOfficerSupabase.from('disbursements').select('*').limit(10);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
@@ -268,8 +279,10 @@ test.describe('Disbursements Table RLS', () => {
       const loan = loans[0];
 
       // Get loan officer user ID
-      const { data: { user: loanOfficerUser } } = await loanOfficerSupabase.auth.getUser();
-      
+      const {
+        data: { user: loanOfficerUser },
+      } = await loanOfficerSupabase.auth.getUser();
+
       if (!loanOfficerUser) {
         console.log('Skipping: Loan officer user not authenticated');
         return;
@@ -294,19 +307,23 @@ test.describe('Disbursements Table RLS', () => {
 
       // Cleanup
       if (data) {
-        await loanOfficerSupabase
-          .from('disbursements')
-          .delete()
-          .eq('id', data.id);
+        await loanOfficerSupabase.from('disbursements').delete().eq('id', data.id);
       }
     }
   });
 
-  test('Disbursement with invalid method is rejected', async ({ adminSupabase, client1Supabase }) => {
-    const { data: { user: clientUser } } = await client1Supabase.auth.getUser();
+  test('Disbursement with invalid method is rejected', async ({
+    adminSupabase,
+    client1Supabase,
+  }) => {
+    const {
+      data: { user: clientUser },
+    } = await client1Supabase.auth.getUser();
     expect(clientUser).toBeTruthy();
 
-    const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+    const {
+      data: { user: adminUser },
+    } = await adminSupabase.auth.getUser();
     expect(adminUser).toBeTruthy();
 
     const { data: loan, error: loanError } = await adminSupabase
@@ -351,16 +368,18 @@ test.describe('Disbursements Table RLS', () => {
   test('Disbursement query includes loan details via join', async ({ adminSupabase }) => {
     const { data, error } = await adminSupabase
       .from('disbursements')
-      .select(`
+      .select(
+        `
         *,
         loan:loans(id, amount, status, term_months)
-      `)
+      `
+      )
       .limit(5);
 
     expect(error).toBeNull();
-    
+
     if (data && data.length > 0) {
-      data.forEach(disbursement => {
+      data.forEach((disbursement) => {
         expect(disbursement.loan).toBeTruthy();
         expect(disbursement.loan).toHaveProperty('id');
         expect(disbursement.loan).toHaveProperty('amount');
@@ -373,17 +392,19 @@ test.describe('Disbursements Table RLS', () => {
     // We can query profiles separately using the user_id
     const { data, error } = await adminSupabase
       .from('disbursements')
-      .select(`
+      .select(
+        `
         *,
         loans!inner(user_id, amount, status)
-      `)
+      `
+      )
       .limit(5);
 
     expect(error).toBeNull();
-    
+
     if (data && data.length > 0) {
       // Verify we can access loan details
-      data.forEach(disbursement => {
+      data.forEach((disbursement) => {
         expect(disbursement.loans).toBeTruthy();
         expect(disbursement.loans.user_id).toBeTruthy();
       });
@@ -393,9 +414,7 @@ test.describe('Disbursements Table RLS', () => {
 
 test.describe('Disbursements RLS - Unauthenticated Access', () => {
   test('Unauthenticated user cannot read disbursements', async ({ anonSupabase }) => {
-    const { data, error } = await anonSupabase
-      .from('disbursements')
-      .select('*');
+    const { data, error } = await anonSupabase.from('disbursements').select('*');
 
     // Should return empty or error
     if (!error) {
@@ -406,15 +425,13 @@ test.describe('Disbursements RLS - Unauthenticated Access', () => {
   });
 
   test('Unauthenticated user cannot create disbursement', async ({ anonSupabase }) => {
-    const { data, error } = await anonSupabase
-      .from('disbursements')
-      .insert({
-        loan_id: '00000000-0000-0000-0000-000000000001',
-        amount: 1000,
-        method: 'bank_transfer',
-        status: 'pending',
-        reference: 'TEST-ANON',
-      });
+    const { data, error } = await anonSupabase.from('disbursements').insert({
+      loan_id: '00000000-0000-0000-0000-000000000001',
+      amount: 1000,
+      method: 'bank_transfer',
+      status: 'pending',
+      reference: 'TEST-ANON',
+    });
 
     expect(error).toBeTruthy();
     expect(error?.message).toMatch(/JWT|auth|policy/i);
@@ -422,7 +439,6 @@ test.describe('Disbursements RLS - Unauthenticated Access', () => {
 });
 
 test.describe('Disbursements RLS - Complete Disbursement RPC', () => {
-
   test('Admin can complete disbursement via RPC', async ({ adminSupabase }) => {
     // Get a pending disbursement
     const { data: disbursements } = await adminSupabase
@@ -439,7 +455,7 @@ test.describe('Disbursements RLS - Complete Disbursement RPC', () => {
         p_disbursement_id: disbursement.id,
         p_payment_method: 'bank_transfer',
         p_payment_reference: 'RPC-TEST-' + Date.now(),
-        p_notes: 'E2E RLS test completion'
+        p_notes: 'E2E RLS test completion',
       });
 
       expect(error).toBeNull();
@@ -473,7 +489,7 @@ test.describe('Disbursements RLS - Complete Disbursement RPC', () => {
       p_disbursement_id: '00000000-0000-0000-0000-000000000000',
       p_payment_method: 'bank_transfer',
       p_payment_reference: 'UNAUTHORIZED',
-      p_notes: 'Should fail'
+      p_notes: 'Should fail',
     });
 
     // RPC returns {success: false, error: "message"} for authorization failures

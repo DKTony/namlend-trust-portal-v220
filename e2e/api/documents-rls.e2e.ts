@@ -1,19 +1,35 @@
 /**
  * E2E RLS Tests for Documents Storage Bucket (Using Fixtures)
- * 
+ *
  * Verifies Row-Level Security policies for document uploads:
  * - Clients can only read/write their own documents
  * - Admins and loan officers can read all documents
  * - Proper isolation between users
- * 
+ *
  * This version uses test fixtures for better auth session isolation
  */
 
 import { test, expect } from '../fixtures';
 
+const hasSupabaseCredentials = Boolean(
+  process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+);
+
+test.skip(
+  !hasSupabaseCredentials,
+  'Legacy Supabase document RLS tests require Supabase credentials; skipped in Convex-only E2E.'
+);
+
 test.describe('Documents Storage RLS', () => {
+  test.skip(
+    !hasSupabaseCredentials,
+    'Legacy Supabase document RLS tests require Supabase credentials; skipped in Convex-only E2E.'
+  );
+
   test('Client can upload document to their own folder', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Create a test file
@@ -34,8 +50,13 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').remove([filePath]);
   });
 
-  test('Client cannot upload to another user folder', async ({ client1Supabase, client2Supabase }) => {
-    const { data: { user: client2User } } = await client2Supabase.auth.getUser();
+  test('Client cannot upload to another user folder', async ({
+    client1Supabase,
+    client2Supabase,
+  }) => {
+    const {
+      data: { user: client2User },
+    } = await client2Supabase.auth.getUser();
     expect(client2User).toBeTruthy();
 
     // Try to upload to client2's folder using client1's credentials
@@ -52,7 +73,9 @@ test.describe('Documents Storage RLS', () => {
   });
 
   test('Client can read their own documents', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Upload a test file first
@@ -63,9 +86,7 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').upload(filePath, testFile);
 
     // Try to read it back
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .download(filePath);
+    const { data, error } = await client1Supabase.storage.from('documents').download(filePath);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
@@ -74,8 +95,13 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').remove([filePath]);
   });
 
-  test('Client cannot read another user documents', async ({ client1Supabase, client2Supabase }) => {
-    const { data: { user: client2User } } = await client2Supabase.auth.getUser();
+  test('Client cannot read another user documents', async ({
+    client1Supabase,
+    client2Supabase,
+  }) => {
+    const {
+      data: { user: client2User },
+    } = await client2Supabase.auth.getUser();
     expect(client2User).toBeTruthy();
 
     // Client 2 uploads a document
@@ -86,9 +112,7 @@ test.describe('Documents Storage RLS', () => {
     await client2Supabase.storage.from('documents').upload(filePath, testFile);
 
     // Client 1 tries to read Client 2's document
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .download(filePath);
+    const { data, error } = await client1Supabase.storage.from('documents').download(filePath);
 
     // Should fail due to RLS policy
     expect(error).toBeTruthy();
@@ -99,7 +123,9 @@ test.describe('Documents Storage RLS', () => {
   });
 
   test('Admin can read all user documents', async ({ client1Supabase, adminSupabase }) => {
-    const { data: { user: client1User } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user: client1User },
+    } = await client1Supabase.auth.getUser();
     expect(client1User).toBeTruthy();
 
     // Client 1 uploads a document
@@ -110,9 +136,7 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').upload(filePath, testFile);
 
     // Admin tries to read client's document
-    const { data, error } = await adminSupabase.storage
-      .from('documents')
-      .download(filePath);
+    const { data, error } = await adminSupabase.storage.from('documents').download(filePath);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
@@ -122,7 +146,9 @@ test.describe('Documents Storage RLS', () => {
   });
 
   test('Client can list only their own documents', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Upload a few test files
@@ -135,9 +161,7 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').upload(path2, file2);
 
     // List documents in user's folder
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .list(user!.id);
+    const { data, error } = await client1Supabase.storage.from('documents').list(user!.id);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
@@ -147,14 +171,17 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').remove([path1, path2]);
   });
 
-  test('Client cannot list another user documents', async ({ client1Supabase, client2Supabase }) => {
-    const { data: { user: client2User } } = await client2Supabase.auth.getUser();
+  test('Client cannot list another user documents', async ({
+    client1Supabase,
+    client2Supabase,
+  }) => {
+    const {
+      data: { user: client2User },
+    } = await client2Supabase.auth.getUser();
     expect(client2User).toBeTruthy();
 
     // Try to list client2's folder using client1's credentials
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .list(client2User!.id);
+    const { data, error } = await client1Supabase.storage.from('documents').list(client2User!.id);
 
     // Should return empty due to RLS (no error, just filtered results)
     expect(error).toBeNull();
@@ -162,7 +189,9 @@ test.describe('Documents Storage RLS', () => {
   });
 
   test('Client can delete their own documents', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Upload a test file
@@ -173,16 +202,19 @@ test.describe('Documents Storage RLS', () => {
     await client1Supabase.storage.from('documents').upload(filePath, testFile);
 
     // Delete it
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .remove([filePath]);
+    const { data, error } = await client1Supabase.storage.from('documents').remove([filePath]);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
   });
 
-  test('Client cannot delete another user documents', async ({ client1Supabase, client2Supabase }) => {
-    const { data: { user: client2User } } = await client2Supabase.auth.getUser();
+  test('Client cannot delete another user documents', async ({
+    client1Supabase,
+    client2Supabase,
+  }) => {
+    const {
+      data: { user: client2User },
+    } = await client2Supabase.auth.getUser();
     expect(client2User).toBeTruthy();
 
     // Client 2 uploads a document
@@ -193,9 +225,7 @@ test.describe('Documents Storage RLS', () => {
     await client2Supabase.storage.from('documents').upload(filePath, testFile);
 
     // Client 1 tries to delete Client 2's document
-    const { data, error } = await client1Supabase.storage
-      .from('documents')
-      .remove([filePath]);
+    const { data, error } = await client1Supabase.storage.from('documents').remove([filePath]);
 
     // Should fail or return empty due to RLS
     if (!error) {
@@ -206,17 +236,19 @@ test.describe('Documents Storage RLS', () => {
     await client2Supabase.storage.from('documents').remove([filePath]);
   });
 
-  test('Documents table RLS - Client can only see their own records', async ({ client1Supabase }) => {
-    const { data: { user } } = await client1Supabase.auth.getUser();
+  test('Documents table RLS - Client can only see their own records', async ({
+    client1Supabase,
+  }) => {
+    const {
+      data: { user },
+    } = await client1Supabase.auth.getUser();
     expect(user).toBeTruthy();
 
     // Query documents table
-    const { data, error } = await client1Supabase
-      .from('documents')
-      .select('*');
+    const { data, error } = await client1Supabase.from('documents').select('*');
 
     expect(error).toBeNull();
-    
+
     // All returned documents should belong to the current user
     if (data && data.length > 0) {
       data.forEach((doc: any) => {
@@ -226,14 +258,13 @@ test.describe('Documents Storage RLS', () => {
   });
 
   test('Documents table RLS - Admin can see all documents', async ({ adminSupabase }) => {
-    const { data: { user: adminUser } } = await adminSupabase.auth.getUser();
+    const {
+      data: { user: adminUser },
+    } = await adminSupabase.auth.getUser();
     expect(adminUser).toBeTruthy();
 
     // Query documents table as admin
-    const { data, error } = await adminSupabase
-      .from('documents')
-      .select('*')
-      .limit(10);
+    const { data, error } = await adminSupabase.from('documents').select('*').limit(10);
 
     expect(error).toBeNull();
     expect(data).toBeTruthy();
@@ -245,9 +276,7 @@ test.describe('Documents RLS - Unauthenticated Access', () => {
     const testFile = new Blob(['Unauthorized'], { type: 'text/plain' });
     const filePath = `anon/test-${Date.now()}.txt`;
 
-    const { data, error } = await anonSupabase.storage
-      .from('documents')
-      .upload(filePath, testFile);
+    const { data, error } = await anonSupabase.storage.from('documents').upload(filePath, testFile);
 
     expect(error).toBeTruthy();
   });
@@ -261,9 +290,7 @@ test.describe('Documents RLS - Unauthenticated Access', () => {
   });
 
   test('Unauthenticated user cannot query documents table', async ({ anonSupabase }) => {
-    const { data, error } = await anonSupabase
-      .from('documents')
-      .select('*');
+    const { data, error } = await anonSupabase.from('documents').select('*');
 
     // Should return empty or error
     if (!error) {

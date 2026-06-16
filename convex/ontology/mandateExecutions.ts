@@ -12,12 +12,13 @@
  */
 
 import { v } from 'convex/values';
-import { internalMutation, internalQuery, query } from '../_generated/server';
 import { internal } from '../_generated/api';
+import { internalMutation, internalQuery, query } from '../_generated/server';
+import { scheduleAuditLog } from '../lib/audit';
 import { assertStaff } from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
-import { scheduleAuditLog } from '../lib/audit';
 import { emitRelationship } from '../lib/relationshipEmitter';
+import { resolveWriteInstitution } from '../lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called by cron / system)
@@ -55,6 +56,7 @@ export const executeMandateDebit = internalMutation({
     // Create execution record
     const executionId = await ctx.db.insert('mandateExecutions', {
       mandateId,
+      institutionId: mandate.institutionId,
       executionNumber,
       amount: mandate.amount,
       status: 'pending',
@@ -68,6 +70,8 @@ export const executeMandateDebit = internalMutation({
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: mandate.loanId!,
       userId: mandate.debtorUserId,
+      institutionId:
+        mandate.institutionId ?? (await resolveWriteInstitution(ctx, { loanId: mandate.loanId! })),
       amount: mandate.amount,
       method: 'debit_order',
       status: 'pending',

@@ -14,15 +14,14 @@
  *   backfillInstitution  - admin only (one-time)
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalMutation } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAdmin, assertStaff } from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
 import { effectiveAt } from '../lib/temporal';
-import { institutionType, institutionStatus } from '../schema';
+import { institutionStatus, institutionType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Mutations
@@ -309,7 +308,7 @@ export const getAllInstitutionConfig = query({
 
     for (const [key, records] of Object.entries(grouped)) {
       const eff = effectiveAt(records, now);
-      if (eff) byKey[key] = (eff as { value: unknown }).value;
+      if (eff) byKey[key] = (eff as unknown as { value: unknown }).value;
     }
 
     return byKey;

@@ -3,13 +3,14 @@
  * Replaces collectionsService.ts Supabase calls.
  */
 
-import { v } from 'convex/values';
-import { ConvexError } from 'convex/values';
-import { query, mutation } from './_generated/server';
-import { assertStaff } from './lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { assertStaff } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 
 const activityType = v.union(
   v.literal('call_attempt'),
@@ -45,13 +46,15 @@ export const getCollectionsQueue = query({
   },
   handler: async (ctx, { minDaysOverdue, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
 
     // Fetch overdue payment schedules to build queue
-    const overdue = await ctx.db
+    const overdueRaw = await ctx.db
       .query('paymentSchedules')
       .withIndex('by_status', (q) => q.eq('status', 'overdue'))
       .order('asc')
       .take(limit ?? 100);
+    const overdue = applyTenantScope(overdueRaw, await tenantReadScope(ctx));
 
     const now = Date.now();
     const MS_PER_DAY = 86_400_000;
@@ -97,6 +100,7 @@ export const listInteractionsByLoan = query({
   args: { loanId: v.id('loans') },
   handler: async (ctx, { loanId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
     return ctx.db
       .query('collectionsInteractions')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
@@ -126,9 +130,11 @@ export const recordInteraction = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
 
     const interactionId = await ctx.db.insert('collectionsInteractions', {
       ...args,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       promiseFulfilled: false,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -176,8 +182,12 @@ export const listPromisesToPay = query({
   },
   handler: async (ctx, { loanId, status }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
 
-    let results = await ctx.db.query('promiseToPay').collect();
+    let results = applyTenantScope(
+      await ctx.db.query('promiseToPay').collect(),
+      await tenantReadScope(ctx)
+    );
     if (loanId) results = results.filter((p) => p.loanId === loanId);
     if (status) results = results.filter((p) => p.status === status);
     return results;
@@ -194,6 +204,7 @@ export const createPromiseToPay = mutation({
   },
   handler: async (ctx, args) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
     const now = Date.now();
 
     const loan = await ctx.db.get(args.loanId);
@@ -202,6 +213,7 @@ export const createPromiseToPay = mutation({
     const ptpId = await ctx.db.insert('promiseToPay', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: loan.institutionId,
       amount: args.promiseAmount,
       promiseDate: args.promiseDate,
       status: 'pending',
@@ -243,6 +255,7 @@ export const markPromiseFulfilled = mutation({
   },
   handler: async (ctx, { ptpId, paymentId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
 
     const ptp = await ctx.db.get(ptpId);
     if (!ptp) throw new Error('Promise-to-pay not found');
@@ -262,6 +275,7 @@ export const markPromiseFulfilled = mutation({
     emitDomainEvent(ctx, 'collection.promise_fulfilled', 'promiseToPay', ptpId, {
       loanId: ptp.loanId,
       amount: ptp.amount,
+      paymentId,
     });
   },
 });
@@ -277,7 +291,11 @@ export const listOverdueReminders = query({
   },
   handler: async (ctx, { loanId, sent }) => {
     await assertStaff(ctx);
-    let results = await ctx.db.query('overdueReminders').collect();
+    await assertCallerFeatureEnabled(ctx, 'collections');
+    let results = applyTenantScope(
+      await ctx.db.query('overdueReminders').collect(),
+      await tenantReadScope(ctx)
+    );
     if (loanId) results = results.filter((r) => r.loanId === loanId);
     if (sent !== undefined) results = results.filter((r) => r.sent === sent);
     return results;
@@ -288,6 +306,7 @@ export const markReminderSent = mutation({
   args: { reminderId: v.id('overdueReminders') },
   handler: async (ctx, { reminderId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
     await ctx.db.patch(reminderId, {
       sent: true,
       sentAt: Date.now(),
@@ -305,8 +324,10 @@ export const getCollectionsStats = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
+    const scope = await tenantReadScope(ctx);
 
-    const [overdue, ptps, interactions] = await Promise.all([
+    const [overdueRaw, ptpsRaw, interactionsRaw] = await Promise.all([
       ctx.db
         .query('paymentSchedules')
         .withIndex('by_status', (q) => q.eq('status', 'overdue'))
@@ -314,6 +335,9 @@ export const getCollectionsStats = query({
       ctx.db.query('promiseToPay').collect(),
       ctx.db.query('collectionsInteractions').collect(),
     ]);
+    const overdue = applyTenantScope(overdueRaw, scope);
+    const ptps = applyTenantScope(ptpsRaw, scope);
+    const interactions = applyTenantScope(interactionsRaw, scope);
 
     const now = Date.now();
     const MS_PER_DAY = 86_400_000;

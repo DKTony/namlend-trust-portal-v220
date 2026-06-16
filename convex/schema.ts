@@ -4,8 +4,8 @@
  * Replaces PostgreSQL + RLS with typed Convex documents + auth-guard functions.
  */
 
-import { defineSchema, defineTable } from 'convex/server';
 import { authTables } from '@convex-dev/auth/server';
+import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 // ---------------------------------------------------------------------------
@@ -278,36 +278,71 @@ export default defineSchema({
   /** Extended user profile — NamLend-specific fields beyond authTables.users */
   profiles: defineTable({
     userId: v.id('users'),
+    institutionId: v.optional(v.id('institutions')),
     email: v.string(),
     fullName: v.optional(v.string()),
     phone: v.optional(v.string()),
     idNumber: v.optional(v.string()),
     idType: v.optional(v.string()),
     address: v.optional(v.string()),
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
     city: v.optional(v.string()),
     country: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
     dateOfBirth: v.optional(v.string()), // ISO date string
     employmentStatus: v.optional(v.string()),
+    employerName: v.optional(v.string()),
+    employerPhone: v.optional(v.string()),
+    employerContactPerson: v.optional(v.string()),
     monthlyIncome: v.optional(v.number()),
+    bankName: v.optional(v.string()),
+    accountNumber: v.optional(v.string()),
+    branchCode: v.optional(v.string()),
+    branchName: v.optional(v.string()),
+    creditScore: v.optional(v.number()),
+    profileCompletionPercentage: v.optional(v.number()),
+    loanApplicationEligible: v.optional(v.boolean()),
+    idDocumentVerified: v.optional(v.boolean()),
+    bankStatementsVerified: v.optional(v.boolean()),
+    payslipVerified: v.optional(v.boolean()),
+    documentsComplete: v.optional(v.boolean()),
     kycStatus,
     status: v.optional(
       v.union(v.literal('active'), v.literal('deactivated'), v.literal('suspended'))
     ),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
-  /** Role assignments — one row per user (client | loan_officer | admin) */
+  /**
+   * Role assignments — one row per user.
+   * `tenant_admin` is the multi-tenant successor to `admin`; both are accepted by the
+   * staff/admin guards during the additive transition (Phase 0). `institutionId` binds
+   * tenant users to their tenant (optional during transition; required once tenancy is
+   * enforced in Phase 1). Platform staff are NOT in this table — see `platformAdmins`.
+   */
   userRoles: defineTable({
     userId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
+    institutionId: v.optional(v.id('institutions')),
     assignedBy: v.optional(v.id('users')),
     createdAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
   /** KYC document uploads — linked to Convex File Storage */
   kycDocuments: defineTable({
     userId: v.id('users'),
+    institutionId: v.optional(v.id('institutions')),
     documentType: v.string(),
     documentNumber: v.optional(v.string()),
     fileStorageId: v.optional(v.id('_storage')),
@@ -316,7 +351,9 @@ export default defineSchema({
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index('by_userId', ['userId']),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_institutionId', ['institutionId']),
 
   // ==========================================================================
   // LENDING CORE
@@ -328,11 +365,14 @@ export default defineSchema({
    */
   loans: defineTable({
     userId: v.id('users'),
+    id: v.optional(v.string()),
     loanNumber: v.optional(v.string()),
+    amount: v.optional(v.number()),
     principal: v.number(),
     interestRate: v.number(), // APR — validated <= 32% (Namibian law)
     termMonths: v.number(),
     monthlyPayment: v.optional(v.number()),
+    totalRepayment: v.optional(v.number()),
     purpose: v.optional(v.string()),
     status: loanStatus,
     currentStage: v.optional(v.string()),
@@ -365,6 +405,7 @@ export default defineSchema({
 
   /** Loan supporting documents via Convex File Storage */
   loanDocuments: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     documentType: v.string(),
@@ -378,6 +419,7 @@ export default defineSchema({
 
   /** Approval decisions on each loan — immutable after write */
   loanApprovals: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     reviewedBy: v.optional(v.id('users')),
     decision: v.union(
@@ -441,6 +483,7 @@ export default defineSchema({
     interestPaid: v.optional(v.number()),
     feesPaid: v.optional(v.number()),
     method: v.string(),
+    paymentMethod: v.optional(v.string()),
     status: v.union(
       v.literal('pending'),
       v.literal('processing'),
@@ -453,6 +496,8 @@ export default defineSchema({
     externalTransactionId: v.optional(v.string()),
     ipsTransactionId: v.optional(v.id('ipsTransactions')),
     paymentDate: v.optional(v.number()),
+    dueDate: v.optional(v.number()),
+    paidAt: v.optional(v.number()),
     metadata: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -467,6 +512,7 @@ export default defineSchema({
     .index('by_institutionId', ['institutionId']),
 
   paymentSchedules: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     installmentNumber: v.number(),
     dueDate: v.number(),
@@ -568,6 +614,7 @@ export default defineSchema({
   // ==========================================================================
 
   notifications: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     type: v.optional(v.string()),
     channel: v.optional(
@@ -641,6 +688,7 @@ export default defineSchema({
 
   /** User notification preferences per channel/category */
   notificationPreferences: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     channel: v.string(),
     category: v.string(),
@@ -650,6 +698,7 @@ export default defineSchema({
   }).index('by_userId', ['userId']),
 
   communicationLogs: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     channel: v.string(),
     direction: v.union(v.literal('inbound'), v.literal('outbound')),
@@ -673,6 +722,7 @@ export default defineSchema({
    * Idempotency enforced via by_msgId index + uniqueness check in mutation.
    */
   ipsTransactions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     msgId: v.string(), // idempotency key — unique per transaction
     txType: v.union(
       v.literal('credit_transfer'),
@@ -739,6 +789,7 @@ export default defineSchema({
     .index('by_settlementDate_status', ['settlementDate', 'status']),
 
   vpaRegistry: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     vpa: v.string(),
     vpaType: v.union(v.literal('collection'), v.literal('disbursement'), v.literal('personal')),
@@ -753,6 +804,7 @@ export default defineSchema({
     .index('by_vpa', ['vpa']),
 
   ipsApiLogs: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     transactionId: v.optional(v.id('ipsTransactions')),
     method: v.string(),
     endpoint: v.string(),
@@ -1454,6 +1506,7 @@ export default defineSchema({
   }).index('by_entityId', ['entityType', 'entityId']),
 
   complianceReports: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     reportType: v.union(
       v.literal('monthly_approvals'),
       v.literal('user_activity'),
@@ -1507,6 +1560,7 @@ export default defineSchema({
   // ==========================================================================
 
   reconciliationRuns: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     runDate: v.optional(v.string()),
     periodStart: v.optional(v.string()),
     periodEnd: v.optional(v.string()),
@@ -1529,6 +1583,7 @@ export default defineSchema({
   }),
 
   bankTransactions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     runId: v.optional(v.id('reconciliationRuns')),
     externalId: v.optional(v.string()),
     transactionDate: v.string(),
@@ -1564,6 +1619,7 @@ export default defineSchema({
   // ==========================================================================
 
   collectionsInteractions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.optional(v.id('users')),
     agentId: v.optional(v.id('users')),
@@ -1586,6 +1642,7 @@ export default defineSchema({
   }).index('by_loanId', ['loanId']),
 
   overdueReminders: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     channel: v.string(),
@@ -1601,6 +1658,7 @@ export default defineSchema({
   }).index('by_loanId', ['loanId']),
 
   promiseToPay: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
     amount: v.number(),
@@ -1774,6 +1832,7 @@ export default defineSchema({
    * Mandate execution records — each time a mandate is exercised against a debtor.
    */
   mandateExecutions: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     mandateId: v.id('mandates'),
     executionNumber: v.number(),
     amount: v.number(),
@@ -1796,6 +1855,7 @@ export default defineSchema({
    * POPIA-aligned consent records — what the person agreed to, when, and how.
    */
   consentRecords: defineTable({
+    institutionId: v.optional(v.id('institutions')),
     userId: v.id('users'),
     consentType: consentType,
     status: consentStatus,
@@ -1852,6 +1912,139 @@ export default defineSchema({
     updatedBy: v.optional(v.id('users')),
     createdAt: v.number(),
   }).index('by_institution_key', ['institutionId', 'key']),
+
+  // ==========================================================================
+  // PLATFORM CONTROL PLANE (multi-tenant SaaS) — Phase 0 (additive, inert)
+  // See docs/architecture/multi-tenant-platform-blueprint.md
+  // ==========================================================================
+
+  /**
+   * Platform staff — cross-tenant, OUTSIDE the tenant role model (`userRoles`).
+   * This is the only source of truth for who may access the Platform Console.
+   */
+  platformAdmins: defineTable({
+    userId: v.id('users'),
+    platformRole: v.union(v.literal('platform_owner'), v.literal('platform_support')),
+    status: v.union(v.literal('active'), v.literal('suspended')),
+    createdBy: v.optional(v.id('users')),
+    createdAt: v.number(),
+    lastReviewedAt: v.optional(v.number()),
+  }).index('by_userId', ['userId']),
+
+  /** Commercial plan/tier catalog — each plan grants a default set of feature keys. */
+  plans: defineTable({
+    planCode: v.string(),
+    name: v.string(),
+    status: v.union(v.literal('active'), v.literal('retired')),
+    defaultFeatures: v.array(v.string()), // featureKeys (validated against the code manifest)
+    limits: v.optional(v.any()), // e.g. { maxOperators, maxActiveLoans }
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+  }).index('by_planCode', ['planCode']),
+
+  /** Active commercial relationship: which plan a tenant is on, and its status. */
+  tenantSubscriptions: defineTable({
+    institutionId: v.id('institutions'),
+    planCode: v.string(),
+    status: v.union(
+      v.literal('trial'),
+      v.literal('active'),
+      v.literal('suspended'),
+      v.literal('expired'),
+      v.literal('cancelled')
+    ),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    billingRef: v.optional(v.string()),
+    createdBy: v.optional(v.id('users')),
+    reason: v.optional(v.string()),
+  }).index('by_institutionId', ['institutionId']),
+
+  /**
+   * Resolved/overridable per-tenant feature grants. The owner console writes these;
+   * both planes read them. Temporal (trials/expiry) and rollout-aware.
+   */
+  tenantEntitlements: defineTable({
+    institutionId: v.id('institutions'),
+    featureKey: v.string(),
+    source: v.union(
+      v.literal('plan'),
+      v.literal('addon'),
+      v.literal('trial'),
+      v.literal('manual_override'),
+      v.literal('removal')
+    ),
+    enabled: v.boolean(),
+    rolloutState: v.union(
+      v.literal('off'),
+      v.literal('internal'),
+      v.literal('pilot'),
+      v.literal('enabled'),
+      v.literal('deprecated')
+    ),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    reason: v.optional(v.string()),
+    changedBy: v.optional(v.id('users')),
+    changedAt: v.number(),
+  })
+    .index('by_institution_feature', ['institutionId', 'featureKey'])
+    .index('by_institutionId', ['institutionId']),
+
+  /**
+   * DB mirror of the feature catalog for owner display/sell/rollout.
+   * AUTHORITY RULE: a row here is valid only if `featureKey` exists in the code
+   * manifest (`src/config/features.ts`); the DB may not invent enforceable features.
+   */
+  featuresCatalog: defineTable({
+    featureKey: v.string(),
+    name: v.string(),
+    category: v.string(),
+    console: v.union(v.literal('platform'), v.literal('backoffice'), v.literal('client')),
+    supportStatus: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_featureKey', ['featureKey']),
+
+  /**
+   * Platform-owned regulatory guardrails — non-negotiable constraints a tenant may
+   * tighten but never relax (APR cap, retention, KYC minimums), optionally per-jurisdiction.
+   */
+  platformGuardrails: defineTable({
+    code: v.string(), // "APR_CAP", "RETENTION_YEARS", "KYC_MIN", ...
+    jurisdiction: v.optional(v.string()),
+    valueType: v.union(
+      v.literal('number'),
+      v.literal('string'),
+      v.literal('boolean'),
+      v.literal('json')
+    ),
+    value: v.string(),
+    effectiveFrom: v.number(),
+    effectiveTo: v.optional(v.number()),
+    updatedBy: v.optional(v.id('users')),
+  }).index('by_code', ['code']),
+
+  /**
+   * Audit of platform-support access to tenant scope — heavier than tenant-admin audit
+   * because support crosses tenant boundaries (POPIA / OWASP multi-tenant guidance).
+   */
+  supportAccessAudit: defineTable({
+    actorUserId: v.id('users'),
+    platformRole: v.string(),
+    institutionId: v.optional(v.id('institutions')),
+    accessType: v.union(v.literal('L0'), v.literal('L1'), v.literal('L2'), v.literal('L3')),
+    reason: v.optional(v.string()),
+    approvedBy: v.optional(v.id('users')),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    viewedResources: v.optional(v.array(v.string())),
+    impersonatedUserId: v.optional(v.id('users')),
+    ticketRef: v.optional(v.string()),
+  })
+    .index('by_actor', ['actorUserId'])
+    .index('by_institution', ['institutionId']),
 
   // ==========================================================================
   // ONTOLOGY ENGINE — Payment Rail Abstraction (Phase 5)

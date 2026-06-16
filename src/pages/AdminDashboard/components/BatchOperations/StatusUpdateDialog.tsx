@@ -1,4 +1,12 @@
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -7,15 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 
 interface StatusUpdateDialogProps {
   open: boolean;

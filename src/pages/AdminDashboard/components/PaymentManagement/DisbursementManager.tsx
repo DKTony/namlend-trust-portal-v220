@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import DisbursementDetailsModal from '@/components/modals/DisbursementDetailsModal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { formatNAD } from '@/utils/currency';
 import {
-  TrendingUp,
-  User,
+  AlertTriangle,
   Calendar,
-  DollarSign,
   CheckCircle,
   Clock,
-  AlertTriangle,
+  DollarSign,
   Eye,
+  TrendingUp,
+  User,
 } from 'lucide-react';
+import React, { useState } from 'react';
 import { useDisbursements } from '../../hooks/useDisbursements';
-import { formatNAD } from '@/utils/currency';
-import DisbursementDetailsModal from '@/components/modals/DisbursementDetailsModal';
 
 type DisbursementStatus = 'all' | 'pending' | 'approved' | 'processing' | 'completed' | 'failed';
 
@@ -34,8 +34,8 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     amount: number;
     status: string;
     method: string;
-    reference: string | null;
-    payment_reference: string | null;
+    reference: string;
+    payment_reference?: string;
     scheduled_at: string;
     created_at: string;
   }
@@ -279,9 +279,9 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                               amount: disbursement.amount,
                               status: disbursement.status,
                               method: disbursement.method,
-                              reference: disbursement.reference,
+                              reference: disbursement.reference ?? '',
                               payment_reference:
-                                (disbursement as DisbursementRow).payment_reference ?? null,
+                                (disbursement as DisbursementRow).payment_reference ?? undefined,
                               scheduled_at: disbursement.scheduled_at,
                               created_at: disbursement.created_at,
                             });

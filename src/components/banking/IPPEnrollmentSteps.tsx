@@ -3,20 +3,20 @@
  * Visual step tracker with completion badges for IPP onboarding.
  */
 
+import { Badge } from '@/components/ui/badge';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Badge } from '@/components/ui/badge';
+import type { OnboardingData } from '@/hooks/useIPPOnboarding';
 import {
   Building2,
-  CreditCard,
-  Shield,
   CheckCircle,
   ChevronRight,
+  CreditCard,
   Key,
-  UserCheck,
   Phone,
+  Shield,
+  UserCheck,
 } from 'lucide-react';
-import type { OnboardingData } from '@/hooks/useIPPOnboarding';
 
 interface IPPEnrollmentStepsProps {
   onboardingData: OnboardingData | null;

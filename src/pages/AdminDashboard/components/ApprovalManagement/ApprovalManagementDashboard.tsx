@@ -1,11 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -13,9 +11,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Eye,
+  FileText,
+  Filter,
+  Search,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Local view model — typed to match actual Convex approvalRequests schema (N2)
@@ -33,22 +48,6 @@ interface ApprovalRequest {
   created_at: string;
   updated_at: string;
 }
-import {
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Eye,
-  FileText,
-  DollarSign,
-  Calendar,
-  Filter,
-  Search,
-  User,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { formatNAD } from '@/utils/currency';
-import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 
 interface ApprovalStats {
   total: number;
@@ -459,7 +458,7 @@ export default function ApprovalManagementDashboard() {
                     </span>
                     {request.request_type === 'loan_application' && (
                       <span className="truncate tabular-nums ml-2">
-                        {formatNAD(request.request_data.amount)}
+                        {formatNAD(Number(request.request_data.amount) || 0)}
                       </span>
                     )}
                   </div>
@@ -548,10 +547,10 @@ export default function ApprovalManagementDashboard() {
                   </div>
                 </div>
 
-                {selectedRequest.review_notes && (
+                {selectedRequest.reviewer_notes && (
                   <div>
                     <Label className="text-xs text-muted-foreground">PREVIOUS NOTES</Label>
-                    <p className="text-sm mt-1">{selectedRequest.review_notes}</p>
+                    <p className="text-sm mt-1">{selectedRequest.reviewer_notes}</p>
                   </div>
                 )}
 

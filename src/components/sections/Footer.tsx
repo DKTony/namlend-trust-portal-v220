@@ -1,7 +1,7 @@
-import { Shield, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { ThemedButton } from '@/components/ui/ThemedButton';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { ThemedButton } from '@/components/ui/ThemedButton';
+import { Facebook, Instagram, Mail, MapPin, Phone, Shield, Twitter } from 'lucide-react';
 
 const Footer = () => {
   const { styles } = useTheme();

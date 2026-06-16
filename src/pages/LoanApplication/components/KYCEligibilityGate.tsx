@@ -1,12 +1,12 @@
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Progress } from '@/components/ui/progress';
-import { ShieldAlert, AlertTriangle, ArrowRight } from 'lucide-react';
+import type { KYCEligibility } from '@/hooks/useKYCEligibility';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
-import type { KYCEligibility } from '@/hooks/useKYCEligibility';
+import { AlertTriangle, ArrowRight, ShieldAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 interface KYCEligibilityGateProps {
   eligibility: KYCEligibility | null;

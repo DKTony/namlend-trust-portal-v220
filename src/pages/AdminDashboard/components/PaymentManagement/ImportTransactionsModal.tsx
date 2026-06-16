@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,11 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
+import { useMutation } from 'convex/react';
+import { AlertTriangle, CheckCircle, FileText, Loader2, Upload } from 'lucide-react';
+import React, { useState } from 'react';
 // Inline type (previously from reconciliationService)
 interface ImportTransactionInput {
   external_id: string;
@@ -22,8 +24,6 @@ interface ImportTransactionInput {
   description?: string;
   source: 'fnb' | 'standard_bank' | 'nedbank' | 'bank_windhoek' | 'csv' | 'api' | 'manual';
 }
-import { formatNAD } from '@/utils/currency';
-import { Loader2, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -156,9 +156,9 @@ export const ImportTransactionsModal: React.FC<Props> = ({ open, onClose, onSucc
           title: 'Success',
           description: (
             <div>
-              <p>Imported: {result.imported_count} transactions</p>
-              {result.duplicate_count && result.duplicate_count > 0 && (
-                <p className="text-yellow-600">Duplicates skipped: {result.duplicate_count}</p>
+              <p>Imported: {result.imported} transactions</p>
+              {result.duplicates > 0 && (
+                <p className="text-yellow-600">Duplicates skipped: {result.duplicates}</p>
               )}
             </div>
           ),

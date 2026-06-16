@@ -1,19 +1,17 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  CreditCard, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Users,
-  BadgeCheck
-} from 'lucide-react';
-import { usePaymentMetrics } from '../../hooks/usePaymentMetrics';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatNAD } from '@/utils/currency';
+import {
+  AlertTriangle,
+  BadgeCheck,
+  CheckCircle,
+  CreditCard,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import React from 'react';
+import { usePaymentMetrics } from '../../hooks/usePaymentMetrics';
 
 const PaymentOverview: React.FC = () => {
   const { metrics, loading, error, refetch } = usePaymentMetrics();
@@ -29,7 +27,7 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
       description: 'Payments processed today',
-      trend: '+12% vs yesterday'
+      trend: '+12% vs yesterday',
     },
     {
       title: 'Pending Disbursements',
@@ -39,7 +37,7 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-200',
       description: 'Awaiting disbursement',
-      count: metrics?.pendingDisbursementCount || 0
+      count: metrics?.pendingDisbursementCount || 0,
     },
     {
       title: 'Overdue Payments',
@@ -50,7 +48,7 @@ const PaymentOverview: React.FC = () => {
       borderColor: 'border-red-200',
       description: 'Past due payments',
       count: metrics?.overdueCount || 0,
-      urgent: (metrics?.overdueCount || 0) > 10
+      urgent: (metrics?.overdueCount || 0) > 10,
     },
     {
       title: 'Collections This Month',
@@ -60,7 +58,7 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
       description: 'Successfully collected',
-      trend: '+8% vs last month'
+      trend: '+8% vs last month',
     },
     {
       title: 'Payment Success Rate',
@@ -70,7 +68,7 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-emerald-50',
       borderColor: 'border-emerald-200',
       description: 'Successful payments',
-      trend: '+2% this week'
+      trend: '+2% this week',
     },
     {
       title: 'Active Payment Plans',
@@ -80,7 +78,7 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
       description: 'Clients on payment plans',
-      trend: '+5 this month'
+      trend: '+5 this month',
     },
     {
       title: 'Settled Loans',
@@ -90,8 +88,8 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-teal-50',
       borderColor: 'border-teal-200',
       description: formatCurrency(metrics?.settledLoansAmount || 0) + ' total',
-      highlight: true
-    }
+      highlight: true,
+    },
   ];
 
   if (loading) {
@@ -135,8 +133,8 @@ const PaymentOverview: React.FC = () => {
       {paymentCards.map((card, index) => {
         const Icon = card.icon;
         return (
-          <Card 
-            key={index} 
+          <Card
+            key={index}
             className={`hover:shadow-lg transition-all duration-200 ${card.borderColor} ${
               card.urgent ? 'ring-2 ring-red-200 shadow-md' : ''
             } ${card.highlight ? 'ring-2 ring-teal-200 shadow-md' : ''}`}
@@ -155,7 +153,7 @@ const PaymentOverview: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div 
+              <div
                 className="text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums"
                 title={typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
               >
@@ -167,11 +165,7 @@ const PaymentOverview: React.FC = () => {
                   <span className="ml-1 font-medium">({card.count} items)</span>
                 )}
               </p>
-              {card.trend && (
-                <p className="text-xs text-green-600 font-medium">
-                  {card.trend}
-                </p>
-              )}
+              {card.trend && <p className="text-xs text-green-600 font-medium">{card.trend}</p>}
             </CardContent>
           </Card>
         );

@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, CheckCircle, AlertCircle, FileText, Upload, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { AlertCircle, CheckCircle, Eye, FileText, ShieldCheck, Upload } from 'lucide-react';
 
 interface DocumentRequirement {
   id: string;

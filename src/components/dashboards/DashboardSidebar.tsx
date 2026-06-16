@@ -4,27 +4,24 @@
  * Ultra-modern slide-in drawer with refined glassmorphism and fluid animations
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  LayoutDashboard,
-  CreditCard,
-  FileText,
-  DollarSign,
-  User,
-  Settings,
-  LogOut,
-  X,
-  ShieldCheck,
-  Menu,
-  Wallet,
-  PieChart,
-  ChevronRight,
-  Bell,
-  Search,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
+import { cn } from '@/lib/utils';
+import {
+  ChevronRight,
+  CreditCard,
+  DollarSign,
+  FileText,
+  LayoutDashboard,
+  Menu,
+  PieChart,
+  Search,
+  Settings,
+  ShieldCheck,
+  User,
+  Wallet,
+  X,
+} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import SignOutButton from '../shared/SignOutButton';
 
 interface DashboardSidebarProps {

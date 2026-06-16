@@ -3,18 +3,17 @@
  * NISS/SWIFT acknowledgements (xsys.001, xsys.002, xsys.003)
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -23,16 +22,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Eye, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import { useSettlementRuns, useAcknowledgements } from '@/hooks/useSettlement';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useAcknowledgements, useSettlementRuns } from '@/hooks/useSettlement';
 import { ACK_TYPE_COLORS, type AckType } from '@/types/settlement';
+import { AlertTriangle, CheckCircle, Eye, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export function AcknowledgementsViewer() {
   const [selectedRunId, setSelectedRunId] = useState<string>('');
@@ -142,8 +142,10 @@ export function AcknowledgementsViewer() {
                       <TableRow key={ack.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {getAckIcon(ack.ack_type)}
-                            <Badge className={`${ACK_TYPE_COLORS[ack.ack_type]} shrink-0`}>
+                            {getAckIcon(ack.ack_type as AckType)}
+                            <Badge
+                              className={`${ACK_TYPE_COLORS[ack.ack_type as AckType]} shrink-0`}
+                            >
                               {ack.ack_type.replace('_', '.')}
                             </Badge>
                           </div>

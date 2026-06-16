@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from 'convex/react';
 import {
-  Settings,
-  RefreshCw,
-  Edit3,
   Check,
-  X,
-  History,
   ChevronDown,
   ChevronRight,
+  Edit3,
+  History,
+  RefreshCw,
+  Settings,
+  X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const CATEGORY_LABELS: Record<string, string> = {
   regulatory: 'Regulatory',
@@ -39,12 +40,14 @@ export function BusinessRulesDashboard() {
   const updateRule = useMutation(api.ontology.businessRules.updateRule);
   const seedRules = useMutation(api.ontology.businessRules.seedDefaultRules);
   const { toast } = useToast();
+  const { isPlatformSupport } = useAuth();
   const [seeding, setSeeding] = useState(false);
   const [editingRule, setEditingRule] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [expandedRule, setExpandedRule] = useState<string | null>(null);
 
   const handleSeed = async () => {
+    if (isPlatformSupport) return;
     setSeeding(true);
     try {
       await seedRules();
@@ -61,8 +64,9 @@ export function BusinessRulesDashboard() {
   };
 
   const handleSave = async (ruleCode: string) => {
+    if (isPlatformSupport) return;
     try {
-      await updateRule({ ruleCode, newValue: editValue });
+      await updateRule({ ruleCode, value: editValue });
       toast({ title: 'Updated', description: `Rule ${ruleCode} updated successfully.` });
       setEditingRule(null);
     } catch (err) {
@@ -114,7 +118,12 @@ export function BusinessRulesDashboard() {
             deploy needed.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleSeed} disabled={seeding}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSeed}
+          disabled={seeding || isPlatformSupport}
+        >
           <RefreshCw className={cn('h-4 w-4 mr-2', seeding && 'animate-spin')} />
           Seed Defaults
         </Button>
@@ -135,7 +144,7 @@ export function BusinessRulesDashboard() {
               Seed the default rules (APR limit, credit scoring thresholds, rail weights) to enable
               data-driven behavior.
             </p>
-            <Button onClick={handleSeed} disabled={seeding}>
+            <Button onClick={handleSeed} disabled={seeding || isPlatformSupport}>
               Seed Default Rules
             </Button>
           </CardContent>
@@ -197,6 +206,7 @@ export function BusinessRulesDashboard() {
                                 size="sm"
                                 className="h-7 w-7 p-0"
                                 onClick={() => handleSave(rule.ruleCode)}
+                                disabled={isPlatformSupport}
                               >
                                 <Check className="h-3.5 w-3.5 text-green-600" />
                               </Button>
@@ -226,6 +236,7 @@ export function BusinessRulesDashboard() {
                                   setEditingRule(rule.ruleCode);
                                   setEditValue(rule.value);
                                 }}
+                                disabled={isPlatformSupport}
                               >
                                 <Edit3 className="h-3.5 w-3.5" />
                               </Button>

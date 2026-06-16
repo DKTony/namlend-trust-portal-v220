@@ -1,5 +1,5 @@
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
+import React from 'react';
 
 interface SectionDividerProps {
   position: 'top' | 'bottom';
@@ -10,7 +10,9 @@ const SectionDivider: React.FC<SectionDividerProps> = ({ position }) => {
 
   if (theme === 'neo') {
     return (
-      <div className={`w-full h-8 overflow-hidden ${position === 'top' ? '-mb-1' : '-mt-1'} z-20 relative`}>
+      <div
+        className={`w-full h-8 overflow-hidden ${position === 'top' ? '-mb-1' : '-mt-1'} z-20 relative`}
+      >
         <svg
           className={`w-full h-full ${isDark ? 'text-zinc-900' : 'text-white'}`}
           preserveAspectRatio="none"
@@ -25,7 +27,9 @@ const SectionDivider: React.FC<SectionDividerProps> = ({ position }) => {
 
   if (theme === 'glass') {
     return (
-      <div className={`w-full h-24 overflow-hidden ${position === 'top' ? '-mb-12' : '-mt-12'} z-20 relative opacity-30`}>
+      <div
+        className={`w-full h-24 overflow-hidden ${position === 'top' ? '-mb-12' : '-mt-12'} z-20 relative opacity-30`}
+      >
         <svg
           viewBox="0 0 1440 320"
           className="w-full h-full text-white"

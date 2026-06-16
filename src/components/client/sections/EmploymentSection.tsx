@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { Building, Edit } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
+import { Building, Edit } from 'lucide-react';
 
 interface EmploymentSectionProps {
   profile: {

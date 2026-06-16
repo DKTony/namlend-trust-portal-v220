@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Communication {
   id: string;
@@ -35,7 +35,7 @@ export const useCommunications = (filter: string, searchTerm: string) => {
           status: 'delivered',
           createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          priority: 'high'
+          priority: 'high',
         },
         {
           id: '2',
@@ -47,7 +47,7 @@ export const useCommunications = (filter: string, searchTerm: string) => {
           status: 'sent',
           createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          priority: 'medium'
+          priority: 'medium',
         },
         {
           id: '3',
@@ -55,11 +55,12 @@ export const useCommunications = (filter: string, searchTerm: string) => {
           clientName: 'Michael Johnson',
           type: 'email',
           subject: 'KYC Document Verification Required',
-          message: 'Please upload your updated proof of income to complete your profile verification.',
+          message:
+            'Please upload your updated proof of income to complete your profile verification.',
           status: 'read',
           createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          priority: 'urgent'
+          priority: 'urgent',
         },
         {
           id: '4',
@@ -71,7 +72,7 @@ export const useCommunications = (filter: string, searchTerm: string) => {
           status: 'replied',
           createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-          priority: 'low'
+          priority: 'low',
         },
         {
           id: '5',
@@ -83,8 +84,8 @@ export const useCommunications = (filter: string, searchTerm: string) => {
           status: 'delivered',
           createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-          priority: 'low'
-        }
+          priority: 'low',
+        },
       ];
 
       // Apply filters
@@ -93,25 +94,26 @@ export const useCommunications = (filter: string, searchTerm: string) => {
       // Type filter
       if (filter !== 'all') {
         if (filter === 'pending') {
-          filteredCommunications = filteredCommunications.filter(comm => comm.status === 'sent');
+          filteredCommunications = filteredCommunications.filter((comm) => comm.status === 'sent');
         } else {
-          filteredCommunications = filteredCommunications.filter(comm => comm.type === filter);
+          filteredCommunications = filteredCommunications.filter((comm) => comm.type === filter);
         }
       }
 
       // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        filteredCommunications = filteredCommunications.filter(comm =>
-          comm.subject.toLowerCase().includes(searchLower) ||
-          comm.clientName.toLowerCase().includes(searchLower) ||
-          comm.message.toLowerCase().includes(searchLower)
+        filteredCommunications = filteredCommunications.filter(
+          (comm) =>
+            comm.subject.toLowerCase().includes(searchLower) ||
+            comm.clientName.toLowerCase().includes(searchLower) ||
+            comm.message.toLowerCase().includes(searchLower)
         );
       }
 
       // Sort by creation date (most recent first)
-      filteredCommunications.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      filteredCommunications.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       setCommunications(filteredCommunications);

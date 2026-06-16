@@ -1,44 +1,30 @@
-import React, { useState } from 'react';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
-import { 
-  MessageSquare, 
-  Mail, 
-  Phone, 
-  Send, 
-  Filter, 
-  Plus,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  User,
-  Calendar
-} from 'lucide-react';
-import { useCommunications } from '../../hooks/useCommunications';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-
-interface Communication {
-  id: string;
-  clientId: string;
-  clientName: string;
-  type: 'email' | 'sms' | 'call' | 'in-app';
-  subject: string;
-  message: string;
-  status: 'sent' | 'delivered' | 'read' | 'replied' | 'failed';
-  createdAt: string;
-  updatedAt: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-}
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Filter,
+  Mail,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  Send,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import { useCommunications } from '../../hooks/useCommunications';
 
 const CommunicationCenter: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showComposer, setShowComposer] = useState(false);
   const { styles } = useTheme();
-  
-  const { communications, loading, error, refetch } = useCommunications(activeFilter, searchTerm);
+
+  const { communications, loading, error } = useCommunications(activeFilter, searchTerm);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
@@ -46,7 +32,7 @@ const CommunicationCenter: React.FC = () => {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   };
 
@@ -55,7 +41,7 @@ const CommunicationCenter: React.FC = () => {
       email: <Mail className="h-4 w-4" />,
       sms: <MessageSquare className="h-4 w-4" />,
       call: <Phone className="h-4 w-4" />,
-      'in-app': <MessageSquare className="h-4 w-4" />
+      'in-app': <MessageSquare className="h-4 w-4" />,
     };
     return icons[type as keyof typeof icons] || <MessageSquare className="h-4 w-4" />;
   };
@@ -63,10 +49,13 @@ const CommunicationCenter: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const variants = {
       sent: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      delivered: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      delivered:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
       read: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      replied: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-      failed: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      replied:
+        'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+      failed:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     const icons = {
@@ -74,7 +63,7 @@ const CommunicationCenter: React.FC = () => {
       delivered: <CheckCircle className="h-3 w-3 mr-1" />,
       read: <CheckCircle className="h-3 w-3 mr-1" />,
       replied: <CheckCircle className="h-3 w-3 mr-1" />,
-      failed: <AlertCircle className="h-3 w-3 mr-1" />
+      failed: <AlertCircle className="h-3 w-3 mr-1" />,
     };
 
     return (
@@ -88,9 +77,11 @@ const CommunicationCenter: React.FC = () => {
   const getPriorityBadge = (priority: string) => {
     const variants = {
       low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      medium:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
       high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      urgent: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      urgent:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     return (
@@ -102,10 +93,26 @@ const CommunicationCenter: React.FC = () => {
 
   const filterOptions = [
     { value: 'all', label: 'All Communications', count: communications?.length || 0 },
-    { value: 'email', label: 'Emails', count: communications?.filter(c => c.type === 'email').length || 0 },
-    { value: 'sms', label: 'SMS', count: communications?.filter(c => c.type === 'sms').length || 0 },
-    { value: 'call', label: 'Calls', count: communications?.filter(c => c.type === 'call').length || 0 },
-    { value: 'pending', label: 'Pending', count: communications?.filter(c => c.status === 'sent').length || 0 }
+    {
+      value: 'email',
+      label: 'Emails',
+      count: communications?.filter((c) => c.type === 'email').length || 0,
+    },
+    {
+      value: 'sms',
+      label: 'SMS',
+      count: communications?.filter((c) => c.type === 'sms').length || 0,
+    },
+    {
+      value: 'call',
+      label: 'Calls',
+      count: communications?.filter((c) => c.type === 'call').length || 0,
+    },
+    {
+      value: 'pending',
+      label: 'Pending',
+      count: communications?.filter((c) => c.status === 'sent').length || 0,
+    },
   ];
 
   if (loading) {
@@ -132,7 +139,7 @@ const CommunicationCenter: React.FC = () => {
       {/* Header with Actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className={cn("text-lg font-semibold", styles.textClass)}>Communication Center</h3>
+          <h3 className={cn('text-lg font-semibold', styles.textClass)}>Communication Center</h3>
           <p className="text-sm text-muted-foreground">Manage client communications and messages</p>
         </div>
         <div className="flex space-x-2">
@@ -153,7 +160,14 @@ const CommunicationCenter: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
               <p className="text-sm text-muted-foreground truncate">Total Messages</p>
-              <p className={cn("text-xl sm:text-2xl font-bold truncate tabular-nums", styles.textClass)}>{communications?.length || 0}</p>
+              <p
+                className={cn(
+                  'text-xl sm:text-2xl font-bold truncate tabular-nums',
+                  styles.textClass
+                )}
+              >
+                {communications?.length || 0}
+              </p>
             </div>
             <MessageSquare className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
           </div>
@@ -162,7 +176,14 @@ const CommunicationCenter: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
               <p className="text-sm text-muted-foreground truncate">Pending Replies</p>
-              <p className={cn("text-xl sm:text-2xl font-bold truncate tabular-nums", styles.textClass)}>{communications?.filter(c => c.status === 'sent').length || 0}</p>
+              <p
+                className={cn(
+                  'text-xl sm:text-2xl font-bold truncate tabular-nums',
+                  styles.textClass
+                )}
+              >
+                {communications?.filter((c) => c.status === 'sent').length || 0}
+              </p>
             </div>
             <Clock className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />
           </div>
@@ -171,7 +192,14 @@ const CommunicationCenter: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
               <p className="text-sm text-muted-foreground truncate">Response Rate</p>
-              <p className={cn("text-xl sm:text-2xl font-bold truncate tabular-nums", styles.textClass)}>87%</p>
+              <p
+                className={cn(
+                  'text-xl sm:text-2xl font-bold truncate tabular-nums',
+                  styles.textClass
+                )}
+              >
+                87%
+              </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
           </div>
@@ -180,11 +208,21 @@ const CommunicationCenter: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
               <p className="text-sm text-muted-foreground truncate">Avg Response Time</p>
-              <p className={cn("text-xl sm:text-2xl font-bold truncate tabular-nums", styles.textClass)}>2.4h</p>
+              <p
+                className={cn(
+                  'text-xl sm:text-2xl font-bold truncate tabular-nums',
+                  styles.textClass
+                )}
+              >
+                2.4h
+              </p>
             </div>
             <div className="flex -space-x-2">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white dark:border-gray-800" />
+                <div
+                  key={i}
+                  className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white dark:border-gray-800"
+                />
               ))}
             </div>
           </div>
@@ -200,14 +238,17 @@ const CommunicationCenter: React.FC = () => {
             placeholder="Search communications..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={cn("w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground", styles.inputClass)}
+            className={cn(
+              'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground',
+              styles.inputClass
+            )}
           />
         </div>
         <div className="flex space-x-2">
           {filterOptions.map((option) => (
             <ThemedButton
               key={option.value}
-              variant={activeFilter === option.value ? "default" : "outline"}
+              variant={activeFilter === option.value ? 'default' : 'outline'}
               size="sm"
               onClick={() => setActiveFilter(option.value)}
               className="flex items-center space-x-1 shrink-0"
@@ -235,12 +276,11 @@ const CommunicationCenter: React.FC = () => {
         <ThemedCard>
           <div className="text-center py-8">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className={cn("text-lg font-medium", styles.textClass)}>No communications found</h3>
+            <h3 className={cn('text-lg font-medium', styles.textClass)}>No communications found</h3>
             <p className="text-muted-foreground">
-              {searchTerm 
+              {searchTerm
                 ? `No communications match "${searchTerm}"`
-                : 'No communications at this time'
-              }
+                : 'No communications at this time'}
             </p>
           </div>
         </ThemedCard>
@@ -251,12 +291,18 @@ const CommunicationCenter: React.FC = () => {
               <div className="flex items-start space-x-4">
                 {/* Communication Type Icon */}
                 <div className="flex-shrink-0">
-                  <div className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center",
-                    comm.type === 'email' ? 'bg-blue-100 text-blue-600' :
-                    comm.type === 'sms' ? 'bg-purple-100 text-purple-600' :
-                    comm.type === 'call' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
-                  )}>
+                  <div
+                    className={cn(
+                      'h-10 w-10 rounded-full flex items-center justify-center',
+                      comm.type === 'email'
+                        ? 'bg-blue-100 text-blue-600'
+                        : comm.type === 'sms'
+                          ? 'bg-purple-100 text-purple-600'
+                          : comm.type === 'call'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-orange-100 text-orange-600'
+                    )}
+                  >
                     {getTypeIcon(comm.type)}
                   </div>
                 </div>
@@ -265,7 +311,9 @@ const CommunicationCenter: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-2">
-                      <h4 className={cn("font-semibold truncate", styles.textClass)}>{comm.clientName}</h4>
+                      <h4 className={cn('font-semibold truncate', styles.textClass)}>
+                        {comm.clientName}
+                      </h4>
                       {getStatusBadge(comm.status)}
                       {getPriorityBadge(comm.priority)}
                     </div>
@@ -274,9 +322,7 @@ const CommunicationCenter: React.FC = () => {
                     </span>
                   </div>
                   <h5 className="text-sm font-medium text-foreground mb-1">{comm.subject}</h5>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                    {comm.message}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{comm.message}</p>
 
                   {/* Actions */}
                   <div className="flex items-center space-x-2">
@@ -288,7 +334,10 @@ const CommunicationCenter: React.FC = () => {
                       View Details
                     </ThemedButton>
                     {comm.status === 'failed' && (
-                      <ThemedButton variant="secondary" className="h-8 px-3 text-xs text-red-600 dark:text-red-400 shrink-0">
+                      <ThemedButton
+                        variant="secondary"
+                        className="h-8 px-3 text-xs text-red-600 dark:text-red-400 shrink-0"
+                      >
                         <Send className="h-3.5 w-3.5 mr-2" />
                         Resend
                       </ThemedButton>
@@ -307,21 +356,37 @@ const CommunicationCenter: React.FC = () => {
           <ThemedCard className="max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto m-0 p-0">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className={cn("text-lg font-semibold", styles.textClass)}>New Message</h3>
-                <ThemedButton variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowComposer(false)}>
+                <h3 className={cn('text-lg font-semibold', styles.textClass)}>New Message</h3>
+                <ThemedButton
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setShowComposer(false)}
+                >
                   ×
                 </ThemedButton>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-foreground">Recipient</label>
-                  <select className={cn("w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}>
+                  <label className="block text-sm font-medium mb-1 text-foreground">
+                    Recipient
+                  </label>
+                  <select
+                    className={cn(
+                      'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+                      styles.inputClass
+                    )}
+                  >
                     <option>Select a client...</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 text-foreground">Type</label>
-                  <select className={cn("w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}>
+                  <select
+                    className={cn(
+                      'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+                      styles.inputClass
+                    )}
+                  >
                     <option value="email">Email</option>
                     <option value="sms">SMS</option>
                     <option value="in-app">In-App Message</option>
@@ -331,7 +396,10 @@ const CommunicationCenter: React.FC = () => {
                   <label className="block text-sm font-medium mb-1 text-foreground">Subject</label>
                   <input
                     type="text"
-                    className={cn("w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
+                    className={cn(
+                      'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+                      styles.inputClass
+                    )}
                     placeholder="Enter subject..."
                   />
                 </div>
@@ -339,7 +407,10 @@ const CommunicationCenter: React.FC = () => {
                   <label className="block text-sm font-medium mb-1 text-foreground">Message</label>
                   <textarea
                     rows={6}
-                    className={cn("w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground", styles.inputClass)}
+                    className={cn(
+                      'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
+                      styles.inputClass
+                    )}
                     placeholder="Enter your message..."
                   />
                 </div>

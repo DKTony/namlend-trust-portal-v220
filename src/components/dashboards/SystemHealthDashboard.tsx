@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { AlertTriangle, CheckCircle, Clock, Database, Shield, Zap } from 'lucide-react';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { errorMonitor } from '@/utils/errorMonitoring';
+import { AlertTriangle, CheckCircle, Clock, Database, Shield, Zap } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface SystemHealthProps {
   isAdmin?: boolean;

@@ -8,9 +8,8 @@
  *   3. Check promise-to-pay deadlines
  */
 
-import { internalAction, internalMutation } from '../_generated/server';
 import { internal } from '../_generated/api';
-import { v } from 'convex/values';
+import { internalAction, internalMutation } from '../_generated/server';
 
 /** Mark payment schedule installments as overdue if past their due date. */
 export const markOverduePayments = internalMutation({
@@ -72,17 +71,18 @@ export const processNotificationQueue = internalAction({
 
     for (const item of pending) {
       try {
+        const content = item.content ?? '';
         if (item.channel === 'sms' && item.recipient) {
           await ctx.runAction(internal.actions.sendSms.sendSms, {
             to: [item.recipient],
-            message: item.content,
+            message: content,
             category: 'general',
             userId: item.userId,
           });
         } else if (item.channel === 'whatsapp' && item.recipient) {
           await ctx.runAction(internal.actions.sendWhatsapp.sendWhatsappText, {
             to: item.recipient,
-            text: item.content,
+            text: content,
             userId: item.userId,
           });
         }
@@ -111,16 +111,18 @@ export const processNotificationQueue = internalAction({
 /** Main daily tasks orchestrator — called by cron. */
 export const runDailyTasks = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (
+    ctx
+  ): Promise<{ overdueCount: number; brokenPtpCount: number; durationMs: number }> => {
     const startTime = Date.now();
     console.log('[dailyTasks] Starting daily maintenance at', new Date().toISOString());
 
-    const overdueCount = await ctx.runMutation(
+    const overdueCount: number = await ctx.runMutation(
       internal.scheduled.dailyTasks.markOverduePayments,
       {}
     );
 
-    const brokenPtpCount = await ctx.runMutation(
+    const brokenPtpCount: number = await ctx.runMutation(
       internal.scheduled.dailyTasks.checkPromiseToPay,
       {}
     );

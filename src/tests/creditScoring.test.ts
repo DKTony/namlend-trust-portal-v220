@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mock the supabase client to avoid storage.getItem error in jsdom
 vi.mock('@/integrations/supabase/client', () => ({
@@ -7,8 +7,8 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 import {
   calculateCreditScore,
-  getLoanRecommendation,
   CREDIT_SCORE_RANGES,
+  getLoanRecommendation,
   type CreditFactors,
 } from '@/services/creditScoring';
 

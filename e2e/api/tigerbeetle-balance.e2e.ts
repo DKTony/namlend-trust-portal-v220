@@ -11,12 +11,17 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://puahejtaskncpazjyxqp.supabase.co';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+// Created lazily so Convex-only E2E can skip this quarantined legacy suite
+// without requiring Supabase credentials at module load.
+let supabase: ReturnType<typeof createClient> | null = null;
+if (SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
 
 // QUARANTINE: Legacy Supabase test — queries Supabase `loan_balance_summary` view and
 // `tigerbeetle_accounts` table directly. Convex equivalent: api.loans.getLoanBalance.
@@ -24,13 +29,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // Self-skips when VITE_SUPABASE_ANON_KEY is absent.
 test.describe('TigerBeetle Balance Fixes', () => {
   test.skip(
-    !SUPABASE_ANON_KEY,
+    !supabase,
     'QUARANTINE [legacy-supabase]: VITE_SUPABASE_ANON_KEY must be set. Migrate to Convex api.loans in N2 batch.'
   );
   let testLoanId: string;
   let testUserId: string;
 
   test.beforeAll(async () => {
+    if (!supabase) return;
+
     // Authenticate as admin to bypass RLS
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: 'admin@test.namlend.com',
@@ -65,13 +72,13 @@ test.describe('TigerBeetle Balance Fixes', () => {
   test.afterAll(async () => {
     // Cleanup test loan
     if (testLoanId) {
-      await supabase.from('loans').delete().eq('id', testLoanId);
+      await supabase?.from('loans').delete().eq('id', testLoanId);
     }
   });
 
   test('loan_balance_summary view returns correct columns', async () => {
     // Test that the view has the correct schema
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loan_balance_summary')
       .select('loan_id, principal_balance, interest_balance, fees_balance, total_balance')
       .eq('loan_id', testLoanId)
@@ -88,7 +95,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
 
   test('tigerbeetle_accounts uses correct entity_type values', async () => {
     // Verify that accounts are created with LOAN_* entity types, not 'loan'
-    const { data: accounts, error } = await supabase
+    const { data: accounts, error } = await supabase!
       .from('tigerbeetle_accounts')
       .select('id, entity_type, entity_id')
       .eq('entity_id', testLoanId);
@@ -108,7 +115,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
   test('ledgerService.getLoanBalance fallback works with correct columns', async () => {
     // This tests the fallback path - directly query the view instead of RPC
     // (The RPC doesn't exist, but the view does and is used by ledgerService)
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from('loan_balance_summary')
       .select('principal_balance, interest_balance, fees_balance, total_balance')
       .eq('loan_id', testLoanId)
@@ -127,7 +134,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
     // Test the query pattern used by useTigerBeetleBalance
     const LOAN_ACCOUNT_TYPES = ['LOAN_PRINCIPAL', 'LOAN_INTEREST', 'LOAN_FEES'];
 
-    const { data: accounts, error } = await supabase
+    const { data: accounts, error } = await supabase!
       .from('tigerbeetle_accounts')
       .select('id, entity_type')
       .in('entity_type', LOAN_ACCOUNT_TYPES)
@@ -140,7 +147,7 @@ test.describe('TigerBeetle Balance Fixes', () => {
 
   test('balance calculation handles missing TigerBeetle data gracefully', async () => {
     // Test that balance queries don't fail when TigerBeetle data is missing
-    const { data: viewData, error: viewError } = await supabase
+    const { data: viewData, error: viewError } = await supabase!
       .from('loan_balance_summary')
       .select('*')
       .eq('loan_id', testLoanId)

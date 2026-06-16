@@ -21,9 +21,8 @@
  */
 
 import { GenericMutationCtx } from 'convex/server';
-import { DataModel } from '../_generated/dataModel';
 import { internal } from '../_generated/api';
-import { Id } from '../_generated/dataModel';
+import { DataModel, Id } from '../_generated/dataModel';
 import { emitEvent, generateCorrelationId } from './eventEmitter';
 
 type MutCtx = GenericMutationCtx<DataModel>;

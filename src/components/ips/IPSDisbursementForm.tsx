@@ -4,29 +4,27 @@
  * Admin form for initiating loan disbursements via IPS
  */
 
-import React, { useState } from 'react';
-import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import {
-  Loader2,
-  Send,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Wallet,
-  User,
-  CreditCard,
-} from 'lucide-react';
-import { VPAInput } from './VPAInput';
-import { IPSTransactionStatus } from './IPSTransactionStatus';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { formatNAD } from '@/constants/regulatory';
 import { useIPSDisbursement } from '@/hooks/useIPSPayment';
 import type { IPSAdapterValidateVPAResponse, InitiateIPSDisbursementResult } from '@/types/ips';
-import { formatNAD } from '@/constants/regulatory';
-import { cn } from '@/lib/utils';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  Send,
+  User,
+  Wallet,
+  XCircle,
+} from 'lucide-react';
+import { useState } from 'react';
+import { IPSTransactionStatus } from './IPSTransactionStatus';
+import { VPAInput } from './VPAInput';
 
 interface IPSDisbursementFormProps {
   disbursementId: string;

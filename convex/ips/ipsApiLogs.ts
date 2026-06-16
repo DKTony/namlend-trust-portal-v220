@@ -3,7 +3,7 @@
  */
 
 import { v } from 'convex/values';
-import { query, internalMutation, internalQuery } from '../_generated/server';
+import { internalMutation, internalQuery, query } from '../_generated/server';
 import { assertStaff } from '../lib/auth';
 import { redactIpsPayload, redactIpsXml, sha256Hex } from '../lib/ipsAliasRules';
 

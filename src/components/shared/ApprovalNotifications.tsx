@@ -1,14 +1,27 @@
-import { useState, useEffect, useMemo } from 'react';
-import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  Bell,
+  BellRing,
+  Check,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  ExternalLink,
+  FileText,
+  Inbox,
+  Loader2,
+  User,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ApprovalNotification {
   id: string;
@@ -21,24 +34,11 @@ interface ApprovalNotification {
   created_at: string;
   request_id?: string;
   priority?: string;
+  metadata?: {
+    priority?: string;
+    request_type?: string;
+  };
 }
-import {
-  Bell,
-  BellRing,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  FileText,
-  DollarSign,
-  User,
-  Check,
-  Inbox,
-  Loader2,
-  ExternalLink,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { useTheme } from '@/context/ThemeContext';
 
 interface ApprovalNotificationsProps {
   showUnreadOnly?: boolean;
@@ -77,6 +77,10 @@ export default function ApprovalNotifications({
           : new Date().toISOString(),
         request_id: n.requestId ? String(n.requestId) : undefined,
         priority: n.priority,
+        metadata: {
+          priority: n.priority,
+          request_type: n.requestType,
+        },
       }));
       const filtered = showUnreadOnly ? mapped.filter((n) => !n.is_read) : mapped;
       setNotifications(filtered);
@@ -367,12 +371,7 @@ export function NotificationBell() {
           )}
         </div>
 
-        <ApprovalNotifications
-          showUnreadOnly={false}
-          maxHeight="400px"
-          onMarkedRead={() => setUnreadCount((c) => Math.max(0, c - 1))}
-          embedded={true}
-        />
+        <ApprovalNotifications showUnreadOnly={false} maxHeight="400px" embedded={true} />
 
         <div className="p-3 border-t border-border/40 bg-muted/30 backdrop-blur-sm">
           <ThemedButton

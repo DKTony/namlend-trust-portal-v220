@@ -1,5 +1,5 @@
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 interface Props {
   children: ReactNode;

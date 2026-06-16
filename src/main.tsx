@@ -1,8 +1,7 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { initSentry } from './utils/sentry';
-import './i18n'; // Initialize i18n before App renders
 import App from './App.tsx';
+import './i18n'; // Initialize i18n before App renders
+import { initSentry } from './utils/sentry';
 
 // Initialize Sentry before anything else (no-op when VITE_SENTRY_DSN is absent)
 initSentry();

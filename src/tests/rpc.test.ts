@@ -3,7 +3,7 @@
  * Mocks supabase.rpc() and monitorRpcCall to isolate logic.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mock supabase before importing callRpc ──────────────────────────
 const mockRpc = vi.fn();

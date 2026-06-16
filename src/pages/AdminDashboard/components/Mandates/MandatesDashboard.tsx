@@ -4,12 +4,8 @@
  * Wired to convex/ontology/mandates.ts (listMandates query).
  */
 
-import React, { useState } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -17,8 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FileSignature, RefreshCw } from 'lucide-react';
 import { formatNAD } from '@/constants/regulatory';
+import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { FileSignature, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',

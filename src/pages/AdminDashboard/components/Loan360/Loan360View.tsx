@@ -4,26 +4,25 @@
  * Refactored into tab sub-components for maintainability.
  */
 
-import { useState, useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Eye, Loader2 } from 'lucide-react';
-import { useQuery } from 'convex/react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/integrations/convex/api';
 import type { Id, QueryItem } from '@/types/convex';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery } from 'convex/react';
+import { Eye, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { LoanSummaryCards } from './components/LoanSummaryCards';
+import { CollectionsTab } from './tabs/CollectionsTab';
+import { DocumentsTab } from './tabs/DocumentsTab';
 import { OverviewTab } from './tabs/OverviewTab';
 import { PaymentsTab } from './tabs/PaymentsTab';
-import { DocumentsTab } from './tabs/DocumentsTab';
-import { CollectionsTab } from './tabs/CollectionsTab';
 import { PromisesTab } from './tabs/PromisesTab';
 import { TimelineTab } from './tabs/TimelineTab';
 
@@ -34,7 +33,6 @@ interface Loan360Props {
 }
 
 export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
 
   // Convex reactive queries — skip when dialog is closed
@@ -51,11 +49,6 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   // Reactive queries for all loan sub-resources
   const rawPayments = useQuery(
     api.payments.getPaymentsByLoan,
-    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
-  );
-
-  const rawDisbursements = useQuery(
-    api.disbursements.getDisbursementsByLoan,
     isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
   );
 
@@ -90,7 +83,7 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
       purpose: rawLoan.purpose ?? '',
       status: rawLoan.status ?? 'pending',
       created_at: rawLoan._creationTime ? new Date(rawLoan._creationTime).toISOString() : '',
-      disbursed_at: rawLoan.disbursedAt ? new Date(rawLoan.disbursedAt).toISOString() : null,
+      disbursed_at: rawLoan.disbursedAt ? new Date(rawLoan.disbursedAt).toISOString() : undefined,
       // Canonical credit scoring fields (N1)
       creditScore: rawLoan.creditScore ?? null,
       debtToIncomeRatio: rawLoan.debtToIncomeRatio ?? null,
@@ -110,6 +103,7 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
       employment_status: rawClient.employmentStatus ?? 'Not specified',
       employer_name: undefined,
       monthly_income: rawClient.monthlyIncome ?? 0,
+      verified: rawClient.kycStatus === 'verified',
     };
   }, [rawClient]);
 
@@ -119,6 +113,8 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
     return rawPayments.map((p: RawPayment) => ({
       id: String(p._id),
       amount: p.amount ?? 0,
+      payment_method: p.paymentMethod ?? 'manual',
+      reference_number: p.referenceNumber ?? String(p._id),
       status: p.status ?? 'pending',
       paid_at: p.paidAt ? new Date(p.paidAt).toISOString() : '',
       created_at: p.createdAt ? new Date(p.createdAt).toISOString() : '',
@@ -126,9 +122,40 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   }, [rawPayments]);
 
   // Wire Convex queries — fall back to empty array while loading
-  const documents = rawDocuments ?? [];
-  const interactions = rawInteractions ?? [];
-  const promises = rawPromises ?? [];
+  const documents = useMemo(
+    () =>
+      (rawDocuments ?? []).map((doc) => ({
+        id: String(doc._id),
+        file_name: doc.fileName,
+        document_type: doc.documentType,
+        status: doc.status,
+        created_at: new Date(doc.uploadedAt).toISOString(),
+      })),
+    [rawDocuments]
+  );
+  const interactions = useMemo(
+    () =>
+      (rawInteractions ?? []).map((interaction) => ({
+        id: String(interaction._id),
+        interaction_type: interaction.activityType ?? interaction.interactionType ?? 'interaction',
+        outcome: interaction.outcome,
+        notes: interaction.notes,
+        created_at: new Date(interaction.createdAt).toISOString(),
+        created_by: String(interaction.agentId ?? interaction.userId ?? ''),
+      })),
+    [rawInteractions]
+  );
+  const promises = useMemo(
+    () =>
+      (rawPromises ?? []).map((promise) => ({
+        id: String(promise._id),
+        promised_amount: promise.amount,
+        promised_date: new Date(promise.promiseDate).toISOString(),
+        status: promise.status,
+        notes: promise.notes,
+      })),
+    [rawPromises]
+  );
 
   const totalPaid = payments.reduce(
     (sum, p) => (p.status === 'completed' ? sum + p.amount : sum),

@@ -10,10 +10,10 @@
  *   paid_off_loan_count
  */
 
-import { internalMutation } from '../_generated/server';
-import { v } from 'convex/values';
 import { GenericMutationCtx } from 'convex/server';
+import { v } from 'convex/values';
 import { DataModel } from '../_generated/dataModel';
+import { internalMutation } from '../_generated/server';
 
 type MutCtx = GenericMutationCtx<DataModel>;
 

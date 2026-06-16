@@ -7,21 +7,19 @@
  * reads the pre-computed values (O(1)) instead of scanning full tables.
  */
 
+import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { GenericMutationCtx } from 'convex/server';
-import { query } from './_generated/server';
 import { DataModel } from './_generated/dataModel';
+import { query } from './_generated/server';
 import { assertStaff } from './lib/auth';
+import { assertCallerFeatureEnabled } from './lib/entitlements';
 
 // ---------------------------------------------------------------------------
 // Portfolio Overview
 // ---------------------------------------------------------------------------
 
 /** Read a single projected metric, returning 0 if not yet populated. */
-async function getMetric(
-  db: GenericMutationCtx<DataModel>['db'],
-  metricKey: string
-): Promise<number> {
+async function getMetric(db: GenericQueryCtx<DataModel>['db'], metricKey: string): Promise<number> {
   const row = await db
     .query('portfolioMetrics')
     .withIndex('by_metricKey', (q) => q.eq('metricKey', metricKey))
@@ -36,6 +34,7 @@ export const getPortfolioSummary = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     // If no date filters, try projected metrics first (O(1) reads)
     if (!dateFrom && !dateTo) {
@@ -139,6 +138,7 @@ export const getRevenueMetrics = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const payments = await ctx.db.query('paymentTransactions').take(10000);
 
@@ -172,6 +172,7 @@ export const getRiskMetrics = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const [loans, overdueSchedules] = await Promise.all([
       ctx.db.query('loans').take(10000),
@@ -214,6 +215,7 @@ export const getClientMetrics = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const [profiles, loans] = await Promise.all([
       ctx.db.query('profiles').take(10000),
@@ -255,6 +257,7 @@ export const getMonthlyTrends = query({
   },
   handler: async (ctx, { months }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const lookback = months ?? 12;
     const now = Date.now();
@@ -265,7 +268,13 @@ export const getMonthlyTrends = query({
       ctx.db.query('paymentTransactions').take(10000),
     ]);
 
-    const trends = [];
+    const trends: Array<{
+      month: string;
+      newLoans: number;
+      disbursedAmount: number;
+      collectionsAmount: number;
+      paymentCount: number;
+    }> = [];
     for (let i = lookback - 1; i >= 0; i--) {
       const periodStart = now - (i + 1) * MS_PER_MONTH;
       const periodEnd = now - i * MS_PER_MONTH;
@@ -304,6 +313,7 @@ export const getIpsAnalytics = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const transactions = await ctx.db.query('ipsTransactions').take(10000);
 

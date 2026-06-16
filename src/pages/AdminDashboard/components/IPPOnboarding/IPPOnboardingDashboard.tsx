@@ -5,27 +5,9 @@
  * Allows admins to view onboarding status, initiate onboarding, and manage users.
  */
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -34,25 +16,76 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import type { IPPOnboardingState, IPPPendingOnboardingUser } from '@/types/ips';
 import {
-  Users,
+  IPP_ONBOARDING_STATE_COLORS,
+  IPP_ONBOARDING_STATE_LABELS,
+  getIPPOnboardingProgress,
+} from '@/types/ips';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  Search,
-  RefreshCw,
-  PlayCircle,
-  Eye,
-  Smartphone,
   CreditCard,
-  Shield,
+  Eye,
   Loader2,
+  PlayCircle,
+  RefreshCw,
+  Search,
+  Shield,
+  Smartphone,
+  Users,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
+interface IPPOnboardingSummary {
+  success: boolean;
+  stats: {
+    by_state: Partial<Record<IPPOnboardingState, number>>;
+    in_progress: number;
+    ipp_ready: number;
+    not_started: number;
+    suspended: number;
+    total_users: number;
+    with_errors: number;
+  };
+}
+
+interface IPPActionResult {
+  error?: string;
+  errorMessage?: string;
+  message?: string;
+  providers?: unknown[];
+  success: boolean;
+}
+
+interface IPPUsersResult {
+  success: boolean;
+  users: IPPPendingOnboardingUser[];
+}
+
 // TODO: Wire to Convex IPS onboarding queries/mutations when available
-const getOnboardingSummary = async (): Promise<any> => ({
+const getOnboardingSummary = async (): Promise<IPPOnboardingSummary> => ({
   success: true,
   stats: {
     total_users: 0,
@@ -68,22 +101,18 @@ const getUsersPendingOnboarding = async (
   _limit: number,
   _offset: number,
   _state?: string
-): Promise<any> => ({ success: true, users: [] as any[] });
-const adminInitiateOnboarding = async (_userId: string, _mobile?: string): Promise<any> => ({
+): Promise<IPPUsersResult> => ({ success: true, users: [] });
+const adminInitiateOnboarding = async (
+  _userId: string,
+  _mobile?: string
+): Promise<IPPActionResult> => ({
   success: true,
   message: 'Onboarding initiated (placeholder)',
 });
-const refreshSoVProviders = async (): Promise<any> => ({ success: true, providers: [] as any[] });
-import type {
-  IPPOnboardingState,
-  IPPPendingOnboardingUser,
-  IPPOnboardingSummaryResult,
-} from '@/types/ips';
-import {
-  IPP_ONBOARDING_STATE_LABELS,
-  IPP_ONBOARDING_STATE_COLORS,
-  getIPPOnboardingProgress,
-} from '@/types/ips';
+const refreshSoVProviders = async (): Promise<IPPActionResult> => ({
+  success: true,
+  providers: [],
+});
 
 // =============================================================================
 // STAT CARD COMPONENT
@@ -139,11 +168,7 @@ export function IPPOnboardingDashboard() {
   const [initiateMobile, setInitiateMobile] = useState('');
 
   // Queries
-  const {
-    data: summary,
-    isLoading: summaryLoading,
-    refetch: refetchSummary,
-  } = useQuery({
+  const { data: summary, refetch: refetchSummary } = useQuery({
     queryKey: ['ipp-onboarding-summary'],
     queryFn: getOnboardingSummary,
     staleTime: 30000,
@@ -211,7 +236,7 @@ export function IPPOnboardingDashboard() {
 
   // Filtered users
   const filteredUsers =
-    usersData?.users?.filter((user) => {
+    usersData?.users?.filter((user: IPPPendingOnboardingUser) => {
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
       return (
@@ -399,59 +424,59 @@ export function IPPOnboardingDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.user_id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {user.first_name} {user.last_name}
-                            </p>
-                            {user.long_alias && (
-                              <p className="text-xs text-muted-foreground font-mono">
-                                {user.long_alias}
+                    {filteredUsers.map((user: IPPPendingOnboardingUser) => {
+                      const state = user.state as IPPOnboardingState;
+                      return (
+                        <TableRow key={user.user_id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {user.first_name} {user.last_name}
                               </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <p className="text-foreground">{user.email}</p>
-                            <p className="text-muted-foreground">{user.phone}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={IPP_ONBOARDING_STATE_COLORS[user.state]}>
-                            {IPP_ONBOARDING_STATE_LABELS[user.state]}
-                          </Badge>
-                          {user.last_error_code && (
-                            <Badge variant="destructive" className="ml-2">
-                              Error: {user.last_error_code}
+                              {user.long_alias && (
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {user.long_alias}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <p className="text-foreground">{user.email}</p>
+                              <p className="text-muted-foreground">{user.phone}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={IPP_ONBOARDING_STATE_COLORS[state]}>
+                              {IPP_ONBOARDING_STATE_LABELS[state]}
                             </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="w-24">
-                            <Progress
-                              value={getIPPOnboardingProgress(user.state)}
-                              className="h-2"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {getIPPOnboardingProgress(user.state)}%
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {user.last_step_completed || '-'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            {user.last_error_code && (
+                              <Badge variant="destructive" className="ml-2">
+                                Error: {user.last_error_code}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-24">
+                              <Progress value={getIPPOnboardingProgress(state)} className="h-2" />
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {getIPPOnboardingProgress(state)}%
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {user.last_step_completed || '-'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedUser(user)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

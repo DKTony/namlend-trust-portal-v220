@@ -1,11 +1,24 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
 import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import {
+  AlertTriangle,
+  Calendar,
+  Clock,
+  DollarSign,
+  History,
+  Mail,
+  Phone,
+  Plus,
+  TrendingUp,
+  User,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
+import RecordActivityModal from './RecordActivityModal';
 
 interface CollectionQueueItem {
   loan_id: string;
@@ -34,22 +47,34 @@ interface CollectionActivity {
   contact_method: string;
   outcome: string;
   notes?: string;
+  promise_amount?: number | null;
+  promise_date?: string | null;
+  promise_fulfilled?: boolean;
   created_at: string;
 }
-import {
-  Phone,
-  Mail,
-  MessageSquare,
-  User,
-  Calendar,
-  DollarSign,
-  AlertTriangle,
-  Clock,
-  TrendingUp,
-  History,
-  Plus,
-} from 'lucide-react';
-import RecordActivityModal from './RecordActivityModal';
+
+interface RawCollectionQueueItem {
+  _id?: unknown;
+  loanId?: unknown;
+  userId?: unknown;
+  clientName?: string;
+  firstName?: string;
+  lastName?: string;
+  amount?: number;
+  amountOverdue?: number;
+  daysOverdue?: number;
+  email?: string;
+  lastContactDate?: string | null;
+  lastContactType?: string | null;
+  nextActionDate?: string | null;
+  outstandingBalance?: number;
+  overdueInstallments?: number;
+  phone?: string;
+  priorityScore?: number;
+  promiseAmount?: number | null;
+  promiseDate?: string | null;
+  status?: string;
+}
 
 export const CollectionsWorkqueue: React.FC = () => {
   const [selectedLoan, setSelectedLoan] = useState<CollectionQueueItem | null>(null);
@@ -64,7 +89,7 @@ export const CollectionsWorkqueue: React.FC = () => {
 
   const queue: CollectionQueueItem[] = useMemo(() => {
     if (!rawQueue) return [];
-    return rawQueue.map((item) => {
+    return (rawQueue as unknown as RawCollectionQueueItem[]).map((item) => {
       const amountOverdue = item.amountOverdue ?? item.amount ?? 0;
       return {
         loan_id: String(item.loanId ?? item._id ?? ''),

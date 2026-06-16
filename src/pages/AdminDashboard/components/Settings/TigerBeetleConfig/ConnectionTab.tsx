@@ -3,14 +3,14 @@
  * Connection status display, enable toggle, cluster ID, replica addresses, timeout settings.
  */
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Server, Zap, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import type { TigerBeetleConnectionConfig } from '@/hooks/useTigerBeetleConfig';
+import { Loader2, Server, Zap } from 'lucide-react';
 
 interface ConnectionTabProps {
   config: TigerBeetleConnectionConfig;

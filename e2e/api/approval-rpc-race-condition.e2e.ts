@@ -13,13 +13,17 @@ const SUPABASE_URL =
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Anon client for authenticated RPC calls
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+// Anon client for authenticated RPC calls. Created lazily so Convex-only E2E
+// can skip this quarantined legacy suite without requiring Supabase creds.
+let supabase: ReturnType<typeof createClient> | null = null;
+if (SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
 
 // Optional service role client for setup/teardown (only if key is provided)
 let serviceClient: ReturnType<typeof createClient> | null = null;
@@ -39,7 +43,7 @@ if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
 test.describe('Approval RPC Race Condition Fix', () => {
   // Skip entire suite if no service key (RLS blocks direct inserts)
   test.skip(
-    !serviceClient,
+    !supabase || !serviceClient,
     'QUARANTINE [legacy-supabase]: SUPABASE_SERVICE_ROLE_KEY not set. Migrate to Convex api.approvalWorkflow in N2 batch.'
   );
 
@@ -47,7 +51,7 @@ test.describe('Approval RPC Race Condition Fix', () => {
   let testUserId: string;
 
   test.beforeAll(async () => {
-    if (!serviceClient) return; // Guard for skip
+    if (!supabase || !serviceClient) return; // Guard for skip
 
     testUserId = '11111111-0000-0000-0000-000000000001'; // Test client1
 

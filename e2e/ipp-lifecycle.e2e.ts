@@ -539,14 +539,8 @@ test.describe('IPP Full Lifecycle', () => {
       }
     }
 
-    // Verify by navigating to reconciliation or payment rails to confirm IPS transactions
-    await openAdminTab(page, 'payment-rails');
-    await page.waitForTimeout(3000);
-
-    // Look for IPS transaction history or status
-    const ipsSection = page.getByText(/IPS|Instant Payment|IPP/i).first();
-    const hasIpsSection = await ipsSection.isVisible({ timeout: 5_000 }).catch(() => false);
-    console.log(`Phase 5: IPS section visible in Payment Rails: ${hasIpsSection}`);
+    // Payment rails moved to the Platform Console; tenant backoffice verification
+    // stops at paid-off loan state, with settlement evidence covered in Phase 6.
 
     // Final verification: Take a screenshot for the record
     await page.screenshot({ path: 'test-results/ipp-lifecycle-phase5-admin-verification.png' });

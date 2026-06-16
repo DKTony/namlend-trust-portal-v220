@@ -18,14 +18,14 @@
  *   admin queries    -> staff only
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalQuery } from '../_generated/server';
-import { ConvexError } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
+import { internalQuery, mutation, query } from '../_generated/server';
+import { scheduleAuditLog } from '../lib/audit';
 import { assertAuthenticated, assertStaff } from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
-import { scheduleAuditLog } from '../lib/audit';
 import { emitRelationship } from '../lib/relationshipEmitter';
-import { consentType, consentStatus } from '../schema';
+import { resolveWriteInstitution } from '../lib/tenancy';
+import { consentStatus, consentType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Mutations
@@ -66,6 +66,7 @@ export const grantConsent = mutation({
 
     const consentId = await ctx.db.insert('consentRecords', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       consentType: args.consentType,
       status: 'granted',
       description: args.description,

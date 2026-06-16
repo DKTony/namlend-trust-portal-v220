@@ -1,8 +1,23 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  DollarSign,
+  Link2,
+  RefreshCw,
+  TrendingUp,
+  Upload,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+import ImportTransactionsModal from './ImportTransactionsModal';
 // Inline type (previously from reconciliationService)
 interface BankTransaction {
   id: string;
@@ -16,21 +31,6 @@ interface BankTransaction {
   matched_payment_id?: string;
   status: string;
 }
-import {
-  Upload,
-  CheckCircle,
-  AlertTriangle,
-  DollarSign,
-  Calendar,
-  RefreshCw,
-  Link2,
-  TrendingUp,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation, useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '../../../../../convex/_generated/dataModel';
-import ImportTransactionsModal from './ImportTransactionsModal';
 
 interface UnmatchedPayment {
   id: string;
@@ -46,7 +46,7 @@ export const ReconciliationDashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [payments, setPayments] = useState<UnmatchedPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const error: string | null = null;
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [matchingLoading, setMatchingLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
@@ -57,6 +57,9 @@ export const ReconciliationDashboard: React.FC = () => {
   // Reactive queries for reconciliation data
   const rawTransactions = useConvexQuery(api.reconciliation.listBankTransactions, {});
   const rawPayments = useConvexQuery(api.payments.adminListPayments, { status: 'pending' });
+  const loadData = () => {
+    setLoading(rawTransactions === undefined);
+  };
 
   // Sync reactive data into local state
   React.useEffect(() => {

@@ -1,5 +1,5 @@
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
 import type { Id } from '../../convex/_generated/dataModel';
 
 interface TigerBeetleBalance {
@@ -48,6 +48,7 @@ export function useTigerBeetleBalance(loanId: string | undefined) {
  * Returns a promise that resolves to the balance from the loan document.
  */
 export async function getLoanBalance(loanId: string): Promise<TigerBeetleBalance> {
+  void loanId;
   // Fallback: return zero balance. In hook contexts, use useTigerBeetleBalance instead.
   return {
     principal: 0,

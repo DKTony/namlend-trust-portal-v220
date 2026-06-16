@@ -4,26 +4,26 @@
  * Drawer-style navigation with 3D tilt effect and theme-aware styling
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { useTheme } from '@/context/ThemeContext';
 import { useBrandingSafe } from '@/context/BrandingContext';
+import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
-  Wallet,
+  BarChart3,
+  ClipboardList,
   CreditCard,
   FileText,
-  Settings,
-  LogOut,
-  ShieldCheck,
-  Menu,
-  X,
-  Users,
-  BarChart3,
-  PieChart,
-  ClipboardList,
   Landmark,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PieChart,
+  Settings,
+  ShieldCheck,
+  Users,
+  Wallet,
+  X,
 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface MenuItem {
   id: string;

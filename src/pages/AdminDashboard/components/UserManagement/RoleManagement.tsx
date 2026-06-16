@@ -1,22 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Shield,
-  Users,
-  Plus,
-  Edit,
-  Settings,
-  Eye,
-  Lock,
-  Unlock,
-  AlertTriangle,
-  CheckCircle,
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -25,12 +10,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
-type AppRole = 'admin' | 'loan_officer' | 'client';
+import { useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Edit,
+  Eye,
+  Lock,
+  Plus,
+  Settings,
+  Shield,
+  Unlock,
+  Users,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import AssignRoleModal from './AssignRoleModal';
+type AppRole = 'admin' | 'loan_officer' | 'client';
 
 interface Role {
   id: string;
@@ -293,26 +293,10 @@ const RoleManagement: React.FC = () => {
     });
   };
 
-  const handleEditRole = (role: Role) => {
-    setEditingRole(role);
-    setNewRole({
-      name: role.name,
-      description: role.description,
-      permissions: role.permissions,
-    });
-  };
-
   const handleUpdateRole = () => {
     toast({
       title: 'Not supported',
       description: 'Editing role definitions is disabled. Use role assignment per user.',
-    });
-  };
-
-  const handleDeleteRole = () => {
-    toast({
-      title: 'Not supported',
-      description: 'Deleting roles is disabled. Use system roles only.',
     });
   };
 

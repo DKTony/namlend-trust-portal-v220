@@ -371,7 +371,7 @@ function buildAmountXml(amount?: IpsXmlAmount): string {
 
 function buildConsentXml(consent?: IpsXmlConsent): string {
   if (!consent) return '';
-  return buildSelfClosingTag('Consent', consent);
+  return buildSelfClosingTag('Consent', { ...consent });
 }
 
 function buildRegIdDetailsXml(regIds?: IpsXmlRegId[]): string {

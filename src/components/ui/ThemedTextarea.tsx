@@ -20,9 +20,9 @@
  * ```
  */
 
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 /**
  * Props for {@link ThemedTextarea}.

@@ -2,7 +2,7 @@
  * @deprecated functionality has been moved to ThemeSwitcher.tsx
  * This component is kept for backward compatibility but should not be used in new code.
  */
-import { Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/components/system/ThemeProvider';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useTheme } from '@/components/system/ThemeProvider';
+import { Moon, Sun } from 'lucide-react';
 
 export function ModeToggle() {
   const { setTheme } = useTheme();

@@ -3,10 +3,10 @@
  * Manages inline editing state for client profile sections.
  */
 
-import { useState } from 'react';
-import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
 import { monitorDatabaseError } from '@/utils/errorMonitoring';
+import { useMutation } from 'convex/react';
+import { useState } from 'react';
 
 interface UseProfileEditReturn {
   isEditing: boolean;
@@ -63,7 +63,10 @@ export function useProfileEdit(): UseProfileEditReturn {
       onSuccess();
     } catch (error) {
       console.error('Error updating profile:', error);
-      monitorDatabaseError('update_profile', error);
+      monitorDatabaseError(
+        'update_profile',
+        error instanceof Error ? { message: error.message } : { message: String(error) }
+      );
     }
   };
 

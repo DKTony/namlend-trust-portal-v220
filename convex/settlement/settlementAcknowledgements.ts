@@ -4,8 +4,19 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation, internalMutation } from '../_generated/server';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { internalMutation, mutation, query } from '../_generated/server';
+import { assertAdmin, assertStaff } from '../lib/auth';
+
+const settlementAckType = v.union(
+  v.literal('xsys_001'),
+  v.literal('xsys_002'),
+  v.literal('xsys_003')
+);
+
+function serializePayload(payload: unknown): string | undefined {
+  if (payload === undefined) return undefined;
+  return typeof payload === 'string' ? payload : JSON.stringify(payload);
+}
 
 export const listAcknowledgementsByRun = query({
   args: { runId: v.id('settlementRuns') },
@@ -33,9 +44,8 @@ export const getPendingAcknowledgements = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
-    // ackStatus is not indexed; filter in-memory from full scan (low volume table)
     const all = await ctx.db.query('settlementAcknowledgements').collect();
-    return all.filter((a) => (a as Record<string, unknown>).ackStatus === 'pending');
+    return all.filter((a) => a.processedAt === undefined && a.errorCode === undefined);
   },
 });
 
@@ -46,18 +56,26 @@ export const recordAcknowledgement = mutation({
   args: {
     runId: v.id('settlementRuns'),
     batchId: v.id('settlementPacs009Batches'),
-    ackType: v.union(v.literal('swift'), v.literal('niss')),
-    ackReference: v.string(),
-    ackStatus: v.union(v.literal('accepted'), v.literal('rejected'), v.literal('pending')),
+    ackType: settlementAckType,
+    msgId: v.string(),
     rawPayload: v.optional(v.any()),
-    rejectionReason: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
+    const now = Date.now();
 
     return ctx.db.insert('settlementAcknowledgements', {
-      ...args,
-      receivedAt: Date.now(),
+      runId: args.runId,
+      batchId: args.batchId,
+      ackType: args.ackType,
+      msgId: args.msgId,
+      rawPayload: serializePayload(args.rawPayload),
+      errorCode: args.errorCode,
+      errorDescription: args.errorDescription,
+      receivedAt: now,
+      createdAt: now,
     });
   },
 });
@@ -69,16 +87,24 @@ export const recordAcknowledgementInternal = internalMutation({
   args: {
     runId: v.id('settlementRuns'),
     batchId: v.id('settlementPacs009Batches'),
-    ackType: v.union(v.literal('swift'), v.literal('niss')),
-    ackReference: v.string(),
-    ackStatus: v.union(v.literal('accepted'), v.literal('rejected'), v.literal('pending')),
+    ackType: settlementAckType,
+    msgId: v.string(),
     rawPayload: v.optional(v.any()),
-    rejectionReason: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const now = Date.now();
     return ctx.db.insert('settlementAcknowledgements', {
-      ...args,
-      receivedAt: Date.now(),
+      runId: args.runId,
+      batchId: args.batchId,
+      ackType: args.ackType,
+      msgId: args.msgId,
+      rawPayload: serializePayload(args.rawPayload),
+      errorCode: args.errorCode,
+      errorDescription: args.errorDescription,
+      receivedAt: now,
+      createdAt: now,
     });
   },
 });
@@ -89,19 +115,20 @@ export const recordAcknowledgementInternal = internalMutation({
 export const updateAcknowledgementStatus = mutation({
   args: {
     ackId: v.id('settlementAcknowledgements'),
-    ackStatus: v.union(v.literal('accepted'), v.literal('rejected')),
-    rejectionReason: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    errorDescription: v.optional(v.string()),
     rawPayload: v.optional(v.any()),
   },
-  handler: async (ctx, { ackId, ackStatus, rejectionReason, rawPayload }) => {
+  handler: async (ctx, { ackId, errorCode, errorDescription, rawPayload }) => {
     await assertAdmin(ctx);
     const ack = await ctx.db.get(ackId);
     if (!ack) throw new Error('Acknowledgement not found');
 
     await ctx.db.patch(ackId, {
-      ackStatus,
-      rejectionReason,
-      ...(rawPayload !== undefined ? { rawPayload } : {}),
+      processedAt: Date.now(),
+      errorCode,
+      errorDescription,
+      ...(rawPayload !== undefined ? { rawPayload: serializePayload(rawPayload) } : {}),
     });
   },
 });

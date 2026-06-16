@@ -1,5 +1,5 @@
-import { User, FileText, Briefcase, CreditCard, ShieldCheck, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Briefcase, ChevronRight, CreditCard, FileText, ShieldCheck, User } from 'lucide-react';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: User },

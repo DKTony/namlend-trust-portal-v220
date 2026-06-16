@@ -1,27 +1,24 @@
-import React, { useState } from 'react';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
-import { useToast } from '@/hooks/use-toast';
-import {
-  FileText,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Filter,
-  Download,
-  Search,
-  RefreshCw,
-} from 'lucide-react';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import {
+  CheckCircle,
+  Clock,
+  Download,
+  FileText,
+  Filter,
+  RefreshCw,
+  Search,
+  XCircle,
+} from 'lucide-react';
+import React, { useState } from 'react';
 
 // Sub-components
-import LoanApplicationsList from './LoanApplicationsList';
-import LoanReviewPanel from './LoanReviewPanel';
 import BulkActionsPanel from './BulkActionsPanel';
+import LoanApplicationsList from './LoanApplicationsList';
 import LoanPortfolioOverview from './LoanPortfolioOverview';
 
 interface LoanManagementDashboardProps {
@@ -45,7 +42,6 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
   // Realtime updates
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewItems, setHasNewItems] = useState(false);
-  const { toast } = useToast();
   const { styles } = useTheme();
 
   const handleLoanSelection = (loanId: string, selected: boolean) => {

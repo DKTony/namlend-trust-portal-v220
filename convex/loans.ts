@@ -6,19 +6,25 @@
  * AUDIT: Every status change is fire-and-forget logged via scheduleAuditLog().
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertAdmin, assertOwnerOrStaff } from './lib/auth';
-import { APR_LIMIT, isValidAPR } from './lib/regulatory';
-import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
-import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
+import { internalMutation, mutation, query } from './_generated/server';
 import { approveLoanCore } from './lib/approvalReadiness';
+import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
+import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertLoanWithinCreditPolicy } from './lib/creditPolicy';
+import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
-import { loanStatus, loanRecommendation } from './schema';
 import { assertKycVerifiedForUser } from './lib/kyc';
+import { APR_LIMIT, isValidAPR } from './lib/regulatory';
+import { emitRelationship } from './lib/relationshipEmitter';
+import {
+  applyTenantScope,
+  assertSameTenant,
+  resolveWriteInstitution,
+  tenantReadScope,
+} from './lib/tenancy';
+import { loanRecommendation, loanStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -48,6 +54,8 @@ export const getLoan = query({
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
     await assertOwnerOrStaff(ctx, loan.userId);
+    // Defense-in-depth: a staff member from another tenant cannot fetch this loan by id.
+    assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
     return loan;
   },
 });
@@ -80,6 +88,10 @@ export const adminListLoans = query({
       results = results.filter((l) => l.userId === userId);
     }
 
+    // Tenant scope (no-op while TENANCY_ENFORCEMENT is off; null-institution legacy rows
+    // are treated as belonging to the caller's tenant during the backfill transition).
+    results = applyTenantScope(results, await tenantReadScope(ctx));
+
     // Enrich with profile names for admin display
     const enriched = await Promise.all(
       results.map(async (loan) => {
@@ -105,6 +117,7 @@ export const getLoanWithHistory = query({
     await assertStaff(ctx);
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
+    assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
 
     const approvals = await ctx.db
       .query('loanApprovals')
@@ -167,6 +180,9 @@ export const createLoan = mutation({
         message: 'Term must be between 1 and 360 months.',
       });
     }
+
+    const institutionId = await resolveWriteInstitution(ctx, { userId });
+    await assertLoanWithinCreditPolicy(ctx, args, institutionId);
 
     // --- PRODUCT VALIDATION (Ontology Phase 6) ---
     // If a productVersionId is provided, validate loan params against product config.
@@ -234,6 +250,7 @@ export const createLoan = mutation({
     const now = Date.now();
     const loanId = await ctx.db.insert('loans', {
       userId,
+      institutionId,
       principal: args.principal,
       interestRate: args.interestRate,
       termMonths: args.termMonths,
@@ -408,6 +425,7 @@ export const rejectLoan = mutation({
       loanId,
       reviewedBy: staffId,
       decision: 'rejected',
+      institutionId: loan.institutionId,
       notes: notes ?? reason,
       stage: loan.currentStage ?? 'officer_review',
       createdAt: Date.now(),

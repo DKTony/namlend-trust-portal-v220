@@ -5,18 +5,18 @@
  * @module context/BrandingContext
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from 'react';
+import { api } from '@/integrations/convex/api';
 import { BrandingConfig, BrandingContextType, DEFAULT_BRANDING } from '@/types/branding';
 import { debugLog } from '@/utils/debug';
 import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 // ============================================================================
 // CONSTANTS

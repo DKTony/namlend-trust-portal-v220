@@ -1,28 +1,29 @@
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import React, { useMemo } from 'react';
 // Temporarily disabled recharts due to d3-array build issue
 // import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
 import {
   AlertTriangle,
-  Shield,
-  TrendingUp,
-  TrendingDown,
-  Target,
-  Users,
-  DollarSign,
   Calendar,
+  DollarSign,
+  Shield,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
 
 interface RiskAnalysisProps {
   dateRange?: string;
 }
 
 const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
+  void dateRange;
   const risk = useQuery(api.analytics.getRiskMetrics);
   const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
 
@@ -115,21 +116,6 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
       criticalRisk: riskDistribution[3].value,
     },
   ];
-
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case 'low':
-        return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
-      case 'medium':
-        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30';
-      case 'high':
-        return 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30';
-      case 'critical':
-        return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
-      default:
-        return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800';
-    }
-  };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {

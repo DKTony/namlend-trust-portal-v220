@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { Label } from '@/components/ui/label';
 import {
@@ -8,9 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import type { LoanFormData } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
-import type { LoanFormData } from '@/hooks/useLoanForm';
+import { useTranslation } from 'react-i18next';
 
 interface LoanDetailsStepProps {
   formData: LoanFormData;

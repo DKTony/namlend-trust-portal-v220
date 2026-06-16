@@ -3,6 +3,8 @@
  * Items awaiting participant response/confirmation on adjustments
  */
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -12,10 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FileClock, AlertTriangle } from 'lucide-react';
 import { useSettlementReports } from '@/hooks/useSettlement';
+import { AlertTriangle, FileClock } from 'lucide-react';
 
 export function PendingAdjustmentResponse() {
   const {

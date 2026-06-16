@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/context/ThemeContext';
-import { cn } from '@/lib/utils';
-import LandingCard from '@/components/landing/LandingCard';
 import LandingButton from '@/components/landing/LandingButton';
+import LandingCard from '@/components/landing/LandingCard';
 import { Slider } from '@/components/ui/slider';
-import { Calculator, Info, ArrowRight } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
+import { ArrowRight, Calculator, Info } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const LoanCalculator = () => {
   const navigate = useNavigate();

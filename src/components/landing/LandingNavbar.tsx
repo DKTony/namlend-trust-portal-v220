@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import LandingButton from './LandingButton';
-import { Shield, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Menu, Shield, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import LandingButton from './LandingButton';
 
 const LandingNavbar: React.FC = () => {
   const { styles, theme } = useTheme();

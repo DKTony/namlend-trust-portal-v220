@@ -6,9 +6,9 @@
  * that the Convex analyzer reads. This file holds the actual runtime logic.
  */
 
-import { convexAuth } from '@convex-dev/auth/server';
 import { Password } from '@convex-dev/auth/providers/Password';
-import { internal } from './_generated/api';
+import { convexAuth } from '@convex-dev/auth/server';
+import { resolveWriteInstitution } from './lib/tenancy';
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [Password],
@@ -26,9 +26,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       const email: string = (args.profile?.email as string) ?? '';
       const now = Date.now();
 
+      // New sign-up: bind to the sole tenant during the single-tenant transition
+      // (multi-tenant signup binding is handled at provisioning time, Phase 4).
+      const institutionId = await resolveWriteInstitution(ctx, { userId });
+
       // Create profile row — fields must match schema.ts profiles table exactly
       await ctx.db.insert('profiles', {
         userId,
+        institutionId,
         email,
         kycStatus: 'pending',
         createdAt: now,
@@ -39,6 +44,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       await ctx.db.insert('userRoles', {
         userId,
         role: 'client',
+        institutionId,
         createdAt: now,
       });
     },

@@ -11,9 +11,9 @@
  *   - On failure: mark failed with exponential backoff (max 5 retries → dead_letter)
  */
 
-import { internalAction } from '../_generated/server';
 import { internal } from '../_generated/api';
 import { Id } from '../_generated/dataModel';
+import { internalAction } from '../_generated/server';
 
 // Optional TigerBeetle HTTP API. Convex remains authoritative; this is shadow evidence.
 const TB_BASE_URL = process.env.TIGERBEETLE_HTTP_URL ?? process.env.TB_BASE_URL;

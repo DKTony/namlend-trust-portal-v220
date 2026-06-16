@@ -24,13 +24,13 @@ export interface ReactErrorInfo {
 }
 
 // Sanitized value type (recursive structure)
-export type SanitizedValue = 
-  | string 
-  | number 
-  | boolean 
-  | null 
-  | undefined 
-  | SanitizedValue[] 
+export type SanitizedValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | SanitizedValue[]
   | { [key: string]: SanitizedValue };
 
 // Error severity levels
@@ -38,7 +38,7 @@ export enum ErrorSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 // Error categories for better classification
@@ -50,7 +50,7 @@ export enum ErrorCategory {
   VALIDATION = 'validation',
   BUSINESS_LOGIC = 'business_logic',
   SYSTEM = 'system',
-  USER_INPUT = 'user_input'
+  USER_INPUT = 'user_input',
 }
 
 // Structured error interface
@@ -80,7 +80,7 @@ class ErrorLogger {
       this.isOnline = true;
       this.flushErrorQueue();
     });
-    
+
     window.addEventListener('offline', () => {
       this.isOnline = false;
     });
@@ -107,8 +107,8 @@ class ErrorLogger {
     }
     // Fallback UUID generation
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   }
@@ -116,7 +116,7 @@ class ErrorLogger {
   public async logError(error: Partial<AppError>): Promise<void> {
     // Sanitize context to prevent circular references
     const sanitizedContext = this.sanitizeContext(error.context);
-    
+
     const appError: AppError = {
       id: this.generateUUID(),
       message: error.message || 'Unknown error',
@@ -128,7 +128,7 @@ class ErrorLogger {
       stack: this.sanitizeStack(error.stack),
       userAgent: navigator.userAgent,
       url: window.location.href,
-      resolved: false
+      resolved: false,
     };
 
     // Store in local queue
@@ -155,7 +155,7 @@ class ErrorLogger {
 
     const sanitizeValue = (key: string, value: unknown, depth: number = 0): SanitizedValue => {
       if (depth > 3) return '[Max Depth]';
-      
+
       if (value === null || typeof value !== 'object') {
         return value as SanitizedValue;
       }
@@ -170,7 +170,7 @@ class ErrorLogger {
         return {
           name: value.name,
           message: value.message,
-          stack: value.stack?.split('\n').slice(0, 3).join('\n')
+          stack: value.stack?.split('\n').slice(0, 3).join('\n'),
         };
       }
 
@@ -183,17 +183,18 @@ class ErrorLogger {
       }
 
       if (Array.isArray(value)) {
-        return value.slice(0, 5).map((item, index) => 
-          sanitizeValue(`${key}[${index}]`, item, depth + 1)
-        );
+        return value
+          .slice(0, 5)
+          .map((item, index) => sanitizeValue(`${key}[${index}]`, item, depth + 1));
       }
 
       const result: Record<string, SanitizedValue> = {};
-      const keys = Object.keys(value as object).slice(0, 10);
-      
+      const record = value as Record<string, unknown>;
+      const keys = Object.keys(record).slice(0, 10);
+
       for (const k of keys) {
         try {
-          result[k] = sanitizeValue(k, value[k], depth + 1);
+          result[k] = sanitizeValue(k, record[k], depth + 1);
         } catch (err) {
           result[k] = '[Sanitization Error]';
         }
@@ -215,7 +216,7 @@ class ErrorLogger {
 
   private sanitizeStack(stack?: string): string | undefined {
     if (!stack) return undefined;
-    
+
     // Limit stack trace to prevent excessive data
     return stack.split('\n').slice(0, 10).join('\n');
   }
@@ -232,9 +233,9 @@ class ErrorLogger {
         userId: data.userId,
         url: data.url,
         contextKeys: data.context ? Object.keys(data.context) : [],
-        stackPreview: data.stack?.split('\n').slice(0, 2).join('\n')
+        stackPreview: data.stack?.split('\n').slice(0, 2).join('\n'),
       };
-      
+
       console.error(message, safeData);
     } catch (err) {
       console.error(message, '[Error object too complex to display]');
@@ -249,9 +250,8 @@ class ErrorLogger {
       this.errorQueue = [];
 
       // Send to Supabase error_logs table
-      const { error } = await supabase
-        .from('error_logs')
-        .insert(errorsToSend.map(err => ({
+      const { error } = await supabase.from('error_logs').insert(
+        errorsToSend.map((err) => ({
           id: err.id,
           message: err.message,
           category: err.category,
@@ -262,8 +262,9 @@ class ErrorLogger {
           stack: err.stack,
           user_agent: err.userAgent,
           url: err.url,
-          resolved: err.resolved
-        })));
+          resolved: err.resolved,
+        }))
+      );
 
       if (error) {
         // If sending fails, put errors back in queue
@@ -280,26 +281,37 @@ class ErrorLogger {
 export const errorLogger = ErrorLogger.getInstance();
 
 // Helper functions for common error scenarios
-export const handleAuthError = (error: ErrorLike | PostgrestError | Error, context?: Record<string, unknown>) => {
+export const handleAuthError = (
+  error: ErrorLike | PostgrestError | Error,
+  context?: Record<string, unknown>
+) => {
   errorLogger.logError({
     message: error.message || 'Authentication error',
     category: ErrorCategory.AUTHENTICATION,
     severity: ErrorSeverity.HIGH,
     context: { ...context, originalError: error },
-    stack: error.stack
+    stack: error.stack,
   });
 };
 
-export const handleDatabaseError = (error: ErrorLike | PostgrestError | Error | unknown, operation: string, context?: Record<string, unknown>) => {
-  const errorMessage = error instanceof Error ? error.message : 
-    (typeof error === 'object' && error !== null && 'message' in error) ? String((error as ErrorLike).message) : 'Unknown error';
+export const handleDatabaseError = (
+  error: ErrorLike | PostgrestError | Error | unknown,
+  operation: string,
+  context?: Record<string, unknown>
+) => {
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as ErrorLike).message)
+        : 'Unknown error';
   const errorStack = error instanceof Error ? error.stack : undefined;
   errorLogger.logError({
     message: `Database error during ${operation}: ${errorMessage}`,
     category: ErrorCategory.DATABASE,
     severity: ErrorSeverity.HIGH,
     context: { operation, ...context, originalError: String(error) },
-    stack: errorStack
+    stack: errorStack,
   });
 };
 
@@ -308,16 +320,20 @@ export const handleValidationError = (field: string, value: unknown, rule: strin
     message: `Validation failed for ${field}: ${rule}`,
     category: ErrorCategory.VALIDATION,
     severity: ErrorSeverity.LOW,
-    context: { field, value, rule }
+    context: { field, value, rule },
   });
 };
 
-export const handleBusinessLogicError = (operation: string, reason: string, context?: Record<string, unknown>) => {
+export const handleBusinessLogicError = (
+  operation: string,
+  reason: string,
+  context?: Record<string, unknown>
+) => {
   errorLogger.logError({
     message: `Business logic error in ${operation}: ${reason}`,
     category: ErrorCategory.BUSINESS_LOGIC,
     severity: ErrorSeverity.MEDIUM,
-    context: { operation, reason, ...context }
+    context: { operation, reason, ...context },
   });
 };
 
@@ -327,18 +343,22 @@ export const handleNetworkError = (url: string, method: string, error: ErrorLike
     category: ErrorCategory.NETWORK,
     severity: ErrorSeverity.MEDIUM,
     context: { url, method, originalError: error },
-    stack: error.stack
+    stack: error.stack,
   });
 };
 
 // Error boundary helper
-export const handleComponentError = (componentName: string, error: Error, errorInfo: ReactErrorInfo) => {
+export const handleComponentError = (
+  componentName: string,
+  error: Error,
+  errorInfo: ReactErrorInfo
+) => {
   errorLogger.logError({
     message: `Component error in ${componentName}: ${error.message}`,
     category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.HIGH,
     context: { componentName, errorInfo },
-    stack: error.stack
+    stack: error.stack,
   });
 };
 
@@ -347,20 +367,20 @@ export const trackUserAction = (action: string, data?: Record<string, any>) => {
   if (process.env.NODE_ENV === 'development') {
     console.log('User Action:', action, data);
   }
-  
+
   // Store recent actions for error context
   const recentActions = JSON.parse(localStorage.getItem('recentUserActions') || '[]');
   recentActions.push({
     action,
     data,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   // Keep only last 10 actions
   if (recentActions.length > 10) {
     recentActions.shift();
   }
-  
+
   localStorage.setItem('recentUserActions', JSON.stringify(recentActions));
 };
 
@@ -375,33 +395,35 @@ export const measurePerformance = async <T>(
   fn: () => Promise<T>
 ): Promise<T> => {
   const startTime = performance.now();
-  
+
   try {
     const result = await fn();
     const duration = performance.now() - startTime;
-    
+
     // Log slow operations
-    if (duration > 2000) { // 2 seconds threshold
+    if (duration > 2000) {
+      // 2 seconds threshold
       errorLogger.logError({
         message: `Slow operation detected: ${operation} took ${duration.toFixed(2)}ms`,
         category: ErrorCategory.SYSTEM,
         severity: ErrorSeverity.MEDIUM,
-        context: { operation, duration }
+        context: { operation, duration },
       });
     }
-    
+
     return result;
   } catch (error) {
     const duration = performance.now() - startTime;
-    
+    const err = error instanceof Error ? error : new Error(String(error));
+
     errorLogger.logError({
-      message: `Operation failed: ${operation} - ${error.message}`,
+      message: `Operation failed: ${operation} - ${err.message}`,
       category: ErrorCategory.SYSTEM,
       severity: ErrorSeverity.HIGH,
-      context: { operation, duration, originalError: error },
-      stack: error.stack
+      context: { operation, duration, originalError: err.message },
+      stack: err.stack,
     });
-    
+
     throw error;
   }
 };
@@ -413,29 +435,30 @@ export const retryWithBackoff = async <T>(
   baseDelay: number = 1000
 ): Promise<T> => {
   let lastError: Error | unknown;
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      lastError = error;
-      
+      const err = error instanceof Error ? error : new Error(String(error));
+      lastError = err;
+
       if (attempt === maxRetries) {
         errorLogger.logError({
-          message: `Operation failed after ${maxRetries + 1} attempts: ${error.message}`,
+          message: `Operation failed after ${maxRetries + 1} attempts: ${err.message}`,
           category: ErrorCategory.SYSTEM,
           severity: ErrorSeverity.HIGH,
-          context: { attempts: attempt + 1, originalError: error },
-          stack: error.stack
+          context: { attempts: attempt + 1, originalError: err.message },
+          stack: err.stack,
         });
         break;
       }
-      
+
       // Exponential backoff
       const delay = baseDelay * Math.pow(2, attempt);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  
+
   throw lastError;
 };

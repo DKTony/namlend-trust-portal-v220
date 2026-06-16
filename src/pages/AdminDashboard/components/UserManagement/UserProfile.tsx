@@ -1,31 +1,8 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Shield,
-  Settings,
-  Edit,
-  Save,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Activity,
-  Key,
-  UserX,
-  UserCheck,
-  Loader2,
-} from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -33,8 +10,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useUserProfile } from '../../hooks/useUserProfile';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Activity,
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Key,
+  Loader2,
+  Save,
+  Settings,
+  Shield,
+  User,
+  UserX,
+  X,
+} from 'lucide-react';
+import React, { useState } from 'react';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 interface UserProfileProps {
   userId: string;

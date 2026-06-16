@@ -1,39 +1,23 @@
-import React from 'react';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
-import {
-  Eye,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  DollarSign,
-  User,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Star,
-} from 'lucide-react';
-import { useClientsList } from '../../hooks/useClientsList';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-
-interface Client {
-  id: string;
-  fullName: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
-  joinedAt: string;
-  totalLoans: number;
-  totalValue: number;
-  lastActivity: string;
-  riskLevel: 'low' | 'medium' | 'high';
-  isPremium: boolean;
-  kycStatus: 'verified' | 'pending' | 'rejected';
-}
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Eye,
+  Mail,
+  MapPin,
+  Phone,
+  Star,
+  User,
+} from 'lucide-react';
+import React from 'react';
+import { useClientsList } from '../../hooks/useClientsList';
 
 interface ClientsListProps {
   status: 'all' | 'active' | 'inactive' | 'suspended' | 'pending';

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Package, Plus, RefreshCw, FileText, ChevronDown, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { cn } from '@/lib/utils';
 import type { Id } from '@/types/convex';
+import { useMutation, useQuery } from 'convex/react';
+import { ChevronDown, ChevronRight, FileText, Package, Plus, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
 export function ProductsDashboard() {
-  const products = useQuery(api.ontology.products.listProducts);
+  const products = useQuery(api.ontology.products.listProducts, {});
   const seedProduct = useMutation(api.ontology.products.seedPersonalLoan);
   const { toast } = useToast();
   const [seeding, setSeeding] = useState(false);
@@ -20,7 +20,7 @@ export function ProductsDashboard() {
   const handleSeed = async () => {
     setSeeding(true);
     try {
-      await seedProduct();
+      await seedProduct({});
       toast({ title: 'Seeded', description: 'Personal Loan product created.' });
     } catch (err) {
       toast({
@@ -93,7 +93,7 @@ export function ProductsDashboard() {
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                       <div>
-                        <CardTitle className="text-base">{product.displayName}</CardTitle>
+                        <CardTitle className="text-base">{product.name}</CardTitle>
                         <p className="text-xs text-muted-foreground font-mono mt-0.5">
                           {product.productCode}
                         </p>
@@ -113,7 +113,7 @@ export function ProductsDashboard() {
                         {product.status}
                       </Badge>
                       <Badge variant="secondary" className="text-xs">
-                        {product.productType}
+                        {product.category}
                       </Badge>
                     </div>
                   </div>
@@ -124,7 +124,7 @@ export function ProductsDashboard() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground text-xs">Currency</p>
-                        <p className="font-medium">{product.currency}</p>
+                        <p className="font-medium">NAD</p>
                       </div>
                       {product.description && (
                         <div className="col-span-2">
@@ -194,9 +194,9 @@ function ProductVersions({ productId }: { productId: string }) {
                   {ver.config.maxAmount.toLocaleString()}
                 </span>
               )}
-              {ver.config?.interestRate != null && (
+              {(ver.config?.defaultInterestRate ?? ver.config?.maxInterestRate) != null && (
                 <Badge variant="outline" className="text-xs">
-                  {ver.config.interestRate}% APR
+                  {ver.config.defaultInterestRate ?? ver.config.maxInterestRate}% APR
                 </Badge>
               )}
             </div>

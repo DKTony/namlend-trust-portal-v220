@@ -3,20 +3,19 @@
  * Tests pure functions — no Supabase calls needed.
  */
 
-import { describe, it, expect } from 'vitest';
+import type { CreditFactors, CreditScoreFactor } from '@/services/creditScoring';
 import {
-  applyThresholdRules,
   applyConditionRules,
-  generateRecommendationsFromRules,
-  getRiskLevelFromScore,
-  getRateAdjustment,
-  INCOME_RULES,
+  applyThresholdRules,
   DTI_RULES,
   EMPLOYMENT_DURATION_RULES,
+  generateRecommendationsFromRules,
+  getRateAdjustment,
+  getRiskLevelFromScore,
+  INCOME_RULES,
   VERIFICATION_RULES,
 } from '@/services/scoringRules';
-import type { CreditScoreFactor } from '@/services/creditScoring';
-import type { CreditFactors } from '@/services/creditScoring';
+import { describe, expect, it } from 'vitest';
 
 // ── Helper to create a base CreditFactors object ────────────────────
 function makeFactors(overrides: Partial<CreditFactors> = {}): CreditFactors {
@@ -82,7 +81,7 @@ describe('applyThresholdRules — Income', () => {
 
   it('uses dynamicDescription callback when provided', () => {
     const factors: CreditScoreFactor[] = [];
-    applyThresholdRules(25000, INCOME_RULES, 'Income', factors, (rule, val) => `Custom: ${val}`);
+    applyThresholdRules(25000, INCOME_RULES, 'Income', factors, (_rule, val) => `Custom: ${val}`);
     expect(factors[0].description).toBe('Custom: 25000');
   });
 });

@@ -1,8 +1,8 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
+import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
+import React from 'react';
 
 export interface AdaptiveTabItem {
   value: string;

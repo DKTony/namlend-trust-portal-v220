@@ -3,29 +3,28 @@
  * Displays real-time IPS transaction health status and alerts
  */
 
-import React, { useMemo, useCallback, useState } from 'react';
-import { useQuery as useConvexQuery, useMutation as useConvexMutation } from 'convex/react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatNAD } from '@/constants/regulatory';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
 import {
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  RefreshCw,
   Activity,
+  AlertTriangle,
   Bell,
-  BellOff,
-  Eye,
   CheckCheck,
+  CheckCircle,
+  Clock,
+  Eye,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
-import { formatNAD } from '@/constants/regulatory';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface IPSHealthData {
   summary: {
@@ -85,7 +84,7 @@ export function IPSHealthWidget() {
     const pendingState = rawTransactions.filter((t) =>
       ['pending', 'initiated', 'sent'].includes(t.status)
     ).length;
-    const timeoutState = rawTransactions.filter((t) => t.status === 'deemed').length;
+    const timeoutState = rawTransactions.filter((t) => t.status === 'timeout').length;
 
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     const stuck = rawTransactions.filter(
@@ -130,8 +129,11 @@ export function IPSHealthWidget() {
       severity: a.severity ?? 'info',
       message: a.message ?? '',
       hours_stuck: 0,
-      amount: a.amount ?? 0,
-      acknowledged_at: a.acknowledgedAt ? new Date(a.acknowledgedAt).toISOString() : null,
+      amount: Number(a.metadata?.amount ?? 0),
+      acknowledged_at:
+        typeof a.metadata?.acknowledgedAt === 'number'
+          ? new Date(a.metadata.acknowledgedAt).toISOString()
+          : null,
       resolved_at: a.resolvedAt ? new Date(a.resolvedAt).toISOString() : null,
       created_at: a.createdAt ? new Date(a.createdAt).toISOString() : new Date().toISOString(),
     }));
@@ -194,7 +196,6 @@ export function IPSHealthWidget() {
   };
 
   const healthStatus = getHealthStatus();
-  const HealthIcon = healthStatus.icon || Activity;
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {

@@ -3,11 +3,11 @@
  * Displays linked bank accounts associated with the user's IPP onboarding.
  */
 
-import { CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Badge } from '@/components/ui/badge';
-import { Building2 } from 'lucide-react';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import type { OnboardingData } from '@/hooks/useIPPOnboarding';
+import { Building2 } from 'lucide-react';
 
 interface LinkedAccountsTabProps {
   onboardingData: OnboardingData | null;

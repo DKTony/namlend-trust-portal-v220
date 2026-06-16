@@ -4,10 +4,10 @@
  * Version: v2.4.0
  */
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GitBranch, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useWorkflowStats } from '@/hooks/useWorkflow';
+import { CheckCircle, Clock, GitBranch, XCircle } from 'lucide-react';
+import React from 'react';
 
 const WorkflowStats: React.FC = () => {
   const { stats, loading } = useWorkflowStats();
@@ -35,29 +35,29 @@ const WorkflowStats: React.FC = () => {
       value: stats?.total_active || 0,
       icon: GitBranch,
       color: 'text-blue-500',
-      bgColor: 'bg-blue-100'
+      bgColor: 'bg-blue-100',
     },
     {
       title: 'Pending My Action',
       value: stats?.pending_my_action || 0,
       icon: Clock,
       color: 'text-yellow-500',
-      bgColor: 'bg-yellow-100'
+      bgColor: 'bg-yellow-100',
     },
     {
       title: 'Completed Today',
       value: stats?.completed_today || 0,
       icon: CheckCircle,
       color: 'text-green-500',
-      bgColor: 'bg-green-100'
+      bgColor: 'bg-green-100',
     },
     {
       title: 'Rejected Today',
       value: stats?.rejected_today || 0,
       icon: XCircle,
       color: 'text-red-500',
-      bgColor: 'bg-red-100'
-    }
+      bgColor: 'bg-red-100',
+    },
   ];
 
   return (
@@ -67,9 +67,7 @@ const WorkflowStats: React.FC = () => {
         return (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
               <div className={`p-2 rounded-full ${stat.bgColor}`}>
                 <Icon className={`h-4 w-4 ${stat.color}`} />
               </div>

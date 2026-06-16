@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 interface Payment {
   id: string;
@@ -15,18 +15,13 @@ interface Payment {
   createdAt: string;
 }
 
-interface PaymentApiItem {
-  id: string;
-  loan_id: string;
-  amount: number;
-  payment_method?: string;
-  status?: string;
-  reference_number?: string;
-  paid_at?: string;
-  created_at: string;
-  client_name?: string;
-  due_date?: string;
-}
+type ConvexPaymentStatus =
+  | 'completed'
+  | 'failed'
+  | 'pending'
+  | 'processing'
+  | 'refunded'
+  | 'reversed';
 
 export const usePaymentsList = (
   status: 'all' | 'pending' | 'completed' | 'failed' | 'overdue',
@@ -34,7 +29,7 @@ export const usePaymentsList = (
 ) => {
   // Convex reactive query — adminListPayments or fallback
   const rawPayments = useConvexQuery(api.payments.adminListPayments, {
-    status: status !== 'all' ? status : undefined,
+    status: status !== 'all' && status !== 'overdue' ? (status as ConvexPaymentStatus) : undefined,
   });
 
   const loading = rawPayments === undefined;

@@ -4,15 +4,15 @@
  * Orchestrates sub-components and the useIPPOnboarding hook.
  */
 
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, CreditCard, Loader2, Zap, RefreshCw } from 'lucide-react';
-import { useIPPOnboarding } from '@/hooks/useIPPOnboarding';
-import { IPPOnboardingCard } from '@/components/banking/IPPOnboardingCard';
-import { IPPEnrollmentSteps } from '@/components/banking/IPPEnrollmentSteps';
 import { IPPActionDialog } from '@/components/banking/IPPActionDialog';
+import { IPPEnrollmentSteps } from '@/components/banking/IPPEnrollmentSteps';
+import { IPPOnboardingCard } from '@/components/banking/IPPOnboardingCard';
 import { LinkedAccountsTab } from '@/components/banking/LinkedAccountsTab';
 import { PaymentMethodsTab } from '@/components/banking/PaymentMethodsTab';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIPPOnboarding } from '@/hooks/useIPPOnboarding';
+import { Building2, CreditCard, Loader2, RefreshCw, Zap } from 'lucide-react';
 
 export function BankingSection() {
   const {

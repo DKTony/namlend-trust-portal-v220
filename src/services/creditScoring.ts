@@ -10,7 +10,7 @@ export const CREDIT_SCORE_RANGES = {
   EXCELLENT: { min: 750, max: 850, label: 'Excellent', color: 'green' },
   GOOD: { min: 670, max: 749, label: 'Good', color: 'blue' },
   FAIR: { min: 580, max: 669, label: 'Fair', color: 'yellow' },
-  POOR: { min: 300, max: 579, label: 'Poor', color: 'red' }
+  POOR: { min: 300, max: 579, label: 'Poor', color: 'red' },
 };
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'very_high';
@@ -20,21 +20,21 @@ export interface CreditFactors {
   monthlyIncome: number;
   employmentStatus: string;
   employmentDuration: number; // months
-  
+
   // Existing Debt
   existingDebt: number;
   monthlyDebtPayments: number;
-  
+
   // Loan Request
   requestedAmount: number;
   requestedTerm: number;
-  
+
   // Profile
   age?: number;
   hasVerifiedId: boolean;
   hasVerifiedAddress: boolean;
   hasVerifiedEmployment: boolean;
-  
+
   // History (if available)
   previousLoans: number;
   paidOnTime: number;
@@ -75,12 +75,12 @@ export interface LoanRecommendation {
 
 // Scoring weights (add up to 100%)
 const SCORING_WEIGHTS = {
-  INCOME: 0.25,           // 25% - Stable income
-  DEBT_RATIO: 0.20,       // 20% - Debt-to-income ratio
-  EMPLOYMENT: 0.15,       // 15% - Employment stability
-  PAYMENT_HISTORY: 0.20,  // 20% - Past payment behavior
-  VERIFICATION: 0.10,     // 10% - Identity verification
-  LOAN_HISTORY: 0.10      // 10% - Previous loan history
+  INCOME: 0.25, // 25% - Stable income
+  DEBT_RATIO: 0.2, // 20% - Debt-to-income ratio
+  EMPLOYMENT: 0.15, // 15% - Employment stability
+  PAYMENT_HISTORY: 0.2, // 20% - Past payment behavior
+  VERIFICATION: 0.1, // 10% - Identity verification
+  LOAN_HISTORY: 0.1, // 10% - Previous loan history
 };
 
 // Base interest rate (regulatory max is 32%)
@@ -93,48 +93,48 @@ const MAX_RATE = 32;
 export function calculateCreditScore(factors: CreditFactors): CreditScore {
   const scoreFactors: CreditScoreFactor[] = [];
   let totalScore = 0;
-  
+
   // 1. Income Assessment (25%)
   const incomeScore = calculateIncomeScore(factors, scoreFactors);
   totalScore += incomeScore * SCORING_WEIGHTS.INCOME;
-  
+
   // 2. Debt-to-Income Ratio (20%)
   const dtiScore = calculateDTIScore(factors, scoreFactors);
   totalScore += dtiScore * SCORING_WEIGHTS.DEBT_RATIO;
-  
+
   // 3. Employment Stability (15%)
   const employmentScore = calculateEmploymentScore(factors, scoreFactors);
   totalScore += employmentScore * SCORING_WEIGHTS.EMPLOYMENT;
-  
+
   // 4. Payment History (20%)
   const paymentScore = calculatePaymentHistoryScore(factors, scoreFactors);
   totalScore += paymentScore * SCORING_WEIGHTS.PAYMENT_HISTORY;
-  
+
   // 5. Verification Status (10%)
   const verificationScore = calculateVerificationScore(factors, scoreFactors);
   totalScore += verificationScore * SCORING_WEIGHTS.VERIFICATION;
-  
+
   // 6. Loan History (10%)
   const loanHistoryScore = calculateLoanHistoryScore(factors, scoreFactors);
   totalScore += loanHistoryScore * SCORING_WEIGHTS.LOAN_HISTORY;
-  
+
   // Convert to credit score range (300-850)
   const creditScore = Math.round(300 + (totalScore / 100) * 550);
   const clampedScore = Math.max(300, Math.min(850, creditScore));
-  
+
   // Determine score range
   const scoreRange = getScoreRange(clampedScore);
   const riskLevel = getRiskLevel(clampedScore);
-  
+
   // Calculate key metrics
   const dti = calculateDTI(factors);
   const affordability = calculateAffordability(factors);
   const maxApproved = calculateMaxApprovedAmount(factors, clampedScore);
   const suggestedRate = calculateSuggestedRate(clampedScore, riskLevel);
-  
+
   // Generate recommendations
   const recommendations = generateRecommendations(factors, scoreFactors, clampedScore);
-  
+
   return {
     score: clampedScore,
     scoreRange,
@@ -144,7 +144,7 @@ export function calculateCreditScore(factors: CreditFactors): CreditScore {
     maxApprovedAmount: maxApproved,
     suggestedInterestRate: suggestedRate,
     debtToIncomeRatio: dti,
-    affordabilityScore: affordability
+    affordabilityScore: affordability,
   };
 }
 
@@ -157,7 +157,7 @@ export function getLoanRecommendation(
 ): LoanRecommendation {
   const reasons: string[] = [];
   const conditions: string[] = [];
-  
+
   // Check minimum requirements
   if (creditScore.score < 400) {
     return {
@@ -167,10 +167,13 @@ export function getLoanRecommendation(
       interestRate: 0,
       monthlyPayment: 0,
       totalRepayment: 0,
-      reasons: ['Credit score below minimum threshold', 'Please improve your credit standing and try again']
+      reasons: [
+        'Credit score below minimum threshold',
+        'Please improve your credit standing and try again',
+      ],
     };
   }
-  
+
   // Check DTI
   if (creditScore.debtToIncomeRatio > 50) {
     return {
@@ -180,10 +183,10 @@ export function getLoanRecommendation(
       interestRate: 0,
       monthlyPayment: 0,
       totalRepayment: 0,
-      reasons: ['Debt-to-income ratio too high', 'Consider reducing existing debt before applying']
+      reasons: ['Debt-to-income ratio too high', 'Consider reducing existing debt before applying'],
     };
   }
-  
+
   // Check income
   if (factors.monthlyIncome < 3000) {
     return {
@@ -193,13 +196,13 @@ export function getLoanRecommendation(
       interestRate: 0,
       monthlyPayment: 0,
       totalRepayment: 0,
-      reasons: ['Monthly income below minimum requirement (N$3,000)']
+      reasons: ['Monthly income below minimum requirement (N$3,000)'],
     };
   }
-  
+
   // Calculate approved amount
   let approvedAmount = Math.min(factors.requestedAmount, creditScore.maxApprovedAmount);
-  
+
   // Determine optimal term
   let suggestedTerm = factors.requestedTerm;
   const monthlyPayment = calculateMonthlyPayment(
@@ -207,7 +210,7 @@ export function getLoanRecommendation(
     creditScore.suggestedInterestRate,
     suggestedTerm
   );
-  
+
   // Ensure payment is affordable (max 35% of income)
   const maxMonthlyPayment = factors.monthlyIncome * 0.35;
   if (monthlyPayment > maxMonthlyPayment) {
@@ -218,7 +221,7 @@ export function getLoanRecommendation(
       creditScore.suggestedInterestRate,
       suggestedTerm
     );
-    
+
     if (adjustedPayment > maxMonthlyPayment) {
       // Reduce amount
       approvedAmount = calculateMaxLoanFromPayment(
@@ -228,39 +231,41 @@ export function getLoanRecommendation(
       );
     }
   }
-  
+
   const finalPayment = calculateMonthlyPayment(
     approvedAmount,
     creditScore.suggestedInterestRate,
     suggestedTerm
   );
   const totalRepayment = finalPayment * suggestedTerm;
-  
+
   // Build reasons
   if (approvedAmount < factors.requestedAmount) {
-    reasons.push(`Amount reduced from ${formatCurrency(factors.requestedAmount)} to ${formatCurrency(approvedAmount)} based on affordability`);
+    reasons.push(
+      `Amount reduced from ${formatCurrency(factors.requestedAmount)} to ${formatCurrency(approvedAmount)} based on affordability`
+    );
   }
-  
+
   if (suggestedTerm !== factors.requestedTerm) {
     reasons.push(`Term adjusted to ${suggestedTerm} months for better affordability`);
   }
-  
+
   if (creditScore.riskLevel === 'medium') {
     conditions.push('Subject to income verification');
   }
-  
+
   if (creditScore.riskLevel === 'high') {
     conditions.push('Subject to additional documentation');
     conditions.push('May require co-signer');
   }
-  
+
   if (!factors.hasVerifiedId) {
     conditions.push('ID verification required');
   }
-  
+
   reasons.push(`Credit score: ${creditScore.score} (${creditScore.scoreRange})`);
   reasons.push(`Risk level: ${creditScore.riskLevel}`);
-  
+
   return {
     approved: true,
     approvedAmount,
@@ -269,7 +274,7 @@ export function getLoanRecommendation(
     monthlyPayment: finalPayment,
     totalRepayment,
     reasons,
-    conditions: conditions.length > 0 ? conditions : undefined
+    conditions: conditions.length > 0 ? conditions : undefined,
   };
 }
 
@@ -277,7 +282,7 @@ export function getLoanRecommendation(
 
 function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
   let score = 0;
-  
+
   // Higher income = higher score
   if (factors.monthlyIncome >= 20000) {
     score = 100;
@@ -286,7 +291,7 @@ function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreF
       factor: 'High income level',
       impact: 'positive',
       weight: 25,
-      description: 'Strong income provides good repayment capacity'
+      description: 'Strong income provides good repayment capacity',
     });
   } else if (factors.monthlyIncome >= 10000) {
     score = 80;
@@ -295,7 +300,7 @@ function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreF
       factor: 'Good income level',
       impact: 'positive',
       weight: 20,
-      description: 'Adequate income for loan repayment'
+      description: 'Adequate income for loan repayment',
     });
   } else if (factors.monthlyIncome >= 5000) {
     score = 60;
@@ -304,7 +309,7 @@ function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreF
       factor: 'Moderate income',
       impact: 'neutral',
       weight: 15,
-      description: 'Income meets minimum requirements'
+      description: 'Income meets minimum requirements',
     });
   } else if (factors.monthlyIncome >= 3000) {
     score = 40;
@@ -313,7 +318,7 @@ function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreF
       factor: 'Low income',
       impact: 'negative',
       weight: -10,
-      description: 'Income near minimum threshold'
+      description: 'Income near minimum threshold',
     });
   } else {
     score = 20;
@@ -322,17 +327,17 @@ function calculateIncomeScore(factors: CreditFactors, scoreFactors: CreditScoreF
       factor: 'Income below minimum',
       impact: 'negative',
       weight: -20,
-      description: 'Income does not meet minimum requirements'
+      description: 'Income does not meet minimum requirements',
     });
   }
-  
+
   return score;
 }
 
 function calculateDTIScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
   const dti = calculateDTI(factors);
   let score = 0;
-  
+
   if (dti <= 20) {
     score = 100;
     scoreFactors.push({
@@ -340,7 +345,7 @@ function calculateDTIScore(factors: CreditFactors, scoreFactors: CreditScoreFact
       factor: 'Excellent debt-to-income ratio',
       impact: 'positive',
       weight: 20,
-      description: `DTI of ${dti.toFixed(1)}% indicates strong financial position`
+      description: `DTI of ${dti.toFixed(1)}% indicates strong financial position`,
     });
   } else if (dti <= 30) {
     score = 80;
@@ -349,7 +354,7 @@ function calculateDTIScore(factors: CreditFactors, scoreFactors: CreditScoreFact
       factor: 'Good debt-to-income ratio',
       impact: 'positive',
       weight: 15,
-      description: `DTI of ${dti.toFixed(1)}% is within acceptable range`
+      description: `DTI of ${dti.toFixed(1)}% is within acceptable range`,
     });
   } else if (dti <= 40) {
     score = 50;
@@ -358,7 +363,7 @@ function calculateDTIScore(factors: CreditFactors, scoreFactors: CreditScoreFact
       factor: 'Moderate debt-to-income ratio',
       impact: 'neutral',
       weight: 0,
-      description: `DTI of ${dti.toFixed(1)}% is approaching limits`
+      description: `DTI of ${dti.toFixed(1)}% is approaching limits`,
     });
   } else {
     score = 20;
@@ -367,20 +372,23 @@ function calculateDTIScore(factors: CreditFactors, scoreFactors: CreditScoreFact
       factor: 'High debt-to-income ratio',
       impact: 'negative',
       weight: -15,
-      description: `DTI of ${dti.toFixed(1)}% indicates potential repayment stress`
+      description: `DTI of ${dti.toFixed(1)}% indicates potential repayment stress`,
     });
   }
-  
+
   return score;
 }
 
-function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
+function calculateEmploymentScore(
+  factors: CreditFactors,
+  scoreFactors: CreditScoreFactor[]
+): number {
   let score = 0;
-  
+
   // Employment status
   if (factors.employmentStatus === 'employed' || factors.employmentStatus === 'self_employed') {
     score += 50;
-    
+
     // Employment duration
     if (factors.employmentDuration >= 24) {
       score += 50;
@@ -389,7 +397,7 @@ function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditSc
         factor: 'Stable employment',
         impact: 'positive',
         weight: 15,
-        description: `${Math.floor(factors.employmentDuration / 12)} years at current employer`
+        description: `${Math.floor(factors.employmentDuration / 12)} years at current employer`,
       });
     } else if (factors.employmentDuration >= 12) {
       score += 30;
@@ -398,7 +406,7 @@ function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditSc
         factor: 'Good employment history',
         impact: 'positive',
         weight: 10,
-        description: '1+ year at current employer'
+        description: '1+ year at current employer',
       });
     } else if (factors.employmentDuration >= 3) {
       score += 15;
@@ -407,7 +415,7 @@ function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditSc
         factor: 'Recent employment',
         impact: 'neutral',
         weight: 5,
-        description: 'Less than 1 year at current employer'
+        description: 'Less than 1 year at current employer',
       });
     } else {
       scoreFactors.push({
@@ -415,7 +423,7 @@ function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditSc
         factor: 'New employment',
         impact: 'negative',
         weight: -5,
-        description: 'Less than 3 months at current employer'
+        description: 'Less than 3 months at current employer',
       });
     }
   } else {
@@ -424,28 +432,31 @@ function calculateEmploymentScore(factors: CreditFactors, scoreFactors: CreditSc
       factor: factors.employmentStatus === 'unemployed' ? 'Unemployed' : 'Non-standard employment',
       impact: 'negative',
       weight: -10,
-      description: 'Employment status affects loan eligibility'
+      description: 'Employment status affects loan eligibility',
     });
   }
-  
+
   return score;
 }
 
-function calculatePaymentHistoryScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
+function calculatePaymentHistoryScore(
+  factors: CreditFactors,
+  scoreFactors: CreditScoreFactor[]
+): number {
   if (factors.previousLoans === 0) {
     scoreFactors.push({
       category: 'History',
       factor: 'No loan history',
       impact: 'neutral',
       weight: 0,
-      description: 'First-time borrower'
+      description: 'First-time borrower',
     });
     return 50; // Neutral score for first-time borrowers
   }
-  
+
   const onTimeRate = factors.paidOnTime / factors.previousLoans;
   let score = onTimeRate * 100;
-  
+
   if (factors.defaults > 0) {
     score -= factors.defaults * 30;
     scoreFactors.push({
@@ -453,10 +464,10 @@ function calculatePaymentHistoryScore(factors: CreditFactors, scoreFactors: Cred
       factor: 'Previous defaults',
       impact: 'negative',
       weight: -25,
-      description: `${factors.defaults} default(s) on record`
+      description: `${factors.defaults} default(s) on record`,
     });
   }
-  
+
   if (factors.latePayments > 0) {
     score -= factors.latePayments * 10;
     scoreFactors.push({
@@ -464,26 +475,29 @@ function calculatePaymentHistoryScore(factors: CreditFactors, scoreFactors: Cred
       factor: 'Late payments',
       impact: 'negative',
       weight: -10,
-      description: `${factors.latePayments} late payment(s) recorded`
+      description: `${factors.latePayments} late payment(s) recorded`,
     });
   }
-  
+
   if (onTimeRate >= 0.95 && factors.defaults === 0) {
     scoreFactors.push({
       category: 'History',
       factor: 'Excellent payment history',
       impact: 'positive',
       weight: 20,
-      description: '95%+ payments made on time'
+      description: '95%+ payments made on time',
     });
   }
-  
+
   return Math.max(0, score);
 }
 
-function calculateVerificationScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
+function calculateVerificationScore(
+  factors: CreditFactors,
+  scoreFactors: CreditScoreFactor[]
+): number {
   let score = 0;
-  
+
   if (factors.hasVerifiedId) {
     score += 40;
     scoreFactors.push({
@@ -491,14 +505,14 @@ function calculateVerificationScore(factors: CreditFactors, scoreFactors: Credit
       factor: 'ID verified',
       impact: 'positive',
       weight: 5,
-      description: 'Identity has been verified'
+      description: 'Identity has been verified',
     });
   }
-  
+
   if (factors.hasVerifiedAddress) {
     score += 30;
   }
-  
+
   if (factors.hasVerifiedEmployment) {
     score += 30;
     scoreFactors.push({
@@ -506,45 +520,48 @@ function calculateVerificationScore(factors: CreditFactors, scoreFactors: Credit
       factor: 'Employment verified',
       impact: 'positive',
       weight: 5,
-      description: 'Employment has been verified'
+      description: 'Employment has been verified',
     });
   }
-  
+
   return score;
 }
 
-function calculateLoanHistoryScore(factors: CreditFactors, scoreFactors: CreditScoreFactor[]): number {
+function calculateLoanHistoryScore(
+  factors: CreditFactors,
+  scoreFactors: CreditScoreFactor[]
+): number {
   if (factors.previousLoans === 0) {
     return 50;
   }
-  
+
   const successfulLoans = factors.paidOnTime;
-  
+
   if (successfulLoans >= 3 && factors.defaults === 0) {
     scoreFactors.push({
       category: 'Loan History',
       factor: 'Strong loan history',
       impact: 'positive',
       weight: 10,
-      description: `${successfulLoans} successfully repaid loans`
+      description: `${successfulLoans} successfully repaid loans`,
     });
     return 100;
   } else if (successfulLoans >= 1) {
     return 70;
   }
-  
+
   return 30;
 }
 
 function calculateDTI(factors: CreditFactors): number {
   if (factors.monthlyIncome === 0) return 100;
-  
+
   const proposedPayment = calculateMonthlyPayment(
     factors.requestedAmount,
     BASE_RATE,
     factors.requestedTerm
   );
-  
+
   const totalDebt = factors.monthlyDebtPayments + proposedPayment;
   return (totalDebt / factors.monthlyIncome) * 100;
 }
@@ -556,7 +573,7 @@ function calculateAffordability(factors: CreditFactors): number {
     BASE_RATE,
     factors.requestedTerm
   );
-  
+
   const affordabilityRatio = (disposableIncome - proposedPayment) / factors.monthlyIncome;
   return Math.max(0, Math.min(100, affordabilityRatio * 100));
 }
@@ -564,10 +581,10 @@ function calculateAffordability(factors: CreditFactors): number {
 function calculateMaxApprovedAmount(factors: CreditFactors, score: number): number {
   // Base max on income (6x monthly income max)
   let maxAmount = factors.monthlyIncome * 6;
-  
+
   // Reduce based on existing debt
   maxAmount -= factors.existingDebt;
-  
+
   // Adjust based on credit score
   if (score >= 750) {
     maxAmount *= 1.2;
@@ -578,14 +595,15 @@ function calculateMaxApprovedAmount(factors: CreditFactors, score: number): numb
   } else {
     maxAmount *= 0.4;
   }
-  
+
   // Cap at reasonable limits
   return Math.max(500, Math.min(50000, Math.round(maxAmount)));
 }
 
 function calculateSuggestedRate(score: number, riskLevel: RiskLevel): number {
+  void score;
   let rate = BASE_RATE;
-  
+
   switch (riskLevel) {
     case 'low':
       rate = BASE_RATE;
@@ -600,7 +618,7 @@ function calculateSuggestedRate(score: number, riskLevel: RiskLevel): number {
       rate = MAX_RATE;
       break;
   }
-  
+
   return Math.min(MAX_RATE, rate);
 }
 
@@ -624,10 +642,10 @@ function generateRecommendations(
   score: number
 ): string[] {
   const recommendations: string[] = [];
-  
+
   // Check for negative factors and provide recommendations
-  const negativeFactors = scoreFactors.filter(f => f.impact === 'negative');
-  
+  const negativeFactors = scoreFactors.filter((f) => f.impact === 'negative');
+
   for (const factor of negativeFactors) {
     switch (factor.category) {
       case 'Income':
@@ -648,7 +666,7 @@ function generateRecommendations(
         break;
     }
   }
-  
+
   // Verification recommendations
   if (!factors.hasVerifiedId) {
     recommendations.push('Complete ID verification to improve your application');
@@ -656,30 +674,42 @@ function generateRecommendations(
   if (!factors.hasVerifiedEmployment) {
     recommendations.push('Provide employment verification documents');
   }
-  
+
   // Score-based recommendations
   if (score < 580) {
     recommendations.push('Consider a smaller loan amount to increase approval chances');
     recommendations.push('A longer repayment term may reduce monthly payments');
   }
-  
+
   return recommendations.slice(0, 5); // Limit to 5 recommendations
 }
 
-function calculateMonthlyPayment(principal: number, annualRate: number, termMonths: number): number {
+function calculateMonthlyPayment(
+  principal: number,
+  annualRate: number,
+  termMonths: number
+): number {
   const monthlyRate = annualRate / 100 / 12;
   if (monthlyRate === 0) return principal / termMonths;
-  
-  return (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
-    (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+  return (
+    (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+    (Math.pow(1 + monthlyRate, termMonths) - 1)
+  );
 }
 
-function calculateMaxLoanFromPayment(monthlyPayment: number, annualRate: number, termMonths: number): number {
+function calculateMaxLoanFromPayment(
+  monthlyPayment: number,
+  annualRate: number,
+  termMonths: number
+): number {
   const monthlyRate = annualRate / 100 / 12;
   if (monthlyRate === 0) return monthlyPayment * termMonths;
-  
-  return (monthlyPayment * (Math.pow(1 + monthlyRate, termMonths) - 1)) /
-    (monthlyRate * Math.pow(1 + monthlyRate, termMonths));
+
+  return (
+    (monthlyPayment * (Math.pow(1 + monthlyRate, termMonths) - 1)) /
+    (monthlyRate * Math.pow(1 + monthlyRate, termMonths))
+  );
 }
 
 function formatCurrency(amount: number): string {
@@ -697,27 +727,27 @@ export async function getCreditFactorsForUser(userId: string): Promise<CreditFac
       .select('*')
       .eq('user_id', userId)
       .single();
-    
+
     if (!profile) return null;
-    
+
     // Fetch loan history
-    const { data: loans } = await supabase
-      .from('loans')
-      .select('*')
-      .eq('user_id', userId);
-    
+    const { data: loans } = await supabase.from('loans').select('*').eq('user_id', userId);
+
     // Fetch payments
     const { data: payments } = await supabase
       .from('payments')
       .select('*')
-      .in('loan_id', (loans || []).map(l => l.id));
-    
+      .in(
+        'loan_id',
+        (loans || []).map((l) => l.id)
+      );
+
     // Calculate history metrics
     const previousLoans = loans?.length || 0;
-    const completedLoans = loans?.filter(l => l.status === 'completed').length || 0;
-    const defaultedLoans = loans?.filter(l => l.status === 'defaulted').length || 0;
-    const latePayments = payments?.filter(p => p.status === 'late').length || 0;
-    
+    const completedLoans = loans?.filter((l) => l.status === 'completed').length || 0;
+    const defaultedLoans = loans?.filter((l) => l.status === 'defaulted').length || 0;
+    const latePayments = payments?.filter((p) => p.status === 'late').length || 0;
+
     return {
       monthlyIncome: profile.monthly_income || 0,
       employmentStatus: profile.employment_status || 'unknown',
@@ -725,14 +755,14 @@ export async function getCreditFactorsForUser(userId: string): Promise<CreditFac
       existingDebt: profile.existing_debt || 0,
       monthlyDebtPayments: profile.monthly_debt_payments || 0,
       requestedAmount: 0, // Set by caller
-      requestedTerm: 0,   // Set by caller
+      requestedTerm: 0, // Set by caller
       hasVerifiedId: profile.verified || false,
       hasVerifiedAddress: profile.address_verified || false,
       hasVerifiedEmployment: profile.employment_verified || false,
       previousLoans,
       paidOnTime: completedLoans,
       defaults: defaultedLoans,
-      latePayments
+      latePayments,
     };
   } catch (error) {
     console.error('Error fetching credit factors:', error);
@@ -755,7 +785,7 @@ export async function saveCreditScore(
       .update({ is_current: false })
       .eq('user_id', userId)
       .eq('is_current', true);
-    
+
     // Insert new score
     const { data, error } = await supabase
       .from('credit_scores')
@@ -771,32 +801,30 @@ export async function saveCreditScore(
         suggested_interest_rate: score.suggestedInterestRate,
         factors: score.factors,
         recommendations: score.recommendations,
-        is_current: true
+        is_current: true,
       })
       .select('id')
       .single();
-    
+
     if (error) {
       console.error('Error saving credit score:', error);
       return null;
     }
-    
+
     // Save factors
     if (data?.id && score.factors.length > 0) {
-      await supabase
-        .from('credit_score_factors')
-        .insert(
-          score.factors.map(f => ({
-            credit_score_id: data.id,
-            category: f.category,
-            factor: f.factor,
-            impact: f.impact,
-            weight: f.weight,
-            description: f.description
-          }))
-        );
+      await supabase.from('credit_score_factors').insert(
+        score.factors.map((f) => ({
+          credit_score_id: data.id,
+          category: f.category,
+          factor: f.factor,
+          impact: f.impact,
+          weight: f.weight,
+          description: f.description,
+        }))
+      );
     }
-    
+
     return data?.id || null;
   } catch (error) {
     console.error('Error in saveCreditScore:', error);
@@ -815,14 +843,14 @@ export async function calculateCreditScoreDB(
     const { data, error } = await supabase.rpc('calculate_credit_score', {
       p_user_id: userId,
       p_loan_id: loanId || null,
-      p_input_data: {}
+      p_input_data: {},
     });
-    
+
     if (error) {
       console.error('Error calculating credit score:', error);
       return null;
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error in calculateCreditScoreDB:', error);
@@ -836,13 +864,13 @@ export async function calculateCreditScoreDB(
 export async function getCurrentCreditScore(userId?: string): Promise<CreditScore | null> {
   try {
     const { data, error } = await supabase.rpc('get_current_credit_score', {
-      p_user_id: userId || null
+      p_user_id: userId || null,
     });
-    
+
     if (error || !data || data.length === 0) {
       return null;
     }
-    
+
     const row = data[0];
     return {
       score: row.score,
@@ -853,7 +881,7 @@ export async function getCurrentCreditScore(userId?: string): Promise<CreditScor
       maxApprovedAmount: row.max_approved_amount,
       suggestedInterestRate: row.suggested_interest_rate,
       debtToIncomeRatio: 0,
-      affordabilityScore: 0
+      affordabilityScore: 0,
     };
   } catch (error) {
     console.error('Error getting current credit score:', error);
@@ -868,5 +896,5 @@ export default {
   saveCreditScore,
   calculateCreditScoreDB,
   getCurrentCreditScore,
-  CREDIT_SCORE_RANGES
+  CREDIT_SCORE_RANGES,
 };

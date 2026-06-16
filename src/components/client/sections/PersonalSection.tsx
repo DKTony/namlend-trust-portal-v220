@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { User, Edit, MapPin } from 'lucide-react';
+import { Edit, MapPin, User } from 'lucide-react';
 
 interface PersonalSectionProps {
   profile: {

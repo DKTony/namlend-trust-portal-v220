@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { DollarSign } from 'lucide-react';
 import { formatNAD } from '@/utils/currency';
+import { DollarSign } from 'lucide-react';
 
 interface CreditPolicy {
   minLoanAmount: number;

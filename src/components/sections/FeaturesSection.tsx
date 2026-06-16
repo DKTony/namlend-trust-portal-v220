@@ -1,8 +1,7 @@
-import React from 'react';
+import LandingCard from '@/components/landing/LandingCard';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import LandingCard from '@/components/landing/LandingCard';
-import { Shield, Zap, Users, Phone, CreditCard, FileCheck } from 'lucide-react';
+import { CreditCard, FileCheck, Phone, Shield, Users, Zap } from 'lucide-react';
 
 const FeaturesSection = () => {
   const { styles, theme, isDark } = useTheme();

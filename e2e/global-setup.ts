@@ -6,24 +6,23 @@
  * UI tests authenticate via the Convex Auth login form (signInViaUI in fixtures.ts).
  * Legacy Supabase RLS/RPC tests are quarantined and skipped when Supabase creds are absent.
  *
- * Supabase seeding is OPTIONAL — if creds are missing the setup completes without error
+ * Supabase seeding is OPTIONAL - if creds are missing the setup completes without error
  * and legacy Supabase tests self-skip via their own `test.skip(!supabaseUrl, ...)` guards.
  */
 
 import 'dotenv/config';
 import { execFileSync } from 'node:child_process';
 import { createClient } from '@supabase/supabase-js';
+import { requireSafeConvexUrl, shouldSeedConvex } from './setupSafety';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-
-const CONVEX_URL = process.env.VITE_CONVEX_URL || 'https://aromatic-okapi-265.convex.cloud';
 
 // Admin credentials for authentication
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Test1234!';
 
-// Test user IDs (Supabase legacy — Convex uses opaque _id strings)
+// Test user IDs (Supabase legacy - Convex uses opaque _id strings)
 const TEST_USERS = {
   admin: 'fbf720fd-7de2-4142-974f-6d6809f4f8c6',
   client1: '11111111-0000-0000-0000-000000000001',
@@ -31,32 +30,66 @@ const TEST_USERS = {
   loanOfficer: '44444444-0000-0000-0000-000000000004',
 };
 
+function deploymentNameFromConvexUrl(convexUrl: string): string {
+  const host = new URL(convexUrl).host;
+  const deploymentName = host.split('.')[0];
+  if (!deploymentName) {
+    throw new Error(`Could not resolve Convex deployment name from VITE_CONVEX_URL=${convexUrl}`);
+  }
+  return deploymentName;
+}
+
 async function globalSetup() {
+  const convexUrl = requireSafeConvexUrl(process.env);
+  const convexDeploymentName = deploymentNameFromConvexUrl(convexUrl);
+
   console.log('🌱 Global Setup: Starting E2E environment check...');
-  console.log(`  Convex URL: ${CONVEX_URL}`);
+  console.log(`  Convex URL: ${convexUrl}`);
+  console.log(`  Convex deployment: ${convexDeploymentName}`);
 
   // -------------------------------------------------------------------------
   // Convex-first: UI tests use signInViaUI() from fixtures.ts.
   // Seed test users + deterministic IPP aliases so browser flows do not depend
   // on live external callback availability.
   // -------------------------------------------------------------------------
+  if (!shouldSeedConvex(process.env)) {
+    throw new Error(
+      'E2E_ALLOW_MUTATING_SEED=true is required to seed Convex. Confirm the staging target first.'
+    );
+  }
+
   try {
     console.log('  Seeding Convex test users and IPP aliases...');
-    execFileSync('npx', ['convex', 'run', 'seed:seedTestUsers', '--push'], {
-      stdio: 'pipe',
-      cwd: process.cwd(),
-      env: process.env,
-    });
+    execFileSync(
+      'npx',
+      [
+        'convex',
+        'run',
+        'seed:seedTestUsers',
+        '--push',
+        '--deployment',
+        convexDeploymentName,
+        '--typecheck',
+        'disable',
+        '--codegen',
+        'disable',
+      ],
+      {
+        stdio: 'pipe',
+        cwd: process.cwd(),
+        env: process.env,
+      }
+    );
     console.log('  ✅ Convex test users and IPP aliases seeded');
   } catch (error) {
     console.warn('  ⚠️  Convex seeding failed:', error instanceof Error ? error.message : error);
     console.warn('      UI tests may fail if test users or aliases are missing.');
   }
 
-  console.log('  ✅ Convex backend configured — UI tests will authenticate via login form');
+  console.log('  ✅ Convex backend configured - UI tests will authenticate via login form');
 
   // -------------------------------------------------------------------------
-  // Legacy Supabase seeding (OPTIONAL — skipped gracefully when creds absent)
+  // Legacy Supabase seeding (OPTIONAL - skipped gracefully when creds absent)
   // Required only for: disbursements-rls, documents-rls, disbursement,
   //   admin-rpc, disbursements-ledger*, tigerbeetle-balance, approval-rpc-race-condition
   // -------------------------------------------------------------------------
@@ -67,7 +100,7 @@ async function globalSetup() {
     return;
   }
 
-  console.log('  Supabase creds found — seeding legacy test data...');
+  console.log('  Supabase creds found - seeding legacy test data...');
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
@@ -86,7 +119,7 @@ async function globalSetup() {
   if (authError) {
     console.warn('  ⚠️  Supabase admin auth failed:', authError.message);
     console.warn('      Legacy Supabase tests may fail. UI tests are unaffected.');
-    console.log('🌱 Global Setup: Complete (Supabase seeding skipped — auth failed)');
+    console.log('🌱 Global Setup: Complete (Supabase seeding skipped - auth failed)');
     return;
   }
   console.log('  ✅ Supabase admin authenticated');

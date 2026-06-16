@@ -1,22 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { api } from '@/integrations/convex/api';
+import { useQuery as useConvexQuery } from 'convex/react';
 import {
-  Database,
-  RefreshCw,
-  CheckCircle2,
   AlertCircle,
-  Clock,
-  TrendingUp,
   ArrowUpDown,
+  CheckCircle2,
+  Clock,
+  Database,
   FileCheck,
   Loader2,
+  TrendingUp,
 } from 'lucide-react';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import { formatNAD } from '@/constants/regulatory';
+import { useMemo, useState } from 'react';
 
 interface OutboxStats {
   pending: number;
@@ -50,11 +48,13 @@ export function LedgerDashboard() {
     limit: 10,
   });
 
-  const outboxStats: OutboxStats = rawOutboxStats ?? {
-    pending: 0,
-    completed: 0,
-    failed: 0,
-    deadLetter: 0,
+  const rawCompleted =
+    rawOutboxStats && 'completed' in rawOutboxStats ? rawOutboxStats.completed : 0;
+  const outboxStats: OutboxStats = {
+    pending: rawOutboxStats?.pending ?? 0,
+    completed: typeof rawCompleted === 'number' ? rawCompleted : 0,
+    failed: rawOutboxStats?.failed ?? 0,
+    deadLetter: rawOutboxStats?.deadLetter ?? 0,
   };
   const accountStats: AccountStats = { total: 0, created: 0, pending: 0 };
   const recentReconciliations: ReconciliationRun[] = useMemo(() => {

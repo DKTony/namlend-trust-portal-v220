@@ -3,9 +3,9 @@
  * Tests dev tool gating, auth flows, and APR validation
  */
 
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { safeExposeWindow, isDebugEnabled, debugLog } from '../utils/devToolsHelper';
-import { APR_LIMIT, isValidAPR, formatNAD } from '../constants/regulatory';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { APR_LIMIT, formatNAD, isValidAPR } from '../constants/regulatory';
+import { debugLog, isDebugEnabled, safeExposeWindow } from '../utils/devToolsHelper';
 
 describe('Security - Dev Tool Gating', () => {
   afterEach(() => {

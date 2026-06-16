@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next';
-import { formatNAD } from '@/utils/currency';
+import type { LoanDetails, LoanFormData } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
-import type { LoanFormData, LoanDetails } from '@/hooks/useLoanForm';
+import { formatNAD } from '@/utils/currency';
+import { useTranslation } from 'react-i18next';
 
 interface ReviewSubmitStepProps {
   formData: LoanFormData;

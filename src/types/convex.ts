@@ -13,17 +13,18 @@
  *   await mutation({ loanId: someString as Id<'loans'> });
  */
 
-import type { FunctionReturnType } from 'convex/server';
+import type { FunctionReference, FunctionReturnType } from 'convex/server';
 
-export type { Id } from '../../convex/_generated/dataModel';
-export type { Doc } from '../../convex/_generated/dataModel';
+export type { Doc, Id } from '../../convex/_generated/dataModel';
 
 /** Extract the return type of a Convex query or mutation function reference. */
-export type QueryReturn<T extends { _returnType: unknown }> = FunctionReturnType<T>;
+type AnyConvexFunction = FunctionReference<'query' | 'mutation' | 'action'>;
+
+export type QueryReturn<T extends AnyConvexFunction> = FunctionReturnType<T>;
 
 /** Non-null version — use after confirming data is loaded (not undefined). */
-export type QueryData<T extends { _returnType: unknown }> = NonNullable<FunctionReturnType<T>>;
+export type QueryData<T extends AnyConvexFunction> = NonNullable<FunctionReturnType<T>>;
 
 /** Array element type — use when a query returns an array. */
-export type QueryItem<T extends { _returnType: unknown }> =
+export type QueryItem<T extends AnyConvexFunction> =
   FunctionReturnType<T> extends (infer U)[] ? U : never;

@@ -3,8 +3,17 @@
  */
 
 import { v } from 'convex/values';
-import { query, mutation } from '../_generated/server';
-import { assertStaff, assertAdmin } from '../lib/auth';
+import { mutation, query } from '../_generated/server';
+import { assertAdmin, assertStaff } from '../lib/auth';
+
+const settlementReportType = v.union(
+  v.literal('raw_data'),
+  v.literal('ntsl'),
+  v.literal('adjustment'),
+  v.literal('pending_adjustment_response'),
+  v.literal('pending_status'),
+  v.literal('timeout')
+);
 
 export const listReportsByRun = query({
   args: { runId: v.id('settlementRuns') },
@@ -51,9 +60,12 @@ export const listRecentReports = query({
 export const createReport = mutation({
   args: {
     runId: v.id('settlementRuns'),
-    reportType: v.string(),
+    reportType: settlementReportType,
     reportData: v.any(),
-    fileStorageId: v.optional(v.id('_storage')),
+    fileName: v.optional(v.string()),
+    fileContent: v.optional(v.string()),
+    fileChecksum: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await assertAdmin(ctx);
@@ -62,11 +74,13 @@ export const createReport = mutation({
 
     return ctx.db.insert('settlementReports', {
       runId: args.runId,
-      settlementDate: run.settlementDate,
       reportType: args.reportType,
       reportData: args.reportData,
-      fileStorageId: args.fileStorageId,
-      generatedAt: Date.now(),
+      fileName: args.fileName ?? `${args.reportType}-${run.settlementDate}.json`,
+      fileContent: args.fileContent,
+      fileChecksum: args.fileChecksum,
+      fileSize: args.fileSize,
+      createdAt: Date.now(),
     });
   },
 });

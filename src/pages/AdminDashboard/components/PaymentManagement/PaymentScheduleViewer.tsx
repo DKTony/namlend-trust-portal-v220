@@ -1,11 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatNAD } from '@/utils/currency';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
+import { formatNAD } from '@/utils/currency';
+import { useQuery as useConvexQuery } from 'convex/react';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Download,
+  TrendingUp,
+} from 'lucide-react';
+import React, { useMemo } from 'react';
 
 interface PaymentSchedule {
   id: string;
@@ -23,15 +32,25 @@ interface PaymentSchedule {
   late_fee: number;
   late_fee_applied: number;
 }
-import {
-  Calendar,
-  DollarSign,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  TrendingUp,
-  Download,
-} from 'lucide-react';
+
+interface RawPaymentSchedule {
+  _id?: unknown;
+  loanId?: unknown;
+  amount?: number;
+  amountDue?: number;
+  amountPaid?: number;
+  balance?: number;
+  daysOverdue?: number;
+  dueDate?: number | string;
+  installmentNumber?: number;
+  interestAmount?: number;
+  lateFee?: number;
+  lateFeeApplied?: number;
+  paidAmount?: number;
+  principalAmount?: number;
+  status?: string;
+  totalAmount?: number;
+}
 
 interface Props {
   loanId: string;
@@ -55,9 +74,9 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
 
   const schedule: PaymentSchedule[] = useMemo(() => {
     if (!rawSchedule) return [];
-    return rawSchedule.map((s, i) => {
+    return (rawSchedule as unknown as RawPaymentSchedule[]).map((s, i) => {
       const amountDue = s.amountDue ?? s.amount ?? 0;
-      const amountPaid = s.amountPaid ?? 0;
+      const amountPaid = s.amountPaid ?? s.paidAmount ?? 0;
       const principalAmount = s.principalAmount ?? amountDue * 0.8;
       const interestAmount = s.interestAmount ?? amountDue * 0.2;
       const lateFeeApplied = s.lateFeeApplied ?? s.lateFee ?? 0;

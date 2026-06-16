@@ -11,24 +11,24 @@
  * All use the Phase 1 XML framework (ipsXmlBuilder + ipsSigningProvider).
  */
 
-import { internalAction } from '../_generated/server';
-import { internal } from '../_generated/api';
 import { v } from 'convex/values';
+import { internal } from '../_generated/api';
+import { internalAction } from '../_generated/server';
+import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
+import { assertIpsProductionReady, type IpsProtocolMode } from '../lib/ipsProductionConfig';
+import { parseRespGetAddDetails } from '../lib/ipsResponseParsers';
+import { createSigningProvider } from '../lib/ipsSigningProvider';
 import {
-  buildReqRegMapper,
   buildReqGetAdd,
+  buildReqRegMapper,
   buildStandardHead,
+  generateMsgId,
   insertSignature,
   parseIpsAck,
   parseIpsXml,
-  generateMsgId,
-  type IpsReqRegMapperPayload,
   type IpsReqGetAddPayload,
+  type IpsReqRegMapperPayload,
 } from '../lib/ipsXmlBuilder';
-import { createSigningProvider } from '../lib/ipsSigningProvider';
-import { getErrorEntry, isSuccess } from '../lib/ipsErrorCodes';
-import { parseRespGetAddDetails } from '../lib/ipsResponseParsers';
-import { assertIpsProductionReady, type IpsProtocolMode } from '../lib/ipsProductionConfig';
 
 const IPS_BASE_URL = process.env.IPS_BASE_URL ?? 'https://ips.bon.na/api/v2';
 

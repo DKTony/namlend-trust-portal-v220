@@ -1,6 +1,6 @@
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface LandingCardProps {
   children: React.ReactNode;
@@ -9,25 +9,27 @@ interface LandingCardProps {
   onClick?: () => void;
 }
 
-const LandingCard: React.FC<LandingCardProps> = ({ 
-  children, 
-  className = '', 
+const LandingCard: React.FC<LandingCardProps> = ({
+  children,
+  className = '',
   hoverEffect = false,
-  onClick
+  onClick,
 }) => {
   const { styles, theme } = useTheme();
 
   let hoverClass = '';
   if (hoverEffect) {
     if (theme === 'neo') {
-      hoverClass = 'cursor-pointer group hover:-translate-y-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-200';
+      hoverClass =
+        'cursor-pointer group hover:-translate-y-1 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all duration-200';
     } else {
-      hoverClass = 'cursor-pointer group hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 ease-out';
+      hoverClass =
+        'cursor-pointer group hover:-translate-y-2 hover:shadow-2xl transition-all duration-300 ease-out';
     }
   }
 
   return (
-    <div 
+    <div
       className={cn(
         'relative overflow-hidden',
         styles.cardClass,
@@ -43,14 +45,12 @@ const LandingCard: React.FC<LandingCardProps> = ({
           <div className="absolute -inset-full h-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-0 group-hover:opacity-10 group-hover:animate-shine pointer-events-none" />
         </>
       )}
-      
+
       {theme === 'lux' && hoverEffect && (
         <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-r from-amber-500/0 via-amber-500/40 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none" />
       )}
 
-      <div className="relative z-10 h-full">
-        {children}
-      </div>
+      <div className="relative z-10 h-full">{children}</div>
     </div>
   );
 };

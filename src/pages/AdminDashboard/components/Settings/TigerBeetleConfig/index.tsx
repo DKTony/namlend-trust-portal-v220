@@ -7,13 +7,14 @@
  */
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import useTigerBeetleConfig from '@/hooks/useTigerBeetleConfig';
+import { AccountsTab } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/AccountsTab';
 import { ConfigHeader } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/ConfigHeader';
 import { ConnectionTab } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/ConnectionTab';
 import { OutboxTab } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/OutboxTab';
 import { ReconciliationTab } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/ReconciliationTab';
-import { AccountsTab } from '@/pages/AdminDashboard/components/Settings/TigerBeetleConfig/AccountsTab';
+import { Loader2 } from 'lucide-react';
 
 export function TigerBeetleConfig() {
   const {
@@ -28,6 +29,7 @@ export function TigerBeetleConfig() {
     handleReset,
     testConnection,
   } = useTigerBeetleConfig();
+  const { isPlatformSupport } = useAuth();
 
   if (loading) {
     return (
@@ -42,8 +44,9 @@ export function TigerBeetleConfig() {
       <ConfigHeader
         hasChanges={hasChanges}
         saving={saving}
-        onSave={handleSave}
-        onReset={handleReset}
+        onSave={isPlatformSupport ? () => undefined : handleSave}
+        onReset={isPlatformSupport ? () => undefined : handleReset}
+        readOnly={isPlatformSupport}
       />
 
       <Tabs defaultValue="connection" className="space-y-4">
@@ -59,7 +62,9 @@ export function TigerBeetleConfig() {
             config={config.connection}
             connectionStatus={connectionStatus}
             testingConnection={testingConnection}
-            onUpdateConfig={(key, value) => updateConfig('connection', key, value)}
+            onUpdateConfig={(key, value) => {
+              if (!isPlatformSupport) updateConfig('connection', key, value);
+            }}
             onTestConnection={testConnection}
           />
         </TabsContent>
@@ -67,21 +72,27 @@ export function TigerBeetleConfig() {
         <TabsContent value="outbox">
           <OutboxTab
             config={config.outbox}
-            onUpdateConfig={(key, value) => updateConfig('outbox', key, value)}
+            onUpdateConfig={(key, value) => {
+              if (!isPlatformSupport) updateConfig('outbox', key, value);
+            }}
           />
         </TabsContent>
 
         <TabsContent value="reconciliation">
           <ReconciliationTab
             config={config.reconciliation}
-            onUpdateConfig={(key, value) => updateConfig('reconciliation', key, value)}
+            onUpdateConfig={(key, value) => {
+              if (!isPlatformSupport) updateConfig('reconciliation', key, value);
+            }}
           />
         </TabsContent>
 
         <TabsContent value="accounts">
           <AccountsTab
             config={config.accounts}
-            onUpdateConfig={(key, value) => updateConfig('accounts', key, value)}
+            onUpdateConfig={(key, value) => {
+              if (!isPlatformSupport) updateConfig('accounts', key, value);
+            }}
           />
         </TabsContent>
       </Tabs>

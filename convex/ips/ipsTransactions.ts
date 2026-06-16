@@ -6,23 +6,24 @@
  * create/link pending financial records, and schedule the actual ReqPay action.
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation, internalQuery, internalMutation } from '../_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { enqueueOutboxIdempotent } from '../lib/outbox';
-import { ipsTransactionStatus } from '../schema';
-import {
-  enforceTransactionLimits,
-  deriveUseCaseType,
-  type IpsUseCaseType,
-} from '../lib/ipsTransactionLimits';
-import { generateMsgId } from '../lib/ipsXmlBuilder';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
 import { assertAliasUsable } from '../lib/ipsAliasRules';
 import { getErrorEntry } from '../lib/ipsErrorCodes';
 import { getPortalFlowDefaults } from '../lib/ipsProductionConfig';
+import {
+  deriveUseCaseType,
+  enforceTransactionLimits,
+  type IpsUseCaseType,
+} from '../lib/ipsTransactionLimits';
+import { generateMsgId } from '../lib/ipsXmlBuilder';
+import { enqueueOutboxIdempotent } from '../lib/outbox';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from '../lib/tenancy';
+import { ipsTransactionStatus } from '../schema';
 
 const SEVEN_YEARS_MS = 7 * 365 * 24 * 60 * 60 * 1000;
 
@@ -549,17 +550,20 @@ export const adminListIpsTransactions = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     if (status) {
-      return ctx.db
+      const rows = await ctx.db
         .query('ipsTransactions')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
+      return applyTenantScope(rows, scope);
     }
-    return ctx.db
+    const rows = await ctx.db
       .query('ipsTransactions')
       .order('desc')
       .take(limit ?? 100);
+    return applyTenantScope(rows, scope);
   },
 });
 
@@ -631,6 +635,7 @@ export const initiateIpsRepayment = mutation({
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       method: 'ips',
       status: 'pending',
@@ -658,6 +663,7 @@ export const initiateIpsRepayment = mutation({
       endToEndId: msgId,
       remittanceInfo: `Loan repayment ${args.loanId}`,
       loanId: args.loanId,
+      institutionId: loan.institutionId,
       userId: loan.userId,
       paymentId,
       clientRequestId: args.clientRequestId,
@@ -812,6 +818,7 @@ export const initiateIpsDisbursement = mutation({
       endToEndId: msgId,
       remittanceInfo: `Loan disbursement ${args.disbursementId}`,
       loanId: disbursement.loanId,
+      institutionId: disbursement.institutionId,
       userId: disbursement.userId,
       disbursementId: args.disbursementId,
       clientRequestId: args.clientRequestId,
@@ -964,6 +971,10 @@ export const initiateIpsTransaction = mutation({
       loanId: linkedLoanId,
       disbursementId: linkedDisbursementId,
       userId: ownerUserId,
+      institutionId: await resolveWriteInstitution(ctx, {
+        loanId: linkedLoanId ?? undefined,
+        userId: ownerUserId ?? undefined,
+      }),
       useCaseType,
       status: 'pending',
       initiatedAt: now,

@@ -14,10 +14,10 @@
  *   user_roles RPC                   → useQuery(api.users.getMyRole)
  */
 
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { useConvexAuth, useQuery, useMutation } from 'convex/react';
-import { useAuthActions } from '@convex-dev/auth/react';
 import { api } from '@/integrations/convex/api';
+import { useAuthActions } from '@convex-dev/auth/react';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { createContext, ReactNode, useCallback, useContext } from 'react';
 
 // ---------------------------------------------------------------------------
 // Compatible User/Session types (replaces Supabase types)
@@ -61,6 +61,14 @@ interface AuthContextType {
   userRole: string | null;
   isAdmin: boolean;
   isLoanOfficer: boolean;
+  // Platform (control-plane) identity — orthogonal to the tenant role above.
+  // Sourced from `platformAdmins`, NOT `userRoles`, so a tenant_admin can never
+  // self-escalate into platform scope.
+  platformRole: 'platform_owner' | 'platform_support' | null;
+  isPlatformOwner: boolean;
+  isPlatformSupport: boolean;
+  isPlatformStaff: boolean;
+  platformRoleLoading: boolean;
   refreshUser: () => Promise<User | null>;
   signUp: (
     email: string,
@@ -92,6 +100,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch role and profile from Convex once authenticated
   const roleData = useQuery(api.users.getMyRole, isAuthenticated ? {} : 'skip');
   const profileData = useQuery(api.users.getMyProfile, isAuthenticated ? {} : 'skip');
+  // Platform role — a cheap indexed `platformAdmins.by_userId` lookup that returns null
+  // for every non-platform user (i.e. everyone, until the owner runs the Phase-0 seed).
+  const platformRoleData = useQuery(
+    api.platform.admins.getMyPlatformRole,
+    isAuthenticated ? {} : 'skip'
+  );
 
   const userRole = typeof roleData === 'string' ? roleData : null;
   const roleLoading = isAuthenticated && roleData === undefined;
@@ -115,8 +129,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Session is a lightweight wrapper (consumers rarely use session directly)
   const session: Session | null = user ? { access_token: 'convex-managed', user } : null;
 
-  const isAdmin = userRole === 'admin';
-  const isLoanOfficer = userRole === 'loan_officer' || userRole === 'admin';
+  // `tenant_admin` is the multi-tenant successor to `admin`; both are treated as admin
+  // during the additive Phase-0 transition (matches the widened backend guards).
+  const isAdmin = userRole === 'admin' || userRole === 'tenant_admin';
+  const isLoanOfficer =
+    userRole === 'loan_officer' || userRole === 'admin' || userRole === 'tenant_admin';
+
+  // Platform identity (control plane). `getMyPlatformRole` already filters to active staff,
+  // returning null otherwise, so the booleans are a direct read.
+  const platformRole =
+    platformRoleData === 'platform_owner' || platformRoleData === 'platform_support'
+      ? platformRoleData
+      : null;
+  const platformRoleLoading = isAuthenticated && platformRoleData === undefined;
+  const isPlatformOwner = platformRole === 'platform_owner';
+  const isPlatformSupport = platformRole === 'platform_support';
+  const isPlatformStaff = platformRole !== null;
 
   // ---------------------------------------------------------------------------
   // Auth actions
@@ -148,13 +176,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = useCallback(
     async (email: string, password: string, userData?: UserMetadata) => {
       try {
-        await authActions.signIn('password', {
+        const signUpArgs: {
+          email: string;
+          flow: 'signUp';
+          name?: string;
+          password: string;
+          phone?: string;
+        } = {
           email,
           password,
           flow: 'signUp',
-          name: userData?.full_name as string | undefined,
-          phone: userData?.phone as string | undefined,
-        });
+        };
+        if (userData?.full_name) signUpArgs.name = userData.full_name;
+        if (userData?.phone) signUpArgs.phone = userData.phone;
+        await authActions.signIn('password', signUpArgs);
         return { error: null };
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Sign up failed');
@@ -218,6 +253,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         userRole,
         isAdmin,
         isLoanOfficer,
+        platformRole,
+        isPlatformOwner,
+        isPlatformSupport,
+        isPlatformStaff,
+        platformRoleLoading,
         refreshUser,
         signUp,
         signIn,

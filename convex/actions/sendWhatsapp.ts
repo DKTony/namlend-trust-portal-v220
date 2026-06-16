@@ -7,8 +7,8 @@
  * Template names must be registered in Meta Business Manager.
  */
 
-import { internalAction } from '../_generated/server';
 import { v } from 'convex/values';
+import { internalAction } from '../_generated/server';
 
 const WA_API_VERSION = 'v19.0';
 const WA_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID ?? '';
@@ -99,7 +99,7 @@ export const sendWhatsappTemplate = internalAction({
     userId: v.optional(v.id('users')),
     loanId: v.optional(v.id('loans')),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     const tmpl = WA_TEMPLATES[args.templateCode];
     if (!tmpl) {
       console.error(`[sendWhatsapp] Unknown template: ${args.templateCode}`);
@@ -164,7 +164,7 @@ export const sendWhatsappText = internalAction({
     text: v.string(),
     userId: v.optional(v.id('users')),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     if (!WA_PHONE_NUMBER_ID || !WA_ACCESS_TOKEN) {
       return { success: false, error: 'WhatsApp not configured' };
     }

@@ -1,7 +1,7 @@
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Moon, Sun } from 'lucide-react';
+import React from 'react';
 
 const LandingThemeToggle: React.FC = () => {
   const { theme, setTheme, isDark, toggleDarkMode } = useTheme();
@@ -15,8 +15,8 @@ const LandingThemeToggle: React.FC = () => {
             onClick={() => setTheme(t)}
             className={cn(
               'px-3 py-1 rounded-full text-xs font-bold uppercase transition-all',
-              theme === t 
-                ? 'bg-blue-600 text-white shadow-md' 
+              theme === t
+                ? 'bg-blue-600 text-white shadow-md'
                 : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-700'
             )}
           >
@@ -25,7 +25,7 @@ const LandingThemeToggle: React.FC = () => {
         ))}
       </div>
 
-      <button 
+      <button
         onClick={toggleDarkMode}
         className="p-4 bg-blue-600 text-white rounded-full shadow-lg hover:scale-110 transition-transform active:scale-95"
       >

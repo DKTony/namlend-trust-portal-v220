@@ -3,18 +3,18 @@
  * Transactions with timeout/uncertain outcome requiring follow-up
  */
 
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,18 +23,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { FileX, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { useTimeoutTransactions, useResolveTimeout } from '@/hooks/useSettlement';
 import { formatNAD } from '@/constants/regulatory';
+import { useResolveTimeout, useTimeoutTransactions } from '@/hooks/useSettlement';
+import { CheckCircle, Clock, FileX, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export function TimeoutReportViewer() {
   const [statusFilter, setStatusFilter] = useState<string>('pending');

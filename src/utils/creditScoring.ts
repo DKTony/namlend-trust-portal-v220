@@ -11,9 +11,9 @@ export {
 } from '@/services/creditScoring';
 
 export type {
-  RiskLevel,
   CreditFactors,
   CreditScore,
   CreditScoreFactor,
   LoanRecommendation,
+  RiskLevel,
 } from '@/services/creditScoring';

@@ -14,20 +14,26 @@
  *   admin queries       -> staff only
  */
 
-import { v } from 'convex/values';
-import { mutation, query, internalMutation, internalQuery } from '../_generated/server';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from '../lib/auth';
+import { ConvexError, v } from 'convex/values';
+import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
-import { emitRelationship } from '../lib/relationshipEmitter';
 import {
-  validateMandateTransition,
-  generateMandateRef,
   calculateNextExecutionDate,
+  generateMandateRef,
+  validateMandateTransition,
   type MandateStatus,
 } from '../lib/mandateStateMachine';
-import { mandateType, mandateStatus, mandateFrequency } from '../schema';
+import { emitRelationship } from '../lib/relationshipEmitter';
+import {
+  applyTenantScope,
+  assertSameTenant,
+  resolveWriteInstitution,
+  tenantReadScope,
+} from '../lib/tenancy';
+import { mandateFrequency, mandateStatus, mandateType } from '../schema';
 
 // ---------------------------------------------------------------------------
 // Mutations
@@ -57,6 +63,7 @@ export const createMandate = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const now = Date.now();
     const mandateRef = generateMandateRef();
     const correlationId = generateCorrelationId();
@@ -98,6 +105,7 @@ export const createMandate = mutation({
       creditorAccountRef: args.creditorAccountRef,
       creditorName: args.creditorName,
       loanId: args.loanId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       currency: args.currency ?? 'NAD',
       frequency: args.frequency,
@@ -172,6 +180,7 @@ export const submitMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -222,6 +231,7 @@ export const authorizeMandate = mutation({
   },
   handler: async (ctx, { mandateId, authorizedVia }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -288,6 +298,7 @@ export const suspendMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -333,6 +344,7 @@ export const reactivateMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -389,6 +401,7 @@ export const revokeMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -571,10 +584,12 @@ export const getMandatesByLoan = query({
   },
   handler: async (ctx, { loanId }) => {
     await assertStaff(ctx);
-    return ctx.db
+    await assertCallerFeatureEnabled(ctx, 'mandates');
+    const rows = await ctx.db
       .query('mandates')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
       .collect();
+    return applyTenantScope(rows, await tenantReadScope(ctx));
   },
 });
 
@@ -587,10 +602,12 @@ export const getMandateByRef = query({
   },
   handler: async (ctx, { mandateRef }) => {
     await assertStaff(ctx);
-    return ctx.db
+    const mandate = await ctx.db
       .query('mandates')
       .withIndex('by_mandateRef', (q) => q.eq('mandateRef', mandateRef))
       .first();
+    assertSameTenant(await tenantReadScope(ctx), mandate?.institutionId);
+    return mandate;
   },
 });
 
@@ -617,6 +634,7 @@ export const listMandates = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'mandates');
 
     if (status) {
       return ctx.db

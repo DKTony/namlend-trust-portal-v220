@@ -3,6 +3,7 @@ import {
   resolveTransactionUseCaseType,
   summarizeTransactionsForUseCaseType,
 } from '../../convex/lib/ipsTransactionLimits';
+import { describe, expect, it } from 'vitest';
 
 describe('ipsTransactionLimits', () => {
   it('treats outbound disbursement rows as B2P even when older records lack an explicit use-case field', () => {

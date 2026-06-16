@@ -12,14 +12,13 @@
  * IMMUTABILITY: settlementObligations are never updated after creation.
  */
 
-import { action, internalAction, internalMutation } from '../_generated/server';
-import type { ActionCtx } from '../_generated/server';
-import { internal, api } from '../_generated/api';
-import { v } from 'convex/values';
-import { ConvexError } from 'convex/values';
-import { xmlEscape } from '../lib/xmlEscape';
+import { ConvexError, v } from 'convex/values';
+import { api, internal } from '../_generated/api';
 import { Id } from '../_generated/dataModel';
+import type { ActionCtx } from '../_generated/server';
+import { action, internalMutation } from '../_generated/server';
 import { sha256Hex } from '../lib/ipsAliasRules';
+import { xmlEscape } from '../lib/xmlEscape';
 
 // ---------------------------------------------------------------------------
 // Internal mutations (called from Actions via ctx.runMutation)

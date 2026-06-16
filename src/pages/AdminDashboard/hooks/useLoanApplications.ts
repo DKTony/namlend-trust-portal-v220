@@ -1,13 +1,24 @@
-import { useMemo } from 'react';
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
-import { type LoanStatus, type LoanApplication } from '@/types/loan';
+import { type LoanApplication, type LoanStatus } from '@/types/loan';
+import { useQuery } from 'convex/react';
+import { useMemo } from 'react';
 
 // Re-export LoanApplication for components that import from this hook
 export type { LoanApplication };
 
 /** Convex loanStatus values that map to the legacy 'pending' filter bucket */
 const PENDING_STATUSES: LoanStatus[] = ['pending', 'submitted', 'under_review'] as LoanStatus[];
+type ConvexLoanStatus =
+  | 'active'
+  | 'approved'
+  | 'defaulted'
+  | 'draft'
+  | 'funded'
+  | 'paid_off'
+  | 'rejected'
+  | 'submitted'
+  | 'under_review'
+  | 'written_off';
 
 interface UseLoanApplicationsParams {
   status: 'pending' | 'approved' | 'rejected' | 'all';
@@ -36,7 +47,7 @@ export const useLoanApplications = ({
       ? undefined
       : status === 'pending'
         ? undefined // fetch all, filter client-side for pending bucket
-        : (status as LoanStatus);
+        : (status as ConvexLoanStatus);
 
   const rawLoans = useQuery(api.loans.adminListLoans, { status: convexStatus });
 

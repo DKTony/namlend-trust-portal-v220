@@ -3,17 +3,18 @@
  * Replaces legacy Supabase RPC/table calls with Convex queries/mutations.
  */
 
-import { useQuery as useConvexQuery, useMutation } from 'convex/react';
-import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
-import type { Id } from '../../../convex/_generated/dataModel';
+import { useQuery as useConvexQuery, useMutation } from 'convex/react';
+import { useCallback, useMemo, useState } from 'react';
+import type { Id } from '../../convex/_generated/dataModel';
 
 // ============================================================================
 // useWorkflowInstance - Get workflow instance for an entity
 // ============================================================================
 
 export const useWorkflowInstance = (entityType: string, entityId: string) => {
+  void entityType;
   const instances = useConvexQuery(
     api.approvalWorkflow.getApprovalsByEntity,
     entityId ? { entityId } : 'skip'
@@ -234,7 +235,6 @@ export const useWorkflowStats = () => {
 
   const stats = useMemo(() => {
     if (pendingApprovals === undefined || allApprovals === undefined) return null;
-    const now = Date.now();
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayMs = todayStart.getTime();

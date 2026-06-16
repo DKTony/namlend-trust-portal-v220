@@ -8,17 +8,17 @@
  * FINANCIAL SAFETY: retry: false on all useMutation calls (frontend).
  */
 
-import { v } from 'convex/values';
-import { query, mutation, internalMutation } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
-import { ConvexError } from 'convex/values';
-import { assertAuthenticated, assertStaff, assertOwnerOrStaff } from './lib/auth';
-import { scheduleAuditLog, scheduleAuditEntry } from './lib/audit';
-import { emitRelationship } from './lib/relationshipEmitter';
-import { emitDomainEvent, DOMAIN_EVENTS } from './lib/domainEvents';
-import { paymentTxStatus } from './schema';
-import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
+import { internalMutation, mutation, query } from './_generated/server';
+import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
+import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { enqueueOutboxIdempotent } from './lib/outbox';
+import { emitRelationship } from './lib/relationshipEmitter';
+import { buildRepaymentOutboxPayload } from './lib/repaymentOutbox';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
+import { paymentTxStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -73,6 +73,8 @@ export const adminListPayments = query({
         .take(limit ?? 100);
     }
 
+    results = applyTenantScope(results, await tenantReadScope(ctx));
+
     // Enrich with profile names for admin display
     const enriched = await Promise.all(
       results.map(async (payment) => {
@@ -111,10 +113,13 @@ export const getOverduePayments = query({
   handler: async (ctx, { limit }) => {
     await assertStaff(ctx);
     const now = Date.now();
-    const scheduled = await ctx.db
-      .query('paymentSchedules')
-      .withIndex('by_status', (q) => q.eq('status', 'scheduled'))
-      .collect();
+    const scheduled = applyTenantScope(
+      await ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'scheduled'))
+        .collect(),
+      await tenantReadScope(ctx)
+    );
     return scheduled.filter((s) => s.dueDate < now).slice(0, limit ?? 100);
   },
 });
@@ -191,6 +196,7 @@ export const recordPayment = mutation({
     const paymentId = await ctx.db.insert('paymentTransactions', {
       loanId: args.loanId,
       userId: loan.userId,
+      institutionId: await resolveWriteInstitution(ctx, { loanId: args.loanId }),
       amount: args.amount,
       principalPaid: args.principalPaid,
       interestPaid: args.interestPaid,
@@ -588,6 +594,7 @@ export const createPaymentSchedule = mutation({
     for (const installment of schedule) {
       await ctx.db.insert('paymentSchedules', {
         loanId,
+        institutionId: loan.institutionId,
         ...installment,
         status: 'scheduled',
         createdAt: now,

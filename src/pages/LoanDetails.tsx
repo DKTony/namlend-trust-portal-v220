@@ -4,37 +4,35 @@
  * Displays detailed information about a specific loan with IPS payment option
  */
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '@/types/convex';
-import { ThemedCard } from '@/components/ui/ThemedCard';
-import { ThemedButton } from '@/components/ui/ThemedButton';
+import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { IPSHistoryList, IPSPaymentModal } from '@/components/ips';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import {
-  Wallet,
-  Zap,
-  Calendar,
-  DollarSign,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  CreditCard,
-  History,
-  FileText,
-} from 'lucide-react';
-import DashboardLayout from '@/components/Layout/DashboardLayout';
-import { formatNAD } from '@/utils/currency';
-import { IPSPaymentModal, IPSHistoryList } from '@/components/ips';
 import { useTheme } from '@/context/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import type { Id } from '@/types/convex';
+import { formatNAD } from '@/utils/currency';
+import { useQuery } from 'convex/react';
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  CreditCard,
+  DollarSign,
+  FileText,
+  History,
+  Loader2,
+  Zap,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
 interface Loan {
   id: string;

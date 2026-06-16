@@ -1,9 +1,9 @@
 /**
  * Central Type Exports
- * 
+ *
  * Re-exports all type definitions for convenient importing throughout the codebase.
  * Import types from '@/types' instead of individual files.
- * 
+ *
  * Note: Canonical loan types are in ./loan.ts. The ./services.ts file has legacy
  * loan types (LoanStatus, LoanRecord) that are deprecated - use canonical from ./loan.
  */
@@ -19,15 +19,15 @@ export * from './ips';
 
 // Service types - exclude conflicting LoanStatus and LoanRecord (use canonical from ./loan)
 export {
+  type AssignToAgentResponse,
+  type CollectionsInteraction,
   // Disbursement types
   type DisbursementPayload,
-  // Collections types
-  type RecordActivityResponse,
-  type AssignToAgentResponse,
-  type RecordPaymentPromiseResponse,
   type MarkPromiseFulfilledResponse,
   type OverdueLoan,
-  type CollectionsInteraction,
+  // Collections types
+  type RecordActivityResponse,
+  type RecordPaymentPromiseResponse,
 } from './services';
 
 // Settlement types

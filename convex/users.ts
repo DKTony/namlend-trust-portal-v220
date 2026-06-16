@@ -6,13 +6,14 @@
  * Role assignment requires assertAdmin().
  */
 
-import { v, ConvexError } from 'convex/values';
-import { query, mutation, internalQuery } from './_generated/server';
+import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
-import { assertAuthenticated, assertAdmin, assertStaff, assertOwnerOrStaff } from './lib/auth';
+import { internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { emitRelationship, deactivateRelationship } from './lib/relationshipEmitter';
+import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
+import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
+import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -63,6 +64,7 @@ export const listUsers = query({
   },
   handler: async (ctx, { role, limit }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
 
     const profiles = await ctx.db
       .query('profiles')
@@ -75,14 +77,22 @@ export const listUsers = query({
           .query('userRoles')
           .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
           .first();
-        return { ...profile, role: roleDoc?.role ?? 'client' };
+        return {
+          ...profile,
+          role: roleDoc?.role ?? 'client',
+          institutionId: roleDoc?.institutionId,
+        };
       })
     );
 
+    // Tenant scope (profiles have no own institutionId — derive from the role row).
+    // No-op while enforcement is off; null-institution rows treated as the caller's tenant.
+    const scoped = applyTenantScope(result, scope);
+
     if (role) {
-      return result.filter((u) => u.role === role);
+      return scoped.filter((u) => u.role === role);
     }
-    return result;
+    return scoped;
   },
 });
 
@@ -112,6 +122,7 @@ export const updateMyProfile = mutation({
     if (!profile) {
       await ctx.db.insert('profiles', {
         userId,
+        institutionId: await resolveWriteInstitution(ctx, { userId }),
         email: '',
         ...args,
         kycStatus: 'pending',
@@ -147,6 +158,7 @@ export const ensureProfile = mutation({
 
     const profileId = await ctx.db.insert('profiles', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       email: args.email,
       fullName: args.fullName,
       kycStatus: 'pending',
@@ -276,7 +288,7 @@ export const deactivateUser = mutation({
     reason: v.optional(v.string()),
   },
   handler: async (ctx, { targetUserId, reason }) => {
-    const adminId = await assertAdmin(ctx);
+    await assertAdmin(ctx);
 
     const profile = await ctx.db
       .query('profiles')
@@ -320,6 +332,7 @@ export const recordKycDocument = mutation({
 
     const docId = await ctx.db.insert('kycDocuments', {
       userId,
+      institutionId: await resolveWriteInstitution(ctx, { userId }),
       documentType: args.documentType,
       fileStorageId: args.fileStorageId,
       status: 'pending',

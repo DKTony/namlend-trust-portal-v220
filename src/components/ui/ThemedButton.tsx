@@ -28,9 +28,9 @@
  * ```
  */
 
-import React, { forwardRef } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import React, { forwardRef } from 'react';
 
 /**
  * Props for {@link ThemedButton}.

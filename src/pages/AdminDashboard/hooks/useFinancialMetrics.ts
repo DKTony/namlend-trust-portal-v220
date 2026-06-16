@@ -1,5 +1,5 @@
-import { useQuery } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
 
 interface FinancialMetrics {
   totalClients: number;

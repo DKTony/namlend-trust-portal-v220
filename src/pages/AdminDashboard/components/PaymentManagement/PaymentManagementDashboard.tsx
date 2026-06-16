@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
+import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import {
-  CreditCard,
-  Search,
-  Filter,
-  Download,
   AlertTriangle,
+  BadgeCheck,
   CheckCircle,
+  CreditCard,
+  Download,
+  Filter,
+  RefreshCw,
+  Search,
   TrendingUp,
   Users,
-  RefreshCw,
-  BadgeCheck,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 // Sub-components
-import PaymentOverview from './PaymentOverview';
-import PaymentsList from './PaymentsList';
+import { ReconciliationDashboard } from '../Reconciliation';
+import CollectionsCenter from './CollectionsCenter';
 import DisbursementManager from './DisbursementManager';
 import OverdueManager from './OverdueManager';
-import CollectionsCenter from './CollectionsCenter';
+import PaymentOverview from './PaymentOverview';
+import PaymentsList from './PaymentsList';
 import SettledLoansList from './SettledLoansList';
-import { ReconciliationDashboard } from '../Reconciliation';
 
 interface PaymentManagementDashboardProps {
   onPaymentSelect?: (paymentId: string) => void;
@@ -121,7 +121,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
           </div>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
             className="w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-48"
           >
             <option value="all">All Statuses</option>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useMutation } from 'convex/react';
 import { api } from '@/integrations/convex/api';
+import { useMutation } from 'convex/react';
+import { CheckCircle, Loader2, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 // Inline types (previously from collectionsService)
 type ActivityType =
@@ -39,7 +40,6 @@ interface RecordActivityInput {
   next_action_date?: string;
   next_action_type?: string;
 }
-import { Loader2, CheckCircle, Phone, Mail, MessageSquare } from 'lucide-react';
 
 interface Props {
   open: boolean;

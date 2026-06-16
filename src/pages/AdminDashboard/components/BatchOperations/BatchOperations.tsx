@@ -4,15 +4,13 @@
  * Refactored: dialogs and job history extracted to sub-components.
  */
 
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -20,15 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckSquare, Square, Bell, RefreshCw, Download, Loader2, Filter } from 'lucide-react';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/integrations/convex/api';
-import type { Id } from '../../../../../convex/_generated/dataModel';
-import { formatNAD } from '@/utils/currency';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
+import { useMutation, useQuery } from 'convex/react';
+import { Bell, CheckSquare, Download, Filter, Loader2, RefreshCw, Square } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { Id } from '../../../../../convex/_generated/dataModel';
+import { BatchJobHistory } from './BatchJobHistory';
 import { NotificationDialog } from './NotificationDialog';
 import { StatusUpdateDialog } from './StatusUpdateDialog';
-import { BatchJobHistory } from './BatchJobHistory';
 
 interface Loan {
   id: string;
@@ -86,7 +86,10 @@ export function BatchOperations() {
   const [processing, setProcessing] = useState(false);
 
   // Convex reactive queries
-  const rawLoans = useQuery(api.loans.adminListLoans, filter !== 'all' ? { status: filter } : {});
+  const rawLoans = useQuery(
+    api.loans.adminListLoans,
+    filter !== 'all' ? { status: filter as LoanStatus } : {}
+  );
   const rawUsers = useQuery(api.users.listUsers, {});
 
   const loading = rawLoans === undefined;
@@ -163,7 +166,8 @@ export function BatchOperations() {
       let processed = 0;
       let failed = 0;
 
-      for (const loan of selectedLoans) {
+      for (const _loan of selectedLoans) {
+        void _loan;
         try {
           await new Promise((resolve) => setTimeout(resolve, 100));
           processed++;
@@ -217,7 +221,7 @@ export function BatchOperations() {
     setActiveJob(job);
 
     try {
-      const result = await batchUpdateMutation({
+      await batchUpdateMutation({
         loanIds: Array.from(selectedIds) as Id<'loans'>[],
         newStatus: newStatus as LoanStatus,
       });
@@ -506,7 +510,7 @@ export function BatchOperations() {
         onOpenChange={setShowBulkStatusDialog}
         selectedCount={selectedIds.size}
         newStatus={newStatus}
-        onStatusChange={setNewStatus}
+        onStatusChange={(status) => setNewStatus(status as LoanStatus)}
         processing={processing}
         onUpdate={handleBulkStatusUpdate}
       />

@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoanStatusTimeline, generateLoanTimeline } from '@/components/workflow/LoanStatusTimeline';
 
 interface TimelineTabProps {

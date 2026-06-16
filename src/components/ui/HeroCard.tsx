@@ -3,9 +3,9 @@
  * Decorative credit card visual for dashboard backgrounds
  */
 
-import React from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface HeroCardProps {
   className?: string;
@@ -14,14 +14,15 @@ interface HeroCardProps {
 export const HeroCard: React.FC<HeroCardProps> = ({ className }) => {
   const { theme } = useTheme();
 
-  const cardGradient = theme === 'lux' 
-    ? 'bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-black border-amber-500/30' 
-    : theme === 'neo' 
-    ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700'
-    : 'bg-gradient-to-br from-white/20 via-white/10 to-transparent border-white/20';
+  const cardGradient =
+    theme === 'lux'
+      ? 'bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-black border-amber-500/30'
+      : theme === 'neo'
+        ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700'
+        : 'bg-gradient-to-br from-white/20 via-white/10 to-transparent border-white/20';
 
   return (
-    <div 
+    <div
       className={cn(
         'relative w-[340px] h-[220px] rounded-3xl p-6',
         'border backdrop-blur-md shadow-2xl',
@@ -57,7 +58,7 @@ export const HeroCard: React.FC<HeroCardProps> = ({ className }) => {
           </div>
         </div>
       </div>
-      
+
       <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
       <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
     </div>

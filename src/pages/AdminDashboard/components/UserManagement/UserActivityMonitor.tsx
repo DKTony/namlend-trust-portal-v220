@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Activity, 
-  Users, 
-  LogIn, 
-  LogOut, 
-  Eye, 
-  RefreshCw,
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Activity,
   AlertCircle,
   CheckCircle,
   Clock,
   Globe,
   Monitor,
+  RefreshCw,
   Smartphone,
-  Tablet
+  Tablet,
+  Users,
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 interface ActiveUser {
   id: string;
@@ -61,7 +58,7 @@ const UserActivityMonitor: React.FC = () => {
       ipAddress: '192.168.1.100',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       deviceType: 'desktop',
-      sessionDuration: 3600
+      sessionDuration: 3600,
     },
     {
       id: 'user-2',
@@ -74,7 +71,7 @@ const UserActivityMonitor: React.FC = () => {
       ipAddress: '192.168.1.101',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       deviceType: 'desktop',
-      sessionDuration: 7200
+      sessionDuration: 7200,
     },
     {
       id: 'user-3',
@@ -87,7 +84,7 @@ const UserActivityMonitor: React.FC = () => {
       ipAddress: '203.0.113.45',
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15',
       deviceType: 'mobile',
-      sessionDuration: 1800
+      sessionDuration: 1800,
     },
     {
       id: 'user-4',
@@ -100,8 +97,8 @@ const UserActivityMonitor: React.FC = () => {
       ipAddress: '192.168.1.102',
       userAgent: 'Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15',
       deviceType: 'tablet',
-      sessionDuration: 5400
-    }
+      sessionDuration: 5400,
+    },
   ];
 
   const mockRecentActivity: ActivityEvent[] = [
@@ -112,7 +109,7 @@ const UserActivityMonitor: React.FC = () => {
       action: 'User role updated',
       timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
       details: 'Changed user role from client to loan_officer',
-      severity: 'info'
+      severity: 'info',
     },
     {
       id: 'activity-2',
@@ -121,7 +118,7 @@ const UserActivityMonitor: React.FC = () => {
       action: 'Loan approved',
       timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
       details: 'Approved loan application #LA-2024-001',
-      severity: 'info'
+      severity: 'info',
     },
     {
       id: 'activity-3',
@@ -130,7 +127,7 @@ const UserActivityMonitor: React.FC = () => {
       action: 'Failed login attempt',
       timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
       details: 'Multiple failed login attempts detected',
-      severity: 'warning'
+      severity: 'warning',
     },
     {
       id: 'activity-4',
@@ -139,7 +136,7 @@ const UserActivityMonitor: React.FC = () => {
       action: 'Support ticket created',
       timestamp: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
       details: 'Created support ticket #ST-2024-045',
-      severity: 'info'
+      severity: 'info',
     },
     {
       id: 'activity-5',
@@ -148,8 +145,8 @@ const UserActivityMonitor: React.FC = () => {
       action: 'Database backup completed',
       timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       details: 'Automated database backup completed successfully',
-      severity: 'info'
-    }
+      severity: 'info',
+    },
   ];
 
   useEffect(() => {
@@ -162,15 +159,18 @@ const UserActivityMonitor: React.FC = () => {
       const interval = setInterval(() => {
         // Simulate real-time updates
         setLastUpdate(new Date());
-        
+
         // Update user statuses randomly
-        setActiveUsers(prev => prev.map(user => ({
-          ...user,
-          lastActivity: Math.random() > 0.7 ? new Date().toISOString() : user.lastActivity,
-          status: Math.random() > 0.8 ? 
-            (['online', 'idle', 'away'][Math.floor(Math.random() * 3)] as any) : 
-            user.status
-        })));
+        setActiveUsers((prev) =>
+          prev.map((user) => ({
+            ...user,
+            lastActivity: Math.random() > 0.7 ? new Date().toISOString() : user.lastActivity,
+            status:
+              Math.random() > 0.8
+                ? (['online', 'idle', 'away'][Math.floor(Math.random() * 3)] as any)
+                : user.status,
+          }))
+        );
       }, 30000); // Update every 30 seconds
 
       return () => clearInterval(interval);
@@ -181,7 +181,7 @@ const UserActivityMonitor: React.FC = () => {
     const now = new Date();
     const time = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     const diffInHours = Math.floor(diffInMinutes / 60);
@@ -198,19 +198,26 @@ const UserActivityMonitor: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      online: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+      online:
+        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
       idle: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      away: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700'
+      away: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
     };
 
     const icons = {
       online: <CheckCircle className="h-3 w-3 mr-1" />,
       idle: <Clock className="h-3 w-3 mr-1" />,
-      away: <AlertCircle className="h-3 w-3 mr-1" />
+      away: <AlertCircle className="h-3 w-3 mr-1" />,
     };
 
     return (
-      <Badge variant="outline" className={variants[status as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[status as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
       </Badge>
@@ -221,7 +228,7 @@ const UserActivityMonitor: React.FC = () => {
     const icons = {
       desktop: <Monitor className="h-4 w-4" />,
       mobile: <Smartphone className="h-4 w-4" />,
-      tablet: <Tablet className="h-4 w-4" />
+      tablet: <Tablet className="h-4 w-4" />,
     };
     return icons[deviceType as keyof typeof icons] || <Monitor className="h-4 w-4" />;
   };
@@ -229,12 +236,20 @@ const UserActivityMonitor: React.FC = () => {
   const getSeverityBadge = (severity: string) => {
     const variants = {
       info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      warning: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      error: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+      warning:
+        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      error:
+        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
     };
 
     return (
-      <Badge variant="outline" className={variants[severity as keyof typeof variants] || 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+      <Badge
+        variant="outline"
+        className={
+          variants[severity as keyof typeof variants] ||
+          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }
+      >
         <span className="capitalize">{severity}</span>
       </Badge>
     );
@@ -254,10 +269,19 @@ const UserActivityMonitor: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">User Activity Monitor</h2>
-          <p className="text-muted-foreground">Real-time monitoring of user activity and system events</p>
+          <p className="text-muted-foreground">
+            Real-time monitoring of user activity and system events
+          </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className={isMonitoring ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'}>
+          <Badge
+            variant="outline"
+            className={
+              isMonitoring
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+            }
+          >
             <Activity className="h-3 w-3 mr-1" />
             {isMonitoring ? 'Monitoring' : 'Paused'}
           </Badge>
@@ -278,7 +302,9 @@ const UserActivityMonitor: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Users</p>
-                <p className="text-2xl font-bold">{activeUsers.filter(u => u.status === 'online').length}</p>
+                <p className="text-2xl font-bold">
+                  {activeUsers.filter((u) => u.status === 'online').length}
+                </p>
               </div>
               <Users className="h-8 w-8 text-green-600 dark:text-green-400" />
             </div>
@@ -300,7 +326,9 @@ const UserActivityMonitor: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Idle Users</p>
-                <p className="text-2xl font-bold">{activeUsers.filter(u => u.status === 'idle').length}</p>
+                <p className="text-2xl font-bold">
+                  {activeUsers.filter((u) => u.status === 'idle').length}
+                </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
             </div>
@@ -327,8 +355,11 @@ const UserActivityMonitor: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              {activeUsers.map(user => (
-                <div key={user.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              {activeUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-2">
                       {getDeviceIcon(user.deviceType)}
@@ -362,8 +393,11 @@ const UserActivityMonitor: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              {recentActivity.map(activity => (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 bg-muted/50 rounded-lg">
+              {recentActivity.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start space-x-3 p-3 bg-muted/50 rounded-lg"
+                >
                   <Activity className="h-4 w-4 mt-1 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
@@ -403,19 +437,27 @@ const UserActivityMonitor: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {activeUsers.map(user => (
-                  <tr key={user.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                {activeUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                  >
                     <td className="p-2 max-w-[200px]">
                       <div>
-                        <p className="font-medium truncate" title={user.fullName}>{user.fullName}</p>
-                        <p className="text-sm text-muted-foreground truncate" title={user.role}>{user.role}</p>
+                        <p className="font-medium truncate" title={user.fullName}>
+                          {user.fullName}
+                        </p>
+                        <p className="text-sm text-muted-foreground truncate" title={user.role}>
+                          {user.role}
+                        </p>
                       </div>
                     </td>
-                    <td className="p-2">
-                      {getStatusBadge(user.status)}
-                    </td>
+                    <td className="p-2">{getStatusBadge(user.status)}</td>
                     <td className="p-2 max-w-[200px]">
-                      <code className="text-sm bg-muted px-2 py-1 rounded block truncate" title={user.currentPage}>
+                      <code
+                        className="text-sm bg-muted px-2 py-1 rounded block truncate"
+                        title={user.currentPage}
+                      >
                         {user.currentPage}
                       </code>
                     </td>
@@ -426,14 +468,12 @@ const UserActivityMonitor: React.FC = () => {
                       </div>
                     </td>
                     <td className="p-2 max-w-[150px]">
-                      <code className="text-sm block truncate" title={user.ipAddress}>{user.ipAddress}</code>
+                      <code className="text-sm block truncate" title={user.ipAddress}>
+                        {user.ipAddress}
+                      </code>
                     </td>
-                    <td className="p-2 tabular-nums">
-                      {formatDuration(user.sessionDuration)}
-                    </td>
-                    <td className="p-2 tabular-nums">
-                      {formatTimeAgo(user.lastActivity)}
-                    </td>
+                    <td className="p-2 tabular-nums">{formatDuration(user.sessionDuration)}</td>
+                    <td className="p-2 tabular-nums">{formatTimeAgo(user.lastActivity)}</td>
                   </tr>
                 ))}
               </tbody>

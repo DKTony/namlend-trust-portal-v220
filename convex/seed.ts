@@ -38,6 +38,16 @@ export const seedTestUsers = internalAction({
       });
     }
 
+    // Deterministic platform_owner for /platform Platform Console E2E coverage.
+    // authAccounts-first grant (see seedPlatformOwnerForE2E) so the granted identity can never
+    // diverge from the login identity. A pure platform_owner (tenant role = client).
+    console.log('[seed] Seeding platform_owner for E2E...');
+    await ctx.runMutation(internal.seedMutations.seedPlatformOwnerForE2E, {
+      ownerEmail: 'platformowner@test.namlend.com',
+      hashedPassword,
+    });
+    console.log('[seed] platform_owner seeded successfully');
+
     // Seed KYC documents for client1 to enable loan application E2E tests
     console.log('[seed] Seeding KYC documents for client1...');
     try {

@@ -4,6 +4,7 @@
  */
 
 import { v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
 
 /** Elevate a user's role by email. */
@@ -97,6 +98,90 @@ export const createTestUser = internalMutation({
     });
 
     console.log(`[seed] Created user ${email} with role '${role}'`);
+  },
+});
+
+/**
+ * Seed a deterministic platform_owner test account (E2E only).
+ *
+ * AUTH-ACCOUNTS-FIRST: the password `authAccounts` row (providerAccountId === email) is the
+ * single source of truth for the identity that login actually resolves to. We create-or-find
+ * THAT exact userId and grant `platform_owner` to it. This is what makes the test robust: it can
+ * never grant to a stale/duplicate `profiles` row whose userId diverges from the login identity
+ * (the exact bug that blocked the manual /platform smoke). Idempotent — safe to re-run.
+ *
+ * The account keeps a non-staff tenant role (`client`) on purpose: a PURE platform_owner, so the
+ * /platform test genuinely exercises the P1 guard-widening (assertAdminOrPlatformOwner /
+ * assertStaffOrPlatformSupport) rather than passing via a tenant-admin path.
+ */
+export const seedPlatformOwnerForE2E = internalMutation({
+  args: { ownerEmail: v.string(), hashedPassword: v.string() },
+  handler: async (ctx, { ownerEmail, hashedPassword }) => {
+    const now = Date.now();
+
+    // 1. authAccounts is the login source of truth — find or create by it.
+    const authAccount = await ctx.db
+      .query('authAccounts')
+      .filter((q) => q.eq(q.field('providerAccountId'), ownerEmail))
+      .first();
+
+    let userId: Id<'users'>;
+    if (authAccount) {
+      userId = authAccount.userId;
+    } else {
+      userId = await ctx.db.insert('users', {});
+      await ctx.db.insert('authAccounts', {
+        userId,
+        provider: 'password',
+        providerAccountId: ownerEmail,
+        secret: hashedPassword,
+      });
+    }
+
+    // 2. Ensure exactly one profile bound to this exact userId.
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .first();
+    if (!profile) {
+      await ctx.db.insert('profiles', {
+        userId,
+        email: ownerEmail,
+        kycStatus: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // 3. Ensure a tenant role (client — platform role is orthogonal to tenant role).
+    const roleRow = await ctx.db
+      .query('userRoles')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .first();
+    if (!roleRow) {
+      await ctx.db.insert('userRoles', { userId, role: 'client', createdAt: now });
+    }
+
+    // 4. Upsert platform_owner by the EXACT login userId (never by a divergent profile lookup).
+    const existing = await ctx.db
+      .query('platformAdmins')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .first();
+    if (existing) {
+      if (existing.platformRole !== 'platform_owner' || existing.status !== 'active') {
+        await ctx.db.patch(existing._id, { platformRole: 'platform_owner', status: 'active' });
+      }
+    } else {
+      await ctx.db.insert('platformAdmins', {
+        userId,
+        platformRole: 'platform_owner',
+        status: 'active',
+        createdAt: now,
+      });
+    }
+
+    console.log(`[seed] platform_owner ready for ${ownerEmail} (userId=${userId})`);
+    return { userId, email: ownerEmail };
   },
 });
 

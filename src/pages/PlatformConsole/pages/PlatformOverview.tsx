@@ -59,7 +59,7 @@ const PlatformOverview: React.FC = () => {
   const backofficeFeatureCount = FEATURES.filter((f) => f.console === 'backoffice').length;
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div data-testid="platform-overview" className="space-y-6 p-4 sm:p-6">
       <div>
         <h2 className="text-xl font-semibold">Platform Overview</h2>
         <p className="text-sm text-muted-foreground">

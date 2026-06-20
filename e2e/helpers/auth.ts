@@ -6,6 +6,10 @@ const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'admin@test.namlend.com';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Test1234!';
 const CLIENT_EMAIL = process.env.E2E_CLIENT_EMAIL || 'client1@test.namlend.com';
 const CLIENT_PASSWORD = process.env.E2E_CLIENT_PASSWORD || 'Test1234!';
+// Dedicated pure platform_owner (tenant role = client) seeded by seedPlatformOwnerForE2E.
+const PLATFORM_OWNER_EMAIL =
+  process.env.E2E_PLATFORM_OWNER_EMAIL || 'platformowner@test.namlend.com';
+const PLATFORM_OWNER_PASSWORD = process.env.E2E_PLATFORM_OWNER_PASSWORD || 'Test1234!';
 
 async function waitForLoginForm(page: Page): Promise<void> {
   const emailInput = page.getByTestId('email-input');
@@ -29,6 +33,7 @@ export async function waitForAppShell(page: Page, timeout = 20000): Promise<void
     '[data-testid="sidebar-rail"]',
     '[data-testid="admin-sidebar-desktop"]',
     '[data-testid="admin-sidebar-rail"]',
+    '[data-testid="platform-console-shell"]',
   ];
   const startedAt = Date.now();
 
@@ -103,6 +108,43 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
   throw new Error(
     `E2E login failed for admin and client. Current URL: ${currentUrl}. Ensure test users are seeded in Convex (npx convex run seed:seedTestUsers).`
   );
+}
+
+/**
+ * Log in as the dedicated platform owner (pure platform_owner; tenant role = client), seeded by
+ * convex/seed.ts::seedPlatformOwnerForE2E. A client-role identity lands on /dashboard after login;
+ * the caller then navigates to /platform and waits for the platform console shell.
+ */
+export async function loginAsPlatformOwner(page: Page): Promise<void> {
+  await page.goto(`${baseURL}/auth`);
+  await page.waitForLoadState('domcontentloaded');
+  await waitForLoginForm(page);
+
+  await page.getByTestId('email-input').fill(PLATFORM_OWNER_EMAIL);
+  await page.getByTestId('password-input').fill(PLATFORM_OWNER_PASSWORD);
+  await page.getByTestId('login-button').click();
+
+  const outcome = await Promise.race<'success' | 'error'>([
+    page
+      .waitForURL(/\/(admin|dashboard)/, { timeout: 30000 })
+      .then(() => 'success' as const)
+      .catch(() => 'error' as const),
+    page
+      .getByText(
+        /invalid credentials|invalid_email|login failed|login error|session timeout|no account found|incorrect password/i
+      )
+      .first()
+      .waitFor({ state: 'visible', timeout: 30000 })
+      .then(() => 'error' as const)
+      .catch(() => 'error' as const),
+  ]);
+
+  if (outcome !== 'success') {
+    throw new Error(
+      `Platform owner login failed for ${PLATFORM_OWNER_EMAIL}. Current URL: ${page.url()}. ` +
+        `Ensure the platform owner is seeded (npx convex run seed:seedTestUsers).`
+    );
+  }
 }
 
 /**

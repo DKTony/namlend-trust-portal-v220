@@ -90,7 +90,11 @@ const ProvisionDialog: React.FC<{ plans: PlanRow[]; onDone: () => void }> = ({ p
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="gap-2">
+      <Button
+        data-testid="platform-tenants-provision"
+        onClick={() => setOpen(true)}
+        className="gap-2"
+      >
         <Plus className="h-4 w-4" /> Provision tenant
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -105,12 +109,18 @@ const ProvisionDialog: React.FC<{ plans: PlanRow[]; onDone: () => void }> = ({ p
           <div className="space-y-3">
             <div>
               <Label htmlFor="t-name">Name</Label>
-              <Input id="t-name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="t-name"
+                data-testid="tenant-name-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="t-code">Short code</Label>
               <Input
                 id="t-code"
+                data-testid="tenant-code-input"
                 value={shortCode}
                 onChange={(e) => setShortCode(e.target.value)}
                 placeholder="ACME"
@@ -162,7 +172,11 @@ const ProvisionDialog: React.FC<{ plans: PlanRow[]; onDone: () => void }> = ({ p
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
               Cancel
             </Button>
-            <Button onClick={submit} disabled={busy || !name.trim() || !shortCode.trim()}>
+            <Button
+              data-testid="tenant-submit"
+              onClick={submit}
+              disabled={busy || !name.trim() || !shortCode.trim()}
+            >
               {busy ? 'Provisioning…' : 'Provision'}
             </Button>
           </DialogFooter>
@@ -292,7 +306,7 @@ const TenantsView: React.FC = () => {
   const onDone = () => force((n) => n + 1);
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div data-testid="platform-tenants" className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Tenants</h2>
@@ -328,7 +342,11 @@ const TenantsView: React.FC = () => {
             </thead>
             <tbody>
               {tenants.map((t: TenantRow) => (
-                <tr key={t._id} className="border-t">
+                <tr
+                  key={t._id}
+                  data-testid={`platform-tenant-row-${t.shortCode}`}
+                  className="border-t"
+                >
                   <td className="py-2 pr-4">
                     <div className="font-medium">{t.name}</div>
                     <div className="font-mono text-xs text-muted-foreground">{t.shortCode}</div>

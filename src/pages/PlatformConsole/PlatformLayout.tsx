@@ -43,6 +43,7 @@ const PlatformLayout: React.FC = () => {
 
   const header = (
     <header
+      data-testid="platform-console-shell"
       className={cn(
         'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
         layout.isCompact && 'pl-14',

@@ -153,7 +153,7 @@ const PlansView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div data-testid="platform-plans" className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Plans &amp; Feature Catalog</h2>

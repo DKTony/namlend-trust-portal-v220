@@ -107,16 +107,6 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
     };
   }, [risk, portfolio]);
 
-  const riskTrends = [
-    {
-      month: 'Current',
-      lowRisk: riskDistribution[0].value,
-      mediumRisk: riskDistribution[1].value,
-      highRisk: riskDistribution[2].value,
-      criticalRisk: riskDistribution[3].value,
-    },
-  ];
-
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'improving':
@@ -188,52 +178,84 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
             <CardDescription>Current risk assessment across all active loans</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="w-full max-w-sm space-y-3 p-4">
-                {riskDistribution.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+            <div className="space-y-4 py-4">
+              {riskDistribution.map((item, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
                       <div
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-sm">{item.name}</span>
+                      <span>{item.name}</span>
                     </div>
-                    <span className="text-sm font-medium">{item.value}%</span>
+                    <span className="font-medium tabular-nums">{item.value}%</span>
                   </div>
-                ))}
-                <div className="text-xs text-muted-foreground pt-2">Chart temporarily disabled</div>
-              </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, item.value))}%`,
+                        backgroundColor: item.color,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Risk Trends (Placeholder) */}
+        {/* Portfolio exposure snapshot — real figures from getRiskMetrics */}
         <Card>
           <CardHeader>
-            <CardTitle>Risk Trends</CardTitle>
-            <CardDescription>Risk distribution over recent months</CardDescription>
+            <CardTitle>Overdue Exposure</CardTitle>
+            <CardDescription>Current portfolio-at-risk figures</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-80 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg w-full">
-              <div className="w-full max-w-md p-4">
-                <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground mb-2 min-w-[280px]">
-                  <div className="font-medium">Month</div>
-                  <div className="text-right">Low</div>
-                  <div className="text-right">Med</div>
-                  <div className="text-right">High</div>
+            <div className="space-y-4 py-4">
+              {[
+                {
+                  label: 'NPL ratio',
+                  pct: Math.round((risk?.nplRatio ?? 0) * 100),
+                  color: '#ef4444',
+                },
+                {
+                  label: 'PAR 30 ratio',
+                  pct: Math.round((risk?.par30Ratio ?? 0) * 100),
+                  color: '#f59e0b',
+                },
+              ].map((row) => (
+                <div key={row.label} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{row.label}</span>
+                    <span className="font-medium tabular-nums">{row.pct}%</span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, row.pct)}%`,
+                        backgroundColor: row.color,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {riskTrends.map((r, idx) => (
-                    <div key={idx} className="grid grid-cols-4 gap-2 text-sm">
-                      <div>{r.month}</div>
-                      <div className="text-right">{r.lowRisk}%</div>
-                      <div className="text-right">{r.mediumRisk}%</div>
-                      <div className="text-right">{r.highRisk}%</div>
-                    </div>
-                  ))}
+              ))}
+              <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Overdue installments</p>
+                  <p className="text-lg font-bold tabular-nums">{risk?.nonPerformingLoans ?? 0}</p>
                 </div>
-                <div className="text-xs text-muted-foreground pt-2">Chart temporarily disabled</div>
+                <div>
+                  <p className="text-muted-foreground">Overdue amount</p>
+                  <p className="text-lg font-bold tabular-nums">
+                    N$
+                    {(risk?.overdueAmount ?? 0).toLocaleString('en-NA', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

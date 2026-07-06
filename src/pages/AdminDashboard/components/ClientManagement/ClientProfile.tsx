@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdaptiveTabs } from '@/components/adaptive/AdaptiveTabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { formatNAD } from '@/utils/currency';
 import {
   AlertTriangle,
   Calendar,
@@ -33,9 +35,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
   const { client, loading, error } = useClientProfile(clientId);
   const [activeTab, setActiveTab] = useState('overview');
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = formatNAD;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
@@ -213,13 +213,15 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
 
           {/* Detailed Information Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="loans">Loans</TabsTrigger>
-              <TabsTrigger value="payments">Payments</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-            </TabsList>
+            <AdaptiveTabs
+              items={[
+                { value: 'overview', label: 'Overview' },
+                { value: 'loans', label: 'Loans' },
+                { value: 'payments', label: 'Payments' },
+                { value: 'documents', label: 'Documents' },
+                { value: 'activity', label: 'Activity' },
+              ]}
+            />
 
             <TabsContent value="overview" className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

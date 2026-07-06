@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { api } from '@/integrations/convex/api';
 import { useQuery as useConvexQuery } from 'convex/react';
 import {

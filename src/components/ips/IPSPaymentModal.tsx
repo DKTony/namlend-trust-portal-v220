@@ -19,8 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { formatNAD } from '@/constants/regulatory';
+import { api, type Id } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
 import { useIPSRepayment } from '@/hooks/useIPSPayment';
+import { useQuery } from 'convex/react';
 import { getDefaultVPA, useUserVPAs } from '@/hooks/useUserVPAs';
 import type { InitiateIPSRepaymentResult, IPSAdapterValidateVPAResponse } from '@/types/ips';
 import { AlertTriangle, CheckCircle2, CreditCard, Loader2, Wallet, XCircle } from 'lucide-react';
@@ -74,8 +76,16 @@ export function IPSPaymentModal({
     }
   }, [isOpen, monthlyPayment, defaultVpa]);
 
+  // Settlement ceiling: outstanding principal + interest already due.
+  // Falls back to the prop while the quote loads.
+  const quote = useQuery(
+    api.payments.getPayoffQuote,
+    loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+  );
+  const settlementAmount = Math.max(outstandingBalance, quote?.payoffQuote ?? 0);
+
   const parsedAmount = parseFloat(amount) || 0;
-  const isValidAmount = parsedAmount > 0 && parsedAmount <= outstandingBalance;
+  const isValidAmount = parsedAmount > 0 && parsedAmount <= settlementAmount;
 
   const selectedVpa =
     selectedVpaId === 'new'
@@ -182,7 +192,7 @@ export function IPSPaymentModal({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Enter amount"
                 min={0}
-                max={outstandingBalance}
+                max={settlementAmount}
                 step={0.01}
                 data-testid="ips-amount-input"
               />
@@ -204,15 +214,21 @@ export function IPSPaymentModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => handleAmountSelect(outstandingBalance)}
+                  onClick={() => handleAmountSelect(settlementAmount)}
                   data-testid="ips-full-balance-btn"
                 >
-                  Full Balance ({formatNAD(outstandingBalance)})
+                  Full Balance ({formatNAD(settlementAmount)})
                 </Button>
               </div>
 
-              {parsedAmount > outstandingBalance && (
-                <p className="text-sm text-red-500">Amount cannot exceed outstanding balance</p>
+              {settlementAmount > outstandingBalance && parsedAmount >= outstandingBalance && (
+                <p className="text-xs text-muted-foreground">
+                  Full settlement includes {formatNAD(settlementAmount - outstandingBalance)} of
+                  interest already due.
+                </p>
+              )}
+              {parsedAmount > settlementAmount && (
+                <p className="text-sm text-red-500">Amount cannot exceed the settlement amount</p>
               )}
             </div>
           </div>
@@ -342,7 +358,14 @@ export function IPSPaymentModal({
               <Separator />
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Balance After Payment</span>
-                <span>{formatNAD(outstandingBalance - parsedAmount)}</span>
+                <span>
+                  {formatNAD(
+                    Math.max(
+                      0,
+                      Math.round(outstandingBalance * 100) - Math.round(parsedAmount * 100)
+                    ) / 100
+                  )}
+                </span>
               </div>
             </div>
 

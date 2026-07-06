@@ -174,22 +174,32 @@ export const getRiskMetrics = query({
     await assertStaff(ctx);
     await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
-    const [loans, overdueSchedules] = await Promise.all([
+    const now = Date.now();
+    const [loans, markedOverdue, partiallyPaid] = await Promise.all([
       ctx.db.query('loans').take(10000),
       ctx.db
         .query('paymentSchedules')
         .withIndex('by_status', (q) => q.eq('status', 'overdue' as const))
         .take(10000),
+      ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'partially_paid' as const))
+        .take(10000),
     ]);
+
+    // partially_paid is sticky — past-due partially paid installments count
+    // toward NPL/PAR with their REMAINING amount, not the full installment.
+    const overdueSchedules = [...markedOverdue, ...partiallyPaid.filter((s) => s.dueDate < now)];
+    const remainingDue = (o: (typeof overdueSchedules)[number]) =>
+      Math.max(0, Math.round(((o.totalDue ?? 0) - (o.paidAmount ?? 0)) * 100)) / 100;
 
     const activeLoans = loans.filter((l) => ['active', 'funded', 'disbursed'].includes(l.status));
     const totalPortfolio = activeLoans.reduce(
       (s, l) => s + (l.outstandingBalance ?? l.principal ?? 0),
       0
     );
-    const overdueAmount = overdueSchedules.reduce((s, o) => s + (o.totalDue ?? 0), 0);
+    const overdueAmount = overdueSchedules.reduce((s, o) => s + remainingDue(o), 0);
 
-    const now = Date.now();
     const MS_PER_DAY = 86_400_000;
 
     const over30 = overdueSchedules.filter((o) => (now - o.dueDate) / MS_PER_DAY > 30);
@@ -199,10 +209,10 @@ export const getRiskMetrics = query({
       nonPerformingLoans: overdueSchedules.length,
       overdueAmount,
       nplRatio: totalPortfolio > 0 ? overdueAmount / totalPortfolio : 0,
-      par30: over30.reduce((s, o) => s + (o.totalDue ?? 0), 0),
-      par90: over90.reduce((s, o) => s + (o.totalDue ?? 0), 0),
+      par30: over30.reduce((s, o) => s + remainingDue(o), 0),
+      par90: over90.reduce((s, o) => s + remainingDue(o), 0),
       par30Ratio:
-        totalPortfolio > 0 ? over30.reduce((s, o) => s + (o.totalDue ?? 0), 0) / totalPortfolio : 0,
+        totalPortfolio > 0 ? over30.reduce((s, o) => s + remainingDue(o), 0) / totalPortfolio : 0,
     };
   },
 });

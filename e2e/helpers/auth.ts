@@ -164,17 +164,27 @@ export async function gotoAuthenticated(
   const targetPath = path.split('?')[0];
 
   const waitStart = Date.now();
+  let authSeenAt: number | null = null;
   while (Date.now() - waitStart < timeout) {
     const currentUrl = new URL(page.url());
     const currentPath = currentUrl.pathname;
 
-    // If redirected to /auth, session expired. Check the pathname instead of
-    // the full URL so /auth?redirect=/dashboard is not treated as /dashboard.
+    // If redirected to /auth, the session may be expired — but the app also
+    // bounces through /auth transiently while the Convex session hydrates.
+    // Only treat it as expired when we STAY on /auth. Check the pathname
+    // instead of the full URL so /auth?redirect=/dashboard is not treated as
+    // /dashboard.
     if (currentPath === '/auth') {
-      throw new Error(
-        `Session expired — redirected to /auth after navigation to ${path}. Re-login required.`
-      );
+      authSeenAt ??= Date.now();
+      if (Date.now() - authSeenAt > 8000) {
+        throw new Error(
+          `Session expired — redirected to /auth after navigation to ${path}. Re-login required.`
+        );
+      }
+      await page.waitForTimeout(200);
+      continue;
     }
+    authSeenAt = null;
 
     // If we're on the target path, check for app shell
     if (currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)) {

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useIPSDisbursement } from '@/hooks/useIPSPayment';
 import type { IPSAdapterValidateVPAResponse, InitiateIPSDisbursementResult } from '@/types/ips';
 import {

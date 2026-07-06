@@ -6,6 +6,8 @@
 import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { internalMutation } from './_generated/server';
+import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
+import { ensurePaymentSchedule } from './lib/scheduleGeneration';
 
 /** Elevate a user's role by email. */
 export const elevateRole = internalMutation({
@@ -243,6 +245,113 @@ export const seedKycDocuments = internalMutation({
     });
 
     console.log(`[seed] KYC documents seeded for ${email}`);
+  },
+});
+
+const E2E_LOAN_PURPOSE = 'E2E seeded active loan';
+
+/**
+ * Seed one mid-life ACTIVE loan (with amortization schedule and a first paid
+ * installment) so payment-flow E2E specs have real data instead of skipping.
+ * Idempotent: keyed on the loan purpose marker per user.
+ */
+export const seedActiveLoanForE2E = internalMutation({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, { email }) => {
+    const profile = await ctx.db
+      .query('profiles')
+      .filter((q) => q.eq(q.field('email'), email))
+      .first();
+
+    if (!profile) {
+      throw new Error(`No profile found for ${email}`);
+    }
+
+    const existing = (
+      await ctx.db
+        .query('loans')
+        .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+        .collect()
+    ).find((l) => l.purpose === E2E_LOAN_PURPOSE);
+    if (existing) {
+      console.log(`[seed] Active E2E loan already exists for ${email}`);
+      return existing._id;
+    }
+
+    const principal = 10000;
+    const interestRate = 20; // within the 32% regulatory limit
+    const termMonths = 12;
+    const now = Date.now();
+    const disbursedAt = now - 45 * 24 * 60 * 60 * 1000; // 45 days ago → installment 1 due
+
+    const monthlyPayment = calculateMonthlyInstalment(principal, interestRate, termMonths);
+    const totalRepayment = calculateTotalRepayable(principal, interestRate, termMonths);
+
+    const loanId = await ctx.db.insert('loans', {
+      userId: profile.userId,
+      principal,
+      interestRate,
+      termMonths,
+      purpose: E2E_LOAN_PURPOSE,
+      status: 'active',
+      monthlyPayment,
+      totalRepayment,
+      // Placeholder balances — corrected below from the generated schedule
+      outstandingBalance: principal,
+      totalPaid: 0,
+      disbursedAt,
+      createdAt: disbursedAt,
+      updatedAt: now,
+    });
+
+    const loan = await ctx.db.get(loanId);
+    if (!loan) throw new Error('Seeded loan vanished — aborting');
+    await ensurePaymentSchedule(ctx, loan, disbursedAt);
+
+    // Mark installment #1 paid and reflect it on the loan so the UI shows a
+    // realistic mid-life state (1 of 12 paid).
+    const firstInstallment = (
+      await ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
+        .collect()
+    ).find((s) => s.installmentNumber === 1);
+
+    if (firstInstallment) {
+      const paidAt = disbursedAt + 30 * 24 * 60 * 60 * 1000;
+      await ctx.db.patch(firstInstallment._id, {
+        status: 'paid',
+        paidAt,
+        paidAmount: firstInstallment.totalDue,
+      });
+      await ctx.db.patch(loanId, {
+        // outstandingBalance tracks remaining principal (see completePayment)
+        outstandingBalance: Math.round((principal - firstInstallment.principalDue) * 100) / 100,
+        totalPaid: firstInstallment.totalDue,
+        updatedAt: now,
+      });
+      await ctx.db.insert('paymentTransactions', {
+        loanId,
+        userId: profile.userId,
+        amount: firstInstallment.totalDue,
+        principalPaid: firstInstallment.principalDue,
+        interestPaid: firstInstallment.interestDue,
+        method: 'ips',
+        status: 'completed',
+        referenceNumber: 'E2E-SEED-PAY-001',
+        paymentDate: paidAt,
+        paidAt,
+        createdAt: paidAt,
+        updatedAt: paidAt,
+      });
+    }
+
+    console.log(
+      `[seed] Created active E2E loan for ${email}: N$${principal} @ ${interestRate}% × ${termMonths}mo, installment 1 paid`
+    );
+    return loanId;
   },
 });
 

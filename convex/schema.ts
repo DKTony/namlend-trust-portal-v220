@@ -50,6 +50,20 @@ export const loanStatus = v.union(
   v.literal('written_off')
 );
 
+/**
+ * Payment-schedule installment status.
+ * 'partially_paid' is sticky: overdue-ness of a partially paid installment is
+ * derived from dueDate < now by consumers; the daily cron only transitions
+ * scheduled → overdue.
+ */
+export const paymentScheduleStatus = v.union(
+  v.literal('scheduled'),
+  v.literal('paid'),
+  v.literal('partially_paid'),
+  v.literal('overdue'),
+  v.literal('waived')
+);
+
 /** txStatus: used for disbursements and as a base for other status unions */
 export const txStatus = v.union(
   v.literal('pending'),
@@ -521,16 +535,129 @@ export default defineSchema({
     totalDue: v.number(),
     paidAt: v.optional(v.number()),
     paidAmount: v.optional(v.number()),
-    status: v.union(
-      v.literal('scheduled'),
-      v.literal('paid'),
-      v.literal('overdue'),
-      v.literal('waived')
-    ),
+    // Decomposition of paidAmount for cent-exact ledger derivation and
+    // reversals. Invariant: paidAmount === principalPaidAmount + interestPaidAmount
+    // (compared in integer cents). Legacy rows without these fields are
+    // decomposed interest-first on read.
+    principalPaidAmount: v.optional(v.number()),
+    interestPaidAmount: v.optional(v.number()),
+    status: paymentScheduleStatus,
     createdAt: v.number(),
   })
     .index('by_loanId', ['loanId'])
     .index('by_status', ['status']),
+
+  /** Client payment-reschedule requests (self-service portal → staff review). */
+  rescheduleRequests: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    userId: v.id('users'),
+    loanId: v.id('loans'),
+    originalDueDate: v.string(),
+    requestedDate: v.string(),
+    reason: v.string(),
+    status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
+    adminNotes: v.optional(v.string()),
+    reviewedBy: v.optional(v.id('users')),
+    reviewedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status']),
+
+  /** Staff→client messages logged by the admin Communication Center. */
+  communications: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    /** Recipient client. */
+    userId: v.id('users'),
+    sentBy: v.id('users'),
+    type: v.union(v.literal('email'), v.literal('sms'), v.literal('call'), v.literal('in_app')),
+    subject: v.string(),
+    message: v.string(),
+    status: v.union(
+      v.literal('sent'),
+      v.literal('delivered'),
+      v.literal('read'),
+      v.literal('replied'),
+      v.literal('failed')
+    ),
+    priority: v.union(
+      v.literal('low'),
+      v.literal('medium'),
+      v.literal('high'),
+      v.literal('urgent')
+    ),
+    inReplyTo: v.optional(v.id('communications')),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status']),
+
+  /** Client support tickets managed from the admin console. */
+  supportTickets: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    /** Client the ticket concerns. */
+    userId: v.id('users'),
+    subject: v.string(),
+    description: v.string(),
+    category: v.union(
+      v.literal('technical'),
+      v.literal('billing'),
+      v.literal('loan'),
+      v.literal('account'),
+      v.literal('general')
+    ),
+    priority: v.union(
+      v.literal('low'),
+      v.literal('medium'),
+      v.literal('high'),
+      v.literal('urgent')
+    ),
+    status: v.union(
+      v.literal('open'),
+      v.literal('in_progress'),
+      v.literal('resolved'),
+      v.literal('closed')
+    ),
+    assignedTo: v.optional(v.id('users')),
+    responses: v.array(
+      v.object({
+        byUserId: v.id('users'),
+        byName: v.string(),
+        message: v.string(),
+        at: v.number(),
+      })
+    ),
+    resolvedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_status', ['status']),
+
+  /**
+   * Per-(payment × installment) allocation ledger — records exactly which
+   * cents of each completed payment settled which installment, enabling
+   * cent-exact reversals. Append-only (7-year retention; no hard deletes).
+   */
+  paymentAllocations: defineTable({
+    paymentId: v.id('paymentTransactions'),
+    /** Absent for direct-principal allocations (loans without schedule rows). */
+    scheduleId: v.optional(v.id('paymentSchedules')),
+    loanId: v.id('loans'),
+    institutionId: v.optional(v.id('institutions')),
+    principalCents: v.number(),
+    interestCents: v.number(),
+    /** True when this allocation waived the row (unearned-interest rebate on settlement). */
+    waived: v.optional(v.boolean()),
+    /** Set when a reversal un-applied this allocation. */
+    reversedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index('by_paymentId', ['paymentId'])
+    .index('by_scheduleId', ['scheduleId'])
+    .index('by_loanId', ['loanId']),
 
   // ==========================================================================
   // APPROVAL WORKFLOW
@@ -1365,7 +1492,7 @@ export default defineSchema({
    * Scheduler (every 30s) claims entries and posts to TigerBeetle at localhost:3001.
    */
   tigerBeetleOutbox: defineTable({
-    eventType: v.string(), // CREATE_ACCOUNT | DISBURSEMENT | REPAYMENT | LATE_FEE | IPS_INITIATE | IPS_COMPLETE | IPS_REVERSE
+    eventType: v.string(), // CREATE_ACCOUNT | DISBURSEMENT | REPAYMENT | REPAYMENT_REVERSAL | LATE_FEE | IPS_INITIATE | IPS_COMPLETE | IPS_REVERSE
     sourceTable: v.string(),
     sourceId: v.string(), // Convex document ID
     payload: v.any(),

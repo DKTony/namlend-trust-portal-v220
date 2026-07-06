@@ -6,7 +6,7 @@
 import { AdaptiveTabs } from '@/components/adaptive';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useSettlementStatistics } from '@/hooks/useSettlement';
 import {
   AlertTriangle,

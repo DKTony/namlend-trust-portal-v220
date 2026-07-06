@@ -3,6 +3,7 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import {
   AlertTriangle,
   Calendar,
@@ -29,9 +30,7 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
   const { clients, loading, error, refetch } = useClientsList(status, searchTerm);
   const { styles } = useTheme();
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = formatNAD;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {

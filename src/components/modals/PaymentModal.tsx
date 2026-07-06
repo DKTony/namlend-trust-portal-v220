@@ -23,6 +23,7 @@ import type { Id } from '@/integrations/convex/api';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
+import { validatePaymentAmount } from '@/utils/paymentValidation';
 import { useMutation as useConvexMutation } from 'convex/react';
 import {
   ArrowRight,
@@ -52,21 +53,10 @@ interface ProcessPaymentResult {
   overpayment?: number;
 }
 
-// Payment method validation rules - replaces sequential if-statements
-const PAYMENT_VALIDATION_RULES: Record<string, (details: Record<string, string>) => boolean> = {
-  ips: () => true, // No additional fields required
-  bank: (d) => Boolean(d.bank && d.accountNumber),
-  card: (d) => Boolean(d.number && d.expiry && d.cvv),
-  mobile: (d) => Boolean(d.wallet && d.phoneNumber),
-  agent: (d) => Boolean(d.location),
-};
-
-const PAYMENT_VALIDATION_MESSAGES: Record<string, string> = {
-  bank: 'Select bank and enter account number.',
-  card: 'Enter valid card information.',
-  mobile: 'Enter wallet and phone number.',
-  agent: 'Select an agent location.',
-};
+// Non-IPS methods record a pending payment INSTRUCTION that staff confirm
+// once the money arrives — no card/account details are collected here (they
+// were previously gathered but never sent anywhere, which was both misleading
+// and a PCI risk for card data).
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -99,15 +89,9 @@ export default function PaymentModal({
   const [paymentResult, setPaymentResult] = useState<ProcessPaymentResult | null>(null);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
 
-  // Form fields for different payment methods
-  const [bankDetails, setBankDetails] = useState({ bank: '', accountNumber: '' });
-  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '' });
-  const [mobileDetails, setMobileDetails] = useState({ wallet: '', phoneNumber: '' });
-  const [agentLocation, setAgentLocation] = useState('');
-
   // Sync payment amount when selected loan changes
   useEffect(() => {
-    if (selectedLoanDetails) {
+    if (selectedLoanDetails?.next_payment_amount != null) {
       setPaymentAmount(selectedLoanDetails.next_payment_amount.toString());
     }
   }, [selectedLoanDetails]);
@@ -133,23 +117,16 @@ export default function PaymentModal({
       return;
     }
 
-    // Validate payment method specific fields using validation map
-    const validationDetails: Record<string, string> = {
-      bank: bankDetails.bank,
-      accountNumber: bankDetails.accountNumber,
-      number: cardDetails.number,
-      expiry: cardDetails.expiry,
-      cvv: cardDetails.cvv,
-      wallet: mobileDetails.wallet,
-      phoneNumber: mobileDetails.phoneNumber,
-      location: agentLocation,
-    };
-
-    const validator = PAYMENT_VALIDATION_RULES[paymentMethod];
-    if (validator && !validator(validationDetails)) {
-      const message =
-        PAYMENT_VALIDATION_MESSAGES[paymentMethod] || 'Please complete all required fields.';
-      toast({ title: 'Incomplete Details', description: message, variant: 'destructive' });
+    const amountValidation = validatePaymentAmount(
+      parseFloat(paymentAmount),
+      selectedLoanDetails?.outstanding_balance ?? NaN
+    );
+    if (!amountValidation.valid) {
+      toast({
+        title: 'Invalid Amount',
+        description: amountValidation.message,
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -168,12 +145,15 @@ export default function PaymentModal({
     try {
       const amount = parseFloat(paymentAmount);
       const normalizedMethod = normalizeMethod(paymentMethod);
+      // One reference for both the backend record and the user's receipt —
+      // this is the number they quote when making the transfer.
+      const referenceNumber = `PAY-${Date.now()}`;
 
       await recordPaymentMutation({
         loanId: selectedLoan as Id<'loans'>,
         amount,
         method: normalizedMethod,
-        referenceNumber: `PAY-${Date.now()}`,
+        referenceNumber,
       });
 
       const outstandingAfter = (selectedLoanDetails?.outstanding_balance ?? 0) - amount;
@@ -184,7 +164,7 @@ export default function PaymentModal({
         loan_settled: false,
         new_balance: Math.max(0, outstandingAfter),
         new_outstanding: Math.max(0, outstandingAfter),
-        reference_number: `PAY-${Date.now()}`,
+        reference_number: referenceNumber,
       };
 
       setPaymentResult(result);
@@ -211,10 +191,6 @@ export default function PaymentModal({
     setSelectedLoanId('');
     setPaymentMethod('bank');
     setPaymentAmount('');
-    setBankDetails({ bank: '', accountNumber: '' });
-    setCardDetails({ number: '', expiry: '', cvv: '' });
-    setMobileDetails({ wallet: '', phoneNumber: '' });
-    setAgentLocation('');
     setPaymentResult(null);
     setShowSuccessScreen(false);
   };
@@ -298,7 +274,7 @@ export default function PaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
         {/* Header */}
         <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl shrink-0 z-10">
           <div className="flex items-center justify-between">
@@ -436,14 +412,14 @@ export default function PaymentModal({
                 </Label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                    $
+                    N$
                   </span>
                   <Input
                     type="number"
                     data-testid="payment-amount-input"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="pl-8 bg-secondary border-transparent text-foreground text-lg h-12 focus:ring-blue-500/20 focus:border-blue-500"
+                    className="pl-10 bg-secondary border-transparent text-foreground text-lg h-12 focus:ring-blue-500/20 focus:border-blue-500"
                     placeholder="0.00"
                   />
                 </div>
@@ -535,95 +511,44 @@ export default function PaymentModal({
                     </div>
                   )}
                   {paymentMethod === 'bank' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Select
-                        value={bankDetails.bank}
-                        onValueChange={(v) => setBankDetails({ ...bankDetails, bank: v })}
-                      >
-                        <SelectTrigger
-                          data-testid="payment-bank-select"
-                          className="bg-card border-border text-foreground"
-                        >
-                          <SelectValue placeholder="Select Bank" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border">
-                          <SelectItem value="fnb">FNB Namibia</SelectItem>
-                          <SelectItem value="bw">Bank Windhoek</SelectItem>
-                          <SelectItem value="standard">Standard Bank</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        placeholder="Account Number"
-                        data-testid="payment-account-input"
-                        value={bankDetails.accountNumber}
-                        onChange={(e) =>
-                          setBankDetails({ ...bankDetails, accountNumber: e.target.value })
-                        }
-                        className="bg-card border-border text-foreground"
-                      />
+                    <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                      <p className="font-medium text-foreground">Bank transfer (EFT)</p>
+                      <p className="text-muted-foreground">
+                        Submitting records your payment instruction. Transfer the amount to NamLend
+                        Trust — FNB Namibia, acc 555 0123 4567, branch 280172 — using the reference
+                        number shown after you submit. Your balance updates once the transfer is
+                        confirmed.
+                      </p>
                     </div>
                   )}
                   {paymentMethod === 'mobile' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Select
-                        value={mobileDetails.wallet}
-                        onValueChange={(v) => setMobileDetails({ ...mobileDetails, wallet: v })}
-                      >
-                        <SelectTrigger className="bg-card border-border text-foreground">
-                          <SelectValue placeholder="Select Wallet" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border">
-                          <SelectItem value="mtc">MTC Maris</SelectItem>
-                          <SelectItem value="ewallet">FNB eWallet</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        placeholder="Mobile Number"
-                        value={mobileDetails.phoneNumber}
-                        onChange={(e) =>
-                          setMobileDetails({ ...mobileDetails, phoneNumber: e.target.value })
-                        }
-                        className="bg-card border-border text-foreground"
-                      />
+                    <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                      <p className="font-medium text-foreground">Mobile money</p>
+                      <p className="text-muted-foreground">
+                        Submitting records your payment instruction. Send the amount via MTC Maris
+                        or FNB eWallet to 081 555 0100 (NamLend Trust) quoting the reference number
+                        shown after you submit.
+                      </p>
                     </div>
                   )}
                   {paymentMethod === 'card' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Input
-                        placeholder="Card Number"
-                        value={cardDetails.number}
-                        onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
-                        className="bg-card border-border text-foreground"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          placeholder="MM/YY"
-                          value={cardDetails.expiry}
-                          onChange={(e) =>
-                            setCardDetails({ ...cardDetails, expiry: e.target.value })
-                          }
-                          className="bg-card border-border text-foreground"
-                        />
-                        <Input
-                          placeholder="CVV"
-                          value={cardDetails.cvv}
-                          onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
-                          className="bg-card border-border text-foreground"
-                        />
-                      </div>
+                    <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                      <p className="font-medium text-foreground">Debit order</p>
+                      <p className="text-muted-foreground">
+                        Submitting records a debit-order instruction against your registered bank
+                        account. No card details are required — the collection is confirmed by our
+                        team before your balance updates.
+                      </p>
                     </div>
                   )}
                   {paymentMethod === 'agent' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <Select value={agentLocation} onValueChange={setAgentLocation}>
-                        <SelectTrigger className="bg-card border-border text-foreground">
-                          <SelectValue placeholder="Select Location" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border-border">
-                          <SelectItem value="windhoek-cbd">Windhoek CBD</SelectItem>
-                          <SelectItem value="katutura">Katutura</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                      <p className="font-medium text-foreground">Cash at an agent</p>
+                      <p className="text-muted-foreground">
+                        Submitting records your payment instruction. Pay cash at any NamLend agent
+                        (Windhoek CBD · Katutura) quoting the reference number shown after you
+                        submit.
+                      </p>
                     </div>
                   )}
                 </div>

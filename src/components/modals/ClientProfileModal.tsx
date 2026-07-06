@@ -166,7 +166,7 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[min(90vh,calc(100dvh-2rem))] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
         {/* Header Section */}
         <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl shrink-0">
           <div className="flex items-center justify-between">

@@ -89,6 +89,14 @@ export const seedTestUsers = internalAction({
     await ctx.runMutation(internal.seedMutations.seedSettlementParticipants, {});
     console.log('[seed] Settlement participants seeded successfully');
 
+    // Active loan with amortization schedule for client1 — unlocks the
+    // payment-flow E2E specs that skip without active loans.
+    console.log('[seed] Seeding active loan for client1...');
+    await ctx.runMutation(internal.seedMutations.seedActiveLoanForE2E, {
+      email: 'client1@test.namlend.com',
+    });
+    console.log('[seed] Active loan seeded successfully');
+
     console.log('[seed] All test users seeded successfully');
   },
 });

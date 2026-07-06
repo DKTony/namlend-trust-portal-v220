@@ -92,8 +92,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     </header>
   );
 
+  // In constrained landscape (short viewport, wider than tall) the bottom nav
+  // would eat ~84px of a ~375px-tall screen — hide it; the drawer stays
+  // available. Passing undefined also drops AdaptiveShell's bottom padding.
+  const hideBottomNav = layout.height < 500 && layout.width > layout.height;
+
   const bottomNavigation =
-    variant === 'client' ? (
+    variant === 'client' && !hideBottomNav ? (
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-2 pb-safe pt-2 backdrop-blur-xl md:hidden">
         <div
           className="mx-auto grid max-w-md gap-1"

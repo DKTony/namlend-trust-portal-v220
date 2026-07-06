@@ -1,9 +1,11 @@
+import { AdaptiveCollection } from '@/components/adaptive/AdaptiveCollection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { formatNAD } from '@/utils/currency';
+import { downloadCsv } from '@/utils/downloadFile';
 import { useQuery as useConvexQuery } from 'convex/react';
 import {
   AlertTriangle,
@@ -109,7 +111,9 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
     });
   };
 
-  const getStatusBadge = (status: string, daysOverdue: number) => {
+  const getStatusBadge = (rawStatus: string, daysOverdue: number) => {
+    // Backend rows use 'scheduled'; render it with the 'pending' styling.
+    const status = rawStatus === 'scheduled' ? 'pending' : rawStatus;
     const variants = {
       pending:
         'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
@@ -149,6 +153,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
     const totalLateFees = schedule.reduce((sum, item) => sum + item.late_fee_applied, 0);
     const overdueCount = schedule.filter((item) => item.status === 'overdue').length;
     const paidCount = schedule.filter((item) => item.status === 'paid').length;
+    const partiallyPaidCount = schedule.filter((item) => item.status === 'partially_paid').length;
 
     return {
       totalAmount,
@@ -157,6 +162,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
       totalLateFees,
       overdueCount,
       paidCount,
+      partiallyPaidCount,
       totalInstallments: schedule.length,
     };
   };
@@ -257,6 +263,11 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
                   <p className="text-xs text-muted-foreground">Progress</p>
                   <p className="text-lg font-bold">
                     {summary.paidCount}/{summary.totalInstallments}
+                    {summary.partiallyPaidCount > 0 && (
+                      <span className="ml-1 text-xs font-medium text-blue-600">
+                        +{summary.partiallyPaidCount} partial
+                      </span>
+                    )}
                   </p>
                 </div>
                 <Calendar className="h-6 w-6 text-purple-600" />
@@ -275,7 +286,35 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
               <span>Payment Schedule</span>
             </CardTitle>
             {viewMode === 'admin' && (
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  downloadCsv(
+                    `payment-schedule-${loanId}.csv`,
+                    [
+                      '#',
+                      'Due Date',
+                      'Principal',
+                      'Interest',
+                      'Total',
+                      'Paid',
+                      'Balance',
+                      'Status',
+                    ],
+                    schedule.map((item) => [
+                      item.installment_number,
+                      formatDate(item.due_date),
+                      item.principal_amount.toFixed(2),
+                      item.interest_amount.toFixed(2),
+                      item.total_amount.toFixed(2),
+                      item.amount_paid.toFixed(2),
+                      item.balance.toFixed(2),
+                      item.status,
+                    ])
+                  )
+                }
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
@@ -296,108 +335,184 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">#</th>
-                  <th className="text-left p-3 text-sm font-medium text-muted-foreground">
-                    Due Date
-                  </th>
-                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">
-                    Principal
-                  </th>
-                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">
-                    Interest
-                  </th>
-                  {viewMode === 'admin' && (
-                    <th className="text-right p-3 text-sm font-medium text-muted-foreground">
-                      Fees
-                    </th>
-                  )}
-                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">
-                    Total
-                  </th>
-                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">Paid</th>
-                  <th className="text-right p-3 text-sm font-medium text-muted-foreground">
-                    Balance
-                  </th>
-                  <th className="text-center p-3 text-sm font-medium text-muted-foreground">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {schedule.map((item) => (
-                  <tr
-                    key={item.id}
-                    className={`border-b hover:bg-muted/50 transition-colors ${
-                      item.status === 'overdue' ? 'bg-red-50 dark:bg-red-900/10' : ''
-                    }`}
-                  >
-                    <td className="p-3 font-medium">{item.installment_number}</td>
-                    <td className="p-3 text-sm">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span>{formatDate(item.due_date)}</span>
-                      </div>
-                    </td>
-                    <td className="text-right p-3 text-sm">{formatNAD(item.principal_amount)}</td>
-                    <td className="text-right p-3 text-sm">{formatNAD(item.interest_amount)}</td>
-                    {viewMode === 'admin' && (
-                      <td className="text-right p-3 text-sm">
-                        {item.late_fee_applied > 0 ? (
-                          <span className="text-red-600 font-medium">
-                            {formatNAD(item.late_fee_applied)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                    )}
-                    <td className="text-right p-3 font-medium">{formatNAD(item.total_amount)}</td>
-                    <td className="text-right p-3 text-sm text-green-600">
-                      {item.amount_paid > 0 ? formatNAD(item.amount_paid) : '-'}
-                    </td>
-                    <td className="text-right p-3 text-sm font-medium">
-                      {item.balance > 0 ? (
-                        <span className={item.status === 'overdue' ? 'text-red-600' : ''}>
-                          {formatNAD(item.balance)}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
+          {/* Wide: table · Compact (<640px): stacked installment cards */}
+          <AdaptiveCollection
+            items={schedule}
+            getKey={(item) => item.id}
+            renderCard={(item) => (
+              <div
+                className={`rounded-lg border p-3 space-y-2 ${
+                  item.status === 'overdue'
+                    ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
+                    : 'border-border'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">
+                    #{item.installment_number} · {formatDate(item.due_date)}
+                  </span>
+                  {getStatusBadge(item.status, item.days_overdue)}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total due</span>
+                  <span className="font-medium tabular-nums">{formatNAD(item.total_amount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Paid</span>
+                  <span className="text-green-600 tabular-nums">
+                    {item.amount_paid > 0 ? formatNAD(item.amount_paid) : '—'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <span>Principal {formatNAD(item.principal_amount)}</span>
+                  <span>Interest {formatNAD(item.interest_amount)}</span>
+                  <span className={item.status === 'overdue' ? 'text-red-600 font-medium' : ''}>
+                    Balance {item.balance > 0 ? formatNAD(item.balance) : '—'}
+                  </span>
+                </div>
+                {viewMode === 'admin' && item.late_fee_applied > 0 && (
+                  <div className="text-xs font-medium text-red-600">
+                    Late fee: {formatNAD(item.late_fee_applied)}
+                  </div>
+                )}
+              </div>
+            )}
+            renderWide={() => (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">#</th>
+                      <th className="text-left p-3 text-sm font-medium text-muted-foreground">
+                        Due Date
+                      </th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                        Principal
+                      </th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                        Interest
+                      </th>
+                      {viewMode === 'admin' && (
+                        <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                          Fees
+                        </th>
                       )}
-                    </td>
-                    <td className="text-center p-3">
-                      {getStatusBadge(item.status, item.days_overdue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 bg-muted/50 font-medium">
-                  <td colSpan={2} className="p-3 text-sm">
-                    Total
-                  </td>
-                  <td className="text-right p-3 text-sm">
-                    {formatNAD(schedule.reduce((sum, item) => sum + item.principal_amount, 0))}
-                  </td>
-                  <td className="text-right p-3 text-sm">
-                    {formatNAD(schedule.reduce((sum, item) => sum + item.interest_amount, 0))}
-                  </td>
-                  {viewMode === 'admin' && (
-                    <td className="text-right p-3 text-sm text-red-600">
-                      {formatNAD(summary.totalLateFees)}
-                    </td>
-                  )}
-                  <td className="text-right p-3">{formatNAD(summary.totalAmount)}</td>
-                  <td className="text-right p-3 text-green-600">{formatNAD(summary.totalPaid)}</td>
-                  <td className="text-right p-3">{formatNAD(summary.totalBalance)}</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                        Total
+                      </th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                        Paid
+                      </th>
+                      <th className="text-right p-3 text-sm font-medium text-muted-foreground">
+                        Balance
+                      </th>
+                      <th className="text-center p-3 text-sm font-medium text-muted-foreground">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedule.map((item) => (
+                      <tr
+                        key={item.id}
+                        className={`border-b hover:bg-muted/50 transition-colors ${
+                          item.status === 'overdue' ? 'bg-red-50 dark:bg-red-900/10' : ''
+                        }`}
+                      >
+                        <td className="p-3 font-medium">{item.installment_number}</td>
+                        <td className="p-3 text-sm">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span>{formatDate(item.due_date)}</span>
+                          </div>
+                        </td>
+                        <td className="text-right p-3 text-sm">
+                          {formatNAD(item.principal_amount)}
+                        </td>
+                        <td className="text-right p-3 text-sm">
+                          {formatNAD(item.interest_amount)}
+                        </td>
+                        {viewMode === 'admin' && (
+                          <td className="text-right p-3 text-sm">
+                            {item.late_fee_applied > 0 ? (
+                              <span className="text-red-600 font-medium">
+                                {formatNAD(item.late_fee_applied)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                        )}
+                        <td className="text-right p-3 font-medium">
+                          {formatNAD(item.total_amount)}
+                        </td>
+                        <td className="text-right p-3 text-sm text-green-600">
+                          {item.amount_paid > 0 ? formatNAD(item.amount_paid) : '-'}
+                        </td>
+                        <td className="text-right p-3 text-sm font-medium">
+                          {item.balance > 0 ? (
+                            <span className={item.status === 'overdue' ? 'text-red-600' : ''}>
+                              {formatNAD(item.balance)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="text-center p-3">
+                          {getStatusBadge(item.status, item.days_overdue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 bg-muted/50 font-medium">
+                      <td colSpan={2} className="p-3 text-sm">
+                        Total
+                      </td>
+                      <td className="text-right p-3 text-sm">
+                        {formatNAD(schedule.reduce((sum, item) => sum + item.principal_amount, 0))}
+                      </td>
+                      <td className="text-right p-3 text-sm">
+                        {formatNAD(schedule.reduce((sum, item) => sum + item.interest_amount, 0))}
+                      </td>
+                      {viewMode === 'admin' && (
+                        <td className="text-right p-3 text-sm text-red-600">
+                          {formatNAD(summary.totalLateFees)}
+                        </td>
+                      )}
+                      <td className="text-right p-3">{formatNAD(summary.totalAmount)}</td>
+                      <td className="text-right p-3 text-green-600">
+                        {formatNAD(summary.totalPaid)}
+                      </td>
+                      <td className="text-right p-3">{formatNAD(summary.totalBalance)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          />
+
+          {/* Compact-only totals (tfoot equivalent); sm:hidden matches the isCompact <640px switch */}
+          <div className="sm:hidden mt-3 rounded-lg border bg-muted/50 p-3 space-y-1 text-sm font-medium">
+            <div className="flex justify-between">
+              <span>Total</span>
+              <span className="tabular-nums">{formatNAD(summary.totalAmount)}</span>
+            </div>
+            <div className="flex justify-between text-green-600">
+              <span>Paid</span>
+              <span className="tabular-nums">{formatNAD(summary.totalPaid)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Balance</span>
+              <span className="tabular-nums">{formatNAD(summary.totalBalance)}</span>
+            </div>
+            {viewMode === 'admin' && summary.totalLateFees > 0 && (
+              <div className="flex justify-between text-red-600">
+                <span>Late fees</span>
+                <span className="tabular-nums">{formatNAD(summary.totalLateFees)}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

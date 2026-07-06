@@ -161,8 +161,15 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
       {!compact &&
         (brandingConfig.assets.show_company_name_with_logo || !brandingConfig.assets.logo_url) && (
           <div className="min-w-0">
-            <h1 className={cn('font-bold text-xl truncate', styles.textClass)}>{displayTitle}</h1>
-            <p className={cn('text-xs opacity-60 truncate', styles.textClass)}>{displaySubtitle}</p>
+            <h1 className={cn('font-bold text-xl truncate', styles.textClass)} title={displayTitle}>
+              {displayTitle}
+            </h1>
+            <p
+              className={cn('text-xs opacity-60 truncate', styles.textClass)}
+              title={displaySubtitle}
+            >
+              {displaySubtitle}
+            </p>
           </div>
         )}
     </div>
@@ -235,8 +242,12 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
       {!compact && (
         <>
           <div className="overflow-hidden flex-1">
-            <p className={cn('text-sm font-semibold truncate', styles.textClass)}>{userName}</p>
-            <p className={cn('text-xs opacity-60 truncate', styles.textClass)}>{userEmail}</p>
+            <p className={cn('text-sm font-semibold truncate', styles.textClass)} title={userName}>
+              {userName}
+            </p>
+            <p className={cn('text-xs opacity-60 truncate', styles.textClass)} title={userEmail}>
+              {userEmail}
+            </p>
           </div>
           {onSignOut && (
             <button
@@ -301,7 +312,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
 
       <div
         className={cn(
-          'fixed inset-0 bg-black/40 backdrop-blur-sm z-[65] transition-opacity duration-500',
+          'fixed inset-0 bg-black/40 backdrop-blur-sm z-[65] transition-opacity duration-500 motion-reduce:transition-none',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
         onClick={() => setIsOpen(false)}
@@ -317,7 +328,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
             ? `perspective(1000px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg) translateX(0)`
             : 'translateX(-120%)',
         }}
-        className="fixed left-0 top-0 h-dvh w-[min(20rem,calc(100vw-0.75rem))] p-3 sm:p-6 z-[70] transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+        className="fixed left-0 top-0 h-dvh w-[min(20rem,calc(100vw-0.75rem))] p-3 sm:p-6 z-[70] transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] motion-reduce:transition-none"
         data-testid="sidebar-drawer"
       >
         <div

@@ -60,6 +60,16 @@ interface Payment {
   reference_number: string;
 }
 
+// Guards against empty strings and malformed timestamps rendering "Invalid Date"
+function formatDateSafe(
+  iso: string | null | undefined,
+  options?: Intl.DateTimeFormatOptions
+): string {
+  if (!iso) return 'N/A';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('en-ZA', options);
+}
+
 export default function LoanDetails() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
@@ -170,12 +180,17 @@ export default function LoanDetails() {
 
   const isActive = ['active', 'disbursed', 'funded'].includes(loan.status);
   const isSettled = loan.status === 'paid_off';
-  const progressPercent =
+  const rawProgress =
     loan.total_paid && loan.total_repayment
       ? Math.round((loan.total_paid / loan.total_repayment) * 100)
       : 0;
-  const outstandingBalance =
-    loan.outstanding_balance || loan.total_repayment - (loan.total_paid || 0);
+  const progressPercent = Number.isFinite(rawProgress)
+    ? Math.min(100, Math.max(0, rawProgress))
+    : 0;
+  const outstandingBalance = Math.max(
+    0,
+    loan.outstanding_balance || loan.total_repayment - (loan.total_paid || 0)
+  );
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
@@ -238,7 +253,7 @@ export default function LoanDetails() {
                     <CheckCircle className="h-5 w-5" />
                     <span className="text-sm font-medium">
                       Settled on{' '}
-                      {new Date(loan.settled_at).toLocaleDateString('en-ZA', {
+                      {formatDateSafe(loan.settled_at, {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
@@ -278,15 +293,13 @@ export default function LoanDetails() {
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Disbursed</p>
                   <p className={cn('font-medium', styles.textClass)}>
-                    {loan.disbursed_at
-                      ? new Date(loan.disbursed_at).toLocaleDateString()
-                      : 'Pending'}
+                    {loan.disbursed_at ? formatDateSafe(loan.disbursed_at) : 'Pending'}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Created</p>
                   <p className={cn('font-medium', styles.textClass)}>
-                    {new Date(loan.created_at).toLocaleDateString()}
+                    {formatDateSafe(loan.created_at)}
                   </p>
                 </div>
               </div>
@@ -328,9 +341,7 @@ export default function LoanDetails() {
                                   {formatNAD(payment.amount)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {payment.paid_at
-                                    ? new Date(payment.paid_at).toLocaleDateString()
-                                    : 'Pending'}
+                                  {payment.paid_at ? formatDateSafe(payment.paid_at) : 'Pending'}
                                 </p>
                               </div>
                             </div>

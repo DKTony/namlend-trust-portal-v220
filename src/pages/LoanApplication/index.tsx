@@ -21,6 +21,7 @@ import LoanSummaryPanel from './components/LoanSummaryPanel';
 import FinancialInfoStep from './steps/FinancialInfoStep';
 import LoanDetailsStep from './steps/LoanDetailsStep';
 import ReviewSubmitStep from './steps/ReviewSubmitStep';
+import { isLoanAmountValid } from './loanLimits';
 
 export default function LoanApplication() {
   const { t } = useTranslation('loanApplication');
@@ -177,6 +178,25 @@ export default function LoanApplication() {
 
   const progress = (step / 3) * 100;
 
+  // Gate the Next button on validity, not just presence, so invalid data
+  // can't ride through to a server-side rejection with a cryptic message.
+  const isStepValid = (currentStep: number): boolean => {
+    if (currentStep === 1) {
+      return (
+        isLoanAmountValid(Number(formData.amount)) &&
+        Boolean(formData.term) &&
+        Boolean(formData.purpose)
+      );
+    }
+    if (currentStep === 2) {
+      if (!formData.employment_status) return false;
+      if (hasProfileIncome) return true;
+      const income = Number(formData.monthly_income);
+      return Number.isFinite(income) && income > 0;
+    }
+    return true;
+  };
+
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
       <div className="max-w-4xl">
@@ -258,13 +278,7 @@ export default function LoanApplication() {
                     {step < 3 ? (
                       <ThemedButton
                         onClick={() => setStep(step + 1)}
-                        disabled={
-                          (step === 1 &&
-                            (!formData.amount || !formData.term || !formData.purpose)) ||
-                          (step === 2 &&
-                            (!formData.employment_status ||
-                              (!formData.monthly_income && !hasProfileIncome)))
-                        }
+                        disabled={!isStepValid(step)}
                         data-testid="loan-next-button"
                       >
                         {t('navigation.next')}

@@ -23,8 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useReportContent, useSettlementReports } from '@/hooks/useSettlement';
+import { downloadCsv } from '@/utils/downloadFile';
 import { Download, Eye, FileText, Search } from 'lucide-react';
 import { useState } from 'react';
 
@@ -174,18 +175,13 @@ export function RawDataReportViewer() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedReportId(report.id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedReportId(report.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -198,7 +194,7 @@ export function RawDataReportViewer() {
 
       {/* Raw Data Details Dialog */}
       <Dialog open={!!selectedReportId} onOpenChange={() => setSelectedReportId(null)}>
-        <DialogContent className="max-w-6xl max-h-[85vh]">
+        <DialogContent className="max-w-6xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Raw Data Report</DialogTitle>
             <DialogDescription className="sr-only">
@@ -222,6 +218,42 @@ export function RawDataReportViewer() {
                 <span className="text-sm text-muted-foreground">
                   {filteredData.length} of {rawData.length} transactions
                 </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  disabled={filteredData.length === 0}
+                  onClick={() =>
+                    downloadCsv(
+                      `raw-data-report-${selectedReportId}.csv`,
+                      [
+                        'Transaction ID',
+                        'Timestamp',
+                        'Remitter',
+                        'Beneficiary',
+                        'Product',
+                        'Status',
+                        'Amount',
+                        'Interchange',
+                        'Switch Fee',
+                      ],
+                      filteredData.map((e) => [
+                        e.txId,
+                        e.timestamp,
+                        e.remitterParticipant,
+                        e.beneficiaryParticipant,
+                        e.productType,
+                        e.status,
+                        e.amount.toFixed(2),
+                        e.interchangeAmount.toFixed(2),
+                        e.switchingFee.toFixed(2),
+                      ])
+                    )
+                  }
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Export CSV
+                </Button>
               </div>
 
               {/* Data Table */}

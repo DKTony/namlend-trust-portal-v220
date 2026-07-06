@@ -31,7 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useResolveTimeout, useTimeoutTransactions } from '@/hooks/useSettlement';
 import { CheckCircle, Clock, FileX, XCircle } from 'lucide-react';
 import { useState } from 'react';

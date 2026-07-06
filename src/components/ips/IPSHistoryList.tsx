@@ -9,7 +9,7 @@ import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useLoanIPSTransactions } from '@/hooks/useIPSTransactionStatus';
 import { cn } from '@/lib/utils';
 import type { IPSTransactionStatus, IPSTransactionType } from '@/types/ips';

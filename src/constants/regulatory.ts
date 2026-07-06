@@ -2,6 +2,7 @@
  * Regulatory constants for NamLend loan platform
  * Namibian financial regulations and compliance limits
  */
+import { formatNAD as formatNADCanonical } from '../utils/currency';
 
 // Maximum Annual Percentage Rate (APR) allowed by Namibian regulations
 export const APR_LIMIT = 32;
@@ -20,16 +21,11 @@ export const isValidAPR = (apr: number): boolean => {
 };
 
 /**
- * Format currency amount in Namibian Dollars
- * @param amount - Amount to format
- * @returns Formatted currency string
+ * Format currency amount in Namibian Dollars.
+ * Delegates to the canonical implementation in `src/utils/currency.ts` so the
+ * app has exactly one NAD formatter; prefer importing from `@/utils/currency`.
  */
-export const formatNAD = (amount: number): string => {
-  return `${CURRENCY_SYMBOL}${amount.toLocaleString('en-NA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
-};
+export const formatNAD = formatNADCanonical;
 
 /**
  * Calculate maximum loan amount based on APR limit
@@ -39,6 +35,7 @@ export const formatNAD = (amount: number): string => {
  */
 export const calculateMaxLoanAtAPRLimit = (monthlyPayment: number, termMonths: number): number => {
   const monthlyRate = APR_LIMIT / 100 / 12;
-  const presentValue = monthlyPayment * ((1 - Math.pow(1 + monthlyRate, -termMonths)) / monthlyRate);
+  const presentValue =
+    monthlyPayment * ((1 - Math.pow(1 + monthlyRate, -termMonths)) / monthlyRate);
   return Math.floor(presentValue);
 };

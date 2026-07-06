@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useIPSTransactionStatus } from '@/hooks/useIPSTransactionStatus';
 import { cn } from '@/lib/utils';
 import type { IPSTransactionStatus as IPSStatus } from '@/types/ips';

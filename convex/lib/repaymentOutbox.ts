@@ -7,6 +7,13 @@ const REPAYMENT_CODES = {
   fees: 5002,
 } as const;
 
+/** Reversing entries mirror the repayment legs with distinct codes. */
+export const REPAYMENT_REVERSAL_CODES = {
+  principal: 2101,
+  interest: 5101,
+  fees: 5102,
+} as const;
+
 export interface RepaymentOutboxInput {
   loanId: Id<'loans'>;
   paymentId: Id<'paymentTransactions'>;
@@ -29,6 +36,175 @@ function assertNonNegativeAmount(label: string, value: number) {
       message: `${label} must be a non-negative amount.`,
     });
   }
+}
+
+export interface RepaymentOutboxCentsInput {
+  loanId: Id<'loans'>;
+  paymentId: Id<'paymentTransactions'>;
+  amountCents: number;
+  principalCents: number;
+  interestCents: number;
+  feeCents: number;
+  /** Overpayment cents excluded from transfers, reported for manual follow-up. */
+  surplusCents?: number;
+  mandateId?: Id<'mandates'>;
+  executionNumber?: number;
+}
+
+/**
+ * Cents-native payload builder — exact integer arithmetic end to end.
+ * The split must conserve every cent: principal + interest + fee + surplus === amount.
+ */
+export function buildRepaymentOutboxPayloadFromCents(input: RepaymentOutboxCentsInput) {
+  const surplusCents = input.surplusCents ?? 0;
+  for (const [label, value] of [
+    ['amountCents', input.amountCents],
+    ['principalCents', input.principalCents],
+    ['interestCents', input.interestCents],
+    ['feeCents', input.feeCents],
+    ['surplusCents', surplusCents],
+  ] as const) {
+    if (!Number.isInteger(value) || value < 0) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: `${label} must be a non-negative integer number of cents.`,
+      });
+    }
+  }
+  if (input.amountCents <= 0) {
+    throw new ConvexError({
+      code: 'VALIDATION_ERROR',
+      message: 'Repayment amount must be positive.',
+    });
+  }
+  if (
+    input.principalCents + input.interestCents + input.feeCents + surplusCents !==
+    input.amountCents
+  ) {
+    throw new ConvexError({
+      code: 'VALIDATION_ERROR',
+      message: 'Repayment split must equal the total payment amount to the cent.',
+    });
+  }
+
+  const transfers: Array<{
+    debit_type: string;
+    credit_type: string;
+    amount: number;
+    code: number;
+  }> = [];
+
+  if (input.principalCents > 0) {
+    transfers.push({
+      debit_type: 'LOAN_PRINCIPAL_RECEIVABLE',
+      credit_type: 'BANK_SETTLEMENT',
+      amount: input.principalCents,
+      code: REPAYMENT_CODES.principal,
+    });
+  }
+  if (input.interestCents > 0) {
+    transfers.push({
+      debit_type: 'LOAN_INTEREST_RECEIVABLE',
+      credit_type: 'INTEREST_INCOME',
+      amount: input.interestCents,
+      code: REPAYMENT_CODES.interest,
+    });
+  }
+  if (input.feeCents > 0) {
+    transfers.push({
+      debit_type: 'BANK_SETTLEMENT',
+      credit_type: 'FEE_INCOME',
+      amount: input.feeCents,
+      code: REPAYMENT_CODES.fees,
+    });
+  }
+
+  return {
+    loan_id: input.loanId,
+    payment_id: input.paymentId,
+    mandate_id: input.mandateId,
+    amount: input.amountCents,
+    principal_paid: input.principalCents,
+    interest_paid: input.interestCents,
+    fees_paid: input.feeCents,
+    unallocated_cents: surplusCents > 0 ? surplusCents : undefined,
+    execution_number: input.executionNumber,
+    transfer_code: transfers[0]?.code ?? REPAYMENT_CODES.principal,
+    transfers,
+  };
+}
+
+/**
+ * Reversal payload: mirrors the original repayment legs (accounts swapped)
+ * with distinct codes so the ledger shows an explicit reversing entry rather
+ * than a deletion. Surplus cents were never posted, so they are not reversed.
+ */
+export function buildRepaymentReversalPayloadFromCents(
+  input: Omit<RepaymentOutboxCentsInput, 'surplusCents'> & { reason?: string }
+) {
+  for (const [label, value] of [
+    ['amountCents', input.amountCents],
+    ['principalCents', input.principalCents],
+    ['interestCents', input.interestCents],
+    ['feeCents', input.feeCents],
+  ] as const) {
+    if (!Number.isInteger(value) || value < 0) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: `${label} must be a non-negative integer number of cents.`,
+      });
+    }
+  }
+
+  const transfers: Array<{
+    debit_type: string;
+    credit_type: string;
+    amount: number;
+    code: number;
+  }> = [];
+
+  if (input.principalCents > 0) {
+    transfers.push({
+      debit_type: 'BANK_SETTLEMENT',
+      credit_type: 'LOAN_PRINCIPAL_RECEIVABLE',
+      amount: input.principalCents,
+      code: REPAYMENT_REVERSAL_CODES.principal,
+    });
+  }
+  if (input.interestCents > 0) {
+    transfers.push({
+      debit_type: 'INTEREST_INCOME',
+      credit_type: 'LOAN_INTEREST_RECEIVABLE',
+      amount: input.interestCents,
+      code: REPAYMENT_REVERSAL_CODES.interest,
+    });
+  }
+  if (input.feeCents > 0) {
+    transfers.push({
+      debit_type: 'FEE_INCOME',
+      credit_type: 'BANK_SETTLEMENT',
+      amount: input.feeCents,
+      code: REPAYMENT_REVERSAL_CODES.fees,
+    });
+  }
+  if (transfers.length === 0) {
+    throw new ConvexError({
+      code: 'VALIDATION_ERROR',
+      message: 'Reversal must reverse at least one posted transfer leg.',
+    });
+  }
+
+  return {
+    loan_id: input.loanId,
+    payment_id: input.paymentId,
+    amount: input.amountCents,
+    principal_reversed: input.principalCents,
+    interest_reversed: input.interestCents,
+    fees_reversed: input.feeCents,
+    reason: input.reason,
+    transfer_code: transfers[0].code,
+    transfers,
+  };
 }
 
 export function buildRepaymentOutboxPayload(input: RepaymentOutboxInput) {
@@ -55,50 +231,21 @@ export function buildRepaymentOutboxPayload(input: RepaymentOutboxInput) {
     });
   }
 
-  const transfers: Array<{
-    debit_type: string;
-    credit_type: string;
-    amount: number;
-    code: number;
-  }> = [];
+  // Delegate to the cents-native builder; the residual cent (if the NAD split
+  // rounds unevenly) is absorbed into principal so conservation holds.
+  const amountCents = toCents(input.amount);
+  const interestCents = toCents(interestPaid);
+  const feeCents = toCents(feesPaid);
+  const principalCents = amountCents - interestCents - feeCents;
 
-  if (principalPaid > 0) {
-    transfers.push({
-      debit_type: 'LOAN_PRINCIPAL_RECEIVABLE',
-      credit_type: 'BANK_SETTLEMENT',
-      amount: toCents(principalPaid),
-      code: REPAYMENT_CODES.principal,
-    });
-  }
-
-  if (interestPaid > 0) {
-    transfers.push({
-      debit_type: 'LOAN_INTEREST_RECEIVABLE',
-      credit_type: 'INTEREST_INCOME',
-      amount: toCents(interestPaid),
-      code: REPAYMENT_CODES.interest,
-    });
-  }
-
-  if (feesPaid > 0) {
-    transfers.push({
-      debit_type: 'BANK_SETTLEMENT',
-      credit_type: 'FEE_INCOME',
-      amount: toCents(feesPaid),
-      code: REPAYMENT_CODES.fees,
-    });
-  }
-
-  return {
-    loan_id: input.loanId,
-    payment_id: input.paymentId,
-    mandate_id: input.mandateId,
-    amount: toCents(input.amount),
-    principal_paid: toCents(principalPaid),
-    interest_paid: toCents(interestPaid),
-    fees_paid: toCents(feesPaid),
-    execution_number: input.executionNumber,
-    transfer_code: transfers[0]?.code ?? REPAYMENT_CODES.principal,
-    transfers,
-  };
+  return buildRepaymentOutboxPayloadFromCents({
+    loanId: input.loanId,
+    paymentId: input.paymentId,
+    amountCents,
+    principalCents,
+    interestCents,
+    feeCents,
+    mandateId: input.mandateId,
+    executionNumber: input.executionNumber,
+  });
 }

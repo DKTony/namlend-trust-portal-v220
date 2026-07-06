@@ -39,7 +39,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
@@ -72,7 +72,14 @@ export default function Dashboard() {
   const rawPayments = useQuery(api.payments.getMyPayments, { limit: 50 });
 
   const loans = rawLoans ?? [];
-  const payments = rawPayments ?? [];
+  const payments = useMemo(() => rawPayments ?? [], [rawPayments]);
+
+  const activeLoan = loans.find((loan) => ['active', 'disbursed', 'funded'].includes(loan.status));
+
+  const paymentSchedule = useQuery(
+    api.payments.getPaymentSchedule,
+    activeLoan ? { loanId: activeLoan._id } : 'skip'
+  );
 
   // Map approval requests to LoanApplication shape — using Convex schema field names
   const loanApplications: LoanApplication[] = (rawApprovals ?? [])
@@ -123,16 +130,57 @@ export default function Dashboard() {
     loading: eligibilityLoading,
   } = useKYCEligibility();
 
-  // Mock Chart Data (replace with real aggregation if available)
-  const chartData = [
-    { name: 'Jan', amount: 2400 },
-    { name: 'Feb', amount: 1398 },
-    { name: 'Mar', amount: 9800 },
-    { name: 'Apr', amount: 3908 },
-    { name: 'May', amount: 4800 },
-    { name: 'Jun', amount: 3800 },
-    { name: 'Jul', amount: 4300 },
-  ];
+  // Chart period, driven by the header Select (6 months vs this year)
+  const [chartPeriod, setChartPeriod] = useState<'6months' | 'year'>('6months');
+
+  // Monthly payment activity aggregated from real payment history
+  const chartData = useMemo(() => {
+    const now = new Date();
+    const monthCount = chartPeriod === 'year' ? now.getMonth() + 1 : 7;
+    const buckets = Array.from({ length: monthCount }, (_, i) => {
+      const d =
+        chartPeriod === 'year'
+          ? new Date(now.getFullYear(), i, 1)
+          : new Date(now.getFullYear(), now.getMonth() - (monthCount - 1 - i), 1);
+      return {
+        year: d.getFullYear(),
+        month: d.getMonth(),
+        name: d.toLocaleDateString('en-US', { month: 'short' }),
+        amount: 0,
+      };
+    });
+    for (const p of payments) {
+      if (['failed', 'reversed', 'refunded'].includes(p.status)) continue;
+      const ts = p.paymentDate ?? p.paidAt ?? p.createdAt;
+      if (!ts) continue;
+      const d = new Date(ts);
+      const bucket = buckets.find((b) => b.year === d.getFullYear() && b.month === d.getMonth());
+      if (bucket) bucket.amount += p.amount ?? 0;
+    }
+    return buckets;
+  }, [payments, chartPeriod]);
+  const maxChartAmount = Math.max(...chartData.map((b) => b.amount), 1);
+  const hasChartData = chartData.some((b) => b.amount > 0);
+
+  // Next installment for the active loan; falls back to deriving from the
+  // disbursement date when no schedule rows exist yet.
+  const nextPaymentDate = useMemo(() => {
+    const upcoming = (paymentSchedule ?? [])
+      .filter(
+        (s) => s.status === 'scheduled' || s.status === 'overdue' || s.status === 'partially_paid'
+      )
+      .sort((a, b) => a.dueDate - b.dueDate)[0];
+    if (upcoming) return new Date(upcoming.dueDate);
+    if (activeLoan?.disbursedAt) {
+      const due = new Date(activeLoan.disbursedAt);
+      const term = activeLoan.termMonths ?? 60;
+      for (let i = 0; i < term && due.getTime() <= Date.now(); i++) {
+        due.setMonth(due.getMonth() + 1);
+      }
+      return due.getTime() > Date.now() ? due : null;
+    }
+    return null;
+  }, [paymentSchedule, activeLoan]);
 
   useEffect(() => {
     if (user) {
@@ -140,17 +188,42 @@ export default function Dashboard() {
     }
   }, [user, trackAction]);
 
+  // Convex useQuery stays undefined while the connection hangs — surface an
+  // escape hatch instead of an indefinite spinner.
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), 12000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   if (authLoading || loading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', styles.background)}>
-        <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+      <div className={cn('min-h-screen flex items-center justify-center px-4', styles.background)}>
+        {loadTimedOut ? (
+          <div className="text-center space-y-4 max-w-sm">
+            <p className={cn('font-medium', styles.textClass)}>
+              This is taking longer than expected.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Check your internet connection and try again.
+            </p>
+            <ThemedButton variant="primary" onClick={() => window.location.reload()}>
+              Retry
+            </ThemedButton>
+          </div>
+        ) : (
+          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+        )}
       </div>
     );
   }
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  const activeLoan = loans.find((loan) => ['active', 'disbursed', 'funded'].includes(loan.status));
   const pendingLoan = loanApplications.find((app) => app.status === 'pending');
 
   const handleTabChange = (tab: string) => {
@@ -208,7 +281,14 @@ export default function Dashboard() {
                 label={t('stats.totalBalance')}
                 value={
                   activeLoan
-                    ? formatNAD(activeLoan.outstandingBalance ?? activeLoan.principal)
+                    ? formatNAD(
+                        activeLoan.outstandingBalance ??
+                          Math.max(
+                            0,
+                            (activeLoan.totalRepayment ?? activeLoan.principal ?? 0) -
+                              (activeLoan.totalPaid ?? 0)
+                          )
+                      )
                     : 'N$0.00'
                 }
                 icon={Wallet}
@@ -235,8 +315,11 @@ export default function Dashboard() {
               <StatCard
                 label={t('stats.nextPayment')}
                 value={
-                  activeLoan
-                    ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  activeLoan && nextPaymentDate
+                    ? nextPaymentDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })
                     : '--'
                 }
                 subValue={activeLoan ? formatNAD(activeLoan.monthlyPayment ?? 0) : ''}
@@ -320,7 +403,10 @@ export default function Dashboard() {
                     <h3 className={cn('text-xl font-bold', styles.textClass)}>
                       {t('chart.title')}
                     </h3>
-                    <Select defaultValue="6months">
+                    <Select
+                      value={chartPeriod}
+                      onValueChange={(v) => setChartPeriod(v as '6months' | 'year')}
+                    >
                       <SelectTrigger className="w-auto h-8 text-sm font-medium bg-muted border-none text-muted-foreground hover:text-foreground">
                         <SelectValue />
                       </SelectTrigger>
@@ -330,29 +416,40 @@ export default function Dashboard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
-                    {/* CSS-only Mock Chart */}
-                    {chartData.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center gap-2 w-full group cursor-pointer"
-                      >
-                        <div className="relative w-full flex items-end justify-center h-48">
-                          <div
-                            className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-300 group-hover:bg-primary/40 relative overflow-hidden"
-                            style={{ height: `${(item.amount / 10000) * 100}%` }}
-                          >
-                            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary/30 to-transparent" />
+                  <div className="h-48 sm:h-64 md:h-72 flex items-end justify-between gap-2 px-4 pb-4 pt-8 bg-gradient-to-b from-transparent to-primary/5 rounded-xl border-b border-l border-border/50">
+                    {hasChartData ? (
+                      chartData.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col items-center gap-2 w-full group cursor-pointer"
+                        >
+                          <div className="relative w-full flex items-end justify-center h-32 sm:h-48">
+                            <div
+                              className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-300 group-hover:bg-primary/40 relative overflow-hidden"
+                              style={{ height: `${(item.amount / maxChartAmount) * 100}%` }}
+                            >
+                              <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary/30 to-transparent" />
+                            </div>
+                            <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-foreground text-background px-2 py-1 rounded">
+                              {formatNAD(item.amount)}
+                            </div>
                           </div>
-                          <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold bg-foreground text-background px-2 py-1 rounded">
-                            {formatNAD(item.amount)}
-                          </div>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {item.name}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {item.name}
-                        </span>
+                      ))
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center">
+                        <TrendingUp className="h-8 w-8 text-muted-foreground/40" />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          No payment activity yet
+                        </p>
+                        <p className="text-xs text-muted-foreground/70">
+                          Your monthly payments will appear here once you start repaying.
+                        </p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </ThemedCard>
               </div>

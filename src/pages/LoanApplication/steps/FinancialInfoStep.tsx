@@ -72,7 +72,7 @@ export default function FinancialInfoStep({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {!hasProfileIncome ? (
+        {!hasProfileIncome || userProfile?.monthly_income == null ? (
           <div className="space-y-2">
             <Label htmlFor="income">{t('financialStep.monthlyIncome')}</Label>
             <ThemedInput
@@ -89,7 +89,7 @@ export default function FinancialInfoStep({
             <Label>{t('financialStep.monthlyIncome')}</Label>
             <div className="flex items-center gap-2 p-3 bg-muted rounded-md border border-input">
               <span className="font-medium text-foreground">
-                {formatNAD(userProfile!.monthly_income!)}
+                {formatNAD(userProfile.monthly_income)}
               </span>
               <span className="text-xs text-muted-foreground">
                 {t('financialStep.fromProfile')}

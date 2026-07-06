@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import type { Id, QueryItem } from '@/types/convex';
 import { useQuery } from 'convex/react';
 import {
@@ -150,9 +151,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
     };
   }, [rawLoan, rawClient, rawDocuments, loanId, propStatus]);
 
-  const formatCurrency = (amount: number) => {
-    return `N$${amount.toLocaleString('en-NA', { minimumFractionDigits: 2 })}`;
-  };
+  const formatCurrency = formatNAD;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {

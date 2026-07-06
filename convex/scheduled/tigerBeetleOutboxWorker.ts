@@ -204,6 +204,41 @@ async function processEntry(entry: OutboxEntry): Promise<ProcessedTransfer[]> {
       break;
     }
 
+    case 'REPAYMENT_REVERSAL': {
+      const transfers =
+        (payload.transfers as Array<{
+          debit_type: string;
+          credit_type: string;
+          amount: number;
+          code: number;
+        }>) ?? [];
+      if (transfers.length === 0) {
+        throw new Error('REPAYMENT_REVERSAL payload must include at least one transfer.');
+      }
+
+      for (let i = 0; i < transfers.length; i++) {
+        const t = transfers[i];
+        const { amountCents, code } = assertTransferAmountAndCode(
+          t.amount,
+          t.code,
+          `REPAYMENT_REVERSAL transfer ${i}`
+        );
+        // Distinct id seed (':rev:') — the original REPAYMENT legs already
+        // posted immutable transfers under `${sourceId}:${i}`.
+        const transferId = idToTBId(`${entry.sourceId}:rev:${i}`);
+        await postTigerBeetle('/transfers', {
+          id: transferId,
+          debit_account_id: GLOBAL_ACCOUNT_IDS[t.debit_type] ?? t.debit_type,
+          credit_account_id: GLOBAL_ACCOUNT_IDS[t.credit_type] ?? t.credit_type,
+          amount: amountCents,
+          code,
+          ledger: 1,
+        });
+        transfersPosted.push({ id: transferId, amountCents, code });
+      }
+      break;
+    }
+
     case 'IPS_INITIATE':
     case 'IPS_COMPLETE':
     case 'IPS_REVERSE':

@@ -38,8 +38,8 @@ const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <ThemedCard className={className}>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
           <h3
             className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate tabular-nums"

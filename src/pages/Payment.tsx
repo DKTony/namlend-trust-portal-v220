@@ -24,11 +24,13 @@ import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { Id } from '@/types/convex';
 import { formatNAD } from '@/utils/currency';
+import { validatePaymentAmount } from '@/utils/paymentValidation';
 import { useMutation, useQuery } from 'convex/react';
 import {
   AlertCircle,
   CheckCircle,
   CreditCard,
+  Loader2,
   MapPin,
   Shield,
   Smartphone,
@@ -95,9 +97,18 @@ export default function Payment() {
     navigate('/dashboard', { state: { tab } });
   };
 
-  // Auto-select first loan when data loads
+  // Settlement ceiling for the selected loan: outstanding principal plus
+  // interest already due (payoff quote). Falls back to outstanding balance
+  // while loading.
+  const payoffQuote = useQuery(
+    api.payments.getPayoffQuote,
+    selectedLoan ? { loanId: selectedLoan as Id<'loans'> } : 'skip'
+  );
+
+  // Auto-select only when there is exactly one loan — with multiple loans the
+  // user must choose explicitly so a payment can't silently target the wrong one.
   useEffect(() => {
-    if (activeLoans.length > 0 && !selectedLoan) {
+    if (activeLoans.length === 1 && !selectedLoan) {
       setSelectedLoan(activeLoans[0].id);
       setPaymentAmount(activeLoans[0].monthly_payment.toString());
     }
@@ -125,6 +136,15 @@ export default function Payment() {
   const selectedLoanDetails = activeLoans.find((loan) => loan.id === selectedLoan);
   const currentProcessingFee = getProcessingFee(paymentMethod);
   const totalAmount = parseFloat(paymentAmount || '0') + currentProcessingFee;
+  const paymentCeiling = selectedLoanDetails
+    ? Math.max(selectedLoanDetails.outstanding_balance, payoffQuote?.payoffQuote ?? 0)
+    : NaN;
+
+  // Inline validation feedback while the user types (only once an amount is entered)
+  const amountValidation =
+    paymentAmount && selectedLoanDetails
+      ? validatePaymentAmount(parseFloat(paymentAmount), paymentCeiling)
+      : { valid: true as const };
 
   // Map UI-friendly payment method names to RPC canonical enum values
   const paymentMethodToRpc: Record<string, string> = {
@@ -140,6 +160,16 @@ export default function Payment() {
       toast({
         title: t('toast.missingInfoTitle'),
         description: t('toast.missingInfoDescription'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const validation = validatePaymentAmount(parseFloat(paymentAmount), paymentCeiling);
+    if (!validation.valid) {
+      toast({
+        title: t('toast.missingInfoTitle'),
+        description: validation.message,
         variant: 'destructive',
       });
       return;
@@ -187,12 +217,35 @@ export default function Payment() {
   };
 
   const handlePayClick = () => {
+    if (paymentAmount && selectedLoanDetails) {
+      const validation = validatePaymentAmount(parseFloat(paymentAmount), paymentCeiling);
+      if (!validation.valid) {
+        toast({
+          title: t('toast.missingInfoTitle'),
+          description: validation.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
     if (paymentMethod === 'ips') {
       setShowIPSModal(true);
     } else {
       handlePayment();
     }
   };
+
+  // Distinguish "still loading" from "genuinely no loans" — otherwise the
+  // empty state flashes while the query is in flight.
+  if (rawLoans === undefined) {
+    return (
+      <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (activeLoans.length === 0) {
     return (
@@ -206,9 +259,14 @@ export default function Payment() {
             <p className="text-muted-foreground text-center mb-4">
               {t('noActiveLoans.description')}
             </p>
-            <ThemedButton onClick={() => navigate('/dashboard')}>
-              {t('noActiveLoans.returnButton')}
-            </ThemedButton>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <ThemedButton onClick={() => navigate('/loan-application')}>
+                {t('noActiveLoans.applyButton', 'Apply for a Loan')}
+              </ThemedButton>
+              <ThemedButton variant="outline" onClick={() => navigate('/dashboard')}>
+                {t('noActiveLoans.returnButton')}
+              </ThemedButton>
+            </div>
           </ThemedCard>
         </div>
       </DashboardLayout>
@@ -268,7 +326,19 @@ export default function Payment() {
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder={t('form.enterAmount')}
+                    aria-invalid={!amountValidation.valid}
                   />
+                  {!amountValidation.valid ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {amountValidation.message}
+                    </p>
+                  ) : (
+                    selectedLoanDetails && (
+                      <p className="text-xs text-muted-foreground">
+                        Outstanding balance: {formatNAD(selectedLoanDetails.outstanding_balance)}
+                      </p>
+                    )
+                  )}
                 </div>
 
                 <div className="space-y-2">

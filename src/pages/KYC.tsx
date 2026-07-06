@@ -2,13 +2,15 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { uploadFileWithProgress } from '@/utils/uploadWithProgress';
 import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { api } from '@/integrations/convex/api';
+import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import { useMutation } from 'convex/react';
-import { Check, FileText } from 'lucide-react';
+import { Check, FileText, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -25,7 +27,9 @@ export default function KYC() {
   const { user } = useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
-  const [uploading, setUploading] = useState(false);
+  // Tracks which document type is mid-upload so the active card can show progress
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
   const [activeTab] = useState('documents');
 
@@ -50,28 +54,19 @@ export default function KYC() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    setUploadingDoc(docType);
+    setUploadProgress(0);
     try {
       // Step 1: Get a signed upload URL from Convex
       const uploadUrl = await generateUploadUrl();
 
-      // Step 2: Upload file directly to Convex Storage
-      const uploadResult = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!uploadResult.ok) {
-        throw new Error('File upload failed');
-      }
-
-      const { storageId } = await uploadResult.json();
+      // Step 2: Upload directly to Convex Storage with real progress events
+      const { storageId } = await uploadFileWithProgress(uploadUrl, file, setUploadProgress);
 
       // Step 3: Record the KYC document in the database
       await recordKycDocument({
         documentType: docType,
-        fileStorageId: storageId,
+        fileStorageId: storageId as Id<'_storage'>,
         fileName: file.name,
         fileSize: file.size,
       });
@@ -89,7 +84,7 @@ export default function KYC() {
         variant: 'destructive',
       });
     } finally {
-      setUploading(false);
+      setUploadingDoc(null);
     }
   };
 
@@ -137,10 +132,23 @@ export default function KYC() {
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png"
                     onChange={(e) => handleFileUpload(e, doc.type)}
-                    disabled={uploading || uploadedDocs.includes(doc.type)}
+                    disabled={uploadingDoc !== null || uploadedDocs.includes(doc.type)}
                   />
                   <p className="text-xs text-muted-foreground">{t('acceptedFormats')}</p>
                 </div>
+
+                {uploadingDoc === doc.type && (
+                  <div
+                    className="space-y-2 p-2 bg-primary/5 dark:bg-primary/10 rounded"
+                    role="status"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm text-primary">Uploading… {uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-1.5" />
+                  </div>
+                )}
 
                 {uploadedDocs.includes(doc.type) && (
                   <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">

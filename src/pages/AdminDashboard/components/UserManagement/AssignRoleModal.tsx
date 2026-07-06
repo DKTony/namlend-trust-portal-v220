@@ -97,7 +97,7 @@ const AssignRoleModal: React.FC<AssignRoleModalProps> = ({ open, role, onClose, 
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl max-h-[min(80vh,calc(100dvh-2rem))] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>

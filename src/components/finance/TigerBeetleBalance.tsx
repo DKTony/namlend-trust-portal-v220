@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useTigerBeetleBalance } from '@/hooks/useTigerBeetleBalance';
 import { AlertCircle, Database, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 

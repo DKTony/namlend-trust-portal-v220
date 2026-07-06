@@ -99,9 +99,15 @@ export const adminListLoans = query({
           .query('profiles')
           .withIndex('by_userId', (q) => q.eq('userId', loan.userId))
           .first();
+        let applicantName = profile?.fullName || profile?.email?.split('@')[0];
+        if (!applicantName) {
+          // Profile row may not exist yet — fall back to the auth user doc
+          const user = await ctx.db.get(loan.userId);
+          applicantName = user?.name || user?.email?.split('@')[0];
+        }
         return {
           ...loan,
-          applicantName: profile?.fullName || profile?.email?.split('@')[0] || 'Unknown',
+          applicantName: applicantName || 'Unknown',
           applicantEmail: profile?.email,
         };
       })

@@ -89,7 +89,7 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 bg-background border-border">
+      <DialogContent className="max-w-2xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-y-auto p-0 gap-0 bg-background border-border">
         <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

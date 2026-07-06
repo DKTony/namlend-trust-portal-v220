@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdaptiveTabs } from '@/components/adaptive/AdaptiveTabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import {
   BarChart3,
   Calendar,
@@ -12,6 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 // Sub-components
 import ComplianceReports from './ComplianceReports';
@@ -20,8 +22,15 @@ import PortfolioAnalytics from './PortfolioAnalytics';
 import ReportGenerator from './ReportGenerator';
 import RiskAnalysis from './RiskAnalysis';
 
+const ANALYTICS_TABS = ['portfolio', 'performance', 'risk', 'reports', 'compliance'];
+
 const AnalyticsDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('portfolio');
+  // Deep-linkable tab (e.g. the admin header Reports button → ?tab=reports)
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    initialTab && ANALYTICS_TABS.includes(initialTab) ? initialTab : 'portfolio'
+  );
   const [dateRange, setDateRange] = useState('30d');
 
   return (
@@ -121,28 +130,15 @@ const AnalyticsDashboard: React.FC = () => {
 
       {/* Main Analytics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="portfolio" className="flex items-center gap-2">
-            <PieChart className="h-4 w-4" />
-            Portfolio
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Performance
-          </TabsTrigger>
-          <TabsTrigger value="risk" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Risk Analysis
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Reports
-          </TabsTrigger>
-          <TabsTrigger value="compliance" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Compliance
-          </TabsTrigger>
-        </TabsList>
+        <AdaptiveTabs
+          items={[
+            { value: 'portfolio', label: 'Portfolio', icon: PieChart },
+            { value: 'performance', label: 'Performance', icon: TrendingUp },
+            { value: 'risk', label: 'Risk Analysis', icon: BarChart3, shortLabel: 'Risk' },
+            { value: 'reports', label: 'Reports', icon: FileText },
+            { value: 'compliance', label: 'Compliance', icon: Calendar },
+          ]}
+        />
 
         <TabsContent value="portfolio" className="space-y-4">
           <PortfolioAnalytics dateRange={dateRange} />

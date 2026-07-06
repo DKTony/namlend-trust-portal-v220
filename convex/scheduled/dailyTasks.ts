@@ -21,6 +21,10 @@ export const markOverduePayments = internalMutation({
 
     let marked = 0;
     for (const s of scheduled) {
+      // Note: 'partially_paid' is deliberately NOT flipped to 'overdue' — the
+      // status is sticky so payment progress stays visible. Consumers that
+      // surface overdue items (getOverduePayments, collections, analytics)
+      // additionally check partially_paid rows with dueDate < now.
       if (s.status === 'scheduled' && s.dueDate < now) {
         await ctx.db.patch(s._id, { status: 'overdue' });
         marked++;

@@ -30,7 +30,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useMutation, useQuery as useConvexQuery } from 'convex/react';
+import type { Id } from '@/integrations/convex/api';
 import {
   AlertCircle,
   Calendar,
@@ -43,7 +44,7 @@ import {
   Receipt,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 // Inline type (previously from collectionsService)
 interface RescheduleRequest {
   id: string;
@@ -83,7 +84,6 @@ interface Payment {
 export function SelfServicePortal() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const rescheduleRequests: RescheduleRequest[] = [];
   const [activeTab, setActiveTab] = useState('statements');
 
   // Reschedule dialog state
@@ -97,6 +97,24 @@ export function SelfServicePortal() {
   // Convex reactive queries
   const rawLoans = useConvexQuery(api.loans.getMyLoans, {});
   const rawPayments = useConvexQuery(api.payments.getMyPayments, {});
+  const rawRescheduleRequests = useConvexQuery(api.collections.getMyRescheduleRequests, {});
+  const requestRescheduleMutation = useMutation(api.collections.requestReschedule);
+
+  const rescheduleRequests: RescheduleRequest[] = useMemo(
+    () =>
+      (rawRescheduleRequests ?? []).map((r) => ({
+        id: String(r._id),
+        user_id: String(r.userId),
+        loan_id: String(r.loanId),
+        original_due_date: r.originalDueDate,
+        requested_date: r.requestedDate,
+        reason: r.reason,
+        status: r.status,
+        created_at: new Date(r.createdAt).toISOString(),
+        admin_notes: r.adminNotes,
+      })),
+    [rawRescheduleRequests]
+  );
 
   const loading = rawLoans === undefined;
 
@@ -104,7 +122,7 @@ export function SelfServicePortal() {
     if (!rawLoans) return [];
     return rawLoans.map((l: any) => ({
       id: String(l._id),
-      amount: l.amount ?? 0,
+      amount: l.principal ?? l.amount ?? 0,
       term_months: l.termMonths ?? 0,
       interest_rate: l.interestRate ?? 0,
       monthly_payment: l.monthlyPayment ?? 0,
@@ -124,17 +142,10 @@ export function SelfServicePortal() {
       amount: p.amount ?? 0,
       payment_method: p.method ?? p.paymentMethod ?? 'bank_transfer',
       status: p.status ?? 'pending',
-      paid_at: p.paidAt ? new Date(p.paidAt).toISOString() : '',
+      paid_at: new Date(p.paymentDate ?? p.paidAt ?? p.createdAt ?? Date.now()).toISOString(),
       reference_number: p.referenceNumber ?? String(p._id).slice(0, 8),
     }));
   }, [rawPayments]);
-
-  // TODO: Wire to Convex collections.getRescheduleRequests query when available
-  useEffect(() => {
-    if (user) {
-      console.warn('getRescheduleRequests: placeholder until Convex wired');
-    }
-  }, [user]);
 
   const generateStatement = (loan: Loan) => {
     // Generate a simple text statement (in production, use PDF library)
@@ -259,14 +270,12 @@ For queries, contact support@namlend.com
 
     setSubmitting(true);
     try {
-      // TODO: Wire to Convex collections.requestReschedule mutation
-      console.warn(
-        'requestReschedule placeholder',
-        selectedLoan.id,
+      await requestRescheduleMutation({
+        loanId: selectedLoan.id as Id<'loans'>,
         originalDueDate,
         requestedDate,
-        rescheduleReason
-      );
+        reason: rescheduleReason,
+      });
       toast({
         title: 'Request Submitted',
         description: 'Your reschedule request has been submitted for review.',

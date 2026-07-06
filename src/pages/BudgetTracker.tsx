@@ -261,23 +261,47 @@ export const BudgetTracker: React.FC = () => {
       const lines = text.split('\n').filter((line) => line.trim());
       if (lines.length >= 2) {
         const parsed: UnifiedTransaction[] = [];
+        let skipped = 0;
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',').map((c) => c.trim().replace(/"/g, ''));
-          if (cols.length < 3) continue;
+          const amount = parseFloat(cols[2]);
+          if (cols.length < 3 || !Number.isFinite(amount)) {
+            skipped++;
+            continue;
+          }
           parsed.push({
             id: `upload-${Date.now()}-${i}`,
             date: cols[0] || new Date().toISOString().split('T')[0],
             description: cols[1] || 'Unknown',
             category: categorizeTransaction(cols[1] || ''),
             source: 'Statement Upload',
-            type: parseFloat(cols[2]) < 0 ? 'out' : 'in',
-            amount: Math.abs(parseFloat(cols[2]) || 0),
+            type: amount < 0 ? 'out' : 'in',
+            amount: Math.abs(amount),
           });
         }
         setTransactions((prev) => [...parsed, ...prev]);
+        toast({
+          title: `Imported ${parsed.length} transaction${parsed.length === 1 ? '' : 's'}`,
+          description:
+            skipped > 0
+              ? `${skipped} row${skipped === 1 ? '' : 's'} skipped (invalid format).`
+              : undefined,
+          variant: parsed.length === 0 ? 'destructive' : undefined,
+        });
+      } else {
+        toast({
+          title: 'Nothing to import',
+          description: 'The file appears to be empty or missing a data row.',
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Error parsing CSV:', err);
+      toast({
+        title: 'Import failed',
+        description: 'The file could not be read. Please check the format and try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }

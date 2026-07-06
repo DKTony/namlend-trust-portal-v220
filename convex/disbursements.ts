@@ -20,6 +20,8 @@ import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { assertKycVerifiedForUser } from './lib/kyc';
 import { enqueueOutboxIdempotent } from './lib/outbox';
+import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
+import { ensurePaymentSchedule } from './lib/scheduleGeneration';
 import {
   DEFAULT_RAIL_WEIGHTS,
   selectOptimalRail,
@@ -331,14 +333,39 @@ export const completeDisbursement = mutation({
       },
     });
 
-    // Update loan to funded
+    // Update loan to funded. Fill in monthlyPayment/totalRepayment when the
+    // application flow didn't set them, so client balance math stays exact.
     if (loan && loan.status === 'approved') {
       await ctx.db.patch(d.loanId, {
         status: 'funded',
         disbursedAt: now,
         updatedAt: now,
+        monthlyPayment:
+          loan.monthlyPayment ??
+          calculateMonthlyInstalment(loan.principal, loan.interestRate, loan.termMonths),
+        totalRepayment:
+          loan.totalRepayment ??
+          calculateTotalRepayable(loan.principal, loan.interestRate, loan.termMonths),
       });
       scheduleAuditLog(ctx, 'loan', d.loanId, 'FUND', 'approved', 'funded');
+
+      // Generate the amortization schedule (idempotent — skipped if rows exist)
+      const installments = await ensurePaymentSchedule(ctx, loan, now);
+      if (installments > 0) {
+        scheduleAuditLog(
+          ctx,
+          'paymentSchedules',
+          d.loanId,
+          'GENERATE_SCHEDULE',
+          'none',
+          'scheduled'
+        );
+        emitDomainEvent(ctx, DOMAIN_EVENTS.SCHEDULE_GENERATED, 'loans', d.loanId, {
+          loanId: d.loanId,
+          installments,
+          termMonths: loan.termMonths,
+        });
+      }
 
       // Notify client that funds have been disbursed
       const amountFormatted = new Intl.NumberFormat('en-NA', {

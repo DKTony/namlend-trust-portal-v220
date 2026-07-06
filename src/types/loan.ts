@@ -1,9 +1,9 @@
 /**
  * Canonical Loan Type Definitions
- * 
+ *
  * This file contains the unified, canonical type definitions for loan-related entities.
  * All components should import from this file to maintain consistency across the codebase.
- * 
+ *
  * @module types/loan
  */
 
@@ -16,7 +16,7 @@
  * State machine: pending → approved → disbursed → active → settled
  *                       ↘ rejected
  */
-export type LoanStatus = 
+export type LoanStatus =
   | 'pending'
   | 'approved'
   | 'rejected'
@@ -31,7 +31,7 @@ export type LoanStatus =
  * State machine: approved → processing → completed
  *                        ↘ failed
  */
-export type DisbursementStatus = 
+export type DisbursementStatus =
   | 'pending'
   | 'approved'
   | 'processing'
@@ -42,12 +42,7 @@ export type DisbursementStatus =
 /**
  * Valid payment statuses
  */
-export type PaymentStatus = 
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'reversed';
+export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'reversed';
 
 // =============================================================================
 // CORE LOAN TYPES
@@ -252,7 +247,7 @@ export interface PaymentScheduleItem {
   principal_amount: number;
   interest_amount: number;
   total_amount: number;
-  status: 'pending' | 'paid' | 'overdue' | 'partial';
+  status: 'pending' | 'scheduled' | 'paid' | 'overdue' | 'partially_paid' | 'waived';
   paid_amount?: number;
   paid_at?: string;
 }
@@ -307,7 +302,16 @@ export interface PaginatedLoanResponse {
  * Check if a status is a valid loan status
  */
 export function isValidLoanStatus(status: string): status is LoanStatus {
-  return ['pending', 'approved', 'rejected', 'disbursed', 'active', 'settled', 'defaulted', 'written_off'].includes(status);
+  return [
+    'pending',
+    'approved',
+    'rejected',
+    'disbursed',
+    'active',
+    'settled',
+    'defaulted',
+    'written_off',
+  ].includes(status);
 }
 
 /**

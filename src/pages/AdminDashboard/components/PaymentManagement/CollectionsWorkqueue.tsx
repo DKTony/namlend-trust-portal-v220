@@ -62,6 +62,7 @@ interface RawCollectionQueueItem {
   lastName?: string;
   amount?: number;
   amountOverdue?: number;
+  amountOwed?: number;
   daysOverdue?: number;
   email?: string;
   lastContactDate?: string | null;
@@ -90,7 +91,9 @@ export const CollectionsWorkqueue: React.FC = () => {
   const queue: CollectionQueueItem[] = useMemo(() => {
     if (!rawQueue) return [];
     return (rawQueue as unknown as RawCollectionQueueItem[]).map((item) => {
-      const amountOverdue = item.amountOverdue ?? item.amount ?? 0;
+      // amountOwed (remaining after partial payments) is preferred — a
+      // past-due partially_paid installment owes totalDue − paidAmount.
+      const amountOverdue = item.amountOwed ?? item.amountOverdue ?? item.amount ?? 0;
       return {
         loan_id: String(item.loanId ?? item._id ?? ''),
         user_id: String(item.userId ?? ''),

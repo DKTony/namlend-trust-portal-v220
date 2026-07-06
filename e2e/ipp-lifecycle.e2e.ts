@@ -360,11 +360,17 @@ test.describe('IPP Full Lifecycle', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
 
-    // Check if we got redirected to auth (session lost)
+    // Check if we got redirected to auth (session lost). The app can bounce
+    // through /auth while the session hydrates — let that settle before
+    // re-authenticating so we don't fill a form that is navigating away.
     if (page.url().includes('/auth')) {
+      await page.waitForURL(/\/(dashboard|payment)/, { timeout: 10_000 }).catch(() => {});
+    }
+    if (page.url().includes('/auth')) {
+      await page.waitForTimeout(500);
       await page.fill('[data-testid="email-input"]', 'client1@test.namlend.com');
       await page.fill('[data-testid="password-input"]', 'Test1234!');
-      await page.click('[data-testid="login-button"]');
+      await page.click('[data-testid="login-button"]', { force: true });
       await page.waitForURL(/\/(dashboard|payment)/, { timeout: 20_000 });
       await page.goto(`${baseURL}/payment`);
       await page.waitForTimeout(3000);
@@ -383,19 +389,20 @@ test.describe('IPP Full Lifecycle', () => {
     const ipsTab = page.getByRole('tab', { name: /ips/i }).first();
     await expect(ipsTab).toBeVisible({ timeout: 10_000 });
 
-    // If there's a specific loan to select and it's not auto-selected, select it
-    if (createdLoanId) {
-      const loanSelector = page.locator('select, [role="combobox"]').first();
-      const isSelectVisible = await loanSelector.isVisible({ timeout: 3_000 }).catch(() => false);
-      if (isSelectVisible) {
-        // Try to select the loan by its ID
-        const options = page.locator(
-          `option[value="${createdLoanId}"], [data-value="${createdLoanId}"]`
-        );
-        if ((await options.count()) > 0) {
-          await loanSelector.selectOption(createdLoanId);
-        }
+    // With multiple loans nothing is auto-selected (deliberate UX guard).
+    // The loan selector is a Radix combobox, so pick via click, preferring the
+    // option whose text carries this lifecycle's loan amount.
+    const loanTrigger = page.locator('#loan');
+    if ((await loanTrigger.getAttribute('data-placeholder')) !== null) {
+      await loanTrigger.click();
+      const amountPattern = new RegExp(`N\\$\\s?1[,.]?${LOAN_AMOUNT.slice(1)}`); // e.g. N$1,350
+      const ownLoanOption = page.locator('[role="option"]', { hasText: amountPattern }).first();
+      if (await ownLoanOption.isVisible({ timeout: 2_000 }).catch(() => false)) {
+        await ownLoanOption.click();
+      } else {
+        await page.locator('[role="option"]').first().click();
       }
+      await page.waitForTimeout(300);
     }
 
     // Click the Pay button to open IPS modal

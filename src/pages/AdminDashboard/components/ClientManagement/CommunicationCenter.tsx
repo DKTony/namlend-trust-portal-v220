@@ -2,12 +2,14 @@ import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useTheme } from '@/context/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from 'convex/react';
 import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Filter,
   Mail,
   MessageSquare,
   Phone,
@@ -18,13 +20,87 @@ import {
 import React, { useState } from 'react';
 import { useCommunications } from '../../hooks/useCommunications';
 
+interface ComposerState {
+  recipientId: string;
+  type: 'email' | 'sms' | 'in_app';
+  subject: string;
+  message: string;
+  inReplyTo?: Id<'communications'>;
+}
+
+const EMPTY_COMPOSER: ComposerState = { recipientId: '', type: 'in_app', subject: '', message: '' };
+
 const CommunicationCenter: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showComposer, setShowComposer] = useState(false);
+  const [composer, setComposer] = useState<ComposerState>(EMPTY_COMPOSER);
+  const [sending, setSending] = useState(false);
   const { styles } = useTheme();
 
   const { communications, loading, error } = useCommunications(activeFilter, searchTerm);
+  const clients = useQuery(
+    api.users.listUsers,
+    showComposer ? { role: 'client', limit: 200 } : 'skip'
+  );
+  const sendMutation = useMutation(api.communications.sendCommunication);
+  const resendMutation = useMutation(api.communications.resendCommunication);
+
+  const openComposer = (prefill?: Partial<ComposerState>) => {
+    setComposer({ ...EMPTY_COMPOSER, ...prefill });
+    setShowComposer(true);
+  };
+
+  const handleSend = async () => {
+    if (!composer.recipientId || !composer.subject.trim() || !composer.message.trim()) {
+      toast({
+        title: 'Missing information',
+        description: 'Select a recipient and enter a subject and message.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSending(true);
+    try {
+      await sendMutation({
+        userId: composer.recipientId as Id<'users'>,
+        type: composer.type,
+        subject: composer.subject,
+        message: composer.message,
+        inReplyTo: composer.inReplyTo,
+      });
+      toast({
+        title: 'Message sent',
+        description:
+          composer.type === 'in_app'
+            ? 'Delivered to the client’s notification center.'
+            : 'Communication logged.',
+      });
+      setShowComposer(false);
+      setComposer(EMPTY_COMPOSER);
+    } catch (err) {
+      toast({
+        title: 'Send failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleResend = async (communicationId: Id<'communications'>) => {
+    try {
+      await resendMutation({ communicationId });
+      toast({ title: 'Message re-sent' });
+    } catch (err) {
+      toast({
+        title: 'Resend failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
@@ -142,16 +218,10 @@ const CommunicationCenter: React.FC = () => {
           <h3 className={cn('text-lg font-semibold', styles.textClass)}>Communication Center</h3>
           <p className="text-sm text-muted-foreground">Manage client communications and messages</p>
         </div>
-        <div className="flex space-x-2">
-          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-            <Filter className="mr-2 h-3.5 w-3.5" />
-            Advanced Filters
-          </ThemedButton>
-          <ThemedButton className="h-9 px-3 text-xs" onClick={() => setShowComposer(true)}>
-            <Plus className="mr-2 h-3.5 w-3.5" />
-            New Message
-          </ThemedButton>
-        </div>
+        <ThemedButton className="h-9 px-3 text-xs" onClick={() => openComposer()}>
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          New Message
+        </ThemedButton>
       </div>
 
       {/* Communication Stats */}
@@ -191,14 +261,15 @@ const CommunicationCenter: React.FC = () => {
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
-              <p className="text-sm text-muted-foreground truncate">Response Rate</p>
+              <p className="text-sm text-muted-foreground truncate">Delivered</p>
               <p
                 className={cn(
                   'text-xl sm:text-2xl font-bold truncate tabular-nums',
                   styles.textClass
                 )}
               >
-                87%
+                {communications?.filter((c) => ['delivered', 'read', 'replied'].includes(c.status))
+                  .length || 0}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
@@ -207,24 +278,17 @@ const CommunicationCenter: React.FC = () => {
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-2">
-              <p className="text-sm text-muted-foreground truncate">Avg Response Time</p>
+              <p className="text-sm text-muted-foreground truncate">Failed</p>
               <p
                 className={cn(
                   'text-xl sm:text-2xl font-bold truncate tabular-nums',
                   styles.textClass
                 )}
               >
-                2.4h
+                {communications?.filter((c) => c.status === 'failed').length || 0}
               </p>
             </div>
-            <div className="flex -space-x-2">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white dark:border-gray-800"
-                />
-              ))}
-            </div>
+            <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400 shrink-0" />
           </div>
         </ThemedCard>
       </div>
@@ -326,17 +390,33 @@ const CommunicationCenter: React.FC = () => {
 
                   {/* Actions */}
                   <div className="flex items-center space-x-2">
-                    <ThemedButton variant="secondary" className="h-8 px-3 text-xs shrink-0">
+                    <ThemedButton
+                      variant="secondary"
+                      className="h-8 px-3 text-xs shrink-0"
+                      onClick={() =>
+                        openComposer({
+                          recipientId: String(comm.clientId),
+                          type:
+                            comm.type === 'in-app'
+                              ? 'in_app'
+                              : comm.type === 'sms'
+                                ? 'sms'
+                                : 'email',
+                          subject: comm.subject.startsWith('Re:')
+                            ? comm.subject
+                            : `Re: ${comm.subject}`,
+                          inReplyTo: comm.communicationId,
+                        })
+                      }
+                    >
                       <MessageSquare className="h-3.5 w-3.5 mr-2" />
                       Reply
-                    </ThemedButton>
-                    <ThemedButton variant="ghost" className="h-8 px-3 text-xs shrink-0">
-                      View Details
                     </ThemedButton>
                     {comm.status === 'failed' && (
                       <ThemedButton
                         variant="secondary"
                         className="h-8 px-3 text-xs text-red-600 dark:text-red-400 shrink-0"
+                        onClick={() => handleResend(comm.communicationId)}
                       >
                         <Send className="h-3.5 w-3.5 mr-2" />
                         Resend
@@ -371,31 +451,49 @@ const CommunicationCenter: React.FC = () => {
                     Recipient
                   </label>
                   <select
+                    value={composer.recipientId}
+                    onChange={(e) => setComposer((c) => ({ ...c, recipientId: e.target.value }))}
                     className={cn(
                       'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
                       styles.inputClass
                     )}
                   >
-                    <option>Select a client...</option>
+                    <option value="">
+                      {clients === undefined ? 'Loading clients…' : 'Select a client...'}
+                    </option>
+                    {(clients ?? []).map((client) => (
+                      <option key={String(client.userId)} value={String(client.userId)}>
+                        {client.fullName || client.email || String(client.userId)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 text-foreground">Type</label>
                   <select
+                    value={composer.type}
+                    onChange={(e) =>
+                      setComposer((c) => ({
+                        ...c,
+                        type: e.target.value as ComposerState['type'],
+                      }))
+                    }
                     className={cn(
                       'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
                       styles.inputClass
                     )}
                   >
-                    <option value="email">Email</option>
-                    <option value="sms">SMS</option>
-                    <option value="in-app">In-App Message</option>
+                    <option value="in_app">In-App Message (delivered instantly)</option>
+                    <option value="email">Email (logged)</option>
+                    <option value="sms">SMS (logged)</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 text-foreground">Subject</label>
                   <input
                     type="text"
+                    value={composer.subject}
+                    onChange={(e) => setComposer((c) => ({ ...c, subject: e.target.value }))}
                     className={cn(
                       'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
                       styles.inputClass
@@ -407,6 +505,8 @@ const CommunicationCenter: React.FC = () => {
                   <label className="block text-sm font-medium mb-1 text-foreground">Message</label>
                   <textarea
                     rows={6}
+                    value={composer.message}
+                    onChange={(e) => setComposer((c) => ({ ...c, message: e.target.value }))}
                     className={cn(
                       'w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
                       styles.inputClass
@@ -418,9 +518,9 @@ const CommunicationCenter: React.FC = () => {
                   <ThemedButton variant="secondary" onClick={() => setShowComposer(false)}>
                     Cancel
                   </ThemedButton>
-                  <ThemedButton>
+                  <ThemedButton onClick={handleSend} disabled={sending}>
                     <Send className="h-4 w-4 mr-2" />
-                    Send Message
+                    {sending ? 'Sending…' : 'Send Message'}
                   </ThemedButton>
                 </div>
               </div>

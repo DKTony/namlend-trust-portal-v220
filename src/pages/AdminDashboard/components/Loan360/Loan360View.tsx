@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdaptiveTabs } from '@/components/adaptive/AdaptiveTabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { api } from '@/integrations/convex/api';
 import type { Id, QueryItem } from '@/types/convex';
 import { useQuery } from 'convex/react';
@@ -215,14 +216,28 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
               onValueChange={setActiveTab}
               className="flex-1 flex flex-col overflow-hidden"
             >
-              <TabsList className="grid grid-cols-6 w-full">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="payments">Payments ({payments.length})</TabsTrigger>
-                <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-                <TabsTrigger value="collections">Collections ({interactions.length})</TabsTrigger>
-                <TabsTrigger value="promises">PTP ({promises.length})</TabsTrigger>
-                <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              </TabsList>
+              <AdaptiveTabs
+                items={[
+                  { value: 'overview', label: 'Overview' },
+                  {
+                    value: 'payments',
+                    label: `Payments (${payments.length})`,
+                    shortLabel: `Pay (${payments.length})`,
+                  },
+                  {
+                    value: 'documents',
+                    label: `Documents (${documents.length})`,
+                    shortLabel: `Docs (${documents.length})`,
+                  },
+                  {
+                    value: 'collections',
+                    label: `Collections (${interactions.length})`,
+                    shortLabel: `Coll (${interactions.length})`,
+                  },
+                  { value: 'promises', label: `PTP (${promises.length})` },
+                  { value: 'timeline', label: 'Timeline' },
+                ]}
+              />
               <ScrollArea className="flex-1 mt-4">
                 <TabsContent value="overview" className="mt-0">
                   <OverviewTab

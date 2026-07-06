@@ -30,7 +30,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
+import { downloadXml } from '@/utils/downloadFile';
 import {
   usePacs009BatchDetails,
   usePacs009Batches,
@@ -290,7 +291,7 @@ export function Pacs009Viewer() {
 
       {/* Batch Details Dialog */}
       <Dialog open={!!selectedBatchId} onOpenChange={() => setSelectedBatchId(null)}>
-        <DialogContent className="max-w-5xl max-h-[85vh]">
+        <DialogContent className="max-w-5xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileCode className="h-5 w-5" />
@@ -320,7 +321,18 @@ export function Pacs009Viewer() {
                     )}
                     {copied ? 'Copied' : 'Copy XML'}
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!batchDetails?.batch?.file_content}
+                    onClick={() =>
+                      batchDetails?.batch?.file_content &&
+                      downloadXml(
+                        `${batchDetails.batch.file_name ?? batchDetails.batch.msg_id ?? 'pacs009'}.xml`,
+                        batchDetails.batch.file_content
+                      )
+                    }
+                  >
                     <Download className="h-4 w-4 mr-1" />
                     Download
                   </Button>

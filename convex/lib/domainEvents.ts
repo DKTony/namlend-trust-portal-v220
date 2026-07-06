@@ -26,6 +26,7 @@ export const DOMAIN_EVENTS = {
   LOAN_REJECTED: 'loan.rejected',
   LOAN_FUNDED: 'loan.funded',
   LOAN_PAID_OFF: 'loan.paid_off',
+  SCHEDULE_GENERATED: 'loan.schedule_generated',
 
   // Disbursement lifecycle
   DISBURSEMENT_INITIATED: 'disbursement.initiated',
@@ -38,6 +39,7 @@ export const DOMAIN_EVENTS = {
   PAYMENT_RECORDED: 'payment.recorded',
   PAYMENT_COMPLETED: 'payment.completed',
   PAYMENT_FAILED: 'payment.failed',
+  PAYMENT_REVERSED: 'payment.reversed',
 
   // Approval lifecycle
   APPROVAL_SUBMITTED: 'approval.submitted',

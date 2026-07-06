@@ -98,8 +98,8 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({ isOpen, on
 
       <div
         className={cn(
-          'fixed top-0 right-0 h-full w-[350px] z-[90]',
-          'transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed top-0 right-0 h-full w-[min(350px,calc(100vw-0.75rem))] z-[90]',
+          'transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
         data-testid="notification-panel"

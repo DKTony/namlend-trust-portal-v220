@@ -143,14 +143,20 @@ describe('Tier 5 — Financial Safety', () => {
     expect(payments).toMatch(/by_referenceNumber.*\n.*filter.*loanId/s);
   });
 
-  it('completePayment, not recordPayment, enqueues TigerBeetle repayment outbox entry', () => {
+  it('completePayment, not recordPayment, applies the repayment (ledger posting on completion)', () => {
+    const repaymentApplication = readSrc('convex/lib/repaymentApplication.ts');
     const recordPaymentBlock =
       payments.match(/export const recordPayment[\s\S]*?export const completePayment/)?.[0] ?? '';
     const completePaymentBlock =
       payments.match(/export const completePayment[\s\S]*?export const failPayment/)?.[0] ?? '';
+    // Ledger posting lives in the shared completion routine, invoked only on completion.
     expect(recordPaymentBlock).not.toContain("eventType: 'REPAYMENT'");
-    expect(completePaymentBlock).toContain("eventType: 'REPAYMENT'");
-    expect(completePaymentBlock).toContain('buildRepaymentOutboxPayload');
+    expect(recordPaymentBlock).not.toContain('applyCompletedRepayment');
+    expect(completePaymentBlock).toContain('applyCompletedRepayment');
+    expect(repaymentApplication).toContain("eventType: 'REPAYMENT'");
+    expect(repaymentApplication).toContain('buildRepaymentOutboxPayloadFromCents');
+    // Exactly-once across all completion paths: shared idempotency key.
+    expect(repaymentApplication).toContain('repayment:payment:');
   });
 
   it('loan lifecycle enforces KYC at submission and scoring before approval', () => {

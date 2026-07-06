@@ -40,6 +40,16 @@ async function gotoWithAuth(page: import('@playwright/test').Page, path: string)
   await page.waitForTimeout(2000);
 
   if (page.url().includes('/auth')) {
+    // The session from loginAsClient may still be hydrating, in which case the
+    // app bounces through /auth and back on its own. Filling the login form
+    // during that bounce races the redirect (inputs detach mid-fill), so let
+    // the transient redirect settle before deciding to re-authenticate.
+    await page
+      .waitForURL(/\/(dashboard|admin|loans|payment|budget)/, { timeout: 10000 })
+      .catch(() => {});
+  }
+
+  if (page.url().includes('/auth')) {
     await page.fill('[data-testid="email-input"]', TEST_USERS.client1.email);
     await page.fill('[data-testid="password-input"]', TEST_USERS.client1.password);
     await page.click('[data-testid="login-button"]');
@@ -77,7 +87,22 @@ async function openPaymentPageOrSkip(page: import('@playwright/test').Page) {
     return false;
   }
 
-  await page.locator('h1:has-text("Make a Payment")').waitFor({ state: 'visible', timeout: 15000 });
+  // .first(): the layout header and the page body both render an h1 with this
+  // text — strict mode would otherwise fail on the ambiguity.
+  await page
+    .locator('h1:has-text("Make a Payment")')
+    .first()
+    .waitFor({ state: 'visible', timeout: 15000 });
+
+  // With multiple loans nothing is auto-selected (deliberate UX guard so a
+  // payment can't silently target the wrong loan) — pick the first loan via
+  // the Radix select so the amount pre-fills and the Pay button enables.
+  const loanTrigger = page.locator('#loan');
+  if ((await loanTrigger.getAttribute('data-placeholder')) !== null) {
+    await loanTrigger.click();
+    await page.locator('[role="option"]').first().click();
+    await page.waitForTimeout(300);
+  }
   return true;
 }
 
@@ -90,7 +115,7 @@ test.describe('Payment Page - IPS Modal Trigger', () => {
     if (!(await openPaymentPageOrSkip(page))) return;
 
     // Verify the payment form renders (client1 has active/disbursed loans from global setup)
-    const heading = page.locator('h1:has-text("Make a Payment")');
+    const heading = page.locator('h1:has-text("Make a Payment")').first();
     await expect(heading).toBeVisible({ timeout: 15000 });
 
     // Verify IPS tab is available
@@ -98,7 +123,7 @@ test.describe('Payment Page - IPS Modal Trigger', () => {
     await expect(ipsTab).toBeVisible();
 
     // Verify Pay button is present
-    const payButton = page.locator('button.w-full:has-text("Pay")');
+    const payButton = page.getByTestId('payment-submit-button');
     await expect(payButton).toBeVisible();
   });
 
@@ -111,7 +136,7 @@ test.describe('Payment Page - IPS Modal Trigger', () => {
     await page.waitForTimeout(500);
 
     // Click the Pay button
-    const payButton = page.locator('button.w-full:has-text("Pay")');
+    const payButton = page.getByTestId('payment-submit-button');
     await payButton.click();
 
     // IPS modal should open
@@ -131,7 +156,7 @@ test.describe('Payment Page - IPS Modal Trigger', () => {
     await page.waitForTimeout(500);
 
     // Click the Pay button — this calls handlePayment() (generic flow)
-    const payButton = page.locator('button.w-full:has-text("Pay")');
+    const payButton = page.getByTestId('payment-submit-button');
     await payButton.click();
 
     // Wait a moment and verify IPS modal did NOT open
@@ -154,7 +179,7 @@ test.describe('Payment Page - IPS Modal Trigger', () => {
     await page.waitForTimeout(300);
 
     // Click Pay
-    const payButton = page.locator('button.w-full:has-text("Pay")');
+    const payButton = page.getByTestId('payment-submit-button');
     await payButton.click();
 
     // IPS modal should open

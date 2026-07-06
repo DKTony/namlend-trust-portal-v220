@@ -125,7 +125,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
         className={cn(
-          'max-w-2xl max-h-[85vh] overflow-y-auto p-0 gap-0 border-border',
+          'max-w-2xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-y-auto p-0 gap-0 border-border',
           styles.cardClass
         )}
       >

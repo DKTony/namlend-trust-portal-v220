@@ -4,9 +4,10 @@
  */
 
 import { ConvexError, v } from 'convex/values';
+import { internal } from './_generated/api';
 import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { assertStaff } from './lib/auth';
+import { assertAuthenticated, assertStaff } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
 import { assertCallerFeatureEnabled } from './lib/entitlements';
 import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
@@ -48,24 +49,39 @@ export const getCollectionsQueue = query({
     await assertStaff(ctx);
     await assertCallerFeatureEnabled(ctx, 'collections');
 
-    // Fetch overdue payment schedules to build queue
-    const overdueRaw = await ctx.db
-      .query('paymentSchedules')
-      .withIndex('by_status', (q) => q.eq('status', 'overdue'))
-      .order('asc')
-      .take(limit ?? 100);
-    const overdue = applyTenantScope(overdueRaw, await tenantReadScope(ctx));
-
+    // Fetch overdue payment schedules to build queue. partially_paid is
+    // sticky (never cron-flipped to 'overdue'), so past-due partially paid
+    // installments are pulled in explicitly with their remaining amount owed.
     const now = Date.now();
+    const [overdueRaw, partiallyPaidRaw] = await Promise.all([
+      ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'overdue'))
+        .order('asc')
+        .take(limit ?? 100),
+      ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'partially_paid'))
+        .order('asc')
+        .take(limit ?? 100),
+    ]);
+    const scope = await tenantReadScope(ctx);
+    const overdue = applyTenantScope(
+      [...overdueRaw, ...partiallyPaidRaw.filter((s) => s.dueDate < now)],
+      scope
+    );
+
     const MS_PER_DAY = 86_400_000;
 
     const enriched = overdue
       .map((s) => ({
         ...s,
+        amountOwed: Math.max(0, Math.round((s.totalDue - (s.paidAmount ?? 0)) * 100)) / 100,
         daysOverdue: Math.floor((now - s.dueDate) / MS_PER_DAY),
       }))
       .filter((s) => (minDaysOverdue !== undefined ? s.daysOverdue >= minDaysOverdue : true))
-      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+      .sort((a, b) => b.daysOverdue - a.daysOverdue)
+      .slice(0, limit ?? 100);
 
     // Enrich with mandate status for collections routing (Ontology Phase 2)
     // Loans with active mandates → automatic debit path (hard collection)
@@ -327,25 +343,37 @@ export const getCollectionsStats = query({
     await assertCallerFeatureEnabled(ctx, 'collections');
     const scope = await tenantReadScope(ctx);
 
-    const [overdueRaw, ptpsRaw, interactionsRaw] = await Promise.all([
+    const [overdueRaw, partiallyPaidRaw, ptpsRaw, interactionsRaw] = await Promise.all([
       ctx.db
         .query('paymentSchedules')
         .withIndex('by_status', (q) => q.eq('status', 'overdue'))
         .collect(),
+      ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_status', (q) => q.eq('status', 'partially_paid'))
+        .collect(),
       ctx.db.query('promiseToPay').collect(),
       ctx.db.query('collectionsInteractions').collect(),
     ]);
-    const overdue = applyTenantScope(overdueRaw, scope);
+    const now = Date.now();
+    // Sticky partially_paid rows past due count with their remaining amount.
+    const overdue = applyTenantScope(
+      [...overdueRaw, ...partiallyPaidRaw.filter((s) => s.dueDate < now)],
+      scope
+    );
     const ptps = applyTenantScope(ptpsRaw, scope);
     const interactions = applyTenantScope(interactionsRaw, scope);
 
-    const now = Date.now();
     const MS_PER_DAY = 86_400_000;
 
     return {
       overdue: {
         count: overdue.length,
-        totalAmount: overdue.reduce((s, o) => s + (o.totalDue ?? 0), 0),
+        totalAmount:
+          overdue.reduce(
+            (s, o) => s + Math.max(0, Math.round(((o.totalDue ?? 0) - (o.paidAmount ?? 0)) * 100)),
+            0
+          ) / 100,
         over30Days: overdue.filter((o) => (now - o.dueDate) / MS_PER_DAY > 30).length,
         over90Days: overdue.filter((o) => (now - o.dueDate) / MS_PER_DAY > 90).length,
       },
@@ -359,5 +387,121 @@ export const getCollectionsStats = query({
         thisWeek: interactions.filter((i) => i.createdAt > now - 7 * MS_PER_DAY).length,
       },
     };
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Payment reschedule requests (client self-service → staff review)
+// ---------------------------------------------------------------------------
+
+/** Client: submit a payment-reschedule request for an owned active loan. */
+export const requestReschedule = mutation({
+  args: {
+    loanId: v.id('loans'),
+    originalDueDate: v.string(),
+    requestedDate: v.string(),
+    reason: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await assertAuthenticated(ctx);
+    const loan = await ctx.db.get(args.loanId);
+    if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+    if (loan.userId !== userId) {
+      // Staff may also file on a client's behalf
+      await assertStaff(ctx);
+    }
+    if (!args.reason.trim()) {
+      throw new ConvexError({ code: 'VALIDATION_ERROR', message: 'A reason is required.' });
+    }
+    if (!['active', 'funded'].includes(loan.status)) {
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: 'Reschedules can only be requested for active loans.',
+      });
+    }
+
+    const now = Date.now();
+    const requestId = await ctx.db.insert('rescheduleRequests', {
+      institutionId: loan.institutionId,
+      userId: loan.userId,
+      loanId: args.loanId,
+      originalDueDate: args.originalDueDate,
+      requestedDate: args.requestedDate,
+      reason: args.reason.trim(),
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    });
+    scheduleAuditLog(ctx, 'rescheduleRequests', requestId, 'REQUEST', 'none', 'pending');
+    return requestId;
+  },
+});
+
+/** Client: own reschedule requests, newest first. */
+export const getMyRescheduleRequests = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await assertAuthenticated(ctx);
+    return (
+      await ctx.db
+        .query('rescheduleRequests')
+        .withIndex('by_userId', (q) => q.eq('userId', userId))
+        .collect()
+    ).sort((a, b) => b.createdAt - a.createdAt);
+  },
+});
+
+/** Staff: pending reschedule requests for review. */
+export const listRescheduleRequests = query({
+  args: {
+    status: v.optional(v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected'))),
+  },
+  handler: async (ctx, { status }) => {
+    await assertStaff(ctx);
+    const rows = status
+      ? await ctx.db
+          .query('rescheduleRequests')
+          .withIndex('by_status', (q) => q.eq('status', status))
+          .collect()
+      : await ctx.db.query('rescheduleRequests').order('desc').take(200);
+    return applyTenantScope(rows, await tenantReadScope(ctx));
+  },
+});
+
+/** Staff: approve or reject a reschedule request; the client is notified. */
+export const reviewRescheduleRequest = mutation({
+  args: {
+    requestId: v.id('rescheduleRequests'),
+    decision: v.union(v.literal('approved'), v.literal('rejected')),
+    adminNotes: v.optional(v.string()),
+  },
+  handler: async (ctx, { requestId, decision, adminNotes }) => {
+    const staffId = await assertStaff(ctx);
+    const request = await ctx.db.get(requestId);
+    if (!request) throw new ConvexError({ code: 'NOT_FOUND', message: 'Request not found.' });
+    if (request.status !== 'pending') return; // idempotent
+
+    const now = Date.now();
+    await ctx.db.patch(requestId, {
+      status: decision,
+      adminNotes,
+      reviewedBy: staffId,
+      reviewedAt: now,
+      updatedAt: now,
+    });
+    ctx.scheduler
+      .runAfter(0, internal.notifications.createNotification, {
+        userId: request.userId,
+        title: `Reschedule request ${decision}`,
+        message:
+          adminNotes ??
+          (decision === 'approved'
+            ? `Your payment has been rescheduled to ${request.requestedDate}.`
+            : 'Your reschedule request was not approved. Contact support for options.'),
+        category: 'payment' as const,
+        priority: 'high' as const,
+      })
+      .catch((err: unknown) => console.error('[reschedule] notify failed:', err));
+    scheduleAuditLog(ctx, 'rescheduleRequests', requestId, 'REVIEW', 'pending', decision);
   },
 });

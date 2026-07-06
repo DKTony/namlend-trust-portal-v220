@@ -10,7 +10,11 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
+import { calculateMonthlyInstalment, calculateTotalRepayable } from '../lib/amortization';
 import { scheduleAuditLog } from '../lib/audit';
+import { computePayoffQuoteNAD } from '../lib/paymentAllocation';
+import { applyCompletedRepayment } from '../lib/repaymentApplication';
+import { ensurePaymentSchedule } from '../lib/scheduleGeneration';
 import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
 import { assertAliasUsable } from '../lib/ipsAliasRules';
 import { getErrorEntry } from '../lib/ipsErrorCodes';
@@ -176,36 +180,28 @@ async function completeLinkedPayment(
   if (!payment || payment.status === 'completed') return;
   if (!['pending', 'processing'].includes(payment.status)) return;
 
+  // Shared completion routine: derives principal/interest splits from the
+  // amortization schedule, updates the loan in integer cents, and enqueues the
+  // REPAYMENT ledger legs (previously missing on the IPS path — only the
+  // IPS_COMPLETE clearing leg was posted). Idempotency key
+  // `repayment:payment:{id}` is shared with the manual/webhook paths, so a
+  // payment completed via any route posts exactly one REPAYMENT entry.
+  await applyCompletedRepayment(ctx, {
+    payment,
+    feesPaidNAD: payment.feesPaid ?? 0,
+    now,
+  });
+
+  // IPS provenance on top of the routine's patch
+  const refreshed = await ctx.db.get(paymentId);
   await ctx.db.patch(paymentId, {
-    status: 'completed',
-    principalPaid: payment.principalPaid ?? payment.amount,
-    paymentDate: now,
-    metadata: mergeMetadata(payment.metadata, {
+    metadata: mergeMetadata(refreshed?.metadata ?? payment.metadata, {
       ipsStatus: 'completed',
       ipsMsgId: tx.msgId,
       ipsTransactionId: tx._id,
     }),
     updatedAt: now,
   });
-
-  const loan = await ctx.db.get(payment.loanId);
-  if (loan) {
-    const principalPaid = payment.principalPaid ?? payment.amount;
-    const newBalance = Math.max(0, (loan.outstandingBalance ?? loan.principal) - principalPaid);
-    const updates: Record<string, unknown> = {
-      outstandingBalance: newBalance,
-      totalPaid: (loan.totalPaid ?? 0) + payment.amount,
-      updatedAt: now,
-    };
-    if (newBalance === 0) {
-      updates.status = 'paid_off';
-      updates.completedAt = now;
-      scheduleAuditLog(ctx, 'loan', payment.loanId, 'PAID_OFF', loan.status, 'paid_off');
-    } else if (loan.status === 'funded') {
-      updates.status = 'active';
-    }
-    await ctx.db.patch(payment.loanId, updates);
-  }
 
   scheduleAuditLog(ctx, 'payment', paymentId, 'COMPLETE', payment.status, 'completed');
 }
@@ -279,9 +275,29 @@ async function updateLinkedDisbursement(
         status: 'funded',
         disbursedAt: now,
         outstandingBalance: loan.outstandingBalance ?? loan.principal,
+        monthlyPayment:
+          loan.monthlyPayment ??
+          calculateMonthlyInstalment(loan.principal, loan.interestRate, loan.termMonths),
+        totalRepayment:
+          loan.totalRepayment ??
+          calculateTotalRepayable(loan.principal, loan.interestRate, loan.termMonths),
         updatedAt: now,
       });
       scheduleAuditLog(ctx, 'loan', disbursement.loanId, 'FUND', 'approved', 'funded');
+
+      // Generate the amortization schedule — same behavior as the manual
+      // completeDisbursement path (idempotent; skipped if rows exist).
+      const installments = await ensurePaymentSchedule(ctx, loan, now);
+      if (installments > 0) {
+        scheduleAuditLog(
+          ctx,
+          'paymentSchedules',
+          disbursement.loanId,
+          'GENERATE_SCHEDULE',
+          'none',
+          'scheduled'
+        );
+      }
     }
 
     scheduleAuditLog(
@@ -613,10 +629,19 @@ export const initiateIpsRepayment = mutation({
     }
 
     const outstanding = loan.outstandingBalance ?? loan.principal;
-    if (args.amount <= 0 || args.amount > outstanding) {
+    // Cap at the payoff quote (outstanding principal + interest already due)
+    // so a delinquent borrower can settle in full, while overpayment beyond
+    // settlement is still rejected at initiation.
+    const scheduleRows = await ctx.db
+      .query('paymentSchedules')
+      .withIndex('by_loanId', (q) => q.eq('loanId', args.loanId))
+      .collect();
+    const payoffQuote = computePayoffQuoteNAD(scheduleRows, outstanding, Date.now());
+    const maxPayable = Math.max(outstanding, payoffQuote);
+    if (args.amount <= 0 || args.amount > maxPayable + 0.005) {
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
-        message: 'Payment amount must be positive and no more than the outstanding balance.',
+        message: 'Payment amount must be positive and no more than the settlement amount.',
       });
     }
 
@@ -715,7 +740,8 @@ export const initiateIpsRepayment = mutation({
       payer_vpa: payerAlias.addr,
       payee_vpa: defaults.collectionsVpa,
       loan_id: String(args.loanId),
-      outstanding_after: Math.max(0, outstanding - args.amount),
+      outstanding_after:
+        Math.max(0, Math.round(outstanding * 100) - Math.round(args.amount * 100)) / 100,
     };
   },
 });

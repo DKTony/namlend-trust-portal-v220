@@ -18,12 +18,13 @@ import { useEntitlements } from '@/hooks/useEntitlements';
 import { cn } from '@/lib/utils';
 import { AlertCircle, BarChart3, RefreshCw } from 'lucide-react';
 import React, { useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 
 const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoanOfficer, signOut } = useAuth();
   const { styles } = useTheme();
   const layout = useAdaptiveLayout();
+  const navigate = useNavigate();
   // Tenant entitlements drive backoffice nav filtering — inert until the owner enforces.
   const { enforced, hasFeature } = useEntitlements();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -91,6 +92,7 @@ const AdminLayout: React.FC = () => {
           variant="secondary"
           className="hidden h-9 px-3 text-xs sm:inline-flex"
           aria-label="Reports"
+          onClick={() => navigate('/admin/analytics?tab=reports')}
         >
           <BarChart3 className="mr-2 h-3.5 w-3.5" />
           Reports

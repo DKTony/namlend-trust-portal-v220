@@ -2,29 +2,112 @@ import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useTheme } from '@/context/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import { useMutation, useQuery } from 'convex/react';
 import {
   AlertCircle,
   CheckCircle,
   Clock,
   Edit,
   Eye,
-  Filter,
   MessageSquare,
   Plus,
   Search,
+  Send,
   User,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useSupportTickets } from '../../hooks/useSupportTickets';
 
+const NEW_TICKET_DEFAULT = {
+  clientId: '',
+  subject: '',
+  description: '',
+  category: 'general' as const,
+  priority: 'medium' as const,
+};
+
 const SupportTickets: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
+  const [showNewTicket, setShowNewTicket] = useState(false);
+  const [newTicket, setNewTicket] = useState<{
+    clientId: string;
+    subject: string;
+    description: string;
+    category: 'technical' | 'billing' | 'loan' | 'account' | 'general';
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+  }>(NEW_TICKET_DEFAULT);
+  const [responseDraft, setResponseDraft] = useState('');
+  const [busy, setBusy] = useState(false);
   const { styles } = useTheme();
 
   const { tickets, loading, error, refetch } = useSupportTickets(activeFilter, searchTerm);
+  const clients = useQuery(
+    api.users.listUsers,
+    showNewTicket ? { role: 'client', limit: 200 } : 'skip'
+  );
+  const createMutation = useMutation(api.supportTickets.createTicket);
+  const respondMutation = useMutation(api.supportTickets.addTicketResponse);
+  const resolveMutation = useMutation(api.supportTickets.resolveTicket);
+  const assignMutation = useMutation(api.supportTickets.assignTicket);
+
+  const activeTicket = tickets?.find((t) => t.id === selectedTicket) ?? null;
+
+  const run = async (action: () => Promise<unknown>, successTitle: string) => {
+    setBusy(true);
+    try {
+      await action();
+      toast({ title: successTitle });
+    } catch (err) {
+      toast({
+        title: 'Action failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCreateTicket = async () => {
+    if (!newTicket.clientId || !newTicket.subject.trim() || !newTicket.description.trim()) {
+      toast({
+        title: 'Missing information',
+        description: 'Select a client and enter a subject and description.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    await run(
+      () =>
+        createMutation({
+          userId: newTicket.clientId as Id<'users'>,
+          subject: newTicket.subject,
+          description: newTicket.description,
+          category: newTicket.category,
+          priority: newTicket.priority,
+        }),
+      'Ticket created'
+    );
+    setShowNewTicket(false);
+    setNewTicket(NEW_TICKET_DEFAULT);
+  };
+
+  const handleRespond = async (ticketId: Id<'supportTickets'>) => {
+    if (!responseDraft.trim()) {
+      toast({ title: 'Enter a response first', variant: 'destructive' });
+      return;
+    }
+    await run(
+      () => respondMutation({ ticketId, message: responseDraft }),
+      'Response sent to client'
+    );
+    setResponseDraft('');
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
@@ -150,16 +233,10 @@ const SupportTickets: React.FC = () => {
           <h3 className={cn('text-lg font-semibold', styles.textClass)}>Support Tickets</h3>
           <p className="text-sm text-muted-foreground">Manage client support requests and issues</p>
         </div>
-        <div className="flex space-x-2">
-          <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
-            <Filter className="mr-2 h-3.5 w-3.5" />
-            Advanced Filters
-          </ThemedButton>
-          <ThemedButton className="h-9 px-3 text-xs">
-            <Plus className="mr-2 h-3.5 w-3.5" />
-            New Ticket
-          </ThemedButton>
-        </div>
+        <ThemedButton className="h-9 px-3 text-xs" onClick={() => setShowNewTicket(true)}>
+          <Plus className="mr-2 h-3.5 w-3.5" />
+          New Ticket
+        </ThemedButton>
       </div>
 
       {/* Support Stats */}
@@ -206,7 +283,11 @@ const SupportTickets: React.FC = () => {
                   styles.textClass
                 )}
               >
-                12
+                {tickets?.filter(
+                  (t) =>
+                    t.resolvedAt != null &&
+                    new Date(t.resolvedAt).toDateString() === new Date().toDateString()
+                ).length || 0}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -215,8 +296,20 @@ const SupportTickets: React.FC = () => {
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Avg Response</p>
-              <p className={cn('text-2xl font-bold', styles.textClass)}>45m</p>
+              <p className="text-sm text-muted-foreground">Avg First Response</p>
+              <p className={cn('text-2xl font-bold', styles.textClass)}>
+                {(() => {
+                  const responded = (tickets ?? []).filter((t) => t.responses.length > 0);
+                  if (responded.length === 0) return '—';
+                  const avgMs =
+                    responded.reduce(
+                      (s, t) => s + (t.responses[0].at - new Date(t.createdAt).getTime()),
+                      0
+                    ) / responded.length;
+                  const hours = avgMs / 3_600_000;
+                  return hours < 1 ? `${Math.round(hours * 60)}m` : `${hours.toFixed(1)}h`;
+                })()}
+              </p>
             </div>
             <MessageSquare className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
@@ -341,15 +434,12 @@ const SupportTickets: React.FC = () => {
                     {ticket.description}
                   </p>
 
-                  {/* Response/Resolution Times */}
-                  {(ticket.responseTime || ticket.resolutionTime) && (
+                  {ticket.responses.length > 0 && (
                     <div className="flex items-center space-x-4 text-xs text-muted-foreground mb-3">
-                      {ticket.responseTime && (
-                        <span className="tabular-nums">Response: {ticket.responseTime}h</span>
-                      )}
-                      {ticket.resolutionTime && (
-                        <span className="tabular-nums">Resolution: {ticket.resolutionTime}h</span>
-                      )}
+                      <span className="tabular-nums">
+                        {ticket.responses.length} response{ticket.responses.length > 1 ? 's' : ''} —
+                        last by {ticket.responses[ticket.responses.length - 1].byName}
+                      </span>
                     </div>
                   )}
 
@@ -369,7 +459,10 @@ const SupportTickets: React.FC = () => {
                     <ThemedButton
                       variant="secondary"
                       className="h-8 px-3 text-xs shrink-0"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTicket(ticket.id); // respond from the detail view
+                      }}
                     >
                       <MessageSquare className="h-3.5 w-3.5 mr-2" />
                       Add Response
@@ -378,16 +471,30 @@ const SupportTickets: React.FC = () => {
                       <ThemedButton
                         variant="secondary"
                         className="h-8 px-3 text-xs shrink-0"
-                        onClick={(e) => e.stopPropagation()}
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          run(
+                            () => assignMutation({ ticketId: ticket.ticketId }),
+                            'Assigned to you'
+                          );
+                        }}
                       >
                         <Edit className="h-3.5 w-3.5 mr-2" />
-                        Assign
+                        Assign to me
                       </ThemedButton>
                     )}
-                    {ticket.status === 'in-progress' && (
+                    {(ticket.status === 'in-progress' || ticket.status === 'open') && (
                       <ThemedButton
                         className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white shrink-0"
-                        onClick={(e) => e.stopPropagation()}
+                        disabled={busy}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          run(
+                            () => resolveMutation({ ticketId: ticket.ticketId }),
+                            'Ticket resolved'
+                          );
+                        }}
                       >
                         <CheckCircle className="h-3.5 w-3.5 mr-2" />
                         Mark Resolved
@@ -410,23 +517,208 @@ const SupportTickets: React.FC = () => {
       )}
 
       {/* Ticket Detail Modal */}
-      {selectedTicket && (
+      {activeTicket && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <ThemedCard className="max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto m-0 p-0">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={cn('text-lg font-semibold', styles.textClass)}>Ticket Details</h3>
+          <ThemedCard className="max-w-4xl w-full mx-4 max-h-[min(90vh,calc(100dvh-2rem))] overflow-y-auto m-0 p-0">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <h3 className={cn('text-lg font-semibold truncate', styles.textClass)}>
+                    {activeTicket.subject}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    #{activeTicket.id.substring(0, 8)} · {activeTicket.clientName} · opened{' '}
+                    {formatDate(activeTicket.createdAt)}
+                  </p>
+                </div>
                 <ThemedButton
                   variant="ghost"
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 shrink-0"
                   onClick={() => setSelectedTicket(null)}
                 >
                   ×
                 </ThemedButton>
               </div>
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Ticket details will be displayed here</p>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {getStatusBadge(activeTicket.status)}
+                {getPriorityBadge(activeTicket.priority)}
+                {getCategoryBadge(activeTicket.category)}
+                {activeTicket.assignedTo && (
+                  <ThemedBadge variant="secondary" className="text-xs">
+                    Assigned: {activeTicket.assignedTo}
+                  </ThemedBadge>
+                )}
+              </div>
+
+              <div className="rounded-lg bg-muted/50 p-4 text-sm text-foreground whitespace-pre-wrap">
+                {activeTicket.description}
+              </div>
+
+              {/* Response thread */}
+              <div className="space-y-3">
+                <h4 className={cn('text-sm font-semibold', styles.textClass)}>
+                  Responses ({activeTicket.responses.length})
+                </h4>
+                {activeTicket.responses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No responses yet.</p>
+                ) : (
+                  activeTicket.responses.map((r, i) => (
+                    <div key={i} className="rounded-lg border border-border p-3">
+                      <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium">{r.byName}</span>
+                        <span className="tabular-nums">
+                          {formatDate(new Date(r.at).toISOString())}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground whitespace-pre-wrap">{r.message}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Respond — notifies the client */}
+              {activeTicket.status !== 'closed' && (
+                <div className="space-y-2 border-t border-border pt-4">
+                  <textarea
+                    rows={3}
+                    value={responseDraft}
+                    onChange={(e) => setResponseDraft(e.target.value)}
+                    placeholder="Write a response — the client is notified immediately…"
+                    className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                  />
+                  <div className="flex justify-end gap-2">
+                    {activeTicket.status !== 'resolved' && (
+                      <ThemedButton
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() =>
+                          run(
+                            () => resolveMutation({ ticketId: activeTicket.ticketId }),
+                            'Ticket resolved'
+                          )
+                        }
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark Resolved
+                      </ThemedButton>
+                    )}
+                    <ThemedButton
+                      disabled={busy || !responseDraft.trim()}
+                      onClick={() => handleRespond(activeTicket.ticketId)}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Response
+                    </ThemedButton>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ThemedCard>
+        </div>
+      )}
+
+      {/* New Ticket Modal */}
+      {showNewTicket && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <ThemedCard className="max-w-2xl w-full mx-4 max-h-[min(90vh,calc(100dvh-2rem))] overflow-y-auto m-0 p-0">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className={cn('text-lg font-semibold', styles.textClass)}>New Ticket</h3>
+                <ThemedButton
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setShowNewTicket(false)}
+                >
+                  ×
+                </ThemedButton>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-foreground">Client</label>
+                <select
+                  value={newTicket.clientId}
+                  onChange={(e) => setNewTicket((t) => ({ ...t, clientId: e.target.value }))}
+                  className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+                >
+                  <option value="">
+                    {clients === undefined ? 'Loading clients…' : 'Select a client...'}
+                  </option>
+                  {(clients ?? []).map((client) => (
+                    <option key={String(client.userId)} value={String(client.userId)}>
+                      {client.fullName || client.email || String(client.userId)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-foreground">Category</label>
+                  <select
+                    value={newTicket.category}
+                    onChange={(e) =>
+                      setNewTicket((t) => ({
+                        ...t,
+                        category: e.target.value as typeof newTicket.category,
+                      }))
+                    }
+                    className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+                  >
+                    <option value="general">General</option>
+                    <option value="technical">Technical</option>
+                    <option value="billing">Billing</option>
+                    <option value="loan">Loan</option>
+                    <option value="account">Account</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-foreground">Priority</label>
+                  <select
+                    value={newTicket.priority}
+                    onChange={(e) =>
+                      setNewTicket((t) => ({
+                        ...t,
+                        priority: e.target.value as typeof newTicket.priority,
+                      }))
+                    }
+                    className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-foreground">Subject</label>
+                <input
+                  type="text"
+                  value={newTicket.subject}
+                  onChange={(e) => setNewTicket((t) => ({ ...t, subject: e.target.value }))}
+                  placeholder="Short summary…"
+                  className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-foreground">
+                  Description
+                </label>
+                <textarea
+                  rows={5}
+                  value={newTicket.description}
+                  onChange={(e) => setNewTicket((t) => ({ ...t, description: e.target.value }))}
+                  placeholder="Describe the issue…"
+                  className="w-full p-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <ThemedButton variant="secondary" onClick={() => setShowNewTicket(false)}>
+                  Cancel
+                </ThemedButton>
+                <ThemedButton onClick={handleCreateTicket} disabled={busy}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {busy ? 'Creating…' : 'Create Ticket'}
+                </ThemedButton>
               </div>
             </div>
           </ThemedCard>

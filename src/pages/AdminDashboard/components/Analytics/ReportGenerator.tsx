@@ -1,5 +1,10 @@
+import { toast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { APR_LIMIT } from '@/constants/regulatory';
+import { downloadCsv } from '@/utils/downloadFile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery } from 'convex/react';
 import {
   AlertTriangle,
   DollarSign,
@@ -11,9 +16,24 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 
+/**
+ * Generates CSV reports directly from the live analytics queries.
+ * Reports download immediately in the browser — no server-side generation
+ * step. The date range applies to the revenue/payment reports (the underlying
+ * getRevenueMetrics query filters by date); portfolio/risk/client reports are
+ * point-in-time snapshots.
+ */
 const ReportGenerator: React.FC = () => {
   const [selectedReports, setSelectedReports] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+
+  const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
+  const risk = useQuery(api.analytics.getRiskMetrics, {});
+  const clients = useQuery(api.analytics.getClientMetrics, {});
+  const revenue = useQuery(api.analytics.getRevenueMetrics, {
+    dateFrom: dateRange.from || undefined,
+    dateTo: dateRange.to || undefined,
+  });
 
   const reportTypes = [
     {
@@ -22,49 +42,46 @@ const ReportGenerator: React.FC = () => {
       description: 'Comprehensive overview of loan portfolio performance',
       icon: PieChart,
       category: 'Portfolio',
-      estimatedTime: '2-3 minutes',
     },
     {
       id: 'financial-performance',
       name: 'Financial Performance Report',
-      description: 'Revenue, disbursements, and collection analytics',
+      description: 'Revenue, collections and income split for the selected period',
       icon: TrendingUp,
       category: 'Financial',
-      estimatedTime: '3-4 minutes',
     },
     {
       id: 'risk-assessment',
       name: 'Risk Assessment Report',
-      description: 'Risk analysis and default probability metrics',
+      description: 'NPL ratio, PAR30/PAR90 and overdue exposure',
       icon: AlertTriangle,
       category: 'Risk',
-      estimatedTime: '4-5 minutes',
     },
     {
       id: 'client-analytics',
       name: 'Client Analytics Report',
-      description: 'Client demographics and behavior analysis',
+      description: 'Client base, KYC funnel and repeat-borrower metrics',
       icon: Users,
       category: 'Clients',
-      estimatedTime: '2-3 minutes',
     },
     {
       id: 'payment-analysis',
       name: 'Payment Analysis Report',
-      description: 'Payment patterns and collection efficiency',
+      description: 'Collections and payment volume for the selected period',
       icon: DollarSign,
       category: 'Payments',
-      estimatedTime: '3-4 minutes',
     },
     {
       id: 'regulatory-compliance',
       name: 'Regulatory Compliance Report',
-      description: 'Compliance status and regulatory metrics',
+      description: 'APR limit adherence and portfolio compliance snapshot',
       icon: FileText,
       category: 'Compliance',
-      estimatedTime: '5-6 minutes',
     },
   ];
+
+  const dataReady =
+    portfolio !== undefined && risk !== undefined && clients !== undefined && revenue !== undefined;
 
   const handleReportSelection = (reportId: string) => {
     setSelectedReports((prev) =>
@@ -73,8 +90,106 @@ const ReportGenerator: React.FC = () => {
   };
 
   const generateReports = () => {
-    // Implementation for report generation
-    console.log('Generating reports:', selectedReports, dateRange);
+    if (!dataReady) {
+      toast({ title: 'Analytics still loading', description: 'Try again in a moment.' });
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const period =
+      dateRange.from || dateRange.to
+        ? `${dateRange.from || 'start'} to ${dateRange.to || 'today'}`
+        : 'all time';
+
+    const builders: Record<string, () => void> = {
+      'portfolio-summary': () =>
+        downloadCsv(
+          `portfolio-summary-${today}.csv`,
+          ['Metric', 'Value'],
+          [
+            ['Total loans', portfolio!.loans.total],
+            ['Active loans', portfolio!.loans.active],
+            ['Pending review', portfolio!.loans.pending],
+            ['Approved', portfolio!.loans.approved],
+            ['Rejected', portfolio!.loans.rejected],
+            ['Paid off', portfolio!.loans.completed],
+            ['Total outstanding (NAD)', portfolio!.portfolio.totalOutstanding.toFixed(2)],
+            ['Total disbursed (NAD)', portfolio!.portfolio.totalDisbursed.toFixed(2)],
+            ['Total repaid (NAD)', portfolio!.portfolio.totalRepaid.toFixed(2)],
+            ['Average loan size (NAD)', portfolio!.portfolio.averageLoanSize.toFixed(2)],
+          ]
+        ),
+      'financial-performance': () =>
+        downloadCsv(
+          `financial-performance-${today}.csv`,
+          ['Metric', 'Value', 'Period'],
+          [
+            ['Interest income (NAD)', revenue!.interestIncome.toFixed(2), period],
+            ['Fees income (NAD)', revenue!.feesIncome.toFixed(2), period],
+            ['Total income (NAD)', revenue!.totalIncome.toFixed(2), period],
+            ['Principal repaid (NAD)', revenue!.principalRepaid.toFixed(2), period],
+            ['Total collected (NAD)', revenue!.totalCollected.toFixed(2), period],
+            ['Payment count', revenue!.paymentCount, period],
+          ]
+        ),
+      'risk-assessment': () =>
+        downloadCsv(
+          `risk-assessment-${today}.csv`,
+          ['Metric', 'Value'],
+          [
+            ['Non-performing installments', risk!.nonPerformingLoans],
+            ['Overdue amount (NAD)', risk!.overdueAmount.toFixed(2)],
+            ['NPL ratio', (risk!.nplRatio * 100).toFixed(2) + '%'],
+            ['PAR 30 (NAD)', risk!.par30.toFixed(2)],
+            ['PAR 90 (NAD)', risk!.par90.toFixed(2)],
+            ['PAR 30 ratio', (risk!.par30Ratio * 100).toFixed(2) + '%'],
+          ]
+        ),
+      'client-analytics': () =>
+        downloadCsv(
+          `client-analytics-${today}.csv`,
+          ['Metric', 'Value'],
+          [
+            ['Total clients', clients!.totalClients],
+            ['KYC verified', clients!.kycApproved],
+            ['KYC pending', clients!.kycPending],
+            ['New this month', clients!.newThisMonth],
+            ['With active loans', clients!.withActiveLoans],
+            ['Repeat borrowers', clients!.repeatBorrowers],
+          ]
+        ),
+      'payment-analysis': () =>
+        downloadCsv(
+          `payment-analysis-${today}.csv`,
+          ['Metric', 'Value', 'Period'],
+          [
+            ['Payments received', revenue!.paymentCount, period],
+            ['Total collected (NAD)', revenue!.totalCollected.toFixed(2), period],
+            ['Principal share (NAD)', revenue!.principalRepaid.toFixed(2), period],
+            ['Interest share (NAD)', revenue!.interestIncome.toFixed(2), period],
+            ['Fees share (NAD)', revenue!.feesIncome.toFixed(2), period],
+          ]
+        ),
+      'regulatory-compliance': () =>
+        downloadCsv(
+          `regulatory-compliance-${today}.csv`,
+          ['Check', 'Value'],
+          [
+            ['Regulatory APR limit', `${APR_LIMIT}%`],
+            ['Active loans', portfolio!.loans.active],
+            ['Total outstanding (NAD)', portfolio!.portfolio.totalOutstanding.toFixed(2)],
+            ['NPL ratio', (risk!.nplRatio * 100).toFixed(2) + '%'],
+            ['KYC verified clients', clients!.kycApproved],
+            ['KYC pending clients', clients!.kycPending],
+            ['Report generated', new Date().toISOString()],
+          ]
+        ),
+    };
+
+    for (const id of selectedReports) builders[id]?.();
+    toast({
+      title: 'Reports downloaded',
+      description: `${selectedReports.length} CSV report${selectedReports.length > 1 ? 's' : ''} generated from live data.`,
+    });
   };
 
   return (
@@ -85,6 +200,10 @@ const ReportGenerator: React.FC = () => {
           <CardTitle>Report Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Date range applies to the Financial Performance and Payment Analysis reports; other
+            reports are point-in-time snapshots.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2 text-foreground">From Date</label>
@@ -166,9 +285,7 @@ const ReportGenerator: React.FC = () => {
                       <span className="bg-muted px-2 py-1 rounded-full text-muted-foreground shrink-0">
                         {report.category}
                       </span>
-                      <span className="text-muted-foreground shrink-0 ml-2">
-                        {report.estimatedTime}
-                      </span>
+                      <span className="text-muted-foreground shrink-0 ml-2">CSV · instant</span>
                     </div>
                   </div>
                 </div>
@@ -188,88 +305,22 @@ const ReportGenerator: React.FC = () => {
                   {selectedReports.length} report{selectedReports.length > 1 ? 's' : ''} selected
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-400">
-                  Estimated generation time:{' '}
-                  {Math.max(
-                    ...selectedReports.map((id) =>
-                      parseInt(
-                        reportTypes.find((r) => r.id === id)?.estimatedTime?.split('-')[1] || '0'
-                      )
-                    )
-                  )}{' '}
-                  minutes
+                  Generated in your browser from live portfolio data.
                 </p>
               </div>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => setSelectedReports([])}>
                   Clear Selection
                 </Button>
-                <Button onClick={generateReports}>
+                <Button onClick={generateReports} disabled={!dataReady}>
                   <Download className="h-4 w-4 mr-2" />
-                  Generate Reports
+                  {dataReady ? 'Generate Reports' : 'Loading data…'}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Recent Reports */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Reports</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[
-              {
-                name: 'Portfolio Summary - December 2024',
-                date: '2025-01-03',
-                status: 'completed',
-              },
-              { name: 'Risk Assessment - Q4 2024', date: '2025-01-02', status: 'completed' },
-              {
-                name: 'Financial Performance - December 2024',
-                date: '2025-01-01',
-                status: 'processing',
-              },
-            ].map((report, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3 min-w-0 flex-1 mr-4">
-                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate" title={report.name}>
-                      {report.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground tabular-nums">
-                      Generated on {report.date}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 shrink-0">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      report.status === 'completed'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
-                    } shrink-0`}
-                  >
-                    {report.status}
-                  </span>
-                  {report.status === 'completed' && (
-                    <Button variant="outline" size="sm" className="shrink-0">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

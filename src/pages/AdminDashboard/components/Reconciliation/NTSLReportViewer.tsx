@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatNAD } from '@/constants/regulatory';
+import { formatNAD } from '@/utils/currency';
 import { useReportContent, useSettlementReports } from '@/hooks/useSettlement';
 import { Download, Eye, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';

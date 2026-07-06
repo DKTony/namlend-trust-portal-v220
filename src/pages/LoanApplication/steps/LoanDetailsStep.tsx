@@ -11,6 +11,7 @@ import type { LoanFormData } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
 import type { ThemeConfig } from '@/types/theme';
 import { useTranslation } from 'react-i18next';
+import { isLoanAmountValid, LOAN_AMOUNT_MAX, LOAN_AMOUNT_MIN } from '../loanLimits';
 
 interface LoanDetailsStepProps {
   formData: LoanFormData;
@@ -20,6 +21,8 @@ interface LoanDetailsStepProps {
 
 export default function LoanDetailsStep({ formData, onFormChange, styles }: LoanDetailsStepProps) {
   const { t } = useTranslation('loanApplication');
+  const amountEntered = formData.amount !== '';
+  const amountValid = !amountEntered || isLoanAmountValid(Number(formData.amount));
 
   return (
     <>
@@ -30,14 +33,20 @@ export default function LoanDetailsStep({ formData, onFormChange, styles }: Loan
             id="amount"
             type="number"
             placeholder={t('loanDetailsStep.amountPlaceholder')}
-            min="1000"
-            max="50000"
+            min={String(LOAN_AMOUNT_MIN)}
+            max={String(LOAN_AMOUNT_MAX)}
             step="500"
             value={formData.amount}
             onChange={(e) => onFormChange('amount', e.target.value)}
             data-testid="loan-amount-input"
+            aria-invalid={!amountValid}
           />
-          <p className="text-xs text-muted-foreground">{t('loanDetailsStep.amountRange')}</p>
+          <p
+            className={cn('text-xs', amountValid ? 'text-muted-foreground' : 'text-destructive')}
+            role={amountValid ? undefined : 'alert'}
+          >
+            {t('loanDetailsStep.amountRange')}
+          </p>
         </div>
 
         <div className="space-y-2">

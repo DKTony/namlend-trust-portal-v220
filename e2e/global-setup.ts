@@ -60,26 +60,28 @@ async function globalSetup() {
 
   try {
     console.log('  Seeding Convex test users and IPP aliases...');
-    execFileSync(
-      'npx',
-      [
-        'convex',
-        'run',
-        'seed:seedTestUsers',
-        '--push',
-        '--deployment',
-        convexDeploymentName,
-        '--typecheck',
-        'disable',
-        '--codegen',
-        'disable',
-      ],
-      {
-        stdio: 'pipe',
-        cwd: process.cwd(),
-        env: process.env,
-      }
-    );
+    const seedArgs = [
+      'convex',
+      'run',
+      'seed:seedTestUsers',
+      '--push',
+      '--typecheck',
+      'disable',
+      '--codegen',
+      'disable',
+    ];
+    // In CI, CONVEX_DEPLOY_KEY authenticates AND pins the deployment; the
+    // --deployment flag would make the CLI resolve it via the dashboard API,
+    // which needs a user access token and fails with "AccessTokenInvalid".
+    // Locally (logged-in CLI, no deploy key) the flag selects the deployment.
+    if (!process.env.CONVEX_DEPLOY_KEY) {
+      seedArgs.push('--deployment', convexDeploymentName);
+    }
+    execFileSync('npx', seedArgs, {
+      stdio: 'pipe',
+      cwd: process.cwd(),
+      env: process.env,
+    });
     console.log('  ✅ Convex test users and IPP aliases seeded');
   } catch (error) {
     console.warn('  ⚠️  Convex seeding failed:', error instanceof Error ? error.message : error);

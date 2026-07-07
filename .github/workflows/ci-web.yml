@@ -90,7 +90,13 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          # E2E deployment only — setupSafety.ts blocks the production URL
+          VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
+          E2E_ALLOW_MUTATING_SEED: 'true'
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          CONVEX_DEPLOYMENT: dev:brave-mole-108
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           VITE_E2E: 'true'
       
       - name: Upload test results
@@ -144,7 +150,13 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+          # E2E deployment only — setupSafety.ts blocks the production URL
+          VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
+          E2E_ALLOW_MUTATING_SEED: 'true'
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          CONVEX_DEPLOYMENT: dev:brave-mole-108
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           VITE_E2E: 'true'
       
       - name: Upload full E2E report

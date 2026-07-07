@@ -25,7 +25,11 @@ on:
 env:
   VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
   VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-  VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+  # E2E runs against the dedicated E2E Convex deployment (dev:brave-mole-108),
+  # NEVER production — e2e/setupSafety.ts hard-blocks the production URL.
+  # NOTE: the E2E deployment enforces a N$10,000/day IPS B2P limit; each
+  # ipp-lifecycle run disburses N$1,350, so CI + local runs share ~7 runs/day.
+  VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
   SUPABASE_PROJECT_ID: puahejtaskncpazjyxqp
 
 jobs:
@@ -70,11 +74,19 @@ jobs:
           E2E_CLIENT_EMAIL: ${{ secrets.E2E_CLIENT_EMAIL }}
           E2E_CLIENT_PASSWORD: ${{ secrets.E2E_CLIENT_PASSWORD }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Safe: setupSafety.ts still refuses the production Convex URL.
+          E2E_ALLOW_MUTATING_SEED: 'true'
+          # Auth for `npx convex run seed:seedTestUsers` in global-setup
+          # (deploy key generated for the brave-mole-108 dev deployment).
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          CONVEX_DEPLOYMENT: dev:brave-mole-108
+          TEST_FILTER: ${{ inputs.test_filter }}
           BASE_URL: http://localhost:8080
           CI: true
         run: |
-          if [ -n "${{ inputs.test_filter }}" ]; then
-            npx playwright test --grep "${{ inputs.test_filter }}"
+          # TEST_FILTER passed via env (not interpolated) to avoid shell injection
+          if [ -n "$TEST_FILTER" ]; then
+            npx playwright test --grep "$TEST_FILTER"
           else
             npx playwright test
           fi

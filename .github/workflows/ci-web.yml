@@ -88,8 +88,8 @@ jobs:
       - name: Run API smoke tests
         run: npx playwright test e2e/api/ --project=chromium
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Supabase env deliberately absent (matches .env.e2e) — legacy
+          # Supabase specs self-skip without credentials.
           # E2E deployment only — setupSafety.ts blocks the production URL
           VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
           E2E_ALLOW_MUTATING_SEED: 'true'
@@ -148,8 +148,8 @@ jobs:
       - name: Start dev server and run full E2E suite
         run: npx playwright test --project=chromium
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Supabase env deliberately absent (matches .env.e2e) — legacy
+          # Supabase specs self-skip without credentials.
           # E2E deployment only — setupSafety.ts blocks the production URL
           VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
           E2E_ALLOW_MUTATING_SEED: 'true'

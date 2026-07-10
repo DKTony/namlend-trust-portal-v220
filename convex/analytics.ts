@@ -177,16 +177,27 @@ export const getPaymentsTotalSince = query({
   handler: async (ctx, { sinceMs }) => {
     await assertStaff(ctx);
     const since = sinceMs ?? Date.now() - 24 * 60 * 60 * 1000;
-    // Same raw-scan convention as the other analytics aggregations in this file.
-    const completed = await ctx.db
+    // This query backs an always-visible dashboard stat, so it must stay cheap
+    // as the payments table grows. Completed payments come back newest-first,
+    // and we only want a recent window (typically "today"), so we page from the
+    // newest and stop as soon as we pass the window — bounded work regardless
+    // of total table size. WINDOW_CAP guards against a pathological run of
+    // out-of-window rows (a payment created long ago but completed recently).
+    const WINDOW_CAP = 2000;
+    let total = 0;
+    let count = 0;
+    let scanned = 0;
+    for await (const p of ctx.db
       .query('paymentTransactions')
       .withIndex('by_status', (q) => q.eq('status', 'completed'))
-      .take(10000);
-    const inWindow = completed.filter((p) => (p.paymentDate ?? p.createdAt) >= since);
-    return {
-      total: inWindow.reduce((s, p) => s + (p.amount ?? 0), 0),
-      count: inWindow.length,
-    };
+      .order('desc')) {
+      if (++scanned > WINDOW_CAP) break;
+      if ((p.paymentDate ?? p.createdAt) >= since) {
+        total += p.amount ?? 0;
+        count += 1;
+      }
+    }
+    return { total, count };
   },
 });
 

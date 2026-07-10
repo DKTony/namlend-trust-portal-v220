@@ -418,7 +418,7 @@ describe('approval requests are deduplicated per loan (no double queue entry)', 
   });
 });
 
-describe('createLoan persists applicant income to the profile', () => {
+describe('createLoan stores income on the loan without touching the profile', () => {
   const profileIncome = (t: ReturnType<typeof convexTest>, userId: Id<'users'>) =>
     t.run(
       async (ctx) =>
@@ -430,33 +430,22 @@ describe('createLoan persists applicant income to the profile', () => {
         )?.monthlyIncome
     );
 
-  test('application income is written back so future scoring is not stale', async () => {
+  test('application income lands on the loan, profile stays untouched', async () => {
     const t = convexTest(schema, modules);
     const borrower = await seedUser(t, { role: 'client' });
-    expect(await profileIncome(t, borrower)).toBeFalsy(); // unset (null/undefined)
 
-    await asUser(t, borrower).mutation(api.loans.createLoan, {
+    const loanId = await asUser(t, borrower).mutation(api.loans.createLoan, {
       principal: 10000,
       interestRate: 20,
       termMonths: 12,
       monthlyIncome: 8500,
     });
 
-    // Profile now carries the stated income (fresh for DTI + future applications)
-    expect(await profileIncome(t, borrower)).toBe(8500);
-  });
-
-  test('omitted or zero income leaves the profile untouched', async () => {
-    const t = convexTest(schema, modules);
-    const borrower = await seedUser(t, { role: 'client' });
-
-    await asUser(t, borrower).mutation(api.loans.createLoan, {
-      principal: 10000,
-      interestRate: 20,
-      termMonths: 12,
-      monthlyIncome: 0,
-    });
-    expect(await profileIncome(t, borrower)).toBeFalsy(); // still unset
+    // Loan carries the income (credit scoring reads it); profile is NOT mutated
+    // so returning applicants still see the editable income field.
+    const loan = await t.run(async (ctx) => ctx.db.get(loanId));
+    expect(loan!.monthlyIncome).toBe(8500);
+    expect(await profileIncome(t, borrower)).toBeFalsy();
   });
 });
 

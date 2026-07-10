@@ -273,23 +273,12 @@ export const createLoan = mutation({
       updatedAt: now,
     });
 
-    // Persist the applicant's stated income onto their profile so it is fresh
-    // for future applications and every other consumer (dashboards, DTI, the
-    // credit-scoring action's profile fallback). Only write when a positive
-    // value was supplied and it actually changed.
-    if (args.monthlyIncome != null && args.monthlyIncome > 0) {
-      const profile = await ctx.db
-        .query('profiles')
-        .withIndex('by_userId', (q) => q.eq('userId', userId))
-        .first();
-      if (profile && profile.monthlyIncome !== args.monthlyIncome) {
-        await ctx.db.patch(profile._id, {
-          monthlyIncome: args.monthlyIncome,
-          updatedAt: now,
-        });
-      }
-    }
-
+    // NOTE: application income is intentionally NOT written back to the
+    // profile here. The credit-scoring action already prefers the loan's stored
+    // monthlyIncome (processLoanApplication.ts) so DTI is correct regardless,
+    // and persisting to the profile would flip FinancialInfoStep to its
+    // read-only "income on file" branch for every returning applicant — a UX
+    // decision to make deliberately alongside that form, not as a side effect.
     scheduleAuditLog(ctx, 'loan', loanId, 'CREATE', 'none', 'draft');
     emitDomainEvent(
       ctx,

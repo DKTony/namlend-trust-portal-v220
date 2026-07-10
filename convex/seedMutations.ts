@@ -67,6 +67,13 @@ export const createTestUser = internalMutation({
         await ctx.db.patch(existingRole._id, { role });
         console.log(`[seed] Updated ${email} role to '${role}'`);
       }
+      // Deterministic reset: clear any income persisted onto the test client by
+      // prior loan-application runs, so FinancialInfoStep always renders the
+      // editable income input the E2E specs fill (getByTestId('income-input')).
+      if (existingProfile.monthlyIncome != null) {
+        await ctx.db.patch(existingProfile._id, { monthlyIncome: undefined });
+        console.log(`[seed] Cleared stale monthlyIncome for ${email}`);
+      }
       return;
     }
 

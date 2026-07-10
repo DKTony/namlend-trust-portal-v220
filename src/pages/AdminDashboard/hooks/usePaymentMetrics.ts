@@ -19,7 +19,15 @@ export const usePaymentMetrics = () => {
   const risk = useQuery(api.analytics.getRiskMetrics);
   const revenue = useQuery(api.analytics.getRevenueMetrics, {});
   const allLoans = useQuery(api.loans.adminListLoans, {});
-  const completedPayments = useQuery(api.payments.adminListPayments, { status: 'completed' });
+
+  // Today's total is summed server-side (no 100-row cap, uses the settlement
+  // date paymentDate not the drift-prone updatedAt, excludes reversed via the
+  // completed-status index). Pass local midnight so "today" is the admin's day.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const paymentsToday = useQuery(api.analytics.getPaymentsTotalSince, {
+    sinceMs: todayStart.getTime(),
+  });
 
   const loading = portfolio === undefined;
   const error: string | null = null;
@@ -30,16 +38,8 @@ export const usePaymentMetrics = () => {
   const activeLoans = loans.filter((l) => ['active', 'funded', 'disbursed'].includes(l.status));
   const settledLoans = loans.filter((l) => l.status === 'paid_off');
 
-  // Calculate today's completed payment total
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayMs = todayStart.getTime();
-  const totalPaymentsToday = (completedPayments ?? [])
-    .filter((p) => (p.updatedAt ?? p.createdAt) >= todayMs)
-    .reduce((sum, p) => sum + (p.amount ?? 0), 0);
-
   const metrics: PaymentMetrics = {
-    totalPaymentsToday,
+    totalPaymentsToday: paymentsToday?.total ?? 0,
     pendingDisbursements: approvedLoans.reduce((s, l) => s + (l.principal ?? 0), 0),
     pendingDisbursementCount: approvedLoans.length,
     overdueAmount: risk?.overdueAmount ?? 0,

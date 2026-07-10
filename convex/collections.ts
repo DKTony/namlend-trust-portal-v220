@@ -458,13 +458,33 @@ export const listRescheduleRequests = query({
   },
   handler: async (ctx, { status }) => {
     await assertStaff(ctx);
-    const rows = status
-      ? await ctx.db
-          .query('rescheduleRequests')
-          .withIndex('by_status', (q) => q.eq('status', status))
-          .collect()
-      : await ctx.db.query('rescheduleRequests').order('desc').take(200);
-    return applyTenantScope(rows, await tenantReadScope(ctx));
+    const rows = applyTenantScope(
+      status
+        ? await ctx.db
+            .query('rescheduleRequests')
+            .withIndex('by_status', (q) => q.eq('status', status))
+            .collect()
+        : await ctx.db.query('rescheduleRequests').order('desc').take(200),
+      await tenantReadScope(ctx)
+    );
+    // Enrich with client name + loan context for the admin review panel.
+    return Promise.all(
+      rows
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map(async (row) => {
+          const profile = await ctx.db
+            .query('profiles')
+            .withIndex('by_userId', (q) => q.eq('userId', row.userId))
+            .first();
+          const loan = await ctx.db.get(row.loanId);
+          return {
+            ...row,
+            clientName: profile?.fullName || profile?.email?.split('@')[0] || 'Unknown',
+            loanPrincipal: loan?.principal ?? null,
+            loanPurpose: loan?.purpose ?? null,
+          };
+        })
+    );
   },
 });
 

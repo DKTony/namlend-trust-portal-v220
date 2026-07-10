@@ -4,6 +4,7 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import {
   AlertTriangle,
   BadgeCheck,
+  CalendarClock,
   CheckCircle,
   CreditCard,
   Download,
@@ -22,6 +23,7 @@ import DisbursementManager from './DisbursementManager';
 import OverdueManager from './OverdueManager';
 import PaymentOverview from './PaymentOverview';
 import PaymentsList from './PaymentsList';
+import RescheduleRequests from './RescheduleRequests';
 import SettledLoansList from './SettledLoansList';
 
 interface PaymentManagementDashboardProps {
@@ -86,7 +88,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <AdaptiveTabs
-          desktopColumns={6}
+          desktopColumns={7}
           items={[
             { value: 'overview', label: 'All Payments', shortLabel: 'Payments', icon: CreditCard },
             {
@@ -98,6 +100,12 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
             { value: 'settled', label: 'Settled Loans', shortLabel: 'Settled', icon: BadgeCheck },
             { value: 'overdue', label: 'Overdue', icon: AlertTriangle },
             { value: 'collections', label: 'Collections', icon: Users },
+            {
+              value: 'reschedules',
+              label: 'Reschedules',
+              shortLabel: 'Reschedule',
+              icon: CalendarClock,
+            },
             {
               value: 'reconciliation',
               label: 'Reconciliation',
@@ -151,6 +159,10 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
 
         <TabsContent value="collections" className="space-y-4">
           <CollectionsCenter />
+        </TabsContent>
+
+        <TabsContent value="reschedules" className="space-y-4">
+          <RescheduleRequests />
         </TabsContent>
 
         <TabsContent value="reconciliation" className="space-y-4">

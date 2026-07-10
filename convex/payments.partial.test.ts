@@ -300,6 +300,50 @@ describe('reversePayment symmetry', () => {
   });
 });
 
+describe('getPaymentsTotalSince (admin "Total Payments Today")', () => {
+  test('counts completed payments in-window and excludes reversed ones', async () => {
+    const t = convexTest(schema, modules);
+    const staff = await seedUser(t, { role: 'loan_officer' });
+    const admin = await seedUser(t, { role: 'admin' });
+    const borrower = await seedUser(t);
+    const { loanId } = await seedActiveLoanWithSchedule(t, borrower);
+
+    // Two completed payments today
+    const keepId: Id<'paymentTransactions'> = await asUser(t, staff).mutation(
+      api.payments.recordPayment,
+      { loanId, amount: 500, method: 'manual', referenceNumber: 'keep' }
+    );
+    await asUser(t, staff).mutation(api.payments.completePayment, { paymentId: keepId });
+    const reverseId: Id<'paymentTransactions'> = await asUser(t, staff).mutation(
+      api.payments.recordPayment,
+      { loanId, amount: 300, method: 'manual', referenceNumber: 'reverse' }
+    );
+    await asUser(t, staff).mutation(api.payments.completePayment, { paymentId: reverseId });
+
+    const since = Date.now() - 60_000;
+    const before = await asUser(t, staff).query(api.analytics.getPaymentsTotalSince, {
+      sinceMs: since,
+    });
+    expect(before.count).toBe(2);
+    expect(toCents(before.total)).toBe(toCents(800));
+
+    // Reversing the second drops it out of the total (status → 'reversed')
+    await asUser(t, admin).mutation(api.payments.reversePayment, { paymentId: reverseId });
+    const after = await asUser(t, staff).query(api.analytics.getPaymentsTotalSince, {
+      sinceMs: since,
+    });
+    expect(after.count).toBe(1);
+    expect(toCents(after.total)).toBe(toCents(500));
+
+    // A window that starts in the future counts nothing
+    const future = await asUser(t, staff).query(api.analytics.getPaymentsTotalSince, {
+      sinceMs: Date.now() + 60_000,
+    });
+    expect(future.count).toBe(0);
+    expect(future.total).toBe(0);
+  });
+});
+
 describe('IPS disbursement completion generates the amortization schedule', () => {
   test('loan funded via IPS rail gets schedule rows and payment fields', async () => {
     const t = convexTest(schema, modules);

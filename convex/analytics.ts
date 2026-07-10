@@ -164,6 +164,32 @@ export const getRevenueMetrics = query({
   },
 });
 
+/**
+ * Total value of payments that SETTLED on/after `sinceMs` (default: 24h ago).
+ * The caller passes its local midnight so "today" respects the admin's
+ * timezone, while the sum runs server-side over every completed payment (no
+ * client-side row cap). Reversed/refunded payments carry a non-'completed'
+ * status and are therefore excluded automatically; `paymentDate` is the
+ * settlement date and does not drift when the row is later patched.
+ */
+export const getPaymentsTotalSince = query({
+  args: { sinceMs: v.optional(v.number()) },
+  handler: async (ctx, { sinceMs }) => {
+    await assertStaff(ctx);
+    const since = sinceMs ?? Date.now() - 24 * 60 * 60 * 1000;
+    // Same raw-scan convention as the other analytics aggregations in this file.
+    const completed = await ctx.db
+      .query('paymentTransactions')
+      .withIndex('by_status', (q) => q.eq('status', 'completed'))
+      .take(10000);
+    const inWindow = completed.filter((p) => (p.paymentDate ?? p.createdAt) >= since);
+    return {
+      total: inWindow.reduce((s, p) => s + (p.amount ?? 0), 0),
+      count: inWindow.length,
+    };
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Risk Analysis
 // ---------------------------------------------------------------------------

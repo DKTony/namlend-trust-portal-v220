@@ -385,6 +385,81 @@ describe('stale disbursement completion (Fix 3)', () => {
 // Role assignment — admin-only
 // ---------------------------------------------------------------------------
 
+describe('approval requests are deduplicated per loan (no double queue entry)', () => {
+  const approvalCount = (t: ReturnType<typeof convexTest>, loanId: Id<'loans'>) =>
+    t.run(
+      async (ctx) =>
+        (
+          await ctx.db
+            .query('approvalRequests')
+            .withIndex('by_entityId', (q) => q.eq('entityId', loanId))
+            .collect()
+        ).length
+    );
+
+  test('submitForApproval called twice yields exactly one open request', async () => {
+    const t = convexTest(schema, modules);
+    const borrower = await seedUser(t, { role: 'client', kyc: 'verified' });
+    const loanId = await seedLoan(t, borrower, { status: 'under_review' });
+
+    const first = await asUser(t, borrower).mutation(api.approvalWorkflow.submitForApproval, {
+      entityType: 'loan',
+      entityId: loanId,
+      requestType: 'loan_application',
+    });
+    const second = await asUser(t, borrower).mutation(api.approvalWorkflow.submitForApproval, {
+      entityType: 'loan',
+      entityId: loanId,
+      requestType: 'loan_application',
+    });
+
+    expect(second).toBe(first); // idempotent — same request id returned
+    expect(await approvalCount(t, loanId)).toBe(1);
+  });
+});
+
+describe('createLoan persists applicant income to the profile', () => {
+  const profileIncome = (t: ReturnType<typeof convexTest>, userId: Id<'users'>) =>
+    t.run(
+      async (ctx) =>
+        (
+          await ctx.db
+            .query('profiles')
+            .withIndex('by_userId', (q) => q.eq('userId', userId))
+            .first()
+        )?.monthlyIncome
+    );
+
+  test('application income is written back so future scoring is not stale', async () => {
+    const t = convexTest(schema, modules);
+    const borrower = await seedUser(t, { role: 'client' });
+    expect(await profileIncome(t, borrower)).toBeFalsy(); // unset (null/undefined)
+
+    await asUser(t, borrower).mutation(api.loans.createLoan, {
+      principal: 10000,
+      interestRate: 20,
+      termMonths: 12,
+      monthlyIncome: 8500,
+    });
+
+    // Profile now carries the stated income (fresh for DTI + future applications)
+    expect(await profileIncome(t, borrower)).toBe(8500);
+  });
+
+  test('omitted or zero income leaves the profile untouched', async () => {
+    const t = convexTest(schema, modules);
+    const borrower = await seedUser(t, { role: 'client' });
+
+    await asUser(t, borrower).mutation(api.loans.createLoan, {
+      principal: 10000,
+      interestRate: 20,
+      termMonths: 12,
+      monthlyIncome: 0,
+    });
+    expect(await profileIncome(t, borrower)).toBeFalsy(); // still unset
+  });
+});
+
 describe('role assignment authorization', () => {
   test('non-admin cannot assign roles', async () => {
     const t = convexTest(schema, modules);

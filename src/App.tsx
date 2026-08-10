@@ -10,6 +10,7 @@ import { BrandingProvider } from '@/context/BrandingContext';
 import { ThemeProvider as EnhancedThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/hooks/useAuth';
 import { convex } from '@/integrations/convex/client';
+import { buildAuthRedirect } from '@/lib/routing';
 import { adminRoutes } from '@/pages/AdminDashboard/adminRoutes';
 import { platformRoutes } from '@/pages/PlatformConsole/platformRoutes';
 import { ConvexAuthProvider } from '@convex-dev/auth/react';
@@ -68,10 +69,11 @@ const AuthEventBridge = () => {
     if (isAuthenticated) {
       wasAuthenticated.current = true;
     } else if (wasAuthenticated.current && location.pathname !== '/auth') {
-      // User was signed in but session is now gone → redirect
-      navigate('/auth', { replace: true });
+      // User was signed in but session is now gone → redirect, keeping where they were so
+      // signing back in returns them there instead of dumping them on a default console.
+      navigate(buildAuthRedirect(location), { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, navigate, location]);
 
   return null;
 };

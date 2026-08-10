@@ -253,8 +253,8 @@ const PermissionMatrix: React.FC = () => {
         return <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       case 'client':
         return <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />;
-      case 'support':
-        return <Settings className="h-4 w-4 text-orange-600 dark:text-orange-400" />;
+      case 'tenant admin':
+        return <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
       default:
         return <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }

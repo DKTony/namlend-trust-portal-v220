@@ -2,13 +2,14 @@ import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { useMutation, useQuery } from 'convex/react';
 import { useMemo, useState } from 'react';
+import type { UserRole } from '@/types/admin';
 
 interface User {
   id: string;
   fullName: string;
   email: string;
   phone?: string;
-  role: 'admin' | 'loan_officer' | 'client' | 'support';
+  role: UserRole;
   status: 'active' | 'inactive' | 'suspended' | 'pending';
   lastLogin: string;
   createdAt: string;
@@ -38,28 +39,26 @@ interface UseUsersListReturn {
   updateUserStatus: (userId: string, status: string) => Promise<void>;
 }
 
-const getRolePermissions = (role: string): string[] => {
+const getRolePermissions = (role: UserRole): string[] => {
   switch (role) {
     case 'admin':
+    case 'tenant_admin':
       return ['user_management', 'loan_approval', 'system_admin', 'financial_reports'];
     case 'loan_officer':
       return ['loan_approval', 'client_management', 'kyc_verification'];
-    case 'support':
-      return ['client_support', 'ticket_management'];
     case 'client':
     default:
       return ['profile_view', 'loan_application'];
   }
 };
 
-const getDepartmentByRole = (role: string): string => {
+const getDepartmentByRole = (role: UserRole): string => {
   switch (role) {
     case 'admin':
+    case 'tenant_admin':
       return 'Administration';
     case 'loan_officer':
       return 'Lending';
-    case 'support':
-      return 'Customer Support';
     default:
       return 'N/A';
   }

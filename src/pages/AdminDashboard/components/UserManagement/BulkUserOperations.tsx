@@ -393,7 +393,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="loan_officer">Loan Officer</SelectItem>
                         <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="support">Support</SelectItem>
+                        <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   )}

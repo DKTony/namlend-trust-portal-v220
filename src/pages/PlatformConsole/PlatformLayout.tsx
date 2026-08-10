@@ -12,6 +12,7 @@ import { AdaptiveShell } from '@/components/adaptive';
 import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
+import { getLandingRoute } from '@/lib/routing';
 import { cn } from '@/lib/utils';
 import { ShieldCheck } from 'lucide-react';
 import React, { useState } from 'react';
@@ -19,7 +20,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { getPlatformNavGroups } from './platformNav';
 
 const PlatformLayout: React.FC = () => {
-  const { user, isPlatformOwner, isPlatformStaff, signOut } = useAuth();
+  const { user, isPlatformOwner, isPlatformStaff, isLoanOfficer, signOut } = useAuth();
   const { styles } = useTheme();
   const layout = useAdaptiveLayout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,7 +28,9 @@ const PlatformLayout: React.FC = () => {
   // Defense in depth — the route guard already enforces this, but never render the owner
   // console for a non-platform identity even if mounted directly.
   if (!user || !isPlatformStaff) {
-    return <Navigate to="/dashboard" replace />;
+    // Send them to their own console rather than always /dashboard — a tenant admin who lands
+    // here belongs in /admin, not the client dashboard.
+    return <Navigate to={getLandingRoute({ isPlatformStaff, isLoanOfficer })} replace />;
   }
 
   const navGroups = getPlatformNavGroups(isPlatformOwner);

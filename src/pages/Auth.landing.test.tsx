@@ -29,7 +29,8 @@ type AuthState = Partial<ReturnType<typeof baseAuth>>;
 
 function baseAuth() {
   return {
-    user: { id: 'u1', email: 'a@b.c' },
+    // Explicitly nullable: the "no user" case below drives the signed-out branch.
+    user: { id: 'u1', email: 'a@b.c' } as { id: string; email: string } | null,
     signIn: vi.fn(),
     signUp: vi.fn(),
     loading: false,

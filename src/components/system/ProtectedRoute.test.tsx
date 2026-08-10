@@ -20,7 +20,8 @@ type AuthState = Partial<ReturnType<typeof baseAuth>>;
 
 function baseAuth() {
   return {
-    user: { id: 'u1', email: 'a@b.c' },
+    // Explicitly nullable: several cases below drive the signed-out / no-profile branches.
+    user: { id: 'u1', email: 'a@b.c' } as { id: string; email: string } | null,
     loading: false,
     roleLoading: false,
     profileMissing: false,

@@ -20,7 +20,6 @@ import {
   MapPin,
   MoreHorizontal,
   Phone,
-  Settings,
   Shield,
   Trash2,
   User,

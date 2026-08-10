@@ -88,9 +88,16 @@ test.describe('Deep-link redirect (?next=)', () => {
     // so every reload detoured through /auth?next=… before coming back.
     const visitedAuth: string[] = [];
     page.on('framenavigated', (frame) => {
-      if (frame === page.mainFrame() && new URL(frame.url()).pathname === '/auth') {
-        visitedAuth.push(frame.url());
+      if (frame !== page.mainFrame()) return;
+      // about:blank and other non-URL navigations would throw in the URL parser and fail
+      // the test for the wrong reason.
+      let pathname: string;
+      try {
+        pathname = new URL(frame.url()).pathname;
+      } catch {
+        return;
       }
+      if (pathname === '/auth') visitedAuth.push(frame.url());
     });
 
     await page.goto(`${baseURL}/admin/loans?status=pending`);

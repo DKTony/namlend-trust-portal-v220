@@ -3,6 +3,7 @@ import { ThemedInput } from '@/components/ui/ThemedInput';
 import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { resolvePostLoginRoute } from '@/lib/routing';
 import { cn } from '@/lib/utils';
 import { ArrowRight, FileText, Loader2, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -18,8 +19,17 @@ const emailSchema = z
 type AuthMode = 'login' | 'signup' | 'forgot_password';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading, resetPassword, updatePassword, userRole, isAdmin } =
-    useAuth();
+  const {
+    user,
+    signIn,
+    signUp,
+    loading,
+    resetPassword,
+    updatePassword,
+    authReady,
+    isLoanOfficer,
+    isPlatformStaff,
+  } = useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -57,19 +67,17 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  // Redirect authenticated users away from /auth
+  // Redirect authenticated users away from /auth, to the console their role belongs to.
+  //
+  // `authReady` is load-bearing: `user` (getMyProfile), the tenant role (getMyRole) and the
+  // platform role (getMyPlatformRole) are three independent Convex subscriptions. Redirecting
+  // as soon as `user` arrives read the role flags before they had settled — every flag is
+  // `false` until then — so staff were routed to /dashboard as if they were clients.
   useEffect(() => {
-    if (!user || isPasswordReset) return;
-    if (nextParam) {
-      navigate(nextParam, { replace: true });
-      return;
-    }
-    if (isAdmin || userRole === 'loan_officer') {
-      navigate('/admin', { replace: true });
-      return;
-    }
-    navigate('/dashboard', { replace: true });
-  }, [user, isPasswordReset, nextParam, navigate, isAdmin, userRole]);
+    if (!user || isPasswordReset || !authReady) return;
+    const destination = resolvePostLoginRoute(nextParam, { isPlatformStaff, isLoanOfficer });
+    navigate(destination, { replace: true });
+  }, [user, authReady, isPasswordReset, nextParam, navigate, isPlatformStaff, isLoanOfficer]);
 
   // Handlers
   const handleLogin = async (e: React.FormEvent) => {
@@ -225,7 +233,8 @@ export default function Auth() {
         toast({ title: 'Success', description: 'Password updated. Please sign in.' });
         setIsPasswordReset(false);
         setAuthMode('login');
-        navigate('/dashboard');
+        // No explicit navigate — clearing `isPasswordReset` releases the redirect effect
+        // above, which lands the user on their own console instead of always /dashboard.
       }
     } catch (error) {
       toast({

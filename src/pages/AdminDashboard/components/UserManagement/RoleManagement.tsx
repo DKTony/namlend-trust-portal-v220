@@ -268,8 +268,8 @@ const RoleManagement: React.FC = () => {
         return <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
       case 'client':
         return <Users className="h-5 w-5 text-green-600 dark:text-green-400" />;
-      case 'support':
-        return <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />;
+      case 'tenant admin':
+        return <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
       default:
         return <Shield className="h-5 w-5 text-muted-foreground" />;
     }

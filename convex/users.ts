@@ -59,7 +59,14 @@ export const getUserProfile = query({
 /** List all user profiles with roles (admin only). */
 export const listUsers = query({
   args: {
-    role: v.optional(v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin'))),
+    role: v.optional(
+      v.union(
+        v.literal('client'),
+        v.literal('loan_officer'),
+        v.literal('admin'),
+        v.literal('tenant_admin')
+      )
+    ),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { role, limit }) => {
@@ -193,7 +200,15 @@ export const ensureProfile = mutation({
 export const assignRole = mutation({
   args: {
     targetUserId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    // Mirrors the `userRoles.role` union in schema.ts. `tenant_admin` is the multi-tenant
+    // successor to `admin` and is what the backoffice guards already treat as primary;
+    // without it here the User Management UI cannot assign it at all.
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
   },
   handler: async (ctx, { targetUserId, role }) => {
     const adminId = await assertAdmin(ctx);
@@ -249,7 +264,12 @@ export const assignRole = mutation({
 export const removeRole = mutation({
   args: {
     targetUserId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
   },
   handler: async (ctx, { targetUserId, role }) => {
     const adminId = await assertAdmin(ctx);

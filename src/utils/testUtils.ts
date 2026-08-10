@@ -1,6 +1,7 @@
 /** @deprecated Legacy Supabase test/debug script. Zero UI imports. Safe to delete after full Convex migration. */
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorCategory, ErrorSeverity, errorLogger, trackUserAction } from '@/utils/errorHandler';
+import type { UserRole } from '@/types/admin';
 
 // Test data interfaces
 export interface TestUser {
@@ -15,7 +16,7 @@ export interface TestUser {
     employment_status: string;
     monthly_income: number;
   };
-  role: 'admin' | 'loan_officer' | 'client' | 'support';
+  role: UserRole;
 }
 
 export interface TestLoanApplication {

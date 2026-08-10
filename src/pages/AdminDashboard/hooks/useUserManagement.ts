@@ -2,13 +2,14 @@ import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { useMutation, useQuery } from 'convex/react';
 import { useMemo, useState } from 'react';
+import type { UserRole } from '@/types/admin';
 
 interface User {
   id: string;
   fullName: string;
   email: string;
   phone?: string;
-  role: 'admin' | 'loan_officer' | 'client' | 'support';
+  role: UserRole;
   status: 'active' | 'inactive' | 'suspended' | 'pending';
   isVerified: boolean;
   lastLogin: string;

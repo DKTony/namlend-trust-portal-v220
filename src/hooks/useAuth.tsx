@@ -56,8 +56,22 @@ interface UserMetadata {
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  /**
+   * True while the session OR the profile behind `user` is still resolving. Consumers that
+   * branch on `!user` MUST check this first — otherwise they treat "profile in flight" as
+   * "signed out" and bounce an authenticated user to /auth.
+   */
   loading: boolean;
   roleLoading: boolean;
+  /** The `getMyProfile` query has not resolved yet. Folded into `loading`; exposed for guards. */
+  profileLoading: boolean;
+  /** Authenticated, but no `profiles` row exists — a broken account, not a signed-out one. */
+  profileMissing: boolean;
+  /**
+   * Every identity query has settled, so role-dependent decisions (notably the post-login
+   * landing route) are safe to make. Gating on `user` alone races the role queries.
+   */
+  authReady: boolean;
   userRole: string | null;
   isAdmin: boolean;
   isLoanOfficer: boolean;
@@ -110,6 +124,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const userRole = typeof roleData === 'string' ? roleData : null;
   const roleLoading = isAuthenticated && roleData === undefined;
 
+  // `undefined` means the query is in flight; `null` means it resolved to "no profile row".
+  // Only the first is a loading state — conflating them is what made the guard redirect an
+  // authenticated user to /auth on every hard page load.
+  const profileLoading = isAuthenticated && profileData === undefined;
+  const profileMissing = isAuthenticated && profileData === null;
+
   // Build a User-shaped object from Convex profile data
   const user: User | null =
     isAuthenticated && profileData
@@ -145,6 +165,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isPlatformOwner = platformRole === 'platform_owner';
   const isPlatformSupport = platformRole === 'platform_support';
   const isPlatformStaff = platformRole !== null;
+
+  // Both planes have answered, so `isAdmin`/`isLoanOfficer`/`isPlatformStaff` are final rather
+  // than "false, so far". The landing redirect must wait for this or it lands an admin on
+  // /dashboard whenever the profile query happens to resolve before the role query.
+  const authReady = !isLoading && !roleLoading && !platformRoleLoading && !profileLoading;
 
   // ---------------------------------------------------------------------------
   // Auth actions
@@ -248,8 +273,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         session,
-        loading: isLoading,
+        loading: isLoading || profileLoading,
         roleLoading,
+        profileLoading,
+        profileMissing,
+        authReady,
         userRole,
         isAdmin,
         isLoanOfficer,

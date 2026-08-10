@@ -90,7 +90,7 @@ const UserActivityMonitor: React.FC = () => {
       id: 'user-4',
       fullName: 'Alice Wilson',
       email: 'alice.wilson@namlend.com',
-      role: 'support',
+      role: 'loan_officer',
       status: 'away',
       lastActivity: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
       currentPage: '/support/tickets',

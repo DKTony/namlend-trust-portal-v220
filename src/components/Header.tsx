@@ -1,5 +1,6 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { useAuth } from '@/hooks/useAuth';
+import { getLandingLabel, getLandingRoute } from '@/lib/routing';
 import { Menu, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +9,14 @@ import SignOutButton from './shared/SignOutButton';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoanOfficer, isPlatformStaff } = useAuth();
   const navigate = useNavigate();
+
+  // "My console", not always the client dashboard — staff and platform users were being sent
+  // to /dashboard from here regardless of role.
+  const roleFlags = { isPlatformStaff, isLoanOfficer };
+  const homeRoute = getLandingRoute(roleFlags);
+  const homeLabel = getLandingLabel(roleFlags);
 
   const handleSignIn = () => {
     navigate('/auth');
@@ -64,10 +71,10 @@ const Header = () => {
                 <ThemedButton
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate(homeRoute)}
                   data-testid="dashboard-button-header"
                 >
-                  Dashboard
+                  {homeLabel}
                 </ThemedButton>
                 <SignOutButton variant="ghost" size="sm" data-testid="signout-button-header" />
               </>
@@ -145,10 +152,10 @@ const Header = () => {
                       variant="ghost"
                       size="lg"
                       className="justify-start h-11"
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => navigate(homeRoute)}
                       data-testid="dashboard-button-mobile"
                     >
-                      Dashboard
+                      {homeLabel}
                     </ThemedButton>
                     <SignOutButton
                       variant="ghost"

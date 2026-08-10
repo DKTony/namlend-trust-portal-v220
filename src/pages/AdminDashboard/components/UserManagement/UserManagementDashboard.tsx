@@ -308,7 +308,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
             <option value="admin">Admin</option>
             <option value="loan_officer">Loan Officer</option>
             <option value="client">Client</option>
-            <option value="support">Support</option>
+            <option value="tenant_admin">Tenant Admin</option>
           </select>
           <select
             value={filterStatus}

@@ -50,8 +50,20 @@ export async function waitForAppShell(page: Page, timeout = 20000): Promise<void
   throw new Error(`Timed out waiting for adaptive app shell at ${page.url()}`);
 }
 
-export async function login(page: Page, preferAdmin: boolean = true): Promise<'admin' | 'client'> {
-  await page.goto(`${baseURL}/auth`);
+/**
+ * Sign in with the seeded admin/client credentials.
+ *
+ * `next` opts into the deep-link flow: the auth page is opened as `/auth?next=…`, exactly as a
+ * route guard would redirect there, so the post-login redirect is exercised end to end.
+ */
+export async function login(
+  page: Page,
+  preferAdmin: boolean = true,
+  next?: string
+): Promise<'admin' | 'client'> {
+  const authUrl = next ? `${baseURL}/auth?next=${encodeURIComponent(next)}` : `${baseURL}/auth`;
+
+  await page.goto(authUrl);
   await page.waitForLoadState('domcontentloaded');
 
   await waitForLoginForm(page);
@@ -99,7 +111,7 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
     }
 
     // If error or timeout, try next candidate
-    await page.goto(`${baseURL}/auth`);
+    await page.goto(authUrl);
     await page.waitForLoadState('domcontentloaded');
     await waitForLoginForm(page);
   }
@@ -112,8 +124,8 @@ export async function login(page: Page, preferAdmin: boolean = true): Promise<'a
 
 /**
  * Log in as the dedicated platform owner (pure platform_owner; tenant role = client), seeded by
- * convex/seed.ts::seedPlatformOwnerForE2E. A client-role identity lands on /dashboard after login;
- * the caller then navigates to /platform and waits for the platform console shell.
+ * convex/seed.ts::seedPlatformOwnerForE2E. The platform plane takes precedence over the tenant
+ * role, so this identity lands directly on /platform even though its tenant role is `client`.
  */
 export async function loginAsPlatformOwner(page: Page): Promise<void> {
   await page.goto(`${baseURL}/auth`);
@@ -126,7 +138,7 @@ export async function loginAsPlatformOwner(page: Page): Promise<void> {
 
   const outcome = await Promise.race<'success' | 'error'>([
     page
-      .waitForURL(/\/(admin|dashboard)/, { timeout: 30000 })
+      .waitForURL(/\/platform/, { timeout: 30000 })
       .then(() => 'success' as const)
       .catch(() => 'error' as const),
     page

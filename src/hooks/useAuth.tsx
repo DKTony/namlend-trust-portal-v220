@@ -66,6 +66,11 @@ interface UserMetadata {
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  /**
+   * True while the session OR the profile behind `user` is still resolving. Consumers that
+   * branch on `!user` MUST check this first — otherwise they treat "profile in flight" as
+   * "signed out" and bounce an authenticated user to /auth.
+   */
   loading: boolean;
   /** Raw Convex session state — true even while the profile query is still in flight. */
   isAuthenticated: boolean;
@@ -84,6 +89,15 @@ interface AuthContextType {
   /** OAuth sign-up that still owes us the phone + ID number password sign-up collects. */
   needsProfileCompletion: boolean;
   roleLoading: boolean;
+  /** The `getMyProfile` query has not resolved yet. Folded into `loading`; exposed for guards. */
+  profileLoading: boolean;
+  /** Authenticated, but no `profiles` row exists — a broken account, not a signed-out one. */
+  profileMissing: boolean;
+  /**
+   * Every identity query has settled, so role-dependent decisions (notably the post-login
+   * landing route) are safe to make. Gating on `user` alone races the role queries.
+   */
+  authReady: boolean;
   userRole: string | null;
   isAdmin: boolean;
   isLoanOfficer: boolean;
@@ -351,6 +365,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         profileMissing,
         needsProfileCompletion,
         roleLoading,
+        profileLoading,
+        profileMissing,
+        authReady,
         userRole,
         isAdmin,
         isLoanOfficer,

@@ -53,6 +53,7 @@ export const ProtectedRoute = ({
     isAuthenticated,
     profileMissing,
     roleLoading,
+    profileMissing,
     isAdmin,
     isLoanOfficer,
     isPlatformStaff,

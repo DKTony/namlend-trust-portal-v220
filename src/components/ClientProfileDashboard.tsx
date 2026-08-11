@@ -12,6 +12,7 @@ import { EmploymentSection } from '@/components/client/sections/EmploymentSectio
 import { OverviewSection } from '@/components/client/sections/OverviewSection';
 import { PersonalSection } from '@/components/client/sections/PersonalSection';
 import { useAuth } from '@/hooks/useAuth';
+import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { useProfileEdit } from '@/hooks/useProfileEdit';
 import { api } from '@/integrations/convex/api';
 import { useQuery as useConvexQuery } from 'convex/react';
@@ -46,17 +47,6 @@ interface ExtendedProfile {
   documents_complete: boolean;
 }
 
-interface DocumentRequirement {
-  id: string;
-  document_type: string;
-  is_required: boolean;
-  is_submitted: boolean;
-  is_verified: boolean;
-  submission_date: string;
-  verification_date: string;
-  rejection_reason: string;
-}
-
 export default function ClientProfileDashboard() {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
@@ -73,6 +63,7 @@ export default function ClientProfileDashboard() {
   // Convex reactive query for user profile
   const rawProfile = useConvexQuery(api.users.getMyProfile);
   const loading = rawProfile === undefined;
+  const { eligibility, isEligible } = useKYCEligibility();
 
   const profile: ExtendedProfile | null = useMemo(() => {
     if (!rawProfile) return null;
@@ -107,23 +98,6 @@ export default function ClientProfileDashboard() {
     };
   }, [rawProfile]);
 
-  // Document requirements and eligibility are derived from profile for now
-  const documentRequirements: DocumentRequirement[] = [];
-  const eligibility = useMemo(() => {
-    if (!profile) return null;
-    return {
-      eligible: profile.loan_application_eligible,
-      required_docs: 5,
-      verified_docs: [
-        profile.id_document_verified,
-        profile.bank_statements_verified,
-        profile.payslip_verified,
-      ].filter(Boolean).length,
-      profile_completion_percentage: profile.profile_completion_percentage,
-      missing_required_docs: [] as string[],
-    };
-  }, [profile]);
-
   const onEditSave = async () => {
     if (!user) return;
     await handleEditSave(user.id, () => {
@@ -146,7 +120,6 @@ export default function ClientProfileDashboard() {
 
   const completionPercent =
     eligibility?.profile_completion_percentage ?? profile.profile_completion_percentage;
-  const isEligible = eligibility?.eligible ?? profile.loan_application_eligible;
 
   return (
     <div className="space-y-8 min-h-full">
@@ -164,16 +137,8 @@ export default function ClientProfileDashboard() {
           {activeSection === 'overview' && (
             <OverviewSection
               profileCompletion={profile.profile_completion_percentage}
-              verifiedDocs={
-                eligibility
-                  ? eligibility.verified_docs
-                  : documentRequirements.filter((d) => d.is_verified).length
-              }
-              requiredDocs={
-                eligibility
-                  ? eligibility.required_docs
-                  : documentRequirements.filter((d) => d.is_required).length
-              }
+              verifiedDocs={eligibility ? eligibility.verified_docs : 0}
+              requiredDocs={eligibility ? eligibility.required_docs : 2}
               isEligible={isEligible}
             />
           )}
@@ -215,9 +180,7 @@ export default function ClientProfileDashboard() {
             />
           )}
 
-          {activeSection === 'documents' && (
-            <DocumentsSection documentRequirements={documentRequirements} isEligible={isEligible} />
-          )}
+          {activeSection === 'documents' && <DocumentsSection />}
         </div>
       </div>
     </div>

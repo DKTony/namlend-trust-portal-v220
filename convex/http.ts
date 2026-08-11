@@ -2,9 +2,10 @@
  * Convex HTTP Router.
  *
  * Routes:
- *   POST /webhook/ips     — IPS XML/JSON callbacks from Bank of Namibia
- *   POST /webhook/payment — Payment gateway webhooks (PayToday, MTC MoMo, TN Mobile)
- *   GET  /health          — Health check for monitoring
+ *   POST /webhook/ips      — IPS XML/JSON callbacks from Bank of Namibia
+ *   POST /webhook/payment  — Payment gateway webhooks (PayToday, MTC MoMo, TN Mobile)
+ *   GET  /health           — Health check for monitoring
+ *   GET  /documents/fetch  — Streams a KYC/loan document against a short-lived grant
  */
 
 import { httpRouter } from 'convex/server';
@@ -163,6 +164,58 @@ http.route({
       JSON.stringify({ status: 'ok', service: 'namlend-convex', ts: Date.now() }),
       { headers: { 'Content-Type': 'application/json' } }
     );
+  }),
+});
+
+// ---------------------------------------------------------------------------
+// Document fetch — short-lived grant → blob stream
+// ---------------------------------------------------------------------------
+
+/**
+ * Serves KYC/loan documents against a grant minted by `requestDocumentAccess`
+ * (see convex/lib/documentGrants.ts for why raw storage URLs are not exposed).
+ * Unknown and expired grants are answered identically: no oracle for probing nonces.
+ */
+http.route({
+  path: '/documents/fetch',
+  method: 'GET',
+  handler: httpAction(async (ctx, request) => {
+    const nonce = new URL(request.url).searchParams.get('grant');
+    if (!nonce) {
+      return new Response('Missing grant', { status: 400 });
+    }
+
+    const grant = await ctx.runMutation(internal.documentAccess.consumeGrant, { nonce });
+    if (!grant) {
+      return new Response('This document link has expired. Please reopen the document.', {
+        status: 404,
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
+
+    const blob = await ctx.storage.get(grant.storageId);
+    if (!blob) {
+      return new Response('Document file is no longer available.', {
+        status: 404,
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
+
+    // RFC 6266/5987 — the filename is user-supplied, so escape for the quoted form
+    // and provide a UTF-8 fallback for anything beyond latin-1.
+    const asciiName = grant.fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+    const disposition = grant.intent === 'download' ? 'attachment' : 'inline';
+    return new Response(blob, {
+      status: 200,
+      headers: {
+        'Content-Type': grant.mimeType ?? 'application/octet-stream',
+        'Content-Disposition':
+          `${disposition}; filename="${asciiName}"; ` +
+          `filename*=UTF-8''${encodeURIComponent(grant.fileName)}`,
+        'Cache-Control': 'private, no-store',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
   }),
 });
 

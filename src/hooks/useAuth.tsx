@@ -12,12 +12,22 @@
  *   supabase.auth.onAuthStateChange  → useConvexAuth() (reactive, managed by Convex)
  *   5-strategy session restore       → eliminated (Convex Auth handles natively)
  *   user_roles RPC                   → useQuery(api.users.getMyRole)
+ *
+ * THREE INDEPENDENT SUBSCRIPTIONS
+ * -------------------------------
+ * Identity is assembled from the Convex session plus three separate reactive
+ * queries (profile, tenant role, platform role) that settle at different times.
+ * Anything that has to *choose* based on identity — the post-login redirect above
+ * all — must wait for `authReady`, or it decides against half-loaded flags and
+ * lands tenant staff on the client dashboard.
  */
 
 import { api } from '@/integrations/convex/api';
+import { markDeliberateSignOut } from '@/lib/routing';
+import { buildOAuthRedirect } from '@/utils/safeRedirect';
 import { useAuthActions } from '@convex-dev/auth/react';
-import { useConvexAuth, useQuery } from 'convex/react';
-import { createContext, ReactNode, useCallback, useContext } from 'react';
+import { useConvexAuth, useMutation, useQuery } from 'convex/react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef } from 'react';
 
 // ---------------------------------------------------------------------------
 // Compatible User/Session types (replaces Supabase types)
@@ -57,6 +67,22 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** Raw Convex session state — true even while the profile query is still in flight. */
+  isAuthenticated: boolean;
+  /**
+   * Every identity query has settled. The post-login redirect must gate on this:
+   * role flags read `false` until their queries resolve, so deciding earlier sends
+   * staff to `/dashboard`.
+   */
+  authReady: boolean;
+  /**
+   * The profile query RESOLVED and there is no row (not "still loading"). Means
+   * enrollment was missed; the guard shows a recovery screen instead of bouncing to
+   * `/auth`, which would loop forever because the redirect keys on `user`.
+   */
+  profileMissing: boolean;
+  /** OAuth sign-up that still owes us the phone + ID number password sign-up collects. */
+  needsProfileCompletion: boolean;
   roleLoading: boolean;
   userRole: string | null;
   isAdmin: boolean;
@@ -82,6 +108,8 @@ interface AuthContextType {
     error: AuthError | null;
     data?: { session: Session | null; user: User | null };
   }>;
+  /** Start the Google OAuth handshake. Navigates away; does not resolve in-page. */
+  signInWithGoogle: (next?: string | null) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updatePassword: (password: string) => Promise<{ error: AuthError | null }>;
@@ -109,6 +137,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const userRole = typeof roleData === 'string' ? roleData : null;
   const roleLoading = isAuthenticated && roleData === undefined;
+
+  // `undefined` = query in flight. `null` = query resolved, no profile row exists.
+  // The two must not be conflated: the first is normal, the second means enrollment
+  // was missed and the user is stranded (useAuth().user would stay null forever).
+  const profileLoading = isAuthenticated && profileData === undefined;
+  const profileMissing = isAuthenticated && profileData === null;
+
+  // Self-heal: a session with no profile row can't use the app at all, so repair it
+  // rather than stranding the user. `enrollUser` on the server is idempotent, and the
+  // ref keeps this to one attempt per mount so a persistent failure can't spin.
+  const enrollMe = useMutation(api.users.completeEnrollment);
+  const healAttempted = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated && profileData === null && !healAttempted.current) {
+      healAttempted.current = true;
+      enrollMe({}).catch((err) => console.error('[auth] self-heal enrollment failed:', err));
+    }
+  }, [isAuthenticated, profileData, enrollMe]);
+
+  // Gate only accounts explicitly marked as OAuth sign-ups. Inferring "incomplete"
+  // from blank phone/ID would trap the entire existing user base, none of whom have
+  // a `signupSource`.
+  const needsProfileCompletion =
+    profileData?.signupSource === 'google' && profileData?.onboardingCompletedAt == null;
 
   // Build a User-shaped object from Convex profile data
   const user: User | null =
@@ -146,6 +198,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isPlatformSupport = platformRole === 'platform_support';
   const isPlatformStaff = platformRole !== null;
 
+  // `loading` covers the profile query too: reporting "not loading" while `user` is
+  // still null is what made every hard load of a protected route detour via /auth.
+  const loading = isLoading || profileLoading;
+  const authReady = !isLoading && !profileLoading && !roleLoading && !platformRoleLoading;
+
   // ---------------------------------------------------------------------------
   // Auth actions
   // ---------------------------------------------------------------------------
@@ -173,12 +230,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [authActions]
   );
 
+  const signInWithGoogle = useCallback(
+    async (next?: string | null) => {
+      try {
+        // Anchor to the origin the user is actually on — one Convex deployment serves
+        // both the Netlify site and localhost, and SITE_URL can only name one of them.
+        // The backend allowlist (lib/authRedirect.ts) vets whatever we send.
+        await authActions.signIn('google', {
+          redirectTo: buildOAuthRedirect(window.location.origin, next),
+        });
+        // Unreachable in practice: signIn sets window.location.href before resolving.
+        return { error: null };
+      } catch (err) {
+        const raw = err instanceof Error ? err : new Error('Google sign-in failed');
+        return { error: raw as AuthError };
+      }
+    },
+    [authActions]
+  );
+
   const signUp = useCallback(
     async (email: string, password: string, userData?: UserMetadata) => {
       try {
         const signUpArgs: {
           email: string;
           flow: 'signUp';
+          idNumber?: string;
           name?: string;
           password: string;
           phone?: string;
@@ -189,6 +266,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         if (userData?.full_name) signUpArgs.name = userData.full_name;
         if (userData?.phone) signUpArgs.phone = userData.phone;
+        // Rides the auth profile rather than a follow-up mutation: the client's auth
+        // handshake completes asynchronously after signIn() resolves, so a separate
+        // call races it and fails UNAUTHENTICATED. convex/auth.ts routes this to the
+        // `profiles` row (it is not a `users` column).
+        if (typeof userData?.id_number === 'string' && userData.id_number.trim()) {
+          signUpArgs.idNumber = userData.id_number.trim();
+        }
         await authActions.signIn('password', signUpArgs);
         return { error: null };
       } catch (err) {
@@ -200,6 +284,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const signOut = useCallback(async () => {
+    // Mark this as a DELIBERATE sign-out before the session drops.
+    //
+    // The guard reacts to the lost session by redirecting to `/auth?next=<current page>`.
+    // That parameter means "we interrupted you, resume afterwards" — true for an expired
+    // session or a deep link, false for someone who chose to leave. Worse, it is applied
+    // to whoever signs in NEXT: on a shared device an admin signing in after a client was
+    // sent to the client's last page instead of /admin, and the previous user's route sat
+    // in the next user's URL bar.
+    //
+    // A flag rather than navigating from here: AuthProvider is mounted ABOVE <Router> in
+    // App.tsx so there is no useNavigate, and a hard `location.replace` would race any
+    // navigation the caller does next. `consumeDeliberateSignOut()` clears it on read.
+    markDeliberateSignOut();
     try {
       await authActions.signOut();
     } catch (err) {
@@ -248,7 +345,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         session,
-        loading: isLoading,
+        loading,
+        isAuthenticated,
+        authReady,
+        profileMissing,
+        needsProfileCompletion,
         roleLoading,
         userRole,
         isAdmin,
@@ -261,6 +362,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         refreshUser,
         signUp,
         signIn,
+        signInWithGoogle,
         signOut,
         resetPassword,
         updatePassword,

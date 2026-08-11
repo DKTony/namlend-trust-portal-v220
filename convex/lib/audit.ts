@@ -126,6 +126,7 @@ function inferDomainSource(entityType: string): string {
   const domainMap: Record<string, string> = {
     loans: 'lending',
     loanDocuments: 'lending',
+    kycDocuments: 'identity',
     loanApprovals: 'lending',
     disbursements: 'payments',
     paymentTransactions: 'payments',

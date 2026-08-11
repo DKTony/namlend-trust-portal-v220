@@ -50,7 +50,29 @@ export interface WorkflowConditions {
 
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
 
-export type UserRole = 'admin' | 'loan_officer' | 'client' | 'support' | 'auditor';
+/**
+ * Tenant roles. Must stay in sync with the `userRoles.role` union in `convex/schema.ts`.
+ *
+ * Platform roles (`platform_owner`, `platform_support`) are deliberately absent: they live in
+ * the separate `platformAdmins` table and are a different identity plane, not a tenant role.
+ */
+export type UserRole = 'client' | 'loan_officer' | 'admin' | 'tenant_admin';
+
+/** Every tenant role, for building selects and iterating the role matrix. */
+export const USER_ROLES: readonly UserRole[] = [
+  'client',
+  'loan_officer',
+  'admin',
+  'tenant_admin',
+] as const;
+
+/** Display label for a tenant role. */
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  client: 'Client',
+  loan_officer: 'Loan Officer',
+  admin: 'Admin',
+  tenant_admin: 'Tenant Admin',
+};
 
 export interface ProfileUpdatePayload {
   first_name?: string;
@@ -221,21 +243,23 @@ export interface SelectOption {
 
 export function isUserStatus(value: unknown): value is UserStatus {
   return (
-    typeof value === 'string' &&
-    ['active', 'inactive', 'suspended', 'pending'].includes(value)
+    typeof value === 'string' && ['active', 'inactive', 'suspended', 'pending'].includes(value)
   );
 }
 
 export function isUserRole(value: unknown): value is UserRole {
-  return (
-    typeof value === 'string' &&
-    ['admin', 'loan_officer', 'client', 'support', 'auditor'].includes(value)
-  );
+  return typeof value === 'string' && (USER_ROLES as readonly string[]).includes(value);
 }
 
 export function isWorkflowEntityType(value: unknown): value is WorkflowEntityType {
   return (
     typeof value === 'string' &&
-    ['loan_application', 'disbursement', 'payment', 'user_role_change', 'kyc_verification'].includes(value)
+    [
+      'loan_application',
+      'disbursement',
+      'payment',
+      'user_role_change',
+      'kyc_verification',
+    ].includes(value)
   );
 }

@@ -5,6 +5,7 @@
  */
 
 import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { LoanDocumentsPanel } from '@/components/documents/LoanDocumentsPanel';
 import { IPSHistoryList, IPSPaymentModal } from '@/components/ips';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -307,7 +308,7 @@ export default function LoanDetails() {
 
             {/* Tabs for History */}
             <Tabs defaultValue="payments" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
                 <TabsTrigger value="payments" className="data-[state=active]:bg-background">
                   <History className="h-4 w-4 mr-2" />
                   Payments
@@ -318,7 +319,15 @@ export default function LoanDetails() {
                   data-testid="ips-history-tab"
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  IPS Transactions
+                  IPS
+                </TabsTrigger>
+                <TabsTrigger
+                  value="documents"
+                  className="data-[state=active]:bg-background"
+                  data-testid="loan-documents-tab"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documents
                 </TabsTrigger>
               </TabsList>
 
@@ -364,6 +373,15 @@ export default function LoanDetails() {
                   <div className="pt-2" data-testid="ips-history">
                     <IPSHistoryList loanId={loan.id} />
                   </div>
+                </ThemedCard>
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <ThemedCard className="mt-4">
+                  <LoanDocumentsPanel
+                    loanId={loan.id}
+                    allowUpload={['draft', 'submitted', 'under_review'].includes(loan.status)}
+                  />
                 </ThemedCard>
               </TabsContent>
             </Tabs>

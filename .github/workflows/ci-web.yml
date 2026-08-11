@@ -39,7 +39,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Run ESLint
         run: npm run lint
@@ -60,7 +60,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Run unit tests
         run: npm run test:unit
@@ -80,7 +80,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
@@ -120,7 +120,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Run npm audit
         run: npm audit --production --audit-level=high
@@ -140,7 +140,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
@@ -180,7 +180,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci --force
+        run: npm ci
       
       - name: Check for legacy schema fields
         run: |

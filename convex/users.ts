@@ -7,13 +7,16 @@
  */
 
 import { ConvexError, v } from 'convex/values';
+import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
 import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { kycDocumentTypeValidator } from './lib/documentPolicy';
 import { emitDomainEvent } from './lib/domainEvents';
+import { enrollUser } from './lib/enrollment';
 import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
-import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
+import { applyTenantScope, tenantReadScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -59,7 +62,14 @@ export const getUserProfile = query({
 /** List all user profiles with roles (admin only). */
 export const listUsers = query({
   args: {
-    role: v.optional(v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin'))),
+    role: v.optional(
+      v.union(
+        v.literal('client'),
+        v.literal('loan_officer'),
+        v.literal('admin'),
+        v.literal('tenant_admin')
+      )
+    ),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { role, limit }) => {
@@ -100,7 +110,14 @@ export const listUsers = query({
 // Profile mutations
 // ---------------------------------------------------------------------------
 
-/** Update own profile fields. */
+/**
+ * Update own profile fields.
+ *
+ * `idNumber` is intentionally NOT accepted here: a client with `kycStatus: 'verified'`
+ * could otherwise silently swap their national ID out from under the verified
+ * documents. The ID lands set-once via `completeEnrollment` (audited); changing it
+ * afterwards is a staff action.
+ */
 export const updateMyProfile = mutation({
   args: {
     fullName: v.optional(v.string()),
@@ -114,22 +131,17 @@ export const updateMyProfile = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
-    const profile = await ctx.db
+    let profile = await ctx.db
       .query('profiles')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .first();
 
     if (!profile) {
-      await ctx.db.insert('profiles', {
-        userId,
-        institutionId: await resolveWriteInstitution(ctx, { userId }),
-        email: '',
-        ...args,
-        kycStatus: 'pending',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-      return;
+      // Route the create path through enrollUser so the `userRoles` row is created
+      // too — inserting the profile alone leaves the user without a role.
+      const { profileId } = await enrollUser(ctx, { userId, source: 'self_heal' });
+      profile = await ctx.db.get(profileId);
+      if (!profile) throw new ConvexError({ code: 'ENROLLMENT_FAILED' });
     }
 
     await ctx.db.patch(profile._id, {
@@ -140,44 +152,51 @@ export const updateMyProfile = mutation({
 });
 
 /**
- * Ensure a profile exists for the current user.
- * Called from the frontend after first sign-in for graceful recovery.
+ * Finish enrolling the signed-in user.
+ *
+ * Serves two callers with one implementation:
+ *  1. the "complete your profile" step, which collects the details an OAuth provider
+ *     can't give us (phone, ID number) — Google returns only email/name/avatar;
+ *  2. password sign-up, which sends the ID number here because `idNumber` is not a
+ *     column on the auth `users` table and so cannot ride the auth profile.
+ *
+ * It also doubles as the self-heal path: if the enrollment that normally runs during
+ * sign-in was ever missed, this recreates the profile and role rather than leaving the
+ * user stranded with `useAuth().user === null`.
+ *
+ * Idempotent, and fill-not-clobber — see `enrollUser`.
  */
-export const ensureProfile = mutation({
+export const completeEnrollment = mutation({
   args: {
-    email: v.string(),
     fullName: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    idNumber: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
-    const existing = await ctx.db
+
+    // This is the ONLY client-reachable write path for `idNumber` (updateMyProfile
+    // deliberately does not accept it): enrollUser's fill-not-clobber semantics make
+    // the national ID set-once, and setting it is identity-relevant → audit it.
+    const before = await ctx.db
       .query('profiles')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .first();
-    if (existing) return existing._id;
 
-    const profileId = await ctx.db.insert('profiles', {
-      userId,
-      institutionId: await resolveWriteInstitution(ctx, { userId }),
-      email: args.email,
-      fullName: args.fullName,
-      kycStatus: 'pending',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+    const { profileId } = await enrollUser(ctx, { userId, ...args, source: 'self_heal' });
 
-    const existingRole = await ctx.db
-      .query('userRoles')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .first();
-    if (!existingRole) {
-      await ctx.db.insert('userRoles', {
+    const idNumberLanded = args.idNumber?.trim() && !before?.idNumber?.trim();
+    if (idNumberLanded) {
+      scheduleAuditLog(
+        ctx,
+        'user',
         userId,
-        role: 'client',
-        createdAt: Date.now(),
-      });
+        'identity_id_number_set',
+        'unset',
+        'set',
+        'Set via profile completion (set-once; changes require staff)'
+      );
     }
-
     return profileId;
   },
 });
@@ -193,7 +212,15 @@ export const ensureProfile = mutation({
 export const assignRole = mutation({
   args: {
     targetUserId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    // Mirrors the `userRoles.role` union in schema.ts. `tenant_admin` is the multi-tenant
+    // successor to `admin` and is what the backoffice guards already treat as primary;
+    // without it here the User Management UI cannot assign it at all.
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
   },
   handler: async (ctx, { targetUserId, role }) => {
     const adminId = await assertAdmin(ctx);
@@ -249,7 +276,12 @@ export const assignRole = mutation({
 export const removeRole = mutation({
   args: {
     targetUserId: v.id('users'),
-    role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    role: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('admin'),
+      v.literal('tenant_admin')
+    ),
   },
   handler: async (ctx, { targetUserId, role }) => {
     const adminId = await assertAdmin(ctx);
@@ -305,57 +337,6 @@ export const deactivateUser = mutation({
   },
 });
 
-// ---------------------------------------------------------------------------
-// KYC document upload
-// ---------------------------------------------------------------------------
-
-/** Generate a signed upload URL for KYC document upload. */
-export const generateKycUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await assertAuthenticated(ctx);
-    return ctx.storage.generateUploadUrl();
-  },
-});
-
-/** Record a KYC document after file upload to Convex Storage. */
-export const recordKycDocument = mutation({
-  args: {
-    documentType: v.string(),
-    fileStorageId: v.id('_storage'),
-    fileName: v.optional(v.string()),
-    fileSize: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
-    const now = Date.now();
-
-    const docId = await ctx.db.insert('kycDocuments', {
-      userId,
-      institutionId: await resolveWriteInstitution(ctx, { userId }),
-      documentType: args.documentType,
-      fileStorageId: args.fileStorageId,
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    return docId;
-  },
-});
-
-/** Get the current user's KYC documents. */
-export const getMyKycDocuments = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await assertAuthenticated(ctx);
-    return ctx.db
-      .query('kycDocuments')
-      .withIndex('by_userId', (q) => q.eq('userId', userId))
-      .collect();
-  },
-});
-
 /**
  * Get a user's profile by userId.
  * INTERNAL — used by processLoanApplication action for credit scoring inputs.
@@ -403,67 +384,6 @@ export const adminUpdateProfile = mutation({
   },
 });
 
-/**
- * Admin: review (approve or reject) a KYC document.
- * On approval, automatically marks profiles.kycStatus = "verified" when ALL
- * of the user's documents are approved. On rejection, marks profile as "rejected".
- * Both changes are audit-logged.
- */
-export const reviewKycDocument = mutation({
-  args: {
-    documentId: v.id('kycDocuments'),
-    status: v.union(v.literal('approved'), v.literal('rejected')),
-    reviewNotes: v.optional(v.string()),
-  },
-  handler: async (ctx, { documentId, status, reviewNotes }) => {
-    const adminId = await assertAdmin(ctx);
-    const doc = await ctx.db.get(documentId);
-    if (!doc) throw new ConvexError({ code: 'NOT_FOUND', message: 'KYC document not found.' });
-
-    const oldStatus = doc.status;
-    await ctx.db.patch(documentId, {
-      status,
-      reviewedBy: adminId,
-      reviewNotes,
-      updatedAt: Date.now(),
-    });
-
-    scheduleAuditLog(ctx, 'kycDocument', documentId, 'REVIEW_KYC', oldStatus, status, reviewNotes);
-
-    // Fetch the user's profile for kycStatus update and notification
-    const profile = await ctx.db
-      .query('profiles')
-      .withIndex('by_userId', (q) => q.eq('userId', doc.userId))
-      .first();
-
-    if (status === 'approved') {
-      // Check if ALL docs for this user are now approved
-      const allDocs = await ctx.db
-        .query('kycDocuments')
-        .withIndex('by_userId', (q) => q.eq('userId', doc.userId))
-        .collect();
-
-      // This doc is already patched; treat it as approved in the check
-      const allApproved =
-        allDocs.length > 0 &&
-        allDocs.every((d) => (d._id === documentId ? true : d.status === 'approved'));
-
-      if (allApproved && profile && profile.kycStatus !== 'verified') {
-        const prevKycStatus = profile.kycStatus;
-        await ctx.db.patch(profile._id, { kycStatus: 'verified', updatedAt: Date.now() });
-        scheduleAuditLog(ctx, 'profile', profile._id, 'KYC_VERIFIED', prevKycStatus, 'verified');
-      }
-    } else {
-      // Rejected doc → mark profile as rejected unless it was already rejected
-      if (profile && profile.kycStatus !== 'rejected') {
-        const prevKycStatus = profile.kycStatus;
-        await ctx.db.patch(profile._id, { kycStatus: 'rejected', updatedAt: Date.now() });
-        scheduleAuditLog(ctx, 'profile', profile._id, 'KYC_REJECTED', prevKycStatus, 'rejected');
-      }
-    }
-  },
-});
-
 /** Get role for any user (staff). */
 export const getUserRole = query({
   args: { userId: v.id('users') },
@@ -474,5 +394,62 @@ export const getUserRole = query({
       .withIndex('by_userId', (q) => q.eq('userId', userId))
       .first();
     return roleDoc?.role ?? 'client';
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Deprecated KYC shims — DELETE once the deployed frontend has been rebuilt
+// ---------------------------------------------------------------------------
+
+/**
+ * BACKWARD-COMPATIBILITY ONLY. Do not call from new code.
+ *
+ * The KYC upload functions moved from this file into `convex/kycDocuments.ts`
+ * (versioned documents, server-side file validation, per-document review). A Convex
+ * backend push is instant while the browser bundle on Netlify is whatever was last
+ * built — so between those two events the live `KYC-*.js` chunk was still calling
+ * `users:generateKycUploadUrl` / `users:recordKycDocument` and getting
+ * "Could not find public function", i.e. clients could not upload KYC documents at all.
+ *
+ * These two names are the ENTIRE overlap: all 42 chunks of the deployed bundle were
+ * scanned, and only the KYC chunk referenced anything removed. `getMyKycDocuments`,
+ * `reviewKycDocument` and `ensureProfile` are unreferenced and deliberately not shimmed.
+ *
+ * They delegate to the new implementation rather than reproducing the old one, so
+ * uploads from the old bundle still get versioning, validation and KYC reopening.
+ *
+ * REMOVAL: safe to delete once Netlify has rebuilt from a commit containing the new
+ * `src/pages/KYC.tsx`, which calls `kycDocuments.*` directly.
+ */
+export const generateKycUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await assertAuthenticated(ctx);
+    return ctx.storage.generateUploadUrl();
+  },
+});
+
+/** @deprecated See `generateKycUploadUrl` above. Delegates to `kycDocuments.recordDocument`. */
+export const recordKycDocument = mutation({
+  args: {
+    documentType: kycDocumentTypeValidator,
+    fileStorageId: v.id('_storage'),
+    fileName: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+  },
+  // Explicit return type is REQUIRED, not stylistic: calling `api.kycDocuments.*` from a
+  // file that `api` itself includes makes the inferred type circular (TS7022/TS7023), and
+  // the resulting `any` leaks out through the generated API into consumer components.
+  handler: async (ctx, args): Promise<Id<'kycDocuments'>> => {
+    // `recordDocument` guards too, but the house rule is that every public function
+    // asserts for itself — a delegate is not a substitute for a visible guard.
+    await assertAuthenticated(ctx);
+    // `fileSize` is intentionally dropped: the new path reads the real size from
+    // storage metadata rather than trusting a client-supplied number.
+    return ctx.runMutation(api.kycDocuments.recordDocument, {
+      documentType: args.documentType,
+      fileStorageId: args.fileStorageId,
+      fileName: args.fileName ?? 'document',
+    });
   },
 });

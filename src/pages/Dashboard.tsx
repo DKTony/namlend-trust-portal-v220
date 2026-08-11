@@ -627,17 +627,27 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        {/* Action Button for Active Loans */}
-                        {isActive && (
+                        <div className={cn('grid gap-2', isActive && 'sm:grid-cols-2')}>
                           <ThemedButton
-                            className="w-full mt-2"
+                            className="w-full"
                             variant="secondary"
-                            onClick={() => setShowPaymentModal(true)}
+                            onClick={() => navigate(`/loans/${loanKey}`)}
+                            data-testid={`view-loan-${loanKey}`}
                           >
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            {t('loans.makePayment')}
+                            <FileText className="h-4 w-4 mr-2" />
+                            View details
                           </ThemedButton>
-                        )}
+                          {isActive && (
+                            <ThemedButton
+                              className="w-full"
+                              variant="secondary"
+                              onClick={() => setShowPaymentModal(true)}
+                            >
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              {t('loans.makePayment')}
+                            </ThemedButton>
+                          )}
+                        </div>
 
                         {isSettled && loan.completedAt && (
                           <p className="text-xs text-green-600 dark:text-green-400 text-center">

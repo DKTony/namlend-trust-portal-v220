@@ -1,129 +1,168 @@
+import { DocumentPreviewDialog } from '@/components/documents/DocumentPreviewDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
+import { useMutation, useQuery } from 'convex/react';
 import { AlertCircle, CheckCircle, Eye, FileText, ShieldCheck, Upload } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-interface DocumentRequirement {
-  id: string;
-  document_type: string;
-  is_required: boolean;
-  is_submitted: boolean;
-  is_verified: boolean;
+const LABELS: Record<string, string> = {
+  id_card: 'National ID Card',
+  proof_income: 'Proof of Income',
+  bank_statement: 'Bank Statement',
+  employment_letter: 'Employment Letter',
+};
+
+function formatDocumentMetadata(document: DocumentViewItem) {
+  const size = document.fileSize
+    ? document.fileSize < 1024 * 1024
+      ? `${(document.fileSize / 1024).toFixed(1)} KB`
+      : `${(document.fileSize / (1024 * 1024)).toFixed(1)} MB`
+    : 'Size unavailable';
+  const date = document.createdAt
+    ? new Date(document.createdAt).toLocaleDateString('en-NA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'Date unavailable';
+  return `${document.fileName} · ${size} · ${date}`;
 }
 
-interface DocumentsSectionProps {
-  documentRequirements: DocumentRequirement[];
-  isEligible: boolean;
-}
+export function DocumentsSection() {
+  const navigate = useNavigate();
+  const overview = useQuery(api.kycDocuments.getMyKycOverview, {});
+  const requestDocumentAccess = useMutation(api.kycDocuments.requestDocumentAccess);
+  const [previewDocument, setPreviewDocument] = useState<DocumentViewItem | null>(null);
+  const documentByType = useMemo(
+    () =>
+      new Map(
+        (overview?.documents ?? []).map((document) => [
+          document.documentType,
+          document as DocumentViewItem,
+        ])
+      ),
+    [overview?.documents]
+  );
 
-export function DocumentsSection({ documentRequirements, isEligible }: DocumentsSectionProps) {
-  const getStatusText = (doc: DocumentRequirement) => {
-    if (doc.is_verified) return 'Verified';
-    if (doc.is_submitted) return 'Under Review';
-    return 'Required';
-  };
+  const requestAccess = async (
+    documentId: string,
+    intent: 'preview' | 'download'
+  ): Promise<DocumentAccessResult> =>
+    requestDocumentAccess({ documentId: documentId as Id<'kycDocuments'>, intent });
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
-        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between border-b border-border bg-muted/30 p-6">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
           <ShieldCheck className="h-5 w-5 text-blue-500" />
           Document Verification
         </h3>
-        <Button
-          size="sm"
-          className="bg-secondary hover:bg-secondary/80 text-secondary-foreground border border-border"
-        >
-          <Upload className="h-3.5 w-3.5 mr-2" /> Upload New
+        <Button size="sm" variant="outline" onClick={() => navigate('/kyc')}>
+          <Upload className="mr-2 h-3.5 w-3.5" /> Manage documents
         </Button>
       </div>
-      <div className="p-6 space-y-4">
-        {documentRequirements.map((doc) => (
-          <div
-            key={doc.id}
-            className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:border-muted-foreground/30 transition-colors group"
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className={cn(
-                  'h-10 w-10 rounded-lg flex items-center justify-center bg-background border border-border',
-                  doc.is_verified
-                    ? 'text-green-500'
-                    : doc.is_submitted
-                      ? 'text-yellow-500'
-                      : 'text-muted-foreground'
-                )}
-              >
-                {doc.is_verified ? (
-                  <CheckCircle className="h-5 w-5" />
-                ) : doc.is_submitted ? (
-                  <AlertCircle className="h-5 w-5" />
-                ) : (
-                  <FileText className="h-5 w-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-foreground capitalize">
-                  {doc.document_type.replace(/_/g, ' ')}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'text-[10px] px-1.5 py-0 border-0 rounded-md',
-                      doc.is_verified
-                        ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                        : doc.is_submitted
-                          ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400'
-                          : 'bg-red-500/10 text-red-600 dark:text-red-400'
-                    )}
-                  >
-                    {getStatusText(doc)}
-                  </Badge>
-                  {doc.is_required && (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 rounded-sm">
-                      Required
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              {doc.is_submitted ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  <Eye className="h-5 w-5" />
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-11 text-xs bg-background border-border text-foreground hover:bg-accent px-4"
-                >
-                  <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
-                </Button>
-              )}
-            </div>
+
+      <div className="space-y-4 p-6">
+        {overview === undefined ? (
+          <div className="space-y-3">
+            {[0, 1].map((item) => (
+              <div key={item} className="h-20 animate-pulse rounded-xl bg-muted" />
+            ))}
           </div>
-        ))}
-        {!isEligible && (
-          <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+        ) : (
+          [...overview.requiredDocumentTypes, ...overview.optionalDocumentTypes].map(
+            (documentType) => {
+              const document = documentByType.get(documentType);
+              const required = overview.requiredDocumentTypes.includes(
+                documentType as (typeof overview.requiredDocumentTypes)[number]
+              );
+              return (
+                <div
+                  key={documentType}
+                  className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background',
+                        document?.status === 'approved'
+                          ? 'text-green-500'
+                          : document?.status === 'rejected'
+                            ? 'text-destructive'
+                            : 'text-yellow-500'
+                      )}
+                    >
+                      {document?.status === 'approved' ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : document?.status === 'rejected' ? (
+                        <AlertCircle className="h-5 w-5" />
+                      ) : (
+                        <FileText className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {LABELS[documentType] ?? documentType.replace(/_/g, ' ')}
+                      </p>
+                      {document && (
+                        <p className="mt-1 max-w-md truncate text-xs text-muted-foreground">
+                          {formatDocumentMetadata(document)}
+                        </p>
+                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {document?.status ?? 'not uploaded'}
+                        </Badge>
+                        {required && <Badge variant="secondary">Required</Badge>}
+                        {document?.reviewNotes && (
+                          <span className="text-xs text-destructive">{document.reviewNotes}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {document && (
+                      <Button variant="ghost" onClick={() => setPreviewDocument(document)}>
+                        <Eye className="mr-2 h-4 w-4" /> View
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={() => navigate('/kyc')}>
+                      {document ? 'Replace' : 'Upload'}
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+          )
+        )}
+
+        {overview && !overview.eligible && (
+          <div className="flex gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+            <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-500" />
             <div>
-              <p className="text-sm font-medium text-yellow-600 dark:text-yellow-500 mb-1">
-                Incomplete Profile
+              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                {overview.status === 'submitted' ? 'Under review' : 'Action required'}
               </p>
-              <p className="text-xs text-yellow-600/80 dark:text-yellow-500/70">
-                Please upload all required documents marked with "Required" to unlock loan
-                applications.
+              <p className="mt-1 text-xs text-yellow-700/80 dark:text-yellow-400/80">
+                {overview.status === 'submitted'
+                  ? 'Your documents are waiting for staff review.'
+                  : 'Complete and submit the required documents to unlock loan applications.'}
               </p>
             </div>
           </div>
         )}
       </div>
+
+      <DocumentPreviewDialog
+        document={previewDocument}
+        open={Boolean(previewDocument)}
+        onOpenChange={(open) => !open && setPreviewDocument(null)}
+        requestAccess={requestAccess}
+      />
     </div>
   );
 }

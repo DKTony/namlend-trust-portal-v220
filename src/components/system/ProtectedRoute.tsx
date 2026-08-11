@@ -1,7 +1,9 @@
+import { ProfileCompletionGate } from '@/components/system/ProfileCompletionGate';
 import { useAuth } from '@/hooks/useAuth';
+import { buildAuthRedirect, getLandingRoute, type RoleFlags } from '@/lib/routing';
 import { Loader2 } from 'lucide-react';
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,6 +13,32 @@ interface ProtectedRouteProps {
   requirePlatform?: boolean;
   requirePlatformOwner?: boolean;
 }
+
+const Centered = ({ children }: { children: ReactNode }) => (
+  <div className="min-h-screen flex items-center justify-center">{children}</div>
+);
+
+const AccessDenied = ({ detail, flags }: { detail: string; flags: RoleFlags }) => {
+  const navigate = useNavigate();
+
+  return (
+    <Centered>
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+        <p className="text-muted-foreground mb-4">You don't have permission to access this page.</p>
+        <p className="text-sm text-muted-foreground mb-6">{detail}</p>
+        <button
+          type="button"
+          onClick={() => navigate(getLandingRoute(flags), { replace: true })}
+          className="text-sm font-medium text-primary hover:underline"
+          data-testid="access-denied-home"
+        >
+          Go to my dashboard
+        </button>
+      </div>
+    </Centered>
+  );
+};
 
 export const ProtectedRoute = ({
   children,
@@ -22,114 +50,92 @@ export const ProtectedRoute = ({
   const {
     user,
     loading,
+    isAuthenticated,
+    profileMissing,
     roleLoading,
     isAdmin,
     isLoanOfficer,
     isPlatformStaff,
     isPlatformOwner,
     platformRoleLoading,
-    refreshUser,
+    signOut,
   } = useAuth();
   const location = useLocation();
   const requiresPlatform = requirePlatform || requirePlatformOwner;
   const requiresRole = requireAdmin || requireLoanOfficer || requiresPlatform;
-  const [checkingSession, setCheckingSession] = useState(false);
-  const checkedSession = useRef(false);
+  const flags: RoleFlags = { isPlatformStaff, isLoanOfficer };
 
-  useEffect(() => {
-    if (!user && !loading && !checkedSession.current) {
-      checkedSession.current = true;
-      setCheckingSession(true);
-      refreshUser().finally(() => setCheckingSession(false));
-    }
-  }, [user, loading, refreshUser]);
-
-  // Show loading spinner while auth state is being determined
-  if (
-    loading ||
-    checkingSession ||
-    (requiresRole && roleLoading) ||
-    (requiresPlatform && platformRoleLoading)
-  ) {
+  if (loading || (requiresRole && roleLoading) || (requiresPlatform && platformRoleLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <Centered>
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
-      </div>
+      </Centered>
     );
   }
 
-  // Redirect to auth if not authenticated
+  // A valid session without a profile must not be redirected into an auth loop. The
+  // enrollment self-heal is already running in useAuth; retry and sign-out remain available.
+  if (profileMissing) {
+    return (
+      <Centered>
+        <div className="text-center max-w-md px-4">
+          <h1 className="text-2xl font-bold mb-4">We couldn't load your profile</h1>
+          <p className="text-muted-foreground mb-6">
+            Your account is signed in but has no profile record. Try again, or sign out and back in.
+            If this persists, contact support.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Retry
+            </button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="text-sm font-medium text-muted-foreground hover:underline"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </Centered>
+    );
+  }
+
+  if (!user && !isAuthenticated) {
+    return <Navigate to={buildAuthRedirect(location)} replace />;
+  }
+
+  // An authenticated profile can briefly be absent while the enrollment self-heal commits.
   if (!user) {
-    // SECURITY: Validate redirect path to prevent open redirect vulnerabilities
-    // Only allow internal paths (starting with /) and not protocol-relative URLs (//)
-    const safePath = location.pathname;
-    const isValidRedirect =
-      safePath.startsWith('/') && !safePath.startsWith('//') && !safePath.includes('://');
-    const redirectPath = isValidRedirect ? encodeURIComponent(safePath) : '/dashboard';
-    return <Navigate to={`/auth?next=${redirectPath}`} replace />;
+    return (
+      <Centered>
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Finishing your account setup…</p>
+        </div>
+      </Centered>
+    );
   }
 
-  // Check role-based access
   if (requireAdmin && !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-muted-foreground">Admin privileges required.</p>
-        </div>
-      </div>
-    );
+    return <AccessDenied detail="Admin privileges required." flags={flags} />;
   }
-
   if (requireLoanOfficer && !isLoanOfficer) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-muted-foreground">Loan officer privileges required.</p>
-        </div>
-      </div>
-    );
+    return <AccessDenied detail="Loan officer privileges required." flags={flags} />;
   }
-
-  // Platform (control-plane) gates. Until the owner runs the Phase-0 seed, no user has a
-  // platform role, so `/platform/*` is Access Denied for everyone — production stays inert.
   if (requirePlatform && !isPlatformStaff) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to access the platform console.
-          </p>
-          <p className="text-sm text-muted-foreground">Platform staff privileges required.</p>
-        </div>
-      </div>
-    );
+    return <AccessDenied detail="Platform staff privileges required." flags={flags} />;
   }
-
   if (requirePlatformOwner && !isPlatformOwner) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-4">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-muted-foreground">Platform owner privileges required.</p>
-        </div>
-      </div>
-    );
+    return <AccessDenied detail="Platform owner privileges required." flags={flags} />;
   }
 
-  return <>{children}</>;
+  return <ProfileCompletionGate>{children}</ProfileCompletionGate>;
 };

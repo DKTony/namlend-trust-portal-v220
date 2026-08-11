@@ -9,6 +9,31 @@ import { internalMutation } from './_generated/server';
 import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
 import { ensurePaymentSchedule } from './lib/scheduleGeneration';
 
+/**
+ * Mark a profile as an OAuth sign-up that hasn't completed onboarding, so the
+ * "complete your profile" gate can be exercised without driving a real Google
+ * handshake (which Google bot-blocks for automation).
+ *
+ * Internal-only, and it mutates nothing but the two marker fields.
+ */
+export const markProfileAsGoogleSignup = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const profile = await ctx.db
+      .query('profiles')
+      .filter((q) => q.eq(q.field('email'), email))
+      .first();
+    if (!profile) throw new Error(`[seed] no profile for ${email}`);
+    await ctx.db.patch(profile._id, {
+      signupSource: 'google',
+      onboardingCompletedAt: undefined,
+      phone: undefined,
+      idNumber: undefined,
+    });
+    return profile._id;
+  },
+});
+
 /** Elevate a user's role by email. */
 export const elevateRole = internalMutation({
   args: {
@@ -74,6 +99,17 @@ export const createTestUser = internalMutation({
         await ctx.db.patch(existingProfile._id, { monthlyIncome: undefined });
         console.log(`[seed] Cleared stale monthlyIncome for ${email}`);
       }
+      // Backfill phone/idNumber on already-seeded deployments: submitMyKyc now
+      // asserts both server-side, so a legacy seed without them would strand every
+      // KYC E2E spec at PROFILE_INCOMPLETE.
+      if (!existingProfile.phone?.trim() || !existingProfile.idNumber?.trim()) {
+        await ctx.db.patch(existingProfile._id, {
+          phone: existingProfile.phone?.trim() || '+264811000000',
+          idNumber: existingProfile.idNumber?.trim() || '90010100001',
+          updatedAt: Date.now(),
+        });
+        console.log(`[seed] Backfilled phone/idNumber for ${email}`);
+      }
       return;
     }
 
@@ -90,10 +126,13 @@ export const createTestUser = internalMutation({
       secret: hashedPassword,
     });
 
-    // 3. Create profile
+    // 3. Create profile — phone/idNumber included because submitMyKyc asserts both
+    // server-side (PROFILE_INCOMPLETE otherwise).
     await ctx.db.insert('profiles', {
       userId,
       email,
+      phone: '+264811000000',
+      idNumber: '90010100001',
       kycStatus: 'pending',
       createdAt: now,
       updatedAt: now,
@@ -245,6 +284,25 @@ export const seedKycDocuments = internalMutation({
       console.log(`[seed] Created approved proof of income for ${email}`);
     }
 
+    // Deterministic reset: withdraw any KYC approval request left open by a previous
+    // (possibly failed) run. Without this the client stays in the "submitted" branch —
+    // `submitMyKyc` early-returns on an open request and the UI hides the submit
+    // button — so the document-workflow journey can only ever pass once per deployment.
+    // Withdrawn rather than deleted: the 7-year retention rule admits no hard deletes.
+    const openKycRequests = await ctx.db
+      .query('approvalRequests')
+      .withIndex('by_entityId', (q) => q.eq('entityId', String(profile._id)))
+      .collect();
+    for (const request of openKycRequests) {
+      if (
+        request.entityType === 'kyc' &&
+        (request.status === 'pending' || request.status === 'escalated')
+      ) {
+        await ctx.db.patch(request._id, { status: 'withdrawn', updatedAt: now });
+        console.log(`[seed] Withdrew stale open KYC request for ${email}`);
+      }
+    }
+
     // Update profile KYC status to verified
     await ctx.db.patch(profile._id, {
       kycStatus: 'verified',
@@ -262,6 +320,66 @@ const E2E_LOAN_PURPOSE = 'E2E seeded active loan';
  * installment) so payment-flow E2E specs have real data instead of skipping.
  * Idempotent: keyed on the loan purpose marker per user.
  */
+const E2E_REVIEWABLE_LOAN_PURPOSE = 'E2E seeded reviewable loan';
+
+/**
+ * A loan parked in `submitted` so the loan-document journey has something to work on.
+ *
+ * `document-workflow.e2e.ts` hunts for a loan in draft/submitted/under_review — the only
+ * states whose Documents tab allows uploading. Without one it walked every loan the test
+ * client owns (73 and counting) before giving up, which cannot finish inside the test
+ * timeout; and even if it had, the spec would have skipped, so loan-document upload was
+ * never actually covered. Idempotent on `purpose`, like the active-loan seed.
+ */
+export const seedReviewableLoanForE2E = internalMutation({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    const profile = await ctx.db
+      .query('profiles')
+      .filter((q) => q.eq(q.field('email'), email))
+      .first();
+    if (!profile) throw new Error(`No profile found for ${email}`);
+
+    const existing = (
+      await ctx.db
+        .query('loans')
+        .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+        .collect()
+    ).find((l) => l.purpose === E2E_REVIEWABLE_LOAN_PURPOSE);
+    if (existing) {
+      // Re-arm it: an earlier run may have advanced the status out of the editable set.
+      if (existing.status !== 'submitted') {
+        await ctx.db.patch(existing._id, { status: 'submitted', updatedAt: Date.now() });
+        console.log(`[seed] Reset reviewable E2E loan to 'submitted' for ${email}`);
+      }
+      return existing._id;
+    }
+
+    const principal = 5000;
+    const interestRate = 20; // within the 32% regulatory limit
+    const termMonths = 6;
+    const now = Date.now();
+
+    const loanId = await ctx.db.insert('loans', {
+      userId: profile.userId,
+      institutionId: profile.institutionId,
+      principal,
+      interestRate,
+      termMonths,
+      purpose: E2E_REVIEWABLE_LOAN_PURPOSE,
+      status: 'submitted',
+      monthlyPayment: calculateMonthlyInstalment(principal, interestRate, termMonths),
+      totalRepayment: calculateTotalRepayable(principal, interestRate, termMonths),
+      outstandingBalance: principal,
+      totalPaid: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+    console.log(`[seed] Created reviewable ('submitted') E2E loan for ${email}`);
+    return loanId;
+  },
+});
+
 export const seedActiveLoanForE2E = internalMutation({
   args: {
     email: v.string(),

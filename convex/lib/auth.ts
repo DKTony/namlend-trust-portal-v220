@@ -112,6 +112,39 @@ export async function assertOwnerOrStaff(
   return userId;
 }
 
+/**
+ * Owner-or-staff guard for tenant-owned records.
+ *
+ * Owners always retain access to their own records. Staff callers must hold a staff
+ * role and, when the record is tenant-bound, must belong to that exact institution.
+ * This closes the cross-tenant staff bypass that the legacy `assertOwnerOrStaff` guard
+ * intentionally tolerated during the first tenancy migration phase.
+ */
+export async function assertOwnerOrTenantStaff(
+  ctx: AnyCtx,
+  resourceUserId: string | Id<'users'>,
+  institutionId?: Id<'institutions'>
+): Promise<Id<'users'>> {
+  const caller = await getTenantIdentity(ctx);
+  if (caller.userId === resourceUserId) return caller.userId;
+
+  if (!caller.role || !STAFF_ROLES.includes(caller.role)) {
+    throw new ConvexError({
+      code: 'FORBIDDEN',
+      message: 'You do not have access to this resource.',
+    });
+  }
+
+  if (institutionId && caller.institutionId !== institutionId) {
+    throw new ConvexError({
+      code: 'FORBIDDEN',
+      message: 'You do not have access to this tenant.',
+    });
+  }
+
+  return caller.userId;
+}
+
 // ---------------------------------------------------------------------------
 // Tenant-scoped role assertions (multi-tenant — Phase 0 additive)
 // ---------------------------------------------------------------------------

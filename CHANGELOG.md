@@ -5,6 +5,105 @@ All notable changes to the NamLend Trust Platform will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-08-11 (Google Sign-In, Enrollment, KYC Document Workflow)
+
+### Added
+
+- **Google OAuth sign-in** (`convex/auth.ts`, `src/components/auth/GoogleSignInButton.tsx`)
+  behind a server-side flag: the button renders only when the deployment reports
+  `authProviders.listEnabled → { google: true }` (both `AUTH_GOOGLE_ID` and
+  `AUTH_GOOGLE_SECRET` set). Cross-provider account linking is verified-email-only:
+  a Google sign-in onto an unverified password account is blocked with guidance to sign
+  in with the password (pre-hijack defence), and password flows never email-link at all
+  (prevents grafting a password onto an existing Google identity).
+- **Idempotent enrollment** (`convex/lib/enrollment.ts`): one routine guarantees the
+  `profiles` + `userRoles` rows for every sign-in path, self-heals stranded sessions,
+  fills blanks without clobbering, never downgrades roles, and audits first enrollment.
+  `users.completeEnrollment` replaces the never-called `ensureProfile`; Google sign-ups
+  complete phone + ID number once via `ProfileCompletionGate`.
+- **Versioned KYC/loan document workflow** (`convex/kycDocuments.ts`,
+  `convex/loanDocuments.ts`, `src/pages/KYC.tsx`, `src/components/documents/`):
+  supersede-in-place versioning (no deletes, 7-year retention), per-document staff
+  review with a KYC approval pipeline (`KycReviewPanel`), server-authoritative file
+  validation (`convex/lib/documentPolicy.ts`), and legacy-metadata backfill tooling
+  with per-page audit entries.
+- **Short-lived document access grants** (`convex/lib/documentGrants.ts`,
+  `GET /documents/fetch`): preview/download URLs now expire after 5 minutes and every
+  actual fetch is audited. Raw `storage.getUrl()` links — permanent and
+  unauthenticated — are no longer surfaced for compliance documents.
+
+### Fixed
+
+- Password sign-up silently discarded `name`/`phone` (bare `Password` provider used
+  `defaultProfile`) — every profile was created with `fullName: undefined`.
+- `profiles.idNumber` had no server write path at all; it is now set once via
+  `completeEnrollment` (audited) and deliberately absent from `updateMyProfile`.
+- Admin KYC queue rendered empty on deployments with unstamped tenancy
+  (`undefined === null` strict-equality filter in `approvalWorkflow`).
+- **Sign-out no longer hands the next user the previous user's destination.** The guard
+  redirects to `/auth?next=<current page>` on session loss, which is right for an expired
+  session but wrong for a deliberate sign-out — and the parameter was consumed by whoever
+  signed in next, so on a shared device an admin signing in after a client landed on the
+  client's dashboard instead of `/admin`. `signOut` now marks the exit as deliberate
+  (`markDeliberateSignOut` in `src/lib/routing.ts`) and the guard drops `?next=`.
+- `submitMyKyc` now asserts phone + ID number server-side (the browser gate is UX only).
+- OAuth `?next=` open redirect closed (`src/utils/safeRedirect.ts`, shared with
+  `ProtectedRoute`).
+
+## [4.1.0] - 2026-08-10 (Role-Based Login Routing)
+
+### Fixed
+
+- **Post-login landing raced the identity queries** — `Auth.tsx` redirected as soon as `user`
+  (`api.users.getMyProfile`) resolved, without waiting for `api.users.getMyRole` or
+  `api.platform.admins.getMyPlatformRole`. Those are three independent Convex subscriptions;
+  until the role queries settle every role flag reads `false`, so tenant staff were landed on
+  `/dashboard` as if they were clients. The redirect now waits on a new `authReady` flag.
+
+- **Platform staff never reached `/platform`** — the redirect only tested
+  `isAdmin || userRole === 'loan_officer'`, so a pure `platform_owner` (tenant role `client`)
+  fell through to `/dashboard`. Landing precedence is now platform → admin → dashboard.
+
+- **Every hard load of a protected route bounced through `/auth?next=…`** — the auth context
+  reported `loading` from the Convex session only, not the profile query, leaving a window
+  where the session was live, `loading` was `false` and `user` was still `null`.
+  `ProtectedRoute` read that as signed out and redirected. `loading` now covers the profile
+  query, and the vestigial Supabase-era `refreshUser()` session check is gone.
+
+- **`?next=` was obeyed without a permission check or re-validation** — a client bounced off
+  `/admin/approvals` was sent straight back into a dead-end "Access Denied", and the parameter
+  was an open-redirect vector on the read side. It is now sanitized on read as well as write,
+  and falls back to the user's own console when they cannot open it.
+
+- **`?next=` dropped the query string and hash** — it was built from `location.pathname` only,
+  so `/admin/loans?status=pending` came back as `/admin/loans`.
+
+- **An authenticated user with no `profiles` row looped between `/auth` and the guard.**
+  `ProtectedRoute` now distinguishes "profile query in flight" (`undefined`) from "no profile
+  row" (`null`) and shows a terminal recovery screen for the latter.
+
+### Added
+
+- `src/lib/routing.ts` — single source of truth for console landing (`getLandingRoute`),
+  redirect-target sanitisation (`sanitizeNextPath`, `buildAuthRedirect`) and per-path access
+  checks (`canAccessPath`, `resolvePostLoginRoute`).
+- An escape hatch on every "Access Denied" screen ("Go to my dashboard"). The heading and
+  copy are unchanged so the existing access-boundary E2E assertions still hold.
+- Tests: `src/lib/routing.test.ts`, `src/pages/Auth.landing.test.tsx`,
+  `src/components/system/ProtectedRoute.test.tsx`, plus nine specs in
+  `e2e/role-routing.e2e.ts` covering the landing matrix and the deep-link flow.
+
+### Changed
+
+- `Header` links to the signed-in user's own console instead of always `/dashboard`;
+  `PlatformLayout` and `AdminLayout` fall back through the same helper; `AuthEventBridge`
+  preserves the current location when a session is lost.
+- Tenant roles aligned with `convex/schema.ts`: `assignRole`, `removeRole` and the `listUsers`
+  filter accept `tenant_admin`, and the frontend `UserRole` union drops the phantom `support`
+  and `auditor` roles that never existed in the schema.
+- `package-lock.json` regenerated to clear 26 malformed `extraneous` entries; `--force`
+  removed from `npm ci` in `ci-web.yml` and `e2e.yml`.
+
 ## [4.0.2] - 2026-02-22 (Frontend Supabase→Convex Rewiring)
 
 ### Changed

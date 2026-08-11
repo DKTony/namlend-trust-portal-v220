@@ -44,3 +44,6 @@ playwright-report/
 
 # Local tool/test output
 output/
+
+# Playwright CLI debug output (console logs / page snapshots)
+.playwright-cli/

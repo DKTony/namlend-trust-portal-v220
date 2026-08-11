@@ -1,4 +1,6 @@
 import { Badge } from '@/components/ui/badge';
+import { DocumentPreviewDialog } from '@/components/documents/DocumentPreviewDialog';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +11,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
 import { formatNAD } from '@/utils/currency';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useMutation, useQuery as useConvexQuery } from 'convex/react';
 import {
   AlertCircle,
   Briefcase,
@@ -21,13 +24,14 @@ import {
   CreditCard,
   DollarSign,
   FileText,
+  Eye,
   History,
   Phone,
   ShieldCheck,
   TrendingUp,
   User,
 } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 interface ClientProfileModalProps {
   open: boolean;
@@ -40,6 +44,8 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
   onClose,
   userId,
 }) => {
+  const [previewDocument, setPreviewDocument] = useState<DocumentViewItem | null>(null);
+  const requestDocumentAccess = useMutation(api.kycDocuments.requestDocumentAccess);
   // Convex reactive queries — skip when dialog is closed (N2 — no as any)
   const rawProfile = useConvexQuery(
     api.users.getUserProfile,
@@ -51,6 +57,10 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
   const rawApprovals = useConvexQuery(
     api.approvalWorkflow.adminListApprovals,
     open && userId ? {} : 'skip'
+  );
+  const kycOverview = useConvexQuery(
+    api.kycDocuments.getUserKycOverview,
+    open && userId ? { userId: userId as Id<'users'> } : 'skip'
   );
 
   const loading = open && userId ? rawProfile === undefined : false;
@@ -96,7 +106,13 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
     reference_number?: string;
     status: string;
   }[] = [];
-  const documents: { id: string; name: string; status: string }[] = [];
+  const documents = (kycOverview?.documents ?? []) as DocumentViewItem[];
+
+  const requestAccess = async (
+    documentId: string,
+    intent: 'preview' | 'download'
+  ): Promise<DocumentAccessResult> =>
+    requestDocumentAccess({ documentId: documentId as Id<'kycDocuments'>, intent });
 
   const activities = useMemo(() => {
     if (!rawApprovals || !userId) return [];
@@ -112,7 +128,7 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
       }));
   }, [rawApprovals, userId]);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | number) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
@@ -383,14 +399,76 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
                 </TabsContent>
 
                 {/* Documents Tab */}
-                <TabsContent value="documents" className="m-0">
-                  <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                    <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                    <p>Secure Document Storage</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      KYC documents and contracts will appear here.
-                    </p>
-                  </div>
+                <TabsContent value="documents" className="m-0 space-y-3">
+                  {kycOverview === undefined ? (
+                    <div className="space-y-3">
+                      {[0, 1].map((item) => (
+                        <div key={item} className="h-20 animate-pulse rounded-xl bg-muted" />
+                      ))}
+                    </div>
+                  ) : documents.length === 0 ? (
+                    <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                      <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                      <p>No KYC documents uploaded</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4">
+                        <div>
+                          <p className="font-medium text-foreground">KYC package</p>
+                          <p className="text-xs text-muted-foreground">
+                            Current status: <span className="capitalize">{kycOverview.status}</span>
+                          </p>
+                        </div>
+                        {getStatusBadge(kycOverview.status)}
+                      </div>
+                      {documents.map((document) => (
+                        <div
+                          key={document.id}
+                          className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="flex min-w-0 items-center gap-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-foreground">
+                                {document.fileName}
+                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span className="capitalize">
+                                  {document.documentType.replace(/_/g, ' ')}
+                                </span>
+                                <span>Version {document.version ?? 1}</span>
+                                {document.fileSize && (
+                                  <span>{(document.fileSize / 1024).toFixed(1)} KB</span>
+                                )}
+                                <span>{formatDate(document.createdAt)}</span>
+                                {!document.fileAvailable && (
+                                  <span className="text-destructive">Legacy file unavailable</span>
+                                )}
+                              </div>
+                              {document.reviewNotes && (
+                                <p className="mt-1 text-xs text-destructive">
+                                  Review note: {document.reviewNotes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(document.status)}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPreviewDocument(document)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" /> View
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </TabsContent>
 
                 {/* Activity Tab */}
@@ -439,6 +517,12 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
           </div>
         )}
       </DialogContent>
+      <DocumentPreviewDialog
+        document={previewDocument}
+        open={Boolean(previewDocument)}
+        onOpenChange={(previewOpen) => !previewOpen && setPreviewDocument(null)}
+        requestAccess={requestAccess}
+      />
     </Dialog>
   );
 };

@@ -1,22 +1,12 @@
-/**
- * useKYCEligibility Hook — Convex-native implementation
- *
- * Replaces the legacy callRpc('check_loan_eligibility') Supabase call.
- * Uses api.users.getMyKycDocuments (reactive Convex query) so the gate
- * lifts in real-time when an admin approves a document — no page reload
- * required.
- *
- * Required document types (from KYC.tsx):
- *   id_card       — national ID or passport (required)
- *   proof_income  — payslip or employer letter (required)
- */
+/** Canonical Convex-backed KYC eligibility projection. */
 
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
+import type { QueryData } from '@/types/convex';
 import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
-const REQUIRED_DOC_TYPES = ['id_card', 'proof_income'] as const;
+export type KYCOverview = QueryData<typeof api.kycDocuments.getMyKycOverview>;
 
 export interface KYCEligibility {
   eligible: boolean;
@@ -24,10 +14,12 @@ export interface KYCEligibility {
   verified_docs: number;
   profile_completion_percentage: number;
   missing_required_docs: string[];
+  status: 'pending' | 'submitted' | 'verified' | 'rejected';
 }
 
 interface UseKYCEligibilityReturn {
   eligibility: KYCEligibility | null;
+  overview: KYCOverview | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -37,26 +29,15 @@ interface UseKYCEligibilityReturn {
 
 export function useKYCEligibility(): UseKYCEligibilityReturn {
   const { user } = useAuth();
-
-  // Reactive Convex query — auto-updates when KYC docs change
-  const rawDocs = useQuery(api.users.getMyKycDocuments, user ? {} : 'skip');
+  const overview = useQuery(api.kycDocuments.getMyKycOverview, user ? {} : 'skip');
   const profile = useQuery(api.users.getMyProfile, user ? {} : 'skip');
-
-  const loading = user ? rawDocs === undefined || profile === undefined : false;
+  const loading = user ? overview === undefined || profile === undefined : false;
 
   const eligibility = useMemo((): KYCEligibility | null => {
-    if (!user) return null;
-    if (rawDocs === undefined) return null;
-
-    // Build a set of approved document types
-    const approvedTypes = new Set(
-      (rawDocs ?? []).filter((doc) => doc.status === 'approved').map((doc) => doc.documentType)
-    );
-
-    const missingDocs = REQUIRED_DOC_TYPES.filter((t) => !approvedTypes.has(t));
-    const verifiedCount = REQUIRED_DOC_TYPES.filter((t) => approvedTypes.has(t)).length;
-
-    // Profile completion: full_name + phone + employment_status + monthly_income = 4 fields
+    if (!user || !overview) return null;
+    const required = overview.requiredDocumentTypes;
+    const approved = new Set(overview.approvedRequiredDocumentTypes);
+    const missingApproval = required.filter((type) => !approved.has(type));
     const profileFields = [
       profile?.fullName,
       profile?.phone,
@@ -64,16 +45,16 @@ export function useKYCEligibility(): UseKYCEligibilityReturn {
       profile?.monthlyIncome,
     ];
     const completedFields = profileFields.filter(Boolean).length;
-    const profileCompletion = Math.round((completedFields / profileFields.length) * 100);
 
     return {
-      eligible: missingDocs.length === 0,
-      required_docs: REQUIRED_DOC_TYPES.length,
-      verified_docs: verifiedCount,
-      profile_completion_percentage: profileCompletion,
-      missing_required_docs: missingDocs,
+      eligible: overview.eligible,
+      required_docs: required.length,
+      verified_docs: approved.size,
+      profile_completion_percentage: Math.round((completedFields / profileFields.length) * 100),
+      missing_required_docs: missingApproval,
+      status: overview.status,
     };
-  }, [rawDocs, profile, user]);
+  }, [overview, profile, user]);
 
   const verificationProgress =
     eligibility && eligibility.required_docs > 0
@@ -82,11 +63,10 @@ export function useKYCEligibility(): UseKYCEligibilityReturn {
 
   return {
     eligibility,
+    overview: overview ?? null,
     loading,
     error: null,
-    refetch: async () => {
-      // No-op: Convex reactive queries update automatically
-    },
+    refetch: async () => {},
     isEligible: eligibility?.eligible ?? false,
     verificationProgress,
   };

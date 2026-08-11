@@ -97,6 +97,14 @@ export const seedTestUsers = internalAction({
     });
     console.log('[seed] Active loan seeded successfully');
 
+    // A `submitted` loan — the only states whose Documents tab accepts uploads.
+    // Without it the loan-document E2E journey has nothing to act on.
+    console.log('[seed] Seeding reviewable loan for client1...');
+    await ctx.runMutation(internal.seedMutations.seedReviewableLoanForE2E, {
+      email: 'client1@test.namlend.com',
+    });
+    console.log('[seed] Reviewable loan seeded successfully');
+
     console.log('[seed] All test users seeded successfully');
   },
 });

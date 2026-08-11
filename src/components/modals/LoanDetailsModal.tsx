@@ -1,3 +1,4 @@
+import { LoanDocumentsPanel } from '@/components/documents/LoanDocumentsPanel';
 import {
   Dialog,
   DialogContent,
@@ -327,6 +328,16 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                 ))}
               </div>
             </div>
+          </div>
+
+          <div>
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              Supporting documents
+            </h3>
+            <ThemedCard className="p-4">
+              <LoanDocumentsPanel loanId={loan.id} allowReview />
+            </ThemedCard>
           </div>
 
           {/* Metadata Footer */}

@@ -13,16 +13,45 @@ import { Id } from './_generated/dataModel';
 import { internalMutation, mutation, query } from './_generated/server';
 import { approveLoanCore } from './lib/approvalReadiness';
 import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
-import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import {
+  assertAdmin,
+  assertAuthenticated,
+  assertOwnerOrStaff,
+  assertOwnerOrTenantStaff,
+  assertStaff,
+} from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
 import { assertCallerFeatureEnabled } from './lib/entitlements';
 import { emitRelationship } from './lib/relationshipEmitter';
-import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
+import {
+  applyTenantScope,
+  getCallerInstitution,
+  resolveWriteInstitution,
+  tenantReadScope,
+} from './lib/tenancy';
 import { approvalRequestStatus } from './schema';
 
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
+
+/**
+ * Phase-0-tolerant KYC visibility. Hide a KYC request from tenant staff only when BOTH
+ * sides are tenant-bound AND they differ — matching `applyTenantScope` semantics.
+ *
+ * Strict equality here (`request.institutionId === caller.institutionId`) looks right but
+ * empties the entire KYC queue on any deployment where tenancy is unstamped: an unbound
+ * staff caller is `null`, an unstamped row is `undefined`, and `undefined === null` is
+ * false. Every seeded staff account and every request created before an `institutions`
+ * row exists falls in that bucket.
+ */
+function kycVisibleTo(caller: { institutionId: Id<'institutions'> | null }) {
+  return (request: { entityType: string; institutionId?: Id<'institutions'> }): boolean =>
+    request.entityType !== 'kyc' ||
+    !caller.institutionId ||
+    !request.institutionId ||
+    request.institutionId === caller.institutionId;
+}
 
 export const getApprovalRequest = query({
   args: { requestId: v.id('approvalRequests') },
@@ -31,6 +60,11 @@ export const getApprovalRequest = query({
     if (!request) {
       await assertAuthenticated(ctx);
       return null;
+    }
+
+    if (request.entityType === 'kyc') {
+      await assertOwnerOrTenantStaff(ctx, request.requestedBy, request.institutionId);
+      return request;
     }
 
     if (request.entityType === 'loan' || request.entityType === 'loans') {
@@ -54,12 +88,13 @@ export const getApprovalsByEntity = query({
   args: { entityId: v.string() },
   handler: async (ctx, { entityId }) => {
     await assertStaff(ctx);
+    const caller = await getCallerInstitution(ctx);
     const rows = await ctx.db
       .query('approvalRequests')
       .withIndex('by_entityId', (q) => q.eq('entityId', entityId))
       .order('desc')
       .collect();
-    return applyTenantScope(rows, await tenantReadScope(ctx));
+    return applyTenantScope(rows, await tenantReadScope(ctx)).filter(kycVisibleTo(caller));
   },
 });
 
@@ -91,19 +126,20 @@ export const adminListApprovals = query({
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
     const scope = await tenantReadScope(ctx);
+    const caller = await getCallerInstitution(ctx);
     if (status) {
       const rows = await ctx.db
         .query('approvalRequests')
         .withIndex('by_status', (q) => q.eq('status', status))
         .order('desc')
         .take(limit ?? 100);
-      return applyTenantScope(rows, scope);
+      return applyTenantScope(rows, scope).filter(kycVisibleTo(caller));
     }
     const rows = await ctx.db
       .query('approvalRequests')
       .order('desc')
       .take(limit ?? 100);
-    return applyTenantScope(rows, scope);
+    return applyTenantScope(rows, scope).filter(kycVisibleTo(caller));
   },
 });
 
@@ -268,6 +304,12 @@ export const processApprovalRequest = mutation({
     const request = await ctx.db.get(requestId);
     if (!request)
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Approval request not found.' });
+    if (request.entityType === 'kyc') {
+      throw new ConvexError({
+        code: 'DEDICATED_KYC_REVIEW_REQUIRED',
+        message: 'Decide each KYC document and complete the package through the KYC review APIs.',
+      });
+    }
 
     if (request.status !== 'pending' && request.status !== 'escalated') {
       throw new ConvexError({

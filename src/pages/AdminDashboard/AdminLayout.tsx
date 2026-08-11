@@ -15,23 +15,25 @@ import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { buildAuthRedirect, getLandingRoute } from '@/lib/routing';
 import { cn } from '@/lib/utils';
 import { AlertCircle, BarChart3, RefreshCw } from 'lucide-react';
 import React, { useState } from 'react';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminLayout: React.FC = () => {
-  const { user, isAdmin, isLoanOfficer, signOut } = useAuth();
+  const { user, isAdmin, isLoanOfficer, isPlatformStaff, signOut } = useAuth();
   const { styles } = useTheme();
   const layout = useAdaptiveLayout();
   const navigate = useNavigate();
+  const location = useLocation();
   // Tenant entitlements drive backoffice nav filtering — inert until the owner enforces.
   const { enforced, hasFeature } = useEntitlements();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={buildAuthRedirect(location)} replace />;
   }
 
   if (!isAdmin && !isLoanOfficer) {
@@ -45,8 +47,11 @@ const AdminLayout: React.FC = () => {
           <p className="text-muted-foreground mb-4">
             You don't have permission to access the admin dashboard.
           </p>
-          <ThemedButton onClick={() => (window.location.href = '/dashboard')} className="w-full">
-            Go to Client Dashboard
+          <ThemedButton
+            onClick={() => navigate(getLandingRoute({ isPlatformStaff, isLoanOfficer }))}
+            className="w-full"
+          >
+            Go to my dashboard
           </ThemedButton>
         </ThemedCard>
       </div>

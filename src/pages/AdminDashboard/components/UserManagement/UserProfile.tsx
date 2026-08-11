@@ -23,7 +23,6 @@ import {
   Key,
   Loader2,
   Save,
-  Settings,
   Shield,
   User,
   UserX,
@@ -31,6 +30,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import type { UserRole } from '@/types/admin';
 
 interface UserProfileProps {
   userId: string;
@@ -43,7 +43,7 @@ interface UserData {
   fullName: string;
   email: string;
   phone?: string;
-  role: 'admin' | 'loan_officer' | 'client' | 'support';
+  role: UserRole;
   status: 'active' | 'inactive' | 'suspended' | 'pending';
   isVerified: boolean;
   lastLogin: string;
@@ -148,22 +148,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
         'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
       client:
         'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      support:
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      tenant_admin:
+        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
     };
 
     const icons = {
       admin: <Shield className="h-3 w-3 mr-1" />,
       loan_officer: <User className="h-3 w-3 mr-1" />,
       client: <User className="h-3 w-3 mr-1" />,
-      support: <Settings className="h-3 w-3 mr-1" />,
+      tenant_admin: <Shield className="h-3 w-3 mr-1" />,
     };
 
     const labels = {
       admin: 'Admin',
       loan_officer: 'Loan Officer',
       client: 'Client',
-      support: 'Support',
+      tenant_admin: 'Tenant Admin',
     };
 
     return (
@@ -526,7 +526,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                             <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="loan_officer">Loan Officer</SelectItem>
                             <SelectItem value="client">Client</SelectItem>
-                            <SelectItem value="support">Support</SelectItem>
+                            <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (

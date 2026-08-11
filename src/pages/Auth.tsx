@@ -1,11 +1,13 @@
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { resolvePostLoginRoute } from '@/lib/routing';
 import { cn } from '@/lib/utils';
 import { ArrowRight, FileText, Loader2, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 
@@ -18,8 +20,17 @@ const emailSchema = z
 type AuthMode = 'login' | 'signup' | 'forgot_password';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading, resetPassword, updatePassword, userRole, isAdmin } =
-    useAuth();
+  const {
+    user,
+    signIn,
+    signUp,
+    loading,
+    resetPassword,
+    updatePassword,
+    authReady,
+    isLoanOfficer,
+    isPlatformStaff,
+  } = useAuth();
   const { styles } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -57,19 +68,42 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  // Redirect authenticated users away from /auth
+  // Wait for both tenant and platform role queries before choosing a console.
   useEffect(() => {
-    if (!user || isPasswordReset) return;
-    if (nextParam) {
-      navigate(nextParam, { replace: true });
+    if (!user || isPasswordReset || !authReady) return;
+    navigate(resolvePostLoginRoute(nextParam, { isPlatformStaff, isLoanOfficer }), {
+      replace: true,
+    });
+  }, [user, authReady, isPasswordReset, nextParam, navigate, isPlatformStaff, isLoanOfficer]);
+
+  // A failed OAuth callback (blocked account link, cancelled consent, any server-side
+  // error) redirects back here with `oauth=return` but WITHOUT the `?code=` a success
+  // carries — the library gives the browser no error signal, so this sentinel is the
+  // only way to notice. Success returns also carry `oauth=return`, so wait out the
+  // code exchange: only conclude failure once auth has settled and no session emerged.
+  const oauthFailureChecked = useRef(false);
+  useEffect(() => {
+    if (searchParams.get('oauth') !== 'return' || oauthFailureChecked.current) return;
+    if (loading) return; // ConvexAuthProvider still exchanging the code
+    if (user) {
+      oauthFailureChecked.current = true; // success — the redirect effect handles it
       return;
     }
-    if (isAdmin || userRole === 'loan_officer') {
-      navigate('/admin', { replace: true });
-      return;
-    }
-    navigate('/dashboard', { replace: true });
-  }, [user, isPasswordReset, nextParam, navigate, isAdmin, userRole]);
+    // Grace period: between the library consuming `?code=` and the session queries
+    // resolving there is a brief authenticated-but-user-null window.
+    const timer = setTimeout(() => {
+      if (oauthFailureChecked.current) return;
+      oauthFailureChecked.current = true;
+      toast({
+        title: 'Google sign-in did not complete',
+        description:
+          'If this email already has a password account, sign in with your password ' +
+          'instead. Otherwise, please try again.',
+        variant: 'destructive',
+      });
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [searchParams, loading, user]);
 
   // Handlers
   const handleLogin = async (e: React.FormEvent) => {
@@ -102,7 +136,7 @@ export default function Auth() {
       }
 
       // Convex Auth handles session natively. The useEffect redirect (line ~58)
-      // will fire once `user` and `userRole` populate from reactive queries.
+      // will fire once the profile and both role queries populate.
       toast({ title: 'Welcome back!', description: 'You have been successfully logged in.' });
     } catch (error) {
       console.error('Login error:', error);
@@ -140,16 +174,30 @@ export default function Auth() {
         return;
       }
 
+      // Convex Auth's default password policy requires 8+ characters. Check it here so
+      // the user gets a clear message instead of a raw server "Invalid password".
+      if (signupData.password.length < 8) {
+        toast({
+          title: 'Password Too Short',
+          description: 'Please use at least 8 characters.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const normalizedSignupEmail = emailCheck.data.toLowerCase();
       const { error } = await signUp(normalizedSignupEmail, signupData.password, {
         full_name: `${signupData.firstName} ${signupData.lastName}`.trim(),
         phone: signupData.phone,
+        id_number: signupData.idNumber,
       });
 
       if (error) {
         toast({ title: 'Registration Failed', description: error.message, variant: 'destructive' });
       } else {
-        // Profile + role are created by convex/auth.ts afterUserCreatedOrUpdated callback.
+        // Profile + role are created by enrollUser, invoked from the
+        // createOrUpdateUser callback in convex/auth.ts.
         // The useEffect redirect will fire once auth state settles.
         toast({ title: 'Account Created', description: 'Welcome! Your account has been created.' });
       }
@@ -225,7 +273,7 @@ export default function Auth() {
         toast({ title: 'Success', description: 'Password updated. Please sign in.' });
         setIsPasswordReset(false);
         setAuthMode('login');
-        navigate('/dashboard');
+        // Clearing reset mode releases the role-aware redirect effect above.
       }
     } catch (error) {
       toast({
@@ -374,205 +422,232 @@ export default function Auth() {
               </form>
             ) : authMode === 'login' ? (
               // LOGIN FORM
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
-                    <ThemedInput
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-12"
-                      placeholder="name@example.com"
-                      required
-                      data-testid="email-input"
-                    />
+              <>
+                <GoogleSignInButton next={nextParam} className="mb-5" />
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
+                    <div className="relative">
+                      <Mail
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={20}
+                      />
+                      <ThemedInput
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-12"
+                        placeholder="name@example.com"
+                        required
+                        data-testid="email-input"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('forgot_password')}
+                        className="text-xs text-primary hover:text-primary/80 font-medium"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Lock
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={20}
+                      />
+                      <ThemedInput
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-12"
+                        placeholder="••••••••"
+                        required
+                        data-testid="password-input"
+                      />
+                    </div>
+                  </div>
+
+                  <ThemedButton
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full mt-4"
+                    data-testid="login-button"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <>
+                        Sign In <ArrowRight size={20} />
+                      </>
+                    )}
+                  </ThemedButton>
+                </form>
+              </>
+            ) : authMode === 'signup' ? (
+              // SIGNUP FORM
+              <>
+                <GoogleSignInButton next={nextParam} className="mb-4" />
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                        First Name
+                      </label>
+                      <div className="relative">
+                        <User
+                          className="absolute left-4 top-3 text-muted-foreground z-10"
+                          size={18}
+                        />
+                        <ThemedInput
+                          value={signupData.firstName}
+                          onChange={(e) =>
+                            setSignupData({ ...signupData, firstName: e.target.value })
+                          }
+                          className="pl-10"
+                          placeholder="John"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                        Last Name
+                      </label>
+                      <div className="relative">
+                        <User
+                          className="absolute left-4 top-3 text-muted-foreground z-10"
+                          size={18}
+                        />
+                        <ThemedInput
+                          value={signupData.lastName}
+                          onChange={(e) =>
+                            setSignupData({ ...signupData, lastName: e.target.value })
+                          }
+                          className="pl-10"
+                          placeholder="Doe"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
+                    <div className="relative">
+                      <Mail
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
+                      <ThemedInput
+                        type="email"
+                        value={signupData.email}
+                        onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                        className="pl-10"
+                        placeholder="name@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className={cn('text-sm font-semibold', styles.textClass)}>Phone</label>
+                      <div className="relative">
+                        <Phone
+                          className="absolute left-4 top-3 text-muted-foreground z-10"
+                          size={18}
+                        />
+                        <ThemedInput
+                          value={signupData.phone}
+                          onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
+                          className="pl-10"
+                          placeholder="+264 81..."
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                        ID Number
+                      </label>
+                      <div className="relative">
+                        <FileText
+                          className="absolute left-4 top-3 text-muted-foreground z-10"
+                          size={18}
+                        />
+                        <ThemedInput
+                          value={signupData.idNumber}
+                          onChange={(e) =>
+                            setSignupData({ ...signupData, idNumber: e.target.value })
+                          }
+                          className="pl-10"
+                          placeholder="ID Number"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className={cn('text-sm font-semibold', styles.textClass)}>
                       Password
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('forgot_password')}
-                      className="text-xs text-primary hover:text-primary/80 font-medium"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
-                    <ThemedInput
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-12"
-                      placeholder="••••••••"
-                      required
-                      data-testid="password-input"
-                    />
-                  </div>
-                </div>
-
-                <ThemedButton
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-4"
-                  data-testid="login-button"
-                >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <>
-                      Sign In <ArrowRight size={20} />
-                    </>
-                  )}
-                </ThemedButton>
-              </form>
-            ) : authMode === 'signup' ? (
-              // SIGNUP FORM
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>
-                      First Name
-                    </label>
                     <div className="relative">
-                      <User
+                      <Lock
                         className="absolute left-4 top-3 text-muted-foreground z-10"
                         size={18}
                       />
                       <ThemedInput
-                        value={signupData.firstName}
+                        type="password"
+                        value={signupData.password}
+                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                        className="pl-10"
+                        placeholder="Create password"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock
+                        className="absolute left-4 top-3 text-muted-foreground z-10"
+                        size={18}
+                      />
+                      <ThemedInput
+                        type="password"
+                        value={signupData.confirmPassword}
                         onChange={(e) =>
-                          setSignupData({ ...signupData, firstName: e.target.value })
+                          setSignupData({ ...signupData, confirmPassword: e.target.value })
                         }
                         className="pl-10"
-                        placeholder="John"
+                        placeholder="Confirm password"
                         required
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>
-                      Last Name
-                    </label>
-                    <div className="relative">
-                      <User
-                        className="absolute left-4 top-3 text-muted-foreground z-10"
-                        size={18}
-                      />
-                      <ThemedInput
-                        value={signupData.lastName}
-                        onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
-                        className="pl-10"
-                        placeholder="Doe"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
-                    <ThemedInput
-                      type="email"
-                      value={signupData.email}
-                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                      className="pl-10"
-                      placeholder="name@example.com"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>Phone</label>
-                    <div className="relative">
-                      <Phone
-                        className="absolute left-4 top-3 text-muted-foreground z-10"
-                        size={18}
-                      />
-                      <ThemedInput
-                        value={signupData.phone}
-                        onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
-                        className="pl-10"
-                        placeholder="+264 81..."
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>
-                      ID Number
-                    </label>
-                    <div className="relative">
-                      <FileText
-                        className="absolute left-4 top-3 text-muted-foreground z-10"
-                        size={18}
-                      />
-                      <ThemedInput
-                        value={signupData.idNumber}
-                        onChange={(e) => setSignupData({ ...signupData, idNumber: e.target.value })}
-                        className="pl-10"
-                        placeholder="ID Number"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
-                    <ThemedInput
-                      type="password"
-                      value={signupData.password}
-                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      className="pl-10"
-                      placeholder="Create password"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-3 text-muted-foreground z-10" size={18} />
-                    <ThemedInput
-                      type="password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, confirmPassword: e.target.value })
-                      }
-                      className="pl-10"
-                      placeholder="Confirm password"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <>
-                      Create Account <ArrowRight size={20} />
-                    </>
-                  )}
-                </ThemedButton>
-              </form>
+                  <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
+                    {isLoading ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <>
+                        Create Account <ArrowRight size={20} />
+                      </>
+                    )}
+                  </ThemedButton>
+                </form>
+              </>
             ) : (
               // FORGOT PASSWORD FORM
               <form onSubmit={handleForgotPassword} className="space-y-5">

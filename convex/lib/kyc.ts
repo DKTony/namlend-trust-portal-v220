@@ -1,21 +1,19 @@
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { DataModel, Id } from '../_generated/dataModel';
+import { getKycReadiness } from './kycReadiness';
 
 type AnyCtx = GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>;
 
 export async function assertKycVerifiedForUser(ctx: AnyCtx, userId: Id<'users'>, action: string) {
-  const profile = await ctx.db
-    .query('profiles')
-    .withIndex('by_userId', (q) => q.eq('userId', userId))
-    .first();
+  const readiness = await getKycReadiness(ctx, userId);
 
-  if (!profile || profile.kycStatus !== 'verified') {
+  if (!readiness.profile || !readiness.eligible) {
     throw new ConvexError({
       code: 'KYC_REQUIRED',
       message: `Verified KYC is required to ${action}.`,
     });
   }
 
-  return profile;
+  return readiness.profile;
 }

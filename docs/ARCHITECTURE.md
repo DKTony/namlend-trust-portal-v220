@@ -466,6 +466,8 @@ convex/
 ├── lib/
 │   ├── auth.ts               # Guard functions (assertAuthenticated, assertStaff, etc.)
 │   ├── audit.ts              # Audit log helper (schedules internal mutations)
+│   ├── documentPolicy.ts     # Authoritative KYC/loan file types, MIME and 5 MB limit
+│   ├── kycReadiness.ts       # Canonical current-version and eligibility calculation
 │   ├── pagination.ts         # Pagination utilities
 │   ├── regulatory.ts         # APR_LIMIT, isValidAPR, formatNAD
 │   └── xmlEscape.ts          # XML escaping for pacs messages
@@ -474,7 +476,8 @@ convex/
 ├── disbursements.ts          # Disbursement state machine
 ├── approvalWorkflow.ts       # Approval queue + workflow
 ├── loanApprovals.ts          # Loan approval helpers
-├── loanDocuments.ts          # Document management
+├── kycDocuments.ts           # Versioned KYC package lifecycle, review and secure access
+├── loanDocuments.ts          # Versioned loan-document upload, review and secure access
 ├── users.ts                  # User/profile management
 ├── notifications.ts          # In-app + queued notifications
 ├── collections.ts            # Collections queue + interactions

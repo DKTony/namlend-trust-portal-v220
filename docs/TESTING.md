@@ -1,6 +1,6 @@
 # NamLend Trust - Testing Documentation
 
-**Last Updated**: 2026-04-28
+**Last Updated**: 2026-08-11
 **Aligned With**: Adaptive UI codebase (v5.2.2+)
 **Status**: Current ✅
 **Original Doc Revision**: 2026-01-19
@@ -12,6 +12,28 @@
 - **E2E**: Playwright in `e2e/` — **56 tests passing** ✅
 - **Unit**: Vitest (`^4.0.18`) in `src/tests/` — run with `npm run test:unit` (137 passing tests)
 - **Interactive**: Playwright MCP browser testing via `.claude/commands/test-portal.md` skill
+
+### Document workflow coverage (2026-08-11)
+
+- ✅ `convex/documentWorkflow.test.ts` covers authoritative file validation, persisted KYC metadata, idempotent submission, required/optional outcomes, retained versions, rejection/resubmission, explicit completion, audit/notifications, and tenant/object access for KYC and loan files.
+- ✅ `src/pages/KYC.test.tsx` covers refresh-persisted presentation, submit confirmation and button state, submitted locking/completion action, and rejection notes/resubmission state.
+- ✅ `src/components/documents/DocumentPreviewDialog.test.tsx` covers authenticated PDF/image rendering and the retained legacy-file fallback.
+- ✅ `e2e/document-workflow.e2e.ts` covers compact/desktop KYC action visibility. Its mutation journey covers upload → refresh → preview → submit → staff decisions/completion → reactive verification and loan-file retrieval in both portals.
+- Mutation E2E tests intentionally require `E2E_ENABLE_DOCUMENT_MUTATIONS=true` and an isolated Convex E2E deployment so retained compliance files do not pollute shared environments.
+
+Focused commands:
+
+```bash
+npx vitest run --config vitest.convex.config.ts convex/documentWorkflow.test.ts
+npx vitest run src/pages/KYC.test.tsx src/components/documents/DocumentPreviewDialog.test.tsx
+npx playwright test e2e/document-workflow.e2e.ts
+E2E_ENABLE_DOCUMENT_MUTATIONS=true npx playwright test e2e/document-workflow.e2e.ts
+```
+
+Legacy rollout is additive and cursor-based. Run the KYC and loan-document internal backfills
+with `dryRun: true` first, inspect `unavailable`, then rerun with `dryRun: false`. Pass each
+returned `continueCursor` until `isDone` is true. Unavailable rows remain retained and appear in
+the tenant-scoped staff remediation queries; the backfill never deletes storage objects or rows.
 
 ### Recent Updates (2026-04-28)
 

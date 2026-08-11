@@ -298,6 +298,17 @@ export default defineSchema({
     phone: v.optional(v.string()),
     idNumber: v.optional(v.string()),
     idType: v.optional(v.string()),
+    /**
+     * Which sign-in path created this profile ('password' | 'google' | 'self_heal').
+     * Drives the post-signup completion gate: OAuth gives us no phone or ID number,
+     * so Google sign-ups must be asked for them. Deliberately an explicit marker
+     * rather than inferring "incomplete" from blank fields — every profile that
+     * predates this field has it undefined and is therefore never gated, which is
+     * what stops the existing user base being trapped behind the new step.
+     */
+    signupSource: v.optional(v.string()),
+    /** Set once phone + ID number have been supplied. Undefined = gate still live. */
+    onboardingCompletedAt: v.optional(v.number()),
     address: v.optional(v.string()),
     addressLine1: v.optional(v.string()),
     addressLine2: v.optional(v.string()),
@@ -359,7 +370,19 @@ export default defineSchema({
     institutionId: v.optional(v.id('institutions')),
     documentType: v.string(),
     documentNumber: v.optional(v.string()),
+    /** Original browser filename. Legacy rows may not have retained it. */
+    fileName: v.optional(v.string()),
     fileStorageId: v.optional(v.id('_storage')),
+    fileSize: v.optional(v.number()),
+    mimeType: v.optional(v.string()),
+    sha256: v.optional(v.string()),
+    /** Versioning is additive so historical compliance records are never overwritten. */
+    version: v.optional(v.number()),
+    isCurrent: v.optional(v.boolean()),
+    submittedAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    supersededAt: v.optional(v.number()),
+    supersededBy: v.optional(v.id('kycDocuments')),
     status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
     reviewedBy: v.optional(v.id('users')),
     reviewNotes: v.optional(v.string()),
@@ -367,7 +390,35 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_userId', ['userId'])
+    .index('by_userId_documentType', ['userId', 'documentType'])
+    .index('by_fileStorageId', ['fileStorageId'])
     .index('by_institutionId', ['institutionId']),
+
+  /**
+   * Short-lived access grants for document preview/download.
+   *
+   * `ctx.storage.getUrl()` returns a PERMANENT unauthenticated URL — a lifelong bearer
+   * token to an ID scan for anyone who ever sees it. Instead, `requestDocumentAccess`
+   * mints a grant row and the browser fetches `/documents/fetch?grant=<nonce>` on the
+   * Convex site, which validates expiry server-side and streams the blob. DB-backed
+   * rather than HMAC-signed: no shared secret to manage, revocable, and the row itself
+   * is the fetch-audit record. Rows are retained after expiry (access history).
+   */
+  documentAccessGrants: defineTable({
+    nonce: v.string(),
+    storageId: v.id('_storage'),
+    sourceTable: v.union(v.literal('kycDocuments'), v.literal('loanDocuments')),
+    documentId: v.string(),
+    /** Who was authorized — the guard already passed when the grant was minted. */
+    actorId: v.id('users'),
+    intent: v.union(v.literal('preview'), v.literal('download')),
+    fileName: v.string(),
+    mimeType: v.optional(v.string()),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+    fetchCount: v.number(),
+    lastFetchedAt: v.optional(v.number()),
+  }).index('by_nonce', ['nonce']),
 
   // ==========================================================================
   // LENDING CORE
@@ -422,14 +473,26 @@ export default defineSchema({
     institutionId: v.optional(v.id('institutions')),
     loanId: v.id('loans'),
     userId: v.id('users'),
+    uploadedBy: v.optional(v.id('users')),
     documentType: v.string(),
     fileName: v.string(),
     fileStorageId: v.id('_storage'),
     fileSize: v.optional(v.number()),
     mimeType: v.optional(v.string()),
+    sha256: v.optional(v.string()),
+    version: v.optional(v.number()),
+    isCurrent: v.optional(v.boolean()),
+    reviewedBy: v.optional(v.id('users')),
+    reviewedAt: v.optional(v.number()),
+    reviewNotes: v.optional(v.string()),
+    supersededAt: v.optional(v.number()),
+    supersededBy: v.optional(v.id('loanDocuments')),
     status: v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected')),
     uploadedAt: v.number(),
-  }).index('by_loanId', ['loanId']),
+  })
+    .index('by_loanId', ['loanId'])
+    .index('by_loanId_documentType', ['loanId', 'documentType'])
+    .index('by_fileStorageId', ['fileStorageId']),
 
   /** Approval decisions on each loan — immutable after write */
   loanApprovals: defineTable({

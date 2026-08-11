@@ -31,6 +31,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { KycReviewPanel } from './KycReviewPanel';
 
 // ---------------------------------------------------------------------------
 // Local view model — typed to match actual Convex approvalRequests schema (N2)
@@ -40,6 +41,7 @@ interface ApprovalRequest {
   /** Convex entityType field */
   request_type: string;
   entity_id: string;
+  requested_by: string;
   status: 'pending' | 'approved' | 'rejected' | 'escalated' | 'withdrawn';
   priority: 'low' | 'medium' | 'high' | 'urgent' | 'normal';
   /** Convex metadata field — typed as unknown, accessed safely */
@@ -98,6 +100,7 @@ export default function ApprovalManagementDashboard() {
       id: String(r._id),
       request_type: r.entityType ?? 'loan_application',
       entity_id: String(r.entityId ?? ''),
+      requested_by: String(r.requestedBy),
       status: r.status as ApprovalRequest['status'],
       priority: (r.priority ?? 'normal') as ApprovalRequest['priority'],
       request_data: (r.metadata ?? {}) as Record<string, unknown>,
@@ -237,7 +240,7 @@ export default function ApprovalManagementDashboard() {
   const getRequestTypeIcon = (type: string) => {
     const icons: Record<string, any> = {
       loan_application: DollarSign,
-      kyc_document: FileText,
+      kyc: FileText,
       profile_update: User,
       payment: DollarSign,
       document_upload: FileText,
@@ -347,7 +350,7 @@ export default function ApprovalManagementDashboard() {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="under_review">Under Review</SelectItem>
+                  <SelectItem value="escalated">Under Review</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
@@ -366,7 +369,7 @@ export default function ApprovalManagementDashboard() {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="loan_application">Loan Applications</SelectItem>
-                  <SelectItem value="kyc_document">KYC Documents</SelectItem>
+                  <SelectItem value="kyc">KYC Packages</SelectItem>
                   <SelectItem value="profile_update">Profile Updates</SelectItem>
                   <SelectItem value="payment">Payments</SelectItem>
                   <SelectItem value="document_upload">Document Uploads</SelectItem>
@@ -485,155 +488,177 @@ export default function ApprovalManagementDashboard() {
           </CardHeader>
           <CardContent>
             {selectedRequest ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">TYPE</Label>
-                    <p className="font-medium">{selectedRequest.request_type.replace('_', ' ')}</p>
+              selectedRequest.request_type === 'kyc' ? (
+                <KycReviewPanel
+                  userId={selectedRequest.requested_by}
+                  requestId={selectedRequest.id}
+                  readOnly={
+                    selectedRequest.status !== 'pending' && selectedRequest.status !== 'escalated'
+                  }
+                  onComplete={() => {
+                    const nextRequest = requests.find(
+                      (request) =>
+                        request.id !== selectedRequest.id &&
+                        request.request_type === 'kyc' &&
+                        (request.status === 'pending' || request.status === 'escalated')
+                    );
+                    setSelectedRequest(nextRequest ?? null);
+                  }}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">TYPE</Label>
+                      <p className="font-medium">
+                        {selectedRequest.request_type.replace('_', ' ')}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">STATUS</Label>
+                      <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">PRIORITY</Label>
+                      <div className="mt-1">{getPriorityBadge(selectedRequest.priority)}</div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">SUBMITTED</Label>
+                      <p className="text-sm">
+                        {formatDistanceToNow(new Date(selectedRequest.created_at), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">STATUS</Label>
-                    <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">PRIORITY</Label>
-                    <div className="mt-1">{getPriorityBadge(selectedRequest.priority)}</div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">SUBMITTED</Label>
-                    <p className="text-sm">
-                      {formatDistanceToNow(new Date(selectedRequest.created_at), {
-                        addSuffix: true,
-                      })}
-                    </p>
-                  </div>
-                </div>
 
-                <div>
-                  <Label className="text-xs text-muted-foreground">ENTITY ID</Label>
-                  <p className="font-medium font-mono text-sm">{selectedRequest.entity_id}</p>
-                </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">ENTITY ID</Label>
+                    <p className="font-medium font-mono text-sm">{selectedRequest.entity_id}</p>
+                  </div>
 
-                <div>
-                  <Label className="text-xs text-muted-foreground">REQUEST DATA</Label>
-                  <div className="mt-2">
-                    {selectedRequest.request_type === 'loan_application' ? (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">REQUEST DATA</Label>
+                    <div className="mt-2">
+                      {selectedRequest.request_type === 'loan_application' ? (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedLoanForModal({
+                              id: selectedRequest.entity_id,
+                              status: selectedRequest.status,
+                              created_at: selectedRequest.created_at,
+                              approved_at:
+                                selectedRequest.status === 'approved'
+                                  ? selectedRequest.updated_at
+                                  : undefined,
+                            });
+                            setLoanDetailsModalOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Loan Application Details
+                        </Button>
+                      ) : (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <pre className="text-xs overflow-x-auto">
+                            {JSON.stringify(selectedRequest.request_data, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedRequest.reviewer_notes && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">PREVIOUS NOTES</Label>
+                      <p className="text-sm mt-1">{selectedRequest.reviewer_notes}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="review-notes">Review Notes</Label>
+                    <Textarea
+                      id="review-notes"
+                      placeholder="Add your review notes..."
+                      value={reviewNotes}
+                      onChange={(e) => setReviewNotes(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Only show action buttons if request is not already approved/rejected */}
+                  {selectedRequest.status !== 'approved' &&
+                  selectedRequest.status !== 'rejected' ? (
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
+                        disabled={processing}
+                        className="w-full flex-1"
+                        data-testid="approvals-approve-btn"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
+                        disabled={processing}
+                        className="w-full flex-1"
+                        data-testid="approvals-reject-btn"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject
+                      </Button>
                       <Button
                         variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          setSelectedLoanForModal({
-                            id: selectedRequest.entity_id,
-                            status: selectedRequest.status,
-                            created_at: selectedRequest.created_at,
-                            approved_at:
-                              selectedRequest.status === 'approved'
-                                ? selectedRequest.updated_at
-                                : undefined,
-                          });
-                          setLoanDetailsModalOpen(true);
+                        onClick={async () => {
+                          if (processing) return;
+                          setProcessing(true);
+                          try {
+                            await processApprovalMutation({
+                              requestId: selectedRequest.id as Parameters<
+                                typeof processApprovalMutation
+                              >[0]['requestId'],
+                              action: 'escalate',
+                              notes: reviewNotes || 'Escalated for additional review',
+                            });
+                            toast({
+                              title: 'Escalated',
+                              description: 'Request escalated for senior review',
+                            });
+                            setSelectedRequest(null);
+                            setReviewNotes('');
+                          } catch {
+                            toast({
+                              title: 'Error',
+                              description: 'Failed to escalate request',
+                              variant: 'destructive',
+                            });
+                          } finally {
+                            setProcessing(false);
+                          }
                         }}
+                        disabled={processing}
+                        className="w-full sm:w-auto"
+                        data-testid="approvals-requestinfo-btn"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Loan Application Details
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Escalate
                       </Button>
-                    ) : (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <pre className="text-xs overflow-x-auto">
-                          {JSON.stringify(selectedRequest.request_data, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground"
+                      data-testid="approvals-processed-state"
+                    >
+                      <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
+                      This request has been {selectedRequest.status}. No further action required.
+                    </div>
+                  )}
                 </div>
-
-                {selectedRequest.reviewer_notes && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground">PREVIOUS NOTES</Label>
-                    <p className="text-sm mt-1">{selectedRequest.reviewer_notes}</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="review-notes">Review Notes</Label>
-                  <Textarea
-                    id="review-notes"
-                    placeholder="Add your review notes..."
-                    value={reviewNotes}
-                    onChange={(e) => setReviewNotes(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                {/* Only show action buttons if request is not already approved/rejected */}
-                {selectedRequest.status !== 'approved' && selectedRequest.status !== 'rejected' ? (
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button
-                      onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
-                      disabled={processing}
-                      className="w-full flex-1"
-                      data-testid="approvals-approve-btn"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
-                      disabled={processing}
-                      className="w-full flex-1"
-                      data-testid="approvals-reject-btn"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={async () => {
-                        if (processing) return;
-                        setProcessing(true);
-                        try {
-                          await processApprovalMutation({
-                            requestId: selectedRequest.id as Parameters<
-                              typeof processApprovalMutation
-                            >[0]['requestId'],
-                            action: 'escalate',
-                            notes: reviewNotes || 'Escalated for additional review',
-                          });
-                          toast({
-                            title: 'Escalated',
-                            description: 'Request escalated for senior review',
-                          });
-                          setSelectedRequest(null);
-                          setReviewNotes('');
-                        } catch {
-                          toast({
-                            title: 'Error',
-                            description: 'Failed to escalate request',
-                            variant: 'destructive',
-                          });
-                        } finally {
-                          setProcessing(false);
-                        }
-                      }}
-                      disabled={processing}
-                      className="w-full sm:w-auto"
-                      data-testid="approvals-requestinfo-btn"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      Escalate
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground"
-                    data-testid="approvals-processed-state"
-                  >
-                    <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                    This request has been {selectedRequest.status}. No further action required.
-                  </div>
-                )}
-              </div>
+              )
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Eye className="h-8 w-8 mx-auto mb-2" />

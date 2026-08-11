@@ -126,11 +126,15 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   const documents = useMemo(
     () =>
       (rawDocuments ?? []).map((doc) => ({
-        id: String(doc._id),
+        id: String(doc.id),
         file_name: doc.fileName,
         document_type: doc.documentType,
         status: doc.status,
         created_at: new Date(doc.uploadedAt).toISOString(),
+        file_size: doc.fileSize,
+        mime_type: doc.mimeType,
+        file_available: doc.fileAvailable,
+        review_notes: doc.reviewNotes,
       })),
     [rawDocuments]
   );
@@ -257,7 +261,7 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
                   <PaymentsTab payments={payments} />
                 </TabsContent>
                 <TabsContent value="documents" className="mt-0">
-                  <DocumentsTab documents={documents} />
+                  <DocumentsTab loanId={loanId} />
                 </TabsContent>
                 <TabsContent value="collections" className="mt-0">
                   <CollectionsTab interactions={interactions} />

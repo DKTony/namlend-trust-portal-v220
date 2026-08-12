@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "lifecycle": [
+    { "stage": "onboard", "testTitleIncludes": ["creates exactly one profile and one client role", "password sign-up is complete on arrival"] },
+    { "stage": "KYC", "testTitleIncludes": ["KYC package lifecycle", "rejects unverified KYC"] },
+    { "stage": "originate", "testTitleIncludes": ["createLoan rejects amounts", "createLoan works under enforcement"] },
+    { "stage": "approve", "testTitleIncludes": ["approves when fully ready", "approves through the workflow path"] },
+    { "stage": "disburse", "testTitleIncludes": ["IPS disbursement completion generates", "cannot complete after the loan left approved state"] },
+    { "stage": "repay", "testTitleIncludes": ["completePayment posts exactly one", "partials accumulate to exactly totalDue"] },
+    { "stage": "collect", "testTitleIncludes": ["collections queue shows only the caller tenant", "collections gated write"] },
+    { "stage": "reconcile", "testTitleIncludes": ["bank transactions list scopes by tenant", "Admin verifies IPP settlement"] },
+    { "stage": "settle", "testTitleIncludes": ["only creates settlement adjustments", "Admin verifies IPP settlement"] },
+    { "stage": "notify", "testTitleIncludes": ["sends notification on loan approval", "sends notification on loan rejection"] }
+  ],
+  "invariants": [
+    { "id": "APR_MAX_32", "testTitleIncludes": ["enforces the 32% APR platform guardrail", "never exceeds 32% APR"] },
+    { "id": "KYC_REQUIRED", "testTitleIncludes": ["rejects unverified KYC", "cannot approve a loan with unverified KYC"] },
+    { "id": "TENANT_ISOLATION", "testTitleIncludes": ["ISOLATED: with enforcement on", "shows only the caller tenant"] },
+    { "id": "LEDGER_COMPLETION_ONLY", "testTitleIncludes": ["posts no ledger row; completePayment posts exactly one"] },
+    { "id": "LEDGER_IDEMPOTENT", "testTitleIncludes": ["completing twice is idempotent"] },
+    { "id": "LEDGER_REVERSAL", "testTitleIncludes": ["reversing a partial payment restores", "posts mirrored legs"] },
+    { "id": "ROLE_LANDING", "testTitleIncludes": ["lands a pure platform owner", "sends tenant staff to the backoffice"] },
+    { "id": "FLAGS_DEFAULT_OFF", "testTitleIncludes": ["enforcement flags default to false"] }
+  ]
+}

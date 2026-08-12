@@ -1,41 +1,25 @@
 name: CI - Web
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'convex/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-      - 'vite.config.ts'
-      - '.github/workflows/ci-web.yml'
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'convex/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-      - 'tsconfig.app.json'
-      - 'vite.config.ts'
-      - 'eslint.config.js'
-      - 'playwright.config.ts'
-      - '.github/workflows/ci-web.yml'
 
 jobs:
   lint-and-typecheck:
     name: Lint & TypeCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
@@ -51,32 +35,177 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
       - name: Run unit tests
-        run: npm run test:unit
+        run: |
+          mkdir -p test-results
+          npm run test:unit -- --reporter=json --outputFile=test-results/unit.json
         env:
           CI: true
+
+      - name: Upload named unit-test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-unit-${{ github.run_id }}
+          path: test-results/unit.json
+          retention-days: 14
+
+  convex-tests:
+    name: Convex Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Convex tests with named results
+        run: |
+          mkdir -p test-results
+          npm run test:convex -- --reporter=json --outputFile=test-results/convex.json
+        env:
+          CI: true
+
+      - name: Upload named Convex-test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-convex-${{ github.run_id }}
+          path: test-results/convex.json
+          retention-days: 14
+
+  production-build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+  ontology:
+    name: Ontology & Evidence Contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compare semantic graph with pull-request base
+        if: github.event_name == 'pull_request'
+        run: npm run ontology:diff -- "$BASE_SHA" | tee ontology/graph-diff.txt
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+      - name: Reject ontology drift and unregistered skips
+        run: npm run ontology:check
+
+      - name: Enforce agent policy and Graphify boundary
+        run: |
+          npm run agent:policy
+          npm run graphify:check
+          npm run agent:eval
+
+      - name: Run T1-T3 and T5-T6 ontology verification
+        run: |
+          mkdir -p test-results
+          npm run ontology:test -- --reporter=json --outputFile=test-results/ontology.json
+
+      - name: Upload ontology verification and semantic diff
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-contract-${{ github.run_id }}
+          path: |
+            test-results/ontology.json
+            ontology/graph-diff.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  behavior-proof:
+    name: Current-SHA Behaviour Proof
+    runs-on: ubuntu-latest
+    needs: [unit-tests, convex-tests, ontology]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download named unit and Convex results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ontology-results-*
+          path: collected-results
+          merge-multiple: true
+
+      - name: Prove T4 behaviours from named passing current-SHA tests
+        run: |
+          mkdir -p test-results
+          npm run ontology:prove-results -- --out test-results/ontology-execution-proof.json collected-results
+          ONTOLOGY_REQUIRE_EXECUTION_PROOF=1 ONTOLOGY_EXECUTION_PROOF=test-results/ontology-execution-proof.json npm run ontology:test
+
+      - name: Upload behaviour proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-behaviour-${{ github.run_id }}
+          path: test-results/ontology-execution-proof.json
+          retention-days: 14
 
   playwright-api-smoke:
     name: Playwright API Smoke Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
@@ -86,7 +215,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       
       - name: Run API smoke tests
-        run: npx playwright test e2e/api/ --project=chromium
+        run: |
+          mkdir -p test-results
+          npx playwright test e2e/api/ --project=chromium --reporter=github,json
         env:
           # Supabase env deliberately absent (matches .env.e2e) — legacy
           # Supabase specs self-skip without credentials.
@@ -98,45 +229,57 @@ jobs:
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           VITE_E2E: 'true'
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/playwright-api.json
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report-api
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
+
+      - name: Upload named API-smoke results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-playwright-api-${{ github.run_id }}
+          path: test-results/playwright-api.json
+          retention-days: 14
 
   dependency-audit:
     name: Dependency Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
       
       - name: Run npm audit
-        run: npm audit --production --audit-level=high
-        continue-on-error: true
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=high
 
   playwright-full-e2e:
     name: Full E2E Test Suite
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
@@ -146,7 +289,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       
       - name: Start dev server and run full E2E suite
-        run: npx playwright test --project=chromium
+        run: |
+          mkdir -p test-results
+          npx playwright test --project=chromium --reporter=github,json
         env:
           # Supabase env deliberately absent (matches .env.e2e) — legacy
           # Supabase specs self-skip without credentials.
@@ -158,25 +303,36 @@ jobs:
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           VITE_E2E: 'true'
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/playwright-full.json
       
       - name: Upload full E2E report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report-full
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Upload named full-E2E results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ontology-results-playwright-full-${{ github.run_id }}
+          path: test-results/playwright-full.json
           retention-days: 14
 
   schema-type-check:
     name: Schema & Type Alignment
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install dependencies
@@ -206,3 +362,80 @@ jobs:
             exit 1
           fi
           echo "✅ No legacy service imports found"
+
+  evidence-ledger:
+    name: Current-SHA Evidence Ledger
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !cancelled() && !contains(needs.*.result, 'failure')
+    needs:
+      - lint-and-typecheck
+      - unit-tests
+      - convex-tests
+      - production-build
+      - ontology
+      - behavior-proof
+      - playwright-api-smoke
+      - playwright-full-e2e
+      - dependency-audit
+      - schema-type-check
+    permissions:
+      contents: read
+      pull-requests: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download upstream named test results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ontology-results-*
+          path: collected-results
+          merge-multiple: true
+
+      - name: Resolve reviewed merge provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0].number // empty')
+          test -n "$PR_NUMBER" || { echo "No reviewed pull request is associated with ${GITHUB_SHA}."; exit 1; }
+          APPROVERS=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/reviews" --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | join(",")')
+          test -n "$APPROVERS" || { echo "No named human approval is available for PR ${PR_NUMBER}."; exit 1; }
+          echo "HUMAN_APPROVERS=${APPROVERS}" >> "$GITHUB_ENV"
+          echo "MERGED_PULL_REQUEST_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Build current-SHA E1 ledger and semantic diff artifact
+        run: |
+          npm run ontology:ingest-results -- collected-results
+          npm run agent:validate-merge -- ontology/ci-artifact/merge-receipt.json
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.before }}
+          UPSTREAM_RESULTS_JSON: ${{ toJson(needs) }}
+
+      - name: Package the immutable assurance subject
+        run: tar -czf "namlend-assurance-${GITHUB_SHA}.tgz" -C ontology/ci-artifact .
+
+      - name: Upload assurance artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: namlend-evidence-${{ github.run_id }}
+          path: |
+            ontology/ci-artifact/
+            namlend-assurance-${{ github.sha }}.tgz
+          retention-days: 30
+
+      - name: Attest current-SHA assurance bundle
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
+        with:
+          subject-path: namlend-assurance-${{ github.sha }}.tgz

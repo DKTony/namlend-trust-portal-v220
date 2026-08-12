@@ -1,0 +1,30 @@
+# Default human owner
+* @DKTony
+
+# A second qualified reviewer must be added before protected changes can merge.
+# The risk-review check enforces two distinct current-head human approvals below.
+
+# Protected lending, identity, data and integration boundaries
+/convex/ @DKTony
+/src/hooks/useAuth.tsx @DKTony
+/src/components/system/ProtectedRoute.tsx @DKTony
+/src/lib/routing.ts @DKTony
+/netlify.toml @DKTony
+
+# Supply chain, assurance and agent policy
+/.github/ @DKTony
+/package.json @DKTony
+/package-lock.json @DKTony
+/.npmrc @DKTony
+/.nvmrc @DKTony
+/AGENTS.md @DKTony
+/CLAUDE.MD @DKTony
+/CONTRIBUTING.md @DKTony
+/WORKFLOW.md @DKTony
+/agent-harness/ @DKTony
+/scripts/agent-harness/ @DKTony
+/scripts/graphify/ @DKTony
+/tools/graphify/ @DKTony
+/ontology/ontology.schema.json @DKTony
+/ontology/source-manifest.json @DKTony
+/ontology/test-exceptions.json @DKTony

@@ -38,6 +38,7 @@ Single required env var for local dev: `VITE_CONVEX_URL` (see `.env.example`). E
 **Authorization is explicit and centralized — there is no RLS.** Every public query/mutation calls a guard from `convex/lib/auth.ts`: `assertAuthenticated` / `assertOwner` / `assertOwnerOrStaff` / `assertStaff` / `assertAdmin`. Object-level authz means: load the row, resolve its owner, then assert against *that* — being authenticated is never sufficient. Roles (`client` | `loan_officer` | `admin`) live in the Convex `userRoles` table, which is what every guard reads.
 
 **Financial mutations follow one consistent shape** (see `convex/payments.ts`, `disbursements.ts`, `loans.ts` as the canonical examples). A single mutation atomically:
+
 1. Guards + validates (state-machine check on `status`, amount/APR validation).
 2. Applies an **idempotency guard** (recent-duplicate window, or dedupe on `externalTransactionId` / `referenceNumber` / a pending row) — financial mutations are designed to be safely retried.
 3. Writes the domain row.
@@ -58,7 +59,7 @@ Single required env var for local dev: `VITE_CONVEX_URL` (see `.env.example`). E
 
 ## Verified gotchas
 
-- **There is no working typecheck gate.** `npx tsc --noEmit` (what the docs cite) compiles *zero* files — root `tsconfig.json` has `"files": []` and, without `-b`, ignores the project references. The real check is `npx tsc -b` (honors `tsconfig.app.json` `strict: true`) and it currently reports many errors. `npm run build` is `vite build` (esbuild, strips types) and type-checks nothing. Use `npx tsc -b` to actually validate types.
+- **Use the project-reference typecheck gate.** `npm run typecheck` runs `tsc -b`, honors `tsconfig.app.json`, and is the release gate. `npx tsc --noEmit` at the repository root is not equivalent because the root configuration delegates to project references. `npm run build` remains a separate production-bundle check.
 - **Editing `convex/schema.ts` or any Convex function requires `npx convex dev` running** to regenerate `convex/_generated`; stale codegen produces misleading type errors.
 - **Server secrets are Convex env vars, not `VITE_`** — anything in `import.meta.env.VITE_*` is shipped to the browser. IPS/SMS/WhatsApp/TigerBeetle keys go through `npx convex env set`.
 - **E2E/test SQL helpers hard-delete records**, which contradicts the 7-year-retention rule the app enforces — don't copy that pattern into application code.

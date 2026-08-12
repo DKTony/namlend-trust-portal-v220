@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://namlend.example/agent-harness/v1/task-contract.schema.json",
+  "title": "NamLend Agent Task Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "taskId", "baseSha", "goal", "nonGoals", "owner", "riskClass",
+    "allowedPaths", "forbiddenOperations", "affectedOntologyIds", "acceptanceChecks",
+    "resourceBudget", "expiresAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "taskId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "baseSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "goal": { "type": "string", "minLength": 10, "maxLength": 2000 },
+    "nonGoals": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 3 } },
+    "owner": { "type": "string", "minLength": 3 },
+    "riskClass": { "enum": ["R0", "R1", "R2", "R3"] },
+    "allowedPaths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "forbiddenOperations": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "affectedOntologyIds": { "type": "array", "items": { "type": "string", "minLength": 3 } },
+    "acceptanceChecks": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 3 } },
+    "resourceBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxMinutes", "maxAttempts", "networkPolicy"],
+      "properties": {
+        "maxMinutes": { "type": "integer", "minimum": 1, "maximum": 45 },
+        "maxAttempts": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "networkPolicy": { "enum": ["deny", "allowlisted-read-only"] },
+        "allowedHosts": { "type": "array", "items": { "type": "string", "format": "hostname" } }
+      }
+    },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "issueUrl": { "type": "string", "format": "uri" }
+  }
+}

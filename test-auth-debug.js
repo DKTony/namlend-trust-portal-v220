@@ -1,8 +1,10 @@
 // Debug script to test authentication state
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://puahejtaskncpazjyxqp.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWhlanRhc2tuY3Bhemp5eHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDc0NTAsImV4cCI6MjA2OTM4MzQ1MH0.pwVQ-yVKyUa11KdUPdRbX-qssywAbTlPwFahfrt5JDw'
+const supabaseUrl = process.env.LEGACY_SUPABASE_URL
+const supabaseKey = process.env.LEGACY_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) throw new Error('Set legacy Supabase connection variables in the process environment.')
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -26,10 +28,10 @@ async function testAuth() {
 
     // Test 2: Try to sign in with test credentials
     console.log('\n2️⃣ Testing sign-in with client credentials...')
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: 'client@namlend.com',
-      password: '123abc'
-    })
+    const email = process.env.LEGACY_TEST_EMAIL
+    const password = process.env.LEGACY_TEST_PASSWORD
+    if (!email || !password) throw new Error('Set legacy test credentials in the process environment.')
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError) {
       console.error('❌ Sign-in error:', signInError)

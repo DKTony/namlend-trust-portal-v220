@@ -1,8 +1,10 @@
 // Test script to verify the loan submission fix
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://puahejtaskncpazjyxqp.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWhlanRhc2tuY3Bhemp5eHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDc0NTAsImV4cCI6MjA2OTM4MzQ1MH0.pwVQ-yVKyUa11KdUPdRbX-qssywAbTlPwFahfrt5JDw'
+const supabaseUrl = process.env.LEGACY_SUPABASE_URL
+const supabaseAnonKey = process.env.LEGACY_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) throw new Error('Set legacy Supabase connection variables in the process environment.')
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 

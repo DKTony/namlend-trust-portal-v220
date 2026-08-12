@@ -20,7 +20,7 @@ Supabase remains in the repository for legacy/reference material and selected mi
 - **Convex auth guards** - Every public Convex query/mutation touching user data must call the correct guard from `convex/lib/auth.ts`.
 - **Object-level authorization** - Authenticated is not enough; enforce owner, owner-or-staff, staff, or admin access as appropriate.
 - **Audit trails** - Financial operations must schedule audit/event writes through Convex audit helpers.
-- **Role-based access** - Respect `client`, `loan_officer`, and `admin`.
+- **Role-based access** - Keep tenant roles (`client`, `loan_officer`, `admin`, `tenant_admin`) distinct from platform roles (`platform_owner`, `platform_support`).
 - **No sensitive logging** - Do not expose PII, financial data, credentials, or raw provider payloads in client logs/errors.
 
 ## Technology Stack
@@ -44,7 +44,11 @@ npm run lint
 
 # Testing
 npm run test:unit
+npm run test:convex
 npm run test:e2e
+npm run ontology:check
+npm run ontology:test
+npm run agent:policy
 npx playwright test --ui
 
 # Convex
@@ -108,3 +112,11 @@ supabase/
 - `docs/ARCHITECTURE.md` - Current architecture
 - `docs/ARCHITECTURAL_REVIEW.md` - Current flaws, risks, and remediation roadmap
 - `docs/SERVICES.md` - Service layer and legacy island inventory
+- `docs/AI_ENGINEERING_HARNESS.md` - Agent contracts, graph boundaries, risk tiers, and promotion gates
+
+## Agent Harness Boundary
+
+The NamLend ontology is authoritative for system inventory, evidence, and impact.
+Graphify is an optional local discovery sidecar and cannot establish E0/E1 facts.
+Autonomous work is limited to policy-validated R0/R1 tasks; humans retain merge,
+deployment, production, schema, financial, auth, security, and agent-policy authority.

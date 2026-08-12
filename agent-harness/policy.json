@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyVersion": "1.0.0",
+  "defaultOwner": "NamLend Engineering",
+  "taskRetentionDays": 30,
+  "maxRunMinutes": 45,
+  "maxAttempts": 2,
+  "autonomousRiskClasses": ["R0", "R1"],
+  "minimumHumanApprovals": 1,
+  "protectedMinimumHumanApprovals": 2,
+  "alwaysForbiddenOperations": [
+    "merge", "push", "deploy", "seed", "migration", "backfill", "production-write",
+    "external-system-write", "secret-read", "history-rewrite"
+  ],
+  "r1AllowedPatterns": [
+    "docs/**", "src/**/*.test.ts", "src/**/*.test.tsx", "convex/**/*.test.ts",
+    "e2e/**", "ontology/nodes.json", "ontology/edges.json", "ontology/evidence-ledger.json",
+    "ontology/metrics.json", "ontology/gaps.json", "ontology/conflicts.json",
+    "ontology/*.md"
+  ],
+  "protectedPatterns": [
+    "convex/schema.ts", "convex/lib/auth.ts", "convex/lib/audit.ts", "convex/lib/regulatory.ts",
+    "convex/loans.ts", "convex/payments.ts", "convex/disbursements.ts", "convex/http.ts",
+    "convex/actions/**", "convex/ips/**", "convex/settlement/**", "convex/scheduled/**",
+    "src/hooks/useAuth.tsx", "src/components/system/ProtectedRoute.tsx", "src/lib/routing.ts",
+    ".github/**", "netlify.toml", "package.json", "package-lock.json", ".npmrc", ".nvmrc",
+    "AGENTS.md", "CLAUDE.MD", "CONTRIBUTING.md", "WORKFLOW.md", "convex/AGENTS.md",
+    "agent-harness/**", "scripts/agent-harness/**", "scripts/graphify/**", "tools/graphify/**",
+    "ontology/ontology.schema.json", "ontology/source-manifest.json", "ontology/test-exceptions.json"
+  ],
+  "hardGapKinds": [
+    "APR_VIOLATION", "KYC_BYPASS", "AUTHORIZATION_GAP", "TENANT_ISOLATION_GAP",
+    "AUDIT_GAP", "FINANCIAL_HARD_DELETE", "UNSUPPORTED_SETTLEMENT_CLAIM",
+    "MONEY_MOVEMENT_NOT_PROVEN", "SECRET_EXPOSURE",
+    "UNREGISTERED_TEST_SKIP", "STALE_SKIP_EXCEPTION"
+  ],
+  "exceptionMaximumDays": {
+    "critical-tool-only": 14,
+    "high-tool-only": 30,
+    "non-safety-debt": 90
+  },
+  "promotionGates": {
+    "hardInvariantPassRate": 1,
+    "severeViolationCount": 0,
+    "exactTaskSuccessRate": 0.9,
+    "scopeContainmentRate": 0.95,
+    "firstReviewAcceptanceRate": 0.8,
+    "consecutiveShadowTasks": 20
+  }
+}

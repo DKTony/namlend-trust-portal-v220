@@ -1,0 +1,205 @@
+{
+  "commitSha": "a662e089057d2167cf173419fbd8b67500731b01",
+  "conflicts": [
+    {
+      "evidenceRefs": [
+        "evidence:cafdbc1b5b066d61"
+      ],
+      "id": "CONFLICT-HAS_APPLICATION_TABLE_COUNT-3",
+      "loser": {
+        "source": "https://app.notion.com/p/37f83bbf405781698ceccec5515e39e8",
+        "tier": "E2",
+        "value": 79
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_APPLICATION_TABLE_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 84
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:f6a6b95e52dcf3e6"
+      ],
+      "id": "CONFLICT-HAS_E2E_PASS_COUNT-7",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56",
+        "tier": "E2",
+        "value": 110
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_E2E_PASS_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-tests",
+      "winner": {
+        "source": "current CI evidence",
+        "tier": "E1",
+        "value": 117
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:f6a6b95e52dcf3e6"
+      ],
+      "id": "CONFLICT-HAS_E2E_SKIP_COUNT-7",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56",
+        "tier": "E2",
+        "value": 204
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_E2E_SKIP_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-tests",
+      "winner": {
+        "source": "current CI evidence",
+        "tier": "E1",
+        "value": 206
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:cafdbc1b5b066d61"
+      ],
+      "id": "CONFLICT-HAS_EFFECTIVE_TABLE_COUNT-3",
+      "loser": {
+        "source": "https://app.notion.com/p/37f83bbf405781698ceccec5515e39e8",
+        "tier": "E2",
+        "value": 86
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 91
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:fda3ea76613fb681"
+      ],
+      "id": "CONFLICT-HAS_EFFECTIVE_TABLE_COUNT-6",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf40578138b99ce861927b22df",
+        "tier": "E2",
+        "value": 86
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 91
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:6821a6c4d4d38244"
+      ],
+      "id": "CONFLICT-HAS_GATED_ENTRY_POINT_COUNT-4",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf405781a58e6fff94949afced",
+        "tier": "E2",
+        "value": 42
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 43
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:f6a6b95e52dcf3e6"
+      ],
+      "id": "CONFLICT-HAS_GATED_ENTRY_POINT_COUNT-7",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56",
+        "tier": "E2",
+        "value": 41
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 43
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:f6a6b95e52dcf3e6"
+      ],
+      "id": "CONFLICT-HAS_GATED_FEATURE_COUNT-7",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56",
+        "tier": "E2",
+        "value": 7
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_GATED_FEATURE_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-convex",
+      "winner": {
+        "source": "current extraction",
+        "tier": "E0",
+        "value": 8
+      }
+    },
+    {
+      "evidenceRefs": [
+        "evidence:fda3ea76613fb681"
+      ],
+      "id": "CONFLICT-HAS_UNIT_PASS_COUNT-6",
+      "loser": {
+        "source": "https://app.notion.com/p/38083bbf40578138b99ce861927b22df",
+        "tier": "E2",
+        "value": 200
+      },
+      "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
+      "owner": "NamLend Engineering",
+      "predicate": "HAS_UNIT_PASS_COUNT",
+      "resolution": "Current code at a662e089057d2167cf173419fbd8b67500731b01 wins over the older documented count.",
+      "status": "resolved",
+      "subjectId": "system:namlend-tests",
+      "winner": {
+        "source": "current CI evidence",
+        "tier": "E1",
+        "value": 296
+      }
+    }
+  ],
+  "extractedAt": "2026-08-12T20:00:03.815Z",
+  "schemaVersion": "1.0.0"
+}

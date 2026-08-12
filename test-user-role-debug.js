@@ -1,8 +1,10 @@
 // Debug script to check user role for the failing user
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://puahejtaskncpazjyxqp.supabase.co'
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWhlanRhc2tuY3Bhemp5eHFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzgwNzQ1MCwiZXhwIjoyMDY5MzgzNDUwfQ.JV3gC1iTeIRnFehfiD0tcZZmRtpYQdRuwvtwEKyOkuc'
+const supabaseUrl = process.env.LEGACY_SUPABASE_URL
+const supabaseServiceKey = process.env.LEGACY_SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) throw new Error('Set legacy Supabase connection variables in the process environment.')
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

@@ -37,6 +37,11 @@ dist/
 .windsurf/
 test-results/
 playwright-report/
+ontology/ci-artifact/
+.cache/graphify/
+tools/graphify/.venv/
+.cursor/
+tmp/
 .playwright-mcp/
 
 # TypeScript incremental build artifacts (tsc -b)

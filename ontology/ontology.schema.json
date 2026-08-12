@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://namlend.example/ontology/v1/schema.json",
+  "title": "NamLend System Ontology",
+  "type": "object",
+  "$defs": {
+    "tier": { "enum": ["E0", "E1", "E2", "E3", "NONE"] },
+    "status": { "enum": ["CURRENT", "STALE", "CONTRADICTED", "NOT_STATED", "UNKNOWN", "BLOCKED"] },
+    "nodeType": {
+      "enum": [
+        "System", "Table", "Index", "Function", "Route", "Component", "Role", "Plan",
+        "Feature", "Flag", "ExternalSystem", "Endpoint", "Test", "CIJob", "Deployment",
+        "Document", "AccessPolicy", "Schedule", "AgentTask", "AgentRun",
+        "DecisionRecord", "Receipt", "Artifact"
+      ]
+    },
+    "edgeType": {
+      "enum": [
+        "CALLS", "READS", "WRITES", "INDEXES", "ROUTES_TO", "GATED_BY", "ENTITLES",
+        "ENFORCED_BY", "POSTS_TO", "SETTLES_VIA", "NOTIFIES_VIA", "TESTED_BY",
+        "DEPLOYED_BY", "DOCUMENTED_IN", "DEPENDS_ON", "CONTAINS", "RENDERS", "INVOKES",
+        "USES_INDEX", "HANDLED_BY", "CALLS_ENDPOINT", "OWNED_BY", "SCHEDULES",
+        "PROPOSED_BY", "PRODUCED", "VERIFIED_BY", "APPROVED_BY", "SUPERSEDES",
+        "INVALIDATES"
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "required": ["id", "tier", "source", "commitSha", "extractedAt", "status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "tier": { "$ref": "#/$defs/tier" },
+        "source": { "type": "string", "minLength": 1 },
+        "path": { "type": "string" },
+        "pathDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "symbol": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "commitSha": { "type": "string", "minLength": 1 },
+        "extractedAt": { "type": "string", "format": "date-time" },
+        "status": { "$ref": "#/$defs/status" },
+        "runId": { "type": ["integer", "string"] },
+        "url": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type", "name", "path", "purpose", "domain", "evidenceTier", "evidenceRefs", "commitSha", "impact"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/nodeType" },
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "minLength": 1 },
+        "evidenceTier": { "$ref": "#/$defs/tier" },
+        "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "commitSha": { "type": "string", "minLength": 1 },
+        "attributes": { "type": "object" },
+        "impact": {
+          "type": "object",
+          "required": ["directDependents", "transitiveDependents"],
+          "properties": {
+            "directDependents": { "type": "array", "items": { "type": "string" } },
+            "transitiveDependents": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "type", "from", "to", "purpose", "evidenceTier", "evidenceRefs", "commitSha"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/edgeType" },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "evidenceTier": { "$ref": "#/$defs/tier" },
+        "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "commitSha": { "type": "string", "minLength": 1 }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": ["id", "subject", "predicate", "object", "tier", "source", "commitSha", "timestamp", "status", "evidenceRefs"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "subject": { "type": "string", "minLength": 1 },
+        "predicate": { "type": "string", "minLength": 1 },
+        "object": {},
+        "tier": { "$ref": "#/$defs/tier" },
+        "source": { "type": "string", "minLength": 1 },
+        "commitSha": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "$ref": "#/$defs/status" },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

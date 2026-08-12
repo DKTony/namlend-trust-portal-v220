@@ -1,5 +1,8 @@
 name: E2E Tests
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ main ]
@@ -7,6 +10,8 @@ on:
       - 'src/**'
       - 'convex/**'
       - 'e2e/**'
+      - 'ontology/**'
+      - 'scripts/ontology/**'
       - 'package.json'
       - 'playwright.config.ts'
       - '.github/workflows/e2e.yml'
@@ -39,12 +44,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - name: Use Node.js 20
-        uses: actions/setup-node@v4
+      - name: Use pinned Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: 20
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies
@@ -80,26 +85,27 @@ jobs:
           TEST_FILTER: ${{ inputs.test_filter }}
           BASE_URL: http://localhost:8080
           CI: true
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/playwright.json
         run: |
           # TEST_FILTER passed via env (not interpolated) to avoid shell injection
           if [ -n "$TEST_FILTER" ]; then
-            npx playwright test --grep "$TEST_FILTER"
+            npx playwright test --grep "$TEST_FILTER" --reporter=github,json
           else
-            npx playwright test
+            npx playwright test --reporter=github,json
           fi
 
       - name: Upload Playwright HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report-${{ github.run_id }}
           path: playwright-report
           retention-days: 14
 
       - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: test-results-${{ github.run_id }}
+          name: ontology-results-e2e-${{ github.run_id }}
           path: test-results
-          retention-days: 7
+          retention-days: 14

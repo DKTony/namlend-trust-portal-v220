@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "1.0.0",
+  "capturedAt": "2026-08-12T06:30:00.000Z",
+  "repository": {
+    "name": "DKTony/namlend-trust-portal-v220",
+    "branch": "main",
+    "baselineCommitSha": "eb457030e75fd004ba39ace8d54bf5fe231b0353"
+  },
+  "notionPages": [
+    {
+      "id": "37f83bbf-4057-8191-babe-ffb74b1e4503",
+      "ordinal": 1,
+      "title": "Overview & Vision",
+      "url": "https://app.notion.com/p/37f83bbf40578191babeffb74b1e4503",
+      "lastEditedAt": "2026-06-20T06:25:27.718Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Describes the product vision, lending lifecycle, three consoles, and commercial tenancy model.",
+      "claims": [
+        { "subjectId": "system:namlend-web", "predicate": "HAS_CONSOLE_COUNT", "object": 3 },
+        { "subjectId": "system:namlend-web", "predicate": "HAS_SEEDED_PLAN_COUNT", "object": 4 },
+        { "subjectId": "flag:TENANCY_ENFORCEMENT", "predicate": "DEFAULTS_TO", "object": false },
+        { "subjectId": "flag:ENTITLEMENT_ENFORCEMENT", "predicate": "DEFAULTS_TO", "object": false }
+      ]
+    },
+    {
+      "id": "37f83bbf-4057-8100-9825-f2f0f06018cd",
+      "ordinal": 2,
+      "title": "Architecture & How It Works",
+      "url": "https://app.notion.com/p/37f83bbf405781009825f2f0f06018cd",
+      "lastEditedAt": "2026-06-20T06:25:41.715Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Documents the Convex-first architecture, identity planes, tenancy, entitlements, integrations, and loan state machine.",
+      "claims": [
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_APPROXIMATE_TABLE_COUNT", "object": 85 },
+        { "subjectId": "endpoint:POST:/webhook/ips", "predicate": "EXISTS", "object": true },
+        { "subjectId": "endpoint:POST:/webhook/payment", "predicate": "EXISTS", "object": true },
+        { "subjectId": "endpoint:GET:/health", "predicate": "EXISTS", "object": true }
+      ]
+    },
+    {
+      "id": "37f83bbf-4057-8169-8cec-cec5515e39e8",
+      "ordinal": 3,
+      "title": "Data Model & Transaction Types",
+      "url": "https://app.notion.com/p/37f83bbf405781698ceccec5515e39e8",
+      "lastEditedAt": "2026-06-20T06:26:12.891Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Catalogues the documented tables and modeled financial transaction lifecycles.",
+      "claims": [
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_EFFECTIVE_TABLE_COUNT", "object": 86 },
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_APPLICATION_TABLE_COUNT", "object": 79 },
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_AUTH_TABLE_COUNT", "object": 7 }
+      ]
+    },
+    {
+      "id": "38083bbf-4057-81a5-8e6f-ff94949afced",
+      "ordinal": 4,
+      "title": "Features & Entitlements",
+      "url": "https://app.notion.com/p/38083bbf405781a58e6fff94949afced",
+      "lastEditedAt": "2026-06-20T06:27:02.705Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Defines the documented feature manifest, seeded plans, entitlement resolution, and enforcement flags.",
+      "claims": [
+        { "subjectId": "system:namlend-web", "predicate": "HAS_FEATURE_COUNT", "object": 23 },
+        { "subjectId": "system:namlend-web", "predicate": "HAS_SEEDED_PLAN_COUNT", "object": 4 },
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_ENTRY_POINT_COUNT", "object": 42 },
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_FEATURE_COUNT", "object": 8 },
+        { "subjectId": "flag:MANDATE_AUTODEBIT_ENABLED", "predicate": "DEFAULTS_TO", "object": false }
+      ]
+    },
+    {
+      "id": "38083bbf-4057-81fe-9528-c66d6cf00285",
+      "ordinal": 5,
+      "title": "Users, Roles & Access",
+      "url": "https://app.notion.com/p/38083bbf405781fe9528c66d6cf00285",
+      "lastEditedAt": "2026-08-10T16:38:11.011Z",
+      "claimedCommitSha": "1aaac02",
+      "purpose": "Documents tenant and platform roles, access boundaries, route guards, and login routing.",
+      "claims": [
+        { "subjectId": "system:namlend-web", "predicate": "HAS_CONSOLE_COUNT", "object": 3 },
+        { "subjectId": "route:/platform", "predicate": "GATED_BY", "object": "platform role" },
+        { "subjectId": "route:/admin", "predicate": "GATED_BY", "object": "tenant staff role" }
+      ],
+      "redactions": [
+        {
+          "findingId": "GAP-NOTION-SHARED-CREDENTIALS",
+          "description": "The source page contains shared test credentials. Values are deliberately excluded from repository artifacts."
+        }
+      ]
+    },
+    {
+      "id": "38083bbf-4057-8138-b99c-e861927b22df",
+      "ordinal": 6,
+      "title": "Component & Code Map",
+      "url": "https://app.notion.com/p/38083bbf40578138b99ce861927b22df",
+      "lastEditedAt": "2026-06-20T06:27:26.686Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Maps documented frontend, backend, ontology, and test responsibilities to source paths.",
+      "claims": [
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_EFFECTIVE_TABLE_COUNT", "object": 86 },
+        { "subjectId": "system:namlend-tests", "predicate": "HAS_CONVEX_PASS_COUNT", "object": 83 },
+        { "subjectId": "system:namlend-tests", "predicate": "HAS_UNIT_PASS_COUNT", "object": 200 },
+        { "subjectId": "system:namlend-tests", "predicate": "HAS_UNIT_SKIP_COUNT", "object": 2 }
+      ]
+    },
+    {
+      "id": "38083bbf-4057-81a3-8aba-ef6b84eafb56",
+      "ordinal": 7,
+      "title": "Build Log & Roadmap",
+      "url": "https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56",
+      "lastEditedAt": "2026-08-10T14:01:44.640Z",
+      "claimedCommitSha": "1aaac02",
+      "purpose": "Records historical implementation phases, verification snapshots, and remaining rollout work.",
+      "claims": [
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_ENTRY_POINT_COUNT", "object": 41 },
+        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_FEATURE_COUNT", "object": 7 },
+        { "subjectId": "system:namlend-tests", "predicate": "HAS_E2E_PASS_COUNT", "object": 110 },
+        { "subjectId": "system:namlend-tests", "predicate": "HAS_E2E_SKIP_COUNT", "object": 204 }
+      ]
+    },
+    {
+      "id": "38083bbf-4057-81da-b1b2-e2ac9876e3f0",
+      "ordinal": 8,
+      "title": "Operations & Runbook",
+      "url": "https://app.notion.com/p/38083bbf405781dab1b2e2ac9876e3f0",
+      "lastEditedAt": "2026-06-20T06:28:32.132Z",
+      "claimedCommitSha": "d4afe44",
+      "purpose": "Documents environments, safe commands, readiness checks, and owner-only activation procedures.",
+      "claims": [
+        { "subjectId": "deployment:netlify-production", "predicate": "URL", "object": "https://namlend-trust-portal-v220.netlify.app" },
+        { "subjectId": "deployment:convex-production-linked", "predicate": "DEPLOYMENT_NAME", "object": "aromatic-okapi-265" },
+        { "subjectId": "deployment:convex-e2e", "predicate": "DEPLOYMENT_NAME", "object": "brave-mole-108" }
+      ]
+    }
+  ],
+  "ciRuns": [
+    {
+      "id": 31501455195,
+      "workflow": "CI - Web",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31501455195",
+      "headSha": "eb457030e75fd004ba39ace8d54bf5fe231b0353",
+      "conclusion": "success",
+      "completedAt": "2026-08-11T14:33:53.000Z",
+      "jobs": [
+        {
+          "id": 93812215798,
+          "name": "Unit Tests",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31501455195/job/93812215798",
+          "results": { "unitPassed": 296, "unitSkipped": 2 }
+        },
+        {
+          "id": 93812215883,
+          "name": "Full E2E Test Suite",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31501455195/job/93812215883",
+          "results": { "e2ePassed": 117, "e2eSkipped": 206 }
+        }
+      ]
+    },
+    {
+      "id": 31501455205,
+      "workflow": "E2E Tests",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31501455205",
+      "headSha": "eb457030e75fd004ba39ace8d54bf5fe231b0353",
+      "conclusion": "success",
+      "completedAt": "2026-08-11T14:34:06.000Z",
+      "jobs": [
+        {
+          "id": 93812215777,
+          "name": "e2e",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31501455205/job/93812215777",
+          "results": { "e2ePassed": 117, "e2eSkipped": 206 }
+        }
+      ]
+    }
+  ],
+  "activeDocuments": [
+    "AGENTS.md",
+    "CLAUDE.MD",
+    "CONTRIBUTING.md",
+    "WORKFLOW.md",
+    "convex/AGENTS.md",
+    "src/AGENTS.md",
+    "e2e/AGENTS.md",
+    "supabase/AGENTS.md",
+    "docs/AGENTS.md",
+    "docs/ARCHITECTURE.md",
+    "docs/ARCHITECTURAL_REVIEW.md",
+    "docs/SERVICES.md",
+    "docs/TECHNICAL_DEBT.md",
+    "docs/FUNCTIONALITY_MAP.md",
+    "docs/TESTING.md",
+    "docs/SECURITY.md",
+    "docs/ONTOLOGY_ENGINE.md",
+    "docs/AI_ENGINEERING_HARNESS.md",
+    "docs/adr/0001-authoritative-ontology-graphify-sidecar.md",
+    "docs/adr/0002-risk-tiered-agent-authority.md"
+  ],
+  "defaults": {
+    "evidenceMaxAgeCommits": 10,
+    "gapOwner": "NamLend Engineering",
+    "gapReviewDate": "2026-09-30"
+  }
+}

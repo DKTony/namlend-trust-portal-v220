@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://namlend.example/agent-harness/v1/agent-run-receipt.schema.json",
+  "title": "NamLend Agent Run Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "runId", "taskId", "taskContract", "baseSha", "headSha", "startedAt",
+    "completedAt", "agent", "policyVersion", "ontologyHash", "graphifyHash", "changedPaths",
+    "commands", "violations", "handoffStatus"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "runId": { "type": "string", "minLength": 3 },
+    "taskId": { "type": "string", "minLength": 3 },
+    "taskContract": { "type": "string", "minLength": 1 },
+    "baseSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "headSha": { "type": "string", "pattern": "^(?:[a-f0-9]{40}|WORKTREE)$" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "completedAt": { "type": "string", "format": "date-time" },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "toolVersion"],
+      "properties": {
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "toolVersion": { "type": "string" }
+      }
+    },
+    "policyVersion": { "type": "string" },
+    "ontologyHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "graphifyHash": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+    "changedPaths": { "type": "array", "items": { "type": "string" } },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["commandId", "exitCode", "outputDigest"],
+        "properties": {
+          "commandId": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "outputDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "testIdentities": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "violations": { "type": "array", "items": { "type": "object" } },
+    "handoffStatus": { "enum": ["READY_FOR_REVIEW", "BLOCKED", "FAILED", "ABANDONED"] }
+  }
+}

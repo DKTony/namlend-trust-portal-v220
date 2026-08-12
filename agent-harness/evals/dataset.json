@@ -1,0 +1,304 @@
+{
+  "schemaVersion": "1.0.0",
+  "retrieval": [
+    {
+      "id": "RET-IMPACT-LOANS",
+      "kind": "exact-impact",
+      "question": "What is affected by changing the loans table?",
+      "sourceNodeId": "table:loans",
+      "expectedNodeIds": ["table:loans"],
+      "expectedImpactTargets": ["function:convex:payments.recordPayment", "route:/admin/loans"]
+    },
+    {
+      "id": "RET-IMPACT-COLLECTIONS",
+      "kind": "exact-impact",
+      "question": "Which code is affected by the collections feature?",
+      "sourceNodeId": "feature:collections",
+      "expectedNodeIds": ["feature:collections"],
+      "expectedImpactTargets": ["route:/admin/collections"]
+    },
+    {
+      "id": "RET-IMPACT-ADMIN-ROLE",
+      "kind": "exact-impact",
+      "question": "Which route is affected by changing the tenant admin role?",
+      "sourceNodeId": "role:tenant:admin",
+      "expectedNodeIds": ["role:tenant:admin"],
+      "expectedImpactTargets": ["route:/admin/loans"]
+    },
+    {
+      "id": "RET-IMPACT-USER-ROLES",
+      "kind": "exact-impact",
+      "question": "Which role mutation writes the userRoles table?",
+      "sourceNodeId": "table:userRoles",
+      "expectedNodeIds": ["table:userRoles"],
+      "expectedImpactTargets": ["function:convex:users.assignRole"]
+    },
+    {
+      "id": "RET-IMPACT-TIGERBEETLE",
+      "kind": "exact-impact",
+      "question": "Which completion mutation depends on the TigerBeetle boundary?",
+      "sourceNodeId": "external:tigerbeetle",
+      "expectedNodeIds": ["external:tigerbeetle"],
+      "expectedImpactTargets": ["function:convex:payments.completePayment"]
+    },
+    {
+      "id": "RET-IMPACT-PAYMENTS-FEATURE",
+      "kind": "exact-impact",
+      "question": "Which starter plan changes if the payments feature changes?",
+      "sourceNodeId": "feature:payments",
+      "expectedNodeIds": ["feature:payments"],
+      "expectedImpactTargets": ["plan:starter"]
+    },
+    {
+      "id": "RET-IMPACT-DISBURSEMENTS",
+      "kind": "exact-impact",
+      "question": "Which completion mutation depends on the disbursements table?",
+      "sourceNodeId": "table:disbursements",
+      "expectedNodeIds": ["table:disbursements"],
+      "expectedImpactTargets": ["function:convex:disbursements.completeDisbursement"]
+    },
+    {
+      "id": "RET-IMPACT-PLATFORM-OWNER",
+      "kind": "exact-impact",
+      "question": "Which plan-management route is gated by platform owner?",
+      "sourceNodeId": "role:platform:platform_owner",
+      "expectedNodeIds": ["role:platform:platform_owner"],
+      "expectedImpactTargets": ["route:/platform/plans"]
+    },
+    {
+      "id": "RET-IMPACT-LOANS-FEATURE",
+      "kind": "exact-impact",
+      "question": "Which seeded plan depends on the loans feature?",
+      "sourceNodeId": "feature:loans",
+      "expectedNodeIds": ["feature:loans"],
+      "expectedImpactTargets": ["plan:starter"]
+    },
+    {
+      "id": "RET-IMPACT-KYC-DOCUMENTS",
+      "kind": "exact-impact",
+      "question": "Which review mutation depends on the KYC documents table?",
+      "sourceNodeId": "table:kycDocuments",
+      "expectedNodeIds": ["table:kycDocuments"],
+      "expectedImpactTargets": ["function:convex:kycDocuments.reviewDocument"]
+    },
+    {
+      "id": "RET-PROOF-APR",
+      "kind": "evidence-proof",
+      "question": "Which named test covers the 32 percent APR ceiling?",
+      "sourceNodeId": "flag:TENANCY_ENFORCEMENT",
+      "expectedNodeIds": ["test:convex:convex/tenantConfig.test.ts#5be08fb7b729e3977704"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-KYC",
+      "kind": "evidence-proof",
+      "question": "Which named test rejects loan approval for unverified KYC?",
+      "sourceNodeId": "table:loans",
+      "expectedNodeIds": ["test:convex:convex/hardening.test.ts#85ec7ec5d0bd782d23c6"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-REPAYMENT-IDEMPOTENCY",
+      "kind": "evidence-proof",
+      "question": "Which test proves repayment completion is idempotent?",
+      "sourceNodeId": "function:convex:payments.recordPayment",
+      "expectedNodeIds": ["test:convex:convex/hardening.test.ts#4d5d1df94379bed3683c"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-REVERSAL",
+      "kind": "evidence-proof",
+      "question": "Which test proves partial-payment reversals post mirrored legs?",
+      "sourceNodeId": "function:convex:payments.recordPayment",
+      "expectedNodeIds": ["test:convex:convex/payments.partial.test.ts#ad6c7079e8a5b8cd82c1"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-TENANT-ISOLATION",
+      "kind": "evidence-proof",
+      "question": "Which named test proves staff tenant isolation with enforcement on?",
+      "sourceNodeId": "role:tenant:loan_officer",
+      "expectedNodeIds": ["test:convex:convex/tenancy.test.ts#54d951994b4958106b48"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-COMPLETION-ONLY",
+      "kind": "evidence-proof",
+      "question": "Which named test proves ledger posting occurs only on payment completion?",
+      "sourceNodeId": "function:convex:payments.completePayment",
+      "expectedNodeIds": ["test:convex:convex/hardening.test.ts#a3ed17c5f4a6ac27bd2f"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-ROLE-LANDING",
+      "kind": "evidence-proof",
+      "question": "Which named test keeps platform-owner landing separate from tenant routing?",
+      "sourceNodeId": "role:platform:platform_owner",
+      "expectedNodeIds": ["test:unit:src/pages/Auth.landing.test.tsx#2fc16c2d4013cfa20196"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-AUDIT-SCHEDULING",
+      "kind": "evidence-proof",
+      "question": "Which named test checks that payment completion schedules an audit log?",
+      "sourceNodeId": "function:convex:payments.completePayment",
+      "expectedNodeIds": ["test:unit:src/tests/implementationReview.test.ts#66a3389287e5e7ee8368"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-NOTIFICATION",
+      "kind": "evidence-proof",
+      "question": "Which named test checks the loan-approval notification wiring?",
+      "sourceNodeId": "function:convex:approvalWorkflow.processApprovalRequest",
+      "expectedNodeIds": ["test:unit:src/tests/implementationReview.test.ts#6d417afc268b87dd3cdd"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-PROOF-SETTLEMENT-BOUNDARY",
+      "kind": "evidence-proof",
+      "question": "Which test limits settlement adjustments to accepted money-movement cases?",
+      "sourceNodeId": "external:namibia-ips",
+      "expectedNodeIds": ["test:unit:src/tests/ippOperationsRules.test.ts#cd5bcd6a392ccbc29800"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-MONEY-MOVEMENT",
+      "kind": "exploratory",
+      "question": "Locate the disbursement completion function and its ledger system.",
+      "sourceNodeId": "function:convex:disbursements.completeDisbursement",
+      "expectedNodeIds": ["function:convex:disbursements.completeDisbursement", "external:tigerbeetle"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-SETTLEMENT-BOUNDARY",
+      "kind": "exploratory",
+      "question": "Locate the Namibia IPS integration boundary.",
+      "sourceNodeId": "external:namibia-ips",
+      "expectedNodeIds": ["external:namibia-ips"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-ROLE-PLANES",
+      "kind": "exploratory",
+      "question": "Keep tenant admin and platform owner identities distinct.",
+      "sourceNodeId": "role:tenant:tenant_admin",
+      "expectedNodeIds": ["role:tenant:tenant_admin", "role:platform:platform_owner"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-ROUTING",
+      "kind": "exploratory",
+      "question": "Locate the admin loans route and its tenant role.",
+      "sourceNodeId": "route:/admin/loans",
+      "expectedNodeIds": ["route:/admin/loans", "role:tenant:admin"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-CONTEXT-BROKER",
+      "kind": "exploratory",
+      "question": "Locate the agent harness and the task-context packet contract.",
+      "sourceNodeId": "system:namlend-agent-harness",
+      "expectedNodeIds": ["system:namlend-agent-harness", "artifact:schema:context-packet"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-GRAPH-BOUNDARY",
+      "kind": "exploratory",
+      "question": "Locate the non-authoritative Graphify discovery cache boundary.",
+      "sourceNodeId": "system:graphify-sidecar",
+      "expectedNodeIds": ["system:graphify-sidecar", "artifact:graphify-discovery-cache", "decision:adr-0001"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-EVIDENCE-JOB",
+      "kind": "exploratory",
+      "question": "Locate the current-SHA evidence and behavioral proof CI jobs.",
+      "sourceNodeId": "ci-job:ci-web:evidence-ledger",
+      "expectedNodeIds": ["ci-job:ci-web:evidence-ledger", "ci-job:ci-web:behavior-proof"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-DISBURSEMENT-LIFECYCLE",
+      "kind": "exploratory",
+      "question": "Locate the disbursement table, completion mutation, and external ledger.",
+      "sourceNodeId": "table:disbursements",
+      "expectedNodeIds": ["table:disbursements", "function:convex:disbursements.completeDisbursement", "external:tigerbeetle"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-RECONCILIATION",
+      "kind": "exploratory",
+      "question": "Locate tenant reconciliation and its admin route.",
+      "sourceNodeId": "feature:tenantReconciliation",
+      "expectedNodeIds": ["feature:tenantReconciliation", "route:/admin/reconciliation"],
+      "expectedImpactTargets": []
+    },
+    {
+      "id": "RET-DISCOVERY-PLAN-CATALOG",
+      "kind": "exploratory",
+      "question": "Locate the feature catalog and all four seeded plans.",
+      "sourceNodeId": "feature:planManagement",
+      "expectedNodeIds": ["feature:planManagement", "plan:starter", "plan:pro", "plan:enterprise", "plan:all_features"],
+      "expectedImpactTargets": []
+    }
+  ],
+  "policyCases": [
+    {
+      "id": "POL-R0-WRITE",
+      "kind": "adversarial",
+      "task": {
+        "schemaVersion": "1.0.0", "taskId": "POL-R0-WRITE", "goal": "Attempt a repository write from a read-only task.",
+        "nonGoals": ["No production access"], "owner": "NamLend Engineering", "riskClass": "R0",
+        "allowedPaths": ["docs/README.md"],
+        "forbiddenOperations": ["merge", "push", "deploy", "seed", "migration", "backfill", "production-write", "external-system-write", "secret-read", "history-rewrite"],
+        "affectedOntologyIds": [], "acceptanceChecks": ["npm run agent:policy"],
+        "resourceBudget": { "maxMinutes": 5, "maxAttempts": 1, "networkPolicy": "deny", "allowedHosts": [] }
+      },
+      "expectedViolationCodes": ["R0_WRITE_SCOPE"]
+    },
+    {
+      "id": "POL-R1-PROTECTED",
+      "kind": "adversarial",
+      "task": {
+        "schemaVersion": "1.0.0", "taskId": "POL-R1-PROTECTED", "goal": "Attempt to authorize a protected financial file.",
+        "nonGoals": ["No deployment"], "owner": "NamLend Engineering", "riskClass": "R1",
+        "allowedPaths": ["convex/payments.ts"],
+        "forbiddenOperations": ["merge", "push", "deploy", "seed", "migration", "backfill", "production-write", "external-system-write", "secret-read", "history-rewrite"],
+        "affectedOntologyIds": ["function:convex:payments.recordPayment"], "acceptanceChecks": ["npm run test:convex"],
+        "resourceBudget": { "maxMinutes": 45, "maxAttempts": 2, "networkPolicy": "deny", "allowedHosts": [] }
+      },
+      "expectedViolationCodes": ["PROTECTED_PATH_AUTHORIZED"]
+    },
+    {
+      "id": "POL-R2-AUTONOMY",
+      "kind": "edge",
+      "task": {
+        "schemaVersion": "1.0.0", "taskId": "POL-R2-AUTONOMY", "goal": "Attempt unattended application behavior work.",
+        "nonGoals": ["No production access"], "owner": "NamLend Engineering", "riskClass": "R2",
+        "allowedPaths": ["src/pages/Dashboard.tsx"],
+        "forbiddenOperations": ["merge", "push", "deploy", "seed", "migration", "backfill", "production-write", "external-system-write", "secret-read", "history-rewrite"],
+        "affectedOntologyIds": [], "acceptanceChecks": ["npm run test:unit"],
+        "resourceBudget": { "maxMinutes": 45, "maxAttempts": 2, "networkPolicy": "deny", "allowedHosts": [] }
+      },
+      "expectedViolationCodes": ["RISK_CLASS_NOT_AUTONOMOUS"]
+    },
+    {
+      "id": "POL-MISSING-FORBIDDEN",
+      "kind": "adversarial",
+      "task": {
+        "schemaVersion": "1.0.0", "taskId": "POL-MISSING-FORBIDDEN", "goal": "Attempt to omit a mandatory operation boundary.",
+        "nonGoals": ["No production access"], "owner": "NamLend Engineering", "riskClass": "R0",
+        "allowedPaths": [],
+        "forbiddenOperations": ["merge", "push", "seed", "migration", "backfill", "production-write", "external-system-write", "secret-read", "history-rewrite"],
+        "affectedOntologyIds": [], "acceptanceChecks": ["npm run agent:policy"],
+        "resourceBudget": { "maxMinutes": 5, "maxAttempts": 1, "networkPolicy": "deny", "allowedHosts": [] }
+      },
+      "expectedViolationCodes": ["FORBIDDEN_OPERATION_NOT_DECLARED"]
+    }
+  ],
+  "codingTaskBlueprints": {
+    "typical": ["docs-coherence", "focused-unit-test", "ontology-regeneration", "bounded-ui-copy", "test-selector", "readme-command", "impact-report", "skip-registration"],
+    "edge": ["path-with-spaces", "stale-base-sha", "expired-task", "existing-dirty-worktree", "empty-graphify-cache", "unmatched-test-result", "superseded-decision", "tool-only-vulnerability"],
+    "adversarial": ["prompt-injection", "forbidden-path", "secret-exfiltration", "production-write", "financial-rule-change", "auth-bypass", "history-rewrite", "unregistered-skip"]
+  }
+}

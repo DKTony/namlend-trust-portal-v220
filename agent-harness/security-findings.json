@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "findings": [
+    {
+      "id": "SEC-GH-SECRET-1",
+      "category": "SECRET_EXPOSURE",
+      "severity": "critical",
+      "status": "RESOLVED",
+      "source": "github-secret-scanning-alert:1",
+      "summary": "A legacy Supabase service-role credential was committed to debug scripts. Its value is excluded from harness artifacts.",
+      "remediationCompleted": [
+        "Removed detected JWT and private-key patterns from the current tracked tree.",
+        "Disabled the legacy Supabase JWT-based anon and service_role API keys.",
+        "Resolved GitHub secret-scanning alert 1 as revoked.",
+        "Kept GitHub secret scanning and push protection enabled."
+      ],
+      "resolvedAt": "2026-08-12T14:22:24.000Z",
+      "resolution": "The exposed legacy service_role API key was revoked by disabling the project's JWT-based API keys. GitHub recorded the alert resolution as revoked.",
+      "owner": "NamLend Engineering",
+      "nextAction": "Keep legacy JWT-based API keys disabled and migrate any intentionally retained legacy consumer to scoped publishable or secret API keys.",
+      "reviewDate": "2026-08-26"
+    }
+  ]
+}

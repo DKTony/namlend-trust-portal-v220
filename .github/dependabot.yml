@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Windhoek
+    open-pull-requests-limit: 5
+    groups:
+      development-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Windhoek
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: /tools/graphify
+    schedule:
+      interval: monthly
+      timezone: Africa/Windhoek
+    open-pull-requests-limit: 1
+    ignore:
+      - dependency-name: graphifyy
+        update-types: [version-update:semver-major, version-update:semver-minor, version-update:semver-patch]

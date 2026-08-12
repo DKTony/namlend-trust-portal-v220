@@ -114,6 +114,28 @@ export function DocumentPreviewDialog({
     }
   };
 
+  const handleOpen = async () => {
+    if (!document) return;
+    const target = window.open('', '_blank');
+    if (target) target.opener = null;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await requestAccess(document.id, 'preview');
+      if (!result.url) {
+        target?.close();
+        setError('This stored file is no longer available.');
+        return;
+      }
+      if (target) target.location.href = result.url;
+    } catch {
+      target?.close();
+      setError('The document could not be opened. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const mimeType = access?.mimeType ?? document?.mimeType ?? '';
   const isImage = mimeType.startsWith('image/');
   const isPdf = mimeType === 'application/pdf';
@@ -193,11 +215,9 @@ export function DocumentPreviewDialog({
             )}
           </div>
           <div className="flex gap-2">
-            {access?.url && (
-              <Button variant="outline" asChild>
-                <a href={access.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Open
-                </a>
+            {document?.fileAvailable && (
+              <Button variant="outline" onClick={() => void handleOpen()} disabled={loading}>
+                <ExternalLink className="mr-2 h-4 w-4" /> Open
               </Button>
             )}
             <Button

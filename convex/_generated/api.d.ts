@@ -26,6 +26,7 @@ import type * as crons from '../crons.js';
 import type * as disbursements from '../disbursements.js';
 import type * as documentAccess from '../documentAccess.js';
 import type * as http from '../http.js';
+import type * as institutionDocuments from '../institutionDocuments.js';
 import type * as ippOperations from '../ippOperations.js';
 import type * as ips_ipsAlerts from '../ips/ipsAlerts.js';
 import type * as ips_ipsAliasDirectory from '../ips/ipsAliasDirectory.js';
@@ -154,6 +155,7 @@ declare const fullApi: ApiFromModules<{
   disbursements: typeof disbursements;
   documentAccess: typeof documentAccess;
   http: typeof http;
+  institutionDocuments: typeof institutionDocuments;
   ippOperations: typeof ippOperations;
   'ips/ipsAlerts': typeof ips_ipsAlerts;
   'ips/ipsAliasDirectory': typeof ips_ipsAliasDirectory;

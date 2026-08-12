@@ -12,6 +12,7 @@ export async function ensureAdminReady(page: Page): Promise<void> {
  */
 const NAV_ROUTES: Record<string, string> = {
   overview: '/admin/overview',
+  'tenant-info': '/admin/tenant-info',
   loans: '/admin/loans',
   clients: '/admin/clients',
   payments: '/admin/payments',

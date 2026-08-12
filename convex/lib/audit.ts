@@ -127,6 +127,7 @@ function inferDomainSource(entityType: string): string {
     loans: 'lending',
     loanDocuments: 'lending',
     kycDocuments: 'identity',
+    institutionDocuments: 'compliance',
     loanApprovals: 'lending',
     disbursements: 'payments',
     paymentTransactions: 'payments',

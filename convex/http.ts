@@ -172,7 +172,8 @@ http.route({
 // ---------------------------------------------------------------------------
 
 /**
- * Serves KYC/loan documents against a grant minted by `requestDocumentAccess`
+ * Serves KYC, loan, and institution documents against a grant minted by
+ * `requestDocumentAccess`
  * (see convex/lib/documentGrants.ts for why raw storage URLs are not exposed).
  * Unknown and expired grants are answered identically: no oracle for probing nonces.
  */

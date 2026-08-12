@@ -88,6 +88,7 @@ test.describe('Adaptive layout regression', () => {
       await page.setViewportSize(viewport);
       for (const route of [
         '/admin/overview',
+        '/admin/tenant-info',
         '/admin/loans',
         '/admin/clients',
         '/admin/payments',

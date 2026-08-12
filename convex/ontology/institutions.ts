@@ -10,7 +10,7 @@
  *   getInstitution       - staff (own institution or admin)
  *   listInstitutions     - admin only
  *   config mutations     - admin only
- *   seedNamLendTrust     - admin only (one-time)
+ *   seedOgFinancialServices - admin only (one-time)
  *   backfillInstitution  - admin only (one-time)
  */
 
@@ -169,7 +169,7 @@ export const getInstitution = query({
 });
 
 /**
- * Get institution by shortCode (e.g. "NAMLEND").
+ * Get institution by shortCode (e.g. "OGFS").
  */
 export const getInstitutionByCode = query({
   args: { shortCode: v.string() },
@@ -316,14 +316,14 @@ export const getAllInstitutionConfig = query({
 });
 
 // ---------------------------------------------------------------------------
-// Admin: Seed NamLend Trust (one-time)
+// Admin: Seed OG Financial Services (one-time)
 // ---------------------------------------------------------------------------
 
 /**
- * Seed the NamLend Trust institution and register BON relationship.
+ * Seed OG Financial Services and its NAMFISA regulator relationship.
  * Idempotent -- checks before inserting.
  */
-export const seedNamLendTrust = mutation({
+export const seedOgFinancialServices = mutation({
   args: {},
   handler: async (ctx) => {
     const adminId = await assertAdmin(ctx);
@@ -332,43 +332,61 @@ export const seedNamLendTrust = mutation({
     // Idempotency check
     const existing = await ctx.db
       .query('institutions')
-      .withIndex('by_shortCode', (q) => q.eq('shortCode', 'NAMLEND'))
+      .withIndex('by_shortCode', (q) => q.eq('shortCode', 'OGFS'))
       .first();
     if (existing) return { institutionId: existing._id, alreadyExists: true };
 
     const institutionId = await ctx.db.insert('institutions', {
-      name: 'NamLend Trust',
-      shortCode: 'NAMLEND',
+      name: 'OG Financial Services',
+      legalName: 'OG Financial Services CC',
+      shortCode: 'OGFS',
       type: 'lender',
-      registrationNumber: 'REG-NAM-2024-001',
-      regulatoryLicense: 'BON-ML-2024-001',
+      registrationNumber: 'CC/2025/12791',
+      regulatoryLicense: '25/11/2366',
+      taxIdentificationNumber: '15848714',
+      taxType: 'ITX 15848714-011',
+      principalOfficer: 'Ornesto Ordiene Goagoseb',
+      contactPhone: '+264 81 417 4288',
+      contactEmail: 'finance@mgholdingsptyltd.com',
+      website: 'https://www.mgholdingsptyltd.com',
+      licensedAddress: '791 Crater Street, Windhoek, Namibia',
+      contactAddress:
+        'Go Works Properties, Block C (Units 62-64), Maerua Mall, Centaurus Road, Windhoek, Namibia',
+      regulatoryEffectiveAt: Date.UTC(2026, 3, 20),
+      regulatoryExpiresAt: Date.UTC(2027, 3, 19),
+      taxEffectiveAt: Date.UTC(2025, 10, 6),
+      taxIssuedAt: Date.UTC(2025, 11, 17),
       status: 'active',
-      contactEmail: 'info@namlend.com.na',
       metadata: {
-        founded: '2024',
         jurisdiction: 'Namibia',
-        regulator: 'Bank of Namibia',
+        regulator: 'NAMFISA',
       },
       createdAt: now,
       updatedAt: now,
     });
 
-    // Seed BON (Bank of Namibia) as regulator
-    const bonId = await ctx.db.insert('institutions', {
-      name: 'Bank of Namibia',
-      shortCode: 'BON',
-      type: 'regulator',
-      status: 'active',
-      metadata: { role: 'Central bank and financial regulator' },
-      createdAt: now,
-      updatedAt: now,
-    });
+    let namfisa = await ctx.db
+      .query('institutions')
+      .withIndex('by_shortCode', (q) => q.eq('shortCode', 'NAMFISA'))
+      .first();
+    if (!namfisa) {
+      const namfisaId = await ctx.db.insert('institutions', {
+        name: 'Namibia Financial Institutions Supervisory Authority',
+        shortCode: 'NAMFISA',
+        type: 'regulator',
+        status: 'active',
+        metadata: { role: 'Non-bank financial institutions regulator' },
+        createdAt: now,
+        updatedAt: now,
+      });
+      namfisa = await ctx.db.get(namfisaId);
+    }
 
-    // Ontology: NamLend Trust -> licensed_by -> Bank of Namibia
+    // Ontology: OG Financial Services -> licensed_by -> NAMFISA
     emitRelationship(
       ctx,
       { type: 'institutions', id: institutionId },
-      { type: 'institutions', id: bonId },
+      { type: 'institutions', id: namfisa!._id },
       'licensed_by'
     );
 
@@ -380,7 +398,7 @@ export const seedNamLendTrust = mutation({
       correlationId: generateCorrelationId(),
       actorId: adminId,
       actorType: 'user',
-      payload: { name: 'NamLend Trust', shortCode: 'NAMLEND', seeded: true },
+      payload: { name: 'OG Financial Services', shortCode: 'OGFS', seeded: true },
     });
 
     // Seed default institution config
@@ -414,10 +432,10 @@ export const seedNamLendTrust = mutation({
       'SEED',
       'none',
       'active',
-      'NamLend Trust seeded'
+      'OG Financial Services seeded'
     );
 
-    return { institutionId, bonId, alreadyExists: false };
+    return { institutionId, regulatorId: namfisa!._id, alreadyExists: false };
   },
 });
 
@@ -426,9 +444,9 @@ export const seedNamLendTrust = mutation({
 // ---------------------------------------------------------------------------
 
 /**
- * Backfill all existing records with the NamLend Trust institutionId.
+ * Backfill all existing records with the primary tenant institutionId.
  * Idempotent -- skips records that already have an institutionId.
- * Run once after seedNamLendTrust().
+ * Run once after seedOgFinancialServices().
  */
 export const backfillInstitutionId = mutation({
   args: {

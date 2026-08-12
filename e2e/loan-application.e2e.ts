@@ -95,5 +95,8 @@ test.describe('Client Loan Application Form', () => {
     const submitBtn = page.getByTestId('loan-submit-button');
     await expect(submitBtn).toBeVisible();
     await expect(submitBtn).toBeEnabled();
+    await expect(page.getByTestId('loan-contract-step')).toHaveCount(0);
+    await expect(page.getByTestId('contract-signature')).toHaveCount(0);
+    await expect(page.getByTestId('contract-upload')).toHaveCount(0);
   });
 });

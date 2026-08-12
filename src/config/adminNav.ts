@@ -8,6 +8,7 @@ import type { NavGroup } from '@/types/navigation';
 import {
   AlertTriangle,
   BarChart3,
+  Building2,
   CheckCircle2,
   CheckSquare,
   DollarSign,
@@ -27,7 +28,10 @@ const allGroups: NavGroup[] = [
   {
     id: 'overview',
     label: 'Overview',
-    items: [{ id: 'overview', label: 'Dashboard', path: '/admin/overview', icon: LayoutDashboard }],
+    items: [
+      { id: 'overview', label: 'Dashboard', path: '/admin/overview', icon: LayoutDashboard },
+      { id: 'tenant-info', label: 'Tenant Info', path: '/admin/tenant-info', icon: Building2 },
+    ],
   },
   {
     id: 'operations',

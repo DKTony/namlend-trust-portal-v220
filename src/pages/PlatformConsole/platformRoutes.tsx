@@ -8,12 +8,14 @@
  */
 
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
+import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import React, { Suspense } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 
 // Platform-only pages
 const PlatformOverview = React.lazy(() => import('./pages/PlatformOverview'));
 const TenantsView = React.lazy(() => import('./pages/TenantsView'));
+const TenantInfoPage = React.lazy(() => import('../TenantInfo/TenantInfoPage'));
 const PlansView = React.lazy(() => import('./pages/PlansView'));
 const EntitlementsView = React.lazy(() => import('./pages/EntitlementsView'));
 const PlatformSupport = React.lazy(() => import('./pages/PlatformSupport'));
@@ -73,6 +75,16 @@ export function platformRoutes() {
           <PageSuspense>
             <TenantsView />
           </PageSuspense>
+        }
+      />
+      <Route
+        path="tenants/:institutionId/info"
+        element={
+          <ProtectedRoute requirePlatformOwner>
+            <PageSuspense>
+              <TenantInfoPage />
+            </PageSuspense>
+          </ProtectedRoute>
         }
       />
       <Route

@@ -1,7 +1,7 @@
 /**
  * Phase 0 control-plane seed — idempotent, inert.
  *
- * Establishes NamLend as tenant #1 on an all-features plan so production behavior is
+ * Establishes OG Financial Services as tenant #1 on an all-features plan so production behavior is
  * IDENTICAL after Phase 0: nothing is gated, nothing is removed. Safe to re-run.
  *
  * Run (dev/prod): npx convex run platform/seed:seedControlPlane '{"ownerEmail":"you@example.com"}'
@@ -9,14 +9,71 @@
 
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
+import { scheduleAuditEntry } from '../lib/audit';
 import { ALWAYS_ON_FEATURES, FEATURES } from '../lib/features';
 
-const NAMLEND_CODE = 'NAMLEND';
+const OG_CODE = 'OGFS';
+const LEGACY_CODE = 'NAMLEND';
+const OG_PROFILE = {
+  name: 'OG Financial Services',
+  legalName: 'OG Financial Services CC',
+  shortCode: OG_CODE,
+  registrationNumber: 'CC/2025/12791',
+  regulatoryLicense: '25/11/2366',
+  taxIdentificationNumber: '15848714',
+  taxType: 'ITX 15848714-011',
+  principalOfficer: 'Ornesto Ordiene Goagoseb',
+  contactPhone: '+264 81 417 4288',
+  contactEmail: 'finance@mgholdingsptyltd.com',
+  website: 'https://www.mgholdingsptyltd.com',
+  licensedAddress: '791 Crater Street, Windhoek, Namibia',
+  contactAddress:
+    'Go Works Properties, Block C (Units 62-64), Maerua Mall, Centaurus Road, Windhoek, Namibia',
+  regulatoryEffectiveAt: Date.UTC(2026, 3, 20),
+  regulatoryExpiresAt: Date.UTC(2027, 3, 19),
+  taxEffectiveAt: Date.UTC(2025, 10, 6),
+  taxIssuedAt: Date.UTC(2025, 11, 17),
+} as const;
+
+async function ensureOgTenant(ctx: any, now: number) {
+  let institution = await ctx.db
+    .query('institutions')
+    .withIndex('by_shortCode', (q: any) => q.eq('shortCode', OG_CODE))
+    .first();
+  if (!institution) {
+    institution = await ctx.db
+      .query('institutions')
+      .withIndex('by_shortCode', (q: any) => q.eq('shortCode', LEGACY_CODE))
+      .first();
+  }
+  if (institution) {
+    await ctx.db.patch(institution._id, {
+      ...OG_PROFILE,
+      address: OG_PROFILE.licensedAddress,
+      metadata: {
+        ...(institution.metadata ?? {}),
+        jurisdiction: 'Namibia',
+        previousShortCode: institution.shortCode === LEGACY_CODE ? LEGACY_CODE : undefined,
+      },
+      updatedAt: now,
+    });
+    return institution._id;
+  }
+  return ctx.db.insert('institutions', {
+    ...OG_PROFILE,
+    type: 'lender',
+    status: 'active',
+    address: OG_PROFILE.licensedAddress,
+    metadata: { jurisdiction: 'Namibia', seededBy: 'platform/seed' },
+    createdAt: now,
+    updatedAt: now,
+  });
+}
 
 /** Backoffice feature keys a plan can grant (platform-only features are not tenant-grantable). */
 const BACKOFFICE_FEATURES = FEATURES.filter((f) => f.console === 'backoffice').map((f) => f.key);
 
-/** Plan catalog seeded at Phase 0. NamLend goes on `all_features`. */
+/** Plan catalog seeded at Phase 0. OG Financial Services uses `all_features`. */
 const PLAN_DEFS: Array<{ planCode: string; name: string; features: string[] }> = [
   { planCode: 'all_features', name: 'All Features (internal)', features: BACKOFFICE_FEATURES },
   { planCode: 'starter', name: 'Starter', features: [...ALWAYS_ON_FEATURES] },
@@ -41,24 +98,8 @@ export const seedControlPlane = internalMutation({
     const now = Date.now();
     const report: Record<string, unknown> = {};
 
-    // 1. Ensure NamLend institution (tenant #1).
-    let namlend = await ctx.db
-      .query('institutions')
-      .withIndex('by_shortCode', (q) => q.eq('shortCode', NAMLEND_CODE))
-      .first();
-    if (!namlend) {
-      const id = await ctx.db.insert('institutions', {
-        name: 'NamLend Trust',
-        shortCode: NAMLEND_CODE,
-        type: 'lender',
-        status: 'active',
-        metadata: { jurisdiction: 'Namibia', seededBy: 'platform/seed' },
-        createdAt: now,
-        updatedAt: now,
-      });
-      namlend = await ctx.db.get(id);
-    }
-    const institutionId = namlend!._id;
+    // 1. Ensure OG Financial Services institution (tenant #1), upgrading the legacy row in place.
+    const institutionId = await ensureOgTenant(ctx, now);
     report.institutionId = institutionId;
 
     // 2. Seed featuresCatalog from the code manifest (authority = code).
@@ -117,7 +158,7 @@ export const seedControlPlane = internalMutation({
     }
     report.guardrailsAdded = guardrailsAdded;
 
-    // 5. NamLend active subscription on all_features.
+    // 5. OG Financial Services active subscription on all_features.
     const existingSub = (
       await ctx.db
         .query('tenantSubscriptions')
@@ -130,7 +171,7 @@ export const seedControlPlane = internalMutation({
         planCode: 'all_features',
         status: 'active',
         effectiveFrom: now,
-        reason: 'Phase 0 seed — NamLend tenant #1',
+        reason: 'Phase 0 seed - OG Financial Services tenant #1',
       });
       report.subscriptionCreated = true;
     }
@@ -215,5 +256,87 @@ export const seedControlPlane = internalMutation({
     }
 
     return report;
+  },
+});
+
+/**
+ * Human-triggered, idempotent production migration for the tenant and public brand defaults.
+ * It preserves the tenant ID and temporal configuration history.
+ */
+export const migrateOgFinancialServices = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    const institutionId = await ensureOgTenant(ctx, now);
+    const branding = [
+      {
+        key: 'branding.general',
+        value: {
+          company_name: 'OG Financial Services',
+          company_tagline: 'Finance that moves you forward',
+          support_email: 'finance@mgholdingsptyltd.com',
+          support_phone: '+264 81 417 4288',
+        },
+      },
+      {
+        key: 'branding.colors',
+        value: {
+          primary_color: '#3F713E',
+          secondary_color: '#7CA05C',
+          accent_color: '#274F35',
+          use_custom_colors: true,
+        },
+      },
+      {
+        key: 'branding.assets',
+        value: {
+          logo_url: '/og-financial-logo.svg',
+          favicon_url: '/favicon.svg',
+          logo_width: 178,
+          logo_height: 48,
+          show_company_name_with_logo: false,
+        },
+      },
+      {
+        key: 'branding.meta',
+        value: {
+          page_title_template: '{company_name} - {page_name}',
+          meta_description:
+            'Apply online with OG Financial Services, a NAMFISA-registered Namibian microlender.',
+          og_image_url: '/og-financial-social.png',
+        },
+      },
+    ];
+    let updated = 0;
+    for (const item of branding) {
+      const rows = await ctx.db
+        .query('systemConfiguration')
+        .withIndex('by_key', (q) => q.eq('key', item.key))
+        .collect();
+      const current = rows.find(
+        (row) => !row.deletedAt && (row.effectiveTo === undefined || row.effectiveTo > now)
+      );
+      if (current && JSON.stringify(current.value) === JSON.stringify(item.value)) continue;
+      if (current) await ctx.db.patch(current._id, { effectiveTo: now, updatedAt: now });
+      await ctx.db.insert('systemConfiguration', {
+        key: item.key,
+        value: item.value,
+        category: 'branding',
+        description: 'OG Financial Services public brand configuration',
+        isPublic: true,
+        effectiveFrom: now,
+        version: (current?.version ?? 0) + 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+      updated += 1;
+    }
+    scheduleAuditEntry(ctx, {
+      entityType: 'institutions',
+      entityId: institutionId,
+      action: 'REBRAND',
+      newState: { name: OG_PROFILE.name, shortCode: OG_CODE, brandingConfigsUpdated: updated },
+    });
+    return { institutionId, brandingConfigsUpdated: updated };
   },
 });

@@ -30,11 +30,19 @@ export const seedTestUsers = internalAction({
       { email: 'loan_officer@test.namlend.com', role: 'loan_officer' as const },
     ];
 
+    // E2E tenant roles must be bound to the tenant they exercise. Migrate/create the
+    // OG tenant first so same-tenant authorization is tested instead of bypassed.
+    const { institutionId } = await ctx.runMutation(
+      internal.platform.seed.migrateOgFinancialServices,
+      {}
+    );
+
     for (const user of testUsers) {
       await ctx.runMutation(internal.seedMutations.createTestUser, {
         email: user.email,
         hashedPassword,
         role: user.role,
+        institutionId,
       });
     }
 

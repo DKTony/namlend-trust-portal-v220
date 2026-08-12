@@ -407,7 +407,11 @@ export default defineSchema({
   documentAccessGrants: defineTable({
     nonce: v.string(),
     storageId: v.id('_storage'),
-    sourceTable: v.union(v.literal('kycDocuments'), v.literal('loanDocuments')),
+    sourceTable: v.union(
+      v.literal('kycDocuments'),
+      v.literal('loanDocuments'),
+      v.literal('institutionDocuments')
+    ),
     documentId: v.string(),
     /** Who was authorized — the guard already passed when the grant was minted. */
     actorId: v.id('users'),
@@ -416,6 +420,7 @@ export default defineSchema({
     mimeType: v.optional(v.string()),
     expiresAt: v.number(),
     createdAt: v.number(),
+    /** Grants are single-use; a non-zero count makes later fetches invalid. */
     fetchCount: v.number(),
     lastFetchedAt: v.optional(v.number()),
   }).index('by_nonce', ['nonce']),
@@ -2079,8 +2084,19 @@ export default defineSchema({
     name: v.string(),
     shortCode: v.string(), // "NAMLEND", "NAMPOST", "BON", etc.
     type: institutionType,
+    legalName: v.optional(v.string()),
     registrationNumber: v.optional(v.string()),
     regulatoryLicense: v.optional(v.string()),
+    taxIdentificationNumber: v.optional(v.string()),
+    taxType: v.optional(v.string()),
+    principalOfficer: v.optional(v.string()),
+    website: v.optional(v.string()),
+    licensedAddress: v.optional(v.string()),
+    contactAddress: v.optional(v.string()),
+    regulatoryEffectiveAt: v.optional(v.number()),
+    regulatoryExpiresAt: v.optional(v.number()),
+    taxEffectiveAt: v.optional(v.number()),
+    taxIssuedAt: v.optional(v.number()),
     status: institutionStatus,
     contactEmail: v.optional(v.string()),
     contactPhone: v.optional(v.string()),
@@ -2091,6 +2107,34 @@ export default defineSchema({
   })
     .index('by_shortCode', ['shortCode'])
     .index('by_status', ['status']),
+
+  /** Versioned regulatory/tax evidence held in private Convex File Storage. */
+  institutionDocuments: defineTable({
+    institutionId: v.id('institutions'),
+    documentType: v.union(
+      v.literal('namfisa_registration'),
+      v.literal('namra_taxpayer_certificate')
+    ),
+    issuer: v.string(),
+    documentNumber: v.optional(v.string()),
+    fileName: v.string(),
+    fileStorageId: v.id('_storage'),
+    fileSize: v.number(),
+    mimeType: v.string(),
+    sha256: v.string(),
+    effectiveAt: v.optional(v.number()),
+    issuedAt: v.optional(v.number()),
+    expiresAt: v.optional(v.number()),
+    version: v.number(),
+    isCurrent: v.boolean(),
+    supersededAt: v.optional(v.number()),
+    supersededBy: v.optional(v.id('institutionDocuments')),
+    uploadedBy: v.id('users'),
+    uploadedAt: v.number(),
+  })
+    .index('by_institutionId', ['institutionId'])
+    .index('by_institution_documentType', ['institutionId', 'documentType'])
+    .index('by_fileStorageId', ['fileStorageId']),
 
   /**
    * Per-institution configuration with temporal versioning.

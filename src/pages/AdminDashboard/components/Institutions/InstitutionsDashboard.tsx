@@ -10,15 +10,15 @@ import { useState } from 'react';
 
 export function InstitutionsDashboard() {
   const institutions = useQuery(api.ontology.institutions.listInstitutions, {});
-  const seedNamLend = useMutation(api.ontology.institutions.seedNamLendTrust);
+  const seedTenant = useMutation(api.ontology.institutions.seedOgFinancialServices);
   const { toast } = useToast();
   const [seeding, setSeeding] = useState(false);
 
   const handleSeed = async () => {
     setSeeding(true);
     try {
-      await seedNamLend({});
-      toast({ title: 'Seeded', description: 'NamLend Trust institution created.' });
+      await seedTenant({});
+      toast({ title: 'Seeded', description: 'OG Financial Services institution created.' });
     } catch (err) {
       toast({
         title: 'Seed Failed',
@@ -47,7 +47,7 @@ export function InstitutionsDashboard() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleSeed} disabled={seeding}>
             <RefreshCw className={cn('h-4 w-4 mr-2', seeding && 'animate-spin')} />
-            Seed NamLend Trust
+            Seed OG Financial Services
           </Button>
         </div>
       </div>
@@ -64,11 +64,11 @@ export function InstitutionsDashboard() {
             <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-lg font-medium mb-2">No Institutions</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Seed the default NamLend Trust institution to get started.
+              Seed the default OG Financial Services institution to get started.
             </p>
             <Button onClick={handleSeed} disabled={seeding}>
               <Plus className="h-4 w-4 mr-2" />
-              Seed NamLend Trust
+              Seed OG Financial Services
             </Button>
           </CardContent>
         </Card>

@@ -24,6 +24,7 @@
 
 import { GenericMutationCtx } from 'convex/server';
 import { DataModel, Id } from '../_generated/dataModel';
+import { scheduleAuditEntry } from './audit';
 
 type MutCtx = GenericMutationCtx<DataModel>;
 
@@ -32,7 +33,7 @@ export const GRANT_TTL_MS = 5 * 60 * 1000;
 
 export interface CreateGrantInput {
   storageId: Id<'_storage'>;
-  sourceTable: 'kycDocuments' | 'loanDocuments';
+  sourceTable: 'kycDocuments' | 'loanDocuments' | 'institutionDocuments';
   documentId: string;
   actorId: Id<'users'>;
   intent: 'preview' | 'download';
@@ -63,6 +64,14 @@ export async function createDocumentGrant(ctx: MutCtx, input: CreateGrantInput):
     expiresAt: now + GRANT_TTL_MS,
     createdAt: now,
     fetchCount: 0,
+  });
+
+  scheduleAuditEntry(ctx, {
+    entityType: input.sourceTable,
+    entityId: input.documentId,
+    action: 'GRANT_CREATE',
+    newState: { intent: input.intent, expiresAt: now + GRANT_TTL_MS },
+    userId: input.actorId,
   });
 
   const siteUrl = process.env.CONVEX_SITE_URL;

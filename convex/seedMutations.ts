@@ -75,8 +75,9 @@ export const createTestUser = internalMutation({
     email: v.string(),
     hashedPassword: v.string(),
     role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
+    institutionId: v.id('institutions'),
   },
-  handler: async (ctx, { email, hashedPassword, role }) => {
+  handler: async (ctx, { email, hashedPassword, role, institutionId }) => {
     // Check if user already exists
     const existingProfile = await ctx.db
       .query('profiles')
@@ -88,9 +89,16 @@ export const createTestUser = internalMutation({
         .query('userRoles')
         .withIndex('by_userId', (q) => q.eq('userId', existingProfile.userId))
         .first();
-      if (existingRole && existingRole.role !== role) {
-        await ctx.db.patch(existingRole._id, { role });
-        console.log(`[seed] Updated ${email} role to '${role}'`);
+      if (existingRole) {
+        await ctx.db.patch(existingRole._id, { role, institutionId });
+        console.log(`[seed] Bound ${email} to tenant as '${role}'`);
+      } else {
+        await ctx.db.insert('userRoles', {
+          userId: existingProfile.userId,
+          role,
+          institutionId,
+          createdAt: Date.now(),
+        });
       }
       // Deterministic reset: clear any income persisted onto the test client by
       // prior loan-application runs, so FinancialInfoStep always renders the
@@ -142,6 +150,7 @@ export const createTestUser = internalMutation({
     await ctx.db.insert('userRoles', {
       userId,
       role,
+      institutionId,
       createdAt: now,
     });
 
@@ -574,7 +583,7 @@ export const seedSettlementParticipants = internalMutation({
       {
         routingCode: 'NAMLEND',
         swiftBic: 'NAMLNANX',
-        name: 'NamLend Trust',
+        name: 'OG Financial Services',
         participantType: 'sponsored' as const,
         nissAccountRef: 'NISS-NAMLEND-E2E',
         isOperator: true,

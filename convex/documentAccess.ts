@@ -26,7 +26,7 @@ export const consumeGrant = internalMutation({
     if (!grant) return null;
 
     const now = Date.now();
-    if (grant.expiresAt < now) return null;
+    if (grant.expiresAt < now || grant.fetchCount > 0) return null;
 
     await ctx.db.patch(grant._id, {
       fetchCount: grant.fetchCount + 1,

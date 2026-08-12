@@ -10,6 +10,7 @@ import { Navigate, Route } from 'react-router-dom';
 
 // Lazy-loaded page components
 const OverviewPage = React.lazy(() => import('./pages/OverviewPage'));
+const TenantInfoPage = React.lazy(() => import('../TenantInfo/TenantInfoPage'));
 
 // Operations
 const LoanManagementDashboard = React.lazy(
@@ -90,6 +91,14 @@ export function adminRoutes() {
         element={
           <PageSuspense>
             <OverviewPage />
+          </PageSuspense>
+        }
+      />
+      <Route
+        path="tenant-info"
+        element={
+          <PageSuspense>
+            <TenantInfoPage />
           </PageSuspense>
         }
       />

@@ -25,7 +25,7 @@ import { api } from '@/integrations/convex/api';
 import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery } from 'convex/react';
-import { Plus, SlidersHorizontal } from 'lucide-react';
+import { FileText, Plus, SlidersHorizontal } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Id } from '../../../../convex/_generated/dataModel';
@@ -381,7 +381,16 @@ const TenantsView: React.FC = () => {
                         <SlidersHorizontal className="h-3.5 w-3.5" /> Entitlements
                       </Link>
                       {isPlatformOwner && (
-                        <AssignPlanDialog tenant={t} plans={plans} onDone={onDone} />
+                        <>
+                          <Link
+                            to={`/platform/tenants/${t._id}/info`}
+                            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted/50"
+                            data-testid={`platform-tenant-info-${t.shortCode}`}
+                          >
+                            <FileText className="h-3.5 w-3.5" /> Tenant Info
+                          </Link>
+                          <AssignPlanDialog tenant={t} plans={plans} onDone={onDone} />
+                        </>
                       )}
                     </div>
                   </td>

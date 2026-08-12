@@ -63,14 +63,15 @@ export function useIPSRepayment() {
 export function useIPSDisbursement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const initiateDisbursement = useConvexMutation(api.ips.ipsTransactions.initiateIpsDisbursement);
+  const initiateDisbursement = useConvexMutation(api.ips.ipsTransactions.startLoanDisbursement);
 
   return useMutation<InitiateIPSDisbursementResult, Error, InitiateIPSDisbursementParams>({
     mutationFn: async (params) => {
       return initiateDisbursement({
-        disbursementId: params.disbursementId as any,
+        loanId: params.loanId as any,
+        amount: params.amount,
         payeeVpa: params.payeeVpa,
-        clientRequestId: params.clientRequestId,
+        clientRequestId: params.clientRequestId ?? `ips-disbursement-${params.loanId}`,
       });
     },
     onSuccess: (result, variables) => {
@@ -80,7 +81,6 @@ export function useIPSDisbursement() {
           description: `Disbursement request for NAD ${variables.amount.toFixed(2)} was accepted for IPS processing.`,
         });
 
-        queryClient.invalidateQueries({ queryKey: ['disbursement', variables.disbursementId] });
         queryClient.invalidateQueries({ queryKey: ['disbursements'] });
         queryClient.invalidateQueries({ queryKey: ['pending-disbursements'] });
         queryClient.invalidateQueries({ queryKey: ['loan', variables.loanId] });

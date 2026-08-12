@@ -13,6 +13,8 @@ export interface Disbursement {
   method: string;
   reference: string;
   scheduled_at: string;
+  processed_at?: string;
+  ips_status?: string;
   created_at: string;
 }
 
@@ -34,12 +36,14 @@ export const useDisbursements = (
     let transformed: Disbursement[] = rawDisbursements.map((d: any) => ({
       id: String(d._id),
       loan_id: String(d.loanId ?? ''),
-      client_name: d.accountName ?? 'Unknown',
+      client_name: d.clientName ?? 'Unknown Client',
       amount: d.amount ?? 0,
       status: (d.status ?? 'pending') as Disbursement['status'],
-      method: d.method ?? 'bank_transfer',
+      method: d.actualRail ?? d.method ?? 'bank_transfer',
       reference: d.referenceNumber ?? `DIS-${String(d._id).slice(0, 8)}`,
-      scheduled_at: d.processedAt ? new Date(d.processedAt).toISOString() : '',
+      scheduled_at: d.createdAt ? new Date(d.createdAt).toISOString() : '',
+      processed_at: d.processedAt ? new Date(d.processedAt).toISOString() : undefined,
+      ips_status: d.ipsStatus,
       created_at: d.createdAt ? new Date(d.createdAt).toISOString() : '',
     }));
 

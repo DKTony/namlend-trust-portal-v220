@@ -15,7 +15,9 @@ import { internal } from '../_generated/api';
 import { Id } from '../_generated/dataModel';
 import { internalAction } from '../_generated/server';
 
-// Optional TigerBeetle HTTP API. Convex remains authoritative; this is shadow evidence.
+// Explicit operation mode. Shadow is deterministic local evidence with zero external IO;
+// live requires a reachable HTTPS bridge and fails closed.
+const TB_MODE = process.env.TIGERBEETLE_MODE;
 const TB_BASE_URL = process.env.TIGERBEETLE_HTTP_URL ?? process.env.TB_BASE_URL;
 
 // Account codes from Chart of Accounts (mirror of the edge function constants)
@@ -93,14 +95,24 @@ function ipsAccountsFor(eventType: string, direction: unknown) {
 }
 
 async function postTigerBeetle(path: string, body: Record<string, unknown>) {
-  if (!TB_BASE_URL) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('TigerBeetle HTTP URL is required in production.');
-    }
+  if (TB_MODE === 'shadow') {
     return { simulated: true };
   }
+  if (TB_MODE !== 'live') {
+    throw new Error('TIGERBEETLE_MODE must be explicitly set to shadow or live.');
+  }
+  if (!TB_BASE_URL) {
+    throw new Error('TigerBeetle HTTPS URL is required in live mode.');
+  }
+  const endpoint = new URL(TB_BASE_URL);
+  if (
+    endpoint.protocol !== 'https:' ||
+    ['localhost', '127.0.0.1', '::1'].includes(endpoint.hostname)
+  ) {
+    throw new Error('TigerBeetle live mode requires a non-local HTTPS endpoint.');
+  }
 
-  const response = await fetch(`${TB_BASE_URL}${path}`, {
+  const response = await fetch(`${TB_BASE_URL.replace(/\/$/, '')}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

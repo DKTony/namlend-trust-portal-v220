@@ -45,6 +45,19 @@ async function upsertMetric(ctx: MutCtx, metricKey: string, delta: number, event
   }
 }
 
+async function decrementMetricIfPositive(ctx: MutCtx, metricKey: string, eventId: string) {
+  const existing = await ctx.db
+    .query('portfolioMetrics')
+    .withIndex('by_metricKey', (q) => q.eq('metricKey', metricKey))
+    .first();
+  if (!existing || existing.lastEventId === eventId) return;
+  await ctx.db.patch(existing._id, {
+    value: Math.max(0, existing.value - 1),
+    lastEventId: eventId,
+    updatedAt: Date.now(),
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Projection Handlers (internalMutation — called via scheduler)
 // ---------------------------------------------------------------------------
@@ -97,7 +110,7 @@ export const onLoanPaidOff = internalMutation({
   },
   handler: async (ctx, { eventId }) => {
     await upsertMetric(ctx, 'paid_off_loan_count', 1, eventId);
-    await upsertMetric(ctx, 'active_loan_count', -1, eventId + ':active');
+    await decrementMetricIfPositive(ctx, 'active_loan_count', eventId + ':active');
   },
 });
 

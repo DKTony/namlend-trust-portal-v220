@@ -4,10 +4,71 @@
  */
 
 import { v } from 'convex/values';
+import type { GenericMutationCtx } from 'convex/server';
+import type { DataModel, Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditEntry } from './lib/audit';
-import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertAuthenticated, assertStaff } from './lib/auth';
 import { resolveWriteInstitution } from './lib/tenancy';
+
+type MutCtx = GenericMutationCtx<DataModel>;
+
+const notificationCategory = v.union(
+  v.literal('loan'),
+  v.literal('payment'),
+  v.literal('kyc'),
+  v.literal('account'),
+  v.literal('general'),
+  v.literal('marketing')
+);
+
+const notificationPriority = v.union(
+  v.literal('low'),
+  v.literal('normal'),
+  v.literal('high'),
+  v.literal('urgent')
+);
+
+type NotificationInput = {
+  userId: Id<'users'>;
+  institutionId?: Id<'institutions'>;
+  title: string;
+  message: string;
+  category: 'loan' | 'payment' | 'kyc' | 'account' | 'general' | 'marketing';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  actionUrl?: string;
+  actionLabel?: string;
+  metadata?: unknown;
+  expiresAt?: number;
+  dedupeKey?: string;
+  type?: string;
+  entityType?: string;
+  entityId?: string;
+};
+
+/** Insert once for a recipient. Exported for repair mutations that must stay atomic. */
+export async function createNotificationIdempotent(
+  ctx: MutCtx,
+  input: NotificationInput
+): Promise<Id<'notifications'>> {
+  if (input.dedupeKey) {
+    const existing = await ctx.db
+      .query('notifications')
+      .withIndex('by_userId_dedupeKey', (q) =>
+        q.eq('userId', input.userId).eq('dedupeKey', input.dedupeKey)
+      )
+      .first();
+    if (existing) return existing._id;
+  }
+
+  const { institutionId, ...notification } = input;
+  return ctx.db.insert('notifications', {
+    ...notification,
+    institutionId: institutionId ?? (await resolveWriteInstitution(ctx, { userId: input.userId })),
+    isRead: false,
+    createdAt: Date.now(),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -97,7 +158,8 @@ export const markNotificationRead = mutation({
   handler: async (ctx, { notificationId }) => {
     const notification = await ctx.db.get(notificationId);
     if (!notification) throw new Error('Notification not found');
-    await assertOwnerOrStaff(ctx, notification.userId);
+    const userId = await assertAuthenticated(ctx);
+    if (userId !== notification.userId) throw new Error('Notification not found');
 
     await ctx.db.patch(notificationId, {
       isRead: true,
@@ -108,6 +170,7 @@ export const markNotificationRead = mutation({
       entityId: notificationId,
       action: 'MARK_READ',
       newState: { isRead: true },
+      userId,
     });
   },
 });
@@ -194,32 +257,70 @@ export const createNotification = internalMutation({
     userId: v.id('users'),
     title: v.string(),
     message: v.string(),
-    category: v.union(
-      v.literal('loan'),
-      v.literal('payment'),
-      v.literal('kyc'),
-      v.literal('account'),
-      v.literal('general'),
-      v.literal('marketing')
-    ),
-    priority: v.union(
-      v.literal('low'),
-      v.literal('normal'),
-      v.literal('high'),
-      v.literal('urgent')
-    ),
+    category: notificationCategory,
+    priority: notificationPriority,
     actionUrl: v.optional(v.string()),
     actionLabel: v.optional(v.string()),
     metadata: v.optional(v.any()),
     expiresAt: v.optional(v.number()),
+    dedupeKey: v.optional(v.string()),
+    type: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    entityId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    return ctx.db.insert('notifications', {
-      ...args,
-      institutionId: await resolveWriteInstitution(ctx, { userId: args.userId }),
-      isRead: false,
-      createdAt: Date.now(),
-    });
+    return createNotificationIdempotent(ctx, args);
+  },
+});
+
+/**
+ * Notify every operational staff member in the same tenant. Marketing preferences do
+ * not suppress lifecycle alerts. A dedupe key is namespaced by recipient automatically.
+ */
+export const createStaffNotifications = internalMutation({
+  args: {
+    institutionId: v.optional(v.id('institutions')),
+    title: v.string(),
+    message: v.string(),
+    category: notificationCategory,
+    priority: notificationPriority,
+    actionUrl: v.optional(v.string()),
+    actionLabel: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    dedupeKey: v.string(),
+    type: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    entityId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.institutionId) return { created: 0, recipients: 0 };
+
+    const roleRows = await ctx.db
+      .query('userRoles')
+      .withIndex('by_institutionId', (q) => q.eq('institutionId', args.institutionId))
+      .collect();
+    const staffIds = Array.from(
+      new Set(
+        roleRows
+          .filter((role) => ['loan_officer', 'admin', 'tenant_admin'].includes(role.role))
+          .map((role) => role.userId)
+      )
+    );
+
+    let created = 0;
+    for (const userId of staffIds) {
+      const existing = await ctx.db
+        .query('notifications')
+        .withIndex('by_userId_dedupeKey', (q) =>
+          q.eq('userId', userId).eq('dedupeKey', args.dedupeKey)
+        )
+        .first();
+      if (existing) continue;
+      await createNotificationIdempotent(ctx, { ...args, userId });
+      created += 1;
+    }
+
+    return { created, recipients: staffIds.length };
   },
 });
 

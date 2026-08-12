@@ -37,6 +37,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     reference: string;
     payment_reference?: string;
     scheduled_at: string;
+    processed_at?: string;
     created_at: string;
   }
 
@@ -46,6 +47,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
       month: 'short',
@@ -94,6 +96,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
     reference: string | null;
     payment_reference?: string | null;
     scheduled_at: string;
+    processed_at?: string;
     created_at: string;
   }
 
@@ -252,7 +255,11 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                     </div>
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4" />
-                      <span>Scheduled: {formatDate(disbursement.scheduled_at)}</span>
+                      <span>
+                        {disbursement.processed_at
+                          ? `Processed: ${formatDate(disbursement.processed_at)}`
+                          : `Initiated: ${formatDate(disbursement.scheduled_at)}`}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <DollarSign className="h-4 w-4" />
@@ -283,6 +290,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
                               payment_reference:
                                 (disbursement as DisbursementRow).payment_reference ?? undefined,
                               scheduled_at: disbursement.scheduled_at,
+                              processed_at: disbursement.processed_at,
                               created_at: disbursement.created_at,
                             });
                             setDetailsModalOpen(true);

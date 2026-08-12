@@ -122,12 +122,15 @@ test.describe('IPP Full Lifecycle', () => {
 
     console.log(`Phase 1: Loan application submission result: ${submitted}`);
     expect(['redirected', 'toast']).toContain(submitted);
+
+    await page.getByTestId('notification-bell').click();
+    await expect(page.getByText(/Application Received/i).first()).toBeVisible({ timeout: 15_000 });
   });
 
   // =========================================================================
   // Phase 2: Admin approves the loan via Approvals workflow
   // =========================================================================
-  test('Phase 2: Admin approves loan', async ({ page }) => {
+  test('Phase 2: Admin approves loan', async ({ page, browser }) => {
     // Login as admin
     const role = await login(page, true);
     if (role !== 'admin') {
@@ -137,6 +140,29 @@ test.describe('IPP Full Lifecycle', () => {
 
     await page.setViewportSize({ width: 1366, height: 900 });
     await ensureAdminReady(page);
+
+    // Reciprocal operational evidence: both admin and loan officer receive the
+    // same tenant-scoped pending-work alert before anyone decides the request.
+    await page.getByTestId('notification-bell').click();
+    await expect(page.getByText(/New Loan Application/i).first()).toBeVisible({ timeout: 15_000 });
+    await page.keyboard.press('Escape');
+
+    const officerContext = await browser.newContext();
+    const officerPage = await officerContext.newPage();
+    await officerPage.goto(`${baseURL}/auth`);
+    await officerPage.getByTestId('email-input').fill('loan_officer@test.namlend.com');
+    await officerPage.getByTestId('password-input').fill('Test1234!');
+    await officerPage.getByTestId('login-button').click();
+    await officerPage.waitForURL(/\/admin/, { timeout: 30_000 });
+    await officerPage.getByTestId('notification-bell').click();
+    await expect(officerPage.getByText(/New Loan Application/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await officerPage.goto(`${baseURL}/admin/approvals`);
+    await expect(officerPage.locator('[data-testid^="approvals-request-"]').first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await officerContext.close();
 
     // -----------------------------------------------------------------------
     // Strategy A: Try Approvals tab (approval request created by processLoanApplication)
@@ -231,7 +257,7 @@ test.describe('IPP Full Lifecycle', () => {
   // =========================================================================
   // Phase 3: Admin disburses via IPP rail
   // =========================================================================
-  test('Phase 3: Admin disburses via IPP rail', async ({ page }) => {
+  test('Phase 3: Admin disburses via IPP rail', async ({ page, browser }) => {
     // Login as admin
     const role = await login(page, true);
     if (role !== 'admin') {
@@ -343,6 +369,34 @@ test.describe('IPP Full Lifecycle', () => {
         })
         .toMatch(/funded|active/i);
     }
+
+    await page.getByTestId('notification-bell').click();
+    await expect(page.getByText(/Disbursement Completed/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.keyboard.press('Escape');
+
+    // Explicitly wait for the reactive client queries. IPS history previously
+    // rendered an empty state briefly even though the linked transaction existed.
+    const clientContext = await browser.newContext();
+    const clientPage = await clientContext.newPage();
+    const clientRole = await login(clientPage, false);
+    expect(clientRole).toBe('client');
+    await clientPage.goto(`${baseURL}/loans/${createdLoanId}`);
+    await expect(clientPage.getByTestId('loan-status')).toContainText(/funded|active/i, {
+      timeout: 20_000,
+    });
+    await clientPage.getByTestId('ips-history-tab').click();
+    await expect(clientPage.getByText(/IPS Transactions \(1\)/i)).toBeVisible({ timeout: 20_000 });
+    await expect(clientPage.getByText(/Successful/i).first()).toBeVisible({ timeout: 20_000 });
+    await clientPage.getByTestId('notification-bell').click();
+    await expect(clientPage.getByText(/Loan Funds Disbursed/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(clientPage.getByText(/IPS transaction completed/i).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await clientContext.close();
 
     console.log('Phase 3: IPS disbursement completed and loan is funded');
   });

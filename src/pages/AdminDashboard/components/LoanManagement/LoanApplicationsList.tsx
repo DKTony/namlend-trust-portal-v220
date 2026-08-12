@@ -3,10 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { api, type Id } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
-import { useMutation } from 'convex/react';
 import {
   AlertTriangle,
   Calendar,
@@ -67,7 +64,6 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   const [loanDetailsOpen, setLoanDetailsOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
   const [selectedDisbursement, setSelectedDisbursement] = useState<{
-    id: string;
     amount: number;
     clientName: string;
     loanId: string;
@@ -83,37 +79,13 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     }
   };
 
-  const { toast } = useToast();
-  const initiateDisbursement = useMutation(api.disbursements.initiateDisbursement);
-
-  const handleDisburse = async (application: LoanApplication) => {
-    try {
-      // Create disbursement via Convex mutation
-      const disbursementId = await initiateDisbursement({
-        loanId: application.id as Id<'loans'>,
-        amount: application.amount,
-        method: 'bank_transfer',
-      });
-
-      // Open the modal with the disbursement ID
-      setSelectedDisbursement({
-        id: String(disbursementId),
-        amount: application.amount,
-        clientName: application.applicantName,
-        loanId: application.id,
-      });
-      setDisbursementModalOpen(true);
-    } catch (error) {
-      console.error('Error preparing disbursement:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to prepare disbursement. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  const handleDisburse = (application: LoanApplication) => {
+    setSelectedDisbursement({
+      amount: application.amount,
+      clientName: application.applicantName,
+      loanId: application.id,
+    });
+    setDisbursementModalOpen(true);
   };
 
   const handleDisbursementSuccess = () => {

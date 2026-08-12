@@ -313,6 +313,7 @@ export const submitMyKyc = mutation({
       )
     );
 
+    const institutionId = profile.institutionId ?? (await resolveWriteInstitution(ctx, { userId }));
     let requestId = existingOpen?._id;
     if (!requestId) {
       requestId = await ctx.db.insert('approvalRequests', {
@@ -321,7 +322,7 @@ export const submitMyKyc = mutation({
         requestType: 'kyc_verification',
         status: 'pending',
         requestedBy: userId,
-        institutionId: profile.institutionId ?? (await resolveWriteInstitution(ctx, { userId })),
+        institutionId,
         priority: 'medium',
         metadata: {
           requiredDocumentTypes: [...REQUIRED_KYC_DOCUMENT_TYPES],
@@ -370,8 +371,27 @@ export const submitMyKyc = mutation({
         actionUrl: '/kyc',
         actionLabel: 'View status',
         metadata: { requestId },
+        dedupeKey: `kyc:${requestId}:submitted:client`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
       })
       .catch(() => console.error('[notification] KYC submission notification enqueue failed'));
+
+    ctx.scheduler
+      .runAfter(0, internal.notifications.createStaffNotifications, {
+        institutionId,
+        title: isResubmission ? 'KYC Package Resubmitted' : 'New KYC Package',
+        message: 'A client KYC package is ready for document review.',
+        category: 'kyc',
+        priority: 'high',
+        actionUrl: '/admin/approvals',
+        actionLabel: 'Review KYC',
+        dedupeKey: `kyc:${requestId}:submitted:staff`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
+        metadata: { requestId, profileId: profile._id },
+      })
+      .catch(() => console.error('[notification] KYC staff fan-out enqueue failed'));
     return requestId;
   },
 });
@@ -574,8 +594,29 @@ export const completeReview = mutation({
         actionUrl: '/kyc',
         actionLabel: verified ? 'Continue' : 'Review documents',
         metadata: { requestId, outcome: profileStatus },
+        dedupeKey: `kyc:${requestId}:${profileStatus}:client`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
       })
       .catch(() => console.error('[notification] KYC decision notification enqueue failed'));
+
+    ctx.scheduler
+      .runAfter(0, internal.notifications.createStaffNotifications, {
+        institutionId: request.institutionId ?? profile.institutionId,
+        title: verified ? 'KYC Package Verified' : 'KYC Action Required',
+        message: verified
+          ? 'A client KYC package completed verification.'
+          : 'A client KYC package was rejected and requires replacement documents.',
+        category: 'kyc',
+        priority: verified ? 'normal' : 'high',
+        actionUrl: '/admin/approvals',
+        actionLabel: 'View KYC Queue',
+        dedupeKey: `kyc:${requestId}:${profileStatus}:staff`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
+        metadata: { requestId, profileId: profile._id, outcome: profileStatus },
+      })
+      .catch(() => console.error('[notification] KYC decision staff fan-out failed'));
 
     return { status: profileStatus };
   },

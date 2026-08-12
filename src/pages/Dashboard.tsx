@@ -68,6 +68,7 @@ export default function Dashboard() {
   // Convex reactive queries — no as any (N2)
   const profile = useQuery(api.users.getMyProfile);
   const rawLoans = useQuery(api.loans.getMyLoans, {});
+  const portfolioSummary = useQuery(api.loans.getMyPortfolioSummary, {});
   const rawApprovals = useQuery(api.approvalWorkflow.getMyApprovalRequests, { status: 'pending' });
   const rawPayments = useQuery(api.payments.getMyPayments, { limit: 50 });
 
@@ -75,11 +76,6 @@ export default function Dashboard() {
   const payments = useMemo(() => rawPayments ?? [], [rawPayments]);
 
   const activeLoan = loans.find((loan) => ['active', 'disbursed', 'funded'].includes(loan.status));
-
-  const paymentSchedule = useQuery(
-    api.payments.getPaymentSchedule,
-    activeLoan ? { loanId: activeLoan._id } : 'skip'
-  );
 
   // Map approval requests to LoanApplication shape — using Convex schema field names
   const loanApplications: LoanApplication[] = (rawApprovals ?? [])
@@ -120,7 +116,7 @@ export default function Dashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Data is loading if any query hasn't returned yet
-  const loading = profile === undefined || rawLoans === undefined;
+  const loading = profile === undefined || rawLoans === undefined || portfolioSummary === undefined;
 
   // KYC eligibility for status indicator
   const {
@@ -162,25 +158,9 @@ export default function Dashboard() {
   const maxChartAmount = Math.max(...chartData.map((b) => b.amount), 1);
   const hasChartData = chartData.some((b) => b.amount > 0);
 
-  // Next installment for the active loan; falls back to deriving from the
-  // disbursement date when no schedule rows exist yet.
-  const nextPaymentDate = useMemo(() => {
-    const upcoming = (paymentSchedule ?? [])
-      .filter(
-        (s) => s.status === 'scheduled' || s.status === 'overdue' || s.status === 'partially_paid'
-      )
-      .sort((a, b) => a.dueDate - b.dueDate)[0];
-    if (upcoming) return new Date(upcoming.dueDate);
-    if (activeLoan?.disbursedAt) {
-      const due = new Date(activeLoan.disbursedAt);
-      const term = activeLoan.termMonths ?? 60;
-      for (let i = 0; i < term && due.getTime() <= Date.now(); i++) {
-        due.setMonth(due.getMonth() + 1);
-      }
-      return due.getTime() > Date.now() ? due : null;
-    }
-    return null;
-  }, [paymentSchedule, activeLoan]);
+  const nextPaymentDate = portfolioSummary?.nextInstallment
+    ? new Date(portfolioSummary.nextInstallment.dueDate)
+    : null;
 
   useEffect(() => {
     if (user) {
@@ -279,30 +259,17 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <StatCard
                 label={t('stats.totalBalance')}
-                value={
-                  activeLoan
-                    ? formatNAD(
-                        activeLoan.outstandingBalance ??
-                          Math.max(
-                            0,
-                            (activeLoan.totalRepayment ?? activeLoan.principal ?? 0) -
-                              (activeLoan.totalPaid ?? 0)
-                          )
-                      )
-                    : 'N$0.00'
-                }
+                value={formatNAD(portfolioSummary?.outstandingPrincipal ?? 0)}
                 icon={Wallet}
                 color="black"
               />
               <StatCard
                 label={t('stats.creditScore')}
                 value={(() => {
-                  const scoredLoan = loans.find((l) => l.creditScore != null);
-                  return scoredLoan?.creditScore ?? 'N/A';
+                  return portfolioSummary?.latestCreditScore ?? 'N/A';
                 })()}
                 subValue={(() => {
-                  const scoredLoan = loans.find((l) => l.creditScore != null);
-                  const score = scoredLoan?.creditScore;
+                  const score = portfolioSummary?.latestCreditScore;
                   if (!score) return '';
                   if (score >= 750) return 'Excellent';
                   if (score >= 670) return 'Good';
@@ -315,14 +282,18 @@ export default function Dashboard() {
               <StatCard
                 label={t('stats.nextPayment')}
                 value={
-                  activeLoan && nextPaymentDate
+                  nextPaymentDate
                     ? nextPaymentDate.toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                       })
                     : '--'
                 }
-                subValue={activeLoan ? formatNAD(activeLoan.monthlyPayment ?? 0) : ''}
+                subValue={
+                  portfolioSummary?.nextInstallment
+                    ? formatNAD(portfolioSummary.nextInstallment.amountDue)
+                    : ''
+                }
                 icon={Calendar}
                 color="blue"
               />
@@ -622,7 +593,11 @@ export default function Dashboard() {
                               {isSettled ? t('loans.totalPaid') : t('loans.totalDue')}
                             </p>
                             <p className="font-medium text-foreground">
-                              {formatNAD(isSettled ? (loan.totalPaid ?? 0) : loan.principal)}
+                              {formatNAD(
+                                isSettled
+                                  ? (loan.totalPaid ?? 0)
+                                  : (loan.totalRepayment ?? loan.principal)
+                              )}
                             </p>
                           </div>
                         </div>

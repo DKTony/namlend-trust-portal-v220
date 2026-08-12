@@ -52,7 +52,10 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
     open && userId ? { userId: userId as Id<'users'> } : 'skip'
   );
 
-  const rawLoans = useConvexQuery(api.loans.adminListLoans, open && userId ? {} : 'skip');
+  const rawLoans = useConvexQuery(
+    api.loans.adminListLoans,
+    open && userId ? { userId: userId as Id<'users'> } : 'skip'
+  );
 
   const rawApprovals = useConvexQuery(
     api.approvalWorkflow.adminListApprovals,
@@ -91,7 +94,7 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
         term_months: l.termMonths ?? 0,
         interest_rate: l.interestRate ?? 0,
         monthly_payment: l.monthlyPayment ?? 0,
-        total_repayment: 0,
+        total_repayment: l.totalRepayment ?? l.principal ?? 0,
         purpose: l.purpose ?? '',
         status: l.status ?? 'pending',
         created_at: new Date(l._creationTime).toISOString(),

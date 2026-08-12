@@ -165,7 +165,8 @@ export interface IPSApiLog {
 
 // Initiate Disbursement
 export interface InitiateIPSDisbursementParams {
-  disbursementId: string;
+  /** Present only for legacy callers that already own a pending disbursement row. */
+  disbursementId?: string;
   loanId: string;
   amount: number;
   sourceVpa?: string;

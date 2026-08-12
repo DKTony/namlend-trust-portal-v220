@@ -216,15 +216,16 @@ export const submitForApproval = mutation({
     }
 
     const now = Date.now();
+    const institutionId = await resolveWriteInstitution(ctx, {
+      loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
+    });
     const requestId = await ctx.db.insert('approvalRequests', {
       entityType: args.entityType,
       entityId: args.entityId,
       requestType: args.requestType,
       status: 'pending',
       requestedBy: userId,
-      institutionId: await resolveWriteInstitution(ctx, {
-        loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
-      }),
+      institutionId,
       priority: args.priority,
       notes: args.notes,
       metadata: args.metadata,
@@ -275,9 +276,31 @@ export const submitForApproval = mutation({
         priority: 'normal',
         actionUrl: '/dashboard',
         actionLabel: 'View Application',
+        dedupeKey: `approval:${requestId}:submitted:client`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
       })
       .catch((err: unknown) =>
         console.error('[notification] submitForApproval notify failed:', err)
+      );
+
+    ctx.scheduler
+      .runAfter(0, internal.notifications.createStaffNotifications, {
+        institutionId,
+        title: 'New Loan Application',
+        message: 'A new loan application is ready for review.',
+        category: 'loan',
+        priority:
+          args.priority === 'urgent' ? 'urgent' : args.priority === 'high' ? 'high' : 'normal',
+        actionUrl: '/admin/approvals',
+        actionLabel: 'Review Application',
+        dedupeKey: `approval:${requestId}:submitted:staff`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
+        metadata: { requestId, entityId: args.entityId, requestType: args.requestType },
+      })
+      .catch((err: unknown) =>
+        console.error('[notification] submitForApproval staff fan-out failed:', err)
       );
 
     return requestId;
@@ -414,12 +437,33 @@ export const processApprovalRequest = mutation({
             actionUrl: `/loans/${loanId}`,
             actionLabel: action === 'approve' ? 'View Loan' : 'View Details',
             metadata: { loanId, decision: action },
+            dedupeKey: `approval:${requestId}:${newStatus}:client`,
+            entityType: 'approvalRequests',
+            entityId: String(requestId),
           })
           .catch((err: unknown) =>
             console.error('[notification] processApprovalRequest notify failed:', err)
           );
       }
     }
+
+    ctx.scheduler
+      .runAfter(0, internal.notifications.createStaffNotifications, {
+        institutionId: request.institutionId,
+        title: 'Loan Approval Updated',
+        message: `A loan approval request was ${newStatus}.`,
+        category: 'loan',
+        priority: newStatus === 'escalated' ? 'high' : 'normal',
+        actionUrl: '/admin/approvals',
+        actionLabel: 'View Approvals',
+        dedupeKey: `approval:${requestId}:${newStatus}:staff`,
+        entityType: 'approvalRequests',
+        entityId: String(requestId),
+        metadata: { requestId, entityId: request.entityId, decision: action },
+      })
+      .catch((err: unknown) =>
+        console.error('[notification] approval decision staff fan-out failed:', err)
+      );
   },
 });
 

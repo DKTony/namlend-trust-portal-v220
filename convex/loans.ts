@@ -47,6 +47,61 @@ export const getMyLoans = query({
   },
 });
 
+/** Authoritative aggregate across every funded/active loan owned by the caller. */
+export const getMyPortfolioSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await assertAuthenticated(ctx);
+    const loans = await ctx.db
+      .query('loans')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .order('desc')
+      .collect();
+    const activeLoans = loans.filter((loan) => ['funded', 'active'].includes(loan.status));
+
+    let nextInstallment:
+      | {
+          loanId: (typeof activeLoans)[number]['_id'];
+          installmentId: string;
+          dueDate: number;
+          amountDue: number;
+          installmentNumber: number;
+        }
+      | undefined;
+    for (const loan of activeLoans) {
+      const schedules = await ctx.db
+        .query('paymentSchedules')
+        .withIndex('by_loanId', (q) => q.eq('loanId', loan._id))
+        .collect();
+      for (const schedule of schedules) {
+        if (!['scheduled', 'overdue', 'partially_paid'].includes(schedule.status)) continue;
+        const amountDue = Math.max(0, schedule.totalDue - (schedule.paidAmount ?? 0));
+        if (amountDue <= 0) continue;
+        if (!nextInstallment || schedule.dueDate < nextInstallment.dueDate) {
+          nextInstallment = {
+            loanId: loan._id,
+            installmentId: String(schedule._id),
+            dueDate: schedule.dueDate,
+            amountDue,
+            installmentNumber: schedule.installmentNumber,
+          };
+        }
+      }
+    }
+
+    return {
+      outstandingPrincipal: activeLoans.reduce(
+        (sum, loan) => sum + (loan.outstandingBalance ?? loan.principal),
+        0
+      ),
+      activeLoanCount: activeLoans.length,
+      latestCreditScore: loans.find((loan) => loan.creditScore !== undefined)?.creditScore,
+      nextInstallment,
+      calculatedAt: Date.now(),
+    };
+  },
+});
+
 /** Get a single loan by ID (owner or staff). */
 export const getLoan = query({
   args: { loanId: v.id('loans') },

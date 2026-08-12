@@ -27,7 +27,6 @@ import { IPSTransactionStatus } from './IPSTransactionStatus';
 import { VPAInput } from './VPAInput';
 
 interface IPSDisbursementFormProps {
-  disbursementId: string;
   loanId: string;
   amount: number;
   customerName: string;
@@ -40,7 +39,6 @@ interface IPSDisbursementFormProps {
 type DisbursementStep = 'input' | 'confirm' | 'processing' | 'result';
 
 export function IPSDisbursementForm({
-  disbursementId,
   loanId,
   amount,
   customerName,
@@ -53,6 +51,9 @@ export function IPSDisbursementForm({
   const [payeeVpa, setPayeeVpa] = useState(initialVpa);
   const [vpaValidation, setVpaValidation] = useState<IPSAdapterValidateVPAResponse | null>(null);
   const [result, setResult] = useState<InitiateIPSDisbursementResult | null>(null);
+  const [clientRequestId] = useState(
+    () => `ips-disbursement-${loanId}-${Date.now()}-${crypto.randomUUID()}`
+  );
 
   const disbursementMutation = useIPSDisbursement();
 
@@ -73,12 +74,12 @@ export function IPSDisbursementForm({
 
     try {
       const disbursementResult = await disbursementMutation.mutateAsync({
-        disbursementId,
         loanId,
         amount,
         sourceVpa: undefined,
         payeeVpa,
         note: `Loan disbursement for ${customerName}`,
+        clientRequestId,
       });
 
       setResult(disbursementResult);

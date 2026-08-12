@@ -831,13 +831,16 @@ export default defineSchema({
     expiresAt: v.optional(v.number()),
     entityType: v.optional(v.string()),
     entityId: v.optional(v.string()),
+    /** Stable per-recipient lifecycle key used to make notification fan-out replay-safe. */
+    dedupeKey: v.optional(v.string()),
     isRead: v.boolean(),
     readAt: v.optional(v.number()),
     metadata: v.optional(v.any()),
     createdAt: v.number(),
   })
     .index('by_userId', ['userId'])
-    .index('by_userId_isRead', ['userId', 'isRead']),
+    .index('by_userId_isRead', ['userId', 'isRead'])
+    .index('by_userId_dedupeKey', ['userId', 'dedupeKey']),
 
   notificationTemplates: defineTable({
     name: v.string(),

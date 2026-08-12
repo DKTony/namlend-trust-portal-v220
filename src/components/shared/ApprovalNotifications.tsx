@@ -5,8 +5,9 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import type { Id } from '@/types/convex';
 import { cn } from '@/lib/utils';
-import { useQuery as useConvexQuery } from 'convex/react';
+import { useMutation, useQuery as useConvexQuery } from 'convex/react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Bell,
@@ -22,6 +23,7 @@ import {
   User,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ApprovalNotification {
   id: string;
@@ -58,6 +60,7 @@ export default function ApprovalNotifications({
   const [notifications, setNotifications] = useState<ApprovalNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const markNotificationRead = useMutation(api.notifications.markNotificationRead);
 
   // Convex reactive query for notifications (no polling needed)
   const rawNotifications = useConvexQuery(api.notifications.getMyNotifications, {});
@@ -91,14 +94,7 @@ export default function ApprovalNotifications({
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      // TODO: Wire to Convex notifications.markAsRead mutation
-      console.warn('markNotificationAsRead placeholder', notificationId);
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n
-        )
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      await markNotificationRead({ notificationId: notificationId as Id<'notifications'> });
       if (onMarkedRead) onMarkedRead();
     } catch (error) {
       toast({
@@ -212,6 +208,7 @@ export default function ApprovalNotifications({
               return (
                 <div
                   key={notification.id}
+                  data-testid={`notification-${notification.id}`}
                   className={cn(
                     'p-4 transition-all duration-200 hover:bg-muted/40 group relative',
                     !notification.is_read && 'bg-primary/5 hover:bg-primary/10'
@@ -261,6 +258,7 @@ export default function ApprovalNotifications({
                             onClick={() => handleMarkAsRead(notification.id)}
                             className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full shrink-0 -mt-1 -mr-1 transition-colors"
                             title="Mark as read"
+                            data-testid={`notification-mark-read-${notification.id}`}
                           >
                             <Check className="h-3.5 w-3.5" />
                           </ThemedButton>
@@ -317,6 +315,7 @@ export default function ApprovalNotifications({
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   // Convex reactive query — auto-refreshes, no polling needed
   const rawNotifications = useConvexQuery(api.notifications.getMyNotifications, {});
@@ -328,6 +327,7 @@ export function NotificationBell() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <ThemedButton
+          data-testid="notification-bell"
           variant="ghost"
           size="icon"
           className={cn(
@@ -380,7 +380,7 @@ export function NotificationBell() {
             className="w-full text-xs font-medium h-9 rounded-xl hover:bg-primary/5 hover:text-primary"
             onClick={() => {
               setOpen(false);
-              // Navigate to full approvals page if it exists
+              navigate('/admin/approvals');
             }}
           >
             View All Approvals

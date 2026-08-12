@@ -20,7 +20,6 @@ import {
   Banknote,
   Building2,
   CheckCircle,
-  CreditCard,
   Loader2,
   Smartphone,
   Zap,
@@ -28,14 +27,13 @@ import {
 import React, { useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
-type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'debit_order' | 'ips';
+type PaymentMethod = 'bank_transfer' | 'mobile_money' | 'cash' | 'ips';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
   disbursement: {
-    id: string;
     amount: number;
     clientName: string;
     loanId: string;
@@ -53,6 +51,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const initiateDisbursementMutation = useMutation(api.disbursements.initiateDisbursement);
   const completeDisbursementMutation = useMutation(api.disbursements.completeDisbursement);
 
   const handleClose = () => {
@@ -99,8 +98,13 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
     setLoading(true);
     try {
+      const disbursementId = await initiateDisbursementMutation({
+        loanId: disbursement.loanId as Id<'loans'>,
+        amount: disbursement.amount,
+        method: paymentMethod,
+      });
       await completeDisbursementMutation({
-        disbursementId: disbursement.id as Id<'disbursements'>,
+        disbursementId,
         referenceNumber: paymentReference.trim(),
       });
       toast({
@@ -221,21 +225,6 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
 
               <button
                 type="button"
-                onClick={() => setPaymentMethod('debit_order')}
-                disabled={loading}
-                data-testid="payment-method-debit"
-                className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
-                  paymentMethod === 'debit_order'
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
-                    : 'border-border hover:border-purple-500/50 bg-card hover:bg-accent'
-                }`}
-              >
-                <CreditCard className="h-5 w-5 shrink-0" />
-                <span className="text-sm font-medium">Debit Order</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setPaymentMethod('ips')}
                 disabled={loading}
                 data-testid="payment-method-ips"
@@ -255,7 +244,6 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
           {paymentMethod === 'ips' ? (
             <div className="border-t pt-4 mt-4">
               <IPSDisbursementForm
-                disbursementId={disbursement.id}
                 loanId={disbursement.loanId}
                 amount={disbursement.amount}
                 customerName={disbursement.clientName}

@@ -10,12 +10,13 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
-import { calculateMonthlyInstalment, calculateTotalRepayable } from '../lib/amortization';
 import { scheduleAuditLog } from '../lib/audit';
+import { completeDisbursementCore } from '../lib/disbursementCompletion';
+import { DOMAIN_EVENTS, emitDomainEvent } from '../lib/domainEvents';
 import { computePayoffQuoteNAD } from '../lib/paymentAllocation';
 import { applyCompletedRepayment } from '../lib/repaymentApplication';
-import { ensurePaymentSchedule } from '../lib/scheduleGeneration';
 import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertKycVerifiedForUser } from '../lib/kyc';
 import { assertAliasUsable } from '../lib/ipsAliasRules';
 import { getErrorEntry } from '../lib/ipsErrorCodes';
 import { getPortalFlowDefaults } from '../lib/ipsProductionConfig';
@@ -26,6 +27,7 @@ import {
 } from '../lib/ipsTransactionLimits';
 import { generateMsgId } from '../lib/ipsXmlBuilder';
 import { enqueueOutboxIdempotent } from '../lib/outbox';
+import { emitRelationship } from '../lib/relationshipEmitter';
 import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from '../lib/tenancy';
 import { ipsTransactionStatus } from '../schema';
 
@@ -244,6 +246,7 @@ async function updateLinkedDisbursement(
   if (status === 'processing' && disbursement.status === 'pending') {
     await ctx.db.patch(disbursementId, {
       status: 'processing',
+      method: 'ips',
       metadata: mergeMetadata(disbursement.metadata, {
         ipsStatus: 'processing',
         ipsMsgId: tx.msgId,
@@ -257,63 +260,25 @@ async function updateLinkedDisbursement(
 
   if (status === 'completed' && disbursement.status !== 'completed') {
     if (!['pending', 'processing'].includes(disbursement.status)) return;
-    await ctx.db.patch(disbursementId, {
-      status: 'completed',
+    await completeDisbursementCore(ctx, {
+      disbursementId,
       referenceNumber: tx.endToEndId ?? tx.msgId,
+      method: 'ips',
+      ledgerFamily: 'ips',
       processedAt: now,
-      metadata: mergeMetadata(disbursement.metadata, {
+      metadata: {
         ipsStatus: 'completed',
         ipsMsgId: tx.msgId,
         ipsTransactionId: tx._id,
-      }),
-      updatedAt: now,
+      },
     });
-
-    const loan = await ctx.db.get(disbursement.loanId);
-    if (loan && loan.status === 'approved') {
-      await ctx.db.patch(disbursement.loanId, {
-        status: 'funded',
-        disbursedAt: now,
-        outstandingBalance: loan.outstandingBalance ?? loan.principal,
-        monthlyPayment:
-          loan.monthlyPayment ??
-          calculateMonthlyInstalment(loan.principal, loan.interestRate, loan.termMonths),
-        totalRepayment:
-          loan.totalRepayment ??
-          calculateTotalRepayable(loan.principal, loan.interestRate, loan.termMonths),
-        updatedAt: now,
-      });
-      scheduleAuditLog(ctx, 'loan', disbursement.loanId, 'FUND', 'approved', 'funded');
-
-      // Generate the amortization schedule — same behavior as the manual
-      // completeDisbursement path (idempotent; skipped if rows exist).
-      const installments = await ensurePaymentSchedule(ctx, loan, now);
-      if (installments > 0) {
-        scheduleAuditLog(
-          ctx,
-          'paymentSchedules',
-          disbursement.loanId,
-          'GENERATE_SCHEDULE',
-          'none',
-          'scheduled'
-        );
-      }
-    }
-
-    scheduleAuditLog(
-      ctx,
-      'disbursement',
-      disbursementId,
-      'COMPLETE',
-      disbursement.status,
-      'completed'
-    );
     return;
   }
 
   if (status === 'failed' && ['pending', 'processing'].includes(disbursement.status)) {
     await ctx.db.patch(disbursementId, {
       status: 'failed',
+      method: 'ips',
       failureReason: reason,
       metadata: mergeMetadata(disbursement.metadata, {
         ipsStatus: 'failed',
@@ -331,6 +296,19 @@ async function updateLinkedDisbursement(
       'failed',
       reason
     );
+    await ctx.scheduler.runAfter(0, internal.notifications.createStaffNotifications, {
+      institutionId: disbursement.institutionId,
+      title: 'IPS Disbursement Failed',
+      message: 'An IPS disbursement failed and requires reconciliation.',
+      category: 'payment',
+      priority: 'urgent',
+      actionUrl: '/admin/loans',
+      actionLabel: 'Review IPS Disbursement',
+      dedupeKey: `disbursement:${disbursementId}:failed:staff`,
+      entityType: 'disbursements',
+      entityId: String(disbursementId),
+      metadata: { disbursementId, ipsTransactionId: tx._id, loanId: disbursement.loanId },
+    });
   }
 }
 
@@ -746,57 +724,32 @@ export const initiateIpsRepayment = mutation({
   },
 });
 
-export const initiateIpsDisbursement = mutation({
+async function initiateIpsDisbursementCore(
+  ctx: any,
   args: {
-    disbursementId: v.id('disbursements'),
-    payeeVpa: v.string(),
-    clientRequestId: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    await assertStaff(ctx);
-    const disbursement = await ctx.db.get(args.disbursementId);
-    if (!disbursement) {
-      throw new ConvexError({ code: 'NOT_FOUND', message: 'Disbursement not found.' });
-    }
+    disbursementId: Id<'disbursements'>;
+    payeeVpa: string;
+    clientRequestId?: string;
+  }
+) {
+  const disbursement = await ctx.db.get(args.disbursementId);
+  if (!disbursement) {
+    throw new ConvexError({ code: 'NOT_FOUND', message: 'Disbursement not found.' });
+  }
 
-    const loan = await ctx.db.get(disbursement.loanId);
-    if (!loan || loan.userId !== disbursement.userId) {
-      throw new ConvexError({
-        code: 'INVALID_STATE',
-        message: 'Disbursement is not linked to a valid loan/customer record.',
-      });
-    }
+  const loan = await ctx.db.get(disbursement.loanId);
+  if (!loan || loan.userId !== disbursement.userId) {
+    throw new ConvexError({
+      code: 'INVALID_STATE',
+      message: 'Disbursement is not linked to a valid loan/customer record.',
+    });
+  }
 
-    if (!['pending', 'processing'].includes(disbursement.status)) {
-      throw new ConvexError({
-        code: 'INVALID_STATE',
-        message: `Cannot initiate IPS disbursement from '${disbursement.status}'.`,
-      });
-    }
-
-    if (disbursement.ipsTransactionId) {
-      const existing = await ctx.db.get(disbursement.ipsTransactionId);
-      if (existing) {
-        return {
-          success: true,
-          message: 'Disbursement request already initiated.',
-          ips_transaction_id: String(existing._id),
-          msg_id: existing.msgId,
-          amount: existing.amount,
-          currency: existing.currency,
-          payer_vpa: existing.debtorVpa,
-          payee_vpa: existing.creditorVpa,
-          loan_id: String(existing.loanId),
-          disbursement_id: String(args.disbursementId),
-        };
-      }
-    }
-
-    const existing = await findTransactionForClientRequest(
-      ctx,
-      disbursement.userId,
-      args.clientRequestId
-    );
+  // Idempotent retries are lookups, not new financial actions. Return the
+  // original transaction even after the loan/disbursement has reached a
+  // terminal state or the customer's later KYC state has changed.
+  if (disbursement.ipsTransactionId) {
+    const existing = await ctx.db.get(disbursement.ipsTransactionId);
     if (existing) {
       return {
         success: true,
@@ -811,92 +764,277 @@ export const initiateIpsDisbursement = mutation({
         disbursement_id: String(args.disbursementId),
       };
     }
+  }
 
-    if (disbursement.amount <= 0) {
+  const existingForRequest = await findTransactionForClientRequest(
+    ctx,
+    disbursement.userId,
+    args.clientRequestId
+  );
+  if (existingForRequest) {
+    if (existingForRequest.disbursementId !== args.disbursementId) {
       throw new ConvexError({
-        code: 'VALIDATION_ERROR',
-        message: 'Disbursement amount must be positive.',
+        code: 'CONFLICT',
+        message: 'The client request ID is already linked to another disbursement.',
+      });
+    }
+    return {
+      success: true,
+      message: 'Disbursement request already initiated.',
+      ips_transaction_id: String(existingForRequest._id),
+      msg_id: existingForRequest.msgId,
+      amount: existingForRequest.amount,
+      currency: existingForRequest.currency,
+      payer_vpa: existingForRequest.debtorVpa,
+      payee_vpa: existingForRequest.creditorVpa,
+      loan_id: String(existingForRequest.loanId),
+      disbursement_id: String(args.disbursementId),
+    };
+  }
+
+  await assertKycVerifiedForUser(ctx, loan.userId, 'initiate IPS disbursement');
+  if (loan.status !== 'approved') {
+    throw new ConvexError({
+      code: 'INVALID_STATE',
+      message: `Loan must be approved before IPS disbursement. Current: '${loan.status}'.`,
+    });
+  }
+  if (Math.abs(disbursement.amount - loan.principal) > 0.01) {
+    throw new ConvexError({
+      code: 'VALIDATION_ERROR',
+      message: 'Partial disbursement is disabled. Amount must equal the loan principal.',
+    });
+  }
+
+  if (!['pending', 'processing'].includes(disbursement.status)) {
+    throw new ConvexError({
+      code: 'INVALID_STATE',
+      message: `Cannot initiate IPS disbursement from '${disbursement.status}'.`,
+    });
+  }
+
+  if (disbursement.amount <= 0) {
+    throw new ConvexError({
+      code: 'VALIDATION_ERROR',
+      message: 'Disbursement amount must be positive.',
+    });
+  }
+
+  const payeeAlias = await resolveUsableAliasForUser(
+    ctx,
+    disbursement.userId,
+    undefined,
+    args.payeeVpa
+  );
+  const defaults = getPortalFlowDefaults();
+  const msgId = generateMsgId();
+  const now = Date.now();
+
+  await enforceTransactionLimits(ctx, disbursement.userId, disbursement.amount, 'B2P');
+
+  const txId = await ctx.db.insert('ipsTransactions', {
+    msgId,
+    txType: 'credit_transfer',
+    direction: 'outbound',
+    useCaseType: 'B2P',
+    status: 'pending',
+    amount: disbursement.amount,
+    currency: 'NAD',
+    debtorVpa: defaults.disbursementsVpa,
+    creditorVpa: payeeAlias.addr,
+    endToEndId: msgId,
+    remittanceInfo: `Loan disbursement ${args.disbursementId}`,
+    loanId: disbursement.loanId,
+    institutionId: disbursement.institutionId,
+    userId: disbursement.userId,
+    disbursementId: args.disbursementId,
+    clientRequestId: args.clientRequestId,
+    purposeCode: defaults.disbursementPurposeCode,
+    initiationMode: defaults.disbursementInitiationMode,
+    channel: defaults.webChannel,
+    limitScopeKey: `${disbursement.userId}:B2P:${payeeAlias.addr}`,
+    transport: { scheduledAction: 'ReqPay.PAY' },
+    initiatedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await ctx.db.patch(args.disbursementId, {
+    method: 'ips',
+    ipsTransactionId: txId,
+    metadata: mergeMetadata(disbursement.metadata, {
+      ipsFlow: 'disbursement',
+      clientRequestId: args.clientRequestId,
+      ipsTransactionId: txId,
+    }),
+    updatedAt: now,
+  });
+
+  await insertIpsOutbox(ctx, txId, msgId, disbursement.amount, 'outbound');
+  await ctx.scheduler.runAfter(0, internal.ippOperations.evaluateIpsTransactionRiskInternal, {
+    transactionId: txId,
+    trigger: 'initiate_disbursement',
+  });
+  await ctx.scheduler.runAfter(0, internal.actions.ipsAdapter.initiateOutboundTransfer, {
+    transactionId: txId,
+    msgId,
+    amount: disbursement.amount,
+    creditorVpa: payeeAlias.addr,
+    debtorVpa: defaults.disbursementsVpa,
+    remittanceInfo: `Loan disbursement ${args.disbursementId}`,
+    purposeCode: defaults.disbursementPurposeCode,
+    initiationMode: defaults.disbursementInitiationMode,
+  });
+
+  scheduleAuditLog(ctx, 'ips_transaction', txId, 'INITIATE_DISBURSEMENT', 'none', 'pending');
+  await ctx.scheduler.runAfter(0, internal.notifications.createStaffNotifications, {
+    institutionId: disbursement.institutionId ?? loan.institutionId,
+    title: 'IPS Disbursement Pending',
+    message: 'An IPS disbursement is awaiting provider completion confirmation.',
+    category: 'payment',
+    priority: 'high',
+    actionUrl: '/admin/loans',
+    actionLabel: 'View IPS Disbursement',
+    dedupeKey: `ips:${txId}:pending:staff`,
+    entityType: 'ipsTransactions',
+    entityId: String(txId),
+    metadata: { ipsTransactionId: txId, disbursementId: args.disbursementId, loanId: loan._id },
+  });
+  return {
+    success: true,
+    message: 'Disbursement request initiated. Completion depends on IPS confirmation.',
+    ips_transaction_id: String(txId),
+    msg_id: msgId,
+    amount: disbursement.amount,
+    currency: 'NAD',
+    payer_vpa: defaults.disbursementsVpa,
+    payee_vpa: payeeAlias.addr,
+    loan_id: String(disbursement.loanId),
+    disbursement_id: String(args.disbursementId),
+  };
+}
+
+/**
+ * Atomically create/reuse the IPS disbursement and its linked IPS transaction.
+ * Opening the UI no longer creates a financial row; this mutation is called only
+ * after the operator confirms the rail, destination, amount, and loan.
+ */
+export const startLoanDisbursement = mutation({
+  args: {
+    loanId: v.id('loans'),
+    amount: v.number(),
+    payeeVpa: v.string(),
+    clientRequestId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const staffId = await assertStaff(ctx);
+    const loan = await ctx.db.get(args.loanId);
+    if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+    const existingByRequest = await findTransactionForClientRequest(
+      ctx,
+      loan.userId,
+      args.clientRequestId
+    );
+    if (existingByRequest) {
+      if (existingByRequest.loanId !== args.loanId || !existingByRequest.disbursementId) {
+        throw new ConvexError({
+          code: 'CONFLICT',
+          message: 'The client request ID is already linked to another IPS operation.',
+        });
+      }
+      return initiateIpsDisbursementCore(ctx, {
+        disbursementId: existingByRequest.disbursementId,
+        payeeVpa: args.payeeVpa,
+        clientRequestId: args.clientRequestId,
       });
     }
 
-    const payeeAlias = await resolveUsableAliasForUser(
-      ctx,
-      disbursement.userId,
-      undefined,
-      args.payeeVpa
-    );
-    const defaults = getPortalFlowDefaults();
-    const msgId = generateMsgId();
+    await assertKycVerifiedForUser(ctx, loan.userId, 'start IPS disbursement');
+    if (loan.status !== 'approved') {
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: `Loan must be approved before disbursement. Current: '${loan.status}'.`,
+      });
+    }
+    if (args.amount <= 0 || Math.abs(args.amount - loan.principal) > 0.01) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: `Partial disbursement is disabled. Amount must equal loan principal (${loan.principal}).`,
+      });
+    }
+
+    const existingPending = await ctx.db
+      .query('disbursements')
+      .withIndex('by_loanId_status', (q: any) =>
+        q.eq('loanId', args.loanId).eq('status', 'pending')
+      )
+      .first();
+    const existingProcessing = await ctx.db
+      .query('disbursements')
+      .withIndex('by_loanId_status', (q: any) =>
+        q.eq('loanId', args.loanId).eq('status', 'processing')
+      )
+      .first();
+    if (existingProcessing && existingProcessing.method !== 'ips') {
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: 'A non-IPS disbursement is already processing for this loan.',
+      });
+    }
+
     const now = Date.now();
+    let disbursementId = (existingPending ?? existingProcessing)?._id;
+    if (!disbursementId) {
+      disbursementId = await ctx.db.insert('disbursements', {
+        loanId: args.loanId,
+        userId: loan.userId,
+        institutionId:
+          loan.institutionId ?? (await resolveWriteInstitution(ctx, { loanId: args.loanId })),
+        amount: args.amount,
+        method: 'ips',
+        status: 'pending',
+        initiatedBy: staffId,
+        createdAt: now,
+        updatedAt: now,
+      });
+      scheduleAuditLog(ctx, 'disbursement', disbursementId, 'INITIATE', 'none', 'pending');
+      emitDomainEvent(
+        ctx,
+        DOMAIN_EVENTS.DISBURSEMENT_INITIATED,
+        'disbursements',
+        disbursementId,
+        { loanId: args.loanId, amount: args.amount, method: 'ips' },
+        { actorId: staffId, actorType: 'user' }
+      );
+      emitRelationship(
+        ctx,
+        { type: 'loans', id: args.loanId },
+        { type: 'disbursements', id: disbursementId },
+        'disbursed_via'
+      );
+    } else if ((existingPending ?? existingProcessing)?.method !== 'ips') {
+      await ctx.db.patch(disbursementId, { method: 'ips', updatedAt: now });
+      scheduleAuditLog(ctx, 'disbursement', disbursementId, 'SELECT_RAIL', 'unselected', 'ips');
+    }
 
-    await enforceTransactionLimits(ctx, disbursement.userId, disbursement.amount, 'B2P');
-
-    const txId = await ctx.db.insert('ipsTransactions', {
-      msgId,
-      txType: 'credit_transfer',
-      direction: 'outbound',
-      useCaseType: 'B2P',
-      status: 'pending',
-      amount: disbursement.amount,
-      currency: 'NAD',
-      debtorVpa: defaults.disbursementsVpa,
-      creditorVpa: payeeAlias.addr,
-      endToEndId: msgId,
-      remittanceInfo: `Loan disbursement ${args.disbursementId}`,
-      loanId: disbursement.loanId,
-      institutionId: disbursement.institutionId,
-      userId: disbursement.userId,
-      disbursementId: args.disbursementId,
+    return initiateIpsDisbursementCore(ctx, {
+      disbursementId,
+      payeeVpa: args.payeeVpa,
       clientRequestId: args.clientRequestId,
-      purposeCode: defaults.disbursementPurposeCode,
-      initiationMode: defaults.disbursementInitiationMode,
-      channel: defaults.webChannel,
-      limitScopeKey: `${disbursement.userId}:B2P:${payeeAlias.addr}`,
-      transport: { scheduledAction: 'ReqPay.PAY' },
-      initiatedAt: now,
-      createdAt: now,
-      updatedAt: now,
     });
+  },
+});
 
-    await ctx.db.patch(args.disbursementId, {
-      ipsTransactionId: txId,
-      metadata: mergeMetadata(disbursement.metadata, {
-        ipsFlow: 'disbursement',
-        clientRequestId: args.clientRequestId,
-        ipsTransactionId: txId,
-      }),
-      updatedAt: now,
-    });
-
-    await insertIpsOutbox(ctx, txId, msgId, disbursement.amount, 'outbound');
-    await ctx.scheduler.runAfter(0, internal.ippOperations.evaluateIpsTransactionRiskInternal, {
-      transactionId: txId,
-      trigger: 'initiate_disbursement',
-    });
-    await ctx.scheduler.runAfter(0, internal.actions.ipsAdapter.initiateOutboundTransfer, {
-      transactionId: txId,
-      msgId,
-      amount: disbursement.amount,
-      creditorVpa: payeeAlias.addr,
-      debtorVpa: defaults.disbursementsVpa,
-      remittanceInfo: `Loan disbursement ${args.disbursementId}`,
-      purposeCode: defaults.disbursementPurposeCode,
-      initiationMode: defaults.disbursementInitiationMode,
-    });
-
-    scheduleAuditLog(ctx, 'ips_transaction', txId, 'INITIATE_DISBURSEMENT', 'none', 'pending');
-    return {
-      success: true,
-      message: 'Disbursement request initiated. Completion depends on IPS confirmation.',
-      ips_transaction_id: String(txId),
-      msg_id: msgId,
-      amount: disbursement.amount,
-      currency: 'NAD',
-      payer_vpa: defaults.disbursementsVpa,
-      payee_vpa: payeeAlias.addr,
-      loan_id: String(disbursement.loanId),
-      disbursement_id: String(args.disbursementId),
-    };
+/** Compatibility wrapper for callers that already created a pending row. */
+export const initiateIpsDisbursement = mutation({
+  args: {
+    disbursementId: v.id('disbursements'),
+    payeeVpa: v.string(),
+    clientRequestId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await assertStaff(ctx);
+    return initiateIpsDisbursementCore(ctx, args);
   },
 });
 

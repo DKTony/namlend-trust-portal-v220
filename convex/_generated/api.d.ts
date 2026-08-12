@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * Generated `api` utility.
  *
@@ -39,6 +40,7 @@ import type * as lib_audit from '../lib/audit.js';
 import type * as lib_auth from '../lib/auth.js';
 import type * as lib_authRedirect from '../lib/authRedirect.js';
 import type * as lib_creditPolicy from '../lib/creditPolicy.js';
+import type * as lib_disbursementCompletion from '../lib/disbursementCompletion.js';
 import type * as lib_documentGrants from '../lib/documentGrants.js';
 import type * as lib_documentPolicy from '../lib/documentPolicy.js';
 import type * as lib_domainEvents from '../lib/domainEvents.js';
@@ -97,6 +99,7 @@ import type * as payments from '../payments.js';
 import type * as platform_admins from '../platform/admins.js';
 import type * as platform_backfill from '../platform/backfill.js';
 import type * as platform_entitlements from '../platform/entitlements.js';
+import type * as platform_lendingWorkflowRepair from '../platform/lendingWorkflowRepair.js';
 import type * as platform_plans from '../platform/plans.js';
 import type * as platform_readiness from '../platform/readiness.js';
 import type * as platform_seed from '../platform/seed.js';
@@ -165,6 +168,7 @@ declare const fullApi: ApiFromModules<{
   'lib/auth': typeof lib_auth;
   'lib/authRedirect': typeof lib_authRedirect;
   'lib/creditPolicy': typeof lib_creditPolicy;
+  'lib/disbursementCompletion': typeof lib_disbursementCompletion;
   'lib/documentGrants': typeof lib_documentGrants;
   'lib/documentPolicy': typeof lib_documentPolicy;
   'lib/domainEvents': typeof lib_domainEvents;
@@ -223,6 +227,7 @@ declare const fullApi: ApiFromModules<{
   'platform/admins': typeof platform_admins;
   'platform/backfill': typeof platform_backfill;
   'platform/entitlements': typeof platform_entitlements;
+  'platform/lendingWorkflowRepair': typeof platform_lendingWorkflowRepair;
   'platform/plans': typeof platform_plans;
   'platform/readiness': typeof platform_readiness;
   'platform/seed': typeof platform_seed;

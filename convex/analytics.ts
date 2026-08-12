@@ -7,25 +7,15 @@
  * reads the pre-computed values (O(1)) instead of scanning full tables.
  */
 
-import { GenericQueryCtx } from 'convex/server';
 import { v } from 'convex/values';
-import { DataModel } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { assertStaff } from './lib/auth';
 import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { applyTenantScope, tenantReadScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Portfolio Overview
 // ---------------------------------------------------------------------------
-
-/** Read a single projected metric, returning 0 if not yet populated. */
-async function getMetric(db: GenericQueryCtx<DataModel>['db'], metricKey: string): Promise<number> {
-  const row = await db
-    .query('portfolioMetrics')
-    .withIndex('by_metricKey', (q) => q.eq('metricKey', metricKey))
-    .first();
-  return row?.value ?? 0;
-}
 
 export const getPortfolioSummary = query({
   args: {
@@ -36,58 +26,17 @@ export const getPortfolioSummary = query({
     await assertStaff(ctx);
     await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
-    // If no date filters, try projected metrics first (O(1) reads)
-    if (!dateFrom && !dateTo) {
-      const [activeCount, approvedCount, paidOffCount, totalDisbursed, totalRepaid] =
-        await Promise.all([
-          getMetric(ctx.db, 'active_loan_count'),
-          getMetric(ctx.db, 'approved_loan_count'),
-          getMetric(ctx.db, 'paid_off_loan_count'),
-          getMetric(ctx.db, 'total_disbursed'),
-          getMetric(ctx.db, 'total_repaid'),
-        ]);
-
-      // If any projection has been populated, use projected path
-      const hasProjections =
-        activeCount > 0 ||
-        approvedCount > 0 ||
-        paidOffCount > 0 ||
-        totalDisbursed > 0 ||
-        totalRepaid > 0;
-
-      if (hasProjections) {
-        // Still need full scan for a few counts that projections don't track
-        const loans = await ctx.db.query('loans').take(10000);
-        const totalPortfolio = loans
-          .filter((l) => ['active', 'funded', 'disbursed'].includes(l.status))
-          .reduce((s, l) => s + (l.outstandingBalance ?? l.principal ?? 0), 0);
-
-        return {
-          loans: {
-            total: loans.length,
-            active: activeCount,
-            pending: loans.filter((l) => ['submitted', 'under_review'].includes(l.status)).length,
-            approved: approvedCount,
-            rejected: loans.filter((l) => l.status === 'rejected').length,
-            completed: paidOffCount,
-          },
-          portfolio: {
-            totalOutstanding: totalPortfolio,
-            totalDisbursed,
-            totalRepaid,
-            averageLoanSize: activeCount > 0 ? totalPortfolio / activeCount : 0,
-          },
-          source: 'projected' as const,
-        };
-      }
-    }
-
-    // Fallback: full-scan analytics (used when date filters are applied or no projections exist)
-    const [loans, disbursements, payments] = await Promise.all([
+    // Source records remain authoritative. portfolioMetrics is a rebuildable read model
+    // and is not selected until an explicit consistency marker is introduced.
+    const scope = await tenantReadScope(ctx);
+    const [allLoans, allDisbursements, allPayments] = await Promise.all([
       ctx.db.query('loans').take(10000),
       ctx.db.query('disbursements').take(10000),
       ctx.db.query('paymentTransactions').take(10000),
     ]);
+    const loans = applyTenantScope(allLoans, scope);
+    const disbursements = applyTenantScope(allDisbursements, scope);
+    const payments = applyTenantScope(allPayments, scope);
 
     const fromMs = dateFrom ? new Date(dateFrom).getTime() : 0;
     const toMs = dateTo ? new Date(dateTo).getTime() : Infinity;

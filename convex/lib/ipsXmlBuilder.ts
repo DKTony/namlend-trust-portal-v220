@@ -546,7 +546,7 @@ export function buildReqValAdd(head: IpsXmlHead, payload: IpsReqValAddPayload): 
     }),
     buildPayerPayeeXml('Payer', {
       addr: payload.payerAddr ?? IPS_VALIDATION_PAYER_ADDR,
-      name: payload.payerName ?? 'NamLend Validation',
+      name: payload.payerName ?? 'OG Financial Validation',
       device: buildDefaultDevice(payload.mobileNumber),
     }),
     buildPayerPayeeXml('Payee', {
@@ -649,7 +649,7 @@ export function buildReqGetAdd(head: IpsXmlHead, payload: IpsReqGetAddPayload): 
     }),
     buildPayerPayeeXml('Payer', {
       addr: payload.payerAddr ?? payload.addr ?? IPS_VALIDATION_PAYER_ADDR,
-      name: payload.payerName ?? 'NamLend User',
+      name: payload.payerName ?? 'OG Financial User',
       device: buildDefaultDevice(
         payload.mobileNumber ?? (payload.idType === 'MOBILE' ? payload.idValue : undefined),
         payload.deviceId
@@ -683,7 +683,7 @@ export function buildReqSetCre(head: IpsXmlHead, payload: IpsReqSetCrePayload): 
     }),
     buildPayerPayeeXml('Payer', {
       addr: payload.addr ?? IPS_VALIDATION_PAYER_ADDR,
-      name: payload.payerName ?? 'NamLend User',
+      name: payload.payerName ?? 'OG Financial User',
       device: buildDefaultDevice(payload.mobileNumber, payload.deviceId),
       account:
         payload.accountRef || payload.accountIfsc

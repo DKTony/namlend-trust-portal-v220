@@ -20,8 +20,7 @@ import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { assertKycVerifiedForUser } from './lib/kyc';
 import { enqueueOutboxIdempotent } from './lib/outbox';
-import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
-import { ensurePaymentSchedule } from './lib/scheduleGeneration';
+import { completeDisbursementCore } from './lib/disbursementCompletion';
 import {
   DEFAULT_RAIL_WEIGHTS,
   selectOptimalRail,
@@ -58,19 +57,48 @@ export const adminListDisbursements = query({
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
     const scope = await tenantReadScope(ctx);
-    if (status) {
-      const rows = await ctx.db
-        .query('disbursements')
-        .withIndex('by_status', (q) => q.eq('status', status))
-        .order('desc')
-        .take(limit ?? 100);
-      return applyTenantScope(rows, scope);
-    }
-    const rows = await ctx.db
-      .query('disbursements')
-      .order('desc')
-      .take(limit ?? 100);
-    return applyTenantScope(rows, scope);
+    const rows = status
+      ? await ctx.db
+          .query('disbursements')
+          .withIndex('by_status', (q) => q.eq('status', status))
+          .order('desc')
+          .take(limit ?? 100)
+      : await ctx.db
+          .query('disbursements')
+          .order('desc')
+          .take(limit ?? 100);
+
+    return Promise.all(
+      applyTenantScope(rows, scope).map(async (row) => {
+        const [profile, user, aliases, ipsTransaction] = await Promise.all([
+          ctx.db
+            .query('profiles')
+            .withIndex('by_userId', (q) => q.eq('userId', row.userId))
+            .first(),
+          ctx.db.get(row.userId),
+          ctx.db
+            .query('ipsAliasDirectory')
+            .withIndex('by_userId', (q) => q.eq('userId', row.userId))
+            .collect(),
+          row.ipsTransactionId ? ctx.db.get(row.ipsTransactionId) : Promise.resolve(null),
+        ]);
+        const verifiedAccountName = aliases.find(
+          (alias) => alias.status === 'ACTIVE' && alias.isDefault && alias.accountHolderName?.trim()
+        )?.accountHolderName;
+        const clientName =
+          profile?.fullName?.trim() ||
+          user?.name?.trim() ||
+          verifiedAccountName?.trim() ||
+          profile?.email?.split('@')[0] ||
+          'Unknown Client';
+        return {
+          ...row,
+          clientName,
+          actualRail: row.ipsTransactionId ? ('ips' as const) : row.method,
+          ipsStatus: ipsTransaction?.status,
+        };
+      })
+    );
   },
 });
 
@@ -126,7 +154,29 @@ export const initiateDisbursement = mutation({
       .query('disbursements')
       .withIndex('by_loanId_status', (q) => q.eq('loanId', args.loanId).eq('status', 'pending'))
       .first();
-    if (existingPending) return existingPending._id;
+    if (existingPending) {
+      if (existingPending.ipsTransactionId && args.method !== 'ips') {
+        throw new ConvexError({
+          code: 'INVALID_STATE',
+          message: 'This pending disbursement is already linked to IPS.',
+        });
+      }
+      if (existingPending.method !== args.method) {
+        await ctx.db.patch(existingPending._id, {
+          method: args.method,
+          updatedAt: Date.now(),
+        });
+        scheduleAuditLog(
+          ctx,
+          'disbursement',
+          existingPending._id,
+          'SELECT_RAIL',
+          existingPending.method,
+          args.method
+        );
+      }
+      return existingPending._id;
+    }
 
     const existingProcessing = await ctx.db
       .query('disbursements')
@@ -280,122 +330,19 @@ export const completeDisbursement = mutation({
     referenceNumber: v.optional(v.string()),
   },
   handler: async (ctx, { disbursementId, referenceNumber }) => {
-    await assertStaff(ctx);
+    const staffId = await assertStaff(ctx);
     const d = await ctx.db.get(disbursementId);
     if (!d) throw new ConvexError({ code: 'NOT_FOUND', message: 'Disbursement not found.' });
-
-    if (!['pending', 'processing'].includes(d.status)) {
-      throw new ConvexError({
-        code: 'INVALID_STATE',
-        message: `Cannot complete disbursement with status '${d.status}'.`,
-      });
-    }
 
     const loan = await ctx.db.get(d.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertKycVerifiedForUser(ctx, loan.userId, 'complete disbursement');
-
-    // STALE-DISBURSEMENT GUARDS: the loan must still be approvable-to-fund at
-    // completion time, not just at initiation. A loan rejected or batch-moved after
-    // initiation must not receive funds or a ledger entry; a legacy pending row
-    // created before partial-disbursement was disabled must not complete partially.
-    if (loan.status !== 'approved') {
-      throw new ConvexError({
-        code: 'INVALID_STATE',
-        message: `Loan is no longer 'approved' (current: '${loan.status}'). Fail or reverse this disbursement instead of completing it.`,
-      });
-    }
-    if (Math.abs(d.amount - loan.principal) > 0.01) {
-      throw new ConvexError({
-        code: 'VALIDATION_ERROR',
-        message: `Disbursement amount ${d.amount} does not equal loan principal ${loan.principal}. Partial disbursement is disabled — fail this disbursement and initiate a full one.`,
-      });
-    }
-
-    const now = Date.now();
-    await ctx.db.patch(disbursementId, {
-      status: 'completed',
-      referenceNumber: referenceNumber ?? d.referenceNumber,
-      processedAt: now,
-      updatedAt: now,
-    });
-
-    await enqueueOutboxIdempotent(ctx, {
-      idempotencyKey: `disbursement:${disbursementId}`,
-      eventType: 'DISBURSEMENT',
-      sourceTable: 'disbursements',
-      sourceId: disbursementId,
-      payload: {
-        loan_id: d.loanId,
-        amount: Math.round(d.amount * 100),
-        disbursement_id: disbursementId,
-        transfer_code: 1001,
-      },
-    });
-
-    // Update loan to funded. Fill in monthlyPayment/totalRepayment when the
-    // application flow didn't set them, so client balance math stays exact.
-    if (loan && loan.status === 'approved') {
-      await ctx.db.patch(d.loanId, {
-        status: 'funded',
-        disbursedAt: now,
-        updatedAt: now,
-        monthlyPayment:
-          loan.monthlyPayment ??
-          calculateMonthlyInstalment(loan.principal, loan.interestRate, loan.termMonths),
-        totalRepayment:
-          loan.totalRepayment ??
-          calculateTotalRepayable(loan.principal, loan.interestRate, loan.termMonths),
-      });
-      scheduleAuditLog(ctx, 'loan', d.loanId, 'FUND', 'approved', 'funded');
-
-      // Generate the amortization schedule (idempotent — skipped if rows exist)
-      const installments = await ensurePaymentSchedule(ctx, loan, now);
-      if (installments > 0) {
-        scheduleAuditLog(
-          ctx,
-          'paymentSchedules',
-          d.loanId,
-          'GENERATE_SCHEDULE',
-          'none',
-          'scheduled'
-        );
-        emitDomainEvent(ctx, DOMAIN_EVENTS.SCHEDULE_GENERATED, 'loans', d.loanId, {
-          loanId: d.loanId,
-          installments,
-          termMonths: loan.termMonths,
-        });
-      }
-
-      // Notify client that funds have been disbursed
-      const amountFormatted = new Intl.NumberFormat('en-NA', {
-        style: 'currency',
-        currency: 'NAD',
-        currencyDisplay: 'symbol',
-      })
-        .format(d.amount)
-        .replace('NAD', 'N$');
-
-      ctx.scheduler
-        .runAfter(0, internal.notifications.createNotification, {
-          userId: d.userId,
-          title: 'Loan Funds Disbursed',
-          message: `${amountFormatted} has been disbursed to your account${referenceNumber ? ` (Ref: ${referenceNumber})` : ''}. Your loan is now active.`,
-          category: 'loan' as const,
-          priority: 'high' as const,
-          actionUrl: `/loans/${d.loanId}`,
-          actionLabel: 'View Loan',
-          metadata: { loanId: d.loanId, disbursementId, amount: d.amount, referenceNumber },
-        })
-        .catch((err: unknown) =>
-          console.error('[notification] completeDisbursement notify failed:', err)
-        );
-    }
-
-    scheduleAuditLog(ctx, 'disbursement', disbursementId, 'COMPLETE', d.status, 'completed');
-    emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_COMPLETED, 'disbursements', disbursementId, {
-      loanId: d.loanId,
-      amount: d.amount,
+    await completeDisbursementCore(ctx, {
+      disbursementId,
+      referenceNumber,
+      method: d.method,
+      ledgerFamily: 'manual',
+      actorId: staffId,
     });
   },
 });
@@ -427,6 +374,19 @@ export const failDisbursement = mutation({
     scheduleAuditLog(ctx, 'disbursement', disbursementId, 'FAIL', d.status, 'failed', reason);
     emitDomainEvent(ctx, DOMAIN_EVENTS.DISBURSEMENT_FAILED, 'disbursements', disbursementId, {
       reason,
+    });
+    await ctx.scheduler.runAfter(0, internal.notifications.createStaffNotifications, {
+      institutionId: d.institutionId,
+      title: 'Disbursement Failed',
+      message: 'A manual disbursement failed and requires review.',
+      category: 'payment',
+      priority: 'urgent',
+      actionUrl: '/admin/loans',
+      actionLabel: 'Review Disbursement',
+      dedupeKey: `disbursement:${disbursementId}:failed:staff`,
+      entityType: 'disbursements',
+      entityId: String(disbursementId),
+      metadata: { loanId: d.loanId, disbursementId },
     });
   },
 });

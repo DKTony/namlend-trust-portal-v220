@@ -832,7 +832,7 @@ async function handleRespPay(
       orgTxnId: txn.endToEndId ?? txn.msgId,
       orgMsgId: txn.msgId,
       status: 'CREDITED',
-      beneficiaryName: process.env.IPS_BENEFICIARY_NAME ?? 'NamLend Trust',
+      beneficiaryName: process.env.IPS_BENEFICIARY_NAME ?? 'OG Financial Services',
     });
   }
 

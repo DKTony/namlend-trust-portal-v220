@@ -44,16 +44,13 @@ export const useClientProfile = (clientId: string) => {
     if (!rawProfile) return null;
     const loans = allLoans ?? [];
 
-    const totalBorrowed = loans.reduce((s, l) => s + (l.amount ?? 0), 0);
-    const totalRepaid = loans.reduce(
-      (s, l) => s + (((l as Record<string, unknown>).totalPaid as number) ?? 0),
-      0
-    );
-    const outstandingBalance = totalBorrowed - totalRepaid;
+    const totalBorrowed = loans.reduce((s, l) => s + l.principal, 0);
+    const totalRepaid = loans.reduce((s, l) => s + (l.totalPaid ?? 0), 0);
+    const outstandingBalance = loans
+      .filter((l) => ['active', 'funded'].includes(l.status))
+      .reduce((s, l) => s + (l.outstandingBalance ?? l.principal), 0);
 
-    const activeLoanCount = loans.filter((l) =>
-      ['approved', 'active', 'funded', 'disbursed'].includes(l.status)
-    ).length;
+    const activeLoanCount = loans.filter((l) => ['active', 'funded'].includes(l.status)).length;
 
     // Simplified credit score
     let creditScore = 650;
@@ -72,9 +69,9 @@ export const useClientProfile = (clientId: string) => {
       status = 'pending';
 
     return {
-      id: String(rawProfile._id),
+      id: String(rawProfile.userId),
       fullName: rawProfile.fullName || 'Unknown',
-      email: rawProfile.email || 'user@namlend.com',
+      email: rawProfile.email || 'user@example.invalid',
       phone: rawProfile.phone,
       address: undefined,
       dateOfBirth: undefined,

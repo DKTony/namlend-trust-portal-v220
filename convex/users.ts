@@ -106,6 +106,93 @@ export const listUsers = query({
   },
 });
 
+/**
+ * Staff client directory with canonical user/profile joins and source-loan totals.
+ * `userId` is the only identifier accepted by downstream loan/profile queries;
+ * `profileId` remains available for compliance records that explicitly reference it.
+ */
+export const adminListClientsWithPortfolio = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
+    const profiles = await ctx.db
+      .query('profiles')
+      .order('desc')
+      .take(limit ?? 250);
+
+    const clients = await Promise.all(
+      profiles.map(async (profile) => {
+        const [role, loans, user, aliases] = await Promise.all([
+          ctx.db
+            .query('userRoles')
+            .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+            .first(),
+          ctx.db
+            .query('loans')
+            .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+            .order('desc')
+            .collect(),
+          ctx.db.get(profile.userId),
+          ctx.db
+            .query('ipsAliasDirectory')
+            .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+            .collect(),
+        ]);
+        if (role?.role !== 'client') return null;
+        const verifiedAccountName = aliases.find(
+          (alias) => alias.status === 'ACTIVE' && alias.isDefault && alias.accountHolderName?.trim()
+        )?.accountHolderName;
+        const activeLoans = loans.filter((loan) => ['funded', 'active'].includes(loan.status));
+        const totalPrincipal = loans.reduce((sum, loan) => sum + loan.principal, 0);
+        const totalRepaid = loans.reduce((sum, loan) => sum + (loan.totalPaid ?? 0), 0);
+        const outstandingBalance = activeLoans.reduce(
+          (sum, loan) => sum + (loan.outstandingBalance ?? loan.principal),
+          0
+        );
+        const latestLoanActivity = loans.reduce(
+          (latest, loan) => Math.max(latest, loan.updatedAt, loan.createdAt),
+          0
+        );
+
+        return {
+          userId: profile.userId,
+          profileId: profile._id,
+          institutionId: role.institutionId ?? profile.institutionId,
+          fullName:
+            profile.fullName?.trim() ||
+            user?.name?.trim() ||
+            verifiedAccountName?.trim() ||
+            profile.email?.split('@')[0],
+          email: profile.email,
+          phone: profile.phone,
+          address: profile.address,
+          dateOfBirth: profile.dateOfBirth,
+          monthlyIncome: profile.monthlyIncome,
+          kycStatus: profile.kycStatus,
+          profileStatus: profile.status,
+          joinedAt: profile.createdAt,
+          latestActivity: Math.max(profile.updatedAt, latestLoanActivity),
+          loanCount: loans.length,
+          activeLoanCount: activeLoans.length,
+          pendingLoanCount: loans.filter((loan) =>
+            ['submitted', 'under_review', 'approved'].includes(loan.status)
+          ).length,
+          totalPrincipal,
+          outstandingBalance,
+          totalRepaid,
+          latestCreditScore: loans.find((loan) => loan.creditScore !== undefined)?.creditScore,
+        };
+      })
+    );
+
+    return applyTenantScope(
+      clients.filter((client): client is NonNullable<typeof client> => client !== null),
+      scope
+    );
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Profile mutations
 // ---------------------------------------------------------------------------

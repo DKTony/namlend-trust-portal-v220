@@ -9,7 +9,6 @@
 
 import { GroupedSidebar } from '@/components/Layout/GroupedSidebar';
 import { AdaptiveShell } from '@/components/adaptive';
-import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { getLandingRoute } from '@/lib/routing';
@@ -21,7 +20,6 @@ import { getPlatformNavGroups } from './platformNav';
 
 const PlatformLayout: React.FC = () => {
   const { user, isPlatformOwner, isPlatformStaff, isLoanOfficer, signOut } = useAuth();
-  const { styles } = useTheme();
   const layout = useAdaptiveLayout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -50,14 +48,19 @@ const PlatformLayout: React.FC = () => {
       className={cn(
         'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
         layout.isCompact && 'pl-14',
-        styles.cardClass,
+        'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
         'rounded-none border-x-0 border-t-0'
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
         <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
         <div className="min-w-0">
-          <h1 className={cn('truncate text-base font-semibold sm:text-xl', styles.textClass)}>
+          <h1
+            className={cn(
+              'truncate text-base font-semibold sm:text-xl',
+              'font-sans text-[#274F35]'
+            )}
+          >
             Platform Console
           </h1>
           <p className="truncate text-xs text-muted-foreground">
@@ -70,7 +73,7 @@ const PlatformLayout: React.FC = () => {
 
   return (
     <AdaptiveShell
-      className={cn('transition-colors duration-500', styles.background)}
+      className={cn('transition-colors duration-500', 'bg-[#F7FAF6]')}
       sidebar={<GroupedSidebar {...sidebarProps} displayMode="sidebar" />}
       rail={<GroupedSidebar {...sidebarProps} displayMode="rail" />}
       mobileNavigation={

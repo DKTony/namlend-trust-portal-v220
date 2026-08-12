@@ -154,7 +154,7 @@ export function SelfServicePortal() {
 
     const statement = `
 =====================================
-NAMLEND TRUST - LOAN STATEMENT
+OG FINANCIAL SERVICES - LOAN STATEMENT
 =====================================
 
 Account Holder: ${user?.email}
@@ -190,8 +190,8 @@ Total Paid: ${formatNAD(totalPaid)}
 Remaining: ${formatNAD(loan.total_repayment - totalPaid)}
 
 =====================================
-This is an official statement from NamLend Trust.
-For queries, contact support@namlend.com
+This is an official statement from OG Financial Services.
+For queries, contact finance@mgholdingsptyltd.com
 =====================================
     `.trim();
 
@@ -200,7 +200,7 @@ For queries, contact support@namlend.com
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `NamLend_Statement_${loan.id.substring(0, 8)}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `OG_Financial_Statement_${loan.id.substring(0, 8)}_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -217,7 +217,7 @@ For queries, contact support@namlend.com
 
     const receipt = `
 =====================================
-NAMLEND TRUST - PAYMENT RECEIPT
+OG FINANCIAL SERVICES - PAYMENT RECEIPT
 =====================================
 
 Receipt No: ${payment.reference_number}
@@ -238,7 +238,7 @@ Original Amount: ${loan ? formatNAD(loan.amount) : 'N/A'}
 
 =====================================
 Thank you for your payment!
-For queries, contact support@namlend.com
+For queries, contact finance@mgholdingsptyltd.com
 =====================================
     `.trim();
 
@@ -246,7 +246,7 @@ For queries, contact support@namlend.com
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `NamLend_Receipt_${payment.reference_number}_${new Date(payment.paid_at).toISOString().split('T')[0]}.txt`;
+    a.download = `OG_Financial_Receipt_${payment.reference_number}_${new Date(payment.paid_at).toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -305,7 +305,7 @@ For queries, contact support@namlend.com
     switch (status.toLowerCase()) {
       case 'approved':
         return (
-          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100/80 dark:hover:bg-green-900/40">
+          <Badge className="bg-green-100  text-green-700  hover:bg-green-100/80 ">
             <CheckCircle className="h-3 w-3 mr-1" />
             Approved
           </Badge>
@@ -553,8 +553,8 @@ For queries, contact support@namlend.com
                   the original due date. Requests are typically processed within 24-48 hours.
                 </p>
                 <p>
-                  <strong>Contact Support:</strong> Email support@namlend.com or call +264 61 123
-                  4567
+                  <strong>Contact Support:</strong> Email finance@mgholdingsptyltd.com or call +264
+                  81 417 4288
                 </p>
               </div>
             </CardContent>

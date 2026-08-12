@@ -1,6 +1,5 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
@@ -30,7 +29,6 @@ export const ProfileCompletionGate = ({ children }: { children: ReactNode }) => 
 };
 
 const ProfileCompletionForm = () => {
-  const { styles } = useTheme();
   const completeEnrollment = useMutation(api.users.completeEnrollment);
   const [phone, setPhone] = useState('');
   const [idNumber, setIdNumber] = useState('');
@@ -65,18 +63,29 @@ const ProfileCompletionForm = () => {
 
   return (
     <div
-      className={cn('min-h-screen flex items-center justify-center p-4', styles.background)}
+      className={cn('min-h-screen flex items-center justify-center p-4', 'bg-[#F7FAF6]')}
       data-testid="profile-completion-gate"
     >
-      <div className={cn('w-full max-w-md p-8', styles.cardClass, styles.radius)}>
-        <h1 className={cn('text-2xl font-bold mb-2', styles.textClass)}>Complete your profile</h1>
+      <div
+        className={cn(
+          'w-full max-w-md p-8',
+          'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
+          'rounded-2xl'
+        )}
+      >
+        <h1 className={cn('text-2xl font-bold mb-2', 'font-sans text-[#274F35]')}>
+          Complete your profile
+        </h1>
         <p className="text-muted-foreground mb-6 text-sm">
           We need a couple more details before you can continue.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <label className={cn('text-sm font-semibold', styles.textClass)} htmlFor="cp-phone">
+            <label
+              className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}
+              htmlFor="cp-phone"
+            >
               Phone
             </label>
             <div className="relative">
@@ -94,7 +103,10 @@ const ProfileCompletionForm = () => {
           </div>
 
           <div className="space-y-2">
-            <label className={cn('text-sm font-semibold', styles.textClass)} htmlFor="cp-id">
+            <label
+              className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}
+              htmlFor="cp-id"
+            >
               ID Number
             </label>
             <div className="relative">

@@ -2,7 +2,6 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { APR_LIMIT, isValidAPR } from '@/constants/regulatory';
-import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
@@ -26,7 +25,6 @@ import { isLoanAmountValid } from './loanLimits';
 export default function LoanApplication() {
   const { t } = useTranslation('loanApplication');
   const { user } = useAuth();
-  const { styles } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
@@ -70,7 +68,7 @@ export default function LoanApplication() {
     return (
       <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
         <div className="flex flex-col items-center justify-center py-16">
-          <Loader2 className={cn('h-8 w-8 animate-spin mb-4', styles.textClass)} />
+          <Loader2 className={cn('h-8 w-8 animate-spin mb-4', 'font-sans text-[#274F35]')} />
           <p className="text-muted-foreground">{t('checkingEligibility')}</p>
         </div>
       </DashboardLayout>
@@ -203,7 +201,6 @@ export default function LoanApplication() {
         <LoanApplicationHeader
           step={step}
           progress={progress}
-          styles={styles}
           onBack={() => navigate('/dashboard')}
         />
 
@@ -212,7 +209,6 @@ export default function LoanApplication() {
           <KYCEligibilityGate
             eligibility={eligibility}
             verificationProgress={verificationProgress}
-            styles={styles}
           />
         )}
 
@@ -222,7 +218,12 @@ export default function LoanApplication() {
             <div className="lg:col-span-2">
               <ThemedCard>
                 <div className="mb-6">
-                  <h2 className={cn('text-xl font-bold flex items-center gap-2', styles.textClass)}>
+                  <h2
+                    className={cn(
+                      'text-xl font-bold flex items-center gap-2',
+                      'font-sans text-[#274F35]'
+                    )}
+                  >
                     {step === 1 && <Calculator className="h-5 w-5" />}
                     {step === 2 && <FileText className="h-5 w-5" />}
                     {step === 3 && <DollarSign className="h-5 w-5" />}
@@ -240,11 +241,7 @@ export default function LoanApplication() {
 
                 <div className="space-y-6">
                   {step === 1 && (
-                    <LoanDetailsStep
-                      formData={formData}
-                      onFormChange={handleFormChange}
-                      styles={styles}
-                    />
+                    <LoanDetailsStep formData={formData} onFormChange={handleFormChange} />
                   )}
 
                   {step === 2 && (
@@ -253,17 +250,10 @@ export default function LoanApplication() {
                       onFormChange={handleFormChange}
                       hasProfileIncome={hasProfileIncome}
                       userProfile={userProfile}
-                      styles={styles}
                     />
                   )}
 
-                  {step === 3 && (
-                    <ReviewSubmitStep
-                      formData={formData}
-                      loanDetails={loanDetails}
-                      styles={styles}
-                    />
-                  )}
+                  {step === 3 && <ReviewSubmitStep formData={formData} loanDetails={loanDetails} />}
 
                   <div className="flex justify-between">
                     <ThemedButton
@@ -297,7 +287,7 @@ export default function LoanApplication() {
               </ThemedCard>
             </div>
 
-            <LoanSummaryPanel loanDetails={loanDetails} styles={styles} />
+            <LoanSummaryPanel loanDetails={loanDetails} />
           </div>
         )}
       </div>

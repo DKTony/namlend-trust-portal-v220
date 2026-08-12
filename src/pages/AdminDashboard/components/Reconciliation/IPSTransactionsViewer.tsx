@@ -154,31 +154,25 @@ export function IPSTransactionsViewer() {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {stats.success}
-            </div>
+            <div className="text-2xl font-bold text-green-600 ">{stats.success}</div>
             <p className="text-xs text-muted-foreground">Successful</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {stats.pending}
-            </div>
+            <div className="text-2xl font-bold text-yellow-600 ">{stats.pending}</div>
             <p className="text-xs text-muted-foreground">Pending</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.failed}</div>
+            <div className="text-2xl font-bold text-red-600 ">{stats.failed}</div>
             <p className="text-xs text-muted-foreground">Failed</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {stats.deemed}
-            </div>
+            <div className="text-2xl font-bold text-orange-600 ">{stats.deemed}</div>
             <p className="text-xs text-muted-foreground">Deemed</p>
           </CardContent>
         </Card>

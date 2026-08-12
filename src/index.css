@@ -2,151 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    /* Light Mode - Smoke/Zinc-50 */
-    --background: 0 0% 98%;
-    --foreground: 240 10% 3.9%;
+    color-scheme: light;
 
+    --background: 105 29% 97%;
+    --foreground: 139 34% 23%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-
+    --card-foreground: 139 34% 23%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 139 34% 23%;
 
-    /* Electric Blue */
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 0 0% 98%;
-    --primary-hover: 221.2 83.2% 45%;
+    --primary: 119 29% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 139 34% 23%;
+    --secondary: 102 33% 94%;
+    --secondary-foreground: 139 34% 23%;
+    --muted: 102 33% 94%;
+    --muted-foreground: 134 9% 40%;
+    --accent: 102 33% 94%;
+    --accent-foreground: 139 34% 23%;
+    --accent-hover: 105 26% 88%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 63% 32%;
+    --success-foreground: 0 0% 100%;
+    --border: 105 26% 88%;
+    --input: 105 18% 75%;
+    --ring: 119 29% 35%;
+    --radius: 0.875rem;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --sidebar-background: 139 34% 23%;
+    --sidebar-foreground: 105 29% 97%;
+    --sidebar-primary: 119 29% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 119 29% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 119 24% 31%;
+    --sidebar-ring: 92 27% 49%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --accent-hover: 240 4.8% 90%;
+    --brand-primary: #3f713e;
+    --brand-secondary: #7ca05c;
+    --brand-accent: #274f35;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --status-pending: 43 96% 36%;
+    --status-pending-bg: 48 100% 95%;
+    --status-approved: 145 63% 32%;
+    --status-approved-bg: 145 55% 94%;
+    --status-rejected: 0 72% 46%;
+    --status-rejected-bg: 0 78% 96%;
+    --status-disbursed: 215 75% 42%;
+    --status-disbursed-bg: 214 95% 95%;
+    --status-active: 215 75% 42%;
+    --status-active-bg: 214 95% 95%;
+    --status-completed: 145 63% 28%;
+    --status-completed-bg: 145 55% 93%;
+    --status-overdue: 0 72% 42%;
+    --status-overdue-bg: 0 78% 96%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221.2 83.2% 53.3%;
-    
-    --radius: 0.75rem;
+    --risk-low: 145 63% 32%;
+    --risk-medium: 43 96% 36%;
+    --risk-high: 28 82% 42%;
+    --risk-critical: 0 72% 46%;
 
-    /* Sidebar - Dark by default for Neo-Fintech look */
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Financial app specific colors */
-    --trust-blue: 221.2 83.2% 53.3%;
-    --warm-orange: 28 80% 52%;
-    --success-green: 145 63% 42%;
-    --neutral-gray: 240 3.8% 46.1%;
-
-    /* Brand color variables (can be overridden by BrandingContext) */
-    --brand-primary: #0EA5E9;
-    --brand-secondary: #10B981;
-    --brand-accent: #8b5cf6;
-
-    /* Loan status colors */
-    --status-pending: 45 93% 47%;
-    --status-pending-bg: 45 93% 95%;
-    --status-approved: 145 63% 42%;
-    --status-approved-bg: 145 63% 95%;
-    --status-rejected: 0 84% 60%;
-    --status-rejected-bg: 0 84% 95%;
-    --status-disbursed: 221.2 83.2% 53.3%;
-    --status-disbursed-bg: 221.2 83.2% 95%;
-    --status-active: 280 67% 55%;
-    --status-active-bg: 280 67% 95%;
-    --status-completed: 145 63% 32%;
-    --status-completed-bg: 145 63% 92%;
-    --status-overdue: 0 84% 50%;
-    --status-overdue-bg: 0 84% 95%;
-
-    /* Risk bucket colors */
-    --risk-low: 145 63% 42%;
-    --risk-medium: 45 93% 47%;
-    --risk-high: 28 80% 52%;
-    --risk-critical: 0 84% 60%;
-
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(221.2 83.2% 45%));
-    --gradient-accent: linear-gradient(135deg, hsl(28 80% 52%), hsl(28 80% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%) 0%, hsl(240 5.9% 10%) 50%, hsl(221.2 83.2% 53.3%) 100%);
-    
-    /* Shadows */
-    --shadow-soft: 0 8px 30px rgba(0,0,0,0.04);
-    --shadow-medium: 0 4px 16px -4px rgba(0,0,0,0.1);
-    --shadow-strong: 0 8px 32px -8px rgba(0,0,0,0.2);
-
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --gradient-primary: linear-gradient(135deg, #3f713e, #274f35);
+    --gradient-accent: linear-gradient(135deg, #7ca05c, #3f713e);
+    --gradient-hero: linear-gradient(135deg, #274f35 0%, #3f713e 60%, #7ca05c 100%);
+    --shadow-soft: 0 12px 32px rgba(39, 79, 53, 0.06);
+    --shadow-medium: 0 8px 24px rgba(39, 79, 53, 0.1);
+    --shadow-strong: 0 18px 48px rgba(39, 79, 53, 0.16);
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.45s cubic-bezier(0.68, -0.3, 0.265, 1.3);
   }
 
-  .dark {
-    /* Dark Mode - Obsidian/Zinc-950 */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 5.9% 10%; /* Charcoal */
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --success: 145 63% 42%;
-    --success-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 221.2 83.2% 53.3%;
-    
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    background: #f7faf6;
   }
 
   body {
@@ -155,50 +90,22 @@ All colors MUST be HSL.
     overflow-x: hidden;
   }
 
-  /* Theme variant data attributes */
-  [data-theme="glass"] {
-    --theme-glow-color: rgba(99, 102, 241, 0.3);
-  }
-  
-  [data-theme="lux"] {
-    --theme-glow-color: rgba(245, 158, 11, 0.2);
-  }
-  
-  [data-theme="neo"] {
-    --theme-glow-color: rgba(16, 185, 129, 0.2);
+  ::selection {
+    background: rgba(124, 160, 92, 0.35);
+    color: #274f35;
   }
 }
 
 @layer utilities {
-  .glass-effect {
-    @apply backdrop-blur-xl bg-white/10 border border-white/20;
-  }
-  
-  .glass-effect-dark {
-    @apply backdrop-blur-xl bg-black/20 border border-white/10;
-  }
-  
-  .text-gradient-gold {
-    @apply bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent;
-  }
-  
-  .text-gradient-blue {
-    @apply bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 bg-clip-text text-transparent;
-  }
-  
   .hover-lift {
     @apply transition-transform duration-300 hover:-translate-y-1;
   }
-  
-  .hover-glow {
-    @apply transition-shadow duration-300 hover:shadow-[0_0_30px_var(--theme-glow-color)];
-  }
 
   .scrollbar-none {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-  
+
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }

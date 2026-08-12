@@ -1,13 +1,10 @@
 /**
  * Themed Button Component
  *
- * A theme-aware button that adapts its styling based on the active design theme
- * (glass, lux, or neo). Wrapped with `forwardRef` for seamless integration with
+ * An OG Financial Services button. Wrapped with `forwardRef` for seamless integration with
  * Radix UI primitives and other ref-forwarding components.
  *
- * Interaction behaviour differs per theme:
- * - **glass/lux**: `active:scale-95` press effect with brightness increase on hover.
- * - **neo**: Brutalist `translate-x/y` offset on press with flat shadow on hover.
+ * Uses a restrained press and hover treatment across the application.
  *
  * @example
  * ```tsx
@@ -28,7 +25,6 @@
  * ```
  */
 
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import React, { forwardRef } from 'react';
 
@@ -56,34 +52,30 @@ interface ThemedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
 
 export const ThemedButton = forwardRef<HTMLButtonElement, ThemedButtonProps>(
   ({ variant = 'primary', size = 'default', children, className = '', ...props }, ref) => {
-    const { styles, theme } = useTheme();
-
     let variantClass = '';
 
     switch (variant) {
       case 'primary':
       case 'default':
-        variantClass = `${styles.accentClass} hover:opacity-90 shadow-lg`;
+        variantClass = `${'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'} hover:opacity-90 shadow-lg`;
         break;
       case 'secondary':
-        variantClass = styles.buttonClass;
+        variantClass =
+          'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] transition-colors hover:bg-[#EEF5EB]';
         break;
       case 'outline':
-        variantClass = `bg-transparent border border-border hover:bg-accent hover:text-accent-foreground ${styles.textClass}`;
+        variantClass = `bg-transparent border border-border hover:bg-accent hover:text-accent-foreground ${'font-sans text-[#274F35]'}`;
         break;
       case 'destructive':
         variantClass = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
         break;
       case 'ghost':
       default:
-        variantClass = `bg-transparent hover:bg-accent/10 ${styles.textClass}`;
+        variantClass = `bg-transparent hover:bg-accent/10 ${'font-sans text-[#274F35]'}`;
         break;
     }
 
-    const interactiveClass =
-      theme === 'neo'
-        ? 'active:translate-x-[2px] active:translate-y-[2px] active:shadow-none hover:shadow-md'
-        : 'active:scale-95 hover:shadow-xl hover:brightness-110';
+    const interactiveClass = 'active:scale-[0.98] hover:shadow-md';
 
     const sizeClasses = {
       default: 'h-10 px-4 py-2',
@@ -98,7 +90,7 @@ export const ThemedButton = forwardRef<HTMLButtonElement, ThemedButtonProps>(
         className={cn(
           'inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
           'min-h-10 touch-no-hover',
-          styles.radius,
+          'rounded-2xl',
           variantClass,
           interactiveClass,
           sizeClasses[size],

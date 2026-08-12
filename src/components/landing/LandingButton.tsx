@@ -1,4 +1,3 @@
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -15,21 +14,16 @@ const LandingButton: React.FC<LandingButtonProps> = ({
   fullWidth = false,
   ...props
 }) => {
-  const { styles, theme } = useTheme();
-
   let variantClass = '';
   if (variant === 'primary') {
-    variantClass = styles.accentClass;
+    variantClass =
+      'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]';
   } else if (variant === 'secondary') {
-    variantClass = styles.buttonClass;
+    variantClass =
+      'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] transition-colors hover:bg-[#EEF5EB]';
   } else {
-    variantClass = `bg-transparent hover:bg-black/5 dark:hover:bg-white/5 ${styles.textClass}`;
+    variantClass = 'bg-transparent font-sans text-[#274F35] hover:bg-[#EEF5EB]';
   }
-
-  const physicsClass = theme === 'neo' ? '' : 'active:scale-95 transition-transform duration-200';
-
-  const radiusClass =
-    theme === 'glass' ? 'rounded-2xl' : theme === 'lux' ? 'rounded-lg' : 'rounded-md';
 
   return (
     <button
@@ -37,8 +31,7 @@ const LandingButton: React.FC<LandingButtonProps> = ({
         'relative px-6 py-3 font-semibold flex items-center justify-center gap-2',
         fullWidth && 'w-full',
         variantClass,
-        physicsClass,
-        radiusClass,
+        'rounded-xl transition-transform duration-200 active:scale-[0.98]',
         className
       )}
       {...props}

@@ -19,9 +19,9 @@ import { RefreshCw, ShieldCheck } from 'lucide-react';
 import React, { useState } from 'react';
 
 const STATUS_COLORS: Record<string, string> = {
-  granted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  withdrawn: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-  expired: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
+  granted: 'bg-green-100 text-green-800  ',
+  withdrawn: 'bg-red-100 text-red-800  ',
+  expired: 'bg-gray-100 text-gray-500  ',
 };
 
 const STATUSES = ['all', 'granted', 'withdrawn', 'expired'] as const;

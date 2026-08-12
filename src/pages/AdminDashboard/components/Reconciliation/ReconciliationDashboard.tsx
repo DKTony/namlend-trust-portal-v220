@@ -69,7 +69,7 @@ export function ReconciliationDashboard() {
             <CardTitle className="text-sm font-medium truncate mr-2">
               Settlement Runs (30d)
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400 shrink-0" />
+            <CheckCircle className="h-4 w-4 text-green-500  shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
@@ -86,7 +86,7 @@ export function ReconciliationDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium truncate mr-2">Total Settled</CardTitle>
-            <FileSpreadsheet className="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0" />
+            <FileSpreadsheet className="h-4 w-4 text-blue-500  shrink-0" />
           </CardHeader>
           <CardContent>
             <div
@@ -104,7 +104,7 @@ export function ReconciliationDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium truncate mr-2">Pending Adjustments</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400 shrink-0" />
+            <AlertTriangle className="h-4 w-4 text-orange-500  shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
@@ -126,7 +126,7 @@ export function ReconciliationDashboard() {
             <CardTitle className="text-sm font-medium truncate mr-2">
               Timeout Transactions
             </CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500 dark:text-yellow-400 shrink-0" />
+            <Clock className="h-4 w-4 text-yellow-500  shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">

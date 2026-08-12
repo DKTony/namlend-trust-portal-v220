@@ -119,16 +119,16 @@ const SettledLoansList: React.FC = () => {
       </div>
 
       {/* Summary */}
-      <Card className="bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800">
+      <Card className="bg-teal-50  border-teal-200 ">
         <CardContent className="pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BadgeCheck className="h-8 w-8 text-teal-600 dark:text-teal-400" />
+              <BadgeCheck className="h-8 w-8 text-teal-600 " />
               <div>
-                <h3 className="font-semibold text-teal-900 dark:text-teal-300">
+                <h3 className="font-semibold text-teal-900 ">
                   {filteredLoans.length} Settled Loan{filteredLoans.length !== 1 ? 's' : ''}
                 </h3>
-                <p className="text-sm text-teal-700 dark:text-teal-400">
+                <p className="text-sm text-teal-700 ">
                   Total collected:{' '}
                   {formatNAD(
                     filteredLoans.reduce(
@@ -167,7 +167,7 @@ const SettledLoansList: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <Badge className="bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400 hover:bg-teal-100 shrink-0">
+                      <Badge className="bg-teal-100  text-teal-800  hover:bg-teal-100 shrink-0">
                         <BadgeCheck className="h-3 w-3 mr-1" />
                         Settled
                       </Badge>
@@ -205,7 +205,7 @@ const SettledLoansList: React.FC = () => {
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Total Paid</p>
                         <p
-                          className="font-semibold text-teal-600 dark:text-teal-400 truncate tabular-nums"
+                          className="font-semibold text-teal-600  truncate tabular-nums"
                           title={formatNAD(loan.total_paid || loan.total_repayment)}
                         >
                           {formatNAD(loan.total_paid || loan.total_repayment)}
@@ -219,7 +219,7 @@ const SettledLoansList: React.FC = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-muted-foreground truncate">Settled</p>
-                        <p className="font-medium text-teal-600 dark:text-teal-400 truncate tabular-nums">
+                        <p className="font-medium text-teal-600  truncate tabular-nums">
                           {formatDate(loan.settled_at)}
                         </p>
                       </div>

@@ -1,7 +1,7 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { useAuth } from '@/hooks/useAuth';
 import { getLandingLabel, getLandingRoute } from '@/lib/routing';
-import { Menu, Shield, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationCenter } from './shared/NotificationCenter';
@@ -38,13 +38,11 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-md flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-primary">NamLend</h1>
-              <p className="text-xs text-muted-foreground">NAMFISA Licensed</p>
-            </div>
+            <img
+              src="/og-financial-logo-v2.svg"
+              alt="OG Financial Services"
+              className="h-12 w-auto max-w-[190px] object-contain"
+            />
           </div>
 
           {/* Desktop Navigation */}

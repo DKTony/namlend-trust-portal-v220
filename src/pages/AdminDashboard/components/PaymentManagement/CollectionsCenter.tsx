@@ -131,37 +131,37 @@ const CollectionsCenter: React.FC = () => {
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'early':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-yellow-100  text-yellow-800 ';
       case 'formal':
-        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
+        return 'bg-orange-100  text-orange-800 ';
       case 'legal':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-red-100  text-red-800 ';
       case 'writeoff':
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-gray-100  text-gray-800 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-gray-100  text-gray-800 ';
     }
   };
 
   const getStrategyColor = (strategy: string) => {
     switch (strategy) {
       case 'standard':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+        return 'bg-blue-100  text-blue-800 ';
       case 'payment_plan':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+        return 'bg-green-100  text-green-800 ';
       case 'settlement':
-        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
+        return 'bg-purple-100  text-purple-800 ';
       case 'legal':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-red-100  text-red-800 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-gray-100  text-gray-800 ';
     }
   };
 
   const getProbabilityColor = (probability: number) => {
-    if (probability >= 70) return 'text-green-600 dark:text-green-400';
-    if (probability >= 40) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
+    if (probability >= 70) return 'text-green-600 ';
+    if (probability >= 40) return 'text-yellow-600 ';
+    return 'text-red-600 ';
   };
 
   const filteredCases = collectionCases.filter((case_) => {
@@ -212,7 +212,7 @@ const CollectionsCenter: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div
-              className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+              className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums"
               title={`NAD ${collectionCases.reduce((sum, c) => sum + c.totalOwed, 0).toLocaleString()}`}
             >
               NAD {collectionCases.reduce((sum, c) => sum + c.totalOwed, 0).toLocaleString()}
@@ -231,7 +231,7 @@ const CollectionsCenter: React.FC = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-green-600  truncate tabular-nums">
               68%
             </div>
             <p className="text-xs text-muted-foreground truncate">
@@ -247,7 +247,7 @@ const CollectionsCenter: React.FC = () => {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums">
               {collectionCases.filter((c) => c.stage === 'legal').length}
             </div>
             <p className="text-xs text-muted-foreground truncate">Requiring legal action</p>
@@ -262,7 +262,7 @@ const CollectionsCenter: React.FC = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
               {new Set(collectionCases.map((c) => c.assignedAgent)).size}
             </div>
             <p className="text-xs text-muted-foreground truncate">Collection agents</p>

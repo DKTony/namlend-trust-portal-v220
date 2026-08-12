@@ -142,12 +142,12 @@ export function DocumentsSection() {
 
         {overview && !overview.eligible && (
           <div className="flex gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4">
-            <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-500" />
+            <AlertCircle className="h-5 w-5 shrink-0 text-yellow-600 " />
             <div>
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+              <p className="text-sm font-medium text-yellow-700 ">
                 {overview.status === 'submitted' ? 'Under review' : 'Action required'}
               </p>
-              <p className="mt-1 text-xs text-yellow-700/80 dark:text-yellow-400/80">
+              <p className="mt-1 text-xs text-yellow-700/80 ">
                 {overview.status === 'submitted'
                   ? 'Your documents are waiting for staff review.'
                   : 'Complete and submit the required documents to unlock loan applications.'}

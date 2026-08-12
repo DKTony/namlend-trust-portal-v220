@@ -1,7 +1,6 @@
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { resolvePostLoginRoute } from '@/lib/routing';
@@ -31,7 +30,6 @@ export default function Auth() {
     isLoanOfficer,
     isPlatformStaff,
   } = useAuth();
-  const { styles } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextParam = searchParams.get('next');
@@ -288,8 +286,8 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center', styles.background)}>
-        <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+      <div className={cn('min-h-screen flex items-center justify-center', 'bg-[#F7FAF6]')}>
+        <Loader2 className={cn('h-8 w-8 animate-spin', 'font-sans text-[#274F35]')} />
       </div>
     );
   }
@@ -298,43 +296,49 @@ export default function Auth() {
     <div
       className={cn(
         'min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-500',
-        styles.background
+        'bg-[#F7FAF6]'
       )}
     >
       <div
         className={cn(
           'max-w-5xl w-full overflow-hidden flex md:min-h-[650px]',
-          styles.cardClass,
-          styles.radius
+          'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
+          'rounded-2xl'
         )}
       >
         {/* Left Side: Brand & Visual */}
-        <div className="w-1/2 bg-zinc-950 text-white p-12 hidden md:flex flex-col justify-between relative overflow-hidden">
+        <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-[#274F35] p-12 text-white md:flex">
           {/* Abstract Background Elements */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[120px] opacity-20 -mr-20 -mt-20 pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600 rounded-full blur-[100px] opacity-20 -ml-10 -mb-10 pointer-events-none"></div>
+          <div className="pointer-events-none absolute -mr-20 -mt-20 h-96 w-96 rounded-full bg-[#7CA05C] opacity-25 blur-[120px] right-0 top-0" />
+          <div className="pointer-events-none absolute -mb-10 -ml-10 h-80 w-80 rounded-full bg-[#3F713E] opacity-35 blur-[100px] bottom-0 left-0" />
 
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-bold text-primary-foreground text-xl shadow-glow">
-                N
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F7FAF6] p-1 shadow-glow">
+                <img
+                  src="/og-financial-mark-v2.svg"
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">NamLend Trust</span>
+              <span className="text-xl font-bold tracking-tight text-white">
+                OG Financial Services
+              </span>
             </div>
           </div>
 
           <div className="relative z-10 max-w-md">
             <h2 className="text-5xl font-extrabold tracking-tight mb-6 leading-tight text-white">
-              Financial freedom <br /> <span className="text-zinc-400">starts here.</span>
+              Financial freedom <br /> <span className="text-white/70">starts here.</span>
             </h2>
-            <p className="text-zinc-400 text-lg leading-relaxed">
-              Access fair, regulated loans with AI-powered instant approval. Designed for the modern
-              Namibian economy.
+            <p className="text-lg leading-relaxed text-white/70">
+              Apply for fair, regulated loans with verified KYC and a responsible credit review.
+              Designed for the modern Namibian economy.
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center gap-3 text-sm text-zinc-400 font-medium bg-white/5 w-fit px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
-            <ShieldCheck size={18} className="text-emerald-500" />
+          <div className="relative z-10 flex w-fit items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-sm">
+            <ShieldCheck size={18} className="text-[#BBD0AC]" />
             <span>Bank-Grade Security Encryption</span>
           </div>
         </div>
@@ -342,8 +346,7 @@ export default function Auth() {
         {/* Right Side: Form */}
         <div
           className={cn(
-            'w-full md:w-1/2 p-5 sm:p-8 lg:p-12 flex flex-col justify-center relative',
-            styles.variant === 'glass' ? 'bg-white/5 backdrop-blur-sm' : 'bg-card'
+            'relative flex w-full flex-col justify-center bg-white p-5 sm:p-8 md:w-1/2 lg:p-12'
           )}
         >
           <div className="max-w-md mx-auto w-full">
@@ -351,26 +354,30 @@ export default function Auth() {
             <div className="mb-8">
               {isPasswordReset ? (
                 <>
-                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                  <h3 className={cn('text-2xl font-bold mb-2', 'font-sans text-[#274F35]')}>
                     Reset Password
                   </h3>
                   <p className="text-muted-foreground">Create a new secure password.</p>
                 </>
               ) : authMode === 'login' ? (
                 <>
-                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>Welcome back</h3>
+                  <h3 className={cn('text-2xl font-bold mb-2', 'font-sans text-[#274F35]')}>
+                    Welcome back
+                  </h3>
                   <p className="text-muted-foreground">Please enter your details to sign in.</p>
                 </>
               ) : authMode === 'signup' ? (
                 <>
-                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                  <h3 className={cn('text-2xl font-bold mb-2', 'font-sans text-[#274F35]')}>
                     Create Account
                   </h3>
-                  <p className="text-muted-foreground">Join NamLend for instant loan access.</p>
+                  <p className="text-muted-foreground">
+                    Apply with OG Financial Services for responsible credit review.
+                  </p>
                 </>
               ) : (
                 <>
-                  <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>
+                  <h3 className={cn('text-2xl font-bold mb-2', 'font-sans text-[#274F35]')}>
                     Forgot Password?
                   </h3>
                   <p className="text-muted-foreground">We'll send you a reset link.</p>
@@ -383,7 +390,7 @@ export default function Auth() {
               // PASSWORD RESET FORM
               <form onSubmit={handlePasswordReset} className="space-y-5">
                 <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>
+                  <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                     New Password
                   </label>
                   <div className="relative">
@@ -400,7 +407,7 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>
+                  <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                     Confirm Password
                   </label>
                   <div className="relative">
@@ -426,7 +433,9 @@ export default function Auth() {
                 <GoogleSignInButton next={nextParam} className="mb-5" />
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
+                    <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail
                         className="absolute left-4 top-3 text-muted-foreground z-10"
@@ -446,7 +455,7 @@ export default function Auth() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                         Password
                       </label>
                       <button
@@ -497,7 +506,7 @@ export default function Auth() {
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                         First Name
                       </label>
                       <div className="relative">
@@ -517,7 +526,7 @@ export default function Auth() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                         Last Name
                       </label>
                       <div className="relative">
@@ -539,7 +548,9 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
+                    <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail
                         className="absolute left-4 top-3 text-muted-foreground z-10"
@@ -558,7 +569,9 @@ export default function Auth() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className={cn('text-sm font-semibold', styles.textClass)}>Phone</label>
+                      <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
+                        Phone
+                      </label>
                       <div className="relative">
                         <Phone
                           className="absolute left-4 top-3 text-muted-foreground z-10"
@@ -574,7 +587,7 @@ export default function Auth() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className={cn('text-sm font-semibold', styles.textClass)}>
+                      <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                         ID Number
                       </label>
                       <div className="relative">
@@ -596,7 +609,7 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                    <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                       Password
                     </label>
                     <div className="relative">
@@ -616,7 +629,7 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className={cn('text-sm font-semibold', styles.textClass)}>
+                    <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                       Confirm Password
                     </label>
                     <div className="relative">
@@ -652,7 +665,9 @@ export default function Auth() {
               // FORGOT PASSWORD FORM
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <div className="space-y-2">
-                  <label className={cn('text-sm font-semibold', styles.textClass)}>Email</label>
+                  <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
+                    Email
+                  </label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-3 text-muted-foreground z-10" size={20} />
                     <ThemedInput

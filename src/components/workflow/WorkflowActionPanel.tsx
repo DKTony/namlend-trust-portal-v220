@@ -77,7 +77,7 @@ const WorkflowActionPanel: React.FC<WorkflowActionPanelProps> = ({
   }
 
   return (
-    <ThemedCard className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+    <ThemedCard className="border-blue-200  bg-blue-50 ">
       <CardHeader>
         <CardTitle className="text-lg">Action Required</CardTitle>
         <CardDescription>

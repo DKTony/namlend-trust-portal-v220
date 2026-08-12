@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './i18n'; // Initialize i18n before App renders
 import { initSentry } from './utils/sentry';
+import { enforceOgPresentation } from './lib/presentation';
 
 // Initialize Sentry before anything else (no-op when VITE_SENTRY_DSN is absent)
 initSentry();
@@ -10,5 +11,7 @@ initSentry();
 // Use `npx convex dashboard` for data inspection and debugging.
 
 import './index.css';
+
+enforceOgPresentation();
 
 createRoot(document.getElementById('root')!).render(<App />);

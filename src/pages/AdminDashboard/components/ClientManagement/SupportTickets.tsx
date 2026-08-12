@@ -1,7 +1,6 @@
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
@@ -43,7 +42,6 @@ const SupportTickets: React.FC = () => {
   }>(NEW_TICKET_DEFAULT);
   const [responseDraft, setResponseDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const { styles } = useTheme();
 
   const { tickets, loading, error, refetch } = useSupportTickets(activeFilter, searchTerm);
   const clients = useQuery(
@@ -121,13 +119,10 @@ const SupportTickets: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      open: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      'in-progress':
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      resolved:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      closed:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      open: 'bg-red-100  text-red-800  border-red-200 ',
+      'in-progress': 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      resolved: 'bg-green-100  text-green-800  border-green-200 ',
+      closed: 'bg-gray-100  text-gray-800  border-gray-200 ',
     };
 
     const icons = {
@@ -147,12 +142,10 @@ const SupportTickets: React.FC = () => {
 
   const getPriorityBadge = (priority: string) => {
     const variants = {
-      low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      medium:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      urgent:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      low: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      medium: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      high: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      urgent: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
@@ -164,15 +157,11 @@ const SupportTickets: React.FC = () => {
 
   const getCategoryBadge = (category: string) => {
     const variants = {
-      technical:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      billing:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      loan: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      account:
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      general:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      technical: 'bg-purple-100  text-purple-800  border-purple-200 ',
+      billing: 'bg-green-100  text-green-800  border-green-200 ',
+      loan: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      account: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      general: 'bg-gray-100  text-gray-800  border-gray-200 ',
     };
 
     return (
@@ -230,7 +219,9 @@ const SupportTickets: React.FC = () => {
       {/* Header with Actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className={cn('text-lg font-semibold', styles.textClass)}>Support Tickets</h3>
+          <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
+            Support Tickets
+          </h3>
           <p className="text-sm text-muted-foreground">Manage client support requests and issues</p>
         </div>
         <ThemedButton className="h-9 px-3 text-xs" onClick={() => setShowNewTicket(true)}>
@@ -245,44 +236,29 @@ const SupportTickets: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Open Tickets</p>
-              <p
-                className={cn(
-                  'text-2xl font-bold text-red-600 dark:text-red-400',
-                  styles.textClass
-                )}
-              >
+              <p className={cn('text-2xl font-bold text-red-600 ', 'font-sans text-[#274F35]')}>
                 {tickets?.filter((t) => t.status === 'open').length || 0}
               </p>
             </div>
-            <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+            <AlertCircle className="h-8 w-8 text-red-600 " />
           </div>
         </ThemedCard>
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">In Progress</p>
-              <p
-                className={cn(
-                  'text-2xl font-bold text-yellow-600 dark:text-yellow-400',
-                  styles.textClass
-                )}
-              >
+              <p className={cn('text-2xl font-bold text-yellow-600 ', 'font-sans text-[#274F35]')}>
                 {tickets?.filter((t) => t.status === 'in-progress').length || 0}
               </p>
             </div>
-            <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+            <Clock className="h-8 w-8 text-yellow-600 " />
           </div>
         </ThemedCard>
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Resolved Today</p>
-              <p
-                className={cn(
-                  'text-2xl font-bold text-green-600 dark:text-green-400',
-                  styles.textClass
-                )}
-              >
+              <p className={cn('text-2xl font-bold text-green-600 ', 'font-sans text-[#274F35]')}>
                 {tickets?.filter(
                   (t) =>
                     t.resolvedAt != null &&
@@ -290,14 +266,14 @@ const SupportTickets: React.FC = () => {
                 ).length || 0}
               </p>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <CheckCircle className="h-8 w-8 text-green-600 " />
           </div>
         </ThemedCard>
         <ThemedCard>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Avg First Response</p>
-              <p className={cn('text-2xl font-bold', styles.textClass)}>
+              <p className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
                 {(() => {
                   const responded = (tickets ?? []).filter((t) => t.responses.length > 0);
                   if (responded.length === 0) return '—';
@@ -311,7 +287,7 @@ const SupportTickets: React.FC = () => {
                 })()}
               </p>
             </div>
-            <MessageSquare className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <MessageSquare className="h-8 w-8 text-blue-600 " />
           </div>
         </ThemedCard>
       </div>
@@ -365,7 +341,9 @@ const SupportTickets: React.FC = () => {
         <ThemedCard>
           <div className="text-center py-8">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>No tickets found</h3>
+            <h3 className={cn('text-lg font-medium mb-2', 'font-sans text-[#274F35]')}>
+              No tickets found
+            </h3>
             <p className="text-muted-foreground">
               {searchTerm
                 ? `No tickets match "${searchTerm}"`
@@ -402,7 +380,9 @@ const SupportTickets: React.FC = () => {
                       <span className="text-xs font-mono text-muted-foreground">
                         #{ticket.id.substring(0, 8)}
                       </span>
-                      <h4 className={cn('font-semibold text-lg truncate', styles.textClass)}>
+                      <h4
+                        className={cn('font-semibold text-lg truncate', 'font-sans text-[#274F35]')}
+                      >
                         {ticket.subject}
                       </h4>
                     </div>
@@ -523,7 +503,7 @@ const SupportTickets: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="min-w-0">
-                  <h3 className={cn('text-lg font-semibold truncate', styles.textClass)}>
+                  <h3 className={cn('text-lg font-semibold truncate', 'font-sans text-[#274F35]')}>
                     {activeTicket.subject}
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -557,7 +537,7 @@ const SupportTickets: React.FC = () => {
 
               {/* Response thread */}
               <div className="space-y-3">
-                <h4 className={cn('text-sm font-semibold', styles.textClass)}>
+                <h4 className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                   Responses ({activeTicket.responses.length})
                 </h4>
                 {activeTicket.responses.length === 0 ? (
@@ -624,7 +604,9 @@ const SupportTickets: React.FC = () => {
           <ThemedCard className="max-w-2xl w-full mx-4 max-h-[min(90vh,calc(100dvh-2rem))] overflow-y-auto m-0 p-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className={cn('text-lg font-semibold', styles.textClass)}>New Ticket</h3>
+                <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
+                  New Ticket
+                </h3>
                 <ThemedButton
                   variant="ghost"
                   className="h-8 w-8 p-0"

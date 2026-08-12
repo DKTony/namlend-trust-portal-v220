@@ -134,14 +134,14 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
                   isCurrent
                     ? 'bg-primary/10 border-2 border-primary/30 cursor-pointer hover:bg-primary/20'
                     : isCompleted
-                      ? 'bg-green-50 dark:bg-green-900/10'
+                      ? 'bg-green-50 '
                       : 'bg-muted/50 opacity-60'
                 }`}
               >
                 <div
                   className={`p-2 rounded-full ${
                     isCompleted
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                      ? 'bg-green-100  text-green-600 '
                       : isCurrent
                         ? 'bg-primary/20 text-primary'
                         : 'bg-muted text-muted-foreground'
@@ -153,7 +153,7 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
                   <p
                     className={`font-medium ${
                       isCompleted
-                        ? 'text-green-700 dark:text-green-300'
+                        ? 'text-green-700 '
                         : isCurrent
                           ? 'text-foreground'
                           : 'text-muted-foreground'
@@ -166,10 +166,7 @@ export function IPPEnrollmentSteps({ onboardingData, onStartAction }: IPPEnrollm
                   )}
                 </div>
                 {isCompleted && (
-                  <Badge
-                    variant="outline"
-                    className="border-green-500 text-green-600 dark:text-green-400"
-                  >
+                  <Badge variant="outline" className="border-green-500 text-green-600 ">
                     ✓ Done
                   </Badge>
                 )}

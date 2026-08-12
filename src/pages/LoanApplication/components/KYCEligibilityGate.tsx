@@ -3,7 +3,6 @@ import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Progress } from '@/components/ui/progress';
 import type { KYCEligibility } from '@/hooks/useKYCEligibility';
 import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/types/theme';
 import { AlertTriangle, ArrowRight, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,13 +10,11 @@ import { useNavigate } from 'react-router-dom';
 interface KYCEligibilityGateProps {
   eligibility: KYCEligibility | null;
   verificationProgress: number;
-  styles: ThemeConfig;
 }
 
 export default function KYCEligibilityGate({
   eligibility,
   verificationProgress,
-  styles,
 }: KYCEligibilityGateProps) {
   const { t } = useTranslation('loanApplication');
   const navigate = useNavigate();
@@ -29,7 +26,9 @@ export default function KYCEligibilityGate({
           <ShieldAlert className="h-6 w-6 text-yellow-500" />
         </div>
         <div className="flex-1">
-          <h3 className={cn('text-lg font-bold mb-1', styles.textClass)}>{t('kyc.title')}</h3>
+          <h3 className={cn('text-lg font-bold mb-1', 'font-sans text-[#274F35]')}>
+            {t('kyc.title')}
+          </h3>
           <p className="text-sm text-muted-foreground mb-4">{t('kyc.description')}</p>
 
           {eligibility && (

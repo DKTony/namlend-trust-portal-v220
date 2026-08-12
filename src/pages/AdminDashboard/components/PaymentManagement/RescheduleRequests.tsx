@@ -1,7 +1,6 @@
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
@@ -13,7 +12,6 @@ import React, { useState } from 'react';
 type StatusFilter = 'pending' | 'approved' | 'rejected' | 'all';
 
 const RescheduleRequests: React.FC = () => {
-  const { styles } = useTheme();
   const [filter, setFilter] = useState<StatusFilter>('pending');
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -62,21 +60,21 @@ const RescheduleRequests: React.FC = () => {
     switch (status) {
       case 'approved':
         return (
-          <ThemedBadge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800">
+          <ThemedBadge className="bg-green-100  text-green-800  border-green-200 ">
             <CheckCircle className="h-3 w-3 mr-1" />
             Approved
           </ThemedBadge>
         );
       case 'rejected':
         return (
-          <ThemedBadge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">
+          <ThemedBadge className="bg-red-100  text-red-800  border-red-200 ">
             <XCircle className="h-3 w-3 mr-1" />
             Rejected
           </ThemedBadge>
         );
       default:
         return (
-          <ThemedBadge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+          <ThemedBadge className="bg-yellow-100  text-yellow-800  border-yellow-200 ">
             <Clock className="h-3 w-3 mr-1" />
             Pending
           </ThemedBadge>
@@ -95,7 +93,7 @@ const RescheduleRequests: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className={cn('text-lg font-semibold', styles.textClass)}>
+          <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
             Payment Reschedule Requests
           </h3>
           <p className="text-sm text-muted-foreground">
@@ -129,7 +127,7 @@ const RescheduleRequests: React.FC = () => {
         <ThemedCard>
           <div className="text-center py-10">
             <CalendarClock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h4 className={cn('font-medium', styles.textClass)}>No {filter} requests</h4>
+            <h4 className={cn('font-medium', 'font-sans text-[#274F35]')}>No {filter} requests</h4>
             <p className="text-sm text-muted-foreground">
               Reschedule requests submitted by clients appear here for review.
             </p>
@@ -145,7 +143,7 @@ const RescheduleRequests: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className={cn('font-semibold truncate', styles.textClass)}>
+                      <span className={cn('font-semibold truncate', 'font-sans text-[#274F35]')}>
                         {req.clientName}
                       </span>
                     </div>
@@ -164,7 +162,7 @@ const RescheduleRequests: React.FC = () => {
                   <span className="text-muted-foreground">From</span>
                   <span className="font-medium">{formatDate(req.originalDueDate)}</span>
                   <span className="text-muted-foreground">to</span>
-                  <span className="font-medium text-blue-600 dark:text-blue-400">
+                  <span className="font-medium text-blue-600 ">
                     {formatDate(req.requestedDate)}
                   </span>
                 </div>
@@ -199,7 +197,7 @@ const RescheduleRequests: React.FC = () => {
                         variant="outline"
                         size="sm"
                         disabled={busyId === String(req._id)}
-                        className="text-red-600 dark:text-red-400"
+                        className="text-red-600 "
                         onClick={() => handleReview(req._id, 'rejected')}
                       >
                         <XCircle className="h-3.5 w-3.5 mr-2" />

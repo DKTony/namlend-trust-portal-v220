@@ -16,7 +16,6 @@ import { Progress } from '@/components/ui/progress';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedInput } from '@/components/ui/ThemedInput';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
@@ -105,7 +104,6 @@ function statusPresentation(status: string) {
 
 export default function KYC() {
   const { user } = useAuth();
-  const { styles } = useTheme();
   const navigate = useNavigate();
   const { overview, loading } = useKYCEligibility();
   const generateUploadUrl = useMutation(api.kycDocuments.generateUploadUrl);
@@ -270,7 +268,7 @@ export default function KYC() {
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className={cn('text-3xl font-bold', styles.textClass)}>KYC Documents</h1>
+            <h1 className={cn('text-3xl font-bold', 'font-sans text-[#274F35]')}>KYC Documents</h1>
             {overview && (
               <Badge variant="outline" className="capitalize">
                 {overview.status.replace(/_/g, ' ')}

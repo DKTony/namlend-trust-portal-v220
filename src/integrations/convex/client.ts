@@ -20,7 +20,7 @@ if (!convexUrl) {
   }
   // Production: log clearly instead of crashing — ErrorBoundary will show a user-friendly message
   console.error(
-    '[NamLend] VITE_CONVEX_URL is not configured. ' +
+    '[OG Financial Services] VITE_CONVEX_URL is not configured. ' +
       'Set it in your hosting provider (Netlify → Site configuration → Environment variables) and redeploy.'
   );
 }

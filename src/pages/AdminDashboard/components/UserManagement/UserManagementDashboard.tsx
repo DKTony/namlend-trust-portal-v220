@@ -208,7 +208,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                   </p>
                 )}
               </div>
-              <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <Users className="h-8 w-8 text-blue-600 " />
             </div>
           </CardContent>
         </Card>
@@ -225,7 +225,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                   </p>
                 )}
               </div>
-              <UserCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <UserCheck className="h-8 w-8 text-green-600 " />
             </div>
           </CardContent>
         </Card>
@@ -242,7 +242,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                   </p>
                 )}
               </div>
-              <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <Shield className="h-8 w-8 text-purple-600 " />
             </div>
           </CardContent>
         </Card>
@@ -259,7 +259,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                   </p>
                 )}
               </div>
-              <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              <AlertTriangle className="h-8 w-8 text-orange-600 " />
             </div>
           </CardContent>
         </Card>

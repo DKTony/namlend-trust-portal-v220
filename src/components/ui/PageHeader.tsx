@@ -1,4 +1,3 @@
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import React from 'react';
@@ -22,7 +21,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   icon,
   className,
 }) => {
-  const { styles } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -46,7 +44,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </div>
           )}
           <div className="min-w-0">
-            <h1 className={cn('text-2xl font-bold tracking-tight', styles.textClass)}>{title}</h1>
+            <h1 className={cn('text-2xl font-bold tracking-tight', 'font-sans text-[#274F35]')}>
+              {title}
+            </h1>
             {description && <p className="text-muted-foreground mt-1">{description}</p>}
           </div>
         </div>

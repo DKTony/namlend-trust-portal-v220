@@ -24,14 +24,10 @@ export function PaymentMethodsTab({ isReady, onboardingData }: PaymentMethodsTab
       <CardContent className="space-y-4">
         {/* IPP */}
         <div
-          className={`p-4 border rounded-lg flex items-center gap-4 ${isReady ? 'border-green-500 bg-green-50/50 dark:bg-green-900/10' : ''}`}
+          className={`p-4 border rounded-lg flex items-center gap-4 ${isReady ? 'border-green-500 bg-green-50/50 ' : ''}`}
         >
-          <div
-            className={`p-3 rounded-xl ${isReady ? 'bg-green-100 dark:bg-green-900/30' : 'bg-muted'}`}
-          >
-            <Zap
-              className={`h-6 w-6 ${isReady ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
-            />
+          <div className={`p-3 rounded-xl ${isReady ? 'bg-green-100 ' : 'bg-muted'}`}>
+            <Zap className={`h-6 w-6 ${isReady ? 'text-green-600 ' : 'text-muted-foreground'}`} />
           </div>
           <div className="flex-1">
             <p className="font-medium">IPP Instant Payment</p>

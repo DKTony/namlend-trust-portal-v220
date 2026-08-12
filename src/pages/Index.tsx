@@ -1,7 +1,5 @@
 import LoanCalculator from '@/components/finance/LoanCalculator';
-import BackgroundLayer from '@/components/landing/BackgroundLayer';
 import LandingNavbar from '@/components/landing/LandingNavbar';
-import LandingThemeToggle from '@/components/landing/LandingThemeToggle';
 import SectionDivider from '@/components/landing/SectionDivider';
 import FeaturesSection from '@/components/sections/FeaturesSection';
 import Footer from '@/components/sections/Footer';
@@ -9,10 +7,7 @@ import HeroSection from '@/components/sections/HeroSection';
 
 const Index = () => {
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
-      {/* Theme-aware background layer */}
-      <BackgroundLayer />
-
+    <div className="relative min-h-screen overflow-x-hidden bg-[#F7FAF6]">
       {/* Fixed navigation */}
       <LandingNavbar />
 
@@ -27,9 +22,6 @@ const Index = () => {
 
       {/* Footer */}
       <Footer />
-
-      {/* Theme toggle (fixed position) */}
-      <LandingThemeToggle />
     </div>
   );
 };

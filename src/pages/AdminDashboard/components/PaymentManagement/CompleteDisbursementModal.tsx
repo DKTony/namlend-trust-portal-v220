@@ -158,7 +158,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Amount:</span>
-            <span className="font-semibold text-green-600 dark:text-green-400 text-lg">
+            <span className="font-semibold text-green-600  text-lg">
               {formatNAD(disbursement.amount)}
             </span>
           </div>
@@ -185,7 +185,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-bank"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'bank_transfer'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                    ? 'border-blue-500 bg-blue-50  text-blue-700 '
                     : 'border-border hover:border-blue-500/50 bg-card hover:bg-accent'
                 }`}
               >
@@ -200,7 +200,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-mobile"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'mobile_money'
-                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    ? 'border-green-500 bg-green-50  text-green-700 '
                     : 'border-border hover:border-green-500/50 bg-card hover:bg-accent'
                 }`}
               >
@@ -215,7 +215,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-cash"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                   paymentMethod === 'cash'
-                    ? 'border-gray-500 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    ? 'border-gray-500 bg-gray-50  text-gray-700 '
                     : 'border-border hover:border-gray-500/50 bg-card hover:bg-accent'
                 }`}
               >
@@ -230,7 +230,7 @@ export const CompleteDisbursementModal: React.FC<Props> = ({
                 data-testid="payment-method-ips"
                 className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all sm:col-span-2 ${
                   paymentMethod === 'ips'
-                    ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
+                    ? 'border-yellow-500 bg-yellow-50  text-yellow-700 '
                     : 'border-border hover:border-yellow-500/50 bg-card hover:bg-accent'
                 }`}
               >

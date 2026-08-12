@@ -175,15 +175,15 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
       case 'active':
       case 'disbursed':
       case 'completed':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800';
+        return 'bg-green-100  text-green-800  border-green-200 ';
       case 'pending':
       case 'under_review':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+        return 'bg-yellow-100  text-yellow-800  border-yellow-200 ';
       case 'rejected':
       case 'defaulted':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800';
+        return 'bg-red-100  text-red-800  border-red-200 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
+        return 'bg-gray-100  text-gray-800  border-gray-200 ';
     }
   };
 

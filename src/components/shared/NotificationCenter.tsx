@@ -1,7 +1,6 @@
 /**
  * Notification Center Component
- * NamLend Premium Design System (NPDS) - NextGen
- * Displays in-app notifications with real-time updates and glassmorphism UI
+ * Displays in-app notifications with real-time updates.
  */
 
 import { ThemedButton } from '@/components/ui/ThemedButton';
@@ -9,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
@@ -52,19 +50,16 @@ interface NotificationCenterProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  loan: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  payment:
-    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-  kyc: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-  account:
-    'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-  general: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
-  marketing: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800',
+  loan: 'bg-blue-500/10 text-blue-700 border-blue-200',
+  payment: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
+  kyc: 'bg-blue-500/10 text-blue-700 border-blue-200',
+  account: 'bg-amber-500/10 text-amber-700 border-amber-200',
+  general: 'bg-slate-500/10 text-slate-700 border-slate-200',
+  marketing: 'bg-[#EEF5EB] text-[#274F35] border-[#B9CCB3]',
 };
 
 export function NotificationCenter({ className }: NotificationCenterProps) {
   const { user } = useAuth();
-  const { isDark } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -161,8 +156,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
 
       <PopoverContent
         className={cn(
-          'w-[calc(100vw-2rem)] max-w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl',
-          isDark ? 'bg-zinc-950/80 border-white/10' : 'bg-white/80 border-black/5',
+          'w-[calc(100vw-2rem)] max-w-[400px] overflow-hidden border border-[#DCE8D8] bg-white p-0 shadow-2xl',
           'rounded-3xl'
         )}
         align="end"
@@ -242,7 +236,6 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                       key={notification.id}
                       notification={notification}
                       onClick={() => handleNotificationClick(notification)}
-                      isDark={isDark}
                     />
                   ))}
                 </div>
@@ -276,10 +269,9 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
 interface NotificationItemProps {
   notification: Notification;
   onClick: () => void;
-  isDark: boolean;
 }
 
-function NotificationItem({ notification, onClick, isDark }: NotificationItemProps) {
+function NotificationItem({ notification, onClick }: NotificationItemProps) {
   return (
     <button
       className={cn(
@@ -299,7 +291,7 @@ function NotificationItem({ notification, onClick, isDark }: NotificationItemPro
         <div
           className={cn(
             'h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105',
-            isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-100'
+            'border-[#DCE8D8] bg-white'
           )}
         >
           {notification.priority === 'urgent' ? (

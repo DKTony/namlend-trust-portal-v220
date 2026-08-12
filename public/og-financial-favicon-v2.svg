@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 224" role="img" aria-labelledby="title description">
+  <title id="title">OG Financial Services CC</title>
+  <desc id="description">OG Financial Services CC application icon</desc>
+  <rect width="224" height="224" rx="48" fill="#F7FAF6"/>
+  <g transform="translate(29 7)"><path fill="#3F713E" d="M18 83C14 121 27 153 55 174c22 17 55 24 82 13 9-4 16-10 20-18-17 8-35 7-54 1-35-11-61-36-77-74-3-7-5-13-8-13Z"/>
+    <path fill="#7CA05C" d="M29 116c9 24 25 42 48 53 22 11 48 14 70 5-10 17-36 24-62 18-31-7-52-27-56-76Z"/>
+    <path fill="#3F713E" d="M48 101h25v58H48z"/>
+    <path fill="#274F35" d="M78 71h25v96H78z"/>
+    <path fill="#3F713E" d="M109 45h25v126h-25z"/>
+    <path fill="#3F713E" d="m96 47 26-29 26 29Z"/>
+    <path fill="#F7FAF6" d="M73 101h5v61h-5zM103 71h6v98h-6z"/></g>
+</svg>

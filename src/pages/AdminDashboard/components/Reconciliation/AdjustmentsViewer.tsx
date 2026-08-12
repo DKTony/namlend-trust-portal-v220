@@ -195,9 +195,7 @@ export function AdjustmentsViewer() {
                         {adj.response_required_by && (
                           <span
                             className={
-                              new Date(adj.response_required_by) < new Date()
-                                ? 'text-red-600 dark:text-red-400'
-                                : ''
+                              new Date(adj.response_required_by) < new Date() ? 'text-red-600 ' : ''
                             }
                           >
                             {new Date(adj.response_required_by).toLocaleDateString()}

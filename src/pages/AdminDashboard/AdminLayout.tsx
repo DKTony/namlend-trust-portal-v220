@@ -11,7 +11,6 @@ import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { getAdminNavGroups } from '@/config/adminNav';
-import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntitlements } from '@/hooks/useEntitlements';
@@ -23,7 +22,6 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminLayout: React.FC = () => {
   const { user, isAdmin, isLoanOfficer, isPlatformStaff, signOut } = useAuth();
-  const { styles } = useTheme();
   const layout = useAdaptiveLayout();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,11 +36,11 @@ const AdminLayout: React.FC = () => {
 
   if (!isAdmin && !isLoanOfficer) {
     return (
-      <div className={cn('flex items-center justify-center min-h-screen', styles.background)}>
+      <div className={cn('flex items-center justify-center min-h-screen', 'bg-[#F7FAF6]')}>
         <ThemedCard className="w-96">
           <div className="flex items-center mb-4">
             <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
-            <h3 className={cn('text-lg font-bold', styles.textClass)}>Access Denied</h3>
+            <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>Access Denied</h3>
           </div>
           <p className="text-muted-foreground mb-4">
             You don't have permission to access the admin dashboard.
@@ -74,12 +72,14 @@ const AdminLayout: React.FC = () => {
       className={cn(
         'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
         layout.isCompact && 'pl-14',
-        styles.cardClass,
+        'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
         'rounded-none border-x-0 border-t-0'
       )}
     >
       <div className="min-w-0">
-        <h1 className={cn('truncate text-base font-semibold sm:text-xl', styles.textClass)}>
+        <h1
+          className={cn('truncate text-base font-semibold sm:text-xl', 'font-sans text-[#274F35]')}
+        >
           Admin Dashboard
         </h1>
       </div>
@@ -109,7 +109,7 @@ const AdminLayout: React.FC = () => {
 
   return (
     <AdaptiveShell
-      className={cn('transition-colors duration-500', styles.background)}
+      className={cn('transition-colors duration-500', 'bg-[#F7FAF6]')}
       sidebar={<GroupedSidebar {...sidebarProps} displayMode="sidebar" />}
       rail={<GroupedSidebar {...sidebarProps} displayMode="rail" />}
       mobileNavigation={

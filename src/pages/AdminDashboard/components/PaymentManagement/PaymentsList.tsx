@@ -94,16 +94,11 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      completed:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      failed:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      overdue:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      partial:
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      completed: 'bg-green-100  text-green-800  border-green-200 ',
+      failed: 'bg-red-100  text-red-800  border-red-200 ',
+      overdue: 'bg-red-100  text-red-800  border-red-200 ',
+      partial: 'bg-orange-100  text-orange-800  border-orange-200 ',
     };
 
     const icons = {
@@ -124,13 +119,10 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
 
   const getPaymentMethodBadge = (method: string) => {
     const variants = {
-      bank_transfer:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      mobile_money:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      cash: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      debit_order:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      bank_transfer: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      mobile_money: 'bg-green-100  text-green-800  border-green-200 ',
+      cash: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      debit_order: 'bg-purple-100  text-purple-800  border-purple-200 ',
     };
 
     const labels = {
@@ -221,7 +213,7 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
           <Card
             key={payment.id}
             className={`hover:shadow-md transition-shadow duration-200 cursor-pointer bg-card border-border ${
-              payment.status === 'overdue' ? 'ring-2 ring-red-200 dark:ring-red-800 shadow-md' : ''
+              payment.status === 'overdue' ? 'ring-2 ring-red-200  shadow-md' : ''
             }`}
             onClick={() => onPaymentSelect?.(payment.id)}
           >
@@ -232,19 +224,19 @@ const PaymentsList: React.FC<PaymentsListProps> = ({ status, searchTerm, onPayme
                   <div
                     className={`h-12 w-12 rounded-full flex items-center justify-center ${
                       payment.status === 'completed'
-                        ? 'bg-green-100 dark:bg-green-900/30'
+                        ? 'bg-green-100 '
                         : payment.status === 'overdue' || payment.status === 'failed'
-                          ? 'bg-red-100 dark:bg-red-900/30'
-                          : 'bg-yellow-100 dark:bg-yellow-900/30'
+                          ? 'bg-red-100 '
+                          : 'bg-yellow-100 '
                     }`}
                   >
                     <CreditCard
                       className={`h-6 w-6 ${
                         payment.status === 'completed'
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-600 '
                           : payment.status === 'overdue' || payment.status === 'failed'
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-yellow-600 dark:text-yellow-400'
+                            ? 'text-red-600 '
+                            : 'text-yellow-600 '
                       }`}
                     />
                   </div>

@@ -109,14 +109,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      active: 'bg-green-100  text-green-800  border-green-200 ',
+      inactive: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      suspended: 'bg-red-100  text-red-800  border-red-200 ',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
     };
 
     const icons = {
@@ -129,10 +125,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -142,14 +135,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
 
   const getRoleBadge = (role: string) => {
     const variants = {
-      admin:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      loan_officer:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      client:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      tenant_admin:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      admin: 'bg-purple-100  text-purple-800  border-purple-200 ',
+      loan_officer: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      client: 'bg-green-100  text-green-800  border-green-200 ',
+      tenant_admin: 'bg-purple-100  text-purple-800  border-purple-200 ',
     };
 
     const icons = {
@@ -169,10 +158,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
     return (
       <Badge
         variant="outline"
-        className={
-          variants[role as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[role as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[role as keyof typeof icons]}
         <span>{labels[role as keyof typeof labels] || role}</span>
@@ -297,8 +283,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
         {/* Header */}
         <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-4 min-w-0 flex-1 mr-4">
-            <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
-              <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="h-12 w-12 bg-blue-100  rounded-full flex items-center justify-center shrink-0">
+              <User className="h-6 w-6 text-blue-600 " />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-2xl font-bold flex items-center truncate text-foreground">
@@ -314,7 +300,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                 <div className="shrink-0">{getRoleBadge(currentUser.role)}</div>
                 <Badge
                   variant="outline"
-                  className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 shrink-0 tabular-nums"
+                  className="bg-blue-100  text-blue-800  shrink-0 tabular-nums"
                 >
                   ID: {currentUser.id.slice(0, 8)}...
                 </Badge>
@@ -371,7 +357,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                       {currentUser.loginCount}
                     </p>
                   </div>
-                  <Activity className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <Activity className="h-8 w-8 text-blue-600  shrink-0" />
                 </div>
               </CardContent>
             </Card>
@@ -384,7 +370,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                       {formatDate(currentUser.lastLogin)}
                     </p>
                   </div>
-                  <Clock className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
+                  <Clock className="h-8 w-8 text-green-600  shrink-0" />
                 </div>
               </CardContent>
             </Card>
@@ -397,7 +383,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                       {currentUser.permissions.length}
                     </p>
                   </div>
-                  <Key className="h-8 w-8 text-purple-600 dark:text-purple-400 shrink-0" />
+                  <Key className="h-8 w-8 text-purple-600  shrink-0" />
                 </div>
               </CardContent>
             </Card>
@@ -410,7 +396,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                       {formatDate(currentUser.createdAt)}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />
+                  <Calendar className="h-8 w-8 text-orange-600  shrink-0" />
                 </div>
               </CardContent>
             </Card>
@@ -618,7 +604,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                         <span className="font-medium capitalize text-foreground">
                           {permission.replace('_', ' ')}
                         </span>
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="h-5 w-5 text-green-600 " />
                       </div>
                     ))}
                   </div>

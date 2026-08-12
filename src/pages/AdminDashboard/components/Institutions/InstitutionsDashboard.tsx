@@ -83,8 +83,8 @@ export function InstitutionsDashboard() {
                     variant="outline"
                     className={
                       inst.status === 'active'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
-                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                        ? 'bg-green-100  text-green-800  border-green-200 '
+                        : 'bg-yellow-100  text-yellow-800  border-yellow-200 '
                     }
                   >
                     {inst.status}

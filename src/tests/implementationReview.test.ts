@@ -90,10 +90,12 @@ describe('Tier 2 — Supabase Hook Migration', () => {
     expect(hook).not.toContain('@/integrations/supabase/client');
   });
 
-  it('useBrandingConfig.ts imports from convex, not supabase', () => {
-    const hook = readSrc('src/hooks/useBrandingConfig.ts');
-    expect(hook).toContain('convex/react');
-    expect(hook).not.toContain('@/integrations/supabase/client');
+  it('keeps the OG brand immutable instead of loading tenant overrides', () => {
+    const provider = readSrc('src/context/BrandingContext.tsx');
+    expect(provider).toContain('IMMUTABLE_BRANDING_CONTEXT');
+    expect(provider).not.toContain('useQuery');
+    expect(provider).not.toContain('faviconLink');
+    expect(fs.existsSync(path.join(ROOT, 'src/hooks/useBrandingConfig.ts'))).toBe(false);
   });
 
   it('usePaymentMetrics uses correct status values', () => {
@@ -340,23 +342,49 @@ describe('Regulatory Constants', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Dark Mode — Semantic theme variables
+// Immutable OG presentation
 // ---------------------------------------------------------------------------
 
-describe('Dark Mode — No hardcoded light colors', () => {
-  const adminComponents = [
-    'src/pages/AdminDashboard/components/PaymentManagement/CollectionsWorkqueue.tsx',
-    'src/pages/AdminDashboard/components/UserManagement/UserManagementDashboard.tsx',
-  ];
+describe('OG presentation is fixed and light-only', () => {
+  it('clears legacy preferences and forces the light root before render', () => {
+    const main = readSrc('src/main.tsx');
+    const presentation = readSrc('src/lib/presentation.ts');
+    expect(main).toContain('enforceOgPresentation();');
+    expect(presentation).toContain("'namlend-theme-variant'");
+    expect(presentation).toContain("'namlend-dark-mode'");
+    expect(presentation).toContain("'vite-ui-theme'");
+    expect(presentation).toContain("root.classList.add('light')");
+    expect(presentation).toContain("root.removeAttribute('data-theme')");
+  });
 
-  for (const file of adminComponents) {
-    const name = path.basename(file);
-    it(`${name} uses semantic colors, not hardcoded white/gray`, () => {
-      const content = readSrc(file);
-      if (!content) return; // file may not exist in test env
-      // Should not have bare bg-white (bg-white/ with opacity is sometimes OK in badges)
-      const bgWhiteCount = (content.match(/\bbg-white\b(?!\/)/g) || []).length;
-      expect(bgWhiteCount).toBeLessThanOrEqual(2); // Allow a few for specific badges
-    });
-  }
+  it('does not mount a theme provider or a runtime picker', () => {
+    const app = readSrc('src/App.tsx');
+    const index = readSrc('src/pages/Index.tsx');
+    expect(app).not.toMatch(/ThemeProvider|ThemeSwitcher|ThemeBackground/);
+    expect(index).not.toMatch(/LandingThemeToggle|BackgroundLayer/);
+    expect(fs.existsSync(path.join(ROOT, 'src/context/ThemeContext.tsx'))).toBe(false);
+  });
+
+  it('uses only versioned OG metadata assets and path-only logo lettering', () => {
+    const html = readSrc('index.html');
+    const manifest = readSrc('public/site.webmanifest');
+    const logo = readSrc('public/og-financial-logo-v2.svg');
+    expect(html).toContain('/og-financial-favicon-v2.svg');
+    expect(html).toContain('/og-financial-social-v2.png');
+    expect(manifest).toContain('/og-financial-icon-192-v2.png');
+    expect(manifest).toContain('/og-financial-icon-512-v2.png');
+    expect(logo).toContain('OG Financial Services CC');
+    expect(logo).not.toContain('<text');
+    expect(html).not.toMatch(/l[o]vable|h[e]art/i);
+  });
+
+  it('keeps contract and signature UI out of the loan application', () => {
+    const application = [
+      readSrc('src/pages/LoanApplication/index.tsx'),
+      readSrc('src/pages/LoanApplication/steps/ReviewSubmitStep.tsx'),
+    ].join('\n');
+    expect(application).not.toContain('loan-contract-step');
+    expect(application).not.toContain('contract-signature');
+    expect(application).not.toContain('contract-upload');
+  });
 });

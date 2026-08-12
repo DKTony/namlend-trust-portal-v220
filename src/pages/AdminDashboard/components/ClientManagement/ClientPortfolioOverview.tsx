@@ -1,5 +1,4 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import { AlertTriangle, Clock, DollarSign, Star, TrendingUp, UserCheck, Users } from 'lucide-react';
@@ -8,7 +7,6 @@ import { useClientPortfolioMetrics } from '../../hooks/useClientPortfolioMetrics
 
 const ClientPortfolioOverview: React.FC = () => {
   const { metrics, loading, error } = useClientPortfolioMetrics();
-  const { styles } = useTheme();
 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
@@ -17,8 +15,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Total Clients',
       value: metrics?.totalClients || 0,
       icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      color: 'text-blue-600 ',
+      bgColor: 'bg-blue-50 ',
       description: 'All registered clients',
       trend: '+12% this month',
     },
@@ -26,8 +24,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Active Clients',
       value: metrics?.activeClients || 0,
       icon: UserCheck,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      color: 'text-green-600 ',
+      bgColor: 'bg-green-50 ',
       description: 'Currently active accounts',
       trend: '+8% this month',
     },
@@ -35,8 +33,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Total Client Value',
       value: formatCurrency(metrics?.totalClientValue || 0),
       icon: DollarSign,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      color: 'text-emerald-600 ',
+      bgColor: 'bg-emerald-50 ',
       description: 'Combined portfolio value',
       trend: '+15% this month',
     },
@@ -44,8 +42,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Average Client Value',
       value: formatCurrency(metrics?.avgClientValue || 0),
       icon: TrendingUp,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      color: 'text-purple-600 ',
+      bgColor: 'bg-purple-50 ',
       description: 'Per client portfolio',
       trend: '+5% this month',
     },
@@ -53,8 +51,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Premium Clients',
       value: metrics?.premiumClients || 0,
       icon: Star,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+      color: 'text-yellow-600 ',
+      bgColor: 'bg-yellow-50 ',
       description: 'High-value clients',
       trend: '+3 this month',
     },
@@ -62,8 +60,8 @@ const ClientPortfolioOverview: React.FC = () => {
       title: 'Pending Verifications',
       value: metrics?.pendingVerifications || 0,
       icon: Clock,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+      color: 'text-orange-600 ',
+      bgColor: 'bg-orange-50 ',
       description: 'Awaiting KYC completion',
       urgent: (metrics?.pendingVerifications || 0) > 5,
     },
@@ -109,7 +107,7 @@ const ClientPortfolioOverview: React.FC = () => {
             key={index}
             className={cn(
               'hover:shadow-lg transition-all duration-200',
-              card.urgent && 'ring-2 ring-orange-200 dark:ring-orange-800 shadow-md'
+              card.urgent && 'ring-2 ring-orange-200  shadow-md'
             )}
           >
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-2">
@@ -119,7 +117,7 @@ const ClientPortfolioOverview: React.FC = () => {
               >
                 {card.title}
                 {card.urgent && (
-                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 align-middle">
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100  text-orange-800  align-middle">
                     Urgent
                   </span>
                 )}
@@ -132,7 +130,7 @@ const ClientPortfolioOverview: React.FC = () => {
               <div
                 className={cn(
                   'text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums',
-                  styles.textClass
+                  'font-sans text-[#274F35]'
                 )}
                 title={typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
               >
@@ -142,10 +140,7 @@ const ClientPortfolioOverview: React.FC = () => {
                 {card.description}
               </p>
               {card.trend && (
-                <p
-                  className="text-xs text-green-600 dark:text-green-400 font-medium truncate"
-                  title={card.trend}
-                >
+                <p className="text-xs text-green-600  font-medium truncate" title={card.trend}>
                   {card.trend}
                 </p>
               )}

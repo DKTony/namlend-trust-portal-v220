@@ -221,7 +221,7 @@ export const ReconciliationDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Unmatched Transactions</p>
                 <p className="text-2xl font-bold">{transactions.length}</p>
               </div>
-              <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <Upload className="h-8 w-8 text-blue-600 " />
             </div>
           </CardContent>
         </Card>
@@ -232,7 +232,7 @@ export const ReconciliationDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Unmatched Payments</p>
                 <p className="text-2xl font-bold">{payments.length}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              <DollarSign className="h-8 w-8 text-orange-600 " />
             </div>
           </CardContent>
         </Card>
@@ -245,7 +245,7 @@ export const ReconciliationDashboard: React.FC = () => {
                   {formatNAD(transactions.reduce((sum, t) => sum + t.amount, 0))}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <TrendingUp className="h-8 w-8 text-green-600 " />
             </div>
           </CardContent>
         </Card>
@@ -256,7 +256,7 @@ export const ReconciliationDashboard: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Match Rate</p>
                 <p className="text-2xl font-bold">{transactions.length > 0 ? '0%' : '100%'}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <CheckCircle className="h-8 w-8 text-purple-600 " />
             </div>
           </CardContent>
         </Card>
@@ -275,7 +275,7 @@ export const ReconciliationDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {matchedCount > 0 && (
-                <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                <Badge className="bg-blue-100  text-blue-800 ">
                   {matchedCount} selected for matching
                 </Badge>
               )}
@@ -345,7 +345,7 @@ export const ReconciliationDashboard: React.FC = () => {
                     }
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedTransaction === txn.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        ? 'border-blue-500 bg-blue-50 '
                         : 'border-border hover:bg-muted/50'
                     }`}
                   >
@@ -360,9 +360,7 @@ export const ReconciliationDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          {formatNAD(txn.amount)}
-                        </p>
+                        <p className="text-lg font-bold text-green-600 ">{formatNAD(txn.amount)}</p>
                         <Badge variant="outline" className="text-xs mt-1">
                           {txn.transaction_type}
                         </Badge>
@@ -399,7 +397,7 @@ export const ReconciliationDashboard: React.FC = () => {
                     }
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedPayment === payment.id
-                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                        ? 'border-orange-500 bg-orange-50 '
                         : 'border-border hover:bg-muted/50'
                     }`}
                   >
@@ -414,7 +412,7 @@ export const ReconciliationDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        <p className="text-lg font-bold text-orange-600 ">
                           {formatNAD(payment.amount)}
                         </p>
                         <Badge variant="outline" className="text-xs mt-1">

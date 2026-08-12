@@ -126,10 +126,7 @@ export function TimeoutReportViewer() {
                   </TableRow>
                 ) : timeouts?.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-8 text-green-600 dark:text-green-400"
-                    >
+                    <TableCell colSpan={7} className="text-center py-8 text-green-600 ">
                       ✓ No timeout transactions
                     </TableCell>
                   </TableRow>

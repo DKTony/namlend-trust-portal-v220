@@ -13,7 +13,6 @@ import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTheme } from '@/context/ThemeContext';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
@@ -75,7 +74,6 @@ export default function LoanDetails() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { styles } = useTheme();
 
   // Validate ID format before passing to Convex (prevents ArgumentValidationError on invalid URLs)
   const isValidConvexId = id ? /^[a-zA-Z0-9_-]{10,}$/.test(id) : false;
@@ -148,7 +146,7 @@ export default function LoanDetails() {
     return (
       <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
         <div className="flex items-center justify-center py-16">
-          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+          <Loader2 className={cn('h-8 w-8 animate-spin', 'font-sans text-[#274F35]')} />
         </div>
       </DashboardLayout>
     );
@@ -165,7 +163,9 @@ export default function LoanDetails() {
           <ThemedCard>
             <div className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>Loan Not Found</h3>
+              <h3 className={cn('text-lg font-medium mb-2', 'font-sans text-[#274F35]')}>
+                Loan Not Found
+              </h3>
               <p className="text-muted-foreground text-center mb-4">
                 The loan you're looking for doesn't exist or you don't have access to it.
               </p>
@@ -199,7 +199,10 @@ export default function LoanDetails() {
         <div className="mb-6">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
-              <h1 className={cn('text-3xl font-bold', styles.textClass)} data-testid="loan-amount">
+              <h1
+                className={cn('text-3xl font-bold', 'font-sans text-[#274F35]')}
+                data-testid="loan-amount"
+              >
                 {formatNAD(loan.amount)}
               </h1>
               <p className="text-muted-foreground">{loan.purpose}</p>
@@ -223,7 +226,9 @@ export default function LoanDetails() {
             {/* Progress Card */}
             <ThemedCard data-testid="loan-progress-card">
               <div className="mb-4">
-                <h3 className={cn('text-lg font-bold', styles.textClass)}>Payment Progress</h3>
+                <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
+                  Payment Progress
+                </h3>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -231,7 +236,9 @@ export default function LoanDetails() {
                     <span className="text-muted-foreground">
                       {formatNAD(loan.total_paid || 0)} paid
                     </span>
-                    <span className={cn('font-medium', styles.textClass)}>{progressPercent}%</span>
+                    <span className={cn('font-medium', 'font-sans text-[#274F35]')}>
+                      {progressPercent}%
+                    </span>
                   </div>
                   <Progress
                     value={progressPercent}
@@ -241,7 +248,7 @@ export default function LoanDetails() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Outstanding</span>
                     <span
-                      className={cn('font-semibold', styles.textClass)}
+                      className={cn('font-semibold', 'font-sans text-[#274F35]')}
                       data-testid="outstanding-balance"
                     >
                       {formatNAD(outstandingBalance)}
@@ -250,7 +257,7 @@ export default function LoanDetails() {
                 </div>
 
                 {isSettled && loan.settled_at && (
-                  <div className="flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-600 bg-green-50  p-3 rounded-lg">
                     <CheckCircle className="h-5 w-5" />
                     <span className="text-sm font-medium">
                       Settled on{' '}
@@ -268,38 +275,47 @@ export default function LoanDetails() {
             {/* Loan Details */}
             <ThemedCard data-testid="loan-details-card">
               <div className="mb-4">
-                <h3 className={cn('text-lg font-bold', styles.textClass)}>Loan Details</h3>
+                <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
+                  Loan Details
+                </h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Term</p>
-                  <p className={cn('font-medium', styles.textClass)}>{loan.term_months} months</p>
+                  <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
+                    {loan.term_months} months
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Interest Rate</p>
-                  <p className={cn('font-medium', styles.textClass)}>{loan.interest_rate}%</p>
+                  <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
+                    {loan.interest_rate}%
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                  <p className={cn('font-medium', styles.textClass)} data-testid="monthly-payment">
+                  <p
+                    className={cn('font-medium', 'font-sans text-[#274F35]')}
+                    data-testid="monthly-payment"
+                  >
                     {formatNAD(loan.monthly_payment)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Total Repayment</p>
-                  <p className={cn('font-medium', styles.textClass)}>
+                  <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
                     {formatNAD(loan.total_repayment)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Disbursed</p>
-                  <p className={cn('font-medium', styles.textClass)}>
+                  <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
                     {loan.disbursed_at ? formatDateSafe(loan.disbursed_at) : 'Pending'}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Created</p>
-                  <p className={cn('font-medium', styles.textClass)}>
+                  <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
                     {formatDateSafe(loan.created_at)}
                   </p>
                 </div>
@@ -342,11 +358,11 @@ export default function LoanDetails() {
                             className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              <div className="w-10 h-10 rounded-full bg-green-100  flex items-center justify-center">
+                                <DollarSign className="h-5 w-5 text-green-600 " />
                               </div>
                               <div>
-                                <p className={cn('font-medium', styles.textClass)}>
+                                <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
                                   {formatNAD(payment.amount)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
@@ -393,7 +409,9 @@ export default function LoanDetails() {
             {isActive && outstandingBalance > 0 && (
               <ThemedCard data-testid="quick-actions-card">
                 <div className="mb-4">
-                  <h3 className={cn('text-lg font-bold', styles.textClass)}>Make a Payment</h3>
+                  <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
+                    Make a Payment
+                  </h3>
                   <p className="text-sm text-muted-foreground">Pay your loan instantly</p>
                 </div>
                 <div className="space-y-3">
@@ -432,38 +450,38 @@ export default function LoanDetails() {
             {/* Payment Summary */}
             <ThemedCard>
               <div className="mb-4">
-                <h3 className={cn('text-lg font-bold', styles.textClass)}>Summary</h3>
+                <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>Summary</h3>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Principal</span>
-                  <span className={cn('font-medium', styles.textClass)}>
+                  <span className={cn('font-medium', 'font-sans text-[#274F35]')}>
                     {formatNAD(loan.amount)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Interest</span>
-                  <span className={cn('font-medium', styles.textClass)}>
+                  <span className={cn('font-medium', 'font-sans text-[#274F35]')}>
                     {formatNAD(loan.total_repayment - loan.amount)}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Total Due</span>
-                  <span className={cn('font-semibold', styles.textClass)}>
+                  <span className={cn('font-semibold', 'font-sans text-[#274F35]')}>
                     {formatNAD(loan.total_repayment)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Paid</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
+                  <span className="font-medium text-green-600 ">
                     {formatNAD(loan.total_paid || 0)}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
-                  <span className={cn('font-medium', styles.textClass)}>Outstanding</span>
-                  <span className={cn('font-bold text-lg', styles.textClass)}>
+                  <span className={cn('font-medium', 'font-sans text-[#274F35]')}>Outstanding</span>
+                  <span className={cn('font-bold text-lg', 'font-sans text-[#274F35]')}>
                     {formatNAD(outstandingBalance)}
                   </span>
                 </div>
@@ -475,10 +493,12 @@ export default function LoanDetails() {
               <ThemedCard>
                 <div className="mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary" />
-                  <h3 className={cn('text-lg font-bold', styles.textClass)}>Next Payment</h3>
+                  <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
+                    Next Payment
+                  </h3>
                 </div>
                 <div className="text-center py-2">
-                  <p className={cn('text-2xl font-bold', styles.textClass)}>
+                  <p className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
                     {formatNAD(loan.monthly_payment)}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">Due monthly</p>

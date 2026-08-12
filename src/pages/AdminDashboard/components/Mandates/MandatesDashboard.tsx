@@ -20,12 +20,12 @@ import { FileSignature, RefreshCw } from 'lucide-react';
 import React, { useState } from 'react';
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  pending_authorization: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  suspended: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-  revoked: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-  expired: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
+  draft: 'bg-gray-100 text-gray-800  ',
+  pending_authorization: 'bg-yellow-100 text-yellow-800  ',
+  active: 'bg-green-100 text-green-800  ',
+  suspended: 'bg-orange-100 text-orange-800  ',
+  revoked: 'bg-red-100 text-red-800  ',
+  expired: 'bg-gray-100 text-gray-500  ',
 };
 
 const STATUSES = [

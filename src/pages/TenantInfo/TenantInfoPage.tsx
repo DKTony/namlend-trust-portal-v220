@@ -366,8 +366,8 @@ export default function TenantInfoPage() {
       <div className="flex flex-col gap-4 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <img
-            src="/og-financial-logo.svg"
-            alt="OG Financial Services"
+            src="/og-financial-logo-v2.svg"
+            alt="OG Financial Services CC"
             className="h-16 w-auto max-w-[240px] object-contain"
           />
           <div className="hidden border-l pl-4 sm:block">
@@ -379,6 +379,48 @@ export default function TenantInfoPage() {
         </div>
         {tenant.canManageDocuments && <UploadDocumentDialog institutionId={institutionId} />}
       </div>
+
+      <Card id="brand-identity" className="scroll-mt-6 border-primary/20 bg-[#F7FAF6]">
+        <CardHeader>
+          <CardTitle>Brand Identity</CardTitle>
+          <CardDescription>
+            The OG Financial Services CC identity is fixed and cannot be changed from tenant
+            settings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.8fr)] lg:items-center">
+          <div className="rounded-xl border border-primary/15 bg-white p-5">
+            <img
+              src="/og-financial-logo-v2.svg"
+              alt="OG Financial Services CC full logo"
+              className="h-auto max-h-36 w-full max-w-xl object-contain object-left"
+            />
+          </div>
+          <div>
+            <p className="mb-3 text-sm font-medium text-[#274F35]">Approved company palette</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
+              {[
+                ['Primary green', '#3F713E'],
+                ['Secondary green', '#7CA05C'],
+                ['Dark green', '#274F35'],
+                ['Off-white', '#F7FAF6'],
+              ].map(([label, color]) => (
+                <div key={color} className="flex items-center gap-3 rounded-lg border bg-white p-3">
+                  <span
+                    aria-hidden="true"
+                    className="h-9 w-9 shrink-0 rounded-md border"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-xs font-medium">{label}</span>
+                    <span className="block font-mono text-xs text-muted-foreground">{color}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <Card>

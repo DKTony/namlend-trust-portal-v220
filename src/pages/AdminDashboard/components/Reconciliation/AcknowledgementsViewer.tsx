@@ -52,11 +52,11 @@ export function AcknowledgementsViewer() {
   const getAckIcon = (ackType: AckType) => {
     switch (ackType) {
       case 'xsys_002':
-        return <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />;
+        return <CheckCircle className="h-4 w-4 text-green-500 " />;
       case 'xsys_001':
-        return <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />;
+        return <XCircle className="h-4 w-4 text-red-500 " />;
       case 'xsys_003':
-        return <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400" />;
+        return <AlertTriangle className="h-4 w-4 text-orange-500 " />;
       default:
         return null;
     }
@@ -220,15 +220,15 @@ export function AcknowledgementsViewer() {
           {/* Legend */}
           <div className="mt-4 flex gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
+              <CheckCircle className="h-4 w-4 text-green-500 " />
               <span>xsys.002 - Positive Acknowledgement (Success)</span>
             </div>
             <div className="flex items-center gap-1">
-              <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+              <XCircle className="h-4 w-4 text-red-500 " />
               <span>xsys.001 - Negative Acknowledgement (Failed)</span>
             </div>
             <div className="flex items-center gap-1">
-              <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+              <AlertTriangle className="h-4 w-4 text-orange-500 " />
               <span>xsys.003 - Abort Notification</span>
             </div>
           </div>

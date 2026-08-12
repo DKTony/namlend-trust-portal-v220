@@ -1,5 +1,4 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import React from 'react';
@@ -18,14 +17,12 @@ interface KPIMetricsProps {
 }
 
 const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => {
-  const { styles } = useTheme();
-
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <TrendingUp className="h-4 w-4 text-green-600 " />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <TrendingDown className="h-4 w-4 text-red-600 " />;
       case 'stable':
         return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
@@ -34,9 +31,9 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
   const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
       case 'up':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-green-600 ';
       case 'down':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-red-600 ';
       case 'stable':
         return 'text-muted-foreground';
     }
@@ -75,7 +72,7 @@ const KPIMetrics: React.FC<KPIMetricsProps> = ({ kpiData, loading = false }) => 
             <div
               className={cn(
                 'text-xl sm:text-2xl font-bold mb-2 truncate tabular-nums',
-                styles.textClass
+                'font-sans text-[#274F35]'
               )}
               title={typeof kpi.value === 'number' ? kpi.value.toLocaleString() : kpi.value}
             >

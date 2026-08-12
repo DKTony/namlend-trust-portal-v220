@@ -1,7 +1,6 @@
 import { AdaptiveShell } from '@/components/adaptive';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
-import { useTheme } from '@/context/ThemeContext';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -35,7 +34,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   userEmail,
 }) => {
   const { user, signOut } = useAuth();
-  const { styles } = useTheme();
   const layout = useAdaptiveLayout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -66,7 +64,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     userEmail: finalUserEmail,
     onSignOut: signOut,
     menuItems,
-    title: variant === 'admin' ? 'NamLend Admin' : 'NamLend',
+    title: variant === 'admin' ? 'OG Financial Services Admin' : 'OG Financial Services',
   };
 
   const header = (
@@ -74,12 +72,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       className={cn(
         'border-b px-4 py-3 sm:px-5 flex min-h-16 items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-20',
         layout.isCompact && 'pl-14',
-        styles.cardClass,
+        'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
         'rounded-none border-x-0 border-t-0'
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
-        <h1 className={cn('truncate text-base font-semibold sm:text-xl', styles.textClass)}>
+        <h1
+          className={cn('truncate text-base font-semibold sm:text-xl', 'font-sans text-[#274F35]')}
+        >
           {displayTitle}
         </h1>
       </div>
@@ -133,7 +133,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <AdaptiveShell
-      className={cn('transition-colors duration-500', styles.background)}
+      className={cn('transition-colors duration-500', 'bg-[#F7FAF6]')}
       sidebar={<ThemedSidebar {...sidebarProps} displayMode="sidebar" />}
       rail={<ThemedSidebar {...sidebarProps} displayMode="rail" />}
       mobileNavigation={

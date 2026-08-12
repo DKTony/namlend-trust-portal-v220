@@ -17,7 +17,6 @@ import {
   GitBranch,
   LayoutDashboard,
   Package,
-  Palette,
   Settings,
   ShieldCheck,
   UserCheck,
@@ -95,7 +94,6 @@ const allGroups: NavGroup[] = [
         path: '/admin/settings/credit-policy',
         icon: Settings,
       },
-      { id: 'branding', label: 'Branding', path: '/admin/settings/branding', icon: Palette },
     ],
   },
 ];

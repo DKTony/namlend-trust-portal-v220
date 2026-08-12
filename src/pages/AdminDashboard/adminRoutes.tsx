@@ -11,6 +11,7 @@ import { Navigate, Route } from 'react-router-dom';
 // Lazy-loaded page components
 const OverviewPage = React.lazy(() => import('./pages/OverviewPage'));
 const TenantInfoPage = React.lazy(() => import('../TenantInfo/TenantInfoPage'));
+const BrandingIdentityRedirect = React.lazy(() => import('./pages/BrandingIdentityRedirect'));
 
 // Operations
 const LoanManagementDashboard = React.lazy(
@@ -54,7 +55,6 @@ const ConsentDashboard = React.lazy(() => import('./components/Consent/ConsentDa
 
 // Settings (admin only) — TB Config/Settlement moved to /platform
 const CreditPolicyConfig = React.lazy(() => import('./components/Settings/CreditPolicy'));
-const BrandingConfigComponent = React.lazy(() => import('./components/Settings/BrandingConfig'));
 
 function PageSuspense({ children }: { children: React.ReactNode }) {
   return (
@@ -254,7 +254,7 @@ export function adminRoutes() {
         element={
           <AdminOnly>
             <PageSuspense>
-              <BrandingConfigComponent />
+              <BrandingIdentityRedirect />
             </PageSuspense>
           </AdminOnly>
         }

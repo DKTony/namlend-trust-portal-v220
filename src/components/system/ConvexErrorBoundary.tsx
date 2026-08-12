@@ -42,8 +42,8 @@ class ConvexErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex items-center justify-center py-20 px-4">
           <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-soft text-center">
-            <div className="mx-auto w-14 h-14 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-5">
-              <ShieldAlert className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            <div className="mx-auto w-14 h-14 bg-amber-100  rounded-full flex items-center justify-center mb-5">
+              <ShieldAlert className="w-7 h-7 text-amber-600 " />
             </div>
             <h2 className="text-lg font-semibold text-foreground mb-2">Access Denied</h2>
             <p className="text-sm text-muted-foreground mb-6">

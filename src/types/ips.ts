@@ -987,23 +987,21 @@ export const IPP_ONBOARDING_STATE_LABELS: Record<IPPOnboardingState, string> = {
 };
 
 export const IPP_ONBOARDING_STATE_COLORS: Record<IPPOnboardingState, string> = {
-  NOT_STARTED: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  DEVICE_BINDING_REQUIRED:
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  DEVICE_BOUND: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  SOV_SELECTION_PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  SOV_SELECTED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  ACCOUNTS_LISTED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  VERIFICATION_PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  VERIFIED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  IPS_PIN_SETTING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  IPS_PIN_SET: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  ALIAS_REGISTRATION_PENDING:
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  ALIAS_REGISTERED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  READY_FOR_IPP_PAYMENTS: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  SUSPENDED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  DEREGISTERED: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  NOT_STARTED: 'bg-gray-100 text-gray-800  ',
+  DEVICE_BINDING_REQUIRED: 'bg-yellow-100 text-yellow-800  ',
+  DEVICE_BOUND: 'bg-blue-100 text-blue-800  ',
+  SOV_SELECTION_PENDING: 'bg-yellow-100 text-yellow-800  ',
+  SOV_SELECTED: 'bg-blue-100 text-blue-800  ',
+  ACCOUNTS_LISTED: 'bg-blue-100 text-blue-800  ',
+  VERIFICATION_PENDING: 'bg-yellow-100 text-yellow-800  ',
+  VERIFIED: 'bg-blue-100 text-blue-800  ',
+  IPS_PIN_SETTING: 'bg-yellow-100 text-yellow-800  ',
+  IPS_PIN_SET: 'bg-blue-100 text-blue-800  ',
+  ALIAS_REGISTRATION_PENDING: 'bg-yellow-100 text-yellow-800  ',
+  ALIAS_REGISTERED: 'bg-blue-100 text-blue-800  ',
+  READY_FOR_IPP_PAYMENTS: 'bg-green-100 text-green-800  ',
+  SUSPENDED: 'bg-red-100 text-red-800  ',
+  DEREGISTERED: 'bg-gray-100 text-gray-800  ',
 };
 
 export const isIPPOnboardingComplete = (state: IPPOnboardingState): boolean => {

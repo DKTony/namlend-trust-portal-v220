@@ -43,10 +43,7 @@ export function ConfigHeader({ hasChanges, saving, onSave, onReset, readOnly }: 
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge
-              variant="outline"
-              className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-            >
+            <Badge variant="outline" className="bg-yellow-50  text-yellow-700  border-yellow-200 ">
               Unsaved Changes
             </Badge>
           )}
@@ -85,15 +82,13 @@ export function ConfigHeader({ hasChanges, saving, onSave, onReset, readOnly }: 
       </div>
 
       {/* Info Banner */}
-      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+      <Card className="border-blue-200  bg-blue-50 ">
         <CardContent className="pt-4">
           <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5" />
+            <Info className="h-5 w-5 text-blue-500  mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-900 dark:text-blue-300">
-                Financial Ledger Integration
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-400">
+              <h4 className="font-medium text-blue-900 ">Financial Ledger Integration</h4>
+              <p className="text-sm text-blue-700 ">
                 TigerBeetle provides strict double-entry bookkeeping with built-in idempotency and
                 immutability. Changes to these settings may affect financial reconciliation.
               </p>

@@ -236,7 +236,7 @@ export function NTSLReportViewer() {
                 <div>
                   <p className="text-sm text-muted-foreground">Net Position</p>
                   <p
-                    className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                    className={`font-medium ${ntslData.netPosition >= 0 ? 'text-green-600 ' : 'text-red-600 '}`}
                   >
                     {formatNAD(ntslData.netPosition)}
                   </p>
@@ -252,13 +252,13 @@ export function NTSLReportViewer() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Total Credits</p>
-                      <p className="text-lg font-medium text-green-600 dark:text-green-400">
+                      <p className="text-lg font-medium text-green-600 ">
                         {formatNAD(ntslData.credits)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total Debits</p>
-                      <p className="text-lg font-medium text-red-600 dark:text-red-400">
+                      <p className="text-lg font-medium text-red-600 ">
                         {formatNAD(ntslData.debits)}
                       </p>
                     </div>
@@ -268,13 +268,13 @@ export function NTSLReportViewer() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Owed</p>
-                      <p className="font-medium text-green-600 dark:text-green-400">
+                      <p className="font-medium text-green-600 ">
                         {formatNAD(ntslData.interchangeOwed)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Interchange Paid</p>
-                      <p className="font-medium text-red-600 dark:text-red-400">
+                      <p className="font-medium text-red-600 ">
                         {formatNAD(ntslData.interchangePaid)}
                       </p>
                     </div>
@@ -315,9 +315,7 @@ export function NTSLReportViewer() {
                               <TableCell>{txn.category}</TableCell>
                               <TableCell
                                 className={`text-right ${
-                                  txn.type === 'credit'
-                                    ? 'text-green-600 dark:text-green-400'
-                                    : 'text-red-600 dark:text-red-400'
+                                  txn.type === 'credit' ? 'text-green-600 ' : 'text-red-600 '
                                 }`}
                               >
                                 {formatNAD(txn.amount)}

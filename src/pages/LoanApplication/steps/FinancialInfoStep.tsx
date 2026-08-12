@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/select';
 import type { LoanFormData } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/types/theme';
 import { formatNAD } from '@/utils/currency';
 import { useTranslation } from 'react-i18next';
 
@@ -24,7 +23,6 @@ interface FinancialInfoStepProps {
   onFormChange: (field: string, value: string) => void;
   hasProfileIncome: boolean;
   userProfile: UserProfile | null;
-  styles: ThemeConfig;
 }
 
 export default function FinancialInfoStep({
@@ -32,7 +30,6 @@ export default function FinancialInfoStep({
   onFormChange,
   hasProfileIncome,
   userProfile,
-  styles,
 }: FinancialInfoStepProps) {
   const { t } = useTranslation('loanApplication');
 
@@ -46,7 +43,10 @@ export default function FinancialInfoStep({
         >
           <SelectTrigger
             data-testid="employment-select"
-            className={cn(styles.inputClass, styles.textClass)}
+            className={cn(
+              'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20',
+              'font-sans text-[#274F35]'
+            )}
           >
             <SelectValue placeholder={t('financialStep.employmentPlaceholder')} />
           </SelectTrigger>

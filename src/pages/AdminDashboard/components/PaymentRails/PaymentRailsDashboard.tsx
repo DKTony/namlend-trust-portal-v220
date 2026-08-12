@@ -10,20 +10,16 @@ import { Activity, Clock, DollarSign, Plus, RefreshCw, Route } from 'lucide-reac
 import { useState } from 'react';
 
 const STATUS_STYLES = {
-  active:
-    'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-  degraded:
-    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-  offline:
-    'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-  maintenance:
-    'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+  active: 'bg-green-100  text-green-800  border-green-200 ',
+  degraded: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+  offline: 'bg-red-100  text-red-800  border-red-200 ',
+  maintenance: 'bg-blue-100  text-blue-800  border-blue-200 ',
 } as const;
 
 const HEALTH_STYLES = {
-  healthy: 'text-green-600 dark:text-green-400',
-  degraded: 'text-yellow-600 dark:text-yellow-400',
-  unhealthy: 'text-red-600 dark:text-red-400',
+  healthy: 'text-green-600 ',
+  degraded: 'text-yellow-600 ',
+  unhealthy: 'text-red-600 ',
 } as const;
 
 interface PaymentRailRow {

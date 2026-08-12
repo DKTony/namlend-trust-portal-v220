@@ -235,28 +235,28 @@ const PermissionMatrix: React.FC = () => {
   const getRiskLevelColor = (riskLevel: string) => {
     switch (riskLevel) {
       case 'high':
-        return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
+        return 'text-red-600  bg-red-100 ';
       case 'medium':
-        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30';
+        return 'text-yellow-600  bg-yellow-100 ';
       case 'low':
-        return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
+        return 'text-green-600  bg-green-100 ';
       default:
-        return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800';
+        return 'text-gray-600  bg-gray-100 ';
     }
   };
 
   const getRoleIcon = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
-        return <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+        return <Shield className="h-4 w-4 text-purple-600 " />;
       case 'loan officer':
-        return <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <Settings className="h-4 w-4 text-blue-600 " />;
       case 'client':
-        return <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <Eye className="h-4 w-4 text-green-600 " />;
       case 'tenant admin':
-        return <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+        return <Shield className="h-4 w-4 text-purple-600 " />;
       default:
-        return <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
+        return <Shield className="h-4 w-4 text-gray-600 " />;
     }
   };
 
@@ -307,9 +307,9 @@ const PermissionMatrix: React.FC = () => {
 
         {/* Changes Alert */}
         {hasChanges && (
-          <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
+          <Card className="border-yellow-200  bg-yellow-50 ">
             <CardContent className="p-4">
-              <div className="flex items-center space-x-2 text-yellow-800 dark:text-yellow-400">
+              <div className="flex items-center space-x-2 text-yellow-800 ">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">You have unsaved changes</span>
                 <span className="text-sm">Remember to save your permission changes</span>
@@ -349,10 +349,7 @@ const PermissionMatrix: React.FC = () => {
                   </thead>
                   <tbody>
                     {permissions.map((permission) => (
-                      <tr
-                        key={permission.id}
-                        className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
+                      <tr key={permission.id} className="border-b hover:bg-gray-50 ">
                         <td className="p-3">
                           <div className="flex items-center space-x-3">
                             <div>
@@ -454,7 +451,7 @@ const PermissionMatrix: React.FC = () => {
                           {roles.map((role) => (
                             <div
                               key={role.id}
-                              className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded"
+                              className="flex items-center justify-between p-2 bg-gray-50  rounded"
                             >
                               <div className="flex items-center space-x-2">
                                 {getRoleIcon(role.name)}
@@ -492,7 +489,7 @@ const PermissionMatrix: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Badge
                       variant="outline"
-                      className="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
+                      className="text-xs bg-red-100  text-red-800  border-red-200 "
                     >
                       High
                     </Badge>
@@ -501,7 +498,7 @@ const PermissionMatrix: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Badge
                       variant="outline"
-                      className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+                      className="text-xs bg-yellow-100  text-yellow-800  border-yellow-200 "
                     >
                       Medium
                     </Badge>
@@ -510,7 +507,7 @@ const PermissionMatrix: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <Badge
                       variant="outline"
-                      className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
+                      className="text-xs bg-green-100  text-green-800  border-green-200 "
                     >
                       Low
                     </Badge>

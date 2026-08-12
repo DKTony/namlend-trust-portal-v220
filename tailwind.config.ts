@@ -2,7 +2,6 @@ import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
 export default {
-  darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -28,8 +27,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'],
-        mono: ['Space Grotesk', 'monospace'],
+        serif: ['ui-serif', 'Georgia', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -84,10 +83,6 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        'trust-blue': 'hsl(var(--trust-blue))',
-        'warm-orange': 'hsl(var(--warm-orange))',
-        'success-green': 'hsl(var(--success-green))',
-        'neutral-gray': 'hsl(var(--neutral-gray))',
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
@@ -106,7 +101,7 @@ export default {
         soft: '0 8px 30px rgba(0,0,0,0.04)',
         medium: 'var(--shadow-medium)',
         strong: 'var(--shadow-strong)',
-        glow: '0 0 20px rgba(37, 99, 235, 0.15)',
+        glow: '0 0 20px rgba(63, 113, 62, 0.18)',
       },
       borderRadius: {
         lg: 'var(--radius)',

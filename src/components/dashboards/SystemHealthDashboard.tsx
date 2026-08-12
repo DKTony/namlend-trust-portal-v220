@@ -33,22 +33,22 @@ const SystemHealthDashboard: React.FC<SystemHealthProps> = ({ isAdmin = false })
   const getStatusIcon = () => {
     switch (healthStatus.status) {
       case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
+        return <CheckCircle className="h-5 w-5 text-green-600 " />;
       case 'degraded':
-        return <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+        return <Clock className="h-5 w-5 text-yellow-600 " />;
       case 'critical':
-        return <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="h-5 w-5 text-red-600 " />;
     }
   };
 
   const getStatusColor = () => {
     switch (healthStatus.status) {
       case 'healthy':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+        return 'bg-green-100  text-green-800 ';
       case 'degraded':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-yellow-100  text-yellow-800 ';
       case 'critical':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-red-100  text-red-800 ';
     }
   };
 

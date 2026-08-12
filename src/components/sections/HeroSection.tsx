@@ -1,268 +1,112 @@
 import LandingButton from '@/components/landing/LandingButton';
 import LandingCard from '@/components/landing/LandingCard';
-import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
 import { ArrowRight, Shield, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const fieldClass =
+  'w-full rounded-xl border border-[#B9CCB3] bg-white p-3 text-[#274F35] outline-none transition-colors placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-2 focus:ring-[#3F713E]/20';
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { styles, theme, isDark } = useTheme();
 
-  const handleApplyClick = () => {
-    if (user) {
-      navigate('/loan-application');
-    } else {
-      navigate('/auth');
-    }
-  };
-
-  const handleCalculateClick = () => {
-    const element = document.getElementById('loans');
-    element?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const apply = () => navigate(user ? '/loan-application' : '/auth');
+  const calculate = () => document.getElementById('loans')?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <section className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden">
-      <div className="container mx-auto px-4 md:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Hero Content */}
-          <div className="text-center lg:text-left animate-fade-in-up">
-            {/* Badges */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-3 mb-8">
-              <div
-                className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2',
-                  theme === 'neo'
-                    ? `border-2 ${isDark ? 'border-white bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]' : 'border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`
-                    : styles.badgeClass
-                )}
-              >
-                <Shield
-                  className={cn(
-                    'w-4 h-4',
-                    theme === 'neo' ? (isDark ? 'text-white' : 'text-black') : 'text-green-500'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'text-sm font-bold uppercase tracking-wider',
-                    theme === 'neo' ? (isDark ? 'text-white' : 'text-black') : ''
-                  )}
-                >
-                  NAMFISA Licensed
-                </span>
-              </div>
-              <div
-                className={cn(
-                  'inline-flex items-center gap-2 px-4 py-2',
-                  theme === 'neo'
-                    ? `border-2 ${isDark ? 'border-white bg-zinc-800 shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]' : 'border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`
-                    : styles.badgeClass
-                )}
-              >
-                <Zap
-                  className={cn('w-4 h-4', theme === 'neo' ? 'text-amber-500' : 'text-amber-500')}
-                />
-                <span
-                  className={cn(
-                    'text-sm font-bold uppercase tracking-wider',
-                    theme === 'neo' ? (isDark ? 'text-white' : 'text-black') : ''
-                  )}
-                >
-                  5-Min Approval
-                </span>
-              </div>
+    <section className="relative flex min-h-screen items-center overflow-hidden pb-16 pt-24">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(circle_at_top_left,rgba(124,160,92,0.18),transparent_55%)]" />
+      <div className="container relative z-10 mx-auto px-4 md:px-8">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="text-center lg:text-left">
+            <div className="mb-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#B9CCB3] bg-[#EEF5EB] px-4 py-2 text-sm font-bold uppercase tracking-wider text-[#274F35]">
+                <Shield className="h-4 w-4" /> NAMFISA licensed
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#DCE8D8] bg-white px-4 py-2 text-sm font-bold uppercase tracking-wider text-[#274F35]">
+                <Zap className="h-4 w-4 text-[#7CA05C]" /> Credit review
+              </span>
             </div>
 
-            <h1
-              className={cn(
-                'text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6',
-                styles.textClass,
-                theme === 'lux'
-                  ? 'font-serif leading-tight'
-                  : theme === 'neo'
-                    ? 'font-mono tracking-tighter leading-[1.0]'
-                    : 'font-sans leading-tight'
-              )}
-            >
-              {theme === 'neo' ? (
-                <>
-                  Quick Loans for
-                  <br />
-                  <span className="relative inline-block bg-[#bef264] px-2 py-1 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transform -rotate-1 text-black mt-2">
-                    Every Namibian
-                  </span>
-                </>
-              ) : (
-                <>
-                  Quick Loans for{' '}
-                  <span
-                    className={cn(
-                      theme === 'lux'
-                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600'
-                        : 'text-blue-500'
-                    )}
-                  >
-                    Every Namibian
-                  </span>
-                </>
-              )}
+            <h1 className="mb-6 font-sans text-4xl font-bold leading-tight text-[#274F35] sm:text-5xl md:text-6xl lg:text-7xl">
+              Quick loans for <span className="text-[#3F713E]">every Namibian</span>
             </h1>
-
-            <p
-              className={cn(
-                'text-lg md:text-xl mb-8 max-w-xl mx-auto lg:mx-0 opacity-80',
-                styles.textClass
-              )}
-            >
-              Get approved in minutes. Transparent terms. No hidden fees. Serving both banked and
-              unbanked communities across Namibia.
+            <p className="mx-auto mb-8 max-w-xl text-lg text-[#274F35]/75 md:text-xl lg:mx-0">
+              Apply online with transparent terms. Your verified application goes directly to an OG
+              Financial Services loan officer for credit review.
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
-              <LandingButton variant="primary" onClick={handleApplyClick}>
-                Apply Now <ArrowRight className="w-5 h-5" />
+            <div className="mb-10 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
+              <LandingButton variant="primary" onClick={apply}>
+                Apply now <ArrowRight className="h-5 w-5" />
               </LandingButton>
-              <LandingButton variant="secondary" onClick={handleCalculateClick}>
-                Calculate Loan
+              <LandingButton variant="secondary" onClick={calculate}>
+                Calculate loan
               </LandingButton>
             </div>
-
-            {/* Trust Stats */}
-            <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto lg:mx-0">
-              <div className="text-center lg:text-left">
-                <div className={cn('text-2xl md:text-3xl font-bold', styles.textClass)}>50K+</div>
-                <div className={cn('text-sm opacity-60', styles.textClass)}>Happy Customers</div>
+            <div className="grid max-w-lg grid-cols-3 gap-4 text-left text-[#274F35] lg:mx-0">
+              <div>
+                <strong className="block text-2xl">32%</strong>
+                <span className="text-sm text-[#274F35]/60">Maximum APR</span>
               </div>
-              <div className="text-center lg:text-left">
-                <div className={cn('text-2xl md:text-3xl font-bold', styles.textClass)}>
-                  N$100M+
-                </div>
-                <div className={cn('text-sm opacity-60', styles.textClass)}>Loans Disbursed</div>
+              <div>
+                <strong className="block text-2xl">3 steps</strong>
+                <span className="text-sm text-[#274F35]/60">Application</span>
               </div>
-              <div className="text-center lg:text-left">
-                <div className={cn('text-2xl md:text-3xl font-bold', styles.textClass)}>4.8★</div>
-                <div className={cn('text-sm opacity-60', styles.textClass)}>App Rating</div>
+              <div>
+                <strong className="block text-2xl">KYC</strong>
+                <span className="text-sm text-[#274F35]/60">Verified first</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Check Card */}
-          <div
-            className="lg:max-w-md mx-auto w-full animate-fade-in-up relative"
-            style={{ animationDelay: '0.2s' }}
-          >
-            {/* Neo theme decorative elements */}
-            {theme === 'neo' && (
-              <>
-                <div
-                  className={cn(
-                    'absolute -top-10 -right-6 w-20 h-20 rounded-full border-2 flex items-center justify-center font-bold text-xs transform rotate-12 animate-float z-20',
-                    isDark
-                      ? 'bg-yellow-400 border-white text-black shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]'
-                      : 'bg-yellow-400 border-black text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                  )}
-                >
-                  0% FEES
-                </div>
-                <div
-                  className={cn(
-                    'absolute top-3 left-3 w-full h-full -z-10',
-                    isDark ? 'bg-white' : 'bg-black'
-                  )}
+          <div className="mx-auto w-full max-w-md">
+            <LandingCard className="p-6 md:p-8">
+              <div className="mb-6 text-center">
+                <img
+                  src="/og-financial-logo-v2.svg"
+                  alt="OG Financial Services CC"
+                  className="mx-auto mb-6 h-16 w-auto max-w-full"
                 />
-              </>
-            )}
-            <LandingCard className="p-6 md:p-8 relative z-10">
-              <div className="text-center mb-6">
-                <h3 className={cn('text-2xl font-bold mb-2', styles.textClass)}>Quick Check</h3>
-                <p className={cn('text-sm opacity-60', styles.textClass)}>
-                  See your eligibility in 2 minutes
-                </p>
+                <h2 className="text-2xl font-bold text-[#274F35]">Start your application</h2>
+                <p className="mt-1 text-sm text-[#274F35]/60">Review the indicative ranges below</p>
               </div>
-
               <form
                 className="space-y-5"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleApplyClick();
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  apply();
                 }}
               >
-                <div>
-                  <label className={cn('block text-sm font-medium mb-2', styles.textClass)}>
-                    Loan Amount (NAD)
-                  </label>
-                  <select
-                    aria-label="Select loan amount range"
-                    className={cn('w-full p-3 transition-all', styles.inputClass)}
-                  >
-                    <option>N$ 500 - N$ 2,000</option>
-                    <option>N$ 2,000 - N$ 5,000</option>
+                <label className="block text-sm font-medium text-[#274F35]">
+                  Loan amount (NAD)
+                  <select aria-label="Select loan amount range" className={`${fieldClass} mt-2`}>
+                    <option>N$ 1,000 - N$ 5,000</option>
                     <option>N$ 5,000 - N$ 10,000</option>
                     <option>N$ 10,000 - N$ 25,000</option>
+                    <option>N$ 25,000 - N$ 50,000</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className={cn('block text-sm font-medium mb-2', styles.textClass)}>
-                    Monthly Income (NAD)
-                  </label>
-                  <select
-                    aria-label="Select monthly income range"
-                    className={cn('w-full p-3 transition-all', styles.inputClass)}
-                  >
+                </label>
+                <label className="block text-sm font-medium text-[#274F35]">
+                  Monthly income (NAD)
+                  <select aria-label="Select monthly income range" className={`${fieldClass} mt-2`}>
                     <option>N$ 0 - N$ 3,000</option>
                     <option>N$ 3,000 - N$ 6,000</option>
                     <option>N$ 6,000 - N$ 10,000</option>
                     <option>N$ 10,000+</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className={cn('block text-sm font-medium mb-2', styles.textClass)}>
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+264 XX XXX XXXX"
-                    className={cn('w-full p-3 transition-all', styles.inputClass)}
-                  />
-                </div>
-
+                </label>
                 <LandingButton type="submit" variant="primary" fullWidth>
-                  Check Eligibility
+                  Continue to application
                 </LandingButton>
-
-                <p className={cn('text-xs text-center opacity-50', styles.textClass)}>
-                  By continuing, you agree to our terms. APR up to 32% p.a.
+                <p className="text-center text-xs text-[#274F35]/55">
+                  Indicative only. Approval follows KYC and credit review. APR never exceeds 32%.
                 </p>
               </form>
             </LandingCard>
           </div>
         </div>
       </div>
-
-      {/* Neo theme decorative elements */}
-      {theme === 'neo' && (
-        <>
-          <div
-            className={cn(
-              'absolute top-32 right-10 w-16 h-16 border-4 rotate-12 animate-float hidden lg:block',
-              isDark ? 'border-white' : 'border-black'
-            )}
-          />
-          <div
-            className={cn(
-              'absolute bottom-32 left-10 w-12 h-12 rounded-full border-4 animate-float hidden lg:block',
-              isDark ? 'border-[#A855F7]' : 'border-[#A855F7]'
-            )}
-            style={{ animationDelay: '-3s' }}
-          />
-        </>
-      )}
     </section>
   );
 };

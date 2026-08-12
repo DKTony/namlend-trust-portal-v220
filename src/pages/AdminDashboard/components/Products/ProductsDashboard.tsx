@@ -104,10 +104,10 @@ export function ProductsDashboard() {
                         variant="outline"
                         className={
                           product.status === 'active'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
+                            ? 'bg-green-100  text-green-800  border-green-200 '
                             : product.status === 'draft'
-                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                              : 'bg-zinc-100 dark:bg-zinc-900/30 text-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800'
+                              ? 'bg-yellow-100  text-yellow-800  border-yellow-200 '
+                              : 'bg-zinc-100  text-zinc-800  border-zinc-200 '
                         }
                       >
                         {product.status}

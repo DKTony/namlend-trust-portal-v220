@@ -76,11 +76,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
                   N$2.4M
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400 truncate">
-                  +12% vs last month
-                </p>
+                <p className="text-xs text-green-600  truncate">+12% vs last month</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
+              <DollarSign className="h-8 w-8 text-green-600  shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -92,9 +90,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
                   156
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 truncate">+8 this month</p>
+                <p className="text-xs text-blue-600  truncate">+8 this month</p>
               </div>
-              <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400 shrink-0" />
+              <FileText className="h-8 w-8 text-blue-600  shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -106,9 +104,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
                   94.2%
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400 truncate">Excellent</p>
+                <p className="text-xs text-green-600  truncate">Excellent</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400 shrink-0" />
+              <TrendingUp className="h-8 w-8 text-green-600  shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -120,9 +118,9 @@ const AnalyticsDashboard: React.FC = () => {
                 <p className="text-xl sm:text-2xl font-bold truncate tabular-nums text-foreground">
                   2.1
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-400 truncate">Low Risk</p>
+                <p className="text-xs text-green-600  truncate">Low Risk</p>
               </div>
-              <BarChart3 className="h-8 w-8 text-orange-600 dark:text-orange-400 shrink-0" />
+              <BarChart3 className="h-8 w-8 text-orange-600  shrink-0" />
             </div>
           </CardContent>
         </Card>

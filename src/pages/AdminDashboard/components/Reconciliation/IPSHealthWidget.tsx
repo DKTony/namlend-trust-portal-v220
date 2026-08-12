@@ -207,10 +207,7 @@ export function IPSHealthWidget() {
         );
       case 'warning':
         return (
-          <Badge
-            variant="outline"
-            className="text-xs border-yellow-500 text-yellow-600 dark:text-yellow-400"
-          >
+          <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-600 ">
             Warning
           </Badge>
         );
@@ -269,19 +266,19 @@ export function IPSHealthWidget() {
             <div className="text-xs text-muted-foreground">Total Transactions</div>
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-2xl font-bold text-green-600 ">
               {isLoading ? '...' : healthData?.summary.final_state || 0}
             </div>
             <div className="text-xs text-muted-foreground">Final State</div>
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+            <div className="text-2xl font-bold text-yellow-600 ">
               {isLoading ? '...' : healthData?.stuck_transactions.count || 0}
             </div>
             <div className="text-xs text-muted-foreground">Stuck (&gt;1h)</div>
           </div>
           <div className="bg-muted/50 rounded-lg p-3">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+            <div className="text-2xl font-bold text-red-600 ">
               {isLoading ? '...' : healthData?.unresolved_alerts.critical || 0}
             </div>
             <div className="text-xs text-muted-foreground">Critical Alerts</div>
@@ -290,12 +287,12 @@ export function IPSHealthWidget() {
 
         {/* Stuck Transactions Summary */}
         {healthData && healthData.stuck_transactions.count > 0 && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+          <div className="bg-yellow-50  border border-yellow-200  rounded-lg p-3">
+            <div className="flex items-center gap-2 text-yellow-800 ">
               <Clock className="h-4 w-4" />
               <span className="font-medium">Stuck Transactions</span>
             </div>
-            <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+            <div className="mt-2 text-sm text-yellow-700 ">
               {healthData.stuck_transactions.count} transaction(s) totaling{' '}
               <strong>{formatNAD(healthData.stuck_transactions.total_amount)}</strong> stuck for up
               to <strong>{healthData.stuck_transactions.oldest_hours.toFixed(1)}h</strong>
@@ -319,9 +316,9 @@ export function IPSHealthWidget() {
                     key={alert.id}
                     className={`rounded-lg border p-3 ${
                       alert.severity === 'critical'
-                        ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                        ? 'border-red-300  bg-red-50 '
                         : alert.severity === 'warning'
-                          ? 'border-yellow-300 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
+                          ? 'border-yellow-300  bg-yellow-50 '
                           : 'border-border bg-muted/30'
                     }`}
                   >
@@ -387,12 +384,10 @@ export function IPSHealthWidget() {
 
         {/* All Clear State */}
         {(!alerts || alerts.length === 0) && healthData?.stuck_transactions.count === 0 && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
-            <CheckCircle className="h-8 w-8 mx-auto text-green-600 dark:text-green-400 mb-2" />
-            <p className="text-sm font-medium text-green-800 dark:text-green-200">All Clear</p>
-            <p className="text-xs text-green-600 dark:text-green-400">
-              No stuck transactions or unresolved alerts
-            </p>
+          <div className="bg-green-50  border border-green-200  rounded-lg p-4 text-center">
+            <CheckCircle className="h-8 w-8 mx-auto text-green-600  mb-2" />
+            <p className="text-sm font-medium text-green-800 ">All Clear</p>
+            <p className="text-xs text-green-600 ">No stuck transactions or unresolved alerts</p>
           </div>
         )}
       </CardContent>

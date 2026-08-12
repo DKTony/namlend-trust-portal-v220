@@ -13,9 +13,6 @@ vi.mock('@/hooks/useKYCEligibility', () => ({
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { _id: 'client-1' }, loading: false }),
 }));
-vi.mock('@/context/ThemeContext', () => ({
-  useTheme: () => ({ styles: { textClass: 'text-foreground' } }),
-}));
 vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn() }));
 vi.mock('convex/react', () => ({ useMutation: () => vi.fn() }));
 vi.mock('@/components/Layout/DashboardLayout', () => ({

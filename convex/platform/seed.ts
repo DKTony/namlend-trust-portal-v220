@@ -290,10 +290,10 @@ export const migrateOgFinancialServices = internalMutation({
       {
         key: 'branding.assets',
         value: {
-          logo_url: '/og-financial-logo.svg',
-          favicon_url: '/favicon.svg',
-          logo_width: 178,
-          logo_height: 48,
+          logo_url: '/og-financial-logo-v2.svg',
+          favicon_url: '/og-financial-favicon-v2.svg',
+          logo_width: 220,
+          logo_height: 72,
           show_company_name_with_logo: false,
         },
       },
@@ -303,7 +303,7 @@ export const migrateOgFinancialServices = internalMutation({
           page_title_template: '{company_name} - {page_name}',
           meta_description:
             'Apply online with OG Financial Services, a NAMFISA-registered Namibian microlender.',
-          og_image_url: '/og-financial-social.png',
+          og_image_url: '/og-financial-social-v2.png',
         },
       },
     ];

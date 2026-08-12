@@ -33,5 +33,5 @@ export {
 // Settlement types
 export * from './settlement';
 
-// Theme types (includes finance types: UnifiedTransaction, BudgetLimit, SavingsGoal)
-export * from './theme';
+// Personal-finance view models
+export * from './finance';

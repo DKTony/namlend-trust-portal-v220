@@ -57,16 +57,11 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      approved:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      processing:
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      completed:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      failed:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      approved: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      processing: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      completed: 'bg-green-100  text-green-800  border-green-200 ',
+      failed: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     const icons = {
@@ -116,7 +111,7 @@ const DisbursementManager: React.FC<Props> = ({ status = 'all', searchTerm = '' 
 
   if (error) {
     return (
-      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+      <Card className="border-red-200  bg-red-50 ">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />

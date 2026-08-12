@@ -151,14 +151,10 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      in_progress:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      completed:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      failed:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      in_progress: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      completed: 'bg-green-100  text-green-800  border-green-200 ',
+      failed: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     const icons = {
@@ -171,10 +167,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status.replace('_', ' ')}</span>
@@ -313,10 +306,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
           <p className="text-muted-foreground">Manage multiple users efficiently</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge
-            variant="outline"
-            className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
-          >
+          <Badge variant="outline" className="bg-blue-100  text-blue-800 ">
             <Users className="h-3 w-3 mr-1" />
             {selectedUsers.length} Selected
           </Badge>
@@ -494,8 +484,8 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                   )}
                 </div>
 
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                <div className="p-3 bg-blue-50  rounded-lg border border-blue-200 ">
+                  <p className="text-sm text-blue-800 ">
                     <strong>Required columns:</strong> full_name, email, role, status
                   </p>
                 </div>
@@ -523,8 +513,8 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-green-800 dark:text-green-300">
+                <div className="p-3 bg-green-50  rounded-lg border border-green-200 ">
+                  <p className="text-sm text-green-800 ">
                     Export will include: Profile data, roles, permissions, and activity summary
                   </p>
                 </div>
@@ -581,11 +571,9 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                     )}
 
                     {operation.errors && operation.errors.length > 0 && (
-                      <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                        <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">
-                          Errors:
-                        </p>
-                        <ul className="text-sm text-red-700 dark:text-red-400">
+                      <div className="mt-2 p-2 bg-red-50  rounded border border-red-200 ">
+                        <p className="text-sm font-medium text-red-800  mb-1">Errors:</p>
+                        <ul className="text-sm text-red-700 ">
                           {operation.errors.map((error, index) => (
                             <li key={index}>• {error}</li>
                           ))}
@@ -594,7 +582,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                     )}
 
                     {operation.completedAt && (
-                      <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                      <p className="text-sm text-green-600  mt-2">
                         Completed: {formatDate(operation.completedAt)}
                       </p>
                     )}

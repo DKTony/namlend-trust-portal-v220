@@ -35,18 +35,15 @@ interface LoanReviewPanelProps {
 const RECOMMENDATION_CONFIG = {
   approve: {
     label: 'Approve',
-    className:
-      'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+    className: 'bg-green-100  text-green-800  border-green-200 ',
   },
   review: {
     label: 'Manual Review',
-    className:
-      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+    className: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
   },
   reject: {
     label: 'Reject',
-    className:
-      'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+    className: 'bg-red-100  text-red-800  border-red-200 ',
   },
 } as const;
 
@@ -58,10 +55,10 @@ function getCreditScoreLabel(score: number): string {
 }
 
 function getCreditScoreClass(score: number): string {
-  if (score >= 750) return 'text-green-600 dark:text-green-400';
-  if (score >= 670) return 'text-blue-600 dark:text-blue-400';
-  if (score >= 580) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
+  if (score >= 750) return 'text-green-600 ';
+  if (score >= 670) return 'text-blue-600 ';
+  if (score >= 580) return 'text-yellow-600 ';
+  return 'text-red-600 ';
 }
 
 const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
@@ -287,7 +284,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                             Requested Amount
                           </label>
                           <p
-                            className="text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums"
+                            className="text-2xl font-bold text-green-600  truncate tabular-nums"
                             title={formatCurrency(loanDetails.amount)}
                           >
                             {formatCurrency(loanDetails.amount)}
@@ -489,10 +486,10 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                               variant="outline"
                               className={
                                 item.status === 'Paid'
-                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
+                                  ? 'bg-green-100  text-green-800  border-green-200 '
                                   : item.status === 'Active'
-                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+                                    ? 'bg-blue-100  text-blue-800  border-blue-200 '
+                                    : 'bg-red-100  text-red-800  border-red-200 '
                               }
                             >
                               {item.status}
@@ -539,10 +536,10 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                       className={cn(
                         'font-semibold tabular-nums',
                         loanDetails.debtToIncomeRatio > 0.43
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-red-600 '
                           : loanDetails.debtToIncomeRatio > 0.36
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-green-600 dark:text-green-400'
+                            ? 'text-yellow-600 '
+                            : 'text-green-600 '
                       )}
                     >
                       {(loanDetails.debtToIncomeRatio * 100).toFixed(1)}%
@@ -628,7 +625,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
                       onClick={handleReject}
                       disabled={loading || !rejectionReason.trim()}
                       variant="outline"
-                      className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="w-full border-red-200  text-red-600  hover:bg-red-50 "
                       data-testid="reject-loan-button"
                     >
                       <XCircle className="h-4 w-4 mr-2" />

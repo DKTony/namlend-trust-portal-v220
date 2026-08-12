@@ -166,16 +166,16 @@ function TransactionRow({ transaction }: TransactionRowProps) {
   const StatusIcon = () => {
     const status = transaction.status;
     if (status === 'pending' || status === 'sent' || status === 'initiated') {
-      return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+      return <Clock className="h-4 w-4 text-yellow-600 " />;
     }
     if (isSuccess) {
-      return <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      return <CheckCircle2 className="h-4 w-4 text-green-600 " />;
     }
     if (status === 'failed') {
-      return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      return <XCircle className="h-4 w-4 text-red-600 " />;
     }
     if (status === 'reversed') {
-      return <AlertTriangle className="h-4 w-4 text-purple-600 dark:text-purple-400" />;
+      return <AlertTriangle className="h-4 w-4 text-purple-600 " />;
     }
     return <Clock className="h-4 w-4 text-muted-foreground" />;
   };
@@ -186,13 +186,13 @@ function TransactionRow({ transaction }: TransactionRowProps) {
       <div
         className={cn(
           'flex h-10 w-10 items-center justify-center rounded-full',
-          isDisbursement ? 'bg-blue-100 dark:bg-blue-900/20' : 'bg-green-100 dark:bg-green-900/20'
+          isDisbursement ? 'bg-blue-100 ' : 'bg-green-100 '
         )}
       >
         {isDisbursement ? (
-          <ArrowUpRight className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <ArrowUpRight className="h-5 w-5 text-blue-600 " />
         ) : (
-          <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <ArrowDownLeft className="h-5 w-5 text-green-600 " />
         )}
       </div>
 
@@ -220,14 +220,7 @@ function TransactionRow({ transaction }: TransactionRowProps) {
 
       {/* Amount and Status */}
       <div className="text-right">
-        <div
-          className={cn(
-            'font-semibold',
-            isDisbursement
-              ? 'text-blue-600 dark:text-blue-400'
-              : 'text-green-600 dark:text-green-400'
-          )}
-        >
+        <div className={cn('font-semibold', isDisbursement ? 'text-blue-600 ' : 'text-green-600 ')}>
           {isDisbursement ? '-' : '+'}
           {formatNAD(transaction.amount)}
         </div>

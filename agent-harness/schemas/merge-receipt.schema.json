@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://namlend.example/agent-harness/v1/merge-receipt.schema.json",
+  "title": "NamLend Reviewed Merge Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "receiptId", "pullRequest", "mergeSha", "mergedAt", "approvers",
+    "ciEvidence", "artifactDigest", "supersedes", "invalidates"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "receiptId": { "type": "string", "minLength": 3 },
+    "pullRequest": { "type": "string", "format": "uri" },
+    "mergeSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "mergedAt": { "type": "string", "format": "date-time" },
+    "approvers": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "ciEvidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["workflow", "job", "runId", "headSha", "conclusion"],
+        "properties": {
+          "workflow": { "type": "string" },
+          "job": { "type": "string" },
+          "runId": { "type": ["string", "integer"] },
+          "headSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+          "conclusion": { "const": "success" },
+          "testIdentities": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "artifactDigest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "supersedes": { "type": "array", "items": { "type": "string" } },
+    "invalidates": { "type": "array", "items": { "type": "string" } }
+  }
+}

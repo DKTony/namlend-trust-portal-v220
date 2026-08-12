@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://namlend.example/agent-harness/v1/context-packet.schema.json",
+  "title": "NamLend Agent Context Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "taskId", "sourceSha", "generatedAt", "ontologyHash", "graphifyHash",
+    "affectedNodes", "impactPaths", "relevantTests", "owners", "conflicts", "gaps", "citations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "taskId": { "type": "string" },
+    "sourceSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "ontologyHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "graphifyHash": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+    "affectedNodes": { "type": "array", "items": { "type": "object" } },
+    "impactPaths": { "type": "array", "items": { "type": "object" } },
+    "relevantTests": { "type": "array", "items": { "type": "object" } },
+    "owners": { "type": "array", "items": { "type": "string" } },
+    "conflicts": { "type": "array", "items": { "type": "object" } },
+    "gaps": { "type": "array", "items": { "type": "object" } },
+    "citations": { "type": "array", "items": { "type": "object" } }
+  }
+}

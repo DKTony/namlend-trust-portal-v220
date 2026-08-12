@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "taskId": "NAM-R0-IMPACT-EXAMPLE",
+  "baseSha": "eb457030e75fd004ba39ace8d54bf5fe231b0353",
+  "goal": "Report the evidence-backed impact of changing the loans table without modifying repository files.",
+  "nonGoals": ["Do not modify code", "Do not contact production systems"],
+  "owner": "NamLend Engineering",
+  "riskClass": "R0",
+  "allowedPaths": [],
+  "forbiddenOperations": [
+    "write", "merge", "push", "deploy", "seed", "migration", "backfill",
+    "production-write", "external-system-write", "secret-read", "history-rewrite"
+  ],
+  "affectedOntologyIds": ["table:loans"],
+  "acceptanceChecks": ["npm run ontology:impact -- table:loans"],
+  "resourceBudget": {
+    "maxMinutes": 15,
+    "maxAttempts": 1,
+    "networkPolicy": "deny",
+    "allowedHosts": []
+  },
+  "expiresAt": "2027-01-01T00:00:00.000Z"
+}

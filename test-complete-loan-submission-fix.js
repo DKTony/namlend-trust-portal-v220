@@ -1,8 +1,10 @@
 // Comprehensive test to verify all loan submission fixes
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://puahejtaskncpazjyxqp.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWhlanRhc2tuY3Bhemp5eHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MDc0NTAsImV4cCI6MjA2OTM4MzQ1MH0.pwVQ-yVKyUa11KdUPdRbX-qssywAbTlPwFahfrt5JDw'
+const supabaseUrl = process.env.LEGACY_SUPABASE_URL
+const supabaseAnonKey = process.env.LEGACY_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) throw new Error('Set legacy Supabase connection variables in the process environment.')
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -12,8 +14,9 @@ async function testCompleteLoanSubmissionFix() {
   
   try {
     // Test credentials for the user that was failing
-    const testEmail = 'client@namlend.com'
-    const testPassword = '123abc'
+    const testEmail = process.env.LEGACY_TEST_EMAIL
+    const testPassword = process.env.LEGACY_TEST_PASSWORD
+    if (!testEmail || !testPassword) throw new Error('Set legacy test credentials in the process environment.')
     const expectedUserId = 'd109c025-d6fe-455d-96ee-d3cc08578a83'
     
     console.log('\n1️⃣ Testing Authentication Flow...')

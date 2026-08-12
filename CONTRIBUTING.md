@@ -1,132 +1,69 @@
 # Contributing to NamLend Trust
 
-Thank you for your interest in contributing to NamLend Trust! This guide will help you get started.
+NamLend Trust is a Convex-first digital lending platform. Read `AGENTS.md`
+before changing code; its regulatory and security constraints are release gates.
 
 ## Prerequisites
 
-- **Node.js** 20+ and **npm** 9+
-- **Git** for version control
-- A code editor (VS Code recommended with ESLint + Prettier extensions)
-- Access to the Supabase project (ask a team lead for credentials)
+- Node.js 22.23.2 and npm 10.9.8 (`.nvmrc` and `packageManager` are canonical)
+- Git
+- A development Convex deployment and `VITE_CONVEX_URL`
 
-## Getting Started
+Supabase files are legacy or migration-debt references. Do not add new Supabase,
+RLS, RPC, Edge Function, or `src/services/` business logic.
 
-1. **Clone the repository**
-
-   ```bash
-   git clone <repo-url>
-   cd namlend-trust-portal
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with your project credentials.
-
-4. **Start the development server**
-
-   ```bash
-   npm run dev
-   ```
-
-   The app will be available at `http://localhost:8080`.
-
-## Branch Naming
-
-Use the following prefixes:
-
-- `feat/` — New features (e.g., `feat/loan-restructuring`)
-- `fix/` — Bug fixes (e.g., `fix/payment-rounding`)
-- `chore/` — Maintenance tasks (e.g., `chore/update-deps`)
-- `docs/` — Documentation changes (e.g., `docs/api-reference`)
-- `refactor/` — Code refactoring (e.g., `refactor/split-banking-section`)
-
-## Commit Messages
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add loan restructuring workflow
-fix: correct APR calculation for short-term loans
-docs: update API reference for disbursement endpoints
-chore: upgrade TanStack Query to v5.60
-```
-
-Include a scope when helpful: `feat(admin): add batch approval actions`
-
-## Pull Request Process
-
-1. Create a feature branch from `main`
-2. Make your changes, ensuring tests pass
-3. Run lint and type checks: `npm run lint && npx tsc --noEmit`
-4. Open a PR against `main` with a clear description
-5. Fill in the PR template (what changed, why, how to test)
-6. Request review from at least one team member
-7. Address feedback and merge once approved
-
-## Code Style
-
-- **TypeScript** for all new code — avoid `any` types
-- **TailwindCSS** for styling — use semantic theme variables (`bg-background`, `text-foreground`), never hardcoded colors
-- **shadcn/ui** for components — check `src/components/ui/` before creating custom components
-- **Services** — use existing services in `src/services/` before creating new ones
-- **Currency** — always format as `N$ X,XXX.XX` using `formatNAD()` from `@/utils/currency`
-- **APR limit** — never exceed 32% (Namibian regulatory requirement)
-
-## Testing
+## Setup and checks
 
 ```bash
-# Run E2E tests
-npm run test:e2e
-
-# Run E2E tests with browser visible
-npm run test:e2e:headed
-
-# Run Playwright UI mode
-npm run test:e2e:ui
-
-# Run unit tests
+npm ci
+npm run dev
+npm run lint
+npm run typecheck
 npm run test:unit
+npm run test:convex
+npm run build
+npm run ontology:check
+npm run ontology:test
+npm run agent:policy
 ```
 
-When adding features:
+Use an isolated E2E Convex deployment for Playwright. Production credentials and
+production data must never be supplied to tests or coding agents.
 
-- Add `data-testid` attributes for E2E test selectors
-- Add Playwright tests in `e2e/` for new user flows
-- Add unit tests in `src/tests/` for business logic
+## Change safety
 
-## Key Directories
+- Maximum APR is 32%; preserve server-side enforcement.
+- Lending requires verified KYC at the authoritative backend boundary.
+- Enforce owner, owner-or-staff, staff, admin, tenant and platform access as appropriate.
+- Schedule audit/event writes for financial operations.
+- Never hard-delete production financial or compliance records.
+- Keep money amounts in NAD at product boundaries and cents at TigerBeetle boundaries.
+- An outbox enqueue does not prove provider acceptance; callback processing does not prove settlement.
 
-| Directory              | Purpose                      |
-| ---------------------- | ---------------------------- |
-| `src/components/`      | Reusable UI components       |
-| `src/pages/`           | Route-level page components  |
-| `src/services/`        | Business logic and API calls |
-| `src/hooks/`           | Custom React hooks           |
-| `src/types/`           | TypeScript type definitions  |
-| `src/constants/`       | Regulatory and app constants |
-| `supabase/migrations/` | Database migrations          |
-| `supabase/functions/`  | Edge Functions (Deno)        |
-| `e2e/`                 | Playwright E2E tests         |
-| `docs/`                | Project documentation        |
+## Pull requests
 
-## Important Constraints
+1. Branch from current `main` and keep the change narrowly scoped.
+2. Describe affected ontology node IDs and the evidence path used for impact analysis.
+3. Run the checks relevant to the changed behavior and attach named-test evidence.
+4. Regenerate the ontology when tracked system structure changes.
+5. Register every runtime test skip with an owner, reason, expiry and gap.
+6. Obtain one human approval. Financial, auth, security, deployment, dependency-policy
+   and agent-policy changes require two distinct human approvals.
 
-- **Never delete financial records** — use soft deletes only
-- **All tables must have RLS policies** — no exceptions
-- **Audit logging is mandatory** for financial operations
-- **Data retention: 7 years** for financial records
-- **Mobile-first design** — test on 375px viewport
+Agents may propose only allowlisted R0/R1 work. Humans own merges, deployments,
+seeds, migrations, backfills, production access and protected NamLend behavior.
 
-## Questions?
+## Active structure
 
-Check `docs/INDEX.md` for the documentation index, or ask in the team channel.
+| Path              | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `src/`            | React/Vite application and Convex client boundary              |
+| `convex/`         | Active schema, authorization, workflows, actions and schedules |
+| `e2e/`            | Playwright browser and API checks                              |
+| `ontology/`       | Authoritative system/evidence graph and reports                |
+| `agent-harness/`  | Agent contracts, risk policy, exceptions and evaluation corpus |
+| `tools/graphify/` | Optional local discovery sidecar lock                          |
+| `supabase/`       | Legacy/reference and selected migration-debt paths only        |
+
+See `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, and
+`docs/AI_ENGINEERING_HARNESS.md` for the active operating model.

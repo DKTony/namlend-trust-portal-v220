@@ -1,9 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
-  'https://puahejtaskncpazjyxqp.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1YWhlanRhc2tuY3Bhemp5eHFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzgwNzQ1MCwiZXhwIjoyMDY5MzgzNDUwfQ.JV3gC1iTeIRnFehfiD0tcZZmRtpYQdRuwvtwEKyOkuc'
+  process.env.LEGACY_SUPABASE_URL,
+  process.env.LEGACY_SUPABASE_SERVICE_ROLE_KEY
 );
+
+if (!process.env.LEGACY_SUPABASE_URL || !process.env.LEGACY_SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Set legacy Supabase connection variables in the process environment.');
+}
 
 async function testDatabase() {
   console.log('=== SUPABASE DATABASE SCHEMA TEST ===\n');
@@ -71,7 +75,7 @@ async function testDatabase() {
   console.log('\n4. Checking client user...');
   try {
     const { data: users } = await supabase.auth.admin.listUsers();
-    const client = users?.users?.find(u => u.email === 'client@namlend.com');
+    const client = users?.users?.find(u => u.email === process.env.LEGACY_TEST_EMAIL);
     
     if (client) {
       console.log('   ✅ Client user found:', client.id);

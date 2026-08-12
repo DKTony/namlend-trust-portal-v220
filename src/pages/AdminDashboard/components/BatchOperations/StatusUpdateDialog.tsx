@@ -60,10 +60,10 @@ export function StatusUpdateDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="p-3 bg-yellow-50  border border-yellow-200  rounded-lg">
             <div className="flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400 mt-0.5" />
-              <div className="text-sm text-yellow-700 dark:text-yellow-400">
+              <AlertTriangle className="h-5 w-5 text-yellow-500  mt-0.5" />
+              <div className="text-sm text-yellow-700 ">
                 <strong>Warning:</strong> This action will update {selectedCount} loans. This action
                 should be audited and may affect client communications.
               </div>

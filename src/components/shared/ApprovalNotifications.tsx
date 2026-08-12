@@ -2,7 +2,6 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
@@ -56,7 +55,6 @@ export default function ApprovalNotifications({
   embedded = false,
 }: ApprovalNotificationsProps) {
   const { toast } = useToast();
-  const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<ApprovalNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -128,13 +126,13 @@ export default function ApprovalNotifications({
 
     switch (type) {
       case 'new_request':
-        return 'text-blue-500 dark:text-blue-400';
+        return 'text-blue-600';
       case 'status_update':
-        return 'text-emerald-500 dark:text-emerald-400';
+        return 'text-emerald-600';
       case 'assignment':
-        return 'text-purple-500 dark:text-purple-400';
+        return 'text-blue-700';
       case 'reminder':
-        return 'text-amber-500 dark:text-amber-400';
+        return 'text-amber-600';
       default:
         return 'text-muted-foreground';
     }
@@ -225,9 +223,7 @@ export default function ApprovalNotifications({
                         'h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm transition-transform group-hover:scale-105',
                         notification.is_read
                           ? 'bg-muted/50 border-border/50'
-                          : isDark
-                            ? 'bg-zinc-900 border-zinc-800'
-                            : 'bg-white border-zinc-100'
+                          : 'border-[#DCE8D8] bg-white'
                       )}
                     >
                       <Icon className={cn('h-4 w-4', iconColor)} />
@@ -287,9 +283,9 @@ export default function ApprovalNotifications({
                                   className={cn(
                                     'text-[10px] px-1.5 h-5 border-0 font-medium capitalize',
                                     notification.metadata.priority === 'urgent'
-                                      ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+                                      ? 'bg-red-500/10 text-red-600'
                                       : notification.metadata.priority === 'high'
-                                        ? 'bg-orange-500/10 text-orange-500 dark:text-orange-400'
+                                        ? 'bg-amber-500/10 text-amber-700'
                                         : 'bg-muted text-muted-foreground'
                                   )}
                                 >
@@ -314,7 +310,6 @@ export default function ApprovalNotifications({
 // Notification Bell Component for Header
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { isDark } = useTheme();
   const navigate = useNavigate();
 
   // Convex reactive query — auto-refreshes, no polling needed
@@ -352,8 +347,7 @@ export function NotificationBell() {
 
       <PopoverContent
         className={cn(
-          'w-[calc(100vw-2rem)] max-w-[400px] p-0 overflow-hidden border shadow-2xl backdrop-blur-xl',
-          isDark ? 'bg-zinc-950/80 border-white/10' : 'bg-white/80 border-black/5',
+          'w-[calc(100vw-2rem)] max-w-[400px] overflow-hidden border border-[#DCE8D8] bg-white p-0 shadow-2xl',
           'rounded-3xl'
         )}
         align="end"

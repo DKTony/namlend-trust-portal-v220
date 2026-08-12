@@ -48,7 +48,7 @@ const UserAnalytics: React.FC = () => {
       change: 12.5,
       trend: 'up',
       icon: <Users className="h-5 w-5" />,
-      color: 'text-blue-600 dark:text-blue-400',
+      color: 'text-blue-600 ',
     },
     {
       label: 'Active Users',
@@ -56,7 +56,7 @@ const UserAnalytics: React.FC = () => {
       change: 8.3,
       trend: 'up',
       icon: <UserCheck className="h-5 w-5" />,
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-green-600 ',
     },
     {
       label: 'New Registrations',
@@ -64,7 +64,7 @@ const UserAnalytics: React.FC = () => {
       change: -5.2,
       trend: 'down',
       icon: <TrendingUp className="h-5 w-5" />,
-      color: 'text-purple-600 dark:text-purple-400',
+      color: 'text-purple-600 ',
     },
     {
       label: 'Suspended Users',
@@ -72,7 +72,7 @@ const UserAnalytics: React.FC = () => {
       change: 15.8,
       trend: 'up',
       icon: <UserX className="h-5 w-5" />,
-      color: 'text-red-600 dark:text-red-400',
+      color: 'text-red-600 ',
     },
     {
       label: 'Avg Session Duration',
@@ -80,7 +80,7 @@ const UserAnalytics: React.FC = () => {
       change: 3.7,
       trend: 'up',
       icon: <Clock className="h-5 w-5" />,
-      color: 'text-orange-600 dark:text-orange-400',
+      color: 'text-orange-600 ',
     },
     {
       label: 'Admin Actions',
@@ -88,7 +88,7 @@ const UserAnalytics: React.FC = () => {
       change: -2.1,
       trend: 'down',
       icon: <Shield className="h-5 w-5" />,
-      color: 'text-indigo-600 dark:text-indigo-400',
+      color: 'text-indigo-600 ',
     },
   ];
 
@@ -283,9 +283,9 @@ const UserAnalytics: React.FC = () => {
                     <span
                       className={`text-sm ${
                         metric.trend === 'up'
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-600 '
                           : metric.trend === 'down'
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-red-600 '
                             : 'text-muted-foreground'
                       }`}
                     >
@@ -419,13 +419,7 @@ const UserAnalytics: React.FC = () => {
                     <td className="p-2 tabular-nums">{row.current}</td>
                     <td className="p-2 tabular-nums">{row.previous}</td>
                     <td className="p-2 tabular-nums">
-                      <span
-                        className={`${
-                          row.change > 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                        }`}
-                      >
+                      <span className={`${row.change > 0 ? 'text-green-600 ' : 'text-red-600 '}`}>
                         {formatChange(row.change)}
                       </span>
                     </td>

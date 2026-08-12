@@ -140,15 +140,15 @@ const ComplianceReports: React.FC = () => {
     switch (status) {
       case 'compliant':
       case 'current':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800';
+        return 'bg-green-100  text-green-800  border-green-200 ';
       case 'warning':
       case 'due':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+        return 'bg-yellow-100  text-yellow-800  border-yellow-200 ';
       case 'violation':
       case 'overdue':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800';
+        return 'bg-red-100  text-red-800  border-red-200 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700';
+        return 'bg-gray-100  text-gray-800  border-gray-200 ';
     }
   };
 
@@ -156,15 +156,15 @@ const ComplianceReports: React.FC = () => {
     switch (status) {
       case 'compliant':
       case 'current':
-        return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle className="h-4 w-4 text-green-600 " />;
       case 'warning':
       case 'due':
-        return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+        return <Clock className="h-4 w-4 text-yellow-600 " />;
       case 'violation':
       case 'overdue':
-        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600 " />;
       default:
-        return <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
+        return <Shield className="h-4 w-4 text-gray-600 " />;
     }
   };
 
@@ -255,7 +255,7 @@ const ComplianceReports: React.FC = () => {
       {/* Compliance Alerts */}
       <div className="space-y-3">
         <Alert className="border-l-4 border-l-yellow-500">
-          <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+          <AlertTriangle className="h-4 w-4 text-yellow-600 " />
           <AlertDescription>
             <div className="flex items-center justify-between">
               <span>Loan Documentation compliance is below target (87.8% vs 95% target)</span>
@@ -267,7 +267,7 @@ const ComplianceReports: React.FC = () => {
         </Alert>
 
         <Alert className="border-l-4 border-l-red-500">
-          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          <AlertTriangle className="h-4 w-4 text-red-600 " />
           <AlertDescription>
             <div className="flex items-center justify-between">
               <span>Consumer Protection Report is overdue (Due: Jan 5, 2025)</span>
@@ -301,19 +301,19 @@ const ComplianceReports: React.FC = () => {
                   <div
                     className={`p-2 rounded-full shrink-0 ${
                       report.status === 'current'
-                        ? 'bg-green-100 dark:bg-green-900/30'
+                        ? 'bg-green-100 '
                         : report.status === 'due'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                          : 'bg-red-100 dark:bg-red-900/30'
+                          ? 'bg-yellow-100 '
+                          : 'bg-red-100 '
                     }`}
                   >
                     <FileText
                       className={`h-5 w-5 ${
                         report.status === 'current'
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-600 '
                           : report.status === 'due'
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-red-600 dark:text-red-400'
+                            ? 'text-yellow-600 '
+                            : 'text-red-600 '
                       }`}
                     />
                   </div>
@@ -359,7 +359,7 @@ const ComplianceReports: React.FC = () => {
             <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-green-600  truncate tabular-nums">
               92.8%
             </div>
             <p className="text-xs text-muted-foreground truncate">
@@ -375,7 +375,7 @@ const ComplianceReports: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums">
               1
             </div>
             <p
@@ -393,7 +393,7 @@ const ComplianceReports: React.FC = () => {
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600  truncate tabular-nums">
               2
             </div>
             <p className="text-xs text-muted-foreground truncate">Reports requiring attention</p>
@@ -406,7 +406,7 @@ const ComplianceReports: React.FC = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
               8
             </div>
             <p className="text-xs text-muted-foreground truncate">Reports this quarter</p>

@@ -445,17 +445,15 @@ export function SettlementRunsList() {
                         {(runDetails.exposures as ParticipantExposureView[]).map((exp, idx) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">{exp.participant}</TableCell>
-                            <TableCell className="text-right text-red-600 dark:text-red-400">
+                            <TableCell className="text-right text-red-600 ">
                               {formatNAD(exp.gross_payables)}
                             </TableCell>
-                            <TableCell className="text-right text-green-600 dark:text-green-400">
+                            <TableCell className="text-right text-green-600 ">
                               {formatNAD(exp.gross_receivables)}
                             </TableCell>
                             <TableCell
                               className={`text-right font-medium ${
-                                exp.net_position >= 0
-                                  ? 'text-green-600 dark:text-green-400'
-                                  : 'text-red-600 dark:text-red-400'
+                                exp.net_position >= 0 ? 'text-green-600 ' : 'text-red-600 '
                               }`}
                             >
                               {formatNAD(exp.net_position)}

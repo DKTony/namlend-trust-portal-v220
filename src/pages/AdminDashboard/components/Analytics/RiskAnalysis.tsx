@@ -110,22 +110,22 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'improving':
-        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <TrendingUp className="h-4 w-4 text-green-600 " />;
       case 'worsening':
-        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <TrendingDown className="h-4 w-4 text-red-600 " />;
       default:
-        return <Target className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
+        return <Target className="h-4 w-4 text-gray-600 " />;
     }
   };
 
   const getAlertIcon = (level: string) => {
     switch (level) {
       case 'high':
-        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600 " />;
       case 'medium':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-600 " />;
       default:
-        return <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <Shield className="h-4 w-4 text-blue-600 " />;
     }
   };
 
@@ -283,10 +283,10 @@ const RiskAnalysis: React.FC<RiskAnalysisProps> = ({ dateRange }) => {
                       variant="secondary"
                       className={`text-xs ${
                         factor.trend === 'improving'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                          ? 'bg-green-100  text-green-800 '
                           : factor.trend === 'worsening'
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+                            ? 'bg-red-100  text-red-800 '
+                            : 'bg-gray-100  text-gray-800 '
                       }`}
                     >
                       {factor.trend}

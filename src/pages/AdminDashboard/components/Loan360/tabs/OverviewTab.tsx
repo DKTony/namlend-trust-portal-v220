@@ -46,18 +46,15 @@ interface OverviewTabProps {
 const RECOMMENDATION_CONFIG = {
   approve: {
     label: 'Approve',
-    className:
-      'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+    className: 'bg-green-100  text-green-800  border-green-200 ',
   },
   review: {
     label: 'Manual Review',
-    className:
-      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+    className: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
   },
   reject: {
     label: 'Reject',
-    className:
-      'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+    className: 'bg-red-100  text-red-800  border-red-200 ',
   },
 } as const;
 
@@ -69,10 +66,10 @@ function getCreditScoreLabel(score: number): string {
 }
 
 function getCreditScoreClass(score: number): string {
-  if (score >= 750) return 'text-green-600 dark:text-green-400';
-  if (score >= 670) return 'text-blue-600 dark:text-blue-400';
-  if (score >= 580) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
+  if (score >= 750) return 'text-green-600 ';
+  if (score >= 670) return 'text-blue-600 ';
+  if (score >= 580) return 'text-yellow-600 ';
+  return 'text-red-600 ';
 }
 
 export function OverviewTab({
@@ -183,16 +180,12 @@ export function OverviewTab({
           <Separator />
           <div className="flex justify-between">
             <span className="text-muted-foreground">Total Paid</span>
-            <span className="font-medium text-green-600 dark:text-green-400">
-              {formatNAD(totalPaid)}
-            </span>
+            <span className="font-medium text-green-600 ">{formatNAD(totalPaid)}</span>
           </div>
           <Separator />
           <div className="flex justify-between">
             <span className="text-muted-foreground">Remaining</span>
-            <span className="font-medium text-orange-600 dark:text-orange-400">
-              {formatNAD(remainingBalance)}
-            </span>
+            <span className="font-medium text-orange-600 ">{formatNAD(remainingBalance)}</span>
           </div>
           <Separator />
           <div className="flex justify-between">
@@ -266,10 +259,10 @@ export function OverviewTab({
                       className={cn(
                         'text-3xl font-bold tabular-nums',
                         debtToIncomeRatio > 0.43
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-red-600 '
                           : debtToIncomeRatio > 0.36
-                            ? 'text-yellow-600 dark:text-yellow-400'
-                            : 'text-green-600 dark:text-green-400'
+                            ? 'text-yellow-600 '
+                            : 'text-green-600 '
                       )}
                     >
                       {(debtToIncomeRatio * 100).toFixed(1)}%

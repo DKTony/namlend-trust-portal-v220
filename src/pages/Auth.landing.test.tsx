@@ -15,12 +15,6 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// The Auth page pulls in the themed form chrome; none of it matters for the redirect.
-vi.mock('@/context/ThemeContext', () => ({
-  useTheme: () => ({
-    styles: { background: '', cardClass: '', textClass: '', radius: '', variant: 'solid' },
-  }),
-}));
 vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn() }));
 vi.mock('@/components/auth/GoogleSignInButton', () => ({
   GoogleSignInButton: () => <button type="button">Continue with Google</button>,

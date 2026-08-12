@@ -39,7 +39,7 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({ stages, currentStag
       case 'rejected':
         return <XCircle className="h-6 w-6 text-red-500" />;
       case 'pending':
-        return <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />;
+        return <Clock className="h-6 w-6 text-yellow-600 " />;
       default:
         return <Circle className="h-6 w-6 text-muted-foreground" />;
     }
@@ -48,19 +48,11 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({ stages, currentStag
   const getStageStatus = (stage: WorkflowStageExecution) => {
     switch (stage.status) {
       case 'approved':
-        return (
-          <Badge className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-            Approved
-          </Badge>
-        );
+        return <Badge className="bg-green-600 hover:bg-green-700  ">Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       case 'pending':
-        return (
-          <Badge className="bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white">
-            Pending
-          </Badge>
-        );
+        return <Badge className="bg-yellow-600 hover:bg-yellow-700   text-white">Pending</Badge>;
       case 'skipped':
         return <Badge variant="outline">Skipped</Badge>;
       default:
@@ -71,19 +63,11 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({ stages, currentStag
   const getWorkflowStatus = () => {
     switch (status) {
       case 'completed':
-        return (
-          <Badge className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600">
-            Completed
-          </Badge>
-        );
+        return <Badge className="bg-green-600 hover:bg-green-700  ">Completed</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       case 'in_progress':
-        return (
-          <Badge className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-            In Progress
-          </Badge>
-        );
+        return <Badge className="bg-blue-600 hover:bg-blue-700  ">In Progress</Badge>;
       case 'cancelled':
         return <Badge variant="outline">Cancelled</Badge>;
       default:
@@ -141,7 +125,7 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({ stages, currentStag
                     <div className="mt-2">
                       <Badge
                         variant="outline"
-                        className="text-xs border-blue-200 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300"
+                        className="text-xs border-blue-200 text-blue-700 bg-blue-50   "
                       >
                         Current Stage - Awaiting Action
                       </Badge>
@@ -164,7 +148,7 @@ const WorkflowProgress: React.FC<WorkflowProgressProps> = ({ stages, currentStag
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div
-              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-600  h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${(stages.filter((s) => s.status === 'approved').length / stages.length) * 100}%`,
               }}

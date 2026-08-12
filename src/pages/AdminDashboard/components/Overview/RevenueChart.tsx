@@ -1,5 +1,4 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import React from 'react';
 // Temporarily disabled recharts due to d3-array build issue
@@ -24,13 +23,14 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   chartType = 'line',
 }) => {
   void chartType;
-  const { styles } = useTheme();
 
   if (loading) {
     return (
       <ThemedCard className="bg-card border-border">
         <div className="pb-4 border-b border-border mb-4">
-          <h3 className={cn('text-lg font-semibold', styles.textClass)}>Revenue Analytics</h3>
+          <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
+            Revenue Analytics
+          </h3>
         </div>
         <div className="h-80 flex items-center justify-center">
           <div className="animate-pulse text-muted-foreground">Loading chart...</div>
@@ -43,7 +43,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
   return (
     <ThemedCard>
       <div className="pb-4 border-b border-border mb-4">
-        <h3 className={cn('text-lg font-semibold', styles.textClass)}>Revenue Analytics</h3>
+        <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
+          Revenue Analytics
+        </h3>
       </div>
       <div>
         <div className="h-80 flex items-center justify-center border-2 border-dashed border-border rounded-lg">
@@ -59,11 +61,11 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
             </div>
             <div className="flex items-center justify-center space-x-4 mt-4">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-blue-500  rounded-full"></div>
                 <span className="text-sm text-muted-foreground">Disbursed</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 dark:bg-purple-400 rounded-full"></div>
+                <div className="w-3 h-3 bg-purple-500  rounded-full"></div>
                 <span className="text-sm text-muted-foreground">Repayments</span>
               </div>
             </div>

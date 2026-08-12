@@ -1,6 +1,6 @@
 {
   "navbar": {
-    "brand": "NamLend",
+    "brand": "OG Financial Services",
     "features": "Features",
     "calculator": "Calculator",
     "about": "About",
@@ -24,7 +24,7 @@
     }
   },
   "features": {
-    "sectionTitle": "Why NamLend?",
+    "sectionTitle": "Why OG Financial Services?",
     "sectionSubtitle": "Everything you need for a seamless lending experience",
     "instantApproval": {
       "title": "Instant AI Approval",
@@ -64,7 +64,7 @@
     "disclaimer": "Rates shown are estimates. Actual rates depend on credit assessment."
   },
   "footer": {
-    "brand": "NamLend Trust",
+    "brand": "OG Financial Services",
     "description": "Empowering Namibians with fair, transparent, and accessible lending solutions.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
@@ -72,7 +72,7 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "regulatoryInfo": "Regulatory Information",
-    "copyright": "{{year}} NamLend Trust. All rights reserved.",
+    "copyright": "{{year}} OG Financial Services. All rights reserved.",
     "regulated": "Regulated under Namibian Financial Institutions Supervisory Authority (NAMFISA)"
   }
 }

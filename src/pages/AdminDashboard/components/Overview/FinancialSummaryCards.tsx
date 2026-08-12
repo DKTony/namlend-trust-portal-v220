@@ -1,5 +1,4 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import { AlertTriangle, DollarSign, TrendingUp, Users } from 'lucide-react';
@@ -24,7 +23,6 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
   metrics,
   loading = false,
 }) => {
-  const { styles } = useTheme();
   const formatCurrency = (amount: number) => formatNAD(amount);
 
   const cards = [
@@ -32,32 +30,32 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
       title: 'Total Clients',
       value: metrics?.totalClients || 0,
       icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      color: 'text-blue-600 ',
+      bgColor: 'bg-blue-50 ',
       format: (val: number) => val.toLocaleString(),
     },
     {
       title: 'Total Disbursed',
       value: metrics?.totalDisbursed || 0,
       icon: DollarSign,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      color: 'text-green-600 ',
+      bgColor: 'bg-green-50 ',
       format: formatCurrency,
     },
     {
       title: 'Total Repayments',
       value: metrics?.totalRepayments || 0,
       icon: TrendingUp,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      color: 'text-emerald-600 ',
+      bgColor: 'bg-emerald-50 ',
       format: formatCurrency,
     },
     {
       title: 'Overdue Payments',
       value: metrics?.overduePayments || 0,
       icon: AlertTriangle,
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      color: 'text-red-600 ',
+      bgColor: 'bg-red-50 ',
       format: (val: number) => val.toLocaleString(),
     },
   ];
@@ -97,7 +95,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({
               <div
                 className={cn(
                   'text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums',
-                  styles.textClass
+                  'font-sans text-[#274F35]'
                 )}
                 title={card.format(card.value)}
               >

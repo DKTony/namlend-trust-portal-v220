@@ -59,9 +59,7 @@ export function LoanStatusTimeline({
                   <div
                     className={cn(
                       'absolute top-4 left-1/2 w-full h-0.5',
-                      step.complete
-                        ? 'bg-[hsl(var(--status-approved))]'
-                        : 'bg-gray-200 dark:bg-gray-800'
+                      step.complete ? 'bg-[hsl(var(--status-approved))]' : 'bg-gray-200 '
                     )}
                   />
                 )}
@@ -80,7 +78,7 @@ export function LoanStatusTimeline({
                     !step.complete &&
                       !step.current &&
                       !step.rejected &&
-                      'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600'
+                      'bg-gray-200  text-gray-400 '
                   )}
                 >
                   <Icon className="w-4 h-4" />

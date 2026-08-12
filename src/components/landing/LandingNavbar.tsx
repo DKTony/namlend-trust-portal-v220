@@ -1,13 +1,11 @@
-import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { Menu, Shield, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingButton from './LandingButton';
 
 const LandingNavbar: React.FC = () => {
-  const { styles, theme } = useTheme();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -43,29 +41,16 @@ const LandingNavbar: React.FC = () => {
     <nav
       className={cn(
         'fixed top-0 left-0 w-full z-50 px-4 md:px-8 py-4 transition-all duration-300',
-        isOpen ? styles.background : 'bg-transparent backdrop-blur-sm'
+        isOpen ? 'bg-[#F7FAF6]' : 'bg-transparent backdrop-blur-sm'
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              'p-2 rounded-lg',
-              theme === 'neo'
-                ? 'bg-[#8b5cf6] border-2 border-black dark:border-white'
-                : theme === 'lux'
-                  ? 'bg-amber-600'
-                  : 'bg-blue-600'
-            )}
-          >
-            <Shield className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className={cn('text-xl font-bold', styles.textClass)}>NamLend</h1>
-            <p className={cn('text-[10px] uppercase tracking-wider opacity-70', styles.textClass)}>
-              NAMFISA Licensed
-            </p>
-          </div>
+          <img
+            src="/og-financial-logo-v2.svg"
+            alt="OG Financial Services"
+            className="h-12 w-auto max-w-[190px] object-contain"
+          />
         </div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -75,7 +60,7 @@ const LandingNavbar: React.FC = () => {
               onClick={() => handleLinkClick(link.href)}
               className={cn(
                 'text-sm font-medium hover:opacity-70 transition-opacity',
-                styles.textClass
+                'font-sans text-[#274F35]'
               )}
             >
               {link.name}
@@ -86,7 +71,7 @@ const LandingNavbar: React.FC = () => {
         <div className="hidden md:flex items-center gap-4">
           <button
             onClick={handleSignInClick}
-            className={cn('text-sm font-medium hover:opacity-70', styles.textClass)}
+            className={cn('text-sm font-medium hover:opacity-70', 'font-sans text-[#274F35]')}
           >
             Sign In
           </button>
@@ -99,7 +84,7 @@ const LandingNavbar: React.FC = () => {
           type="button"
           className={cn(
             'md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors',
-            'hover:bg-black/5 dark:hover:bg-white/10'
+            'hover:bg-[#DCE8D8]'
           )}
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
@@ -107,7 +92,11 @@ const LandingNavbar: React.FC = () => {
           aria-controls="landing-mobile-navigation"
           data-testid="landing-mobile-menu-trigger"
         >
-          {isOpen ? <X className={styles.textClass} /> : <Menu className={styles.textClass} />}
+          {isOpen ? (
+            <X className={'font-sans text-[#274F35]'} />
+          ) : (
+            <Menu className={'font-sans text-[#274F35]'} />
+          )}
         </button>
       </div>
 
@@ -118,8 +107,8 @@ const LandingNavbar: React.FC = () => {
           aria-label="Mobile navigation"
           className={cn(
             'md:hidden absolute top-full left-0 w-full p-4 border-b',
-            styles.background,
-            styles.borderClass
+            'bg-[#F7FAF6]',
+            'border-[#DCE8D8]'
           )}
         >
           <div className="flex flex-col gap-4">
@@ -127,12 +116,15 @@ const LandingNavbar: React.FC = () => {
               <button
                 key={link.name}
                 onClick={() => handleLinkClick(link.href)}
-                className={cn('block min-h-11 py-2 font-medium text-left', styles.textClass)}
+                className={cn(
+                  'block min-h-11 py-2 font-medium text-left',
+                  'font-sans text-[#274F35]'
+                )}
               >
                 {link.name}
               </button>
             ))}
-            <hr className={styles.borderClass} />
+            <hr className={'border-[#DCE8D8]'} />
             <LandingButton fullWidth onClick={handleApplyClick}>
               Apply Now
             </LandingButton>

@@ -302,10 +302,10 @@ export function BatchOperations() {
 
       {/* Active Job Progress */}
       {activeJob && (
-        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+        <Card className="border-blue-200  bg-blue-50 ">
           <CardContent className="pt-4">
             <div className="flex items-center gap-4">
-              <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
+              <Loader2 className="h-5 w-5 animate-spin text-blue-500 " />
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-foreground">

@@ -9,17 +9,15 @@ import {
 } from '@/components/ui/select';
 import type { LoanFormData } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/types/theme';
 import { useTranslation } from 'react-i18next';
 import { isLoanAmountValid, LOAN_AMOUNT_MAX, LOAN_AMOUNT_MIN } from '../loanLimits';
 
 interface LoanDetailsStepProps {
   formData: LoanFormData;
   onFormChange: (field: string, value: string) => void;
-  styles: ThemeConfig;
 }
 
-export default function LoanDetailsStep({ formData, onFormChange, styles }: LoanDetailsStepProps) {
+export default function LoanDetailsStep({ formData, onFormChange }: LoanDetailsStepProps) {
   const { t } = useTranslation('loanApplication');
   const amountEntered = formData.amount !== '';
   const amountValid = !amountEntered || isLoanAmountValid(Number(formData.amount));
@@ -54,7 +52,10 @@ export default function LoanDetailsStep({ formData, onFormChange, styles }: Loan
           <Select value={formData.term} onValueChange={(value) => onFormChange('term', value)}>
             <SelectTrigger
               data-testid="loan-term-select"
-              className={cn(styles.inputClass, styles.textClass)}
+              className={cn(
+                'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20',
+                'font-sans text-[#274F35]'
+              )}
             >
               <SelectValue placeholder={t('loanDetailsStep.termPlaceholder')} />
             </SelectTrigger>
@@ -72,7 +73,10 @@ export default function LoanDetailsStep({ formData, onFormChange, styles }: Loan
         <Select value={formData.purpose} onValueChange={(value) => onFormChange('purpose', value)}>
           <SelectTrigger
             data-testid="loan-purpose-select"
-            className={cn(styles.inputClass, styles.textClass)}
+            className={cn(
+              'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20',
+              'font-sans text-[#274F35]'
+            )}
           >
             <SelectValue placeholder={t('loanDetailsStep.purposePlaceholder')} />
           </SelectTrigger>

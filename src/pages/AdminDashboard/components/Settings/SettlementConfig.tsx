@@ -359,10 +359,7 @@ export function SettlementConfig() {
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <Badge
-              variant="outline"
-              className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"
-            >
+            <Badge variant="outline" className="bg-yellow-50  text-yellow-700 ">
               Unsaved Changes
             </Badge>
           )}
@@ -400,15 +397,13 @@ export function SettlementConfig() {
       </div>
 
       {ips.connection.mock_mode && (
-        <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+        <Card className="border-orange-200  bg-orange-50 ">
           <CardContent className="pt-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <AlertTriangle className="h-5 w-5 text-orange-600 " />
               <div>
-                <h4 className="font-medium text-orange-900 dark:text-orange-300">
-                  IPS Mock Mode Active
-                </h4>
-                <p className="text-sm text-orange-700 dark:text-orange-400">
+                <h4 className="font-medium text-orange-900 ">IPS Mock Mode Active</h4>
+                <p className="text-sm text-orange-700 ">
                   Real transactions not processed. Configure API credentials for production.
                 </p>
               </div>
@@ -621,12 +616,10 @@ export function SettlementConfig() {
                     onCheckedChange={(v) => updateI('connection', 'enabled', v)}
                   />
                 </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-orange-50 ">
                   <div>
-                    <Label className="text-orange-700 dark:text-orange-300">Mock Mode</Label>
-                    <p className="text-xs text-orange-600 dark:text-orange-400">
-                      Simulate responses
-                    </p>
+                    <Label className="text-orange-700 ">Mock Mode</Label>
+                    <p className="text-xs text-orange-600 ">Simulate responses</p>
                   </div>
                   <Switch
                     checked={ips.connection.mock_mode}

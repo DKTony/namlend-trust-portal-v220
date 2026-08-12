@@ -97,32 +97,32 @@ const RISK_BUCKETS = [
   {
     id: 'all',
     label: 'All',
-    color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
+    color: 'bg-gray-100  text-gray-700 ',
   },
   {
     id: 'current',
     label: 'Current',
-    color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    color: 'bg-green-100  text-green-700 ',
   },
   {
     id: 'bucket_1_30',
     label: '1-30 Days',
-    color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+    color: 'bg-yellow-100  text-yellow-700 ',
   },
   {
     id: 'bucket_31_60',
     label: '31-60 Days',
-    color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    color: 'bg-orange-100  text-orange-700 ',
   },
   {
     id: 'bucket_61_90',
     label: '61-90 Days',
-    color: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    color: 'bg-red-100  text-red-700 ',
   },
   {
     id: 'bucket_90_plus',
     label: '90+ Days',
-    color: 'bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-300',
+    color: 'bg-red-200  text-red-800 ',
   },
 ];
 
@@ -354,7 +354,7 @@ export function CollectionsDashboard() {
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">1-30 Days</p>
                 <p
-                  className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums"
+                  className="text-xl sm:text-2xl font-bold text-yellow-600  truncate tabular-nums"
                   title={stats?.bucket_1_30?.toLocaleString()}
                 >
                   {stats?.bucket_1_30 || 0}
@@ -371,7 +371,7 @@ export function CollectionsDashboard() {
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">31-60 Days</p>
                 <p
-                  className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums"
+                  className="text-xl sm:text-2xl font-bold text-orange-600  truncate tabular-nums"
                   title={stats?.bucket_31_60?.toLocaleString()}
                 >
                   {stats?.bucket_31_60 || 0}
@@ -388,7 +388,7 @@ export function CollectionsDashboard() {
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">61-90 Days</p>
                 <p
-                  className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+                  className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums"
                   title={stats?.bucket_61_90?.toLocaleString()}
                 >
                   {stats?.bucket_61_90 || 0}
@@ -405,7 +405,7 @@ export function CollectionsDashboard() {
               <div className="min-w-0 flex-1 mr-2">
                 <p className="text-sm text-muted-foreground truncate">90+ Days</p>
                 <p
-                  className="text-xl sm:text-2xl font-bold text-red-800 dark:text-red-300 truncate tabular-nums"
+                  className="text-xl sm:text-2xl font-bold text-red-800  truncate tabular-nums"
                   title={stats?.bucket_90_plus?.toLocaleString()}
                 >
                   {stats?.bucket_90_plus || 0}
@@ -570,7 +570,7 @@ export function CollectionsDashboard() {
                             <span className="tabular-nums whitespace-nowrap">
                               Principal: {formatNAD(item.principalDue)}
                             </span>
-                            <span className="text-red-600 dark:text-red-400 font-medium tabular-nums whitespace-nowrap">
+                            <span className="text-red-600  font-medium tabular-nums whitespace-nowrap">
                               {item.daysOverdue} days overdue
                             </span>
                           </div>

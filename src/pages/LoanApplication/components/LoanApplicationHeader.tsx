@@ -1,21 +1,18 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/types/theme';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LoanApplicationHeaderProps {
   step: number;
   progress: number;
-  styles: ThemeConfig;
   onBack: () => void;
 }
 
 export default function LoanApplicationHeader({
   step,
   progress,
-  styles,
   onBack,
 }: LoanApplicationHeaderProps) {
   const { t } = useTranslation('loanApplication');
@@ -31,7 +28,7 @@ export default function LoanApplicationHeader({
         {t('backToDashboard')}
       </ThemedButton>
 
-      <h1 className={cn('text-3xl font-bold mb-2', styles.textClass)}>{t('title')}</h1>
+      <h1 className={cn('text-3xl font-bold mb-2', 'font-sans text-[#274F35]')}>{t('title')}</h1>
       <p className="text-muted-foreground">{t('subtitle')}</p>
 
       <div className="mt-6">

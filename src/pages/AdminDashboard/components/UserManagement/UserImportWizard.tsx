@@ -162,12 +162,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      valid:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      warning:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      error:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      valid: 'bg-green-100  text-green-800  border-green-200 ',
+      warning: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      error: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     const icons = {
@@ -179,10 +176,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -252,9 +246,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                 <div className="ml-3">
                   <p
                     className={`text-sm font-medium ${
-                      currentStep === step.id
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-foreground'
+                      currentStep === step.id ? 'text-blue-600 ' : 'text-foreground'
                     }`}
                   >
                     {step.title}
@@ -296,11 +288,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     )}
                   </div>
 
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                      CSV Format Requirements:
-                    </h4>
-                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                  <div className="p-4 bg-blue-50  rounded-lg border border-blue-200 ">
+                    <h4 className="font-medium text-blue-800  mb-2">CSV Format Requirements:</h4>
+                    <ul className="text-sm text-blue-700  space-y-1">
                       <li>• Required columns: full_name, email, role</li>
                       <li>• Optional columns: phone, department</li>
                       <li>• Valid roles: admin, loan_officer, client, support</li>
@@ -407,11 +397,11 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Valid</p>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        <p className="text-2xl font-bold text-green-600 ">
                           {validationResults.valid}
                         </p>
                       </div>
-                      <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                      <CheckCircle className="h-8 w-8 text-green-600 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -420,11 +410,11 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Warnings</p>
-                        <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                        <p className="text-2xl font-bold text-yellow-600 ">
                           {validationResults.warnings}
                         </p>
                       </div>
-                      <AlertTriangle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+                      <AlertTriangle className="h-8 w-8 text-yellow-600 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -433,11 +423,11 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Errors</p>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                        <p className="text-2xl font-bold text-red-600 ">
                           {validationResults.errors}
                         </p>
                       </div>
-                      <X className="h-8 w-8 text-red-600 dark:text-red-400" />
+                      <X className="h-8 w-8 text-red-600 " />
                     </div>
                   </CardContent>
                 </Card>
@@ -461,11 +451,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                         </div>
 
                         {user.errors.length > 0 && (
-                          <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                            <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">
-                              Errors:
-                            </p>
-                            <ul className="text-sm text-red-700 dark:text-red-400">
+                          <div className="mt-2 p-2 bg-red-50  rounded border border-red-200 ">
+                            <p className="text-sm font-medium text-red-800  mb-1">Errors:</p>
+                            <ul className="text-sm text-red-700 ">
                               {user.errors.map((error, i) => (
                                 <li key={i}>• {error}</li>
                               ))}
@@ -474,11 +462,9 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                         )}
 
                         {user.warnings.length > 0 && (
-                          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
-                            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
-                              Warnings:
-                            </p>
-                            <ul className="text-sm text-yellow-700 dark:text-yellow-400">
+                          <div className="mt-2 p-2 bg-yellow-50  rounded border border-yellow-200 ">
+                            <p className="text-sm font-medium text-yellow-800  mb-1">Warnings:</p>
+                            <ul className="text-sm text-yellow-700 ">
                               {user.warnings.map((warning, i) => (
                                 <li key={i}>• {warning}</li>
                               ))}
@@ -511,7 +497,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Users with Errors (Skipped)</p>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                        <p className="text-2xl font-bold text-red-600 ">
                           {validationResults.errors}
                         </p>
                       </div>
@@ -529,8 +515,8 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
                       </Label>
                     </div>
 
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <div className="p-4 bg-blue-50  rounded-lg border border-blue-200 ">
+                      <p className="text-sm text-blue-800 ">
                         Users will be created with default passwords and will receive email
                         invitations to set up their accounts.
                       </p>

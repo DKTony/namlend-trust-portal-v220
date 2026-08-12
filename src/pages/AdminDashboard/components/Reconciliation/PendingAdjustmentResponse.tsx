@@ -90,10 +90,7 @@ export function PendingAdjustmentResponse() {
                 </TableRow>
               ) : reports?.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-8 text-green-600 dark:text-green-400"
-                  >
+                  <TableCell colSpan={7} className="text-center py-8 text-green-600 ">
                     ✓ No pending adjustment responses
                   </TableCell>
                 </TableRow>
@@ -108,10 +105,7 @@ export function PendingAdjustmentResponse() {
                   const isOverdue = ageInDays > 7;
 
                   return (
-                    <TableRow
-                      key={report.id}
-                      className={isOverdue ? 'bg-red-50 dark:bg-red-900/20' : ''}
-                    >
+                    <TableRow key={report.id} className={isOverdue ? 'bg-red-50 ' : ''}>
                       <TableCell className="tabular-nums">
                         {new Date(report.run_date).toLocaleDateString()}
                       </TableCell>
@@ -133,7 +127,7 @@ export function PendingAdjustmentResponse() {
                       </TableCell>
                       <TableCell>
                         <span
-                          className={`${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''} tabular-nums`}
+                          className={`${isOverdue ? 'text-red-600  font-medium' : ''} tabular-nums`}
                         >
                           {ageInDays} days
                         </span>

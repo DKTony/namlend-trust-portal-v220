@@ -1,30 +1,23 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Facebook, Instagram, Mail, MapPin, Phone, Shield, Twitter } from 'lucide-react';
 
 const Footer = () => {
-  const { styles } = useTheme();
-
   return (
     <footer
-      className={cn(
-        'border-t transition-colors duration-300',
-        styles.background,
-        styles.borderClass
-      )}
+      className={cn('border-t transition-colors duration-300', 'bg-[#F7FAF6]', 'border-[#DCE8D8]')}
     >
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
+              <img src="/og-financial-mark-v2.svg" alt="" className="h-10 w-10" />
               <div>
-                <h3 className={cn('text-xl font-bold', styles.textClass)}>NamLend</h3>
-                <p className="text-sm text-muted-foreground">NAMFISA Licensed</p>
+                <h3 className={cn('text-xl font-bold', 'font-sans text-[#274F35]')}>
+                  OG Financial Services
+                </h3>
+                <p className="text-sm text-muted-foreground">NAMFISA registered microlender</p>
               </div>
             </div>
             <p className="mb-4 text-muted-foreground">
@@ -34,18 +27,16 @@ const Footer = () => {
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <Shield className="w-4 h-4 text-primary" />
-                <span>NAMFISA License: ML-2024-001</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-primary" />
-                <span>FIC Registered</span>
+                <span>NAMFISA licence: 25/11/2366</span>
               </div>
             </div>
           </div>
 
           {/* Services */}
           <div>
-            <h4 className={cn('text-lg font-semibold mb-4', styles.textClass)}>Our Services</h4>
+            <h4 className={cn('text-lg font-semibold mb-4', 'font-sans text-[#274F35]')}>
+              Our Services
+            </h4>
             <ul className="space-y-2">
               <li>
                 <a
@@ -92,20 +83,24 @@ const Footer = () => {
 
           {/* Support */}
           <div>
-            <h4 className={cn('text-lg font-semibold mb-4', styles.textClass)}>Customer Support</h4>
+            <h4 className={cn('text-lg font-semibold mb-4', 'font-sans text-[#274F35]')}>
+              Customer Support
+            </h4>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="w-4 h-4 text-primary" />
                 <div>
-                  <p className={cn('text-sm font-medium', styles.textClass)}>+264 61 123 456</p>
-                  <p className="text-xs text-muted-foreground">24/7 Support</p>
+                  <p className={cn('text-sm font-medium', 'font-sans text-[#274F35]')}>
+                    +264 81 417 4288
+                  </p>
+                  <p className="text-xs text-muted-foreground">Customer support</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-primary" />
                 <div>
-                  <p className={cn('text-sm font-medium', styles.textClass)}>
-                    support@namlend.com.na
+                  <p className={cn('text-sm font-medium', 'font-sans text-[#274F35]')}>
+                    finance@mgholdingsptyltd.com
                   </p>
                   <p className="text-xs text-muted-foreground">Email Support</p>
                 </div>
@@ -113,8 +108,10 @@ const Footer = () => {
               <div className="flex items-center space-x-3">
                 <MapPin className="w-4 h-4 text-primary" />
                 <div>
-                  <p className={cn('text-sm font-medium', styles.textClass)}>Windhoek, Namibia</p>
-                  <p className="text-xs text-muted-foreground">Head Office</p>
+                  <p className={cn('text-sm font-medium', 'font-sans text-[#274F35]')}>
+                    Maerua Mall, Centaurus Road
+                  </p>
+                  <p className="text-xs text-muted-foreground">Contact office, Windhoek</p>
                 </div>
               </div>
             </div>
@@ -122,7 +119,7 @@ const Footer = () => {
 
           {/* Legal & Compliance */}
           <div>
-            <h4 className={cn('text-lg font-semibold mb-4', styles.textClass)}>
+            <h4 className={cn('text-lg font-semibold mb-4', 'font-sans text-[#274F35]')}>
               Legal & Compliance
             </h4>
             <ul className="space-y-2 text-sm">
@@ -170,7 +167,9 @@ const Footer = () => {
 
             {/* Social Media */}
             <div className="mt-6">
-              <h5 className={cn('text-sm font-semibold mb-3', styles.textClass)}>Follow Us</h5>
+              <h5 className={cn('text-sm font-semibold mb-3', 'font-sans text-[#274F35]')}>
+                Follow Us
+              </h5>
               <div className="flex space-x-3">
                 <ThemedButton
                   variant="secondary"
@@ -202,11 +201,13 @@ const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className={cn('border-t mt-8 pt-8', styles.borderClass)}>
+        <div className={cn('border-t mt-8 pt-8', 'border-[#DCE8D8]')}>
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 text-muted-foreground">
             <div className="text-sm">
-              <p>&copy; 2024 NamLend. All rights reserved.</p>
-              <p>Licensed microlender regulated by NAMFISA.</p>
+              <p>
+                &copy; {new Date().getFullYear()} OG Financial Services CC. All rights reserved.
+              </p>
+              <p>NAMFISA-registered microlender, licence 25/11/2366.</p>
             </div>
 
             <div className="text-sm text-center md:text-right">

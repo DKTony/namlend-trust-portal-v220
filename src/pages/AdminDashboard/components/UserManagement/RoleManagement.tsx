@@ -263,13 +263,13 @@ const RoleManagement: React.FC = () => {
   const getRoleIcon = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
-        return <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
+        return <Shield className="h-5 w-5 text-purple-600 " />;
       case 'loan officer':
-        return <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+        return <Users className="h-5 w-5 text-blue-600 " />;
       case 'client':
-        return <Users className="h-5 w-5 text-green-600 dark:text-green-400" />;
+        return <Users className="h-5 w-5 text-green-600 " />;
       case 'tenant admin':
-        return <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
+        return <Shield className="h-5 w-5 text-purple-600 " />;
       default:
         return <Shield className="h-5 w-5 text-muted-foreground" />;
     }
@@ -507,8 +507,8 @@ const RoleManagement: React.FC = () => {
                         variant="outline"
                         className={`${
                           role.isActive
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800'
+                            ? 'bg-green-100  text-green-800  border-green-200 '
+                            : 'bg-red-100  text-red-800  border-red-200 '
                         } shrink-0`}
                       >
                         {role.isActive ? (
@@ -670,8 +670,8 @@ const RoleManagement: React.FC = () => {
                             variant="outline"
                             className={`${
                               user.account_status === 'active'
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800'
-                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                                ? 'bg-green-100  text-green-800  border-green-200 '
+                                : 'bg-yellow-100  text-yellow-800  border-yellow-200 '
                             }`}
                           >
                             {user.account_status || 'pending'}

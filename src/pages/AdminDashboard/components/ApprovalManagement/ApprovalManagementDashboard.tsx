@@ -173,39 +173,33 @@ export default function ApprovalManagementDashboard() {
       {
         pending: {
           icon: Clock,
-          color: 'text-yellow-600 dark:text-yellow-400',
-          badgeClass:
-            'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+          color: 'text-yellow-600 ',
+          badgeClass: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
         },
         under_review: {
           icon: Eye,
-          color: 'text-blue-600 dark:text-blue-400',
-          badgeClass:
-            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+          color: 'text-blue-600 ',
+          badgeClass: 'bg-blue-100  text-blue-800  border-blue-200 ',
         },
         escalated: {
           icon: Eye,
-          color: 'text-blue-600 dark:text-blue-400',
-          badgeClass:
-            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+          color: 'text-blue-600 ',
+          badgeClass: 'bg-blue-100  text-blue-800  border-blue-200 ',
         },
         approved: {
           icon: CheckCircle,
-          color: 'text-green-600 dark:text-green-400',
-          badgeClass:
-            'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+          color: 'text-green-600 ',
+          badgeClass: 'bg-green-100  text-green-800  border-green-200 ',
         },
         rejected: {
           icon: XCircle,
-          color: 'text-red-600 dark:text-red-400',
-          badgeClass:
-            'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+          color: 'text-red-600 ',
+          badgeClass: 'bg-red-100  text-red-800  border-red-200 ',
         },
         withdrawn: {
           icon: AlertTriangle,
-          color: 'text-orange-600 dark:text-orange-400',
-          badgeClass:
-            'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+          color: 'text-orange-600 ',
+          badgeClass: 'bg-orange-100  text-orange-800  border-orange-200 ',
         },
       };
 
@@ -222,12 +216,10 @@ export default function ApprovalManagementDashboard() {
 
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
-      low: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      normal:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      urgent:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      low: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      normal: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      high: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      urgent: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
@@ -281,10 +273,10 @@ export default function ApprovalManagementDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <Clock className="h-4 w-4 text-yellow-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400 truncate tabular-nums">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600  truncate tabular-nums">
                 {stats.pending}
               </div>
             </CardContent>
@@ -293,10 +285,10 @@ export default function ApprovalManagementDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-              <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Eye className="h-4 w-4 text-blue-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
                 {stats.underReview}
               </div>
             </CardContent>
@@ -305,10 +297,10 @@ export default function ApprovalManagementDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Approved</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <CheckCircle className="h-4 w-4 text-green-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 truncate tabular-nums">
+              <div className="text-xl sm:text-2xl font-bold text-green-600  truncate tabular-nums">
                 {stats.approved}
               </div>
             </CardContent>

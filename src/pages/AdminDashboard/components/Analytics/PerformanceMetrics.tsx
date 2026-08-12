@@ -111,13 +111,13 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'excellent':
-        return <Award className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <Award className="h-4 w-4 text-green-600 " />;
       case 'good':
-        return <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <CheckCircle className="h-4 w-4 text-blue-600 " />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-600 " />;
       case 'poor':
-        return <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <AlertTriangle className="h-4 w-4 text-red-600 " />;
       default:
         return <Target className="h-4 w-4 text-muted-foreground" />;
     }
@@ -126,24 +126,24 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+        return 'bg-green-100  text-green-800 ';
       case 'good':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+        return 'bg-blue-100  text-blue-800 ';
       case 'warning':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-yellow-100  text-yellow-800 ';
       case 'poor':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-red-100  text-red-800 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-gray-100  text-gray-800 ';
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <TrendingUp className="h-4 w-4 text-green-600 " />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <TrendingDown className="h-4 w-4 text-red-600 " />;
       default:
         return <Target className="h-4 w-4 text-muted-foreground" />;
     }
@@ -236,7 +236,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <h4 className="font-medium text-green-600 dark:text-green-400 flex items-center gap-2">
+              <h4 className="font-medium text-green-600  flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 Strengths
               </h4>
@@ -247,7 +247,7 @@ const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({ dateRange }) =>
               </ul>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+              <h4 className="font-medium text-yellow-600  flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
                 Areas for Improvement
               </h4>

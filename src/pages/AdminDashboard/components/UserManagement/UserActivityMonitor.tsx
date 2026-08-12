@@ -198,10 +198,9 @@ const UserActivityMonitor: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      online:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      idle: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      away: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+      online: 'bg-green-100  text-green-800  border-green-200 ',
+      idle: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      away: 'bg-gray-100  text-gray-800  border-gray-200 ',
     };
 
     const icons = {
@@ -213,10 +212,7 @@ const UserActivityMonitor: React.FC = () => {
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -235,20 +231,15 @@ const UserActivityMonitor: React.FC = () => {
 
   const getSeverityBadge = (severity: string) => {
     const variants = {
-      info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      warning:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      error:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      info: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      warning: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      error: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
       <Badge
         variant="outline"
-        className={
-          variants[severity as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[severity as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         <span className="capitalize">{severity}</span>
       </Badge>
@@ -277,9 +268,7 @@ const UserActivityMonitor: React.FC = () => {
           <Badge
             variant="outline"
             className={
-              isMonitoring
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+              isMonitoring ? 'bg-green-100  text-green-800 ' : 'bg-gray-100  text-gray-800 '
             }
           >
             <Activity className="h-3 w-3 mr-1" />
@@ -306,7 +295,7 @@ const UserActivityMonitor: React.FC = () => {
                   {activeUsers.filter((u) => u.status === 'online').length}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <Users className="h-8 w-8 text-green-600 " />
             </div>
           </CardContent>
         </Card>
@@ -317,7 +306,7 @@ const UserActivityMonitor: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Total Sessions</p>
                 <p className="text-2xl font-bold">{activeUsers.length}</p>
               </div>
-              <Globe className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <Globe className="h-8 w-8 text-blue-600 " />
             </div>
           </CardContent>
         </Card>
@@ -330,7 +319,7 @@ const UserActivityMonitor: React.FC = () => {
                   {activeUsers.filter((u) => u.status === 'idle').length}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+              <Clock className="h-8 w-8 text-yellow-600 " />
             </div>
           </CardContent>
         </Card>
@@ -341,7 +330,7 @@ const UserActivityMonitor: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Last Update</p>
                 <p className="text-sm font-semibold">{formatTimeAgo(lastUpdate.toISOString())}</p>
               </div>
-              <RefreshCw className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <RefreshCw className="h-8 w-8 text-purple-600 " />
             </div>
           </CardContent>
         </Card>

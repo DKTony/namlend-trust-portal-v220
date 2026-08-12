@@ -3,7 +3,6 @@
  * Decorative credit card visual for dashboard backgrounds
  */
 
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -12,15 +11,6 @@ interface HeroCardProps {
 }
 
 export const HeroCard: React.FC<HeroCardProps> = ({ className }) => {
-  const { theme } = useTheme();
-
-  const cardGradient =
-    theme === 'lux'
-      ? 'bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-black border-amber-500/30'
-      : theme === 'neo'
-        ? 'bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700'
-        : 'bg-gradient-to-br from-white/20 via-white/10 to-transparent border-white/20';
-
   return (
     <div
       className={cn(
@@ -28,7 +18,7 @@ export const HeroCard: React.FC<HeroCardProps> = ({ className }) => {
         'border backdrop-blur-md shadow-2xl',
         'flex flex-col justify-between overflow-hidden',
         'transform rotate-[-15deg] hover:rotate-[-12deg] transition-transform duration-1000 ease-in-out',
-        cardGradient,
+        'border-[#7CA05C]/50 bg-gradient-to-br from-[#274F35] via-[#3F713E] to-[#7CA05C]',
         className
       )}
       data-testid="hero-card"
@@ -53,7 +43,7 @@ export const HeroCard: React.FC<HeroCardProps> = ({ className }) => {
             <p>12/28</p>
           </div>
           <div className="text-white/80 text-xs text-right">
-            <p>NamLend Trust</p>
+            <p>OG Financial Services</p>
             <p className="font-semibold">PLATINUM</p>
           </div>
         </div>

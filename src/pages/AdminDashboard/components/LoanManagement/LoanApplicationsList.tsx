@@ -151,13 +151,13 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+        return <Clock className="h-4 w-4 text-yellow-600 " />;
       case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
+        return <CheckCircle className="h-4 w-4 text-green-600 " />;
       case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+        return <XCircle className="h-4 w-4 text-red-600 " />;
       case 'disbursed':
-        return <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
+        return <DollarSign className="h-4 w-4 text-blue-600 " />;
       default:
         return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
@@ -165,23 +165,16 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      approved:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      rejected:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      disbursed:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      approved: 'bg-green-100  text-green-800  border-green-200 ',
+      rejected: 'bg-red-100  text-red-800  border-red-200 ',
+      disbursed: 'bg-blue-100  text-blue-800  border-blue-200 ',
     };
 
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {getStatusIcon(status)}
         <span className="ml-1 capitalize">{status}</span>
@@ -194,29 +187,20 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
 
     if (riskScore >= 80) {
       return (
-        <Badge
-          variant="outline"
-          className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
-        >
+        <Badge variant="outline" className="bg-red-100  text-red-800  border-red-200 ">
           <AlertTriangle className="h-3 w-3 mr-1" />
           High Risk
         </Badge>
       );
     } else if (riskScore >= 60) {
       return (
-        <Badge
-          variant="outline"
-          className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-        >
+        <Badge variant="outline" className="bg-yellow-100  text-yellow-800  border-yellow-200 ">
           Medium Risk
         </Badge>
       );
     } else {
       return (
-        <Badge
-          variant="outline"
-          className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
-        >
+        <Badge variant="outline" className="bg-green-100  text-green-800  border-green-200 ">
           Low Risk
         </Badge>
       );
@@ -287,9 +271,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
           key={application.id}
           data-testid={`loan-card-${application.id}`}
           className={`hover:shadow-md transition-shadow duration-200 bg-card border-border ${
-            selectedLoans.includes(application.id)
-              ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
-              : ''
+            selectedLoans.includes(application.id) ? 'ring-2 ring-blue-500 bg-blue-50 ' : ''
           }`}
         >
           <CardContent className="p-4 sm:p-6">
@@ -409,7 +391,7 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="w-full text-red-600 border-red-200 hover:bg-red-50 "
                       disabled={actionLoading}
                       onClick={async () => {
                         const success = await rejectLoan(application.id);

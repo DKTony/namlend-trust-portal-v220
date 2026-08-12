@@ -47,14 +47,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      active: 'bg-green-100  text-green-800  border-green-200 ',
+      inactive: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      suspended: 'bg-red-100  text-red-800  border-red-200 ',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
     };
 
     const icons = {
@@ -67,10 +63,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -117,8 +110,8 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
         {/* Header */}
         <div className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center space-x-4">
-            <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-              <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="h-12 w-12 bg-blue-100  rounded-full flex items-center justify-center">
+              <User className="h-6 w-6 text-blue-600 " />
             </div>
             <div>
               <h2 className="text-2xl font-bold flex items-center text-foreground">
@@ -127,16 +120,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
               </h2>
               <div className="flex items-center space-x-2 mt-1">
                 {getStatusBadge(client.status)}
-                <Badge
-                  variant="outline"
-                  className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
-                >
+                <Badge variant="outline" className="bg-blue-100  text-blue-800 ">
                   ID: {client.id}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                >
+                <Badge variant="outline" className="text-xs bg-green-50  text-green-700 ">
                   KYC: {client.kycSource}
                 </Badge>
               </div>
@@ -170,7 +157,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                       {formatCurrency(client.totalValue)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <DollarSign className="h-8 w-8 text-green-600 " />
                 </div>
               </CardContent>
             </Card>
@@ -181,7 +168,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                     <p className="text-sm text-muted-foreground">Active Loans</p>
                     <p className="text-2xl font-bold text-foreground">{client.activeLoans}</p>
                   </div>
-                  <FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <FileText className="h-8 w-8 text-blue-600 " />
                 </div>
               </CardContent>
             </Card>
@@ -192,7 +179,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                     <p className="text-sm text-muted-foreground">Credit Score</p>
                     <p className="text-2xl font-bold text-foreground">{client.creditScore}</p>
                   </div>
-                  <CreditCard className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  <CreditCard className="h-8 w-8 text-purple-600 " />
                 </div>
               </CardContent>
             </Card>
@@ -205,7 +192,7 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                       {formatDate(client.joinedAt)}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                  <Calendar className="h-8 w-8 text-orange-600 " />
                 </div>
               </CardContent>
             </Card>
@@ -305,10 +292,10 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                           variant="outline"
                           className={
                             client.riskLevel === 'low'
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                              ? 'bg-green-100  text-green-800 '
                               : client.riskLevel === 'medium'
-                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                                ? 'bg-yellow-100  text-yellow-800 '
+                                : 'bg-red-100  text-red-800 '
                           }
                         >
                           {client.riskLevel} Risk
@@ -328,30 +315,21 @@ const ClientProfile: React.FC<ClientProfileProps> = ({ clientId, onClose }) => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                       <span className="text-foreground">Identity Verification</span>
-                      <Badge
-                        variant="outline"
-                        className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
-                      >
+                      <Badge variant="outline" className="bg-green-100  text-green-800 ">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                       <span className="text-foreground">Address Verification</span>
-                      <Badge
-                        variant="outline"
-                        className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
-                      >
+                      <Badge variant="outline" className="bg-green-100  text-green-800 ">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                       <span className="text-foreground">Income Verification</span>
-                      <Badge
-                        variant="outline"
-                        className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400"
-                      >
+                      <Badge variant="outline" className="bg-yellow-100  text-yellow-800 ">
                         <Clock className="h-3 w-3 mr-1" />
                         Pending
                       </Badge>

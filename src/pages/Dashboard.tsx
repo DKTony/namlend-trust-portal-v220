@@ -17,7 +17,6 @@ import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { LoanStatusTimeline, generateLoanTimeline } from '@/components/workflow/LoanStatusTimeline';
-import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
@@ -59,7 +58,6 @@ interface LoanApplication {
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { styles } = useTheme();
   const navigate = useNavigate();
   const { trackAction } = useErrorHandler();
   const isMobile = useIsMobile();
@@ -182,10 +180,10 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className={cn('min-h-screen flex items-center justify-center px-4', styles.background)}>
+      <div className={cn('min-h-screen flex items-center justify-center px-4', 'bg-[#F7FAF6]')}>
         {loadTimedOut ? (
           <div className="text-center space-y-4 max-w-sm">
-            <p className={cn('font-medium', styles.textClass)}>
+            <p className={cn('font-medium', 'font-sans text-[#274F35]')}>
               This is taking longer than expected.
             </p>
             <p className="text-sm text-muted-foreground">
@@ -196,7 +194,7 @@ export default function Dashboard() {
             </ThemedButton>
           </div>
         ) : (
-          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+          <Loader2 className={cn('h-8 w-8 animate-spin', 'font-sans text-[#274F35]')} />
         )}
       </div>
     );
@@ -239,7 +237,7 @@ export default function Dashboard() {
                 <h2
                   className={cn(
                     'text-3xl md:text-4xl font-extrabold tracking-tight',
-                    styles.textClass
+                    'font-sans text-[#274F35]'
                   )}
                 >
                   {t('greeting', { name: profile?.fullName?.split(' ')[0] || 'Client' })}
@@ -308,7 +306,7 @@ export default function Dashboard() {
                       <Shield className="h-6 w-6 text-yellow-500" />
                     </div>
                     <div>
-                      <h3 className={cn('font-bold', styles.textClass)}>
+                      <h3 className={cn('font-bold', 'font-sans text-[#274F35]')}>
                         {t('kyc.completeVerification')}
                       </h3>
                       <p className="text-sm text-muted-foreground">
@@ -353,7 +351,7 @@ export default function Dashboard() {
                       <CheckCircle className="h-5 w-5 text-green-500" />
                     </div>
                     <div>
-                      <h3 className={cn('font-medium', styles.textClass)}>
+                      <h3 className={cn('font-medium', 'font-sans text-[#274F35]')}>
                         {t('kyc.verificationComplete')}
                       </h3>
                       <p className="text-sm text-muted-foreground">{t('kyc.readyToApply')}</p>
@@ -371,7 +369,7 @@ export default function Dashboard() {
               <div className="lg:col-span-2">
                 <ThemedCard className="h-full">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-                    <h3 className={cn('text-xl font-bold', styles.textClass)}>
+                    <h3 className={cn('text-xl font-bold', 'font-sans text-[#274F35]')}>
                       {t('chart.title')}
                     </h3>
                     <Select
@@ -430,8 +428,8 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     'p-8 relative overflow-hidden',
-                    styles.cardClass,
-                    styles.radius,
+                    'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]',
+                    'rounded-2xl',
                     'bg-primary text-primary-foreground border-none'
                   )}
                 >
@@ -472,7 +470,7 @@ export default function Dashboard() {
                 </div>
 
                 <ThemedCard>
-                  <h3 className={cn('text-lg font-bold mb-4', styles.textClass)}>
+                  <h3 className={cn('text-lg font-bold mb-4', 'font-sans text-[#274F35]')}>
                     {t('quickActions.title')}
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -507,7 +505,9 @@ export default function Dashboard() {
       case 'loans':
         return (
           <div className="space-y-6">
-            <h2 className={cn('text-2xl font-bold', styles.textClass)}>{t('loans.title')}</h2>
+            <h2 className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
+              {t('loans.title')}
+            </h2>
             {loans.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {loans.map((loan) => {
@@ -522,22 +522,16 @@ export default function Dashboard() {
                   return (
                     <ThemedCard
                       key={loanKey}
-                      className={cn(
-                        isSettled
-                          ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800'
-                          : ''
-                      )}
+                      className={cn(isSettled ? 'bg-green-50/50  border-green-200 ' : '')}
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <h3 className={cn('text-xl font-bold', styles.textClass)}>
+                          <h3 className={cn('text-xl font-bold', 'font-sans text-[#274F35]')}>
                             {formatNAD(loan.principal)}
                           </h3>
                           <p className="text-sm text-muted-foreground">{loan.purpose}</p>
                         </div>
-                        <ThemedBadge
-                          className={isSettled ? 'bg-green-600 dark:bg-green-500 text-white' : ''}
-                        >
+                        <ThemedBadge className={isSettled ? 'bg-green-600  text-white' : ''}>
                           {isSettled ? `✓ ${t('loans.settled')}` : loan.status}
                         </ThemedBadge>
                       </div>
@@ -556,7 +550,7 @@ export default function Dashboard() {
                             </div>
                             <Progress
                               value={progressPercent}
-                              className={`h-2 ${isSettled ? '[&>div]:bg-green-600 dark:[&>div]:bg-green-500' : ''}`}
+                              className={`h-2 ${isSettled ? '[&>div]:bg-green-600 ' : ''}`}
                             />
                             {!isSettled && (loan.outstandingBalance ?? 0) > 0 && (
                               <p className="text-xs text-muted-foreground">
@@ -625,7 +619,7 @@ export default function Dashboard() {
                         </div>
 
                         {isSettled && loan.completedAt && (
-                          <p className="text-xs text-green-600 dark:text-green-400 text-center">
+                          <p className="text-xs text-green-600  text-center">
                             {t('loans.settledOn', {
                               date: new Date(loan.completedAt).toLocaleDateString('en-ZA', {
                                 day: 'numeric',
@@ -643,7 +637,7 @@ export default function Dashboard() {
             ) : (
               <ThemedCard className="text-center py-12">
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className={cn('text-lg font-semibold', styles.textClass)}>
+                <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
                   {t('loans.noLoansTitle')}
                 </h3>
                 <p className="text-muted-foreground mb-4">{t('loans.noLoansDescription')}</p>
@@ -659,7 +653,7 @@ export default function Dashboard() {
         return (
           <div className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className={cn('text-2xl font-bold', styles.textClass)}>
+              <h2 className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
                 {t('applications.title')}
               </h2>
               <ThemedButton
@@ -676,7 +670,7 @@ export default function Dashboard() {
                 <ThemedCard key={application.id}>
                   <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-6">
                     <div>
-                      <h3 className={cn('text-lg font-bold', styles.textClass)}>
+                      <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
                         {formatNAD(application.amount)}
                       </h3>
                       <p className="text-sm text-muted-foreground">{application.purpose}</p>
@@ -703,7 +697,7 @@ export default function Dashboard() {
               {loanApplications.length === 0 && (
                 <ThemedCard className="text-center py-12">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className={cn('text-lg font-semibold', styles.textClass)}>
+                  <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
                     {t('applications.noPendingTitle')}
                   </h3>
                   <ThemedButton
@@ -721,7 +715,9 @@ export default function Dashboard() {
       case 'payments':
         return (
           <div className="space-y-6">
-            <h2 className={cn('text-2xl font-bold', styles.textClass)}>{t('payments.title')}</h2>
+            <h2 className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
+              {t('payments.title')}
+            </h2>
             <ThemedCard className="overflow-hidden p-0">
               {payments.length > 0 ? (
                 <div className="divide-y divide-border">
@@ -731,7 +727,7 @@ export default function Dashboard() {
                       className="flex flex-col gap-3 p-4 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                        <div className="w-10 h-10 rounded-full bg-green-100  flex items-center justify-center text-green-600 ">
                           <DollarSign size={20} />
                         </div>
                         <div>

@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import {
@@ -57,8 +56,6 @@ interface LoanDetailsModalProps {
 }
 
 export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClose, loan }) => {
-  const { styles } = useTheme();
-
   if (!loan) return null;
 
   const formatDate = (dateString?: string) => {
@@ -75,33 +72,27 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { className: string; icon: React.ReactNode }> = {
       pending: {
-        className:
-          'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+        className: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
         icon: <Clock className="h-3 w-3" />,
       },
       approved: {
-        className:
-          'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+        className: 'bg-blue-100  text-blue-800  border-blue-200 ',
         icon: <CheckCircle className="h-3 w-3" />,
       },
       disbursed: {
-        className:
-          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+        className: 'bg-green-100  text-green-800  border-green-200 ',
         icon: <CheckCircle className="h-3 w-3" />,
       },
       active: {
-        className:
-          'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
+        className: 'bg-green-100  text-green-800  border-green-200 ',
         icon: <TrendingUp className="h-3 w-3" />,
       },
       rejected: {
-        className:
-          'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+        className: 'bg-red-100  text-red-800  border-red-200 ',
         icon: <AlertCircle className="h-3 w-3" />,
       },
       completed: {
-        className:
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+        className: 'bg-gray-100  text-gray-800  border-gray-200 ',
         icon: <CheckCircle className="h-3 w-3" />,
       },
     };
@@ -127,7 +118,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
       <DialogContent
         className={cn(
           'max-w-2xl max-h-[min(85vh,calc(100dvh-2rem))] overflow-y-auto p-0 gap-0 border-border',
-          styles.cardClass
+          'rounded-2xl border border-[#DCE8D8] bg-white shadow-[0_12px_32px_rgba(39,79,53,0.06)]'
         )}
       >
         {/* Header */}
@@ -138,7 +129,9 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                 <FileText className="h-5 w-5 text-blue-500" />
               </div>
               <div>
-                <DialogTitle className={cn('text-xl font-bold tracking-tight', styles.textClass)}>
+                <DialogTitle
+                  className={cn('text-xl font-bold tracking-tight', 'font-sans text-[#274F35]')}
+                >
                   Loan Details
                 </DialogTitle>
                 <DialogDescription className="sr-only">
@@ -162,7 +155,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                 <DollarSign className="h-4 w-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Principal</span>
               </div>
-              <p className={cn('text-3xl font-bold tracking-tight', styles.textClass)}>
+              <p className={cn('text-3xl font-bold tracking-tight', 'font-sans text-[#274F35]')}>
                 {formatNAD(loan.amount)}
               </p>
             </ThemedCard>
@@ -206,7 +199,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                   <p
                     className={cn(
                       'text-sm font-semibold',
-                      styles.textClass,
+                      'font-sans text-[#274F35]',
                       item.capitalize && 'capitalize'
                     )}
                   >
@@ -229,7 +222,9 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Briefcase className="h-3.5 w-3.5" /> Employment
                   </span>
-                  <span className={cn('text-sm font-medium capitalize', styles.textClass)}>
+                  <span
+                    className={cn('text-sm font-medium capitalize', 'font-sans text-[#274F35]')}
+                  >
                     {employmentStatus}
                   </span>
                 </div>
@@ -237,7 +232,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Wallet className="h-3.5 w-3.5" /> Income
                   </span>
-                  <span className={cn('text-sm font-medium font-mono', styles.textClass)}>
+                  <span className={cn('text-sm font-medium font-mono', 'font-sans text-[#274F35]')}>
                     {formatNAD(monthlyIncome)}
                   </span>
                 </div>
@@ -300,7 +295,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                       className={cn(
                         'h-10 w-10 rounded-xl border flex items-center justify-center relative z-10 transition-all duration-300',
                         step.active
-                          ? `${step.bg} ${step.border} shadow-lg shadow-black/5 dark:shadow-black/20`
+                          ? `${step.bg} ${step.border} shadow-lg shadow-black/5 `
                           : 'bg-muted border-border'
                       )}
                     >
@@ -315,7 +310,7 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                       <p
                         className={cn(
                           'text-sm font-medium transition-colors',
-                          step.active ? styles.textClass : 'text-muted-foreground'
+                          step.active ? 'font-sans text-[#274F35]' : 'text-muted-foreground'
                         )}
                       >
                         {step.label}
@@ -360,7 +355,9 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                         {key.replace(/_/g, ' ')}
                       </span>
-                      <span className={cn('text-sm font-medium truncate', styles.textClass)}>
+                      <span
+                        className={cn('text-sm font-medium truncate', 'font-sans text-[#274F35]')}
+                      >
                         {typeof value === 'boolean'
                           ? value
                             ? 'Yes'

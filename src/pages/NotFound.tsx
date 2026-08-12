@@ -1,6 +1,5 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Home } from 'lucide-react';
 import { useEffect } from 'react';
@@ -9,22 +8,21 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { styles } = useTheme();
 
   useEffect(() => {
     console.error('404 Error: User attempted to access non-existent route:', location.pathname);
   }, [location.pathname]);
 
   return (
-    <div className={cn('min-h-screen flex items-center justify-center p-4', styles.background)}>
+    <div className={cn('min-h-screen flex items-center justify-center p-4', 'bg-[#F7FAF6]')}>
       <ThemedCard className="max-w-md w-full text-center p-8">
         <div className="flex justify-center mb-6">
-          <div className="h-24 w-24 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-            <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
+          <div className="h-24 w-24 rounded-full bg-red-100  flex items-center justify-center">
+            <AlertCircle className="h-12 w-12 text-red-600 " />
           </div>
         </div>
 
-        <h1 className={cn('text-4xl font-bold mb-2', styles.textClass)}>404</h1>
+        <h1 className={cn('text-4xl font-bold mb-2', 'font-sans text-[#274F35]')}>404</h1>
         <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Page Not Found</h2>
 
         <p className="text-muted-foreground mb-8">

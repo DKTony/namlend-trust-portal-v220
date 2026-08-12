@@ -201,21 +201,16 @@ const UserAuditLog: React.FC = () => {
 
   const getSeverityBadge = (severity: string) => {
     const variants = {
-      low: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      medium:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      high: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      critical:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      low: 'bg-green-100  text-green-800  border-green-200 ',
+      medium: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      high: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      critical: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
       <Badge
         variant="outline"
-        className={
-          variants[severity as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[severity as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         <span className="capitalize">{severity}</span>
       </Badge>
@@ -224,30 +219,20 @@ const UserAuditLog: React.FC = () => {
 
   const getActionTypeBadge = (actionType: string) => {
     const variants = {
-      create:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      update:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      delete:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      login:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      logout:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      permission:
-        'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800',
-      role: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
-      status:
-        'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+      create: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      update: 'bg-purple-100  text-purple-800  border-purple-200 ',
+      delete: 'bg-red-100  text-red-800  border-red-200 ',
+      login: 'bg-green-100  text-green-800  border-green-200 ',
+      logout: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      permission: 'bg-orange-100  text-orange-800  border-orange-200 ',
+      role: 'bg-indigo-100  text-indigo-800  border-indigo-200 ',
+      status: 'bg-teal-100  text-teal-800  border-teal-200 ',
     };
 
     return (
       <Badge
         variant="outline"
-        className={
-          variants[actionType as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[actionType as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {getActionIcon(actionType)}
         <span className="ml-1 capitalize">{actionType}</span>
@@ -479,21 +464,14 @@ const UserAuditLog: React.FC = () => {
                 </div>
 
                 {log.changes && log.changes.length > 0 && (
-                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">
-                      Changes:
-                    </p>
+                  <div className="mt-2 p-2 bg-blue-50  rounded border border-blue-200 ">
+                    <p className="text-sm font-medium text-blue-800  mb-1">Changes:</p>
                     <div className="space-y-1">
                       {log.changes.map((change, index) => (
-                        <div key={index} className="text-sm text-blue-700 dark:text-blue-400">
+                        <div key={index} className="text-sm text-blue-700 ">
                           <span className="font-medium">{change.field}:</span>
-                          <span className="text-red-600 dark:text-red-400 line-through mx-1">
-                            {change.oldValue}
-                          </span>
-                          →
-                          <span className="text-green-600 dark:text-green-400 mx-1">
-                            {change.newValue}
-                          </span>
+                          <span className="text-red-600  line-through mx-1">{change.oldValue}</span>
+                          →<span className="text-green-600  mx-1">{change.newValue}</span>
                         </div>
                       ))}
                     </div>
@@ -581,21 +559,14 @@ const UserAuditLog: React.FC = () => {
                   <Label>Changes Made</Label>
                   <div className="mt-1 space-y-2">
                     {selectedEntry.changes.map((change, index) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800"
-                      >
-                        <p className="font-medium text-blue-800 dark:text-blue-300">
-                          {change.field}
-                        </p>
+                      <div key={index} className="p-3 bg-blue-50  rounded border border-blue-200 ">
+                        <p className="font-medium text-blue-800 ">{change.field}</p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-red-600 dark:text-red-400 line-through">
+                          <span className="text-sm text-red-600  line-through">
                             {change.oldValue}
                           </span>
                           <span className="text-muted-foreground">→</span>
-                          <span className="text-sm text-green-600 dark:text-green-400">
-                            {change.newValue}
-                          </span>
+                          <span className="text-sm text-green-600 ">{change.newValue}</span>
                         </div>
                       </div>
                     ))}

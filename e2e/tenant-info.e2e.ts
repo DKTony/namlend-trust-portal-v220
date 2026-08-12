@@ -15,7 +15,7 @@ async function loginAsLoanOfficer(page: Page) {
 
 async function expectTenantDetails(page: Page) {
   await expect(page.getByTestId('tenant-info-page')).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText('OG Financial Services CC')).toBeVisible();
+  await expect(page.getByText('OG Financial Services CC', { exact: true })).toBeVisible();
   await expect(page.getByText('CC/2025/12791')).toBeVisible();
   await expect(page.getByText('25/11/2366')).toBeVisible();
   await expect(page.getByText('NAMFISA-licensed address')).toBeVisible();

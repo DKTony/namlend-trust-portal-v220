@@ -75,13 +75,13 @@ interface RawPortfolioSummary {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-500 dark:bg-green-600',
-  disbursed: 'bg-blue-500 dark:bg-blue-600',
-  pending: 'bg-yellow-500 dark:bg-yellow-600',
-  approved: 'bg-emerald-500 dark:bg-emerald-600',
-  completed: 'bg-gray-500 dark:bg-gray-600',
-  rejected: 'bg-red-500 dark:bg-red-600',
-  defaulted: 'bg-red-700 dark:bg-red-800',
+  active: 'bg-green-500 ',
+  disbursed: 'bg-blue-500 ',
+  pending: 'bg-yellow-500 ',
+  approved: 'bg-emerald-500 ',
+  completed: 'bg-gray-500 ',
+  rejected: 'bg-red-500 ',
+  defaulted: 'bg-red-700 ',
 };
 
 const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30d' }) => {
@@ -187,7 +187,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {formatNAD(metrics?.totalDisbursed || 0)}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500 dark:text-green-400 opacity-50 shrink-0" />
+              <DollarSign className="h-8 w-8 text-green-500  opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -204,7 +204,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {formatNAD(metrics?.totalOutstanding || 0)}
                 </p>
               </div>
-              <Target className="h-8 w-8 text-orange-500 dark:text-orange-400 opacity-50 shrink-0" />
+              <Target className="h-8 w-8 text-orange-500  opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -221,7 +221,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {formatNAD(metrics?.totalRepaid || 0)}
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-blue-500 dark:text-blue-400 opacity-50 shrink-0" />
+              <CheckCircle className="h-8 w-8 text-blue-500  opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>
@@ -238,7 +238,7 @@ const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({ dateRange = '30
                   {metrics?.clientCount || 0}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-purple-500 dark:text-purple-400 opacity-50 shrink-0" />
+              <Users className="h-8 w-8 text-purple-500  opacity-50 shrink-0" />
             </div>
           </CardContent>
         </Card>

@@ -223,28 +223,28 @@ export function CreditScoreDisplay({
           {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-3 bg-muted rounded-lg">
-              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600 dark:text-green-400" />
+              <DollarSign className="h-5 w-5 mx-auto mb-1 text-green-600 " />
               <div className="text-lg font-bold text-foreground">
                 {formatNAD(score.maxApprovedAmount)}
               </div>
               <div className="text-xs text-muted-foreground">Max Approved</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <Percent className="h-5 w-5 mx-auto mb-1 text-blue-600 dark:text-blue-400" />
+              <Percent className="h-5 w-5 mx-auto mb-1 text-blue-600 " />
               <div className="text-lg font-bold text-foreground">
                 {score.suggestedInterestRate}%
               </div>
               <div className="text-xs text-muted-foreground">Interest Rate</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <TrendingUp className="h-5 w-5 mx-auto mb-1 text-purple-600 dark:text-purple-400" />
+              <TrendingUp className="h-5 w-5 mx-auto mb-1 text-purple-600 " />
               <div className="text-lg font-bold text-foreground">
                 {score.debtToIncomeRatio.toFixed(1)}%
               </div>
               <div className="text-xs text-muted-foreground">DTI Ratio</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
-              <Shield className="h-5 w-5 mx-auto mb-1 text-orange-600 dark:text-orange-400" />
+              <Shield className="h-5 w-5 mx-auto mb-1 text-orange-600 " />
               <div className="text-lg font-bold capitalize text-foreground">
                 {score.riskLevel.replace('_', ' ')}
               </div>
@@ -268,19 +268,17 @@ export function CreditScoreDisplay({
                       <div
                         className={cn(
                           'flex items-center justify-between p-2 rounded-lg border',
-                          factor.impact === 'positive' &&
-                            'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
-                          factor.impact === 'negative' &&
-                            'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+                          factor.impact === 'positive' && 'bg-green-50  border-green-200 ',
+                          factor.impact === 'negative' && 'bg-red-50  border-red-200 ',
                           factor.impact === 'neutral' && 'bg-muted/50 border-border'
                         )}
                       >
                         <div className="flex items-center gap-2">
                           {factor.impact === 'positive' && (
-                            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <TrendingUp className="h-4 w-4 text-green-600 " />
                           )}
                           {factor.impact === 'negative' && (
-                            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            <TrendingDown className="h-4 w-4 text-red-600 " />
                           )}
                           {factor.impact === 'neutral' && (
                             <Minus className="h-4 w-4 text-muted-foreground" />
@@ -293,10 +291,8 @@ export function CreditScoreDisplay({
                           variant="outline"
                           className={cn(
                             'text-xs',
-                            factor.impact === 'positive' &&
-                              'text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
-                            factor.impact === 'negative' &&
-                              'text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
+                            factor.impact === 'positive' && 'text-green-700  border-green-200 ',
+                            factor.impact === 'negative' && 'text-red-700  border-red-200 ',
                             factor.impact === 'neutral' && 'text-muted-foreground border-border'
                           )}
                         >
@@ -360,33 +356,29 @@ export function CreditScoreDisplay({
             {recommendation.approved ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-green-700 dark:text-green-400">
+                  <div className="text-center p-3 bg-green-50  rounded-lg">
+                    <div className="text-xl font-bold text-green-700 ">
                       {formatNAD(recommendation.approvedAmount)}
                     </div>
-                    <div className="text-xs text-green-600 dark:text-green-500">
-                      Approved Amount
-                    </div>
+                    <div className="text-xs text-green-600 ">Approved Amount</div>
                   </div>
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                  <div className="text-center p-3 bg-blue-50  rounded-lg">
+                    <div className="text-xl font-bold text-blue-700 ">
                       {recommendation.suggestedTerm} months
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-500">Term</div>
+                    <div className="text-xs text-blue-600 ">Term</div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                  <div className="text-center p-3 bg-purple-50  rounded-lg">
+                    <div className="text-xl font-bold text-purple-700 ">
                       {formatNAD(recommendation.monthlyPayment)}
                     </div>
-                    <div className="text-xs text-purple-600 dark:text-purple-500">
-                      Monthly Payment
-                    </div>
+                    <div className="text-xs text-purple-600 ">Monthly Payment</div>
                   </div>
-                  <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-orange-700 dark:text-orange-400">
+                  <div className="text-center p-3 bg-orange-50  rounded-lg">
+                    <div className="text-xl font-bold text-orange-700 ">
                       {recommendation.interestRate}%
                     </div>
-                    <div className="text-xs text-orange-600 dark:text-orange-500">APR</div>
+                    <div className="text-xs text-orange-600 ">APR</div>
                   </div>
                 </div>
 
@@ -400,8 +392,8 @@ export function CreditScoreDisplay({
                 </div>
 
                 {recommendation.conditions && recommendation.conditions.length > 0 && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <h5 className="font-medium text-yellow-700 dark:text-yellow-400 mb-2 flex items-center gap-2">
+                  <div className="p-3 bg-yellow-50  rounded-lg border border-yellow-200 ">
+                    <h5 className="font-medium text-yellow-700  mb-2 flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
                       Conditions
                     </h5>
@@ -409,7 +401,7 @@ export function CreditScoreDisplay({
                       {recommendation.conditions.map((condition, index) => (
                         <li
                           key={index}
-                          className="text-sm text-yellow-700 dark:text-yellow-300 flex items-center gap-2"
+                          className="text-sm text-yellow-700  flex items-center gap-2"
                         >
                           <Clock className="h-3 w-3" />
                           {condition}
@@ -422,10 +414,7 @@ export function CreditScoreDisplay({
             ) : (
               <div className="space-y-3">
                 {recommendation.reasons.map((reason, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400"
-                  >
+                  <div key={index} className="flex items-start gap-2 text-sm text-red-700 ">
                     <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <span>{reason}</span>
                   </div>

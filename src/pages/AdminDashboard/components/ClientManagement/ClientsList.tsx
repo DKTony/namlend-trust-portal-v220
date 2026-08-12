@@ -1,7 +1,6 @@
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import {
@@ -28,7 +27,6 @@ interface ClientsListProps {
 
 const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientSelect }) => {
   const { clients, loading, error, refetch } = useClientsList(status, searchTerm);
-  const { styles } = useTheme();
 
   const formatCurrency = formatNAD;
 
@@ -42,14 +40,10 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      active: 'bg-green-100  text-green-800  border-green-200 ',
+      inactive: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      suspended: 'bg-red-100  text-red-800  border-red-200 ',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
     };
 
     const icons = {
@@ -61,10 +55,7 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
 
     return (
       <ThemedBadge
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -74,10 +65,9 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
 
   const getRiskBadge = (riskLevel: string) => {
     const variants = {
-      low: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      medium:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      high: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      low: 'bg-green-100  text-green-800  border-green-200 ',
+      medium: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      high: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
@@ -90,12 +80,9 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
 
   const getKycBadge = (kycStatus: string) => {
     const variants = {
-      verified:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      rejected:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
+      verified: 'bg-green-100  text-green-800  border-green-200 ',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      rejected: 'bg-red-100  text-red-800  border-red-200 ',
     };
 
     return (
@@ -145,7 +132,9 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
       <ThemedCard>
         <div className="text-center py-8">
           <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>No clients found</h3>
+          <h3 className={cn('text-lg font-medium mb-2', 'font-sans text-[#274F35]')}>
+            No clients found
+          </h3>
           <p className="text-muted-foreground">
             {searchTerm
               ? `No clients match "${searchTerm}"`
@@ -167,8 +156,8 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             {/* Client Avatar */}
             <div className="flex-shrink-0">
-              <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="h-12 w-12 bg-blue-100  rounded-full flex items-center justify-center">
+                <User className="h-6 w-6 text-blue-600 " />
               </div>
             </div>
 
@@ -176,7 +165,12 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
             <div className="flex-1 min-w-0">
               <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h3 className={cn('text-lg font-semibold flex items-center', styles.textClass)}>
+                  <h3
+                    className={cn(
+                      'text-lg font-semibold flex items-center',
+                      'font-sans text-[#274F35]'
+                    )}
+                  >
                     {client.fullName}
                     {client.isPremium && <Star className="h-4 w-4 text-yellow-500 ml-2" />}
                   </h3>
@@ -188,7 +182,7 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
                   <div
                     className={cn(
                       'text-xl sm:text-2xl font-bold truncate tabular-nums',
-                      styles.textClass
+                      'font-sans text-[#274F35]'
                     )}
                     title={formatCurrency(client.totalValue)}
                   >

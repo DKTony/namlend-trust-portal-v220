@@ -111,20 +111,20 @@ const OverdueManager: React.FC = () => {
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'low':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+        return 'bg-green-100  text-green-800 ';
       case 'medium':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+        return 'bg-yellow-100  text-yellow-800 ';
       case 'high':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+        return 'bg-red-100  text-red-800 ';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400';
+        return 'bg-gray-100  text-gray-800 ';
     }
   };
 
   const getDaysOverdueColor = (days: number) => {
-    if (days <= 7) return 'text-yellow-600 dark:text-yellow-400';
-    if (days <= 30) return 'text-orange-600 dark:text-orange-400';
-    return 'text-red-600 dark:text-red-400';
+    if (days <= 7) return 'text-yellow-600 ';
+    if (days <= 30) return 'text-orange-600 ';
+    return 'text-red-600 ';
   };
 
   const filteredPayments = overduePayments.filter((payment) => {
@@ -179,7 +179,7 @@ const OverdueManager: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div
-              className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums"
+              className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums"
               title={`NAD ${overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}`}
             >
               NAD {overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}
@@ -196,7 +196,7 @@ const OverdueManager: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums">
               {overduePayments.filter((p) => p.riskLevel === 'high').length}
             </div>
             <p className="text-xs text-muted-foreground truncate">Require immediate attention</p>
@@ -211,7 +211,7 @@ const OverdueManager: React.FC = () => {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
               {overduePayments.filter((p) => p.paymentPlan).length}
             </div>
             <p className="text-xs text-muted-foreground truncate">Active payment plans</p>
@@ -226,7 +226,7 @@ const OverdueManager: React.FC = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400 truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-orange-600  truncate tabular-nums">
               {Math.round(
                 overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length
               )}
@@ -329,7 +329,7 @@ const OverdueManager: React.FC = () => {
                       {payment.paymentPlan && (
                         <Badge
                           variant="outline"
-                          className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                          className="text-xs bg-blue-50  text-blue-700  border-blue-200 "
                         >
                           Payment Plan
                         </Badge>

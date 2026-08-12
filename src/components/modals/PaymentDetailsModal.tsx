@@ -94,7 +94,7 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
-                <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-500" />
+                <ArrowDownLeft className="h-5 w-5 text-green-600 " />
               </div>
               <div>
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
@@ -211,7 +211,7 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
                       className={cn(
                         'h-8 w-8 rounded-lg flex items-center justify-center border',
                         step.highlight
-                          ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-500'
+                          ? 'bg-green-500/10 border-green-500/20 text-green-600 '
                           : 'bg-muted border-border text-muted-foreground'
                       )}
                     >
@@ -221,7 +221,7 @@ export const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
                       <p
                         className={cn(
                           'text-xs font-medium',
-                          step.highlight ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                          step.highlight ? 'text-green-600 ' : 'text-foreground'
                         )}
                       >
                         {step.label}

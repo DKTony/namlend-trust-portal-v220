@@ -2,7 +2,6 @@ import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import {
   CheckCircle,
@@ -42,7 +41,6 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
   // Realtime updates
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewItems, setHasNewItems] = useState(false);
-  const { styles } = useTheme();
 
   const handleLoanSelection = (loanId: string, selected: boolean) => {
     if (selected) {
@@ -113,7 +111,9 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
       {showFilters && (
         <ThemedCard>
           <div className="mb-4">
-            <h3 className={cn('text-lg font-semibold', styles.textClass)}>Filter Applications</h3>
+            <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
+              Filter Applications
+            </h3>
           </div>
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -126,7 +126,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
                   onChange={(e) => setDateFrom(e.target.value)}
                   className={cn(
                     'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground',
-                    styles.inputClass
+                    'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
                   )}
                 />
               </div>
@@ -138,7 +138,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
                   onChange={(e) => setDateTo(e.target.value)}
                   className={cn(
                     'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground',
-                    styles.inputClass
+                    'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
                   )}
                 />
               </div>
@@ -153,7 +153,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
                   placeholder="0"
                   className={cn(
                     'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
-                    styles.inputClass
+                    'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
                   )}
                 />
               </div>
@@ -166,7 +166,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
                   placeholder="100000"
                   className={cn(
                     'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
-                    styles.inputClass
+                    'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
                   )}
                 />
               </div>
@@ -180,7 +180,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
                     onChange={(e) => setPriorityFilter(e.target.value)}
                     className={cn(
                       'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground',
-                      styles.inputClass
+                      'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
                     )}
                   >
                     <option value="all">All Priorities</option>
@@ -245,7 +245,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
               onChange={(e) => setSearchTerm(e.target.value)}
               className={cn(
                 'w-full pl-10 pr-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground',
-                styles.inputClass
+                'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
               )}
             />
           </div>
@@ -254,7 +254,7 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
             onChange={(e) => setFilterStatus(e.target.value)}
             className={cn(
               'w-full px-3 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-ring text-foreground sm:w-48',
-              styles.inputClass
+              'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20'
             )}
             data-testid="filter-status-select"
           >

@@ -77,17 +77,15 @@ export function ClientProfileHeader({
             <span
               className={cn(
                 'text-sm font-medium',
-                isEligible
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-yellow-600 dark:text-yellow-400'
+                isEligible ? 'text-green-600 ' : 'text-yellow-600 '
               )}
             >
               {isEligible ? 'Loan Eligible' : 'Action Required'}
             </span>
             {isEligible ? (
-              <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />
+              <CheckCircle className="h-5 w-5 text-green-500 " />
             ) : (
-              <AlertCircle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+              <AlertCircle className="h-5 w-5 text-yellow-500 " />
             )}
           </div>
         </div>

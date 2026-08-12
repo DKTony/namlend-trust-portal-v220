@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import type {
@@ -34,7 +33,7 @@ import type {
   SavingsGoal,
   TransactionCategory,
   UnifiedTransaction,
-} from '@/types/theme';
+} from '@/types/finance';
 import { formatNAD } from '@/utils/currency';
 import {
   AlertCircle,
@@ -103,7 +102,7 @@ const INITIAL_TRANSACTIONS: UnifiedTransaction[] = [
   {
     id: '5',
     date: '2026-01-09',
-    description: 'NamLend Loan Repayment',
+    description: 'OG Financial Services Loan Repayment',
     category: 'Loan',
     source: 'System',
     type: 'out',
@@ -183,7 +182,6 @@ function categorizeTransaction(description: string): TransactionCategory {
 }
 
 export const BudgetTracker: React.FC = () => {
-  const { styles } = useTheme();
   const isMobile = useIsMobile();
   const { t } = useTranslation('budget');
   const navigate = useNavigate();
@@ -457,7 +455,7 @@ export const BudgetTracker: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `namlend-transactions-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `og-financial-transactions-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -529,7 +527,9 @@ export const BudgetTracker: React.FC = () => {
                   <CardContent className="pt-6">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${styles.accentClass}`}>
+                        <div
+                          className={`p-2 rounded-xl ${'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'}`}
+                        >
                           {getIcon(goal.icon)}
                         </div>
                         <div>
@@ -555,7 +555,7 @@ export const BudgetTracker: React.FC = () => {
                       </div>
                       <div className="w-full h-2 rounded-full overflow-hidden bg-muted">
                         <div
-                          className={`h-full rounded-full transition-all duration-1000 ${styles.accentClass}`}
+                          className={`h-full rounded-full transition-all duration-1000 ${'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'}`}
                           style={{ width: `${progress}%` }}
                         />
                       </div>

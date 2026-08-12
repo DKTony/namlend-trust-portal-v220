@@ -115,14 +115,10 @@ const UsersList: React.FC<UsersListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      inactive:
-        'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700',
-      suspended:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      active: 'bg-green-100  text-green-800  border-green-200 ',
+      inactive: 'bg-gray-100  text-gray-800  border-gray-200 ',
+      suspended: 'bg-red-100  text-red-800  border-red-200 ',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
     };
 
     const icons = {
@@ -135,10 +131,7 @@ const UsersList: React.FC<UsersListProps> = ({
     return (
       <Badge
         variant="outline"
-        className={
-          variants[status as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[status as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[status as keyof typeof icons]}
         <span className="capitalize">{status}</span>
@@ -148,14 +141,10 @@ const UsersList: React.FC<UsersListProps> = ({
 
   const getRoleBadge = (role: string) => {
     const variants = {
-      admin:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-      loan_officer:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-      client:
-        'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      tenant_admin:
-        'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+      admin: 'bg-purple-100  text-purple-800  border-purple-200 ',
+      loan_officer: 'bg-blue-100  text-blue-800  border-blue-200 ',
+      client: 'bg-green-100  text-green-800  border-green-200 ',
+      tenant_admin: 'bg-purple-100  text-purple-800  border-purple-200 ',
     };
 
     const icons = {
@@ -175,10 +164,7 @@ const UsersList: React.FC<UsersListProps> = ({
     return (
       <Badge
         variant="outline"
-        className={
-          variants[role as keyof typeof variants] ||
-          'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
-        }
+        className={variants[role as keyof typeof variants] || 'bg-gray-100  text-gray-800 '}
       >
         {icons[role as keyof typeof icons]}
         <span>{labels[role as keyof typeof labels] || role}</span>
@@ -318,10 +304,7 @@ const UsersList: React.FC<UsersListProps> = ({
                   Select All ({uniqueUsers.length} users)
                 </span>
                 {selectedUsers.length > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
-                  >
+                  <Badge variant="outline" className="bg-blue-100  text-blue-800 ">
                     {selectedUsers.length} selected
                   </Badge>
                 )}
@@ -354,8 +337,8 @@ const UsersList: React.FC<UsersListProps> = ({
 
               {/* User Avatar */}
               <div className="flex-shrink-0">
-                <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <div className="h-12 w-12 bg-blue-100  rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-blue-600 " />
                 </div>
               </div>
 

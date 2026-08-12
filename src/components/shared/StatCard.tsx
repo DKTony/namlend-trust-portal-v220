@@ -22,18 +22,18 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const colorStyles = {
     black: 'bg-muted text-foreground',
-    green: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
-    blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
-    amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
-    red: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+    green: 'bg-green-50  text-green-700 ',
+    blue: 'bg-blue-50  text-blue-700 ',
+    amber: 'bg-amber-50  text-amber-700 ',
+    red: 'bg-red-50  text-red-700 ',
   };
 
   const iconColorStyles = {
     black: 'text-foreground',
-    green: 'text-green-600 dark:text-green-400',
-    blue: 'text-blue-600 dark:text-blue-400',
-    amber: 'text-amber-600 dark:text-amber-400',
-    red: 'text-red-600 dark:text-red-400',
+    green: 'text-green-600 ',
+    blue: 'text-blue-600 ',
+    amber: 'text-amber-600 ',
+    red: 'text-red-600 ',
   };
 
   return (

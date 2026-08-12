@@ -115,13 +115,10 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
     // Backend rows use 'scheduled'; render it with the 'pending' styling.
     const status = rawStatus === 'scheduled' ? 'pending' : rawStatus;
     const variants = {
-      pending:
-        'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-      paid: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800',
-      overdue:
-        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-      partially_paid:
-        'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      pending: 'bg-yellow-100  text-yellow-800  border-yellow-200 ',
+      paid: 'bg-green-100  text-green-800  border-green-200 ',
+      overdue: 'bg-red-100  text-red-800  border-red-200 ',
+      partially_paid: 'bg-blue-100  text-blue-800  border-blue-200 ',
       waived: 'bg-muted text-muted-foreground border-border',
     };
 
@@ -186,7 +183,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
 
   if (error) {
     return (
-      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+      <Card className="border-red-200  bg-red-50 ">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />
@@ -324,9 +321,9 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
         <CardContent>
           {/* Overdue Warning */}
           {summary.overdueCount > 0 && (
-            <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start space-x-2">
+            <div className="mb-4 bg-red-50  border border-red-200  rounded-lg p-3 flex items-start space-x-2">
               <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-800 dark:text-red-300">
+              <div className="text-sm text-red-800 ">
                 <p className="font-medium">
                   {summary.overdueCount} installment{summary.overdueCount > 1 ? 's' : ''} overdue
                 </p>
@@ -342,9 +339,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
             renderCard={(item) => (
               <div
                 className={`rounded-lg border p-3 space-y-2 ${
-                  item.status === 'overdue'
-                    ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
-                    : 'border-border'
+                  item.status === 'overdue' ? 'border-red-200  bg-red-50 ' : 'border-border'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -416,7 +411,7 @@ export const PaymentScheduleViewer: React.FC<Props> = ({
                       <tr
                         key={item.id}
                         className={`border-b hover:bg-muted/50 transition-colors ${
-                          item.status === 'overdue' ? 'bg-red-50 dark:bg-red-900/10' : ''
+                          item.status === 'overdue' ? 'bg-red-50 ' : ''
                         }`}
                       >
                         <td className="p-3 font-medium">{item.installment_number}</td>

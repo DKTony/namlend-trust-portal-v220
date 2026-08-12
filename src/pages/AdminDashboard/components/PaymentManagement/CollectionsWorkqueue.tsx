@@ -169,29 +169,13 @@ export const CollectionsWorkqueue: React.FC = () => {
 
   const getPriorityBadge = (score: number) => {
     if (score >= 100) {
-      return (
-        <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">
-          Critical
-        </Badge>
-      );
+      return <Badge className="bg-red-100  text-red-800  border-red-200 ">Critical</Badge>;
     } else if (score >= 50) {
-      return (
-        <Badge className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 border-orange-200 dark:border-orange-800">
-          High
-        </Badge>
-      );
+      return <Badge className="bg-orange-100  text-orange-800  border-orange-200 ">High</Badge>;
     } else if (score >= 20) {
-      return (
-        <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
-          Medium
-        </Badge>
-      );
+      return <Badge className="bg-yellow-100  text-yellow-800  border-yellow-200 ">Medium</Badge>;
     } else {
-      return (
-        <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-          Low
-        </Badge>
-      );
+      return <Badge className="bg-blue-100  text-blue-800  border-blue-200 ">Low</Badge>;
     }
   };
 
@@ -214,7 +198,7 @@ export const CollectionsWorkqueue: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+      <Card className="border-red-200  bg-red-50 ">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertTriangle className="h-5 w-5" />

@@ -27,12 +27,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  regulatory:
-    'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800',
-  scoring:
-    'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-  routing:
-    'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+  regulatory: 'bg-red-100  text-red-800  border-red-200 ',
+  scoring: 'bg-blue-100  text-blue-800  border-blue-200 ',
+  routing: 'bg-purple-100  text-purple-800  border-purple-200 ',
 };
 
 export function BusinessRulesDashboard() {

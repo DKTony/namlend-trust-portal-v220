@@ -237,7 +237,7 @@ const ReportGenerator: React.FC = () => {
             <Card
               key={report.id}
               className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
+                isSelected ? 'ring-2 ring-blue-500 bg-blue-50 ' : ''
               }`}
               onClick={() => handleReportSelection(report.id)}
             >
@@ -245,12 +245,12 @@ const ReportGenerator: React.FC = () => {
                 <div className="flex items-start space-x-4">
                   <div
                     className={`p-3 rounded-full shrink-0 ${
-                      isSelected ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-muted'
+                      isSelected ? 'bg-blue-100 ' : 'bg-muted'
                     }`}
                   >
                     <Icon
                       className={`h-6 w-6 ${
-                        isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'
+                        isSelected ? 'text-blue-600 ' : 'text-muted-foreground'
                       }`}
                     />
                   </div>
@@ -260,7 +260,7 @@ const ReportGenerator: React.FC = () => {
                         {report.name}
                       </h3>
                       {isSelected && (
-                        <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center shrink-0 ml-2">
+                        <div className="w-5 h-5 bg-blue-600  rounded-full flex items-center justify-center shrink-0 ml-2">
                           <svg
                             className="w-3 h-3 text-white"
                             fill="currentColor"
@@ -297,14 +297,14 @@ const ReportGenerator: React.FC = () => {
 
       {/* Generate Reports Section */}
       {selectedReports.length > 0 && (
-        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+        <Card className="border-blue-200  bg-blue-50 ">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">
+                <h3 className="font-semibold text-blue-900  mb-1">
                   {selectedReports.length} report{selectedReports.length > 1 ? 's' : ''} selected
                 </h3>
-                <p className="text-sm text-blue-700 dark:text-blue-400">
+                <p className="text-sm text-blue-700 ">
                   Generated in your browser from live portfolio data.
                 </p>
               </div>

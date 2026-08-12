@@ -476,9 +476,9 @@ export default function PaymentModal({
                       className={cn(
                         'flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative',
                         paymentMethod === method.id
-                          ? 'bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400'
+                          ? 'bg-blue-500/10 border-blue-500/50 text-blue-600 '
                           : method.highlight
-                            ? 'bg-green-500/5 border-green-500/30 text-green-600 dark:text-green-400 hover:bg-green-500/10'
+                            ? 'bg-green-500/5 border-green-500/30 text-green-600  hover:bg-green-500/10'
                             : 'bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground'
                       )}
                     >
@@ -492,7 +492,7 @@ export default function PaymentModal({
                   {paymentMethod === 'ips' && (
                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium mb-1">
+                        <div className="flex items-center gap-2 text-green-600  text-sm font-medium mb-1">
                           <Zap className="h-4 w-4" />
                           <span>Instant Payment</span>
                         </div>
@@ -514,10 +514,10 @@ export default function PaymentModal({
                     <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
                       <p className="font-medium text-foreground">Bank transfer (EFT)</p>
                       <p className="text-muted-foreground">
-                        Submitting records your payment instruction. Transfer the amount to NamLend
-                        Trust — FNB Namibia, acc 555 0123 4567, branch 280172 — using the reference
-                        number shown after you submit. Your balance updates once the transfer is
-                        confirmed.
+                        Submitting records your payment instruction. Transfer the amount to OG
+                        Financial Services — FNB Namibia, acc 555 0123 4567, branch 280172 — using
+                        the reference number shown after you submit. Your balance updates once the
+                        transfer is confirmed.
                       </p>
                     </div>
                   )}
@@ -526,8 +526,8 @@ export default function PaymentModal({
                       <p className="font-medium text-foreground">Mobile money</p>
                       <p className="text-muted-foreground">
                         Submitting records your payment instruction. Send the amount via MTC Maris
-                        or FNB eWallet to 081 555 0100 (NamLend Trust) quoting the reference number
-                        shown after you submit.
+                        or FNB eWallet to 081 555 0100 (OG Financial Services) quoting the reference
+                        number shown after you submit.
                       </p>
                     </div>
                   )}
@@ -545,9 +545,9 @@ export default function PaymentModal({
                     <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm animate-in fade-in slide-in-from-top-2 duration-200">
                       <p className="font-medium text-foreground">Cash at an agent</p>
                       <p className="text-muted-foreground">
-                        Submitting records your payment instruction. Pay cash at any NamLend agent
-                        (Windhoek CBD · Katutura) quoting the reference number shown after you
-                        submit.
+                        Submitting records your payment instruction. Pay cash at any OG Financial
+                        Services agent (Windhoek CBD · Katutura) quoting the reference number shown
+                        after you submit.
                       </p>
                     </div>
                   )}

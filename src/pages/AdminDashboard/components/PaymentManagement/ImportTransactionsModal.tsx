@@ -202,12 +202,12 @@ export const ImportTransactionsModal: React.FC<Props> = ({ open, onClose, onSucc
 
         <div className="space-y-4 py-4">
           {/* CSV Format Help */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <div className="bg-blue-50  border border-blue-200  rounded-lg p-3">
             <div className="flex items-start space-x-2">
-              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800 dark:text-blue-300">
+              <FileText className="h-5 w-5 text-blue-600  flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800 ">
                 <p className="font-medium mb-1">Expected CSV Format:</p>
-                <code className="text-xs bg-white dark:bg-black/40 px-2 py-1 rounded block border border-blue-100 dark:border-blue-800/50">
+                <code className="text-xs bg-white  px-2 py-1 rounded block border border-blue-100 ">
                   External ID,Date,Amount,Type,Source,Account,Description
                   <br />
                   TXN001,2026-01-18,5000.00,credit,FNB,123456,Payment received
@@ -281,8 +281,8 @@ export const ImportTransactionsModal: React.FC<Props> = ({ open, onClose, onSucc
                             <span
                               className={
                                 txn.transaction_type === 'credit'
-                                  ? 'text-green-600 dark:text-green-400'
-                                  : 'text-red-600 dark:text-red-400'
+                                  ? 'text-green-600 '
+                                  : 'text-red-600 '
                               }
                             >
                               {txn.transaction_type}
@@ -304,9 +304,9 @@ export const ImportTransactionsModal: React.FC<Props> = ({ open, onClose, onSucc
           )}
 
           {/* Warning */}
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex items-start space-x-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-yellow-800 dark:text-yellow-300">
+          <div className="bg-yellow-50  border border-yellow-200  rounded-lg p-3 flex items-start space-x-2">
+            <AlertTriangle className="h-5 w-5 text-yellow-600  flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-800 ">
               <p className="font-medium">Important:</p>
               <p className="mt-1">
                 Duplicate transactions (same external ID and source) will be automatically skipped.

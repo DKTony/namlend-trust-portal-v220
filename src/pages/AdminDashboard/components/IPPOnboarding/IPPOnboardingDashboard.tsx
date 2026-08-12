@@ -128,11 +128,11 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon, description, color = 'blue' }: StatCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
-    green: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-    yellow: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400',
-    red: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
-    gray: 'bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+    blue: 'bg-blue-50 text-blue-700  ',
+    green: 'bg-green-50 text-green-700  ',
+    yellow: 'bg-yellow-50 text-yellow-700  ',
+    red: 'bg-red-50 text-red-700  ',
+    gray: 'bg-gray-50 text-gray-700  ',
   };
 
   return (
@@ -519,8 +519,8 @@ export function IPPOnboardingDashboard() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 rounded-full bg-blue-100 ">
+                    <Smartphone className="h-5 w-5 text-blue-600 " />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">1. Device Binding</h4>
@@ -530,8 +530,8 @@ export function IPPOnboardingDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                    <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  <div className="p-2 rounded-full bg-purple-100 ">
+                    <CreditCard className="h-5 w-5 text-purple-600 " />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">2. Provider & Account Selection</h4>
@@ -541,8 +541,8 @@ export function IPPOnboardingDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                    <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div className="p-2 rounded-full bg-amber-100 ">
+                    <Shield className="h-5 w-5 text-amber-600 " />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">3. Verification & PIN Setup</h4>
@@ -552,8 +552,8 @@ export function IPPOnboardingDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30">
-                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-2 rounded-full bg-green-100 ">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 " />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-foreground">4. Alias Registration</h4>
@@ -666,8 +666,8 @@ export function IPPOnboardingDashboard() {
                   </p>
                 </div>
                 {selectedUser.last_error_code && (
-                  <div className="col-span-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
-                    <p className="text-sm font-medium text-red-800 dark:text-red-400">
+                  <div className="col-span-2 p-3 rounded-lg bg-red-50 ">
+                    <p className="text-sm font-medium text-red-800 ">
                       Last Error: {selectedUser.last_error_code}
                     </p>
                   </div>

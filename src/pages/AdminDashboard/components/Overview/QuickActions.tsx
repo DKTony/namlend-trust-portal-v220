@@ -1,6 +1,5 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import {
   AlertCircle,
@@ -26,7 +25,6 @@ interface QuickAction {
 
 const QuickActions: React.FC = () => {
   const navigate = useNavigate();
-  const { styles } = useTheme();
 
   const quickActions: QuickAction[] = [
     {
@@ -73,7 +71,12 @@ const QuickActions: React.FC = () => {
   return (
     <ThemedCard>
       <div className="mb-6">
-        <h3 className={cn('text-lg font-semibold flex items-center gap-2', styles.textClass)}>
+        <h3
+          className={cn(
+            'text-lg font-semibold flex items-center gap-2',
+            'font-sans text-[#274F35]'
+          )}
+        >
           <Plus className="h-5 w-5" />
           Quick Actions
         </h3>
@@ -103,7 +106,7 @@ const QuickActions: React.FC = () => {
                   <div
                     className={cn(
                       'font-medium text-sm leading-tight mb-1 truncate',
-                      styles.textClass
+                      'font-sans text-[#274F35]'
                     )}
                     title={action.title}
                   >

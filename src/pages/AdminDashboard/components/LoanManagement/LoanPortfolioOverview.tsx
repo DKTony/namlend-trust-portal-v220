@@ -1,5 +1,4 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
-import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import { AlertTriangle, Calendar, CheckCircle, Clock, DollarSign, TrendingUp } from 'lucide-react';
@@ -8,7 +7,6 @@ import { useLoanPortfolioMetrics } from '../../hooks/useLoanPortfolioMetrics';
 
 const LoanPortfolioOverview: React.FC = () => {
   const { metrics, loading, error } = useLoanPortfolioMetrics();
-  const { styles } = useTheme();
 
   const formatCurrency = (amount: number) => formatNAD(amount);
 
@@ -17,8 +15,8 @@ const LoanPortfolioOverview: React.FC = () => {
       title: 'Pending Applications',
       value: metrics?.pendingCount || 0,
       icon: Clock,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+      color: 'text-yellow-600 ',
+      bgColor: 'bg-yellow-50 ',
       description: 'Awaiting review',
       urgent: (metrics?.pendingCount || 0) > 10,
     },
@@ -26,40 +24,40 @@ const LoanPortfolioOverview: React.FC = () => {
       title: 'Approved This Month',
       value: metrics?.approvedThisMonth || 0,
       icon: CheckCircle,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      color: 'text-green-600 ',
+      bgColor: 'bg-green-50 ',
       description: 'Ready for disbursement',
     },
     {
       title: 'Total Portfolio Value',
       value: formatCurrency(metrics?.totalPortfolioValue || 0),
       icon: DollarSign,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      color: 'text-blue-600 ',
+      bgColor: 'bg-blue-50 ',
       description: 'Active loans',
     },
     {
       title: 'Average Processing Time',
       value: `${metrics?.avgProcessingDays || 0} days`,
       icon: Calendar,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      color: 'text-purple-600 ',
+      bgColor: 'bg-purple-50 ',
       description: 'Application to decision',
     },
     {
       title: 'Approval Rate',
       value: `${metrics?.approvalRate || 0}%`,
       icon: TrendingUp,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      color: 'text-emerald-600 ',
+      bgColor: 'bg-emerald-50 ',
       description: 'Last 30 days',
     },
     {
       title: 'High Risk Applications',
       value: metrics?.highRiskCount || 0,
       icon: AlertTriangle,
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      color: 'text-red-600 ',
+      bgColor: 'bg-red-50 ',
       description: 'Requires special review',
       urgent: (metrics?.highRiskCount || 0) > 0,
     },
@@ -105,7 +103,7 @@ const LoanPortfolioOverview: React.FC = () => {
             key={index}
             className={cn(
               'hover:shadow-lg transition-all duration-200',
-              card.urgent && 'ring-2 ring-red-200 dark:ring-red-800 shadow-md'
+              card.urgent && 'ring-2 ring-red-200  shadow-md'
             )}
           >
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-2">
@@ -115,7 +113,7 @@ const LoanPortfolioOverview: React.FC = () => {
               >
                 {card.title}
                 {card.urgent && (
-                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 align-middle">
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100  text-red-800  align-middle">
                     Urgent
                   </span>
                 )}
@@ -128,7 +126,7 @@ const LoanPortfolioOverview: React.FC = () => {
               <div
                 className={cn(
                   'text-xl sm:text-2xl font-bold mb-1 truncate tabular-nums',
-                  styles.textClass
+                  'font-sans text-[#274F35]'
                 )}
                 title={typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
               >

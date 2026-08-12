@@ -15,7 +15,7 @@ const AT_SANDBOX_URL = 'https://api.sandbox.africastalking.com/version1/messagin
 
 const API_KEY = process.env.AFRICASTALKING_API_KEY ?? '';
 const USERNAME = process.env.AFRICASTALKING_USERNAME ?? 'sandbox';
-const SENDER_ID = process.env.SMS_SENDER_ID ?? 'NAMLEND';
+const SENDER_ID = process.env.SMS_SENDER_ID ?? 'OGFIN';
 const IS_SANDBOX = process.env.AFRICASTALKING_SANDBOX === 'true';
 
 // ---------------------------------------------------------------------------
@@ -73,73 +73,73 @@ const SMS_TEMPLATES: Record<
   LOAN_SUBMITTED: {
     category: 'loan_notification',
     template:
-      "Hi {firstName}, your loan application for {amount} has been submitted. Ref: {reference}. We'll review it within 24hrs. - NamLend",
+      "Hi {firstName}, your loan application for {amount} has been submitted. Ref: {reference}. We'll review it within 24hrs. - OG Financial",
     variables: ['firstName', 'amount', 'reference'],
   },
   LOAN_APPROVED: {
     category: 'loan_notification',
     template:
-      'Great news {firstName}! Your loan of {amount} has been approved. Funds will be disbursed within 24hrs. Ref: {reference} - NamLend',
+      'Great news {firstName}! Your loan of {amount} has been approved. Funds will be disbursed within 24hrs. Ref: {reference} - OG Financial',
     variables: ['firstName', 'amount', 'reference'],
   },
   LOAN_REJECTED: {
     category: 'loan_notification',
     template:
-      'Hi {firstName}, unfortunately your loan application was not approved. Please contact us for more info. Ref: {reference} - NamLend',
+      'Hi {firstName}, unfortunately your loan application was not approved. Please contact us for more info. Ref: {reference} - OG Financial',
     variables: ['firstName', 'reference'],
   },
   LOAN_DISBURSED: {
     category: 'loan_notification',
     template:
-      'Hi {firstName}, {amount} has been disbursed to your account. First payment of {monthlyPayment} due on {dueDate}. - NamLend',
+      'Hi {firstName}, {amount} has been disbursed to your account. First payment of {monthlyPayment} due on {dueDate}. - OG Financial',
     variables: ['firstName', 'amount', 'monthlyPayment', 'dueDate'],
   },
   PAYMENT_REMINDER_7_DAYS: {
     category: 'payment_reminder',
     template:
-      'Reminder: Your loan payment of {amount} is due in 7 days ({dueDate}). Ref: {reference}. Pay via *140# or bank transfer. - NamLend',
+      'Reminder: Your loan payment of {amount} is due in 7 days ({dueDate}). Ref: {reference}. Pay via *140# or bank transfer. - OG Financial',
     variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_REMINDER_3_DAYS: {
     category: 'payment_reminder',
     template:
-      'Reminder: Your loan payment of {amount} is due in 3 days ({dueDate}). Avoid late fees - pay now! Ref: {reference} - NamLend',
+      'Reminder: Your loan payment of {amount} is due in 3 days ({dueDate}). Avoid late fees - pay now! Ref: {reference} - OG Financial',
     variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_REMINDER_1_DAY: {
     category: 'payment_reminder',
     template:
-      'URGENT: Your loan payment of {amount} is due tomorrow ({dueDate}). Pay now to avoid late fees. Ref: {reference} - NamLend',
+      'URGENT: Your loan payment of {amount} is due tomorrow ({dueDate}). Pay now to avoid late fees. Ref: {reference} - OG Financial',
     variables: ['amount', 'dueDate', 'reference'],
   },
   PAYMENT_OVERDUE: {
     category: 'collections',
     template:
-      'OVERDUE: Your payment of {amount} was due on {dueDate}. Please pay immediately to avoid additional charges. Call us: 061-123-4567 - NamLend',
+      'OVERDUE: Your payment of {amount} was due on {dueDate}. Please pay immediately to avoid additional charges. Call us: +264 81 417 4288 - OG Financial',
     variables: ['amount', 'dueDate'],
   },
   PAYMENT_RECEIVED: {
     category: 'payment_confirmation',
     template:
-      'Payment received! {amount} paid on {date}. Remaining balance: {balance}. Ref: {reference}. Thank you! - NamLend',
+      'Payment received! {amount} paid on {date}. Remaining balance: {balance}. Ref: {reference}. Thank you! - OG Financial',
     variables: ['amount', 'date', 'balance', 'reference'],
   },
   LOAN_COMPLETED: {
     category: 'loan_notification',
     template:
-      'Congratulations {firstName}! Your loan has been fully repaid. Thank you for choosing NamLend. Apply again anytime! - NamLend',
+      'Congratulations {firstName}! Your loan has been fully repaid. Thank you for choosing OG Financial. Apply again anytime! - OG Financial',
     variables: ['firstName'],
   },
   OTP_VERIFICATION: {
     category: 'otp',
     template:
-      'Your NamLend verification code is: {otp}. Valid for 10 minutes. Never share this code.',
+      'Your OG Financial verification code is: {otp}. Valid for 10 minutes. Never share this code.',
     variables: ['otp'],
   },
   PTP_REMINDER: {
     category: 'collections',
     template:
-      'Hi {firstName}, reminder: You promised to pay {amount} today ({date}). Please fulfill your commitment. Ref: {reference} - NamLend',
+      'Hi {firstName}, reminder: You promised to pay {amount} today ({date}). Please fulfill your commitment. Ref: {reference} - OG Financial',
     variables: ['firstName', 'amount', 'date', 'reference'],
   },
 };

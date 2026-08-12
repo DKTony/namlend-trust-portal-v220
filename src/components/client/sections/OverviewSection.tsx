@@ -66,20 +66,18 @@ export function OverviewSection({
         <div className="flex items-center gap-3 mt-2">
           {isEligible ? (
             <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 shrink-0">
-              <CheckCircle className="h-6 w-6 text-green-500 dark:text-green-400" />
+              <CheckCircle className="h-6 w-6 text-green-500 " />
             </div>
           ) : (
             <div className="h-12 w-12 rounded-full bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 shrink-0">
-              <AlertCircle className="h-6 w-6 text-yellow-500 dark:text-yellow-400" />
+              <AlertCircle className="h-6 w-6 text-yellow-500 " />
             </div>
           )}
           <div className="min-w-0">
             <p
               className={cn(
                 'text-lg font-bold truncate',
-                isEligible
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-yellow-600 dark:text-yellow-500'
+                isEligible ? 'text-green-600 ' : 'text-yellow-600 '
               )}
             >
               {isEligible ? 'Eligible' : 'Ineligible'}

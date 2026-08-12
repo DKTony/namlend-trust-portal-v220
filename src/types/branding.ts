@@ -1,6 +1,5 @@
 /**
- * Branding Configuration Types
- * White-label customization for NamLend backoffice
+ * Immutable OG Financial Services identity types.
  * @module types/branding
  */
 
@@ -61,58 +60,35 @@ export interface BrandingContextType {
   config: BrandingConfig;
   loading: boolean;
   error: string | null;
-  refreshBranding: () => Promise<void>;
-  updateBrandingLocally: (
-    section: keyof BrandingConfig,
-    values: Partial<BrandingConfig[keyof BrandingConfig]>
-  ) => void;
 }
 
 /**
  * Default branding values - used as fallback when database is unavailable
  */
-export const DEFAULT_BRANDING: BrandingConfig = {
-  general: {
-    company_name: 'NamLend',
-    company_tagline: 'Trust & Finance',
-    support_email: 'support@namlend.com',
-    support_phone: '+264 61 123 456',
-  },
-  colors: {
-    primary_color: '#0EA5E9',
-    secondary_color: '#10B981',
-    accent_color: '#8b5cf6',
-    use_custom_colors: false,
-  },
-  assets: {
-    logo_url: null,
-    favicon_url: null,
-    logo_width: 120,
-    logo_height: 40,
-    show_company_name_with_logo: true,
-  },
-  meta: {
+export const DEFAULT_BRANDING: BrandingConfig = Object.freeze({
+  general: Object.freeze({
+    company_name: 'OG Financial Services',
+    company_tagline: 'Finance that moves you forward',
+    support_email: 'finance@mgholdingsptyltd.com',
+    support_phone: '+264 81 417 4288',
+  }),
+  colors: Object.freeze({
+    primary_color: '#3F713E',
+    secondary_color: '#7CA05C',
+    accent_color: '#274F35',
+    use_custom_colors: true,
+  }),
+  assets: Object.freeze({
+    logo_url: '/og-financial-logo-v2.svg',
+    favicon_url: '/og-financial-favicon-v2.svg',
+    logo_width: 220,
+    logo_height: 72,
+    show_company_name_with_logo: false,
+  }),
+  meta: Object.freeze({
     page_title_template: '{company_name} - {page_name}',
-    meta_description: 'Professional loan management platform',
-    og_image_url: null,
-  },
-};
-
-/**
- * Branding configuration keys as stored in system_configuration table
- */
-export type BrandingConfigKey =
-  | 'branding.general'
-  | 'branding.colors'
-  | 'branding.assets'
-  | 'branding.meta';
-
-/**
- * Maps branding section names to their config keys
- */
-export const BRANDING_CONFIG_KEYS: Record<keyof BrandingConfig, BrandingConfigKey> = {
-  general: 'branding.general',
-  colors: 'branding.colors',
-  assets: 'branding.assets',
-  meta: 'branding.meta',
-};
+    meta_description:
+      'Apply online with OG Financial Services, a NAMFISA-registered Namibian microlender.',
+    og_image_url: '/og-financial-social-v2.png',
+  }),
+});

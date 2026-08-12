@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTheme } from '@/context/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,7 +50,6 @@ interface Loan {
 
 export default function Payment() {
   const { user } = useAuth();
-  const { styles } = useTheme();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { t } = useTranslation('payment');
@@ -241,7 +239,7 @@ export default function Payment() {
     return (
       <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
         <div className="flex items-center justify-center py-16">
-          <Loader2 className={cn('h-8 w-8 animate-spin', styles.textClass)} />
+          <Loader2 className={cn('h-8 w-8 animate-spin', 'font-sans text-[#274F35]')} />
         </div>
       </DashboardLayout>
     );
@@ -253,7 +251,7 @@ export default function Payment() {
         <div className="max-w-2xl">
           <ThemedCard className="flex flex-col items-center justify-center py-12">
             <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className={cn('text-lg font-medium mb-2', styles.textClass)}>
+            <h3 className={cn('text-lg font-medium mb-2', 'font-sans text-[#274F35]')}>
               {t('noActiveLoans.title')}
             </h3>
             <p className="text-muted-foreground text-center mb-4">
@@ -277,7 +275,9 @@ export default function Payment() {
     <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
       <div className="max-w-4xl">
         <div className="mb-8">
-          <h1 className={cn('text-3xl font-bold mb-2', styles.textClass)}>{t('title')}</h1>
+          <h1 className={cn('text-3xl font-bold mb-2', 'font-sans text-[#274F35]')}>
+            {t('title')}
+          </h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
 
@@ -285,7 +285,7 @@ export default function Payment() {
           <div className="lg:col-span-2">
             <ThemedCard>
               <div className="mb-6">
-                <h2 className={cn('text-xl font-bold', styles.textClass)}>
+                <h2 className={cn('text-xl font-bold', 'font-sans text-[#274F35]')}>
                   {t('form.paymentDetails')}
                 </h2>
                 <p className="text-sm text-muted-foreground">{t('form.paymentDetailsSubtitle')}</p>
@@ -302,7 +302,13 @@ export default function Payment() {
                       if (loan) setPaymentAmount(loan.monthly_payment.toString());
                     }}
                   >
-                    <SelectTrigger id="loan" className={cn(styles.inputClass, styles.textClass)}>
+                    <SelectTrigger
+                      id="loan"
+                      className={cn(
+                        'rounded-xl border border-[#B9CCB3] bg-white text-[#274F35] placeholder:text-slate-400 focus:border-[#3F713E] focus:ring-[#3F713E]/20',
+                        'font-sans text-[#274F35]'
+                      )}
+                    >
                       <SelectValue placeholder={t('form.selectLoanPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -366,14 +372,14 @@ export default function Payment() {
 
                     <div className="mt-4">
                       <TabsContent value="ips">
-                        <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                        <div className="p-4 rounded-lg bg-blue-50  border border-blue-100 ">
                           <div className="flex items-start gap-3">
-                            <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                            <Zap className="h-5 w-5 text-blue-600  mt-0.5" />
                             <div>
-                              <h4 className="font-medium text-blue-900 dark:text-blue-300">
+                              <h4 className="font-medium text-blue-900 ">
                                 {t('methods.ips.title')}
                               </h4>
-                              <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                              <p className="text-sm text-blue-700  mt-1">
                                 {t('methods.ips.description')}
                               </p>
                             </div>
@@ -490,13 +496,11 @@ export default function Payment() {
                   </Tabs>
                 </div>
 
-                <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center gap-2 p-4 bg-blue-50  rounded-lg">
+                  <Shield className="h-5 w-5 text-blue-600 " />
                   <div className="text-sm">
-                    <p className="font-medium text-blue-800 dark:text-blue-200">
-                      {t('security.title')}
-                    </p>
-                    <p className="text-blue-600 dark:text-blue-300">{t('security.description')}</p>
+                    <p className="font-medium text-blue-800 ">{t('security.title')}</p>
+                    <p className="text-blue-600 ">{t('security.description')}</p>
                   </div>
                 </div>
 

@@ -137,10 +137,10 @@ function ActionDialogContent({
     case 'select_sov':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4  ">
             <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 " />
+              <p className="text-sm text-blue-800 ">
                 Choose the bank or wallet provider that owns the account you want to link.
               </p>
             </div>
@@ -174,14 +174,14 @@ function ActionDialogContent({
     case 'select_account':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4  ">
             <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 " />
               <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                <p className="text-sm font-medium text-blue-800 ">
                   Accounts from {onboardingData?.sov_provider_name || 'your provider'}
                 </p>
-                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                <p className="mt-1 text-xs text-blue-700 ">
                   Select the account that should be mapped to your IPP alias.
                 </p>
               </div>
@@ -234,14 +234,14 @@ function ActionDialogContent({
     case 'start_verification':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4  ">
             <div className="flex items-start gap-3">
-              <Shield className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Shield className="mt-0.5 h-5 w-5 text-blue-600 " />
               <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                <p className="text-sm font-medium text-blue-800 ">
                   Verify {selectedAccount?.maskedAccountNumber ?? 'your selected account'}
                 </p>
-                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                <p className="mt-1 text-xs text-blue-700 ">
                   Only the methods returned by IPS for this account are shown here.
                 </p>
               </div>
@@ -285,8 +285,8 @@ function ActionDialogContent({
     case 'verify_otp':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4  ">
+            <p className="text-sm text-blue-800 ">
               Enter the OTP sent to your registered mobile number.
             </p>
           </div>
@@ -307,8 +307,8 @@ function ActionDialogContent({
     case 'set_pin':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4  ">
+            <p className="text-sm text-amber-800 ">
               <strong>Important:</strong> Your IPS PIN authorizes payments. Keep it private.
             </p>
           </div>
@@ -365,8 +365,8 @@ function ActionDialogContent({
             </p>
           </div>
           {vpaUsername && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
-              <p className="text-sm text-green-800 dark:text-green-200">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3  ">
+              <p className="text-sm text-green-800 ">
                 Your VPA will be{' '}
                 <strong>
                   {vpaUsername}@{handle}
@@ -381,14 +381,14 @@ function ActionDialogContent({
     case 'register_alias':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4  ">
             <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 " />
               <div>
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                <p className="text-sm font-medium text-blue-800 ">
                   Register {onboardingData?.long_alias ?? 'your alias'} with IPS
                 </p>
-                <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                <p className="mt-1 text-xs text-blue-700 ">
                   This submits the alias to the IPS directory. Enrollment stays pending until the
                   callback confirms the alias is active and synced.
                 </p>
@@ -401,14 +401,12 @@ function ActionDialogContent({
     case 'finalize':
       return (
         <div className="space-y-4">
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4  ">
             <div className="flex items-start gap-3">
-              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 dark:text-green-400" />
+              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 " />
               <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  Alias confirmed by IPS
-                </p>
-                <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                <p className="text-sm font-medium text-green-800 ">Alias confirmed by IPS</p>
+                <p className="mt-1 text-xs text-green-700 ">
                   Finalize the enrollment now that your account, PIN, and alias are all confirmed.
                 </p>
               </div>

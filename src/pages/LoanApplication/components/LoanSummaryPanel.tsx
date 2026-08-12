@@ -1,24 +1,24 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import type { LoanDetails } from '@/hooks/useLoanForm';
 import { cn } from '@/lib/utils';
-import type { ThemeConfig } from '@/types/theme';
 import { formatNAD } from '@/utils/currency';
 import { Calculator, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LoanSummaryPanelProps {
   loanDetails: LoanDetails;
-  styles: ThemeConfig;
 }
 
-export default function LoanSummaryPanel({ loanDetails, styles }: LoanSummaryPanelProps) {
+export default function LoanSummaryPanel({ loanDetails }: LoanSummaryPanelProps) {
   const { t } = useTranslation('loanApplication');
 
   return (
     <div className="space-y-6">
       <ThemedCard>
         <div className="mb-4">
-          <h2 className={cn('text-lg font-bold flex items-center gap-2', styles.textClass)}>
+          <h2
+            className={cn('text-lg font-bold flex items-center gap-2', 'font-sans text-[#274F35]')}
+          >
             <Calculator className="h-5 w-5" />
             {t('summary.title')}
           </h2>
@@ -53,7 +53,9 @@ export default function LoanSummaryPanel({ loanDetails, styles }: LoanSummaryPan
 
       <ThemedCard>
         <div className="mb-4">
-          <h2 className={cn('text-lg font-bold flex items-center gap-2', styles.textClass)}>
+          <h2
+            className={cn('text-lg font-bold flex items-center gap-2', 'font-sans text-[#274F35]')}
+          >
             <Clock className="h-5 w-5" />
             {t('processingTime.title')}
           </h2>

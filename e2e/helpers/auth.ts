@@ -1,4 +1,4 @@
-import { Page, expect, BrowserContext } from '@playwright/test';
+import { Page } from '@playwright/test';
 
 export const baseURL = process.env.BASE_URL || 'http://localhost:8080';
 
@@ -10,6 +10,45 @@ const CLIENT_PASSWORD = process.env.E2E_CLIENT_PASSWORD || 'Test1234!';
 const PLATFORM_OWNER_EMAIL =
   process.env.E2E_PLATFORM_OWNER_EMAIL || 'platformowner@test.namlend.com';
 const PLATFORM_OWNER_PASSWORD = process.env.E2E_PLATFORM_OWNER_PASSWORD || 'Test1234!';
+
+export const AUTH_FAILURE_TOAST =
+  /login failed|no account found|incorrect password|login error|invalid credentials|invalid_email|session timeout/i;
+
+async function readLoginDiagnostics(page: Page): Promise<{
+  url: string;
+  toasts: string;
+  viteConvexUrl: string;
+}> {
+  const url = page.url();
+  const toasts = (await page.locator('[role="status"], [role="alert"]').allInnerTexts())
+    .map((text) => text.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' || ');
+  let viteConvexUrl = 'unavailable';
+  try {
+    viteConvexUrl = await page.evaluate(() => {
+      const fromForm = document
+        .querySelector('[data-testid="email-input"]')
+        ?.closest('form')
+        ?.getAttribute('data-e2e-convex-url');
+      return fromForm || 'unset';
+    });
+  } catch {
+    viteConvexUrl = 'evaluate-failed';
+  }
+  return { url, toasts: toasts || '(none)', viteConvexUrl };
+}
+
+function formatLoginFailure(
+  kind: 'timeout' | 'toast',
+  email: string,
+  diag: { url: string; toasts: string; viteConvexUrl: string }
+): string {
+  return (
+    `E2E login ${kind} for ${email}. URL=${diag.url}; ` +
+    `VITE_CONVEX_URL=${diag.viteConvexUrl}; toasts=${diag.toasts}`
+  );
+}
 
 async function waitForLoginForm(page: Page): Promise<void> {
   const emailInput = page.getByTestId('email-input');
@@ -93,6 +132,8 @@ export async function login(
         { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, role: 'admin' as const },
       ];
 
+  const failures: string[] = [];
+
   for (const c of candidates) {
     await waitForLoginForm(page);
     const emailInput = page.getByTestId('email-input');
@@ -103,37 +144,35 @@ export async function login(
 
     await page.getByTestId('login-button').click();
 
-    // Wait for navigation to dashboard or admin, or detect auth error
     const outcome = await Promise.race<'success' | 'error' | 'timeout'>([
       page
-        .waitForURL(/\/(admin|dashboard)/, { timeout: 30000 })
-        .then(() => 'success')
-        .catch(() => 'timeout'),
+        .waitForURL(/\/(admin|dashboard|platform)/, { timeout: 30000 })
+        .then(() => 'success' as const)
+        .catch(() => 'timeout' as const),
       page
-        .getByText(
-          /invalid credentials|invalid_email|login failed|login error|session timeout|no account found|incorrect password/i
-        )
+        .getByText(AUTH_FAILURE_TOAST)
         .first()
         .waitFor({ state: 'visible', timeout: 30000 })
-        .then(() => 'error')
-        .catch(() => 'none' as any),
+        .then(() => 'error' as const)
+        .catch(() => 'none' as unknown as 'timeout'),
     ]);
 
     if (outcome === 'success') {
-      // Wait for app shell to render (drawer trigger, rail, or permanent sidebar).
       await waitForAppShell(page, 20000);
       return c.role;
     }
 
-    // If error or timeout, try next candidate
+    const kind = outcome === 'error' ? 'toast' : 'timeout';
+    failures.push(formatLoginFailure(kind, c.email, await readLoginDiagnostics(page)));
+
     await page.goto(authUrl);
     await page.waitForLoadState('domcontentloaded');
     await waitForLoginForm(page);
   }
 
-  const currentUrl = page.url();
   throw new Error(
-    `E2E login failed for admin and client. Current URL: ${currentUrl}. Ensure test users are seeded in Convex (npx convex run seed:seedTestUsers).`
+    `E2E login failed for admin and client. ${failures.join(' | ')}. ` +
+      'Ensure test users are seeded in Convex (npx convex run seed:seedTestUsers).'
   );
 }
 
@@ -151,25 +190,25 @@ export async function loginAsPlatformOwner(page: Page): Promise<void> {
   await page.getByTestId('password-input').fill(PLATFORM_OWNER_PASSWORD);
   await page.getByTestId('login-button').click();
 
-  const outcome = await Promise.race<'success' | 'error'>([
+  const outcome = await Promise.race<'success' | 'error' | 'timeout'>([
     page
       .waitForURL(/\/platform/, { timeout: 30000 })
       .then(() => 'success' as const)
-      .catch(() => 'error' as const),
+      .catch(() => 'timeout' as const),
     page
-      .getByText(
-        /invalid credentials|invalid_email|login failed|login error|session timeout|no account found|incorrect password/i
-      )
+      .getByText(AUTH_FAILURE_TOAST)
       .first()
       .waitFor({ state: 'visible', timeout: 30000 })
       .then(() => 'error' as const)
-      .catch(() => 'error' as const),
+      .catch(() => 'none' as unknown as 'timeout'),
   ]);
 
   if (outcome !== 'success') {
+    const kind = outcome === 'error' ? 'toast' : 'timeout';
     throw new Error(
-      `Platform owner login failed for ${PLATFORM_OWNER_EMAIL}. Current URL: ${page.url()}. ` +
-        `Ensure the platform owner is seeded (npx convex run seed:seedTestUsers).`
+      `Platform owner login failed for ${PLATFORM_OWNER_EMAIL}. ` +
+        `${formatLoginFailure(kind, PLATFORM_OWNER_EMAIL, await readLoginDiagnostics(page))}. ` +
+        'Ensure the platform owner is seeded (npx convex run seed:seedTestUsers).'
     );
   }
 }

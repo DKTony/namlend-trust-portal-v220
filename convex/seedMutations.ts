@@ -5,7 +5,7 @@
 
 import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
-import { internalMutation } from './_generated/server';
+import { internalMutation, internalQuery, type MutationCtx } from './_generated/server';
 import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
 import { ensurePaymentSchedule } from './lib/scheduleGeneration';
 
@@ -69,6 +69,53 @@ export const elevateRole = internalMutation({
   },
 });
 
+/** Password identities the protected E2E login smoke must be able to sign in as. */
+export const E2E_PASSWORD_LOGIN_EMAILS = [
+  'client1@test.namlend.com',
+  'admin@test.namlend.com',
+  'loan_officer@test.namlend.com',
+  'platformowner@test.namlend.com',
+] as const;
+
+async function findPasswordAccount(ctx: MutationCtx, email: string) {
+  return await ctx.db
+    .query('authAccounts')
+    .filter((q) =>
+      q.and(q.eq(q.field('provider'), 'password'), q.eq(q.field('providerAccountId'), email))
+    )
+    .first();
+}
+
+async function upsertPasswordAccount(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+  email: string,
+  hashedPassword: string
+): Promise<void> {
+  const existing = await findPasswordAccount(ctx, email);
+  if (existing) {
+    await ctx.db.patch(existing._id, { secret: hashedPassword, userId });
+    return;
+  }
+  await ctx.db.insert('authAccounts', {
+    userId,
+    provider: 'password',
+    providerAccountId: email,
+    secret: hashedPassword,
+  });
+}
+
+async function ensureUserEmail(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+  email: string
+): Promise<void> {
+  const user = await ctx.db.get(userId);
+  if (user && user.email !== email) {
+    await ctx.db.patch(userId, { email });
+  }
+}
+
 /** Insert a single test user directly into auth tables + profiles + userRoles. */
 export const createTestUser = internalMutation({
   args: {
@@ -77,84 +124,95 @@ export const createTestUser = internalMutation({
     role: v.union(v.literal('client'), v.literal('loan_officer'), v.literal('admin')),
     institutionId: v.id('institutions'),
   },
+  returns: v.object({
+    userId: v.id('users'),
+    created: v.boolean(),
+  }),
   handler: async (ctx, { email, hashedPassword, role, institutionId }) => {
-    // Check if user already exists
-    const existingProfile = await ctx.db
-      .query('profiles')
-      .filter((q) => q.eq(q.field('email'), email))
-      .first();
-    if (existingProfile) {
-      console.log('[seed] Test user already exists, skipping');
-      const existingRole = await ctx.db
-        .query('userRoles')
-        .withIndex('by_userId', (q) => q.eq('userId', existingProfile.userId))
-        .first();
-      if (existingRole) {
-        await ctx.db.patch(existingRole._id, { role, institutionId });
-        console.log(`[seed] Bound existing test user to tenant as '${role}'`);
-      } else {
-        await ctx.db.insert('userRoles', {
-          userId: existingProfile.userId,
-          role,
-          institutionId,
-          createdAt: Date.now(),
-        });
-      }
-      // Deterministic reset: clear any income persisted onto the test client by
-      // prior loan-application runs, so FinancialInfoStep always renders the
-      // editable income input the E2E specs fill (getByTestId('income-input')).
-      if (existingProfile.monthlyIncome != null) {
-        await ctx.db.patch(existingProfile._id, { monthlyIncome: undefined });
-        console.log('[seed] Cleared stale monthlyIncome for existing test user');
-      }
-      // Backfill phone/idNumber on already-seeded deployments: submitMyKyc now
-      // asserts both server-side, so a legacy seed without them would strand every
-      // KYC E2E spec at PROFILE_INCOMPLETE.
-      if (!existingProfile.phone?.trim() || !existingProfile.idNumber?.trim()) {
-        await ctx.db.patch(existingProfile._id, {
-          phone: existingProfile.phone?.trim() || '+264811000000',
-          idNumber: existingProfile.idNumber?.trim() || '90010100001',
-          updatedAt: Date.now(),
-        });
-        console.log('[seed] Backfilled required test-user identity fields');
-      }
-      return;
-    }
-
+    const normalizedEmail = email.trim().toLowerCase();
     const now = Date.now();
 
-    // 1. Create user in Convex Auth users table
-    const userId = await ctx.db.insert('users', {});
+    // authAccounts is what Password sign-in resolves. Always write/update `secret`
+    // even when a profile already exists — a skipped hash left InvalidSecret on
+    // re-seed, and a missing users.email broke Convex Auth's account lookup.
+    const existingAccount = await findPasswordAccount(ctx, normalizedEmail);
+    const existingProfile = await ctx.db
+      .query('profiles')
+      .filter((q) => q.eq(q.field('email'), normalizedEmail))
+      .first();
 
-    // 2. Create auth account (password provider)
-    await ctx.db.insert('authAccounts', {
-      userId,
-      provider: 'password',
-      providerAccountId: email,
-      secret: hashedPassword,
-    });
+    let userId: Id<'users'>;
+    let created = false;
+    if (existingAccount) {
+      userId = existingAccount.userId;
+    } else if (existingProfile) {
+      userId = existingProfile.userId;
+    } else {
+      userId = await ctx.db.insert('users', { email: normalizedEmail });
+      created = true;
+    }
 
-    // 3. Create profile — phone/idNumber included because submitMyKyc asserts both
-    // server-side (PROFILE_INCOMPLETE otherwise).
-    await ctx.db.insert('profiles', {
-      userId,
-      email,
-      phone: '+264811000000',
-      idNumber: '90010100001',
-      kycStatus: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    });
+    await upsertPasswordAccount(ctx, userId, normalizedEmail, hashedPassword);
+    await ensureUserEmail(ctx, userId, normalizedEmail);
 
-    // 4. Create role
-    await ctx.db.insert('userRoles', {
-      userId,
-      role,
-      institutionId,
-      createdAt: now,
-    });
+    const profile =
+      existingProfile?.userId === userId
+        ? existingProfile
+        : await ctx.db
+            .query('profiles')
+            .withIndex('by_userId', (q) => q.eq('userId', userId))
+            .first();
 
-    console.log(`[seed] Created test user with role '${role}'`);
+    if (!profile) {
+      await ctx.db.insert('profiles', {
+        userId,
+        email: normalizedEmail,
+        phone: '+264811000000',
+        idNumber: '90010100001',
+        kycStatus: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else {
+      const profilePatch: {
+        email?: string;
+        monthlyIncome?: undefined;
+        phone?: string;
+        idNumber?: string;
+        updatedAt?: number;
+      } = {};
+      if (profile.email !== normalizedEmail) profilePatch.email = normalizedEmail;
+      // Deterministic reset: FinancialInfoStep always renders income-input for E2E.
+      if (profile.monthlyIncome != null) profilePatch.monthlyIncome = undefined;
+      if (!profile.phone?.trim() || !profile.idNumber?.trim()) {
+        profilePatch.phone = profile.phone?.trim() || '+264811000000';
+        profilePatch.idNumber = profile.idNumber?.trim() || '90010100001';
+        profilePatch.updatedAt = now;
+      }
+      if (Object.keys(profilePatch).length > 0) {
+        await ctx.db.patch(profile._id, profilePatch);
+      }
+    }
+
+    const existingRole = await ctx.db
+      .query('userRoles')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .first();
+    if (existingRole) {
+      await ctx.db.patch(existingRole._id, { role, institutionId });
+    } else {
+      await ctx.db.insert('userRoles', {
+        userId,
+        role,
+        institutionId,
+        createdAt: now,
+      });
+    }
+
+    console.log(
+      `[seed] ${created ? 'Created' : 'Updated'} test user ${normalizedEmail} as '${role}'`
+    );
+    return { userId, created };
   },
 });
 
@@ -173,27 +231,26 @@ export const createTestUser = internalMutation({
  */
 export const seedPlatformOwnerForE2E = internalMutation({
   args: { ownerEmail: v.string(), hashedPassword: v.string() },
+  returns: v.object({
+    userId: v.id('users'),
+    email: v.string(),
+  }),
   handler: async (ctx, { ownerEmail, hashedPassword }) => {
     const now = Date.now();
+    const normalizedEmail = ownerEmail.trim().toLowerCase();
 
-    // 1. authAccounts is the login source of truth — find or create by it.
-    const authAccount = await ctx.db
-      .query('authAccounts')
-      .filter((q) => q.eq(q.field('providerAccountId'), ownerEmail))
-      .first();
+    // 1. authAccounts is the login source of truth — find or create by it, and always
+    // refresh `secret` so re-seeds cannot leave a stale hash.
+    const authAccount = await findPasswordAccount(ctx, normalizedEmail);
 
     let userId: Id<'users'>;
     if (authAccount) {
       userId = authAccount.userId;
     } else {
-      userId = await ctx.db.insert('users', {});
-      await ctx.db.insert('authAccounts', {
-        userId,
-        provider: 'password',
-        providerAccountId: ownerEmail,
-        secret: hashedPassword,
-      });
+      userId = await ctx.db.insert('users', { email: normalizedEmail });
     }
+    await upsertPasswordAccount(ctx, userId, normalizedEmail, hashedPassword);
+    await ensureUserEmail(ctx, userId, normalizedEmail);
 
     // 2. Ensure exactly one profile bound to this exact userId.
     const profile = await ctx.db
@@ -203,7 +260,7 @@ export const seedPlatformOwnerForE2E = internalMutation({
     if (!profile) {
       await ctx.db.insert('profiles', {
         userId,
-        email: ownerEmail,
+        email: normalizedEmail,
         kycStatus: 'pending',
         createdAt: now,
         updatedAt: now,
@@ -238,7 +295,32 @@ export const seedPlatformOwnerForE2E = internalMutation({
     }
 
     console.log('[seed] Platform-owner test account is ready');
-    return { userId, email: ownerEmail };
+    return { userId, email: normalizedEmail };
+  },
+});
+
+/** Census used by seed logs and convex-test: password accounts for the four E2E emails. */
+export const countE2EAuthAccounts = internalQuery({
+  args: {},
+  returns: v.object({
+    count: v.number(),
+    emails: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const emails: string[] = [];
+    for (const email of E2E_PASSWORD_LOGIN_EMAILS) {
+      const account = await ctx.db
+        .query('authAccounts')
+        .filter((q) =>
+          q.and(q.eq(q.field('provider'), 'password'), q.eq(q.field('providerAccountId'), email))
+        )
+        .first();
+      if (account?.secret) emails.push(email);
+    }
+    console.log(
+      `[seed] authAccounts with secrets for E2E emails: ${emails.length}/${E2E_PASSWORD_LOGIN_EMAILS.length} (${emails.join(', ') || 'none'})`
+    );
+    return { count: emails.length, emails };
   },
 });
 

@@ -431,7 +431,11 @@ export default function Auth() {
               // LOGIN FORM
               <>
                 <GoogleSignInButton next={nextParam} className="mb-5" />
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form
+                  onSubmit={handleLogin}
+                  className="space-y-5"
+                  data-e2e-convex-url={import.meta.env.VITE_CONVEX_URL ?? ''}
+                >
                   <div className="space-y-2">
                     <label className={cn('text-sm font-semibold', 'font-sans text-[#274F35]')}>
                       Email

@@ -2,13 +2,20 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 8080;
 const baseURL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const convexUrl = process.env.VITE_CONVEX_URL ?? '';
+
+if (process.env.CI && !convexUrl) {
+  throw new Error(
+    'VITE_CONVEX_URL must be pinned for CI Playwright so Vite talks to the disposable preview.'
+  );
+}
 
 // Environment wiring summary:
-//   VITE_CONVEX_URL       — Convex backend (required for all UI tests)
+//   VITE_CONVEX_URL       — Convex backend (required for all UI tests; pinned on webServer.env)
 //   VITE_SUPABASE_URL     — Legacy Supabase (optional; legacy API tests self-skip when absent)
 //   VITE_SUPABASE_ANON_KEY — Legacy Supabase anon key (optional)
 //   SUPABASE_SERVICE_ROLE_KEY — Legacy service key (optional; approval-rpc-race-condition only)
-//   E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD — Test credentials (defaults in global-setup.ts)
+//   E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD — Test credentials (defaults in helpers/auth.ts)
 //   BASE_URL              — Override app URL (default: http://localhost:8080)
 
 export default defineConfig({
@@ -35,5 +42,14 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Playwright replaces the child env when `env` is set — spread process.env, then pin
+    // the values Vite inlines. Otherwise the SPA can boot against aromatic while tests
+    // think they are on the disposable preview.
+    env: {
+      ...process.env,
+      VITE_CONVEX_URL: convexUrl,
+      VITE_E2E: 'true',
+      BASE_URL: baseURL,
+    },
   },
 });

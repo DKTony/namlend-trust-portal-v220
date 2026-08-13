@@ -1,5 +1,5 @@
-import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { readRegularFileWithinRoot } from './safe-files.mjs';
 
 const distDirectory = path.resolve(process.cwd(), 'dist');
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -32,14 +32,11 @@ function assertPng(fileName, contents) {
 }
 
 for (const asset of requiredAssets) {
-  const assetPath = path.join(distDirectory, asset.fileName);
-  const metadata = await stat(assetPath);
-
-  if (!metadata.isFile() || metadata.size === 0) {
+  const contents = readRegularFileWithinRoot(distDirectory, asset.fileName);
+  if (!contents || contents.length === 0) {
     throw new Error(`${asset.fileName} is missing or empty in dist`);
   }
 
-  const contents = await readFile(assetPath);
   if (asset.type === 'svg') assertSvg(asset.fileName, contents);
   if (asset.type === 'png') assertPng(asset.fileName, contents);
 }

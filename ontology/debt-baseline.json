@@ -4,10 +4,36 @@
   "commitSha": "eb457030e75fd004ba39ace8d54bf5fe231b0353",
   "policy": "Counts may decrease but cannot increase. Safety gap kinds are not eligible for this baseline.",
   "gaps": [
-    { "kind": "E1_NOT_YET_AVAILABLE", "maximumCount": 1, "owner": "NamLend Engineering", "reviewDate": "2026-09-30" },
-    { "kind": "FUNCTIONAL_ORPHAN", "maximumCount": 71, "owner": "NamLend Engineering", "reviewDate": "2026-09-30" },
-    { "kind": "SENSITIVE_DOCUMENTATION", "maximumCount": 1, "owner": "NamLend Engineering", "reviewDate": "2026-09-30", "scope": "Redacted E2 Notion finding only; secret values are excluded and a true production credential cannot be waived." },
-    { "kind": "TABLE_CONNECTIVITY", "maximumCount": 31, "owner": "NamLend Engineering", "reviewDate": "2026-09-30" },
-    { "kind": "TEST_SKIP", "maximumCount": 51, "owner": "NamLend Engineering", "reviewDate": "2026-09-30" }
+    {
+      "kind": "E1_NOT_YET_AVAILABLE",
+      "maximumCount": 1,
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-09-30"
+    },
+    {
+      "kind": "FUNCTIONAL_ORPHAN",
+      "maximumCount": 71,
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-09-30"
+    },
+    {
+      "kind": "SENSITIVE_DOCUMENTATION",
+      "maximumCount": 1,
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-09-30",
+      "scope": "Redacted E2 Notion finding only; secret values are excluded and a true production credential cannot be waived."
+    },
+    {
+      "kind": "TABLE_CONNECTIVITY",
+      "maximumCount": 31,
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-09-30"
+    },
+    {
+      "kind": "TEST_SKIP",
+      "maximumCount": 51,
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-09-30"
+    }
   ]
 }

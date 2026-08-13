@@ -108,33 +108,38 @@ jobs:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
           JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
           JWKS: ${{ secrets.JWKS }}
+          PREVIEW_URL: ${{ steps.convex-preview.outputs.url }}
         run: |
-          # Previews inherit production env, not aromatic-okapi-265. If prod lacks the
-          # Convex Auth issuer keys, password sign-in hangs on /auth with no toast.
-          # Copy JWT_PRIVATE_KEY / JWKS once into the e2e-protected environment from the
-          # aromatic dashboard — never Notion aromatic-okapi-265 user passwords.
-          has_jwt=0
-          has_jwks=0
-          while IFS= read -r line; do
-            name="${line%%=*}"
-            case "$name" in
-              JWT_PRIVATE_KEY) has_jwt=1 ;;
-              JWKS) has_jwks=1 ;;
-            esac
-          done < <(npx convex env list --names-only)
-
-          echo "Preview JWT_PRIVATE_KEY present: $has_jwt"
-          echo "Preview JWKS present: $has_jwks"
-
-          if [ "$has_jwt" -eq 0 ] || [ "$has_jwks" -eq 0 ]; then
-            if [ -z "$JWT_PRIVATE_KEY" ] || [ -z "$JWKS" ]; then
-              echo "::error::Disposable preview is missing JWT_PRIVATE_KEY/JWKS and e2e-protected secrets are not set. Copy them from the aromatic Convex dashboard into the e2e-protected environment (not Notion test passwords)."
+          # Previews inherit production env, not aromatic-okapi-265. Prod currently has
+          # no env vars, so JWT_PRIVATE_KEY/JWKS must be copied onto the preview.
+          # PEM newlines cannot be argv (`unknown option -----BEGIN`); use --from-file.
+          # Never copy Notion aromatic-okapi-265 user passwords.
+          set -euo pipefail
+          case "$PREVIEW_URL" in
+            https://*.convex.cloud) ;;
+            *)
+              echo "::error::Missing disposable preview URL for env set."
               exit 1
-            fi
-            npx convex env set JWT_PRIVATE_KEY "$JWT_PRIVATE_KEY"
-            npx convex env set JWKS "$JWKS"
-            echo "Set JWT_PRIVATE_KEY and JWKS on the disposable preview (values redacted)."
+              ;;
+          esac
+          deployment="${PREVIEW_URL#https://}"
+          deployment="${deployment%.convex.cloud}"
+          echo "Preview deployment: $deployment"
+
+          if [ -z "${JWT_PRIVATE_KEY:-}" ] || [ -z "${JWKS:-}" ]; then
+            echo "::error::e2e-protected secrets JWT_PRIVATE_KEY/JWKS are not set. Copy them from the aromatic Convex dashboard (not Notion test passwords)."
+            exit 1
           fi
+
+          jwt_file="$RUNNER_TEMP/convex-jwt.pem"
+          jwks_file="$RUNNER_TEMP/convex-jwks.json"
+          umask 077
+          printf '%s' "$JWT_PRIVATE_KEY" > "$jwt_file"
+          printf '%s' "$JWKS" > "$jwks_file"
+          npx convex env set JWT_PRIVATE_KEY --from-file "$jwt_file" --deployment "$deployment"
+          npx convex env set JWKS --from-file "$jwks_file" --deployment "$deployment"
+          rm -f "$jwt_file" "$jwks_file"
+          echo "Set JWT_PRIVATE_KEY and JWKS on $deployment (values redacted)."
 
       - name: Login smoke (fail fast)
         timeout-minutes: 5

@@ -24,7 +24,9 @@ describe('getLandingRoute', () => {
   });
 
   it('sends a pure platform owner to the platform console, not /dashboard', () => {
-    // The seeded owner's tenant role is `client`; landing them on /dashboard was the bug.
+    // Notion Users, Roles & Access: platform_owner lands on /platform even when the
+    // tenant role stays `client`. Disposable E2E uses platformowner@test.namlend.com
+    // — not Notion's aromatic-okapi-265 owner@namlend.test password.
     expect(getLandingRoute(PLATFORM)).toBe('/platform');
   });
 

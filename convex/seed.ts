@@ -114,6 +114,10 @@ export const seedTestUsers = internalAction({
     console.log('[seed] Reviewable loan seeded successfully');
 
     console.log('[seed] All test users seeded successfully');
+    const census = await ctx.runQuery(internal.seedMutations.countE2EAuthAccounts, {});
+    console.log(
+      `[seed] E2E password authAccounts: ${census.count}/4 [${census.emails.join(', ') || 'none'}]`
+    );
   },
 });
 

@@ -42,7 +42,7 @@ jobs:
     name: Full E2E (protected disposable preview)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     # Configure this environment with required reviewers and a Convex Preview
     # Deploy Key. Pull-request jobs never enter it or receive its secret.
     environment: e2e-protected
@@ -101,6 +101,52 @@ jobs:
               ;;
           esac
           printf 'url=%s\n' "$preview_url" >> "$GITHUB_OUTPUT"
+          echo "SPA Convex origin: $preview_url"
+
+      - name: Ensure preview Convex Auth issuer keys
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_PREVIEW_DEPLOY_KEY }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          JWKS: ${{ secrets.JWKS }}
+        run: |
+          # Previews inherit production env, not aromatic-okapi-265. If prod lacks the
+          # Convex Auth issuer keys, password sign-in hangs on /auth with no toast.
+          # Copy JWT_PRIVATE_KEY / JWKS once into the e2e-protected environment from the
+          # aromatic dashboard — never Notion aromatic-okapi-265 user passwords.
+          has_jwt=0
+          has_jwks=0
+          while IFS= read -r line; do
+            name="${line%%=*}"
+            case "$name" in
+              JWT_PRIVATE_KEY) has_jwt=1 ;;
+              JWKS) has_jwks=1 ;;
+            esac
+          done < <(npx convex env list --names-only)
+
+          echo "Preview JWT_PRIVATE_KEY present: $has_jwt"
+          echo "Preview JWKS present: $has_jwks"
+
+          if [ "$has_jwt" -eq 0 ] || [ "$has_jwks" -eq 0 ]; then
+            if [ -z "$JWT_PRIVATE_KEY" ] || [ -z "$JWKS" ]; then
+              echo "::error::Disposable preview is missing JWT_PRIVATE_KEY/JWKS and e2e-protected secrets are not set. Copy them from the aromatic Convex dashboard into the e2e-protected environment (not Notion test passwords)."
+              exit 1
+            fi
+            npx convex env set JWT_PRIVATE_KEY "$JWT_PRIVATE_KEY"
+            npx convex env set JWKS "$JWKS"
+            echo "Set JWT_PRIVATE_KEY and JWKS on the disposable preview (values redacted)."
+          fi
+
+      - name: Login smoke (fail fast)
+        timeout-minutes: 5
+        env:
+          VITE_CONVEX_URL: ${{ steps.convex-preview.outputs.url }}
+          E2E_ALLOW_MUTATING_SEED: 'true'
+          E2E_DISPOSABLE_CONVEX_PREVIEW: 'true'
+          E2E_PRESEEDED_CONVEX_PREVIEW: 'true'
+          BASE_URL: http://localhost:8080
+          CI: true
+          VITE_E2E: 'true'
+        run: npx playwright test e2e/login-smoke.e2e.ts --reporter=github,list
 
       - name: Run protected mutating Playwright suite
         env:

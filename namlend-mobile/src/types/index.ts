@@ -37,7 +37,14 @@ export interface UserProfile {
 // LOAN TYPES
 // ============================================================================
 
-export type LoanStatus = 'pending' | 'approved' | 'rejected' | 'disbursed' | 'active' | 'completed' | 'defaulted';
+export type LoanStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'disbursed'
+  | 'active'
+  | 'completed'
+  | 'defaulted';
 
 export interface Loan {
   id: string;
@@ -161,7 +168,7 @@ export interface LoanPaymentDetails {
   summary?: {
     total_scheduled: number;
     total_paid: number;
-    outstanding_balance: number;
+    outstandingBalance: number;
     installments_paid: number;
     installments_remaining: number;
     total_installments: number;
@@ -306,7 +313,12 @@ export interface Document {
 // IPS/VPA TYPES (Instant Payment System)
 // ============================================================================
 
-export type IPSTransactionStatus = 'initiated' | 'pending_callback' | 'completed' | 'failed' | 'timeout';
+export type IPSTransactionStatus =
+  | 'initiated'
+  | 'pending_callback'
+  | 'completed'
+  | 'failed'
+  | 'timeout';
 export type IPSTransactionType = 'PAY' | 'COLLECT' | 'REVERSAL' | 'REFUND';
 
 export interface VPA {
@@ -344,7 +356,14 @@ export interface IPSTransaction {
 // NOTIFICATION TYPES (Backend Integration)
 // ============================================================================
 
-export type NotificationCategory = 'loan' | 'payment' | 'kyc' | 'account' | 'general' | 'marketing' | 'collections';
+export type NotificationCategory =
+  | 'loan'
+  | 'payment'
+  | 'kyc'
+  | 'account'
+  | 'general'
+  | 'marketing'
+  | 'collections';
 export type NotificationChannel = 'in_app' | 'sms' | 'whatsapp' | 'email' | 'push';
 
 export interface BackendNotification {

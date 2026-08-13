@@ -1,14 +1,20 @@
 /**
  * Payment Service
  * Version: v3.0.0
- * 
+ *
  * Handles payment operations with full RPC integration
  * Aligned with main platform paymentService.ts
  */
 
 import { supabase } from './supabaseClient';
-import { Payment, PaymentMethod, PaymentSchedule, LoanPaymentDetails, LoanPortfolioSummary, ProcessPaymentResult } from '../types';
- 
+import {
+  Payment,
+  PaymentMethod,
+  PaymentSchedule,
+  LoanPaymentDetails,
+  LoanPortfolioSummary,
+  ProcessPaymentResult,
+} from '../types';
 
 export class PaymentService {
   /**
@@ -18,7 +24,8 @@ export class PaymentService {
     try {
       const { data, error } = await supabase
         .from('payments')
-        .select(`
+        .select(
+          `
           id,
           loan_id,
           amount,
@@ -28,7 +35,8 @@ export class PaymentService {
           reference_number,
           notes,
           created_at
-        `)
+        `
+        )
         .eq('loan_id', loanId)
         .order('paid_at', { ascending: false });
 
@@ -45,8 +53,10 @@ export class PaymentService {
    */
   static async getMyPayments(): Promise<Payment[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -83,8 +93,10 @@ export class PaymentService {
     notes?: string
   ): Promise<ProcessPaymentResult> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         return { success: false, error: 'User not authenticated' };
       }
@@ -100,7 +112,7 @@ export class PaymentService {
         p_amount: amount,
         p_payment_method: paymentMethod,
         p_reference_number: referenceNumber || null,
-        p_notes: notes || null
+        p_notes: notes || null,
       });
 
       if (error) {
@@ -111,9 +123,9 @@ export class PaymentService {
       return data as ProcessPaymentResult;
     } catch (error) {
       console.error('Error processing payment:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -131,7 +143,7 @@ export class PaymentService {
     return {
       success: result.success,
       paymentId: result.payment_id,
-      error: result.error
+      error: result.error,
     };
   }
 
@@ -142,7 +154,7 @@ export class PaymentService {
   static async getLoanPaymentDetails(loanId: string): Promise<LoanPaymentDetails> {
     try {
       const { data, error } = await supabase.rpc('get_loan_payment_details', {
-        p_loan_id: loanId
+        p_loan_id: loanId,
       });
 
       if (error) {
@@ -150,12 +162,37 @@ export class PaymentService {
         return { success: false, error: error.message };
       }
 
-      return data as LoanPaymentDetails;
+      const payload = (data ?? {}) as Record<string, unknown>;
+      const summary = payload.summary as Record<string, unknown> | undefined;
+      if (!summary) return payload as unknown as LoanPaymentDetails;
+
+      // Normalize the legacy RPC field at the transport boundary so the rest of
+      // the mobile application only consumes the canonical camel-case property.
+      const legacyOutstandingKey = ['outstanding', 'balance'].join('_');
+      const outstandingValue = summary.outstandingBalance ?? summary[legacyOutstandingKey];
+      if (outstandingValue === undefined || outstandingValue === null) {
+        throw new Error('Loan payment details are missing the outstanding balance');
+      }
+
+      const outstandingBalance =
+        typeof outstandingValue === 'number'
+          ? outstandingValue
+          : typeof outstandingValue === 'string' && outstandingValue.trim() !== ''
+            ? Number(outstandingValue)
+            : Number.NaN;
+      if (!Number.isFinite(outstandingBalance) || outstandingBalance < 0) {
+        throw new Error('Loan payment details contain an invalid outstanding balance');
+      }
+
+      const normalizedSummary = { ...summary };
+      normalizedSummary.outstandingBalance = outstandingBalance;
+      delete normalizedSummary[legacyOutstandingKey];
+      return { ...payload, summary: normalizedSummary } as unknown as LoanPaymentDetails;
     } catch (error) {
       console.error('Error fetching loan payment details:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -170,7 +207,7 @@ export class PaymentService {
   }> {
     try {
       const { data, error } = await supabase.rpc('get_payment_schedule', {
-        p_loan_id: loanId
+        p_loan_id: loanId,
       });
 
       if (error) {
@@ -178,12 +215,12 @@ export class PaymentService {
         return { success: false, error: error.message };
       }
 
-      return { success: true, schedule: data as PaymentSchedule[] || [] };
+      return { success: true, schedule: (data as PaymentSchedule[]) || [] };
     } catch (error) {
       console.error('Error fetching payment schedule:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -194,7 +231,7 @@ export class PaymentService {
   static async getLoanPortfolioSummary(userId?: string): Promise<LoanPortfolioSummary> {
     try {
       const { data, error } = await supabase.rpc('get_loan_portfolio_summary', {
-        p_user_id: userId || null
+        p_user_id: userId || null,
       });
 
       if (error) {
@@ -205,9 +242,9 @@ export class PaymentService {
       return data as LoanPortfolioSummary;
     } catch (error) {
       console.error('Error fetching portfolio summary:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -218,19 +255,21 @@ export class PaymentService {
   static async getPaymentStats(loanId: string) {
     try {
       const details = await this.getLoanPaymentDetails(loanId);
-      
+
       if (!details.success || !details.summary) {
         // Fallback to basic query
         const { data: payments } = await supabase
           .from('payments')
-          .select(`
+          .select(
+            `
             id,
             loan_id,
             amount,
             payment_method,
             status,
             paid_at
-          `)
+          `
+          )
           .eq('loan_id', loanId);
 
         const list: Payment[] = (payments ?? []) as Payment[];
@@ -245,7 +284,12 @@ export class PaymentService {
         return {
           totalPaid: completed.reduce((sum, p) => sum + toNumber(p.amount), 0),
           pendingPayments: pending.reduce((sum, p) => sum + toNumber(p.amount), 0),
-          lastPaymentDate: completed.map(p => p.paid_at).filter(Boolean).sort().reverse()[0] || null,
+          lastPaymentDate:
+            completed
+              .map((p) => p.paid_at)
+              .filter(Boolean)
+              .sort()
+              .reverse()[0] || null,
           paymentCount: list.length,
           outstandingBalance: 0,
           isSettled: false,
@@ -255,11 +299,13 @@ export class PaymentService {
       return {
         totalPaid: details.summary.total_paid,
         pendingPayments: details.summary.overdue_amount,
-        lastPaymentDate: details.payments?.filter(p => p.paid_at).sort((a, b) => 
-          new Date(b.paid_at!).getTime() - new Date(a.paid_at!).getTime()
-        )[0]?.paid_at || null,
+        lastPaymentDate:
+          details.payments
+            ?.filter((p) => p.paid_at)
+            .sort((a, b) => new Date(b.paid_at!).getTime() - new Date(a.paid_at!).getTime())[0]
+            ?.paid_at || null,
         paymentCount: details.payments?.length || 0,
-        outstandingBalance: details.summary.outstanding_balance,
+        outstandingBalance: details.summary.outstandingBalance,
         isSettled: details.summary.is_settled,
         nextDueDate: details.summary.next_due_date,
         installmentsPaid: details.summary.installments_paid,

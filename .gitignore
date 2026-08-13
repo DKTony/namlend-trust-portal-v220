@@ -37,6 +37,7 @@ dist/
 .windsurf/
 test-results/
 playwright-report/
+namlend-mobile/coverage/
 ontology/ci-artifact/
 .cache/graphify/
 tools/graphify/.venv/

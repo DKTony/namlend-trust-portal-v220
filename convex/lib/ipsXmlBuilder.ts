@@ -1022,10 +1022,7 @@ export function ipsTimestamp(): string {
 export function generateMsgId(bankCode?: string): string {
   const code = bankCode ?? process.env.IPS_BANK_CODE ?? '099';
   const padded = code.padStart(3, '0').slice(0, 3);
-  const uuid =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID().replace(/-/g, '')
-      : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  const uuid = crypto.randomUUID().replace(/-/g, '');
   return `${padded}${uuid}`;
 }
 

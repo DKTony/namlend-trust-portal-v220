@@ -129,6 +129,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <ThemedButton
+          data-testid="notification-bell"
           variant="ghost"
           size="icon"
           className={cn(

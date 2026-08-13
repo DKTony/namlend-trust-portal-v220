@@ -33,14 +33,19 @@ export class Router {
    */
   private pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
     const paramNames: string[] = [];
-    
-    const regexPattern = path
-      .replace(/\/:([^/]+)/g, (_, paramName) => {
-        paramNames.push(paramName);
-        return '/([^/]+)';
-      })
-      .replace(/\//g, '\\/');
-    
+    const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parameter = /\/:([^/]+)/g;
+    let cursor = 0;
+    let regexPattern = '';
+    for (const match of path.matchAll(parameter)) {
+      const index = match.index ?? 0;
+      regexPattern += escapeRegex(path.slice(cursor, index));
+      regexPattern += '/([^/]+)';
+      paramNames.push(match[1]);
+      cursor = index + match[0].length;
+    }
+    regexPattern += escapeRegex(path.slice(cursor));
+
     return {
       pattern: new RegExp(`^${regexPattern}$`),
       paramNames,
@@ -53,7 +58,7 @@ export class Router {
   private addRoute(method: HttpMethod, path: string, handler: RouteHandler): void {
     const fullPath = this.basePath + path;
     const { pattern, paramNames } = this.pathToRegex(fullPath);
-    
+
     this.routes.push({
       method,
       pattern,
@@ -116,24 +121,24 @@ export class Router {
     const method = req.method as HttpMethod;
 
     // Find matching routes for this path
-    const matchingRoutes = this.routes.filter(route => route.pattern.test(path));
-    
+    const matchingRoutes = this.routes.filter((route) => route.pattern.test(path));
+
     if (matchingRoutes.length === 0) {
       return notFound(`Endpoint not found: ${path}`);
     }
 
     // Find route with matching method
-    const route = matchingRoutes.find(r => r.method === method);
-    
+    const route = matchingRoutes.find((r) => r.method === method);
+
     if (!route) {
-      const allowedMethods = matchingRoutes.map(r => r.method);
+      const allowedMethods = matchingRoutes.map((r) => r.method);
       return methodNotAllowed(allowedMethods);
     }
 
     // Extract params
     const match = path.match(route.pattern);
     const params: Record<string, string> = {};
-    
+
     if (match) {
       route.paramNames.forEach((name, index) => {
         params[name] = match[index + 1];

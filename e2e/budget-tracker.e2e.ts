@@ -202,7 +202,9 @@ test.describe('BudgetTracker - Export', () => {
     await page.getByTestId('export-transactions-btn').click();
 
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/^namlend-transactions-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(download.suggestedFilename()).toMatch(
+      /^og-financial-transactions-\d{4}-\d{2}-\d{2}\.csv$/
+    );
   });
 
   test('Exported CSV has correct headers and data rows', async ({ page }) => {

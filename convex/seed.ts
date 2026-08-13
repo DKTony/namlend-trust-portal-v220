@@ -133,6 +133,13 @@ export const seedDisposableE2EPreview = internalAction({
     // OG must sit on the all_features plan before enforcement is flipped. Otherwise
     // /budget, /kyc, collections, analytics, and the Banking toggle are all denied.
     await ctx.runMutation(internal.platform.seed.seedControlPlane, {});
+    const entitled = await ctx.runQuery(
+      internal.seedMutations.assertDisposablePreviewEntitlements,
+      {}
+    );
+    console.log(
+      `[seed] OGFS entitled (${entitled.featureCount} features, clientBanking=${entitled.hasClientBanking})`
+    );
     await ctx.runMutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
     console.log('[seed] Disposable E2E preview enforcement is enabled');
   },

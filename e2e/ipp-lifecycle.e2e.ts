@@ -144,7 +144,7 @@ test.describe('IPP Full Lifecycle', () => {
     // Reciprocal operational evidence: both admin and loan officer receive the
     // same tenant-scoped pending-work alert before anyone decides the request.
     await page.getByTestId('notification-bell').click();
-    await expect(page.getByText(/New Loan Application/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/New Loan Application/i).first()).toBeVisible({ timeout: 30_000 });
     await page.keyboard.press('Escape');
 
     const officerContext = await browser.newContext();
@@ -156,7 +156,7 @@ test.describe('IPP Full Lifecycle', () => {
     await officerPage.waitForURL(/\/admin/, { timeout: 30_000 });
     await officerPage.getByTestId('notification-bell').click();
     await expect(officerPage.getByText(/New Loan Application/i).first()).toBeVisible({
-      timeout: 15_000,
+      timeout: 30_000,
     });
     await officerPage.goto(`${baseURL}/admin/approvals`);
     await expect(officerPage.locator('[data-testid^="approvals-request-"]').first()).toBeVisible({

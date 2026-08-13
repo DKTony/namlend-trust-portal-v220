@@ -10,7 +10,7 @@
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { Id } from './_generated/dataModel';
-import { internalMutation, mutation, query } from './_generated/server';
+import { internalMutation, mutation, query, type MutationCtx } from './_generated/server';
 import { approveLoanCore } from './lib/approvalReadiness';
 import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
 import {
@@ -159,6 +159,61 @@ export const getApprovalHistory = query({
 // Mutations
 // ---------------------------------------------------------------------------
 
+async function scheduleLoanSubmittedNotifications(
+  ctx: MutationCtx,
+  args: {
+    requestId: Id<'approvalRequests'>;
+    institutionId: Id<'institutions'> | undefined;
+    borrowerUserId: Id<'users'>;
+    entityId: string;
+    requestType: string;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+  }
+) {
+  await ctx.scheduler.runAfter(0, internal.notifications.createNotification, {
+    userId: args.borrowerUserId,
+    title: 'Application Received',
+    message: 'Your loan application has been submitted and is pending review.',
+    category: 'loan',
+    priority: 'normal',
+    actionUrl: '/dashboard',
+    actionLabel: 'View Application',
+    dedupeKey: `approval:${args.requestId}:submitted:client`,
+    entityType: 'approvalRequests',
+    entityId: String(args.requestId),
+  });
+
+  if (!args.institutionId) return;
+
+  await ctx.scheduler.runAfter(0, internal.notifications.createStaffNotifications, {
+    institutionId: args.institutionId,
+    title: 'New Loan Application',
+    message: 'A new loan application is ready for review.',
+    category: 'loan',
+    priority: args.priority === 'urgent' ? 'urgent' : args.priority === 'high' ? 'high' : 'normal',
+    actionUrl: '/admin/approvals',
+    actionLabel: 'Review Application',
+    dedupeKey: `approval:${args.requestId}:submitted:staff`,
+    entityType: 'approvalRequests',
+    entityId: String(args.requestId),
+    metadata: {
+      requestId: args.requestId,
+      entityId: args.entityId,
+      requestType: args.requestType,
+    },
+  });
+}
+
+async function borrowerUserIdForEntity(
+  ctx: MutationCtx,
+  entityType: string,
+  entityId: string
+): Promise<Id<'users'> | null> {
+  if (entityType !== 'loan') return null;
+  const loan = await ctx.db.get(entityId as Id<'loans'>);
+  return loan?.userId ?? null;
+}
+
 /**
  * Submit an entity for approval.
  * Replaces `submit_for_approval` RPC.
@@ -266,42 +321,14 @@ export const submitForApproval = mutation({
       { actorId: userId, actorType: 'user' }
     );
 
-    // Notify requesting user that their application was received
-    ctx.scheduler
-      .runAfter(0, internal.notifications.createNotification, {
-        userId,
-        title: 'Application Received',
-        message: 'Your loan application has been submitted and is pending review.',
-        category: 'loan',
-        priority: 'normal',
-        actionUrl: '/dashboard',
-        actionLabel: 'View Application',
-        dedupeKey: `approval:${requestId}:submitted:client`,
-        entityType: 'approvalRequests',
-        entityId: String(requestId),
-      })
-      .catch((err: unknown) =>
-        console.error('[notification] submitForApproval notify failed:', err)
-      );
-
-    ctx.scheduler
-      .runAfter(0, internal.notifications.createStaffNotifications, {
-        institutionId,
-        title: 'New Loan Application',
-        message: 'A new loan application is ready for review.',
-        category: 'loan',
-        priority:
-          args.priority === 'urgent' ? 'urgent' : args.priority === 'high' ? 'high' : 'normal',
-        actionUrl: '/admin/approvals',
-        actionLabel: 'Review Application',
-        dedupeKey: `approval:${requestId}:submitted:staff`,
-        entityType: 'approvalRequests',
-        entityId: String(requestId),
-        metadata: { requestId, entityId: args.entityId, requestType: args.requestType },
-      })
-      .catch((err: unknown) =>
-        console.error('[notification] submitForApproval staff fan-out failed:', err)
-      );
+    await scheduleLoanSubmittedNotifications(ctx, {
+      requestId,
+      institutionId,
+      borrowerUserId: userId,
+      entityId: args.entityId,
+      requestType: args.requestType,
+      priority: args.priority,
+    });
 
     return requestId;
   },
@@ -548,7 +575,20 @@ export const createSystemApprovalRequest = internalMutation({
         .withIndex('by_entityId', (q) => q.eq('entityId', args.entityId))
         .collect()
     ).find((r) => r.status === 'pending' || r.status === 'escalated');
-    if (existingOpen) return existingOpen._id;
+    const borrowerUserId = await borrowerUserIdForEntity(ctx, args.entityType, args.entityId);
+    if (existingOpen) {
+      if (borrowerUserId) {
+        await scheduleLoanSubmittedNotifications(ctx, {
+          requestId: existingOpen._id,
+          institutionId: existingOpen.institutionId,
+          borrowerUserId,
+          entityId: args.entityId,
+          requestType: args.requestType,
+          priority: args.priority,
+        });
+      }
+      return existingOpen._id;
+    }
 
     // Use a system user as requestedBy — look up any admin or use a sentinel approach.
     // For system-generated requests we omit requestedBy from the direct insert.
@@ -560,15 +600,16 @@ export const createSystemApprovalRequest = internalMutation({
       .first();
     if (!adminRole) return null;
 
+    const institutionId = await resolveWriteInstitution(ctx, {
+      loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
+    });
     const id = await ctx.db.insert('approvalRequests', {
       entityType: args.entityType,
       entityId: args.entityId,
       requestType: args.requestType,
       status: 'pending',
       requestedBy: adminRole.userId,
-      institutionId: await resolveWriteInstitution(ctx, {
-        loanId: args.entityType === 'loan' ? (args.entityId as Id<'loans'>) : undefined,
-      }),
+      institutionId,
       priority: args.priority,
       metadata: args.details,
       createdAt: now,
@@ -585,6 +626,16 @@ export const createSystemApprovalRequest = internalMutation({
         priority: args.priority,
       },
     });
+    if (borrowerUserId) {
+      await scheduleLoanSubmittedNotifications(ctx, {
+        requestId: id,
+        institutionId,
+        borrowerUserId,
+        entityId: args.entityId,
+        requestType: args.requestType,
+        priority: args.priority,
+      });
+    }
     return id;
   },
 });

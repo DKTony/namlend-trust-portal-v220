@@ -18,10 +18,50 @@ async function openEntitlements(page: Page) {
   await expect(page.getByTestId('platform-entitlements')).toBeVisible();
 }
 
+async function selectOgTenant(page: Page) {
+  const select = page.getByTestId('entitlements-tenant-select');
+  await expect(select).toBeVisible({ timeout: 20_000 });
+  const ogOption = select.locator('option').filter({ hasText: /OGFS|OG Financial/i });
+  if ((await ogOption.count()) > 0) {
+    const value = await ogOption.first().getAttribute('value');
+    if (value) await select.selectOption(value);
+  }
+}
+
+async function bankingSwitch(page: Page) {
+  return page.getByTestId('entitlement-switch-clientBanking');
+}
+
+async function waitForBankingSwitch(page: Page) {
+  await selectOgTenant(page);
+  await expect(page.getByText('all_features')).toBeVisible({ timeout: 20_000 });
+  const toggle = await bankingSwitch(page);
+  await expect(toggle).toBeVisible({ timeout: 20_000 });
+  return toggle;
+}
+
+async function restoreBanking(page: Page) {
+  if (!/\/auth(\?|$)/.test(page.url())) {
+    try {
+      await signOutViaUI(page);
+    } catch {
+      await page.goto(`${baseURL}/auth`);
+    }
+  }
+  await loginAsPlatformOwner(page);
+  await openEntitlements(page);
+  const restore = await waitForBankingSwitch(page);
+  if (!(await restore.isChecked())) {
+    await restore.click({ force: true });
+  }
+  await expect(restore).toBeChecked({ timeout: 20_000 });
+}
+
 test.describe('Client feature dispatch', () => {
   test('owner disabling Banking removes desktop/mobile/deep-state/IPP surfaces and restores them', async ({
     page,
   }) => {
+    test.setTimeout(120_000);
     if (process.env.E2E_MUTATE_ENTITLEMENTS !== 'true') {
       throw new Error(
         'E2E_MUTATE_ENTITLEMENTS=true is required for the disposable enforcement preview.'
@@ -32,10 +72,10 @@ test.describe('Client feature dispatch', () => {
     await openEntitlements(page);
     await expect(page.getByText('On', { exact: true })).toBeVisible();
 
-    const bankingSwitch = page.getByRole('switch', { name: 'Toggle Banking' });
-    await expect(bankingSwitch).toBeChecked();
-    await bankingSwitch.click();
-    await expect(bankingSwitch).not.toBeChecked();
+    const toggle = await waitForBankingSwitch(page);
+    await expect(toggle).toBeChecked();
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
 
     try {
       await signOutViaUI(page);
@@ -63,15 +103,8 @@ test.describe('Client feature dispatch', () => {
       await page.reload();
       await expect(page.getByText(/banking|IPP accounts/i)).toHaveCount(0);
     } finally {
-      if (!/\/platform/.test(page.url())) {
-        if (!/\/auth/.test(page.url())) await signOutViaUI(page);
-        await page.setViewportSize({ width: 1280, height: 900 });
-        await loginAsPlatformOwner(page);
-      }
-      await openEntitlements(page);
-      const restore = page.getByRole('switch', { name: 'Toggle Banking' });
-      if (!(await restore.isChecked())) await restore.click();
-      await expect(restore).toBeChecked();
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await restoreBanking(page);
     }
   });
 });

@@ -173,6 +173,7 @@ const EntitlementsView: React.FC = () => {
         <label className="text-sm">
           <span className="mr-2 text-muted-foreground">Tenant:</span>
           <select
+            data-testid="entitlements-tenant-select"
             className="rounded-md border bg-background px-2 py-1.5 text-sm"
             value={selectedId}
             onChange={(e) => onSelect(e.target.value)}
@@ -268,57 +269,65 @@ const EntitlementsView: React.FC = () => {
                 Toggling writes a manual override for this tenant. Unknown feature keys are rejected
                 server-side by the code manifest authority rule.
               </p>
-              <div className="space-y-5">
-                {DISPATCH_GROUPS.map((group) => (
-                  <section key={group.console}>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {group.label}
-                    </h4>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {group.features.map((f) => {
-                        const missingDependencies = (f.dependsOn ?? []).filter(
-                          (key) => !resolvedSet.has(key)
-                        );
-                        const row = (rows ?? []).find(
-                          (r: Doc<'tenantEntitlements'>) => r.featureKey === f.key && !r.effectiveTo
-                        );
-                        return (
-                          <div
-                            key={f.key}
-                            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium">{f.name}</p>
-                              <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
-                              {(f.dependsOn?.length ?? 0) > 0 && (
-                                <p
-                                  className={cn(
-                                    'mt-1 text-xs',
-                                    missingDependencies.length > 0
-                                      ? 'text-amber-600'
-                                      : 'text-muted-foreground'
-                                  )}
-                                >
-                                  Depends on {f.dependsOn?.join(', ')}
+              {resolved === undefined ? (
+                <p className="text-sm text-muted-foreground" data-testid="entitlements-resolving">
+                  Resolving feature switches…
+                </p>
+              ) : (
+                <div className="space-y-5">
+                  {DISPATCH_GROUPS.map((group) => (
+                    <section key={group.console}>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.label}
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {group.features.map((f) => {
+                          const missingDependencies = (f.dependsOn ?? []).filter(
+                            (key) => !resolvedSet.has(key)
+                          );
+                          const row = (rows ?? []).find(
+                            (r: Doc<'tenantEntitlements'>) =>
+                              r.featureKey === f.key && !r.effectiveTo
+                          );
+                          return (
+                            <div
+                              key={f.key}
+                              className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{f.name}</p>
+                                <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                                {(f.dependsOn?.length ?? 0) > 0 && (
+                                  <p
+                                    className={cn(
+                                      'mt-1 text-xs',
+                                      missingDependencies.length > 0
+                                        ? 'text-amber-600'
+                                        : 'text-muted-foreground'
+                                    )}
+                                  >
+                                    Depends on {f.dependsOn?.join(', ')}
+                                  </p>
+                                )}
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Rollout: {row?.rolloutState ?? 'plan/default'}
                                 </p>
-                              )}
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Rollout: {row?.rolloutState ?? 'plan/default'}
-                              </p>
+                              </div>
+                              <Switch
+                                checked={resolvedSet.has(f.key)}
+                                disabled={pending === f.key}
+                                onCheckedChange={(v) => dispatch(f.key, v)}
+                                aria-label={`Toggle ${f.name}`}
+                                data-testid={`entitlement-switch-${f.key}`}
+                              />
                             </div>
-                            <Switch
-                              checked={resolvedSet.has(f.key)}
-                              disabled={pending === f.key || resolved === undefined}
-                              onCheckedChange={(v) => dispatch(f.key, v)}
-                              aria-label={`Toggle ${f.name}`}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
             </ThemedCard>
           )}
 

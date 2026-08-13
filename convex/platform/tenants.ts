@@ -138,6 +138,11 @@ export const listTenants = query({
   handler: async (ctx) => {
     await assertPlatformSupport(ctx);
     const institutions = await ctx.db.query('institutions').collect();
+    institutions.sort((left, right) => {
+      if (left.shortCode === 'OGFS') return -1;
+      if (right.shortCode === 'OGFS') return 1;
+      return left.name.localeCompare(right.name);
+    });
     return Promise.all(
       institutions.map(async (inst) => {
         const sub = await currentSubscription(ctx, inst._id);

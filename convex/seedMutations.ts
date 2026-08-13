@@ -8,6 +8,7 @@ import type { Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, type MutationCtx } from './_generated/server';
 import { calculateMonthlyInstalment, calculateTotalRepayable } from './lib/amortization';
 import { ensurePaymentSchedule } from './lib/scheduleGeneration';
+import { resolveEntitlements } from './lib/entitlements';
 
 /**
  * Mark a profile as an OAuth sign-up that hasn't completed onboarding, so the
@@ -170,18 +171,21 @@ export const createTestUser = internalMutation({
         phone: '+264811000000',
         idNumber: '90010100001',
         kycStatus: 'pending',
+        institutionId,
         createdAt: now,
         updatedAt: now,
       });
     } else {
       const profilePatch: {
         email?: string;
+        institutionId?: Id<'institutions'>;
         monthlyIncome?: undefined;
         phone?: string;
         idNumber?: string;
         updatedAt?: number;
       } = {};
       if (profile.email !== normalizedEmail) profilePatch.email = normalizedEmail;
+      if (profile.institutionId !== institutionId) profilePatch.institutionId = institutionId;
       // Deterministic reset: FinancialInfoStep always renders income-input for E2E.
       if (profile.monthlyIncome != null) profilePatch.monthlyIncome = undefined;
       if (!profile.phone?.trim() || !profile.idNumber?.trim()) {
@@ -324,6 +328,40 @@ export const countE2EAuthAccounts = internalQuery({
   },
 });
 
+/** Fail the disposable preview seed if OG is not fully entitled for gated E2E surfaces. */
+export const assertDisposablePreviewEntitlements = internalQuery({
+  args: {},
+  returns: v.object({
+    institutionId: v.id('institutions'),
+    featureCount: v.number(),
+    hasClientBanking: v.boolean(),
+    hasIppOnboarding: v.boolean(),
+  }),
+  handler: async (ctx) => {
+    const og = await ctx.db
+      .query('institutions')
+      .withIndex('by_shortCode', (q) => q.eq('shortCode', 'OGFS'))
+      .first();
+    if (!og) {
+      throw new Error('[seed] OGFS tenant missing after disposable preview seed');
+    }
+    const keys = await resolveEntitlements(ctx, og._id);
+    const hasClientBanking = keys.has('clientBanking');
+    const hasIppOnboarding = keys.has('ippOnboarding');
+    if (!hasClientBanking || !hasIppOnboarding) {
+      throw new Error(
+        `[seed] OGFS is missing clientBanking/ippOnboarding after seedControlPlane (${[...keys].sort().join(', ')})`
+      );
+    }
+    return {
+      institutionId: og._id,
+      featureCount: keys.size,
+      hasClientBanking,
+      hasIppOnboarding,
+    };
+  },
+});
+
 /** Seed approved KYC documents for a test user (for E2E testing). */
 export const seedKycDocuments = internalMutation({
   args: {
@@ -453,7 +491,14 @@ export const seedReviewableLoanForE2E = internalMutation({
 
     const loanId = await ctx.db.insert('loans', {
       userId: profile.userId,
-      institutionId: profile.institutionId,
+      institutionId:
+        profile.institutionId ??
+        (
+          await ctx.db
+            .query('userRoles')
+            .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+            .first()
+        )?.institutionId,
       principal,
       interestRate,
       termMonths,
@@ -507,6 +552,14 @@ export const seedActiveLoanForE2E = internalMutation({
 
     const loanId = await ctx.db.insert('loans', {
       userId: profile.userId,
+      institutionId:
+        profile.institutionId ??
+        (
+          await ctx.db
+            .query('userRoles')
+            .withIndex('by_userId', (q) => q.eq('userId', profile.userId))
+            .first()
+        )?.institutionId,
       principal,
       interestRate,
       termMonths,

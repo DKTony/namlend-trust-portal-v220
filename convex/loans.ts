@@ -404,17 +404,21 @@ export const submitLoan = mutation({
       principal: loan.principal,
     });
 
-    ctx.scheduler.runAfter(0, internal.actions.processLoanApplication.processLoanApplication, {
-      loanId,
-      userId: loan.userId,
-      amount: loan.principal,
-      interestRate: loan.interestRate,
-      termMonths: loan.termMonths,
-      purpose: loan.purpose,
-      monthlyIncome: loan.monthlyIncome,
-      monthlyExpenses: loan.monthlyExpenses,
-      existingDebt: loan.existingDebt,
-    });
+    await ctx.scheduler.runAfter(
+      0,
+      internal.actions.processLoanApplication.processLoanApplication,
+      {
+        loanId,
+        userId: loan.userId,
+        amount: loan.principal,
+        interestRate: loan.interestRate,
+        termMonths: loan.termMonths,
+        purpose: loan.purpose,
+        monthlyIncome: loan.monthlyIncome,
+        monthlyExpenses: loan.monthlyExpenses,
+        existingDebt: loan.existingDebt,
+      }
+    );
   },
 });
 

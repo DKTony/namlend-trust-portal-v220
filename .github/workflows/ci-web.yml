@@ -15,19 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint
         run: npm run lint
-      
+
       - name: Run TypeScript compiler
         run: npm run typecheck
 
@@ -36,16 +36,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run unit tests
         run: |
           mkdir -p test-results
@@ -201,143 +201,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      
-      - name: Run API smoke tests
-        run: |
-          mkdir -p test-results
-          npx playwright test e2e/api/ --project=chromium --reporter=github,json
-        env:
-          # Supabase env deliberately absent (matches .env.e2e) — legacy
-          # Supabase specs self-skip without credentials.
-          # E2E deployment only — setupSafety.ts blocks the production URL
-          VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
-          E2E_ALLOW_MUTATING_SEED: 'true'
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          CONVEX_DEPLOYMENT: dev:brave-mole-108
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          VITE_E2E: 'true'
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/playwright-api.json
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: playwright-report-api
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
 
-      - name: Upload named API-smoke results
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ontology-results-playwright-api-${{ github.run_id }}
-          path: test-results/playwright-api.json
-          retention-days: 14
+      # Pull-request code receives no deployment key or test-account secret.
+      # Mutating API execution is available only through the protected manual
+      # job in e2e.yml; this required check validates deterministic discovery.
+      - name: Validate API smoke-test discovery (secretless)
+        env:
+          VITE_CONVEX_URL: https://e2e-discovery.invalid
+        run: npx playwright test e2e/api/ --project=chromium --list
 
   dependency-audit:
     name: Dependency Security Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run npm audit
         run: |
           npm audit --omit=dev --audit-level=high
           npm audit --audit-level=high
-
-  playwright-full-e2e:
-    name: Full E2E Test Suite
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      
-      - name: Start dev server and run full E2E suite
-        run: |
-          mkdir -p test-results
-          npx playwright test --project=chromium --reporter=github,json
-        env:
-          # Supabase env deliberately absent (matches .env.e2e) — legacy
-          # Supabase specs self-skip without credentials.
-          # E2E deployment only — setupSafety.ts blocks the production URL
-          VITE_CONVEX_URL: ${{ secrets.E2E_CONVEX_URL }}
-          E2E_ALLOW_MUTATING_SEED: 'true'
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          CONVEX_DEPLOYMENT: dev:brave-mole-108
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          VITE_E2E: 'true'
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/playwright-full.json
-      
-      - name: Upload full E2E report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: playwright-report-full
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 14
-
-      - name: Upload named full-E2E results
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ontology-results-playwright-full-${{ github.run_id }}
-          path: test-results/playwright-full.json
-          retention-days: 14
 
   schema-type-check:
     name: Schema & Type Alignment
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Check for legacy schema fields
         run: |
           echo "Checking for legacy fields: payment_date, next_payment_date..."
@@ -375,7 +291,6 @@ jobs:
       - ontology
       - behavior-proof
       - playwright-api-smoke
-      - playwright-full-e2e
       - dependency-audit
       - schema-type-check
     permissions:
@@ -410,10 +325,48 @@ jobs:
         run: |
           PR_NUMBER=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0].number // empty')
           test -n "$PR_NUMBER" || { echo "No reviewed pull request is associated with ${GITHUB_SHA}."; exit 1; }
-          APPROVERS=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/reviews" --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | join(",")')
-          test -n "$APPROVERS" || { echo "No named human approval is available for PR ${PR_NUMBER}."; exit 1; }
-          echo "HUMAN_APPROVERS=${APPROVERS}" >> "$GITHUB_ENV"
-          echo "MERGED_PULL_REQUEST_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}" >> "$GITHUB_ENV"
+          PR_METADATA=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+          PR_AUTHOR=$(printf '%s' "$PR_METADATA" | jq -r '.user.login')
+          PR_HEAD_SHA=$(printf '%s' "$PR_METADATA" | jq -r '.head.sha')
+          test -n "$PR_AUTHOR" && test -n "$PR_HEAD_SHA" || {
+            echo "Unable to resolve PR author and exact reviewed head for PR ${PR_NUMBER}."
+            exit 1
+          }
+
+          # Count only each reviewer's latest decisive review. The approval must
+          # be from a non-author human collaborator and target the final PR head;
+          # stale, dismissed, superseded, author, and bot approvals never count.
+          APPROVERS=$(
+            gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/reviews" |
+              jq -r --arg author "$PR_AUTHOR" --arg head "$PR_HEAD_SHA" '
+                (add // [])
+                | map(select(.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED"))
+                | sort_by(.submitted_at // "")
+                | reduce .[] as $review ({}; .[$review.user.login] = $review)
+                | to_entries
+                | map(select(
+                    .key != $author
+                    and (.value.user.type // "") != "Bot"
+                    and (.key | endswith("[bot]") | not)
+                    and (
+                      .value.author_association == "OWNER"
+                      or .value.author_association == "MEMBER"
+                      or .value.author_association == "COLLABORATOR"
+                    )
+                    and .value.state == "APPROVED"
+                    and .value.commit_id == $head
+                  ))
+                | map(.key)
+                | sort
+                | join(",")
+              '
+          )
+          test -n "$APPROVERS" || {
+            echo "No non-author human collaborator approved exact PR head ${PR_HEAD_SHA}."
+            exit 1
+          }
+          printf 'HUMAN_APPROVERS=%s\n' "$APPROVERS" >> "$GITHUB_ENV"
+          printf 'MERGED_PULL_REQUEST_URL=%s/%s/pull/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$PR_NUMBER" >> "$GITHUB_ENV"
 
       - name: Build current-SHA E1 ledger and semantic diff artifact
         run: |

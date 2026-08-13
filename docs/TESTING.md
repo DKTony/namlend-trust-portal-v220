@@ -19,7 +19,7 @@
 - ✅ `src/pages/KYC.test.tsx` covers refresh-persisted presentation, submit confirmation and button state, submitted locking/completion action, and rejection notes/resubmission state.
 - ✅ `src/components/documents/DocumentPreviewDialog.test.tsx` covers authenticated PDF/image rendering and the retained legacy-file fallback.
 - ✅ `e2e/document-workflow.e2e.ts` covers compact/desktop KYC action visibility. Its mutation journey covers upload → refresh → preview → submit → staff decisions/completion → reactive verification and loan-file retrieval in both portals.
-- Mutation E2E tests intentionally require `E2E_ENABLE_DOCUMENT_MUTATIONS=true` and an isolated Convex E2E deployment so retained compliance files do not pollute shared environments.
+- Mutation E2E tests intentionally require `E2E_ENABLE_DOCUMENT_MUTATIONS=true` and a freshly created disposable Convex preview so retained compliance files never pollute shared or production environments.
 
 Focused commands:
 

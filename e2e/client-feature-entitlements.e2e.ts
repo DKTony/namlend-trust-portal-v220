@@ -19,14 +19,14 @@ async function openEntitlements(page: Page) {
 }
 
 test.describe('Client feature dispatch', () => {
-  test.skip(
-    process.env.E2E_MUTATE_ENTITLEMENTS !== 'true',
-    'Set E2E_MUTATE_ENTITLEMENTS=true only for a disposable enforcement-enabled environment.'
-  );
-
   test('owner disabling Banking removes desktop/mobile/deep-state/IPP surfaces and restores them', async ({
     page,
   }) => {
+    if (process.env.E2E_MUTATE_ENTITLEMENTS !== 'true') {
+      throw new Error(
+        'E2E_MUTATE_ENTITLEMENTS=true is required for the disposable enforcement preview.'
+      );
+    }
     await page.setViewportSize({ width: 1280, height: 900 });
     await loginAsPlatformOwner(page);
     await openEntitlements(page);

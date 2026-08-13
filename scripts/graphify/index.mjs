@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { readRegularFileWithinRoot } from '../safe-files.mjs';
 
 const root = process.cwd();
 const command = process.argv[2] ?? 'check';
@@ -19,7 +20,8 @@ const allowedRoots = ['src/', 'convex/', 'e2e/', '.github/workflows/'];
 const allowedRootFiles = new Set([
   'AGENTS.md', 'CLAUDE.MD', 'CONTRIBUTING.md', 'WORKFLOW.md', 'package.json', 'netlify.toml',
   'vite.config.ts', 'vitest.config.ts', 'vitest.convex.config.ts', 'vitest.ontology.config.ts',
-  'playwright.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json'
+  'playwright.config.ts', 'tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json',
+  'scripts/safe-files.mjs'
 ]);
 
 function git(args, fallback = '') {
@@ -35,7 +37,16 @@ function digest(value) {
 }
 
 function trackedAllowlist() {
-  const files = git(['ls-files']).split('\n').filter(Boolean).map((file) => file.replaceAll('\\', '/'));
+  const files = git(['ls-files', '--stage'])
+    .split('\n')
+    .filter(Boolean)
+    .map((entry) => {
+      const match = entry.match(/^(\d{6}) [0-9a-f]+ \d\t(.+)$/);
+      if (!match) throw new Error(`Unable to parse tracked file entry: ${entry}`);
+      return { mode: match[1], file: match[2].replaceAll('\\', '/') };
+    })
+    .filter(({ mode }) => mode === '100644' || mode === '100755')
+    .map(({ file }) => file);
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'ontology', 'source-manifest.json'), 'utf8'));
   const activeDocuments = new Set(manifest.activeDocuments ?? []);
   return files.filter((file) => {
@@ -94,16 +105,24 @@ function runGraphify(graphifyArgs, options = {}) {
 function copyCorpus(files, target) {
   fs.mkdirSync(target, { recursive: true });
   for (const file of files) {
-    const source = path.join(root, file);
-    if (!fs.existsSync(source) || !fs.statSync(source).isFile()) continue;
+    const contents = readRegularFileWithinRoot(root, file);
+    if (contents === undefined) throw new Error(`Allowlisted source is missing or unsafe: ${file}`);
     const destination = path.join(target, file);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
-    fs.copyFileSync(source, destination);
+    fs.writeFileSync(destination, contents);
   }
 }
 
 function sourceManifestHash(files) {
-  return digest(files.map((file) => `${file}:${digest(fs.readFileSync(path.join(root, file)))}`).join('\n'));
+  return digest(
+    files
+      .map((file) => {
+        const contents = readRegularFileWithinRoot(root, file);
+        if (contents === undefined) throw new Error(`Allowlisted source is missing or unsafe: ${file}`);
+        return `${file}:${digest(contents)}`;
+      })
+      .join('\n')
+  );
 }
 
 function validateGraph(graphFile, allowed) {

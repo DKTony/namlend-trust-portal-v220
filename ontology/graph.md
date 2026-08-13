@@ -1,17 +1,17 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `d2f70cc775a36cdff0e01052eeb7c165d8df89c7`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `d2c6b91ec5a0a6c7c1b4633d472bbe9f66b15d4b`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |
 | Effective Convex tables |    92 |
 | Convex indexes          |   198 |
-| Convex functions        |   501 |
+| Convex functions        |   503 |
 | Web routes              |    40 |
 | React components        |   257 |
 | Features                |    32 |
 | Seeded plans            |     4 |
-| Named tests             |   825 |
+| Named tests             |   836 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 
@@ -356,13 +356,13 @@ flowchart LR
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus["updateIpsTransactionStatus"]
   n_function_convex_notifications_markNotificationRead["markNotificationRead"]
   n_function_convex_approvalWorkflow_processApprovalRequest["processApprovalRequest"]
+  n_function_convex_approvalWorkflow_createSystemApprovalRequest["createSystemApprovalRequest"]
   n_function_convex_actions_processLoanApplication_processLoanApplication["processLoanApplication"]
   n_function_convex_ips_ipsTransactions_initiateIpsDisbursement["initiateIpsDisbursement"]
   n_function_convex_kycDocuments_completeReview["completeReview"]
   n_function_convex_notifications_markAllNotificationsRead["markAllNotificationsRead"]
   n_function_convex_notifications_getPreferencesForUser["getPreferencesForUser"]
   n_function_convex_disbursements_completeDisbursement["completeDisbursement"]
-  n_function_convex_notifications_updateNotificationPreference["updateNotificationPreference"]
   n_function_convex_platform_lendingWorkflowRepair_backfillPendingStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_communications_resendCommunication -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_loanProcessing_recordProcessingFailure -- "CALLS" --> n_function_convex_notifications_createNotification
@@ -391,6 +391,7 @@ flowchart LR
   n_function_convex_approvalWorkflow_processApprovalRequest -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
+  n_function_convex_approvalWorkflow_createSystemApprovalRequest -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_actions_processLoanApplication_processLoanApplication -- "CALLS" --> n_function_convex_actions_sendNotification_sendNotification
   n_function_convex_ips_ipsTransactions_initiateIpsDisbursement -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
   n_function_convex_kycDocuments_completeReview -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
@@ -401,10 +402,9 @@ flowchart LR
   n_function_convex_actions_sendNotification_sendNotification -- "CALLS" --> n_function_convex_actions_sendSms_sendSms
   n_function_convex_kycDocuments_completeReview -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_disbursements_completeDisbursement -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
-  n_function_convex_notifications_updateNotificationPreference -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_actions_sendSms_sendTemplateSms -- "CALLS" --> n_function_convex_actions_sendSms_sendSms
   n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
-  n_function_convex_notifications_updateNotificationPreference -- "CALLS" --> n_function_convex_audit_writeAuditEntry
+  n_function_convex_approvalWorkflow_createSystemApprovalRequest -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
   n_function_convex_platform_lendingWorkflowRepair_backfillPendingIpsStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_platform_lendingWorkflowRepair_backfillBlockedDisbursementStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_disbursements_completeDisbursement -- "CALLS" --> n_function_convex_notifications_createNotification

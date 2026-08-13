@@ -9,10 +9,10 @@
  * Run: npm run test:convex
  */
 import { convexTest } from 'convex-test';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
-import { ALWAYS_ON_FEATURES, isValidFeatureKey } from './lib/features';
+import { ALWAYS_ON_FEATURES, CLIENT_FEATURES, isValidFeatureKey } from './lib/features';
 import schema from './schema';
 
 const modules = import.meta.glob('./**/*.*s');
@@ -92,6 +92,19 @@ describe('feature manifest', () => {
   test('unknown keys are rejected', () => {
     expect(isValidFeatureKey('quantum-loans')).toBe(false);
   });
+  test('catalogues all nine distinct Client Portal surfaces', () => {
+    expect(CLIENT_FEATURES.map((feature) => feature.key)).toEqual([
+      'clientOverview',
+      'clientLoans',
+      'clientApplications',
+      'clientPayments',
+      'clientBanking',
+      'clientBudget',
+      'clientDocuments',
+      'clientSelfService',
+      'clientProfile',
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -131,6 +144,26 @@ describe('platform guards', () => {
         defaultFeatures: ['quantum-loans'],
       })
     ).rejects.toMatchObject({ data: { code: 'VALIDATION_ERROR' } });
+  });
+
+  test('plans reject platform capabilities and incomplete feature dependencies', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    await expect(
+      asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+        planCode: 'platform-leak',
+        name: 'Platform leak',
+        defaultFeatures: ['tenantRegistry'],
+      })
+    ).rejects.toMatchObject({ data: { code: 'VALIDATION_ERROR' } });
+    await expect(
+      asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+        planCode: 'missing-docs',
+        name: 'Missing docs',
+        defaultFeatures: ['clientApplications'],
+      })
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_DEPENDENCY_MISSING' } });
   });
 
   test('getMyPlatformRole returns role for owner, null for tenant user', async () => {
@@ -232,6 +265,35 @@ describe('control-plane guard widening', () => {
     await expect(
       asUser(t, tenantAdmin).query(api.systemConfig.getAllConfig, { category: 'platform' })
     ).resolves.toHaveLength(1);
+  });
+
+  test('tenant admins cannot create or update protected enforcement rules', async () => {
+    const t = convexTest(schema, modules);
+    const tenantAdmin = await seedTenantUser(t, { role: 'tenant_admin' });
+    await expect(
+      asUser(t, tenantAdmin).mutation(api.ontology.businessRules.createRule, {
+        ruleCode: 'ENTITLEMENT_ENFORCEMENT',
+        category: 'platform',
+        displayName: 'Entitlement enforcement',
+        valueType: 'boolean',
+        value: 'true',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+  });
+
+  test('owners cannot bypass entitlement readiness through generic rule mutations', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    await expect(
+      asUser(t, owner).mutation(api.ontology.businessRules.createRule, {
+        ruleCode: 'ENTITLEMENT_ENFORCEMENT',
+        category: 'platform',
+        displayName: 'Entitlement enforcement',
+        valueType: 'boolean',
+        value: 'true',
+      })
+    ).rejects.toMatchObject({ data: { code: 'PROTECTED_RULE_API_REQUIRED' } });
   });
 
   test('non-platform, non-staff user is denied control-plane reads', async () => {
@@ -358,6 +420,151 @@ describe('entitlement resolution', () => {
       {}
     );
     expect(set).not.toContain('products');
+  });
+
+  test('dispatch rejects platform keys, always-on revocation, and dependency gaps', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    const dispatch = (featureKey: string, enabled: boolean) =>
+      asUser(t, owner).mutation(api.platform.entitlements.setTenantEntitlement, {
+        institutionId: inst,
+        featureKey,
+        source: enabled ? ('manual_override' as const) : ('removal' as const),
+        enabled,
+        rolloutState: enabled ? ('enabled' as const) : ('off' as const),
+      });
+
+    await expect(dispatch('tenantRegistry', true)).rejects.toMatchObject({
+      data: { code: 'VALIDATION_ERROR' },
+    });
+    await expect(dispatch('loans', false)).rejects.toMatchObject({
+      data: { code: 'ALWAYS_ON_FEATURE' },
+    });
+    await expect(dispatch('clientApplications', true)).rejects.toMatchObject({
+      data: { code: 'FEATURE_DEPENDENCY_MISSING' },
+    });
+    await dispatch('clientDocuments', true);
+    await dispatch('clientApplications', true);
+    await expect(dispatch('clientDocuments', false)).rejects.toMatchObject({
+      data: { code: 'FEATURE_DEPENDENCY_MISSING' },
+    });
+  });
+
+  test('client-feature backfill is additive, conflict-preserving, audited, and idempotent', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    await asUser(t, owner).mutation(api.platform.plans.upsertPlan, {
+      planCode: 'legacy',
+      name: 'Legacy',
+      defaultFeatures: ['loans'],
+    });
+    await t.run(async (ctx) => {
+      await ctx.db.insert('tenantEntitlements', {
+        institutionId: inst,
+        featureKey: 'clientBanking',
+        source: 'removal',
+        enabled: false,
+        rolloutState: 'off',
+        effectiveFrom: Date.now(),
+        changedAt: Date.now(),
+      });
+    });
+
+    const dryRun = await asUser(t, owner).mutation(
+      api.platform.entitlements.backfillClientFeatureDefaults,
+      { dryRun: true }
+    );
+    expect(dryRun.counts.catalogToInsert).toBe(9);
+    expect(dryRun.counts.plansToUpdate).toBe(1);
+    expect(dryRun.counts.overrideConflicts).toBe(1);
+
+    vi.useFakeTimers();
+    try {
+      const applied = await asUser(t, owner).mutation(
+        api.platform.entitlements.backfillClientFeatureDefaults,
+        { dryRun: false }
+      );
+      expect(applied.counts.plansToUpdate).toBe(1);
+      const second = await asUser(t, owner).mutation(
+        api.platform.entitlements.backfillClientFeatureDefaults,
+        { dryRun: false }
+      );
+      expect(second.counts.catalogToInsert).toBe(0);
+      expect(second.counts.plansToUpdate).toBe(0);
+
+      const state = await t.run(async (ctx) => ({
+        plan: await ctx.db
+          .query('plans')
+          .withIndex('by_planCode', (q) => q.eq('planCode', 'legacy'))
+          .first(),
+        overrides: await ctx.db
+          .query('tenantEntitlements')
+          .withIndex('by_institutionId', (q) => q.eq('institutionId', inst))
+          .collect(),
+      }));
+      expect(state.plan?.defaultFeatures).toEqual(
+        expect.arrayContaining([...CLIENT_FEATURES.map((feature) => feature.key), 'ippOnboarding'])
+      );
+      expect(state.overrides).toHaveLength(1);
+
+      await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+      const audits = await t.run(async (ctx) => ctx.db.query('auditLogs').collect());
+      expect(audits.some((audit) => audit.action === 'APPLY_CLIENT_FEATURE_BACKFILL')).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('support cannot migrate or activate entitlements', async () => {
+    const t = convexTest(schema, modules);
+    const support = await seedTenantUser(t, { role: 'client' });
+    await makePlatformSupport(t, support);
+    await expect(
+      asUser(t, support).mutation(api.platform.entitlements.backfillClientFeatureDefaults, {
+        dryRun: true,
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+    await expect(
+      asUser(t, support).mutation(api.platform.entitlements.setEntitlementEnforcement, {
+        enabled: true,
+        reason: 'Support must remain read-only',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+  });
+
+  test('entitlement activation requires tenancy enforcement and green readiness', async () => {
+    const t = convexTest(schema, modules);
+    const email = 'activation-owner@example.test';
+    const owner = await seedTenantUser(t, { email });
+    await t.mutation(internal.platform.seed.seedControlPlane, { ownerEmail: email });
+
+    await expect(
+      asUser(t, owner).mutation(api.platform.entitlements.setEntitlementEnforcement, {
+        enabled: true,
+        reason: 'Activation test before tenancy',
+      })
+    ).rejects.toMatchObject({ data: { code: 'TENANCY_ENFORCEMENT_REQUIRED' } });
+
+    await asUser(t, owner).mutation(api.ontology.businessRules.createRule, {
+      ruleCode: 'TENANCY_ENFORCEMENT',
+      category: 'platform',
+      displayName: 'Tenancy enforcement',
+      valueType: 'boolean',
+      value: 'true',
+    });
+    await expect(
+      asUser(t, owner).mutation(api.platform.entitlements.setEntitlementEnforcement, {
+        enabled: true,
+        reason: 'Readiness checks passed in the test environment',
+      })
+    ).resolves.toMatchObject({ changed: true, enabled: true });
+    await expect(
+      asUser(t, owner).query(api.platform.entitlements.isEntitlementEnforcementOn, {})
+    ).resolves.toBe(true);
   });
 });
 

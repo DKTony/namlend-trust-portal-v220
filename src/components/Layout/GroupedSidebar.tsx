@@ -6,6 +6,7 @@
 
 import { useBrandingSafe } from '@/context/BrandingContext';
 import { cn } from '@/lib/utils';
+import { DEFAULT_BRANDING } from '@/types/branding';
 import type { NavGroup } from '@/types/navigation';
 import { ChevronDown, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -61,7 +62,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsedState);
-  const [failedBrandAssetUrl, setFailedBrandAssetUrl] = useState<string | null>(null);
+  const [failedBrandAssetUrls, setFailedBrandAssetUrls] = useState<string[]>([]);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : internalIsOpen;
   const setIsOpen = useCallback(
@@ -78,7 +79,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    setFailedBrandAssetUrl(null);
+    setFailedBrandAssetUrls([]);
   }, [brandingConfig.assets.favicon_url, brandingConfig.assets.logo_url]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -125,10 +126,16 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   const displaySubtitle = subtitle || 'Admin Portal';
 
   const renderBrand = (compact = false) => {
-    const assetUrl = compact
+    const configuredAssetUrl = compact
       ? (brandingConfig.assets.favicon_url ?? brandingConfig.assets.logo_url)
       : brandingConfig.assets.logo_url;
-    const showImage = Boolean(assetUrl && assetUrl !== failedBrandAssetUrl);
+    const defaultAssetUrl = compact
+      ? (DEFAULT_BRANDING.assets.favicon_url ?? DEFAULT_BRANDING.assets.logo_url)
+      : DEFAULT_BRANDING.assets.logo_url;
+    const assetUrl = [configuredAssetUrl, defaultAssetUrl].find((candidate): candidate is string =>
+      Boolean(candidate && !failedBrandAssetUrls.includes(candidate))
+    );
+    const showImage = Boolean(assetUrl);
 
     return (
       <div className={cn('flex items-center gap-3', compact ? 'mb-4 justify-center' : 'mb-8 mt-2')}>
@@ -142,14 +149,19 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
             }}
             className="object-contain"
             data-testid="sidebar-brand-logo"
-            onError={() => setFailedBrandAssetUrl(assetUrl)}
+            onError={() =>
+              assetUrl &&
+              setFailedBrandAssetUrls((current) =>
+                current.includes(assetUrl) ? current : [...current, assetUrl]
+              )
+            }
           />
         ) : (
           <div
             className={cn(
               compact ? 'h-10 w-10' : 'w-10 h-10',
               'rounded-xl flex items-center justify-center shadow-lg',
-              'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
+              'rounded-xl bg-[var(--brand-primary)] text-white shadow-sm transition-colors hover:bg-[var(--brand-accent)]'
             )}
             data-testid="sidebar-brand-fallback"
             role="img"
@@ -160,10 +172,14 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
         )}
         {!compact && (brandingConfig.assets.show_company_name_with_logo || !showImage) && (
           <div className="min-w-0">
-            <h1 className={cn('font-bold text-xl truncate', 'font-sans text-[#274F35]')}>
+            <h1
+              className={cn('font-bold text-xl truncate', 'font-sans text-[var(--brand-accent)]')}
+            >
               {displayTitle}
             </h1>
-            <p className={cn('text-xs opacity-60 truncate', 'font-sans text-[#274F35]')}>
+            <p
+              className={cn('text-xs opacity-60 truncate', 'font-sans text-[var(--brand-accent)]')}
+            >
               {displaySubtitle}
             </p>
           </div>
@@ -192,7 +208,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
                   'w-full flex min-h-9 items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors',
                   hasActiveItem
                     ? 'text-sky-400'
-                    : `${'font-sans text-[#274F35]'} opacity-50 hover:opacity-70`
+                    : 'font-sans text-[var(--brand-accent)] opacity-50 hover:opacity-70'
                 )}
               >
                 {group.label}
@@ -218,8 +234,8 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
                           'flex min-h-11 items-center rounded-xl transition-all duration-300 group relative overflow-hidden',
                           compact ? 'justify-center p-3' : 'gap-4 px-4 py-3',
                           isActive
-                            ? `${'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'} shadow-md`
-                            : `hover:bg-white/5 ${'font-sans text-[#274F35]'} opacity-70 hover:opacity-100`
+                            ? 'rounded-xl bg-[var(--brand-primary)] text-white shadow-md transition-colors hover:bg-[var(--brand-accent)]'
+                            : 'font-sans text-[var(--brand-accent)] opacity-70 hover:bg-white/5 hover:opacity-100'
                         )
                       }
                       data-testid={`sidebar-nav-${item.id}`}
@@ -264,7 +280,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
       <div
         className={cn(
           'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
-          'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
+          'rounded-xl bg-[var(--brand-primary)] text-white shadow-sm transition-colors hover:bg-[var(--brand-accent)]'
         )}
       >
         {userName?.charAt(0).toUpperCase() || 'U'}
@@ -272,17 +288,27 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
       {!compact && (
         <>
           <div className="overflow-hidden flex-1">
-            <p className={cn('text-sm font-semibold truncate', 'font-sans text-[#274F35]')}>
+            <p
+              className={cn(
+                'text-sm font-semibold truncate',
+                'font-sans text-[var(--brand-accent)]'
+              )}
+            >
               {userName}
             </p>
-            <p className={cn('text-xs opacity-60 truncate', 'font-sans text-[#274F35]')}>
+            <p
+              className={cn('text-xs opacity-60 truncate', 'font-sans text-[var(--brand-accent)]')}
+            >
               {userEmail}
             </p>
           </div>
           {onSignOut && (
             <button
               onClick={onSignOut}
-              className={cn('ml-auto p-2 rounded-lg hover:bg-white/10', 'font-sans text-[#274F35]')}
+              className={cn(
+                'ml-auto p-2 rounded-lg hover:bg-white/10',
+                'font-sans text-[var(--brand-accent)]'
+              )}
               data-testid="sidebar-signout"
               aria-label="Sign Out"
               title="Sign Out"
@@ -329,7 +355,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
         className={cn(
           'fixed top-4 left-4 z-[60] w-10 h-10 flex items-center justify-center',
           'rounded-full shadow-sm transition-transform hover:scale-105 active:scale-95',
-          'border border-[#DCE8D8] bg-white text-[#274F35]',
+          'border border-[#DCE8D8] bg-white text-[var(--brand-accent)]',
           isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         )}
         data-testid="sidebar-trigger"
@@ -377,7 +403,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
             onClick={() => setIsOpen(false)}
             className={cn(
               'absolute top-4 right-4 p-2 rounded-full hover:bg-white/10',
-              'font-sans text-[#274F35]'
+              'font-sans text-[var(--brand-accent)]'
             )}
             data-testid="sidebar-close"
           >

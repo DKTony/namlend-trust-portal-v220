@@ -9,7 +9,27 @@
 import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { scheduleAuditEntry } from '../lib/audit';
-import { assertAdminOrPlatformOwner, assertStaffOrPlatformSupport } from '../lib/platformAuth';
+import {
+  assertAdminOrPlatformOwner,
+  assertPlatformOwner,
+  assertStaffOrPlatformSupport,
+} from '../lib/platformAuth';
+
+const PLATFORM_PROTECTED_RULES = new Set(['TENANCY_ENFORCEMENT', 'ENTITLEMENT_ENFORCEMENT']);
+
+async function assertRuleMutationAuthority(ctx: any, ruleCode: string) {
+  const userId = PLATFORM_PROTECTED_RULES.has(ruleCode)
+    ? assertPlatformOwner(ctx)
+    : assertAdminOrPlatformOwner(ctx);
+  const authorizedUserId = await userId;
+  if (ruleCode === 'ENTITLEMENT_ENFORCEMENT') {
+    throw new ConvexError({
+      code: 'PROTECTED_RULE_API_REQUIRED',
+      message: 'Use the protected entitlement-enforcement activation operation.',
+    });
+  }
+  return authorizedUserId;
+}
 
 const ruleValueType = v.union(
   v.literal('number'),
@@ -85,7 +105,7 @@ export const createRule = mutation({
     value: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAdminOrPlatformOwner(ctx);
+    const userId = await assertRuleMutationAuthority(ctx, args.ruleCode);
 
     // Check for existing active rule
     const existing = await ctx.db
@@ -114,6 +134,7 @@ export const createRule = mutation({
       entityId: ruleId,
       action: 'CREATE_RULE',
       newState: { ruleCode: args.ruleCode, value: args.value, version: 1 },
+      userId,
     });
 
     return ruleId;
@@ -128,7 +149,7 @@ export const updateRule = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, { ruleCode, value, description }) => {
-    const userId = await assertAdminOrPlatformOwner(ctx);
+    const userId = await assertRuleMutationAuthority(ctx, ruleCode);
 
     const existing = await ctx.db
       .query('businessRules')
@@ -168,6 +189,7 @@ export const updateRule = mutation({
       action: 'UPDATE_RULE',
       oldState: { value: current.value, version: current.version },
       newState: { value, version: current.version + 1 },
+      userId,
     });
 
     return newRuleId;

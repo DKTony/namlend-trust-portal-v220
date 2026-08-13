@@ -10,7 +10,14 @@
 import { v } from 'convex/values';
 import { internalMutation } from '../_generated/server';
 import { scheduleAuditEntry } from '../lib/audit';
-import { ALWAYS_ON_FEATURES, FEATURES } from '../lib/features';
+import {
+  ALWAYS_ON_FEATURES,
+  CLIENT_FEATURES,
+  FEATURES,
+  getFeatureCatalogMetadata,
+  TENANT_GRANTABLE_FEATURES,
+  withFeatureDependencyClosure,
+} from '../lib/features';
 
 const OG_CODE = 'OGFS';
 const LEGACY_CODE = 'NAMLEND';
@@ -70,26 +77,30 @@ async function ensureOgTenant(ctx: any, now: number) {
   });
 }
 
-/** Backoffice feature keys a plan can grant (platform-only features are not tenant-grantable). */
-const BACKOFFICE_FEATURES = FEATURES.filter((f) => f.console === 'backoffice').map((f) => f.key);
+const CLIENT_FEATURE_KEYS = CLIENT_FEATURES.map((feature) => feature.key);
+const ALL_TENANT_FEATURES = TENANT_GRANTABLE_FEATURES.map((feature) => feature.key);
 
 /** Plan catalog seeded at Phase 0. OG Financial Services uses `all_features`. */
 const PLAN_DEFS: Array<{ planCode: string; name: string; features: string[] }> = [
-  { planCode: 'all_features', name: 'All Features (internal)', features: BACKOFFICE_FEATURES },
-  { planCode: 'starter', name: 'Starter', features: [...ALWAYS_ON_FEATURES] },
+  { planCode: 'all_features', name: 'All Features (internal)', features: ALL_TENANT_FEATURES },
+  {
+    planCode: 'starter',
+    name: 'Starter',
+    features: withFeatureDependencyClosure([...ALWAYS_ON_FEATURES, ...CLIENT_FEATURE_KEYS]),
+  },
   {
     planCode: 'pro',
     name: 'Pro',
-    features: [
+    features: withFeatureDependencyClosure([
       ...ALWAYS_ON_FEATURES,
+      ...CLIENT_FEATURE_KEYS,
       'collections',
-      'ippOnboarding',
       'products',
       'advancedAnalytics',
       'creditPolicy',
-    ],
+    ]),
   },
-  { planCode: 'enterprise', name: 'Enterprise', features: BACKOFFICE_FEATURES },
+  { planCode: 'enterprise', name: 'Enterprise', features: ALL_TENANT_FEATURES },
 ];
 
 export const seedControlPlane = internalMutation({
@@ -115,6 +126,7 @@ export const seedControlPlane = internalMutation({
         name: f.name,
         category: f.category,
         console: f.console,
+        metadata: getFeatureCatalogMetadata(f),
         createdAt: now,
         updatedAt: now,
       });

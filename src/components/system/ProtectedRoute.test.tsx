@@ -25,6 +25,7 @@ function baseAuth() {
     loading: false,
     roleLoading: false,
     profileMissing: false,
+    userRole: 'client' as string | null,
     isAdmin: false,
     isLoanOfficer: false,
     isPlatformStaff: false,
@@ -97,6 +98,30 @@ describe('ProtectedRoute — session hydration', () => {
 });
 
 describe('ProtectedRoute — role gates', () => {
+  it('denies tenant staff access to client self-service routes', () => {
+    renderAt(
+      '/dashboard',
+      { userRole: 'loan_officer', isLoanOfficer: true },
+      { requireClient: true }
+    );
+
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+    expect(screen.getByText('Client privileges required.')).toBeInTheDocument();
+  });
+
+  it('admits the client role to client self-service routes', () => {
+    renderAt('/dashboard', { userRole: 'client' }, { requireClient: true });
+
+    expect(screen.getByText('DASHBOARD CONTENT')).toBeInTheDocument();
+  });
+
+  it('waits for the tenant role before deciding a client route', () => {
+    renderAt('/dashboard', { userRole: null, roleLoading: true }, { requireClient: true });
+
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
+
   it('denies a client the backoffice, with a way out', () => {
     renderAt('/admin/approvals', { isLoanOfficer: false }, { requireLoanOfficer: true });
 

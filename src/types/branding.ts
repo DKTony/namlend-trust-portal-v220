@@ -1,5 +1,6 @@
 /**
- * Immutable OG Financial Services identity types.
+ * Single-light presentation branding. OG Financial Services remains the trusted fallback;
+ * entitled tenants may override the approved identity fields without introducing themes.
  * @module types/branding
  */
 
@@ -60,10 +61,15 @@ export interface BrandingContextType {
   config: BrandingConfig;
   loading: boolean;
   error: string | null;
+  refreshBranding: () => Promise<void>;
+  updateBrandingLocally: (
+    section: keyof BrandingConfig,
+    values: Partial<BrandingConfig[keyof BrandingConfig]>
+  ) => void;
 }
 
 /**
- * Default branding values - used as fallback when database is unavailable
+ * Trusted default branding values used for public, loading, unentitled, and failed states.
  */
 export const DEFAULT_BRANDING: BrandingConfig = Object.freeze({
   general: Object.freeze({
@@ -92,3 +98,8 @@ export const DEFAULT_BRANDING: BrandingConfig = Object.freeze({
     og_image_url: '/og-financial-social-v2.png',
   }),
 });
+
+export interface BrandingAssetStorageIds {
+  logo: string | null;
+  favicon: string | null;
+}

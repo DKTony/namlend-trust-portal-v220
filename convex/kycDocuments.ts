@@ -13,6 +13,7 @@ import { internalMutation, mutation, query } from './_generated/server';
 import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
 import { assertAuthenticated, assertOwnerOrTenantStaff, assertStaff } from './lib/auth';
 import { createDocumentGrant } from './lib/documentGrants';
+import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import {
   OPTIONAL_KYC_DOCUMENT_TYPES,
   REQUIRED_KYC_DOCUMENT_TYPES,
@@ -178,6 +179,7 @@ export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
     await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     return ctx.storage.generateUploadUrl();
   },
 });
@@ -190,6 +192,7 @@ export const recordDocument = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     const profile = await ctx.db
       .query('profiles')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -276,6 +279,7 @@ export const submitMyKyc = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     const readiness = await getKycReadiness(ctx, userId);
     const profile = readiness.profile;
     if (!profile) {
@@ -641,6 +645,7 @@ export const requestDocumentAccess = mutation({
       document.userId,
       document.institutionId ?? profile?.institutionId
     );
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     const metadata = document.fileStorageId
       ? await ctx.db.system.get('_storage', document.fileStorageId)
       : null;

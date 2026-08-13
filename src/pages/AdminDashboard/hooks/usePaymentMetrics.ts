@@ -1,4 +1,5 @@
 import { api } from '@/integrations/convex/api';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useQuery } from 'convex/react';
 
 interface PaymentMetrics {
@@ -15,9 +16,12 @@ interface PaymentMetrics {
 }
 
 export const usePaymentMetrics = () => {
+  const { enforced, entitlements, isLoading: entitlementsLoading } = useEntitlements();
+  const advancedAnalyticsEnabled =
+    !entitlementsLoading && (!enforced || entitlements.has('advancedAnalytics'));
   const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
-  const risk = useQuery(api.analytics.getRiskMetrics);
-  const revenue = useQuery(api.analytics.getRevenueMetrics, {});
+  const risk = useQuery(api.analytics.getRiskMetrics, advancedAnalyticsEnabled ? {} : 'skip');
+  const revenue = useQuery(api.analytics.getRevenueMetrics, advancedAnalyticsEnabled ? {} : 'skip');
   const allLoans = useQuery(api.loans.adminListLoans, {});
 
   // Today's total is summed server-side (no 100-row cap, uses the settlement

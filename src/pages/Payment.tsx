@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { Id } from '@/types/convex';
@@ -53,6 +54,9 @@ export default function Payment() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { t } = useTranslation('payment');
+  const { hasFeature } = useEntitlements();
+  const bankingEnabled = hasFeature('clientBanking');
+  const applicationsEnabled = hasFeature('clientApplications');
   // Convex reactive queries
   const rawLoans = useQuery(api.loans.getMyLoans, {});
   const recordPaymentMutation = useMutation(api.payments.recordPayment);
@@ -76,7 +80,7 @@ export default function Payment() {
     });
 
   const [selectedLoan, setSelectedLoan] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState('ips');
+  const [paymentMethod, setPaymentMethod] = useState(bankingEnabled ? 'ips' : 'card');
   const [showIPSModal, setShowIPSModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -111,6 +115,10 @@ export default function Payment() {
       setPaymentAmount(activeLoans[0].monthly_payment.toString());
     }
   }, [activeLoans, selectedLoan]);
+
+  useEffect(() => {
+    if (!bankingEnabled && paymentMethod === 'ips') setPaymentMethod('card');
+  }, [bankingEnabled, paymentMethod]);
 
   // Processing fee varies by payment method - IPS has no fee
   const getProcessingFee = (method: string): number => {
@@ -226,7 +234,7 @@ export default function Payment() {
         return;
       }
     }
-    if (paymentMethod === 'ips') {
+    if (paymentMethod === 'ips' && bankingEnabled) {
       setShowIPSModal(true);
     } else {
       handlePayment();
@@ -258,9 +266,11 @@ export default function Payment() {
               {t('noActiveLoans.description')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <ThemedButton onClick={() => navigate('/loan-application')}>
-                {t('noActiveLoans.applyButton', 'Apply for a Loan')}
-              </ThemedButton>
+              {applicationsEnabled && (
+                <ThemedButton onClick={() => navigate('/loan-application')}>
+                  {t('noActiveLoans.applyButton', 'Apply for a Loan')}
+                </ThemedButton>
+              )}
               <ThemedButton variant="outline" onClick={() => navigate('/dashboard')}>
                 {t('noActiveLoans.returnButton')}
               </ThemedButton>
@@ -349,16 +359,18 @@ export default function Payment() {
 
                 <div className="space-y-2">
                   <Label>{t('form.paymentMethod')}</Label>
-                  <Tabs defaultValue="ips" className="w-full" onValueChange={setPaymentMethod}>
+                  <Tabs value={paymentMethod} className="w-full" onValueChange={setPaymentMethod}>
                     <TabsList
                       className={cn(
                         'grid w-full bg-muted/50 p-1 h-auto gap-1',
-                        isMobile ? 'grid-cols-1' : 'grid-cols-3'
+                        isMobile ? 'grid-cols-1' : bankingEnabled ? 'grid-cols-3' : 'grid-cols-2'
                       )}
                     >
-                      <TabsTrigger value="ips" className="data-[state=active]:bg-background py-3">
-                        <Zap className="h-4 w-4 mr-2" /> {t('methods.ips.label')}
-                      </TabsTrigger>
+                      {bankingEnabled && (
+                        <TabsTrigger value="ips" className="data-[state=active]:bg-background py-3">
+                          <Zap className="h-4 w-4 mr-2" /> {t('methods.ips.label')}
+                        </TabsTrigger>
+                      )}
                       <TabsTrigger value="card" className="data-[state=active]:bg-background py-3">
                         <CreditCard className="h-4 w-4 mr-2" /> {t('methods.card.label')}
                       </TabsTrigger>
@@ -371,21 +383,23 @@ export default function Payment() {
                     </TabsList>
 
                     <div className="mt-4">
-                      <TabsContent value="ips">
-                        <div className="p-4 rounded-lg bg-blue-50  border border-blue-100 ">
-                          <div className="flex items-start gap-3">
-                            <Zap className="h-5 w-5 text-blue-600  mt-0.5" />
-                            <div>
-                              <h4 className="font-medium text-blue-900 ">
-                                {t('methods.ips.title')}
-                              </h4>
-                              <p className="text-sm text-blue-700  mt-1">
-                                {t('methods.ips.description')}
-                              </p>
+                      {bankingEnabled && (
+                        <TabsContent value="ips">
+                          <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
+                            <div className="flex items-start gap-3">
+                              <Zap className="h-5 w-5 text-blue-600 mt-0.5" />
+                              <div>
+                                <h4 className="font-medium text-blue-900">
+                                  {t('methods.ips.title')}
+                                </h4>
+                                <p className="text-sm text-blue-700 mt-1">
+                                  {t('methods.ips.description')}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TabsContent>
+                        </TabsContent>
+                      )}
 
                       <TabsContent value="card">
                         <div className="p-4 rounded-lg bg-muted/50 border border-border">
@@ -518,7 +532,7 @@ export default function Payment() {
           </div>
 
           {/* IPS Payment Modal */}
-          {selectedLoanDetails && (
+          {bankingEnabled && selectedLoanDetails && (
             <IPSPaymentModal
               isOpen={showIPSModal}
               onClose={() => setShowIPSModal(false)}

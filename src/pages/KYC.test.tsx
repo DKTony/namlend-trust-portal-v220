@@ -6,12 +6,16 @@ import type { Id } from '@/integrations/convex/api';
 import KYC from './KYC';
 
 const mockEligibility = vi.fn();
+const mockHasFeature = vi.fn();
 
 vi.mock('@/hooks/useKYCEligibility', () => ({
   useKYCEligibility: () => mockEligibility(),
 }));
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { _id: 'client-1' }, loading: false }),
+}));
+vi.mock('@/hooks/useEntitlements', () => ({
+  useEntitlements: () => ({ hasFeature: mockHasFeature }),
 }));
 vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn() }));
 vi.mock('convex/react', () => ({ useMutation: () => vi.fn() }));
@@ -74,6 +78,7 @@ function overview(overrides: Partial<KYCOverview> = {}): KYCOverview {
 describe('KYC persisted workflow screen', () => {
   beforeEach(() => {
     mockEligibility.mockReset();
+    mockHasFeature.mockImplementation(() => true);
   });
 
   test('renders persisted file metadata and requires confirmation before submission', () => {
@@ -128,5 +133,24 @@ describe('KYC persisted workflow screen', () => {
 
     expect(screen.getByText(/Upload a full, uncropped payslip/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /resubmit for review/i })).toBeDisabled();
+  });
+
+  test('hides the loan-application continuation when applications are disabled', () => {
+    mockEligibility.mockReturnValue({
+      overview: overview({ status: 'verified', eligible: true, canSubmit: false }),
+      loading: false,
+    });
+    mockHasFeature.mockImplementation((featureKey: string) => featureKey !== 'clientApplications');
+
+    render(
+      <MemoryRouter>
+        <KYC />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('button', { name: /back to dashboard/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /continue to loan application/i })
+    ).not.toBeInTheDocument();
   });
 });

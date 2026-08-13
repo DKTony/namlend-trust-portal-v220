@@ -18,6 +18,7 @@ import { ThemedCard } from '@/components/ui/ThemedCard';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
@@ -104,7 +105,9 @@ function statusPresentation(status: string) {
 
 export default function KYC() {
   const { user } = useAuth();
+  const { hasFeature } = useEntitlements();
   const navigate = useNavigate();
+  const applicationsEnabled = hasFeature('clientApplications');
   const { overview, loading } = useKYCEligibility();
   const generateUploadUrl = useMutation(api.kycDocuments.generateUploadUrl);
   const recordDocument = useMutation(api.kycDocuments.recordDocument);
@@ -231,9 +234,11 @@ export default function KYC() {
           <ThemedButton variant="outline" onClick={() => navigate('/dashboard')}>
             Back to dashboard
           </ThemedButton>
-          <ThemedButton onClick={() => navigate('/loan-application')}>
-            Continue to loan application
-          </ThemedButton>
+          {applicationsEnabled && (
+            <ThemedButton onClick={() => navigate('/loan-application')}>
+              Continue to loan application
+            </ThemedButton>
+          )}
         </div>
       );
     }

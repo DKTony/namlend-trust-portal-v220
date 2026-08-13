@@ -97,7 +97,7 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       // Default error UI — uses only plain HTML + Tailwind CSS variables.
-      // MUST NOT call any React context hooks (useTheme, etc.) because
+      // MUST NOT call any React context hooks because
       // this fallback renders OUTSIDE all providers.
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">

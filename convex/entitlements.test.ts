@@ -197,7 +197,7 @@ const gatedFeatureCases: FeatureCase[] = [
   {
     featureKey: 'advancedAnalytics',
     label: 'advanced analytics',
-    call: async (t, staff) => asUser(t, staff).query(api.analytics.getPortfolioSummary, {}),
+    call: async (t, staff) => asUser(t, staff).query(api.analytics.getRiskMetrics, {}),
   },
   {
     featureKey: 'mandates',
@@ -297,18 +297,132 @@ describe('entitlement gating — enforced', () => {
 });
 
 describe('entitlement gating — always-on preservation', () => {
-  test('always-on core lending is never gated (createLoan works under enforcement)', async () => {
+  test('client application writes require the client surface while core loan reads remain available', async () => {
     const t = convexTest(schema, modules);
     const inst = await seedInstitution(t, 'CORE');
     const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
     await enableEntitlementEnforcement(t);
 
+    await expect(
+      asUser(t, borrower).mutation(api.loans.createLoan, {
+        principal: 5000,
+        interestRate: 20,
+        termMonths: 12,
+      })
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+
+    await grantFeature(t, inst, 'clientDocuments');
+    await grantFeature(t, inst, 'clientApplications');
+    await expect(
+      asUser(t, staff).mutation(api.loans.createLoan, {
+        principal: 5000,
+        interestRate: 20,
+        termMonths: 12,
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
     const loanId = await asUser(t, borrower).mutation(api.loans.createLoan, {
       principal: 5000,
       interestRate: 20,
       termMonths: 12,
     });
     expect(loanId).toBeDefined();
+    await expect(asUser(t, borrower).query(api.loans.getMyLoans, {})).resolves.toHaveLength(1);
+  });
+
+  test('client document writes are gated but staff workflows bypass Client Portal keys', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'CLIENT_DOCS');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
+    await enableEntitlementEnforcement(t);
+
+    await expect(
+      asUser(t, borrower).mutation(api.kycDocuments.generateUploadUrl, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await expect(
+      asUser(t, staff).mutation(api.kycDocuments.generateUploadUrl, {})
+    ).resolves.toBeTypeOf('string');
+  });
+
+  test('self-service reschedule writes require clientSelfService', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'SELF_SERVICE');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    const loanId = await seedLoanFor(t, borrower, inst);
+    await enableEntitlementEnforcement(t);
+    const request = {
+      loanId,
+      originalDueDate: '2026-08-30',
+      requestedDate: '2026-09-15',
+      reason: 'Temporary cash-flow interruption',
+    };
+
+    await expect(
+      asUser(t, borrower).mutation(api.collections.requestReschedule, request)
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await grantFeature(t, inst, 'clientSelfService');
+    await expect(
+      asUser(t, borrower).mutation(api.collections.requestReschedule, request)
+    ).resolves.toBeDefined();
+  });
+
+  test('staff reschedule workflows bypass clientSelfService but still require collections', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'STAFF_RESCHEDULE');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
+    const loanId = await seedLoanFor(t, borrower, inst);
+    await enableEntitlementEnforcement(t);
+    const request = {
+      loanId,
+      originalDueDate: '2026-08-30',
+      requestedDate: '2026-09-15',
+      reason: 'Staff-assisted reschedule',
+    };
+
+    await expect(
+      asUser(t, staff).mutation(api.collections.requestReschedule, request)
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await grantFeature(t, inst, 'collections');
+    await expect(
+      asUser(t, staff).mutation(api.collections.requestReschedule, request)
+    ).resolves.toBeDefined();
+  });
+
+  test('client banking writes require both IPP and the clientBanking surface', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'CLIENT_BANKING');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    await enableEntitlementEnforcement(t);
+
+    await grantFeature(t, inst, 'ippOnboarding');
+    await expect(
+      asUser(t, borrower).mutation(api.ips.ipsOnboarding.startOnboarding, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await grantFeature(t, inst, 'clientBanking');
+    await expect(
+      asUser(t, borrower).mutation(api.ips.ipsOnboarding.startOnboarding, {})
+    ).resolves.toBeDefined();
+  });
+
+  test('IPP staff bypass never crosses the caller tenant boundary', async () => {
+    const t = convexTest(schema, modules);
+    const tenantA = await seedInstitution(t, 'IPP_TENANT_A');
+    const tenantB = await seedInstitution(t, 'IPP_TENANT_B');
+    const staffA = await seedUser(t, { role: 'tenant_admin', institutionId: tenantA });
+    const borrowerB = await seedUser(t, { role: 'client', institutionId: tenantB });
+    const loanB = await seedLoanFor(t, borrowerB, tenantB);
+
+    await expect(
+      asUser(t, staffA).query(api.ips.ipsTransactions.getTransactionsByLoan, { loanId: loanB })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+    await expect(
+      asUser(t, staffA).mutation(api.ips.ipsTransactions.initiateIpsRepayment, {
+        loanId: loanB,
+        amount: 100,
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
   });
 
   test('core-lending product reads stay open even when unentitled to the products feature', async () => {

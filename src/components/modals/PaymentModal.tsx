@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { toast } from '@/hooks/use-toast';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useFetchActiveLoans } from '@/hooks/useFetchActiveLoans';
 import type { Id } from '@/integrations/convex/api';
 import { api } from '@/integrations/convex/api';
@@ -71,6 +72,8 @@ export default function PaymentModal({
   userId,
   onPaymentSuccess,
 }: PaymentModalProps) {
+  const { hasFeature } = useEntitlements();
+  const bankingEnabled = hasFeature('clientBanking');
   // Use custom hook for loan fetching - replaces ~90 lines of duplicated logic
   const {
     loans: activeLoans,
@@ -103,6 +106,10 @@ export default function PaymentModal({
       setPaymentResult(null);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!bankingEnabled && paymentMethod === 'ips') setPaymentMethod('bank');
+  }, [bankingEnabled, paymentMethod]);
 
   const selectedLoan = selectedLoanDetails?.id || '';
   const totalAmount = parseFloat(paymentAmount || '0') + processingFee;
@@ -468,24 +475,26 @@ export default function PaymentModal({
                       { id: 'card', icon: CreditCard, label: 'Card', highlight: false },
                       { id: 'agent', icon: MapPin, label: 'Agent', highlight: false },
                     ] as const
-                  ).map((method) => (
-                    <button
-                      key={method.id}
-                      data-testid={`payment-method-${method.id}`}
-                      onClick={() => setPaymentMethod(method.id)}
-                      className={cn(
-                        'flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative',
-                        paymentMethod === method.id
-                          ? 'bg-blue-500/10 border-blue-500/50 text-blue-600 '
-                          : method.highlight
-                            ? 'bg-green-500/5 border-green-500/30 text-green-600  hover:bg-green-500/10'
-                            : 'bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground'
-                      )}
-                    >
-                      <method.icon className="h-5 w-5" />
-                      <span className="text-xs font-medium">{method.label}</span>
-                    </button>
-                  ))}
+                  )
+                    .filter((method) => method.id !== 'ips' || bankingEnabled)
+                    .map((method) => (
+                      <button
+                        key={method.id}
+                        data-testid={`payment-method-${method.id}`}
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={cn(
+                          'flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 relative',
+                          paymentMethod === method.id
+                            ? 'bg-blue-500/10 border-blue-500/50 text-blue-600 '
+                            : method.highlight
+                              ? 'bg-green-500/5 border-green-500/30 text-green-600  hover:bg-green-500/10'
+                              : 'bg-card border-border text-muted-foreground hover:bg-accent hover:text-foreground'
+                        )}
+                      >
+                        <method.icon className="h-5 w-5" />
+                        <span className="text-xs font-medium">{method.label}</span>
+                      </button>
+                    ))}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border">

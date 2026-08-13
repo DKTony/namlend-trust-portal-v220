@@ -2,18 +2,16 @@
  * OG Financial Services responsive sidebar.
  */
 
+import { CLIENT_NAV_ITEMS } from '@/config/clientNav';
 import { useBrandingSafe } from '@/context/BrandingContext';
 import { cn } from '@/lib/utils';
+import { DEFAULT_BRANDING } from '@/types/branding';
 import {
   BarChart3,
-  ClipboardList,
   CreditCard,
-  FileText,
-  Landmark,
   LayoutDashboard,
   LogOut,
   Menu,
-  PieChart,
   Settings,
   ShieldCheck,
   Users,
@@ -63,7 +61,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
-  const [failedBrandAssetUrl, setFailedBrandAssetUrl] = useState<string | null>(null);
+  const [failedBrandAssetUrls, setFailedBrandAssetUrls] = useState<string[]>([]);
 
   // Handle controlled vs uncontrolled state
   const isOpen = propIsOpen !== undefined ? propIsOpen : internalIsOpen;
@@ -81,7 +79,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    setFailedBrandAssetUrl(null);
+    setFailedBrandAssetUrls([]);
   }, [brandingConfig.assets.favicon_url, brandingConfig.assets.logo_url]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -101,18 +99,6 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
     setRotate({ x: 0, y: 0 });
   };
 
-  const defaultClientMenuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: 'Overview', id: 'dashboard' },
-    { icon: Wallet, label: 'My Loans', id: 'loans' },
-    { icon: ClipboardList, label: 'Applications', id: 'applications' },
-    { icon: CreditCard, label: 'Payments', id: 'payments' },
-    { icon: Landmark, label: 'Banking', id: 'banking' },
-    { icon: PieChart, label: 'Budget & Finance', id: 'budget' },
-    { icon: FileText, label: 'Documents', id: 'documents' },
-    { icon: Users, label: 'Self Service', id: 'self-service' },
-    { icon: Settings, label: 'Profile', id: 'profile' },
-  ];
-
   const defaultAdminMenuItems: MenuItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
     { icon: Users, label: 'Clients', id: 'clients' },
@@ -124,7 +110,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
   ];
 
   const menuItems =
-    propMenuItems || (variant === 'admin' ? defaultAdminMenuItems : defaultClientMenuItems);
+    propMenuItems || (variant === 'admin' ? defaultAdminMenuItems : CLIENT_NAV_ITEMS);
 
   // Use branding config for display values, with prop overrides
   const displayTitle =
@@ -138,10 +124,16 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
   };
 
   const renderBrand = (compact = false) => {
-    const assetUrl = compact
+    const configuredAssetUrl = compact
       ? (brandingConfig.assets.favicon_url ?? brandingConfig.assets.logo_url)
       : brandingConfig.assets.logo_url;
-    const showImage = Boolean(assetUrl && assetUrl !== failedBrandAssetUrl);
+    const defaultAssetUrl = compact
+      ? (DEFAULT_BRANDING.assets.favicon_url ?? DEFAULT_BRANDING.assets.logo_url)
+      : DEFAULT_BRANDING.assets.logo_url;
+    const assetUrl = [configuredAssetUrl, defaultAssetUrl].find((candidate): candidate is string =>
+      Boolean(candidate && !failedBrandAssetUrls.includes(candidate))
+    );
+    const showImage = Boolean(assetUrl);
 
     return (
       <div
@@ -157,14 +149,19 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
             }}
             className="object-contain"
             data-testid="sidebar-brand-logo"
-            onError={() => setFailedBrandAssetUrl(assetUrl)}
+            onError={() =>
+              assetUrl &&
+              setFailedBrandAssetUrls((current) =>
+                current.includes(assetUrl) ? current : [...current, assetUrl]
+              )
+            }
           />
         ) : (
           <div
             className={cn(
               compact ? 'h-10 w-10' : 'w-10 h-10',
               'rounded-xl flex items-center justify-center shadow-lg',
-              'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
+              'rounded-xl bg-[var(--brand-primary)] text-white shadow-sm transition-colors hover:bg-[var(--brand-accent)]'
             )}
             data-testid="sidebar-brand-fallback"
             role="img"
@@ -176,13 +173,13 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
         {!compact && (brandingConfig.assets.show_company_name_with_logo || !showImage) && (
           <div className="min-w-0">
             <h1
-              className={cn('font-bold text-xl truncate', 'font-sans text-[#274F35]')}
+              className={cn('font-bold text-xl truncate', 'font-sans text-[var(--brand-accent)]')}
               title={displayTitle}
             >
               {displayTitle}
             </h1>
             <p
-              className={cn('text-xs opacity-60 truncate', 'font-sans text-[#274F35]')}
+              className={cn('text-xs opacity-60 truncate', 'font-sans text-[var(--brand-accent)]')}
               title={displaySubtitle}
             >
               {displaySubtitle}
@@ -213,8 +210,8 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
               'flex min-h-11 items-center rounded-xl transition-all duration-300 group relative overflow-hidden',
               compact ? 'justify-center p-3' : 'gap-4 p-4',
               active
-                ? `${'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'} shadow-md`
-                : `hover:bg-white/5 ${'font-sans text-[#274F35]'} opacity-70 hover:opacity-100`
+                ? 'rounded-xl bg-[var(--brand-primary)] text-white shadow-md transition-colors hover:bg-[var(--brand-accent)]'
+                : 'font-sans text-[var(--brand-accent)] opacity-70 hover:bg-white/5 hover:opacity-100'
             )}
             data-testid={`sidebar-nav-${item.id}`}
             title={item.label}
@@ -249,7 +246,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
       <div
         className={cn(
           'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
-          'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
+          'rounded-xl bg-[var(--brand-primary)] text-white shadow-sm transition-colors hover:bg-[var(--brand-accent)]'
         )}
       >
         {userName?.charAt(0).toUpperCase() || 'U'}
@@ -258,13 +255,16 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
         <>
           <div className="overflow-hidden flex-1">
             <p
-              className={cn('text-sm font-semibold truncate', 'font-sans text-[#274F35]')}
+              className={cn(
+                'text-sm font-semibold truncate',
+                'font-sans text-[var(--brand-accent)]'
+              )}
               title={userName}
             >
               {userName}
             </p>
             <p
-              className={cn('text-xs opacity-60 truncate', 'font-sans text-[#274F35]')}
+              className={cn('text-xs opacity-60 truncate', 'font-sans text-[var(--brand-accent)]')}
               title={userEmail}
             >
               {userEmail}
@@ -273,7 +273,10 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
           {onSignOut && (
             <button
               onClick={onSignOut}
-              className={cn('ml-auto p-2 rounded-lg hover:bg-white/10', 'font-sans text-[#274F35]')}
+              className={cn(
+                'ml-auto p-2 rounded-lg hover:bg-white/10',
+                'font-sans text-[var(--brand-accent)]'
+              )}
               data-testid="sidebar-signout"
               aria-label="Sign Out"
               title="Sign Out"
@@ -319,7 +322,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
         className={cn(
           'fixed top-4 left-4 z-[60] w-10 h-10 flex items-center justify-center',
           'rounded-full shadow-sm transition-transform hover:scale-105 active:scale-95',
-          'border border-[#DCE8D8] bg-white text-[#274F35]',
+          'border border-[#DCE8D8] bg-white text-[var(--brand-accent)]',
           isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
         )}
         data-testid="sidebar-trigger"
@@ -363,7 +366,7 @@ export const ThemedSidebar: React.FC<ThemedSidebarProps> = ({
             onClick={() => setIsOpen(false)}
             className={cn(
               'absolute top-4 right-4 p-2 rounded-full hover:bg-white/10',
-              'font-sans text-[#274F35]'
+              'font-sans text-[var(--brand-accent)]'
             )}
             data-testid="sidebar-close"
           >

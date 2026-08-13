@@ -22,6 +22,7 @@ import { ConvexError, v } from 'convex/values';
 import { internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
 import { assertAuthenticated, assertStaff } from '../lib/auth';
+import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
 import { resolveWriteInstitution } from '../lib/tenancy';
@@ -238,6 +239,7 @@ export const getConsentsByUser = query({
   },
   handler: async (ctx, { userId }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'popiaConsent');
     return ctx.db
       .query('consentRecords')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -256,6 +258,7 @@ export const listConsents = query({
   },
   handler: async (ctx, { status, consentType: cType, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'popiaConsent');
 
     if (status) {
       const results = await ctx.db

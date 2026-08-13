@@ -64,6 +64,18 @@ const ADMIN_ROLES = ['admin', 'tenant_admin'];
 /** Staff = any admin role plus loan_officer. */
 const STAFF_ROLES = ['admin', 'tenant_admin', 'loan_officer'];
 
+/** Asserts the caller has the tenant client role used by self-service APIs. */
+export async function assertClient(ctx: AnyCtx): Promise<Id<'users'>> {
+  const { userId, role } = await getIdentityWithRole(ctx);
+  if (role !== 'client') {
+    throw new ConvexError({
+      code: 'FORBIDDEN',
+      message: 'This action is available only through a client account.',
+    });
+  }
+  return userId;
+}
+
 /**
  * Asserts the caller has a tenant-admin role (`admin` or `tenant_admin`).
  */

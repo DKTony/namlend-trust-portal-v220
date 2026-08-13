@@ -15,11 +15,17 @@
 import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { assertAdmin, assertAuthenticated, assertStaff } from '../lib/auth';
+import { assertAdmin, assertAuthenticated, assertStaff, assertTenantAdmin } from '../lib/auth';
 import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { APR_LIMIT } from '../lib/regulatory';
 import { emitRelationship } from '../lib/relationshipEmitter';
+import {
+  applyTenantScope,
+  assertSameTenant,
+  getCallerInstitution,
+  tenantReadScope,
+} from '../lib/tenancy';
 import { productCategory, productStatus } from '../schema';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +47,9 @@ export const createProduct = mutation({
   handler: async (ctx, args) => {
     const adminId = await assertAdmin(ctx);
     await assertCallerFeatureEnabled(ctx, 'products');
+    const caller = await getCallerInstitution(ctx);
+    const institutionId = args.institutionId ?? caller.institutionId ?? undefined;
+    if (institutionId) await assertTenantAdmin(ctx, institutionId);
     const now = Date.now();
 
     // Uniqueness check
@@ -61,7 +70,7 @@ export const createProduct = mutation({
       category: args.category,
       status: 'draft',
       description: args.description,
-      institutionId: args.institutionId,
+      institutionId,
       metadata: args.metadata,
       createdAt: now,
       updatedAt: now,
@@ -81,10 +90,10 @@ export const createProduct = mutation({
     scheduleAuditLog(ctx, 'productDefinitions', productId, 'CREATE', 'none', 'draft');
 
     // Ontology: institution -> offers -> product (if linked)
-    if (args.institutionId) {
+    if (institutionId) {
       emitRelationship(
         ctx,
-        { type: 'institutions', id: args.institutionId },
+        { type: 'institutions', id: institutionId },
         { type: 'productDefinitions', id: productId },
         'offers'
       );
@@ -112,6 +121,7 @@ export const updateProduct = mutation({
     if (!product) {
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Product not found.' });
     }
+    if (product.institutionId) await assertTenantAdmin(ctx, product.institutionId);
 
     const oldStatus = product.status;
     const updates: Record<string, unknown> = { updatedAt: Date.now() };
@@ -182,6 +192,7 @@ export const createVersion = mutation({
     if (!product) {
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Product not found.' });
     }
+    if (product.institutionId) await assertTenantAdmin(ctx, product.institutionId);
 
     // Regulatory validation: maxInterestRate must not exceed APR_LIMIT
     if (args.config.maxInterestRate !== undefined && args.config.maxInterestRate > APR_LIMIT) {
@@ -261,7 +272,9 @@ export const getProduct = query({
   args: { productId: v.id('productDefinitions') },
   handler: async (ctx, { productId }) => {
     await assertStaff(ctx);
-    return ctx.db.get(productId);
+    const product = await ctx.db.get(productId);
+    if (product) assertSameTenant(await tenantReadScope(ctx), product.institutionId);
+    return product;
   },
 });
 
@@ -272,10 +285,12 @@ export const getProductByCode = query({
   args: { productCode: v.string() },
   handler: async (ctx, { productCode }) => {
     await assertStaff(ctx);
-    return ctx.db
+    const product = await ctx.db
       .query('productDefinitions')
       .withIndex('by_productCode', (q) => q.eq('productCode', productCode))
       .first();
+    if (product) assertSameTenant(await tenantReadScope(ctx), product.institutionId);
+    return product;
   },
 });
 
@@ -289,19 +304,26 @@ export const listProducts = query({
   },
   handler: async (ctx, { status, category }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     if (status) {
-      return ctx.db
-        .query('productDefinitions')
-        .withIndex('by_status', (q) => q.eq('status', status))
-        .collect();
+      return applyTenantScope(
+        await ctx.db
+          .query('productDefinitions')
+          .withIndex('by_status', (q) => q.eq('status', status))
+          .collect(),
+        scope
+      );
     }
     if (category) {
-      return ctx.db
-        .query('productDefinitions')
-        .withIndex('by_category', (q) => q.eq('category', category))
-        .collect();
+      return applyTenantScope(
+        await ctx.db
+          .query('productDefinitions')
+          .withIndex('by_category', (q) => q.eq('category', category))
+          .collect(),
+        scope
+      );
     }
-    return ctx.db.query('productDefinitions').collect();
+    return applyTenantScope(await ctx.db.query('productDefinitions').collect(), scope);
   },
 });
 
@@ -312,10 +334,11 @@ export const getActiveProducts = query({
   args: {},
   handler: async (ctx) => {
     await assertAuthenticated(ctx);
-    return ctx.db
+    const products = await ctx.db
       .query('productDefinitions')
       .withIndex('by_status', (q) => q.eq('status', 'active'))
       .collect();
+    return applyTenantScope(products, await tenantReadScope(ctx));
   },
 });
 
@@ -326,6 +349,9 @@ export const getCurrentVersion = query({
   args: { productId: v.id('productDefinitions') },
   handler: async (ctx, { productId }) => {
     await assertStaff(ctx);
+    const product = await ctx.db.get(productId);
+    if (!product) return null;
+    assertSameTenant(await tenantReadScope(ctx), product.institutionId);
     return ctx.db
       .query('productVersions')
       .withIndex('by_productId_current', (q) =>
@@ -342,6 +368,9 @@ export const getVersionHistory = query({
   args: { productId: v.id('productDefinitions') },
   handler: async (ctx, { productId }) => {
     await assertStaff(ctx);
+    const product = await ctx.db.get(productId);
+    if (!product) return [];
+    assertSameTenant(await tenantReadScope(ctx), product.institutionId);
     return ctx.db
       .query('productVersions')
       .withIndex('by_productId', (q) => q.eq('productId', productId))
@@ -389,6 +418,11 @@ export const checkEligibility = query({
     if (!version) {
       throw new ConvexError({ code: 'NOT_FOUND', message: 'Product version not found.' });
     }
+    const product = await ctx.db.get(version.productId);
+    if (!product) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'Product not found.' });
+    }
+    assertSameTenant(await tenantReadScope(ctx), product.institutionId);
 
     const config = version.config;
     const criteria = config.eligibilityCriteria as Record<string, unknown> | undefined;
@@ -491,6 +525,10 @@ export const seedPersonalLoan = mutation({
   },
   handler: async (ctx, { institutionId }) => {
     const adminId = await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'products');
+    const caller = await getCallerInstitution(ctx);
+    const targetInstitutionId = institutionId ?? caller.institutionId ?? undefined;
+    if (targetInstitutionId) await assertTenantAdmin(ctx, targetInstitutionId);
     const now = Date.now();
 
     // Idempotency check
@@ -517,7 +555,7 @@ export const seedPersonalLoan = mutation({
       status: 'active',
       description:
         'Standard personal loan for Namibian residents. Variable term, competitive rates.',
-      institutionId,
+      institutionId: targetInstitutionId,
       createdAt: now,
       updatedAt: now,
     });

@@ -17,6 +17,7 @@ import {
   GitBranch,
   LayoutDashboard,
   Package,
+  Palette,
   Settings,
   ShieldCheck,
   UserCheck,
@@ -94,6 +95,12 @@ const allGroups: NavGroup[] = [
         path: '/admin/settings/credit-policy',
         icon: Settings,
       },
+      {
+        id: 'branding',
+        label: 'Branding',
+        path: '/admin/settings/branding',
+        icon: Palette,
+      },
     ],
   },
 ];
@@ -105,7 +112,7 @@ const allGroups: NavGroup[] = [
  */
 const FEATURE_BY_NAV_ITEM: Map<string, FeatureDef> = (() => {
   const map = new Map<string, FeatureDef>();
-  for (const feature of FEATURES) {
+  for (const feature of FEATURES.filter((candidate) => candidate.console === 'backoffice')) {
     for (const navId of feature.navItems ?? []) map.set(navId, feature);
   }
   return map;

@@ -7,9 +7,14 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { assertAuthenticated, assertStaff } from './lib/auth';
+import {
+  assertAuthenticated,
+  assertOwnerOrTenantStaff,
+  assertStaff,
+  assertTenantStaff,
+} from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
-import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from './lib/entitlements';
 import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
 import { applyTenantScope, resolveWriteInstitution, tenantReadScope } from './lib/tenancy';
 
@@ -403,13 +408,13 @@ export const requestReschedule = mutation({
     reason: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientSelfService', 'collections');
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-    if (loan.userId !== userId) {
-      // Staff may also file on a client's behalf
-      await assertStaff(ctx);
-    }
+    // Owners may request against their own loan; staff-assisted requests must remain inside
+    // the staff member's tenant even while the generic staff role spans the application.
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     if (!args.reason.trim()) {
       throw new ConvexError({ code: 'VALIDATION_ERROR', message: 'A reason is required.' });
     }
@@ -458,6 +463,7 @@ export const listRescheduleRequests = query({
   },
   handler: async (ctx, { status }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
     const rows = applyTenantScope(
       status
         ? await ctx.db
@@ -497,8 +503,12 @@ export const reviewRescheduleRequest = mutation({
   },
   handler: async (ctx, { requestId, decision, adminNotes }) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'collections');
     const request = await ctx.db.get(requestId);
     if (!request) throw new ConvexError({ code: 'NOT_FOUND', message: 'Request not found.' });
+    const loan = request.institutionId ? null : await ctx.db.get(request.loanId);
+    const institutionId = request.institutionId ?? loan?.institutionId;
+    if (institutionId) await assertTenantStaff(ctx, institutionId);
     if (request.status !== 'pending') return; // idempotent
 
     const now = Date.now();

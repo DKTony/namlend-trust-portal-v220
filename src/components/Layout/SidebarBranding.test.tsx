@@ -7,15 +7,10 @@ import { ThemedSidebar } from './ThemedSidebar';
 
 const mocks = vi.hoisted(() => ({
   useBrandingSafe: vi.fn(),
-  useTheme: vi.fn(),
 }));
 
 vi.mock('@/context/BrandingContext', () => ({
   useBrandingSafe: mocks.useBrandingSafe,
-}));
-
-vi.mock('@/context/ThemeContext', () => ({
-  useTheme: mocks.useTheme,
 }));
 
 const brandingConfig: BrandingConfig = {
@@ -71,15 +66,6 @@ function renderGroupedSidebar(displayMode: 'rail' | 'sidebar' = 'sidebar') {
 
 beforeEach(() => {
   mocks.useBrandingSafe.mockReturnValue(useBranding(brandingConfig));
-  mocks.useTheme.mockReturnValue({
-    styles: {
-      accentClass: 'bg-primary',
-      cardClass: 'bg-card',
-      textClass: 'text-foreground',
-      variant: 'neo',
-    },
-    isDark: false,
-  });
 });
 
 describe('ThemedSidebar branding', () => {
@@ -107,7 +93,7 @@ describe('ThemedSidebar branding', () => {
     });
   });
 
-  test('replaces a failed image with the local mark and company name', () => {
+  test('replaces a failed trusted image with the local mark and company name', () => {
     renderThemedSidebar();
 
     fireEvent.error(screen.getByTestId('sidebar-brand-logo'));
@@ -137,6 +123,24 @@ describe('ThemedSidebar branding', () => {
     );
     expect(screen.queryByTestId('sidebar-brand-fallback')).not.toBeInTheDocument();
   });
+
+  test('falls back from a broken tenant logo to the trusted OG asset', () => {
+    mocks.useBrandingSafe.mockReturnValue(
+      useBranding({
+        ...brandingConfig,
+        assets: { ...brandingConfig.assets, logo_url: 'https://assets.example.test/broken.png' },
+      })
+    );
+    renderThemedSidebar();
+
+    fireEvent.error(screen.getByTestId('sidebar-brand-logo'));
+
+    expect(screen.getByTestId('sidebar-brand-logo')).toHaveAttribute(
+      'src',
+      '/og-financial-logo-v2.svg'
+    );
+    expect(screen.queryByTestId('sidebar-brand-fallback')).not.toBeInTheDocument();
+  });
 });
 
 describe('GroupedSidebar branding', () => {
@@ -162,7 +166,7 @@ describe('GroupedSidebar branding', () => {
     );
   });
 
-  test('replaces a failed image with the local mark and company name', () => {
+  test('replaces a failed trusted image with the local mark and company name', () => {
     renderGroupedSidebar();
 
     fireEvent.error(screen.getByTestId('sidebar-brand-logo'));

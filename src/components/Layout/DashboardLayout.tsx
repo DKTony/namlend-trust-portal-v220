@@ -1,10 +1,11 @@
 import { AdaptiveShell } from '@/components/adaptive';
 import { NotificationBell } from '@/components/shared/ApprovalNotifications';
 import { NotificationCenter } from '@/components/shared/NotificationCenter';
+import { getEnabledClientNavItems } from '@/config/clientNav';
 import { useAdaptiveLayout } from '@/hooks/useAdaptiveLayout';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { cn } from '@/lib/utils';
-import { CreditCard, FileText, LayoutDashboard, User, Wallet } from 'lucide-react';
 import React, { useState } from 'react';
 import ThemedSidebar, { MenuItem } from './ThemedSidebar';
 
@@ -35,6 +36,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const layout = useAdaptiveLayout();
+  const { hasFeature } = useEntitlements();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const displayTitle = title || (variant === 'admin' ? 'Admin Dashboard' : 'Dashboard');
@@ -42,17 +44,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     userName || String(user?.user_metadata?.first_name ?? user?.email?.split('@')[0] ?? 'User');
   const finalUserEmail = userEmail || user?.email;
 
-  const fallbackClientMenuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: 'Overview', id: 'dashboard' },
-    { icon: Wallet, label: 'Loans', id: 'loans' },
-    { icon: FileText, label: 'Apply', id: 'applications' },
-    { icon: CreditCard, label: 'Payments', id: 'payments' },
-    { icon: User, label: 'Profile', id: 'profile' },
-  ];
-  const navItems = menuItems || fallbackClientMenuItems;
-  const bottomItems = navItems.filter((item) =>
-    ['dashboard', 'overview', 'loans', 'applications', 'payments', 'profile'].includes(item.id)
-  );
+  const navItems = menuItems ?? (variant === 'client' ? getEnabledClientNavItems(hasFeature) : []);
+  const bottomItems = navItems.slice(0, 5);
   const isActive = (id: string) =>
     activeTab === id || (activeTab === 'overview' && id === 'dashboard');
 
@@ -63,7 +56,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     userName: finalUserName,
     userEmail: finalUserEmail,
     onSignOut: signOut,
-    menuItems,
+    menuItems: navItems,
     title: variant === 'admin' ? 'OG Financial Services Admin' : 'OG Financial Services',
   };
 
@@ -98,7 +91,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const hideBottomNav = layout.height < 500 && layout.width > layout.height;
 
   const bottomNavigation =
-    variant === 'client' && !hideBottomNav ? (
+    variant === 'client' && !hideBottomNav && bottomItems.length > 0 ? (
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-2 pb-safe pt-2 backdrop-blur-xl md:hidden">
         <div
           className="mx-auto grid max-w-md gap-1"

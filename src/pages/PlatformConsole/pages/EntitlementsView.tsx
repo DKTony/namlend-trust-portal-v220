@@ -8,6 +8,7 @@
  */
 
 import { ThemedCard } from '@/components/ui/ThemedCard';
+import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { FEATURES, getFeature } from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
@@ -20,8 +21,20 @@ import { useMutation, useQuery } from 'convex/react';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-/** Backoffice add-ons an owner can dispatch per tenant (core/always-on can't be revoked). */
-const DISPATCHABLE = FEATURES.filter((f) => f.console === 'backoffice' && !f.alwaysOn);
+/** Tenant-grantable switches (core/always-on features cannot be revoked). */
+const DISPATCHABLE = FEATURES.filter((f) => f.console !== 'platform' && !f.alwaysOn);
+const DISPATCH_GROUPS = [
+  {
+    console: 'backoffice',
+    label: 'Backoffice add-ons',
+    features: DISPATCHABLE.filter((feature) => feature.console === 'backoffice'),
+  },
+  {
+    console: 'client',
+    label: 'Client Portal',
+    features: DISPATCHABLE.filter((feature) => feature.console === 'client'),
+  },
+];
 
 /** Shape returned by the platform-gated listTenants query (subset used by the selector). */
 interface TenantOption {
@@ -41,9 +54,17 @@ const EntitlementsView: React.FC = () => {
   // Platform-gated tenant read (a pure platform_owner is not tenant staff).
   const tenants = useQuery(api.platform.tenants.listTenants, {}) as TenantOption[] | undefined;
   const setTenantEntitlement = useMutation(api.platform.entitlements.setTenantEntitlement);
+  const backfillClientFeatures = useMutation(
+    api.platform.entitlements.backfillClientFeatureDefaults
+  );
 
   const [selectedId, setSelectedId] = useState<string>(searchParams.get('tenant') ?? '');
   const [pending, setPending] = useState<string | null>(null);
+  const [migrationBusy, setMigrationBusy] = useState(false);
+  const [migrationReport, setMigrationReport] = useState<{
+    dryRun: boolean;
+    counts: { catalogToInsert: number; plansToUpdate: number; overrideConflicts: number };
+  } | null>(null);
 
   // Default to the first tenant once the list loads (unless one is deep-linked).
   useEffect(() => {
@@ -76,9 +97,22 @@ const EntitlementsView: React.FC = () => {
     const missingDependencies = (feature?.dependsOn ?? []).filter((key) => !resolvedSet.has(key));
     if (enabled && missingDependencies.length > 0) {
       toast({
-        title: 'Dependency warning',
-        description: `${feature?.name ?? featureKey} depends on ${missingDependencies.join(', ')}. Enable dependencies first or expect runtime gaps.`,
+        title: 'Enable dependency first',
+        description: `${feature?.name ?? featureKey} requires ${missingDependencies.map((key) => getFeature(key)?.name ?? key).join(', ')}.`,
+        variant: 'destructive',
       });
+      return;
+    }
+    const activeDependent = DISPATCHABLE.find(
+      (candidate) => resolvedSet.has(candidate.key) && candidate.dependsOn?.includes(featureKey)
+    );
+    if (!enabled && activeDependent) {
+      toast({
+        title: 'Dependency still in use',
+        description: `${feature?.name ?? featureKey} cannot be disabled while ${activeDependent.name} remains enabled.`,
+        variant: 'destructive',
+      });
+      return;
     }
     setPending(featureKey);
     try {
@@ -102,6 +136,26 @@ const EntitlementsView: React.FC = () => {
       });
     } finally {
       setPending(null);
+    }
+  };
+
+  const runClientFeatureBackfill = async (dryRun: boolean) => {
+    setMigrationBusy(true);
+    try {
+      const report = await backfillClientFeatures({ dryRun });
+      setMigrationReport(report);
+      toast({
+        title: dryRun ? 'Backfill dry run complete' : 'Client features backfilled',
+        description: `${report.counts.catalogToInsert} catalogue rows, ${report.counts.plansToUpdate} plans, ${report.counts.overrideConflicts} override conflicts.`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Backfill failed',
+        description: handleMutationError(err, 'Could not run the client-feature backfill.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setMigrationBusy(false);
     }
   };
 
@@ -131,6 +185,43 @@ const EntitlementsView: React.FC = () => {
           </select>
         </label>
       </div>
+
+      {isPlatformOwner && (
+        <ThemedCard className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">Client feature migration</h3>
+              <p className="text-xs text-muted-foreground">
+                Additive and idempotent. Review the dry run before applying; tenant overrides are
+                reported and preserved.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={migrationBusy}
+                onClick={() => void runClientFeatureBackfill(true)}
+              >
+                Dry run
+              </Button>
+              <Button
+                disabled={migrationBusy || migrationReport?.dryRun !== true}
+                onClick={() => void runClientFeatureBackfill(false)}
+              >
+                Apply backfill
+              </Button>
+            </div>
+          </div>
+          {migrationReport && (
+            <p className="text-xs text-muted-foreground" data-testid="client-backfill-report">
+              {migrationReport.dryRun ? 'Dry run' : 'Applied'}:{' '}
+              {migrationReport.counts.catalogToInsert} catalogue row(s),{' '}
+              {migrationReport.counts.plansToUpdate} plan(s),{' '}
+              {migrationReport.counts.overrideConflicts} override conflict(s).
+            </p>
+          )}
+        </ThemedCard>
+      )}
 
       {!selected ? (
         <ThemedCard>
@@ -177,47 +268,56 @@ const EntitlementsView: React.FC = () => {
                 Toggling writes a manual override for this tenant. Unknown feature keys are rejected
                 server-side by the code manifest authority rule.
               </p>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {DISPATCHABLE.map((f) => {
-                  const missingDependencies = (f.dependsOn ?? []).filter(
-                    (key) => !resolvedSet.has(key)
-                  );
-                  const row = (rows ?? []).find(
-                    (r: Doc<'tenantEntitlements'>) => r.featureKey === f.key && !r.effectiveTo
-                  );
-                  return (
-                    <div
-                      key={f.key}
-                      className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{f.name}</p>
-                        <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
-                        {(f.dependsOn?.length ?? 0) > 0 && (
-                          <p
-                            className={cn(
-                              'mt-1 text-xs',
-                              missingDependencies.length > 0
-                                ? 'text-amber-600'
-                                : 'text-muted-foreground'
-                            )}
+              <div className="space-y-5">
+                {DISPATCH_GROUPS.map((group) => (
+                  <section key={group.console}>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </h4>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {group.features.map((f) => {
+                        const missingDependencies = (f.dependsOn ?? []).filter(
+                          (key) => !resolvedSet.has(key)
+                        );
+                        const row = (rows ?? []).find(
+                          (r: Doc<'tenantEntitlements'>) => r.featureKey === f.key && !r.effectiveTo
+                        );
+                        return (
+                          <div
+                            key={f.key}
+                            className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
                           >
-                            Depends on {f.dependsOn?.join(', ')}
-                          </p>
-                        )}
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Rollout: {row?.rolloutState ?? 'plan/default'}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={resolvedSet.has(f.key)}
-                        disabled={pending === f.key || resolved === undefined}
-                        onCheckedChange={(v) => dispatch(f.key, v)}
-                        aria-label={`Toggle ${f.name}`}
-                      />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">{f.name}</p>
+                              <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                              {(f.dependsOn?.length ?? 0) > 0 && (
+                                <p
+                                  className={cn(
+                                    'mt-1 text-xs',
+                                    missingDependencies.length > 0
+                                      ? 'text-amber-600'
+                                      : 'text-muted-foreground'
+                                  )}
+                                >
+                                  Depends on {f.dependsOn?.join(', ')}
+                                </p>
+                              )}
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Rollout: {row?.rolloutState ?? 'plan/default'}
+                              </p>
+                            </div>
+                            <Switch
+                              checked={resolvedSet.has(f.key)}
+                              disabled={pending === f.key || resolved === undefined}
+                              onCheckedChange={(v) => dispatch(f.key, v)}
+                              aria-label={`Toggle ${f.name}`}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </section>
+                ))}
               </div>
             </ThemedCard>
           )}
@@ -229,17 +329,29 @@ const EntitlementsView: React.FC = () => {
             {resolved === undefined ? (
               <p className="text-sm text-muted-foreground">Resolving…</p>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {resolved.map((key: string) => {
-                  const known = getFeature(key);
+              <div className="space-y-3">
+                {['backoffice', 'client'].map((consoleName) => {
+                  const keys = resolved.filter(
+                    (key: string) => getFeature(key)?.console === consoleName
+                  );
+                  if (keys.length === 0) return null;
                   return (
-                    <span
-                      key={key}
-                      title={known ? `${known.category} · ${known.console}` : 'Unknown key'}
-                      className="rounded border border-border px-2 py-0.5 text-xs"
-                    >
-                      {known ? known.name : key}
-                    </span>
+                    <section key={consoleName}>
+                      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {consoleName === 'client' ? 'Client Portal' : 'Backoffice'} ({keys.length})
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {keys.map((key: string) => (
+                          <span
+                            key={key}
+                            title={`${getFeature(key)?.category} · ${consoleName}`}
+                            className="rounded border border-border px-2 py-0.5 text-xs"
+                          >
+                            {getFeature(key)?.name}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
                   );
                 })}
               </div>

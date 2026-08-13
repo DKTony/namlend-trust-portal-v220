@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { Id } from '@/types/convex';
@@ -73,7 +74,12 @@ function formatDateSafe(
 export default function LoanDetails() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const { hasFeature } = useEntitlements();
   const navigate = useNavigate();
+  const paymentsEnabled = hasFeature('clientPayments');
+  const bankingEnabled = hasFeature('clientBanking');
+  const ipsEnabled = paymentsEnabled && bankingEnabled;
+  const documentsEnabled = hasFeature('clientDocuments');
 
   // Validate ID format before passing to Convex (prevents ArgumentValidationError on invalid URLs)
   const isValidConvexId = id ? /^[a-zA-Z0-9_-]{10,}$/.test(id) : false;
@@ -324,27 +330,40 @@ export default function LoanDetails() {
 
             {/* Tabs for History */}
             <Tabs defaultValue="payments" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
+              <TabsList
+                className={cn(
+                  'grid w-full bg-muted/50 p-1',
+                  ipsEnabled && documentsEnabled
+                    ? 'grid-cols-3'
+                    : ipsEnabled || documentsEnabled
+                      ? 'grid-cols-2'
+                      : 'grid-cols-1'
+                )}
+              >
                 <TabsTrigger value="payments" className="data-[state=active]:bg-background">
                   <History className="h-4 w-4 mr-2" />
                   Payments
                 </TabsTrigger>
-                <TabsTrigger
-                  value="ips"
-                  className="data-[state=active]:bg-background"
-                  data-testid="ips-history-tab"
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  IPS
-                </TabsTrigger>
-                <TabsTrigger
-                  value="documents"
-                  className="data-[state=active]:bg-background"
-                  data-testid="loan-documents-tab"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Documents
-                </TabsTrigger>
+                {ipsEnabled && (
+                  <TabsTrigger
+                    value="ips"
+                    className="data-[state=active]:bg-background"
+                    data-testid="ips-history-tab"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    IPS
+                  </TabsTrigger>
+                )}
+                {documentsEnabled && (
+                  <TabsTrigger
+                    value="documents"
+                    className="data-[state=active]:bg-background"
+                    data-testid="loan-documents-tab"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Documents
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="payments">
@@ -384,29 +403,33 @@ export default function LoanDetails() {
                 </ThemedCard>
               </TabsContent>
 
-              <TabsContent value="ips">
-                <ThemedCard className="mt-4">
-                  <div className="pt-2" data-testid="ips-history">
-                    <IPSHistoryList loanId={loan.id} />
-                  </div>
-                </ThemedCard>
-              </TabsContent>
+              {ipsEnabled && (
+                <TabsContent value="ips">
+                  <ThemedCard className="mt-4">
+                    <div className="pt-2" data-testid="ips-history">
+                      <IPSHistoryList loanId={loan.id} />
+                    </div>
+                  </ThemedCard>
+                </TabsContent>
+              )}
 
-              <TabsContent value="documents">
-                <ThemedCard className="mt-4">
-                  <LoanDocumentsPanel
-                    loanId={loan.id}
-                    allowUpload={['draft', 'submitted', 'under_review'].includes(loan.status)}
-                  />
-                </ThemedCard>
-              </TabsContent>
+              {documentsEnabled && (
+                <TabsContent value="documents">
+                  <ThemedCard className="mt-4">
+                    <LoanDocumentsPanel
+                      loanId={loan.id}
+                      allowUpload={['draft', 'submitted', 'under_review'].includes(loan.status)}
+                    />
+                  </ThemedCard>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            {isActive && outstandingBalance > 0 && (
+            {paymentsEnabled && isActive && outstandingBalance > 0 && (
               <ThemedCard data-testid="quick-actions-card">
                 <div className="mb-4">
                   <h3 className={cn('text-lg font-bold', 'font-sans text-[#274F35]')}>
@@ -415,24 +438,27 @@ export default function LoanDetails() {
                   <p className="text-sm text-muted-foreground">Pay your loan instantly</p>
                 </div>
                 <div className="space-y-3">
-                  {/* IPS Payment Button */}
-                  <ThemedButton
-                    className="w-full gap-2"
-                    onClick={() => setShowIPSModal(true)}
-                    data-testid="ips-payment-button"
-                  >
-                    <Zap className="h-4 w-4" />
-                    Pay with IPS
-                  </ThemedButton>
+                  {ipsEnabled && (
+                    <>
+                      <ThemedButton
+                        className="w-full gap-2"
+                        onClick={() => setShowIPSModal(true)}
+                        data-testid="ips-payment-button"
+                      >
+                        <Zap className="h-4 w-4" />
+                        Pay with IPS
+                      </ThemedButton>
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-border" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">or</span>
-                    </div>
-                  </div>
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-card px-2 text-muted-foreground">or</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <ThemedButton
                     variant="secondary"
@@ -509,28 +535,30 @@ export default function LoanDetails() {
         </div>
 
         {/* IPS Payment Modal */}
-        <IPSPaymentModal
-          isOpen={showIPSModal}
-          onClose={() => setShowIPSModal(false)}
-          loanId={loan.id}
-          outstandingBalance={outstandingBalance}
-          monthlyPayment={loan.monthly_payment}
-          onSuccess={() => {
-            setShowIPSModal(false);
-            // Convex reactive query auto-updates — no manual refetch needed
-            toast({
-              title: 'Payment Successful',
-              description: 'Your IPS payment has been processed.',
-            });
-          }}
-          onError={(error) => {
-            toast({
-              title: 'Payment Failed',
-              description: error,
-              variant: 'destructive',
-            });
-          }}
-        />
+        {ipsEnabled && (
+          <IPSPaymentModal
+            isOpen={showIPSModal}
+            onClose={() => setShowIPSModal(false)}
+            loanId={loan.id}
+            outstandingBalance={outstandingBalance}
+            monthlyPayment={loan.monthly_payment}
+            onSuccess={() => {
+              setShowIPSModal(false);
+              // Convex reactive query auto-updates — no manual refetch needed
+              toast({
+                title: 'Payment Successful',
+                description: 'Your IPS payment has been processed.',
+              });
+            }}
+            onError={(error) => {
+              toast({
+                title: 'Payment Failed',
+                description: error,
+                variant: 'destructive',
+              });
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

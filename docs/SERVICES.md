@@ -74,7 +74,7 @@ These are outside `src/services/` but still matter architecturally:
 
 1. Split `creditScoring.ts` into pure scoring utilities and a clearly deprecated Supabase RPC adapter, then remove the adapter once no tests depend on it.
 2. Delete or quarantine `src/utils/rpc.ts` and Supabase test utilities after E2E/API tests are migrated to Convex fixtures.
-3. Move branding asset persistence from data URLs in `systemConfiguration` to Convex storage before production white-label use.
+3. Keep tenant branding isolated in `institutionConfig` and restrict branding asset uploads to the validated Convex File Storage path.
 
 ---
 

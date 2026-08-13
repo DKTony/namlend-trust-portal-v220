@@ -384,8 +384,8 @@ export default function TenantInfoPage() {
         <CardHeader>
           <CardTitle>Brand Identity</CardTitle>
           <CardDescription>
-            The OG Financial Services CC identity is fixed and cannot be changed from tenant
-            settings.
+            OG Financial Services CC is the platform default. Approved tenant branding is managed
+            separately when the White-label Branding feature is enabled.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,.8fr)] lg:items-center">

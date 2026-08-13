@@ -12,6 +12,7 @@ import { internal } from '../_generated/api';
 import type { Id } from '../_generated/dataModel';
 import { action, mutation, query } from '../_generated/server';
 import { assertAuthenticated } from '../lib/auth';
+import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from '../lib/entitlements';
 import { getAliasAvailabilityReason, isAliasUsable } from '../lib/ipsResponseParsers';
 import { resolveWriteInstitution } from '../lib/tenancy';
 
@@ -112,6 +113,8 @@ export const upsertVpa = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     const normalizedVpa = args.vpaAddress.trim().toLowerCase();
 
     if (!/^[a-z0-9._-]+@[a-z0-9.-]+$/i.test(normalizedVpa)) {
@@ -210,6 +213,8 @@ export const deleteVpa = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     const now = Date.now();
 
     if (args.source !== 'legacy_registry') {
@@ -261,6 +266,8 @@ export const setDefaultVpa = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     const now = Date.now();
 
     const [aliases, legacy] = await Promise.all([

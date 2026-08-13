@@ -3,12 +3,12 @@
   "applicationTableCount": 85,
   "authIndexCount": 11,
   "authTableCount": 7,
-  "commitSha": "79dcf930f619cb7eb66396071b3848d899e2dd43",
+  "commitSha": "fd49a9e5fee7bfa58b76b419978132ef7aba7ab2",
   "componentCount": 257,
   "conflictCount": 11,
   "effectiveIndexCount": 198,
   "effectiveTableCount": 92,
-  "extractedAt": "2026-08-13T13:21:17.660Z",
+  "extractedAt": "2026-08-13T13:23:23.692Z",
   "featureCount": 32,
   "functionCount": 501,
   "gapCount": 145,
@@ -16,7 +16,7 @@
   "gatedFeatureCount": 10,
   "planCount": 4,
   "routeCount": 40,
-  "schemaEvidence": "evidence:a54a238781404632",
+  "schemaEvidence": "evidence:0279a2a1e5e418c9",
   "schemaVersion": "1.0.0",
   "testCount": 825
 }

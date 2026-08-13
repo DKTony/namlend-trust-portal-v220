@@ -170,6 +170,54 @@
           "results": { "e2ePassed": 117, "e2eSkipped": 206 }
         }
       ]
+    },
+    {
+      "id": 31639625555,
+      "workflow": "Secret Detection",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625555",
+      "headSha": "2718b279bbb9195eafbaaa7b4dcb4aac69979abc",
+      "conclusion": "success",
+      "completedAt": "2026-08-12T20:50:37.000Z",
+      "jobs": [
+        {
+          "id": 94258563829,
+          "name": "Secret Detection",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625555/job/94258563829",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31639625503,
+      "workflow": "Dependency Review",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625503",
+      "headSha": "2718b279bbb9195eafbaaa7b4dcb4aac69979abc",
+      "conclusion": "success",
+      "completedAt": "2026-08-12T20:52:07.000Z",
+      "jobs": [
+        {
+          "id": 94258563358,
+          "name": "Dependency Review",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625503/job/94258563358",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31639625505,
+      "workflow": "CodeQL",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625505",
+      "headSha": "2718b279bbb9195eafbaaa7b4dcb4aac69979abc",
+      "conclusion": "success",
+      "completedAt": "2026-08-12T20:52:29.000Z",
+      "jobs": [
+        {
+          "id": 94258563712,
+          "name": "CodeQL JavaScript/TypeScript",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625505/job/94258563712",
+          "results": {}
+        }
+      ]
     }
   ],
   "activeDocuments": [

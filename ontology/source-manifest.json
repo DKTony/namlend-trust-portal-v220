@@ -31,7 +31,11 @@
       "claimedCommitSha": "d4afe44",
       "purpose": "Documents the Convex-first architecture, identity planes, tenancy, entitlements, integrations, and loan state machine.",
       "claims": [
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_APPROXIMATE_TABLE_COUNT", "object": 85 },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_APPROXIMATE_TABLE_COUNT",
+          "object": 85
+        },
         { "subjectId": "endpoint:POST:/webhook/ips", "predicate": "EXISTS", "object": true },
         { "subjectId": "endpoint:POST:/webhook/payment", "predicate": "EXISTS", "object": true },
         { "subjectId": "endpoint:GET:/health", "predicate": "EXISTS", "object": true }
@@ -46,8 +50,16 @@
       "claimedCommitSha": "d4afe44",
       "purpose": "Catalogues the documented tables and modeled financial transaction lifecycles.",
       "claims": [
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_EFFECTIVE_TABLE_COUNT", "object": 86 },
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_APPLICATION_TABLE_COUNT", "object": 79 },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
+          "object": 86
+        },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_APPLICATION_TABLE_COUNT",
+          "object": 79
+        },
         { "subjectId": "system:namlend-convex", "predicate": "HAS_AUTH_TABLE_COUNT", "object": 7 }
       ]
     },
@@ -62,9 +74,21 @@
       "claims": [
         { "subjectId": "system:namlend-web", "predicate": "HAS_FEATURE_COUNT", "object": 23 },
         { "subjectId": "system:namlend-web", "predicate": "HAS_SEEDED_PLAN_COUNT", "object": 4 },
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_ENTRY_POINT_COUNT", "object": 42 },
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_FEATURE_COUNT", "object": 8 },
-        { "subjectId": "flag:MANDATE_AUTODEBIT_ENABLED", "predicate": "DEFAULTS_TO", "object": false }
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
+          "object": 42
+        },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_GATED_FEATURE_COUNT",
+          "object": 8
+        },
+        {
+          "subjectId": "flag:MANDATE_AUTODEBIT_ENABLED",
+          "predicate": "DEFAULTS_TO",
+          "object": false
+        }
       ]
     },
     {
@@ -96,7 +120,11 @@
       "claimedCommitSha": "d4afe44",
       "purpose": "Maps documented frontend, backend, ontology, and test responsibilities to source paths.",
       "claims": [
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_EFFECTIVE_TABLE_COUNT", "object": 86 },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
+          "object": 86
+        },
         { "subjectId": "system:namlend-tests", "predicate": "HAS_CONVEX_PASS_COUNT", "object": 83 },
         { "subjectId": "system:namlend-tests", "predicate": "HAS_UNIT_PASS_COUNT", "object": 200 },
         { "subjectId": "system:namlend-tests", "predicate": "HAS_UNIT_SKIP_COUNT", "object": 2 }
@@ -111,8 +139,16 @@
       "claimedCommitSha": "1aaac02",
       "purpose": "Records historical implementation phases, verification snapshots, and remaining rollout work.",
       "claims": [
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_ENTRY_POINT_COUNT", "object": 41 },
-        { "subjectId": "system:namlend-convex", "predicate": "HAS_GATED_FEATURE_COUNT", "object": 7 },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
+          "object": 41
+        },
+        {
+          "subjectId": "system:namlend-convex",
+          "predicate": "HAS_GATED_FEATURE_COUNT",
+          "object": 7
+        },
         { "subjectId": "system:namlend-tests", "predicate": "HAS_E2E_PASS_COUNT", "object": 110 },
         { "subjectId": "system:namlend-tests", "predicate": "HAS_E2E_SKIP_COUNT", "object": 204 }
       ]
@@ -126,9 +162,21 @@
       "claimedCommitSha": "d4afe44",
       "purpose": "Documents environments, safe commands, readiness checks, and owner-only activation procedures.",
       "claims": [
-        { "subjectId": "deployment:netlify-production", "predicate": "URL", "object": "https://namlend-trust-portal-v220.netlify.app" },
-        { "subjectId": "deployment:convex-production-linked", "predicate": "DEPLOYMENT_NAME", "object": "aromatic-okapi-265" },
-        { "subjectId": "deployment:convex-e2e-legacy", "predicate": "DEPLOYMENT_NAME", "object": "brave-mole-108" }
+        {
+          "subjectId": "deployment:netlify-production",
+          "predicate": "URL",
+          "object": "https://namlend-trust-portal-v220.netlify.app"
+        },
+        {
+          "subjectId": "deployment:convex-production-linked",
+          "predicate": "DEPLOYMENT_NAME",
+          "object": "aromatic-okapi-265"
+        },
+        {
+          "subjectId": "deployment:convex-e2e-legacy",
+          "predicate": "DEPLOYMENT_NAME",
+          "object": "brave-mole-108"
+        }
       ]
     }
   ],
@@ -215,6 +263,54 @@
           "id": 94258563712,
           "name": "CodeQL JavaScript/TypeScript",
           "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31639625505/job/94258563712",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31706328809,
+      "workflow": "Secret Detection",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328809",
+      "headSha": "d2f70cc775a36cdff0e01052eeb7c165d8df89c7",
+      "conclusion": "success",
+      "completedAt": "2026-08-13T13:43:19.000Z",
+      "jobs": [
+        {
+          "id": 94467699315,
+          "name": "Secret Detection",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328809/job/94467699315",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31706328764,
+      "workflow": "Dependency Review",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328764",
+      "headSha": "d2f70cc775a36cdff0e01052eeb7c165d8df89c7",
+      "conclusion": "success",
+      "completedAt": "2026-08-13T13:44:17.000Z",
+      "jobs": [
+        {
+          "id": 94467699138,
+          "name": "Dependency Review",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328764/job/94467699138",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31706328816,
+      "workflow": "CodeQL",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328816",
+      "headSha": "d2f70cc775a36cdff0e01052eeb7c165d8df89c7",
+      "conclusion": "success",
+      "completedAt": "2026-08-13T13:44:52.000Z",
+      "jobs": [
+        {
+          "id": 94467699512,
+          "name": "CodeQL JavaScript/TypeScript",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31706328816/job/94467699512",
           "results": {}
         }
       ]

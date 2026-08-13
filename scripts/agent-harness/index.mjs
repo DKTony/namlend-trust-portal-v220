@@ -16,6 +16,7 @@ import {
   validateExceptions,
   validateTaskPolicy,
 } from './lib.mjs';
+import { readRegularFileWithinRoot } from '../safe-files.mjs';
 
 const command = process.argv[2] ?? 'preflight';
 const args = process.argv.slice(3).filter((arg) => arg !== '--');
@@ -127,9 +128,11 @@ function policyCheck() {
     /(?:^|[^A-Za-z0-9_])sk-[A-Za-z0-9_-]{20,}/,
   ];
   for (const relative of trackedFiles) {
-    const absolute = path.join(ROOT, relative);
-    if (!fs.existsSync(absolute) || !fs.statSync(absolute).isFile() || fs.statSync(absolute).size > 5_000_000) continue;
-    const contents = fs.readFileSync(absolute, 'utf8');
+    const contents = readRegularFileWithinRoot(ROOT, relative, {
+      encoding: 'utf8',
+      maxBytes: 5_000_000,
+    });
+    if (contents === undefined) continue;
     if (secretPatterns.some((pattern) => pattern.test(contents))) errors.push(`${relative}: tracked source matches a prohibited credential pattern.`);
   }
   const activeInstructions = ['AGENTS.md', 'CLAUDE.MD', 'CONTRIBUTING.md', 'WORKFLOW.md', 'convex/AGENTS.md'];

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { readRegularFileWithinRoot } from '../safe-files.mjs';
 
 export const SCHEMA_VERSION = '1.0.0';
 
@@ -117,8 +118,12 @@ export function writeJson(file, value) {
 }
 
 export function readJson(file, fallback = undefined) {
-  if (!fs.existsSync(file)) return fallback;
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return fallback;
+    throw error;
+  }
 }
 
 export function git(root, args, fallback = '') {
@@ -147,8 +152,16 @@ export function activeFiles(root) {
   ];
   const visit = (relative) => {
     const absolute = path.join(root, relative);
-    if (!fs.existsSync(absolute)) return;
-    const stat = fs.statSync(absolute);
+    let stat;
+    try {
+      stat = fs.lstatSync(absolute);
+    } catch (error) {
+      if (error?.code === 'ENOENT') return;
+      throw error;
+    }
+    // The authoritative corpus is repository-local. Never traverse or ingest a
+    // symlink, even when its tracked path appears beneath an active root.
+    if (stat.isSymbolicLink()) return;
     if (stat.isDirectory()) {
       for (const name of fs.readdirSync(absolute).sort()) {
         if (['node_modules', '_generated', '.venv', '.cache', 'dist', 'test-results', 'playwright-report', 'ci-artifact'].includes(name)) continue;
@@ -162,7 +175,7 @@ export function activeFiles(root) {
   for (const rootFile of [
     'package.json', 'netlify.toml', 'vite.config.ts', 'AGENTS.md', 'CLAUDE.MD',
     'CONTRIBUTING.md', 'WORKFLOW.md', '.nvmrc', '.npmrc',
-    'ontology/ontology.test.ts'
+    'ontology/ontology.test.ts', 'scripts/safe-files.mjs'
   ]) visit(rootFile);
   return [...tracked].sort();
 }
@@ -260,12 +273,10 @@ export class OntologyGraph {
     let pathDigest;
     if (tier === 'E0' && sourcePath) {
       if (!this.pathDigestCache.has(sourcePath)) {
-        const absolute = path.join(this.root, sourcePath);
+        const contents = readRegularFileWithinRoot(this.root, sourcePath);
         this.pathDigestCache.set(
           sourcePath,
-          fs.existsSync(absolute) && fs.statSync(absolute).isFile()
-            ? `sha256:${stableHash(fs.readFileSync(absolute), 64)}`
-            : undefined
+          contents === undefined ? undefined : `sha256:${stableHash(contents, 64)}`
         );
       }
       pathDigest = this.pathDigestCache.get(sourcePath);

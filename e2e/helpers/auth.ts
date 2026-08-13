@@ -75,7 +75,12 @@ async function waitForLoginForm(page: Page): Promise<void> {
  * user switch deterministic.
  */
 export async function signOutViaUI(page: Page): Promise<void> {
-  await page.getByTestId('sidebar-signout').click();
+  const signOut = page.getByTestId('sidebar-signout');
+  try {
+    await signOut.click({ timeout: 5_000 });
+  } catch {
+    await signOut.click({ force: true, timeout: 5_000 });
+  }
   await page.waitForURL(/\/auth(\?|$)/, { timeout: 20000 });
   await waitForLoginForm(page);
 }

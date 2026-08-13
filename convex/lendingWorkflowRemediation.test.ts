@@ -1,5 +1,5 @@
 import { convexTest } from 'convex-test';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import schema from './schema';
@@ -76,6 +76,77 @@ describe('reciprocal staff notifications', () => {
       notificationId: adminRow._id,
     });
     expect(await t.run(async (ctx) => (await ctx.db.get(adminRow._id))?.isRead)).toBe(true);
+  });
+});
+
+describe('system approval request notifications', () => {
+  test('createSystemApprovalRequest fans out New Loan Application to tenant staff', async () => {
+    vi.useFakeTimers();
+    try {
+      const t = convexTest(schema, modules);
+      const seeded = await t.run(async (ctx) => {
+        const now = Date.now();
+        const institutionId = await ctx.db.insert('institutions', {
+          name: 'Tenant A',
+          shortCode: 'TENANTA',
+          type: 'lender',
+          status: 'active',
+          createdAt: now,
+          updatedAt: now,
+        });
+        const admin = await ctx.db.insert('users', {});
+        const officer = await ctx.db.insert('users', {});
+        const borrower = await ctx.db.insert('users', {});
+        await ctx.db.insert('userRoles', {
+          userId: admin,
+          role: 'tenant_admin',
+          institutionId,
+          createdAt: now,
+        });
+        await ctx.db.insert('userRoles', {
+          userId: officer,
+          role: 'loan_officer',
+          institutionId,
+          createdAt: now,
+        });
+        await ctx.db.insert('userRoles', {
+          userId: borrower,
+          role: 'client',
+          institutionId,
+          createdAt: now,
+        });
+        const loanId = await ctx.db.insert('loans', {
+          userId: borrower,
+          institutionId,
+          principal: 1500,
+          interestRate: 20,
+          termMonths: 3,
+          status: 'submitted',
+          createdAt: now,
+          updatedAt: now,
+        });
+        return { institutionId, admin, officer, borrower, loanId };
+      });
+
+      await t.mutation(internal.approvalWorkflow.createSystemApprovalRequest, {
+        entityType: 'loan',
+        entityId: seeded.loanId,
+        requestType: 'loan_review',
+        priority: 'high',
+      });
+      await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+
+      const rows = await t.run(async (ctx) => ctx.db.query('notifications').collect());
+      const staffTitles = rows
+        .filter((row) => row.userId === seeded.admin || row.userId === seeded.officer)
+        .map((row) => row.title);
+      expect(staffTitles).toEqual(['New Loan Application', 'New Loan Application']);
+      expect(
+        rows.some((row) => row.userId === seeded.borrower && row.title === 'Application Received')
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

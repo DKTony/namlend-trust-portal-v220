@@ -454,6 +454,10 @@ describe('disposable preview fixture', () => {
     await t.mutation(internal.platform.seed.seedControlPlane, {});
     await t.mutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
 
+    const proof = await t.query(internal.seedMutations.assertDisposablePreviewEntitlements, {});
+    expect(proof.hasClientBanking).toBe(true);
+    expect(proof.hasIppOnboarding).toBe(true);
+
     const keys = await t.run(async (ctx) => {
       const og = await ctx.db
         .query('institutions')

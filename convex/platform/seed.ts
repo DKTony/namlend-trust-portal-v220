@@ -134,14 +134,30 @@ export const seedControlPlane = internalMutation({
     }
     report.catalogAdded = catalogAdded;
 
-    // 3. Seed plans.
+    // 3. Seed plans. Always keep defaultFeatures in sync with the code manifest so a
+    //    re-seed cannot leave OG on a stale catalogue (missing clientBanking, etc.).
     let plansAdded = 0;
+    let plansUpdated = 0;
     for (const p of PLAN_DEFS) {
       const existing = await ctx.db
         .query('plans')
         .withIndex('by_planCode', (q) => q.eq('planCode', p.planCode))
         .first();
-      if (existing) continue;
+      if (existing) {
+        const sameFeatures =
+          existing.status === 'active' &&
+          existing.defaultFeatures.length === p.features.length &&
+          p.features.every((key) => existing.defaultFeatures.includes(key));
+        if (!sameFeatures) {
+          await ctx.db.patch(existing._id, {
+            name: p.name,
+            status: 'active',
+            defaultFeatures: p.features,
+          });
+          plansUpdated++;
+        }
+        continue;
+      }
       await ctx.db.insert('plans', {
         planCode: p.planCode,
         name: p.name,
@@ -152,6 +168,7 @@ export const seedControlPlane = internalMutation({
       plansAdded++;
     }
     report.plansAdded = plansAdded;
+    report.plansUpdated = plansUpdated;
 
     // 4. Seed platform guardrails (mirror existing global constants).
     const guardrails: Array<{ code: string; valueType: 'number'; value: string }> = [
@@ -186,6 +203,13 @@ export const seedControlPlane = internalMutation({
         reason: 'Phase 0 seed - OG Financial Services tenant #1',
       });
       report.subscriptionCreated = true;
+    } else if (existingSub.planCode !== 'all_features' || existingSub.status !== 'active') {
+      await ctx.db.patch(existingSub._id, {
+        planCode: 'all_features',
+        status: 'active',
+        reason: existingSub.reason ?? 'Phase 0 seed - OG Financial Services tenant #1',
+      });
+      report.subscriptionUpdated = true;
     }
 
     // 6. Backfill userRoles.institutionId for tenant users; migrate admin → tenant_admin.

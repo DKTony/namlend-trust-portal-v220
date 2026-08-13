@@ -61,6 +61,7 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsedState);
+  const [failedBrandAssetUrl, setFailedBrandAssetUrl] = useState<string | null>(null);
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : internalIsOpen;
   const setIsOpen = useCallback(
@@ -75,6 +76,10 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
   useEffect(() => {
     if (!isOpen) setRotate({ x: 0, y: 0 });
   }, [isOpen]);
+
+  useEffect(() => {
+    setFailedBrandAssetUrl(null);
+  }, [brandingConfig.assets.favicon_url, brandingConfig.assets.logo_url]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!sidebarRef.current) return;
@@ -119,34 +124,41 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
     title !== 'OG Financial Services Admin' ? title : brandingConfig.general.company_name;
   const displaySubtitle = subtitle || 'Admin Portal';
 
-  const renderBrand = (compact = false) => (
-    <div className={cn('flex items-center gap-3', compact ? 'mb-4 justify-center' : 'mb-8 mt-2')}>
-      {brandingConfig.assets.logo_url ? (
-        <img
-          src={
-            (compact ? brandingConfig.assets.favicon_url : brandingConfig.assets.logo_url) ??
-            undefined
-          }
-          alt={displayTitle}
-          style={{
-            width: compact ? 40 : Math.min(brandingConfig.assets.logo_width, 180),
-            height: compact ? 40 : Math.min(brandingConfig.assets.logo_height, 56),
-          }}
-          className="object-contain"
-        />
-      ) : (
-        <div
-          className={cn(
-            compact ? 'h-10 w-10' : 'w-10 h-10',
-            'rounded-xl flex items-center justify-center shadow-lg',
-            'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
-          )}
-        >
-          <ShieldCheck size={compact ? 20 : 24} className="text-white" />
-        </div>
-      )}
-      {!compact &&
-        (brandingConfig.assets.show_company_name_with_logo || !brandingConfig.assets.logo_url) && (
+  const renderBrand = (compact = false) => {
+    const assetUrl = compact
+      ? (brandingConfig.assets.favicon_url ?? brandingConfig.assets.logo_url)
+      : brandingConfig.assets.logo_url;
+    const showImage = Boolean(assetUrl && assetUrl !== failedBrandAssetUrl);
+
+    return (
+      <div className={cn('flex items-center gap-3', compact ? 'mb-4 justify-center' : 'mb-8 mt-2')}>
+        {showImage ? (
+          <img
+            src={assetUrl ?? undefined}
+            alt={displayTitle}
+            style={{
+              width: compact ? 40 : Math.min(brandingConfig.assets.logo_width, 180),
+              height: compact ? 40 : Math.min(brandingConfig.assets.logo_height, 56),
+            }}
+            className="object-contain"
+            data-testid="sidebar-brand-logo"
+            onError={() => setFailedBrandAssetUrl(assetUrl)}
+          />
+        ) : (
+          <div
+            className={cn(
+              compact ? 'h-10 w-10' : 'w-10 h-10',
+              'rounded-xl flex items-center justify-center shadow-lg',
+              'rounded-xl bg-[#3F713E] text-white shadow-sm transition-colors hover:bg-[#274F35]'
+            )}
+            data-testid="sidebar-brand-fallback"
+            role="img"
+            aria-label={`${displayTitle} fallback mark`}
+          >
+            <ShieldCheck size={compact ? 20 : 24} className="text-white" />
+          </div>
+        )}
+        {!compact && (brandingConfig.assets.show_company_name_with_logo || !showImage) && (
           <div className="min-w-0">
             <h1 className={cn('font-bold text-xl truncate', 'font-sans text-[#274F35]')}>
               {displayTitle}
@@ -156,8 +168,9 @@ export const GroupedSidebar: React.FC<GroupedSidebarProps> = ({
             </p>
           </div>
         )}
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderNavGroups = (compact = false) => (
     <div

@@ -2,6 +2,7 @@ import { convexTest } from 'convex-test';
 import { describe, expect, test, vi } from 'vitest';
 import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import { resolveEntitlements } from './lib/entitlements';
 import schema from './schema';
 
 const modules = import.meta.glob('./**/*.*s');
@@ -444,6 +445,39 @@ describe('disposable preview fixture', () => {
     expect(rules.every((rule) => rule.valueType === 'boolean' && rule.value === 'true')).toBe(true);
     expect(rules.every((rule) => /Disposable Convex preview/.test(rule.description ?? ''))).toBe(
       true
+    );
+  });
+
+  test('all_features plus enforcement keeps OG entitled for gated E2E surfaces', async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.platform.seed.migrateOgFinancialServices, {});
+    await t.mutation(internal.platform.seed.seedControlPlane, {});
+    await t.mutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
+
+    const keys = await t.run(async (ctx) => {
+      const og = await ctx.db
+        .query('institutions')
+        .withIndex('by_shortCode', (q) => q.eq('shortCode', 'OGFS'))
+        .first();
+      if (!og) throw new Error('OG tenant missing');
+      return [...(await resolveEntitlements(ctx, og._id))];
+    });
+
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'clientBudget',
+        'clientDocuments',
+        'clientBanking',
+        'collections',
+        'ippOnboarding',
+        'advancedAnalytics',
+        'whiteLabelBranding',
+        'creditPolicy',
+        'products',
+        'mandates',
+        'popiaConsent',
+        'workflows',
+      ])
     );
   });
 });

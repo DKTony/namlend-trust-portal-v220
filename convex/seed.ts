@@ -130,6 +130,9 @@ export const seedDisposableE2EPreview = internalAction({
   args: {},
   handler: async (ctx) => {
     await ctx.runAction(internal.seed.seedTestUsers, {});
+    // OG must sit on the all_features plan before enforcement is flipped. Otherwise
+    // /budget, /kyc, collections, analytics, and the Banking toggle are all denied.
+    await ctx.runMutation(internal.platform.seed.seedControlPlane, {});
     await ctx.runMutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
     console.log('[seed] Disposable E2E preview enforcement is enabled');
   },

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run verify:brand-assets",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "tsc -b",
@@ -40,6 +40,7 @@
     "graphify:extract": "node scripts/graphify/index.mjs extract",
     "graphify:query": "node scripts/graphify/index.mjs query --",
     "graphify:check": "node scripts/graphify/index.mjs check",
+    "verify:brand-assets": "node scripts/verify-brand-assets.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "docs:lint:active": "markdownlint-cli2 --config .markdownlint.json AGENTS.md CLAUDE.MD CONTRIBUTING.md WORKFLOW.md src/AGENTS.md convex/AGENTS.md e2e/AGENTS.md supabase/AGENTS.md docs/AGENTS.md docs/ARCHITECTURE.md docs/ARCHITECTURAL_REVIEW.md docs/SERVICES.md docs/TECHNICAL_DEBT.md docs/FUNCTIONALITY_MAP.md docs/TESTING.md docs/SECURITY.md docs/adr/*.md",

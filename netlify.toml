@@ -30,8 +30,21 @@
     Cache-Control = "public, max-age=300, must-revalidate"
 
 [[headers]]
-  for = "/og-financial-*-v2.*"
+  for = "/og-financial-logo-v2.svg"
   [headers.values]
+    Content-Type = "image/svg+xml; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/og-financial-favicon-v2.svg"
+  [headers.values]
+    Content-Type = "image/svg+xml; charset=utf-8"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/og-financial-social-v2.png"
+  [headers.values]
+    Content-Type = "image/png"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]

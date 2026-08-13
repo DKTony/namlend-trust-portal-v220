@@ -30,7 +30,7 @@ import { accountStatus, accountType } from '../schema';
 
 /**
  * Generate a unique account number.
- * Format: ACC-{type_prefix}-{timestamp36}-{random4}
+ * Format: ACC-{type_prefix}-{timestamp36}-{random8}
  */
 function generateAccountNumber(type: string): string {
   const prefixes: Record<string, string> = {
@@ -44,7 +44,7 @@ function generateAccountNumber(type: string): string {
   };
   const prefix = prefixes[type] ?? 'XX';
   const ts = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const rand = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
   return `ACC-${prefix}-${ts}-${rand}`;
 }
 

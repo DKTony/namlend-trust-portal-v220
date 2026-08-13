@@ -10,7 +10,7 @@ import { ConvexError, v } from 'convex/values';
 import type { Id } from '../_generated/dataModel';
 import { internalMutation, internalQuery, query } from '../_generated/server';
 import { scheduleAuditEntry } from '../lib/audit';
-import { assertStaffOrPlatformSupport } from '../lib/platformAuth';
+import { assertPlatformSupport } from '../lib/platformAuth';
 
 type ReconciliationClass = {
   safe: boolean;
@@ -193,13 +193,13 @@ export const resetDeadLetter = internalMutation({
 });
 
 // ---------------------------------------------------------------------------
-// Queries (admin monitoring)
+// Queries (global infrastructure monitoring; platform roles only)
 // ---------------------------------------------------------------------------
 
 export const getOutboxStats = query({
   args: {},
   handler: async (ctx) => {
-    await assertStaffOrPlatformSupport(ctx);
+    await assertPlatformSupport(ctx);
     const pending = await ctx.db
       .query('tigerBeetleOutbox')
       .withIndex('by_status', (q) => q.eq('status', 'pending'))
@@ -224,7 +224,7 @@ export const getOutboxStats = query({
 export const listDeadLetterEntries = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
-    await assertStaffOrPlatformSupport(ctx);
+    await assertPlatformSupport(ctx);
     return ctx.db
       .query('tigerBeetleOutbox')
       .withIndex('by_status', (q) => q.eq('status', 'dead_letter'))
@@ -237,7 +237,7 @@ export const listDeadLetterEntries = query({
 export const getReconciliationReport = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
-    await assertStaffOrPlatformSupport(ctx);
+    await assertPlatformSupport(ctx);
     return buildReconciliationReport(ctx, limit);
   },
 });

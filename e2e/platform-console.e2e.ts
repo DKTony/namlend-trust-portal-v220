@@ -73,7 +73,7 @@ test.describe('Platform Console — sections render for the owner (guard widenin
     for (const section of OWNER_SECTIONS) {
       await openSection(page, section.path);
       await expect(page, `${section.path} should keep the /platform URL`).toHaveURL(
-        new RegExp(section.path.replace(/\//g, '\\/'))
+        (url) => url.pathname === section.path
       );
       if (section.testid) {
         await expect(

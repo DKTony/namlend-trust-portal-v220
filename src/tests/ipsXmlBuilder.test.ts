@@ -15,6 +15,7 @@ import {
   buildReqValAdd,
   buildStandardHead,
   buildTxnConfirmation,
+  generateMsgId,
   parseIpsXml,
 } from '../../convex/lib/ipsXmlBuilder';
 
@@ -26,6 +27,15 @@ describe('ipsXmlBuilder', () => {
     expect(head.prodType).toBeTruthy();
     expect(head.orgId).toBeTruthy();
     expect(head.orgId).not.toBe('NAMLEND');
+  });
+
+  it('generates unpredictable, bank-prefixed message identifiers', () => {
+    const first = generateMsgId('7');
+    const second = generateMsgId('7');
+
+    expect(first).toMatch(/^007[a-f0-9]{32}$/);
+    expect(second).toMatch(/^007[a-f0-9]{32}$/);
+    expect(second).not.toBe(first);
   });
 
   it('emits supported request shapes with their required top-level sections', () => {

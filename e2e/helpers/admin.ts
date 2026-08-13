@@ -67,7 +67,7 @@ export async function openAdminTab(page: Page, tabId: string): Promise<void> {
   const expectedPath = NAV_ROUTES[tabId];
   if (expectedPath) {
     await page
-      .waitForURL(new RegExp(expectedPath.replace(/\//g, '\\/')), { timeout: 10000 })
+      .waitForURL((url) => url.pathname === expectedPath, { timeout: 10000 })
       .catch(() => {});
   }
 

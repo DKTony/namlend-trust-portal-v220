@@ -49,12 +49,12 @@ Deno.serve(async (req) => {
     const dbLatency = Math.round(performance.now() - dbStart);
 
     if (error) {
-      checks.database = { status: 'fail', latencyMs: dbLatency, message: error.message };
+      checks.database = { status: 'fail', latencyMs: dbLatency, message: 'Database check failed' };
     } else {
       checks.database = { status: 'pass', latencyMs: dbLatency };
     }
-  } catch (err) {
-    checks.database = { status: 'fail', message: String(err) };
+  } catch {
+    checks.database = { status: 'fail', message: 'Database check failed' };
   }
 
   // ── Check 2: Auth Service ───────────────────────────────────────
@@ -64,12 +64,16 @@ Deno.serve(async (req) => {
     const authLatency = Math.round(performance.now() - authStart);
 
     if (error) {
-      checks.auth = { status: 'fail', latencyMs: authLatency, message: error.message };
+      checks.auth = {
+        status: 'fail',
+        latencyMs: authLatency,
+        message: 'Authentication check failed',
+      };
     } else {
       checks.auth = { status: 'pass', latencyMs: authLatency };
     }
-  } catch (err) {
-    checks.auth = { status: 'fail', message: String(err) };
+  } catch {
+    checks.auth = { status: 'fail', message: 'Authentication check failed' };
   }
 
   // ── Check 3: TigerBeetle Outbox Backlog ─────────────────────────
@@ -80,7 +84,7 @@ Deno.serve(async (req) => {
       .eq('status', 'pending_sync');
 
     if (error) {
-      checks.outbox = { status: 'fail', message: error.message };
+      checks.outbox = { status: 'fail', message: 'Outbox check failed' };
     } else {
       const pendingCount = count ?? 0;
       checks.outbox = {
@@ -88,8 +92,8 @@ Deno.serve(async (req) => {
         message: `${pendingCount} pending entries`,
       };
     }
-  } catch (err) {
-    checks.outbox = { status: 'fail', message: String(err) };
+  } catch {
+    checks.outbox = { status: 'fail', message: 'Outbox check failed' };
   }
 
   // ── Determine overall status ────────────────────────────────────

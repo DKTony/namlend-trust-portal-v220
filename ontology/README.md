@@ -26,7 +26,7 @@ npm run ontology:diff -- <base-sha>
 npm run ontology:ingest-results -- <vitest-or-playwright-json> [...]
 ```
 
-`ontology:check` compares semantic content while ignoring only extraction timestamps. E0 evidence carries a path-content SHA-256 digest, allowing CI to detect path-specific drift even though a generated snapshot necessarily records the commit that existed before the snapshot itself is committed.
+`ontology:check` compares semantic content while ignoring extraction timestamps and recorded `commitSha`. E0 evidence carries a path-content SHA-256 digest, so CI still detects path-specific drift. Rebase-merge orphans the SHA recorded inside snapshots even when the tree is unchanged; after such a merge, run `npm run ontology:extract` on the new `main` HEAD and land that restamp as its own merge commit. Do not weaken E1 age: successful E1 proof must still be an ancestor of HEAD within ten commits.
 
 Local result ingestion from a dirty working tree is labeled `WORKTREE`/E3. Only
 CI running at an exact `GITHUB_SHA` may publish current-commit E1 execution proof.

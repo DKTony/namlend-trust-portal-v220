@@ -12,19 +12,21 @@ and entitlement enforcement are wired in Phases 1–2.
 
 ## Guard reference
 
-| Guard                                     | File                  | Passes for                               | Notes                                   |
-| ----------------------------------------- | --------------------- | ---------------------------------------- | --------------------------------------- |
-| `assertAuthenticated`                     | `lib/auth.ts`         | any signed-in user                       | —                                       |
-| `assertOwner`                             | `lib/auth.ts`         | resource owner                           | strict, no staff bypass                 |
-| `assertOwnerOrStaff`                      | `lib/auth.ts`         | owner OR staff                           | staff = loan_officer/admin/tenant_admin |
-| `assertStaff`                             | `lib/auth.ts`         | loan_officer/admin/tenant_admin          | widened in Phase 0                      |
-| `assertAdmin`                             | `lib/auth.ts`         | admin/tenant_admin                       | widened in Phase 0                      |
-| `assertTenantRole(inst, roles)`           | `lib/auth.ts`         | role ∈ roles AND tenant match (if bound) | tenant-scoped                           |
-| `assertTenantAdmin` / `assertTenantStaff` | `lib/auth.ts`         | tenant-scoped admin / staff              | —                                       |
-| `assertPlatformOwner`                     | `lib/platformAuth.ts` | active `platform_owner`                  | control plane                           |
-| `assertPlatformSupport`                   | `lib/platformAuth.ts` | active platform owner OR support         | control plane                           |
-| `assertFeatureEnabled(inst, key)`         | `lib/entitlements.ts` | tenant entitled to key                   | **INERT in Phase 0** (kill-switch off)  |
-| `requireTenantContext`                    | `lib/tenancy.ts`      | bound tenant user                        | enforced in Phase 1+                    |
+| Guard                                        | File                  | Passes for                                  | Notes                                   |
+| -------------------------------------------- | --------------------- | ------------------------------------------- | --------------------------------------- |
+| `assertAuthenticated`                        | `lib/auth.ts`         | any signed-in user                          | —                                       |
+| `assertOwner`                                | `lib/auth.ts`         | resource owner                              | strict, no staff bypass                 |
+| `assertOwnerOrStaff`                         | `lib/auth.ts`         | owner OR staff                              | staff = loan_officer/admin/tenant_admin |
+| `assertStaff`                                | `lib/auth.ts`         | loan_officer/admin/tenant_admin             | widened in Phase 0                      |
+| `assertAdmin`                                | `lib/auth.ts`         | admin/tenant_admin                          | widened in Phase 0                      |
+| `assertTenantRole(inst, roles)`              | `lib/auth.ts`         | role ∈ roles AND tenant match (if bound)    | tenant-scoped                           |
+| `assertTenantAdmin` / `assertTenantStaff`    | `lib/auth.ts`         | tenant-scoped admin / staff                 | —                                       |
+| `assertPlatformOwner`                        | `lib/platformAuth.ts` | active `platform_owner`                     | control plane                           |
+| `assertPlatformSupport`                      | `lib/platformAuth.ts` | active platform owner OR support            | control plane                           |
+| `assertFeatureEnabled(inst, key)`            | `lib/entitlements.ts` | tenant entitled to key                      | **INERT in Phase 0** (kill-switch off)  |
+| `assertCallerFeatureEnabled(ctx, key)`       | `lib/entitlements.ts` | caller's tenant entitled to backoffice key  | staff/data-plane capability gate        |
+| `assertCallerClientFeatureEnabled(ctx, key)` | `lib/entitlements.ts` | client caller entitled; tenant staff bypass | discretionary Client Portal writes only |
+| `requireTenantContext`                       | `lib/tenancy.ts`      | bound tenant user                           | enforced in Phase 1+                    |
 
 ## Console landing (frontend)
 
@@ -59,6 +61,29 @@ point, `canAccessPath` only answers "should we send them there at all".
 ```
 caller → tenant context → tenant role → entitlement → platform guardrails → tenant-scoped data
 ```
+
+## Feature control authority
+
+| Operation                             | platform_owner        | platform_support   | tenant_admin / admin                  | loan_officer                          | client                |
+| ------------------------------------- | --------------------- | ------------------ | ------------------------------------- | ------------------------------------- | --------------------- |
+| Read commercial plans                 | yes                   | yes                | no                                    | no                                    | no                    |
+| Change plans / tenant entitlements    | yes                   | no                 | no                                    | no                                    | no                    |
+| Dry-run/apply client-feature backfill | yes                   | no                 | no                                    | no                                    | no                    |
+| Change protected enforcement rules    | yes                   | no                 | no                                    | no                                    | no                    |
+| Read tenant entitlement details       | yes                   | audited L1 session | no                                    | no                                    | own resolved set only |
+| Use entitled backoffice capability    | not a tenant workflow | no                 | yes                                   | role-dependent                        | no                    |
+| Use entitled Client Portal surface    | not a tenant workflow | no                 | staff bypass only for staff workflows | staff bypass only for staff workflows | yes                   |
+
+`TENANCY_ENFORCEMENT` and `ENTITLEMENT_ENFORCEMENT` are protected rule codes. Generic business-rule
+mutations require `platform_owner` for protected codes, and entitlement enforcement additionally
+rejects the generic mutation path so readiness cannot be bypassed; owners must use the dedicated
+activation operation. Tenant admins may continue to manage ordinary tenant rules.
+`platform_support` remains read-only and cannot dispatch, migrate, or activate.
+
+Client feature entitlements are tenant-wide. They hide optional client surfaces and block only the
+client-originated discretionary writes listed in the feature catalogue. They do not delete or make
+historical financial/KYC records unavailable to authorised servicing staff, and they do not bypass
+APR, KYC, POPIA, retention, ownership, or tenant-isolation controls.
 
 ## Phase 0 status
 

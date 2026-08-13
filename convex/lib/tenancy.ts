@@ -9,7 +9,7 @@
 
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
-import { DataModel, Id } from '../_generated/dataModel';
+import { DataModel, Doc, Id } from '../_generated/dataModel';
 import { assertAuthenticated } from './auth';
 import { getBooleanRule } from './ruleEvaluator';
 
@@ -21,6 +21,20 @@ export interface TenantContext {
   role: string | null;
   /** Bound tenant, or null if the account is not yet bound (transition state). */
   institutionId: Id<'institutions'> | null;
+}
+
+const COMMERCIAL_TENANT_TYPES = new Set<Doc<'institutions'>['type']>([
+  'lender',
+  'bank',
+  'fintech',
+  'mno',
+]);
+
+/** Regulators participate in the institution registry, but are not commercial tenants. */
+export function isCommercialTenantInstitution(
+  institution: Pick<Doc<'institutions'>, 'type'>
+): boolean {
+  return COMMERCIAL_TENANT_TYPES.has(institution.type);
 }
 
 /**
@@ -72,11 +86,10 @@ export async function isTenancyEnforced(ctx: AnyCtx): Promise<boolean> {
 
 /** Returns the single institution id if exactly one tenant exists, else null. */
 async function soleInstitution(ctx: AnyCtx): Promise<Id<'institutions'> | null> {
-  const two = await ctx.db.query('institutions').take(2);
-  // Ignore non-tenant institutions (e.g. BON regulator) by preferring a 'lender'.
-  const lenders = two.filter((i) => i.type === 'lender');
-  if (lenders.length === 1) return lenders[0]._id;
-  return two.length === 1 ? two[0]._id : null;
+  const commercialInstitutions = (await ctx.db.query('institutions').collect()).filter(
+    isCommercialTenantInstitution
+  );
+  return commercialInstitutions.length === 1 ? commercialInstitutions[0]._id : null;
 }
 
 /** Look up a user's bound tenant from their userRoles row. */

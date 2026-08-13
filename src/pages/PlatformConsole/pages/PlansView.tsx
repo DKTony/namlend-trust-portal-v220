@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FEATURES, getFeature } from '@/config/features';
+import { FEATURES, getFeature, getMissingFeatureDependencies } from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
@@ -31,6 +31,18 @@ import React, { useMemo, useState } from 'react';
 
 /** Features a plan may grant: everything except platform-console capabilities. */
 const SELECTABLE_FEATURES = FEATURES.filter((f) => f.console !== 'platform');
+const FEATURE_GROUPS = [
+  {
+    console: 'backoffice' as const,
+    label: 'Backoffice',
+    features: SELECTABLE_FEATURES.filter((feature) => feature.console === 'backoffice'),
+  },
+  {
+    console: 'client' as const,
+    label: 'Client Portal',
+    features: SELECTABLE_FEATURES.filter((feature) => feature.console === 'client'),
+  },
+];
 
 const PlanDialog: React.FC<{ existing?: Doc<'plans'>; trigger: React.ReactNode }> = ({
   existing,
@@ -51,8 +63,33 @@ const PlanDialog: React.FC<{ existing?: Doc<'plans'>; trigger: React.ReactNode }
 
   const toggle = (key: string) =>
     setSelected((prev) => {
+      const feature = getFeature(key);
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        const dependent = SELECTABLE_FEATURES.find(
+          (candidate) => next.has(candidate.key) && candidate.dependsOn?.includes(key)
+        );
+        if (dependent) {
+          toast({
+            title: 'Dependency required',
+            description: `${feature?.name ?? key} cannot be removed while ${dependent.name} is selected.`,
+            variant: 'destructive',
+          });
+          return prev;
+        }
+        next.delete(key);
+      } else {
+        const missing = (feature?.dependsOn ?? []).filter((dependency) => !next.has(dependency));
+        if (missing.length > 0) {
+          toast({
+            title: 'Enable dependency first',
+            description: `${feature?.name ?? key} requires ${missing.map((dependency) => getFeature(dependency)?.name ?? dependency).join(', ')}.`,
+            variant: 'destructive',
+          });
+          return prev;
+        }
+        next.add(key);
+      }
       return next;
     });
 
@@ -62,6 +99,16 @@ const PlanDialog: React.FC<{ existing?: Doc<'plans'>; trigger: React.ReactNode }
       // Always-on features are implicitly part of every plan; include them defensively.
       const features = new Set(selected);
       for (const f of SELECTABLE_FEATURES) if (f.alwaysOn) features.add(f.key);
+      const missingDependencies = getMissingFeatureDependencies(features);
+      if (missingDependencies.length > 0) {
+        const first = missingDependencies[0];
+        toast({
+          title: 'Dependency required',
+          description: `${getFeature(first.featureKey)?.name ?? first.featureKey} requires ${getFeature(first.dependency)?.name ?? first.dependency}.`,
+          variant: 'destructive',
+        });
+        return;
+      }
       await upsertPlan({
         planCode: planCode.trim(),
         name: name.trim(),
@@ -108,24 +155,33 @@ const PlanDialog: React.FC<{ existing?: Doc<'plans'>; trigger: React.ReactNode }
             </div>
             <div>
               <Label>Default features</Label>
-              <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
-                {SELECTABLE_FEATURES.map((f) => (
-                  <label
-                    key={f.key}
-                    className="flex items-center gap-2 rounded border px-2 py-1 text-sm"
-                    title={`${f.category} · ${f.console}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={f.alwaysOn || selected.has(f.key)}
-                      disabled={f.alwaysOn}
-                      onChange={() => toggle(f.key)}
-                    />
-                    <span className={cn(f.alwaysOn && 'text-muted-foreground')}>
-                      {f.name}
-                      {f.alwaysOn && ' (core)'}
-                    </span>
-                  </label>
+              <div className="mt-2 space-y-4">
+                {FEATURE_GROUPS.map((group) => (
+                  <section key={group.console}>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </p>
+                    <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                      {group.features.map((f) => (
+                        <label
+                          key={f.key}
+                          className="flex items-center gap-2 rounded border px-2 py-1 text-sm"
+                          title={`${f.category} · ${f.console}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={f.alwaysOn || selected.has(f.key)}
+                            disabled={f.alwaysOn}
+                            onChange={() => toggle(f.key)}
+                          />
+                          <span className={cn(f.alwaysOn && 'text-muted-foreground')}>
+                            {f.name}
+                            {f.alwaysOn && ' (core)'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
             </div>
@@ -217,24 +273,42 @@ const PlansView: React.FC = () => {
                 <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
                   Default features ({plan.defaultFeatures.length})
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {plan.defaultFeatures.map((key: string) => {
-                    const known = getFeature(key);
+                <div className="space-y-2">
+                  {['backoffice', 'client'].map((consoleName) => {
+                    const keys = plan.defaultFeatures.filter(
+                      (key: string) => getFeature(key)?.console === consoleName
+                    );
+                    if (keys.length === 0) return null;
                     return (
-                      <span
-                        key={key}
-                        title={known ? `${known.name} · ${known.category}` : 'Unknown feature key'}
-                        className={cn(
-                          'rounded border px-2 py-0.5 text-xs',
-                          known
-                            ? 'border-border text-foreground'
-                            : 'border-amber-500/40 bg-amber-500/10 text-amber-600'
-                        )}
-                      >
-                        {known ? known.name : `⚠ ${key}`}
-                      </span>
+                      <div key={consoleName}>
+                        <p className="mb-1 text-xs text-muted-foreground">
+                          {consoleName === 'client' ? 'Client Portal' : 'Backoffice'}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {keys.map((key: string) => (
+                            <span
+                              key={key}
+                              title={`${getFeature(key)?.name} · ${getFeature(key)?.category}`}
+                              className="rounded border border-border px-2 py-0.5 text-xs text-foreground"
+                            >
+                              {getFeature(key)?.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     );
                   })}
+                  {plan.defaultFeatures
+                    .filter((key: string) => !getFeature(key))
+                    .map((key: string) => (
+                      <span
+                        key={key}
+                        title="Unknown feature key"
+                        className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600"
+                      >
+                        ⚠ {key}
+                      </span>
+                    ))}
                 </div>
               </div>
             </ThemedCard>

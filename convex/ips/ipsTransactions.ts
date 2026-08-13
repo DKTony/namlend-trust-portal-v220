@@ -13,9 +13,15 @@ import { internalMutation, internalQuery, mutation, query } from '../_generated/
 import { scheduleAuditLog } from '../lib/audit';
 import { completeDisbursementCore } from '../lib/disbursementCompletion';
 import { DOMAIN_EVENTS, emitDomainEvent } from '../lib/domainEvents';
+import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from '../lib/entitlements';
 import { computePayoffQuoteNAD } from '../lib/paymentAllocation';
 import { applyCompletedRepayment } from '../lib/repaymentApplication';
-import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import {
+  assertAuthenticated,
+  assertOwnerOrTenantStaff,
+  assertStaff,
+  assertTenantStaff,
+} from '../lib/auth';
 import { assertKycVerifiedForUser } from '../lib/kyc';
 import { assertAliasUsable } from '../lib/ipsAliasRules';
 import { getErrorEntry } from '../lib/ipsErrorCodes';
@@ -49,10 +55,15 @@ function mergeMetadata(existing: unknown, extra: Record<string, unknown>) {
   };
 }
 
-async function authorizeTransactionRead(ctx: any, tx: { userId?: Id<'users'> } | null) {
+async function authorizeTransactionRead(
+  ctx: any,
+  tx: { userId?: Id<'users'>; institutionId?: Id<'institutions'> } | null
+) {
   if (!tx) return;
   if (tx.userId) {
-    await assertOwnerOrStaff(ctx, tx.userId);
+    await assertOwnerOrTenantStaff(ctx, tx.userId, tx.institutionId);
+  } else if (tx.institutionId) {
+    await assertTenantStaff(ctx, tx.institutionId);
   } else {
     await assertStaff(ctx);
   }
@@ -528,7 +539,7 @@ export const getTransactionsByLoan = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     return ctx.db
       .query('ipsTransactions')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
@@ -544,6 +555,7 @@ export const adminListIpsTransactions = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     const scope = await tenantReadScope(ctx);
     if (status) {
       const rows = await ctx.db
@@ -575,9 +587,11 @@ export const initiateIpsRepayment = mutation({
   },
   handler: async (ctx, args) => {
     await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking');
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
 
     const existing = await findTransactionForClientRequest(ctx, loan.userId, args.clientRequestId);
     if (existing) {
@@ -928,8 +942,10 @@ export const startLoanDisbursement = mutation({
   },
   handler: async (ctx, args) => {
     const staffId = await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+    if (loan.institutionId) await assertTenantStaff(ctx, loan.institutionId);
     const existingByRequest = await findTransactionForClientRequest(
       ctx,
       loan.userId,
@@ -1034,6 +1050,12 @@ export const initiateIpsDisbursement = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    const disbursement = await ctx.db.get(args.disbursementId);
+    if (!disbursement) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'Disbursement not found.' });
+    }
+    if (disbursement.institutionId) await assertTenantStaff(ctx, disbursement.institutionId);
     return initiateIpsDisbursementCore(ctx, args);
   },
 });
@@ -1075,6 +1097,8 @@ export const initiateIpsTransaction = mutation({
   },
   handler: async (ctx, args) => {
     const callerId = await assertAuthenticated(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking');
 
     if (args.amount <= 0 || args.currency !== 'NAD') {
       throw new ConvexError({
@@ -1090,7 +1114,7 @@ export const initiateIpsTransaction = mutation({
     if (args.loanId) {
       const loan = await ctx.db.get(args.loanId);
       if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-      await assertOwnerOrStaff(ctx, loan.userId);
+      await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
       ownerUserId = loan.userId;
     }
 
@@ -1100,6 +1124,7 @@ export const initiateIpsTransaction = mutation({
       if (!disbursement) {
         throw new ConvexError({ code: 'NOT_FOUND', message: 'Disbursement not found.' });
       }
+      if (disbursement.institutionId) await assertTenantStaff(ctx, disbursement.institutionId);
       if (!['pending', 'processing'].includes(disbursement.status)) {
         throw new ConvexError({
           code: 'INVALID_STATE',
@@ -1204,6 +1229,12 @@ export const updateIpsTransactionStatus = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+    const transaction = await ctx.db.get(args.transactionId);
+    if (!transaction) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'IPS transaction not found.' });
+    }
+    if (transaction.institutionId) await assertTenantStaff(ctx, transaction.institutionId);
     await updateIpsTransactionStatusCore(ctx, args);
   },
 });

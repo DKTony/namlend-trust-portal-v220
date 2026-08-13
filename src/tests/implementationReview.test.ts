@@ -90,12 +90,17 @@ describe('Tier 2 — Supabase Hook Migration', () => {
     expect(hook).not.toContain('@/integrations/supabase/client');
   });
 
-  it('keeps the OG brand immutable instead of loading tenant overrides', () => {
+  it('keeps OG as the fallback and loads only tenant-scoped entitled overrides', () => {
     const provider = readSrc('src/context/BrandingContext.tsx');
-    expect(provider).toContain('IMMUTABLE_BRANDING_CONTEXT');
-    expect(provider).not.toContain('useQuery');
-    expect(provider).not.toContain('faviconLink');
-    expect(fs.existsSync(path.join(ROOT, 'src/hooks/useBrandingConfig.ts'))).toBe(false);
+    const backend = readSrc('convex/systemConfig.ts');
+    expect(provider).toContain('DEFAULT_BRANDING');
+    expect(provider).toContain("hasFeature('whiteLabelBranding')");
+    expect(provider).toContain('api.systemConfig.getTenantBranding');
+    expect(provider).not.toMatch(/localStorage|sessionStorage/);
+    expect(backend).toContain("query('institutionConfig')");
+    expect(backend).toContain("eq('institutionId', tenant.institutionId)");
+    expect(backend).toContain("assertCallerFeatureEnabled(ctx, 'whiteLabelBranding')");
+    expect(fs.existsSync(path.join(ROOT, 'src/hooks/useBrandingConfig.ts'))).toBe(true);
   });
 
   it('usePaymentMetrics uses correct status values', () => {
@@ -345,7 +350,7 @@ describe('Regulatory Constants', () => {
 // Immutable OG presentation
 // ---------------------------------------------------------------------------
 
-describe('OG presentation is fixed and light-only', () => {
+describe('OG presentation is light-only with an entitled brand layer', () => {
   it('clears legacy preferences and forces the light root before render', () => {
     const main = readSrc('src/main.tsx');
     const presentation = readSrc('src/lib/presentation.ts');
@@ -363,6 +368,21 @@ describe('OG presentation is fixed and light-only', () => {
     expect(app).not.toMatch(/ThemeProvider|ThemeSwitcher|ThemeBackground/);
     expect(index).not.toMatch(/LandingThemeToggle|BackgroundLayer/);
     expect(fs.existsSync(path.join(ROOT, 'src/context/ThemeContext.tsx'))).toBe(false);
+  });
+
+  it('does not restore retired runtime theme variants through branding', () => {
+    const runtimeFiles = [
+      'src/App.tsx',
+      'src/context/BrandingContext.tsx',
+      'src/components/Layout/ThemedSidebar.tsx',
+      'src/components/Layout/GroupedSidebar.tsx',
+    ]
+      .map(readSrc)
+      .join('\n');
+    expect(runtimeFiles).not.toMatch(
+      /ThemeContext|ThemeProvider|ThemeBackground|ThemeSwitcher|useTheme/
+    );
+    expect(runtimeFiles).not.toMatch(/dark:|neo|glass|lux/i);
   });
 
   it('uses only versioned OG metadata assets and path-only logo lettering', () => {

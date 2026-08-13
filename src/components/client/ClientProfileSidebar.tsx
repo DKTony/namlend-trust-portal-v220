@@ -1,3 +1,4 @@
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { cn } from '@/lib/utils';
 import { Briefcase, ChevronRight, CreditCard, FileText, ShieldCheck, User } from 'lucide-react';
 
@@ -18,9 +19,12 @@ export function ClientProfileSidebar({
   activeSection,
   onSectionChange,
 }: ClientProfileSidebarProps) {
+  const { hasFeature } = useEntitlements();
+  const visibleTabs = TABS.filter((tab) => tab.id !== 'documents' || hasFeature('clientDocuments'));
+
   return (
     <div className="lg:col-span-1 space-y-2">
-      {TABS.map((tab) => (
+      {visibleTabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onSectionChange(tab.id)}

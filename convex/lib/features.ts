@@ -152,7 +152,7 @@ export const FEATURES: readonly FeatureDef[] = [
   },
   {
     key: 'popiaConsent',
-    name: 'POPIA Consent',
+    name: 'POPIA Consent Management',
     category: 'compliance',
     console: 'backoffice',
     navItems: ['consent'],
@@ -181,6 +181,102 @@ export const FEATURES: readonly FeatureDef[] = [
     category: 'lending',
     console: 'backoffice',
     navItems: ['workflows'],
+    killSwitchable: true,
+  },
+
+  // --- Client Portal surfaces ---
+  // These keys intentionally remain distinct from similarly named backoffice capabilities.
+  {
+    key: 'clientOverview',
+    name: 'Overview',
+    category: 'lending',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['overview'],
+    backendCapabilities: ['client-dashboard-overview'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientLoans',
+    name: 'My Loans',
+    category: 'lending',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['loans'],
+    backendCapabilities: ['client-loan-history'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientApplications',
+    name: 'Applications',
+    category: 'lending',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['applications'],
+    backendCapabilities: ['client-loan-draft', 'client-loan-submission'],
+    dependsOn: ['clientDocuments'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientPayments',
+    name: 'Payments',
+    category: 'payments',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['payments'],
+    backendCapabilities: ['client-payment-surface'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientBanking',
+    name: 'Banking',
+    category: 'payments',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['banking'],
+    backendCapabilities: ['client-ipp-onboarding', 'client-ipp-alias', 'client-instant-payment'],
+    dependsOn: ['ippOnboarding'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientBudget',
+    name: 'Budget & Finance',
+    category: 'analytics',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['budget'],
+    backendCapabilities: ['client-budget-surface'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientDocuments',
+    name: 'Documents',
+    category: 'compliance',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['documents'],
+    backendCapabilities: ['client-kyc-upload', 'client-kyc-submission', 'client-document-access'],
+    complianceClass: 'feature_rule',
+    killSwitchable: true,
+  },
+  {
+    key: 'clientSelfService',
+    name: 'Self Service',
+    category: 'collections',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['self-service'],
+    backendCapabilities: ['client-reschedule-request'],
+    killSwitchable: true,
+  },
+  {
+    key: 'clientProfile',
+    name: 'Profile',
+    category: 'compliance',
+    console: 'client',
+    requiredRoles: ['client'],
+    navItems: ['profile'],
+    backendCapabilities: ['optional-client-profile-surface'],
     killSwitchable: true,
   },
 
@@ -245,3 +341,71 @@ export function getFeature(key: string): FeatureDef | undefined {
 export const ALWAYS_ON_FEATURES: readonly string[] = FEATURES.filter((f) => f.alwaysOn).map(
   (f) => f.key
 );
+
+/** Client Portal features in catalogue/navigation fallback order. */
+export const CLIENT_FEATURES: readonly FeatureDef[] = FEATURES.filter(
+  (feature) => feature.console === 'client'
+);
+
+/** Features that commercial plans and tenant overrides are allowed to grant. */
+export const TENANT_GRANTABLE_FEATURES: readonly FeatureDef[] = FEATURES.filter(
+  (feature) => feature.console !== 'platform'
+);
+
+export const TENANT_GRANTABLE_FEATURE_KEYS: ReadonlySet<string> = new Set(
+  TENANT_GRANTABLE_FEATURES.map((feature) => feature.key)
+);
+
+export function isTenantGrantableFeatureKey(key: string): boolean {
+  return TENANT_GRANTABLE_FEATURE_KEYS.has(key);
+}
+
+export interface MissingFeatureDependency {
+  featureKey: string;
+  dependency: string;
+}
+
+/** Return every direct dependency omitted from the supplied resolved feature set. */
+export function getMissingFeatureDependencies(
+  featureKeys: Iterable<string>
+): MissingFeatureDependency[] {
+  const enabled = new Set(featureKeys);
+  return TENANT_GRANTABLE_FEATURES.flatMap((feature) =>
+    enabled.has(feature.key)
+      ? (feature.dependsOn ?? [])
+          .filter((dependency) => !enabled.has(dependency))
+          .map((dependency) => ({ featureKey: feature.key, dependency }))
+      : []
+  );
+}
+
+/** Expand a feature set with the complete transitive dependency closure. */
+export function withFeatureDependencyClosure(featureKeys: Iterable<string>): string[] {
+  const expanded = new Set(featureKeys);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const featureKey of [...expanded]) {
+      const feature = getFeature(featureKey);
+      for (const dependency of feature?.dependsOn ?? []) {
+        if (!expanded.has(dependency)) {
+          expanded.add(dependency);
+          changed = true;
+        }
+      }
+    }
+  }
+  return [...expanded];
+}
+
+/** Serializable catalogue metadata derived from the canonical manifest. */
+export function getFeatureCatalogMetadata(feature: FeatureDef): Record<string, unknown> {
+  return {
+    ...(feature.requiredRoles ? { requiredRoles: feature.requiredRoles } : {}),
+    ...(feature.navItems ? { navItems: feature.navItems } : {}),
+    ...(feature.backendCapabilities ? { backendCapabilities: feature.backendCapabilities } : {}),
+    ...(feature.dependsOn ? { dependsOn: feature.dependsOn } : {}),
+    ...(feature.killSwitchable !== undefined ? { killSwitchable: feature.killSwitchable } : {}),
+    ...(feature.alwaysOn !== undefined ? { alwaysOn: feature.alwaysOn } : {}),
+  };
+}

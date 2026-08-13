@@ -11,10 +11,18 @@ import { internal } from './_generated/api';
 import { internalMutation, mutation, query } from './_generated/server';
 import { approveLoanCore } from './lib/approvalReadiness';
 import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
-import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import {
+  assertAdmin,
+  assertAuthenticated,
+  assertClient,
+  assertOwner,
+  assertOwnerOrStaff,
+  assertStaff,
+} from './lib/auth';
 import { assertLoanWithinCreditPolicy } from './lib/creditPolicy';
 import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
+import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import { assertKycVerifiedForUser } from './lib/kyc';
 import { APR_LIMIT, isValidAPR } from './lib/regulatory';
 import { emitRelationship } from './lib/relationshipEmitter';
@@ -36,7 +44,7 @@ export const getMyLoans = query({
     status: v.optional(v.string()),
   },
   handler: async (ctx, { status }) => {
-    const userId = await assertAuthenticated(ctx);
+    const userId = await assertClient(ctx);
     const q = ctx.db.query('loans').withIndex('by_userId', (q) => q.eq('userId', userId));
 
     const loans = await q.order('desc').collect();
@@ -216,7 +224,8 @@ export const createLoan = mutation({
     existingDebt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await assertAuthenticated(ctx);
+    const userId = await assertClient(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientApplications');
     // KYC is enforced at submission and beyond (not at draft creation) so applicants
     // can build a draft while verification is in progress. See submitLoan / approveLoanCore.
 
@@ -375,10 +384,11 @@ export const createLoan = mutation({
 export const submitLoan = mutation({
   args: { loanId: v.id('loans') },
   handler: async (ctx, { loanId }) => {
-    await assertAuthenticated(ctx);
+    await assertClient(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientApplications');
     const loan = await ctx.db.get(loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwner(ctx, loan.userId);
     await assertKycVerifiedForUser(ctx, loan.userId, 'submit a loan application');
 
     if (loan.status !== 'draft') {

@@ -57,6 +57,7 @@ const PlatformOverview: React.FC = () => {
   const planCount = plans?.length ?? '—';
   const platformFeatureCount = FEATURES.filter((f) => f.console === 'platform').length;
   const backofficeFeatureCount = FEATURES.filter((f) => f.console === 'backoffice').length;
+  const clientFeatureCount = FEATURES.filter((f) => f.console === 'client').length;
 
   return (
     <div data-testid="platform-overview" className="space-y-6 p-4 sm:p-6">
@@ -77,7 +78,7 @@ const PlatformOverview: React.FC = () => {
         <StatCard
           label="Plans"
           value={planCount}
-          hint={`${backofficeFeatureCount} backoffice · ${platformFeatureCount} platform features`}
+          hint={`${backofficeFeatureCount} backoffice · ${clientFeatureCount} client · ${platformFeatureCount} platform features`}
           icon={<Package className="h-6 w-6" />}
         />
         <StatCard

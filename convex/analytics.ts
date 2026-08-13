@@ -24,11 +24,10 @@ export const getPortfolioSummary = query({
   },
   handler: async (ctx, { dateFrom, dateTo }) => {
     await assertStaff(ctx);
-    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
+    const scope = await tenantReadScope(ctx);
 
     // Source records remain authoritative. portfolioMetrics is a rebuildable read model
     // and is not selected until an explicit consistency marker is introduced.
-    const scope = await tenantReadScope(ctx);
     const [allLoans, allDisbursements, allPayments] = await Promise.all([
       ctx.db.query('loans').take(10000),
       ctx.db.query('disbursements').take(10000),
@@ -89,7 +88,10 @@ export const getRevenueMetrics = query({
     await assertStaff(ctx);
     await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
-    const payments = await ctx.db.query('paymentTransactions').take(10000);
+    const payments = applyTenantScope(
+      await ctx.db.query('paymentTransactions').take(10000),
+      await tenantReadScope(ctx)
+    );
 
     const fromMs = dateFrom ? new Date(dateFrom).getTime() : 0;
     const toMs = dateTo ? new Date(dateTo).getTime() : Infinity;
@@ -125,6 +127,7 @@ export const getPaymentsTotalSince = query({
   args: { sinceMs: v.optional(v.number()) },
   handler: async (ctx, { sinceMs }) => {
     await assertStaff(ctx);
+    const scope = await tenantReadScope(ctx);
     const since = sinceMs ?? Date.now() - 24 * 60 * 60 * 1000;
     // This query backs an always-visible dashboard stat, so it must stay cheap
     // as the payments table grows. Completed payments come back newest-first,
@@ -141,6 +144,7 @@ export const getPaymentsTotalSince = query({
       .withIndex('by_status', (q) => q.eq('status', 'completed'))
       .order('desc')) {
       if (++scanned > WINDOW_CAP) break;
+      if (scope && p.institutionId !== undefined && p.institutionId !== scope) continue;
       if ((p.paymentDate ?? p.createdAt) >= since) {
         total += p.amount ?? 0;
         count += 1;
@@ -161,7 +165,8 @@ export const getRiskMetrics = query({
     await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
     const now = Date.now();
-    const [loans, markedOverdue, partiallyPaid] = await Promise.all([
+    const scope = await tenantReadScope(ctx);
+    const [loanRows, overdueRows, partiallyPaidRows] = await Promise.all([
       ctx.db.query('loans').take(10000),
       ctx.db
         .query('paymentSchedules')
@@ -172,6 +177,9 @@ export const getRiskMetrics = query({
         .withIndex('by_status', (q) => q.eq('status', 'partially_paid' as const))
         .take(10000),
     ]);
+    const loans = applyTenantScope(loanRows, scope);
+    const markedOverdue = applyTenantScope(overdueRows, scope);
+    const partiallyPaid = applyTenantScope(partiallyPaidRows, scope);
 
     // partially_paid is sticky — past-due partially paid installments count
     // toward NPL/PAR with their REMAINING amount, not the full installment.
@@ -211,12 +219,14 @@ export const getClientMetrics = query({
   args: {},
   handler: async (ctx) => {
     await assertStaff(ctx);
-    await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
-    const [profiles, loans] = await Promise.all([
+    const scope = await tenantReadScope(ctx);
+    const [profileRows, loanRows] = await Promise.all([
       ctx.db.query('profiles').take(10000),
       ctx.db.query('loans').take(10000),
     ]);
+    const profiles = applyTenantScope(profileRows, scope);
+    const loans = applyTenantScope(loanRows, scope);
 
     const now = Date.now();
     const MS_30_DAYS = 30 * 86_400_000;
@@ -259,10 +269,13 @@ export const getMonthlyTrends = query({
     const now = Date.now();
     const MS_PER_MONTH = 30 * 86_400_000;
 
-    const [loans, payments] = await Promise.all([
+    const scope = await tenantReadScope(ctx);
+    const [loanRows, paymentRows] = await Promise.all([
       ctx.db.query('loans').take(10000),
       ctx.db.query('paymentTransactions').take(10000),
     ]);
+    const loans = applyTenantScope(loanRows, scope);
+    const payments = applyTenantScope(paymentRows, scope);
 
     const trends: Array<{
       month: string;
@@ -311,7 +324,10 @@ export const getIpsAnalytics = query({
     await assertStaff(ctx);
     await assertCallerFeatureEnabled(ctx, 'advancedAnalytics');
 
-    const transactions = await ctx.db.query('ipsTransactions').take(10000);
+    const transactions = applyTenantScope(
+      await ctx.db.query('ipsTransactions').take(10000),
+      await tenantReadScope(ctx)
+    );
 
     const fromMs = dateFrom ? new Date(dateFrom).getTime() : 0;
     const toMs = dateTo ? new Date(dateTo).getTime() : Infinity;

@@ -4,6 +4,7 @@
  */
 
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';
+import { EntitledRoute } from '@/components/system/EntitledRoute';
 import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import React, { Suspense } from 'react';
 import { Navigate, Route } from 'react-router-dom';
@@ -11,7 +12,7 @@ import { Navigate, Route } from 'react-router-dom';
 // Lazy-loaded page components
 const OverviewPage = React.lazy(() => import('./pages/OverviewPage'));
 const TenantInfoPage = React.lazy(() => import('../TenantInfo/TenantInfoPage'));
-const BrandingIdentityRedirect = React.lazy(() => import('./pages/BrandingIdentityRedirect'));
+const BrandingConfigComponent = React.lazy(() => import('./components/Settings/BrandingConfig'));
 
 // Operations
 const LoanManagementDashboard = React.lazy(
@@ -79,6 +80,14 @@ function AdminOnly({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute requireAdmin>{children}</ProtectedRoute>;
 }
 
+function FeatureOnly({ featureKey, children }: { featureKey: string; children: React.ReactNode }) {
+  return (
+    <EntitledRoute featureKey={featureKey} returnTo="/admin/overview">
+      {children}
+    </EntitledRoute>
+  );
+}
+
 export function adminRoutes() {
   return (
     <>
@@ -139,17 +148,21 @@ export function adminRoutes() {
       <Route
         path="collections"
         element={
-          <PageSuspense>
-            <CollectionsDashboard />
-          </PageSuspense>
+          <FeatureOnly featureKey="collections">
+            <PageSuspense>
+              <CollectionsDashboard />
+            </PageSuspense>
+          </FeatureOnly>
         }
       />
       <Route
         path="ipp-onboarding"
         element={
-          <PageSuspense>
-            <IPPOnboardingDashboard />
-          </PageSuspense>
+          <FeatureOnly featureKey="ippOnboarding">
+            <PageSuspense>
+              <IPPOnboardingDashboard />
+            </PageSuspense>
+          </FeatureOnly>
         }
       />
       {/* Management (admin only) */}
@@ -179,9 +192,11 @@ export function adminRoutes() {
         path="analytics"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <PortfolioAnalytics />
-            </PageSuspense>
+            <FeatureOnly featureKey="advancedAnalytics">
+              <PageSuspense>
+                <PortfolioAnalytics />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -189,9 +204,11 @@ export function adminRoutes() {
         path="reconciliation"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <ReconciliationDashboard />
-            </PageSuspense>
+            <FeatureOnly featureKey="tenantReconciliation">
+              <PageSuspense>
+                <ReconciliationDashboard />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -201,9 +218,11 @@ export function adminRoutes() {
         path="products"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <ProductsDashboard />
-            </PageSuspense>
+            <FeatureOnly featureKey="products">
+              <PageSuspense>
+                <ProductsDashboard />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -211,9 +230,11 @@ export function adminRoutes() {
         path="workflows"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <WorkflowManagementDashboard />
-            </PageSuspense>
+            <FeatureOnly featureKey="workflows">
+              <PageSuspense>
+                <WorkflowManagementDashboard />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -221,9 +242,11 @@ export function adminRoutes() {
         path="mandates"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <MandatesDashboard />
-            </PageSuspense>
+            <FeatureOnly featureKey="mandates">
+              <PageSuspense>
+                <MandatesDashboard />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -231,9 +254,11 @@ export function adminRoutes() {
         path="consent"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <ConsentDashboard />
-            </PageSuspense>
+            <FeatureOnly featureKey="popiaConsent">
+              <PageSuspense>
+                <ConsentDashboard />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -243,9 +268,11 @@ export function adminRoutes() {
         path="settings/credit-policy"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <CreditPolicyConfig />
-            </PageSuspense>
+            <FeatureOnly featureKey="creditPolicy">
+              <PageSuspense>
+                <CreditPolicyConfig />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />
@@ -253,9 +280,11 @@ export function adminRoutes() {
         path="settings/branding"
         element={
           <AdminOnly>
-            <PageSuspense>
-              <BrandingIdentityRedirect />
-            </PageSuspense>
+            <FeatureOnly featureKey="whiteLabelBranding">
+              <PageSuspense>
+                <BrandingConfigComponent />
+              </PageSuspense>
+            </FeatureOnly>
           </AdminOnly>
         }
       />

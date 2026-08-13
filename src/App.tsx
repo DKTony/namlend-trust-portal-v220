@@ -1,4 +1,5 @@
 import ErrorBoundary from '@/components/system/ErrorBoundary';
+import { EntitledRoute } from '@/components/system/EntitledRoute';
 import { ProtectedRoute } from '@/components/system/ProtectedRoute';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
@@ -102,7 +103,7 @@ const App = () => (
                       <Route
                         path="/dashboard"
                         element={
-                          <ProtectedRoute>
+                          <ProtectedRoute requireClient>
                             <Dashboard />
                           </ProtectedRoute>
                         }
@@ -130,40 +131,50 @@ const App = () => (
                       <Route
                         path="/loan-application"
                         element={
-                          <ProtectedRoute>
-                            <LoanApplication />
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientApplications">
+                              <LoanApplication />
+                            </EntitledRoute>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="/payment"
                         element={
-                          <ProtectedRoute>
-                            <Payment />
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientPayments">
+                              <Payment />
+                            </EntitledRoute>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="/loans/:id"
                         element={
-                          <ProtectedRoute>
-                            <LoanDetails />
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientLoans">
+                              <LoanDetails />
+                            </EntitledRoute>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="/kyc"
                         element={
-                          <ProtectedRoute>
-                            <KYC />
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientDocuments">
+                              <KYC />
+                            </EntitledRoute>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="/budget"
                         element={
-                          <ProtectedRoute>
-                            <BudgetTracker />
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientBudget">
+                              <BudgetTracker />
+                            </EntitledRoute>
                           </ProtectedRoute>
                         }
                       />

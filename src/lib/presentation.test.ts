@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { enforceOgPresentation, LEGACY_PRESENTATION_KEYS } from './presentation';
 
-describe('immutable OG presentation bootstrap', () => {
+describe('single-light OG presentation bootstrap', () => {
   beforeEach(() => {
     document.documentElement.className = '';
     document.documentElement.removeAttribute('data-theme');

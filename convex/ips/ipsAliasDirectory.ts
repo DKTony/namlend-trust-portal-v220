@@ -12,6 +12,7 @@ import { internal } from '../_generated/api';
 import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
 import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from '../lib/entitlements';
 import { assertAliasAvailable, assertAliasUsable, validateIpsHandle } from '../lib/ipsAliasRules';
 import { isValidNamibianMobile, normalizeNamibianMobile } from '../lib/ipsPhoneNormalize';
 
@@ -23,6 +24,11 @@ const aliasStatus = v.union(
   v.literal('DEREGISTERED'),
   v.literal('PORTED')
 );
+
+async function assertAliasWriteEnabled(ctx: any) {
+  await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
+  await assertCallerClientFeatureEnabled(ctx, 'clientBanking');
+}
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -74,6 +80,7 @@ export const adminListAliases = query({
   },
   handler: async (ctx, { status, limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     if (status) {
       return ctx.db
         .query('ipsAliasDirectory')
@@ -93,6 +100,7 @@ export const getPendingSyncAliases = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     return ctx.db
       .query('ipsAliasDirectory')
       .withIndex('by_syncedWithIps', (q) => q.eq('syncedWithIps', false))
@@ -142,6 +150,7 @@ export const registerLocalAlias = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
+    await assertAliasWriteEnabled(ctx);
     const [handlePart, providerPart] = args.addr.split('@');
     if (!handlePart || !providerPart) {
       throw new ConvexError({
@@ -286,6 +295,7 @@ export const deregisterAlias = mutation({
   args: { aliasId: v.id('ipsAliasDirectory') },
   handler: async (ctx, { aliasId }) => {
     await assertAuthenticated(ctx);
+    await assertAliasWriteEnabled(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
     await assertOwnerOrStaff(ctx, alias.userId);
@@ -329,6 +339,7 @@ export const blockAlias = mutation({
   },
   handler: async (ctx, { aliasId, reason }) => {
     await assertStaff(ctx);
+    await assertCallerFeatureEnabled(ctx, 'ippOnboarding');
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
 
@@ -361,6 +372,7 @@ export const setDefaultAlias = mutation({
   args: { aliasId: v.id('ipsAliasDirectory') },
   handler: async (ctx, { aliasId }) => {
     await assertAuthenticated(ctx);
+    await assertAliasWriteEnabled(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
     await assertOwnerOrStaff(ctx, alias.userId);

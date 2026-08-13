@@ -1,2 +1,2 @@
-// Branding is intentionally read-only and is displayed in Tenant Info.
+export { BrandingConfigComponent } from './BrandingConfig';
 export { CreditPolicyConfig } from './CreditPolicy';

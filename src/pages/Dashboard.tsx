@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/Layout/DashboardLayout';
 import PaymentModal from '@/components/modals/PaymentModal';
 import StatCard from '@/components/shared/StatCard';
 import { HeroCard } from '@/components/ui/HeroCard';
+import { getEnabledClientNavItems, normalizeClientTab } from '@/config/clientNav';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -20,6 +21,7 @@ import { LoanStatusTimeline, generateLoanTimeline } from '@/components/workflow/
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
@@ -57,11 +59,13 @@ interface LoanApplication {
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { trackAction } = useErrorHandler();
   const isMobile = useIsMobile();
   const { t } = useTranslation('dashboard');
+  const { hasFeature, isLoading: entitlementsLoading } = useEntitlements();
+  const clientMenuItems = useMemo(() => getEnabledClientNavItems(hasFeature), [hasFeature]);
 
   // Convex reactive queries — no as any (N2)
   const profile = useQuery(api.users.getMyProfile);
@@ -98,23 +102,44 @@ export default function Dashboard() {
   // UI State
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
-    const incoming = location.state?.tab;
-    if (!incoming) return 'overview';
-    return incoming === 'dashboard' ? 'overview' : incoming;
+    return normalizeClientTab(location.state?.tab) ?? 'overview';
   });
 
-  // Accept tab from cross-page navigation (e.g., from BudgetTracker)
+  // Accept only entitled incoming tabs and fall back in catalogue order when the current tab
+  // is disabled. External first-enabled surfaces redirect to their canonical route.
   useEffect(() => {
-    if (location.state?.tab) {
-      setActiveTab(location.state.tab === 'dashboard' ? 'overview' : location.state.tab);
-      // Clean up state to prevent re-triggering on refresh
-      window.history.replaceState({}, '');
+    if (entitlementsLoading) return;
+    const incoming = normalizeClientTab(location.state?.tab);
+    const requested = incoming ?? activeTab;
+    const enabledRequested = clientMenuItems.find((item) => item.id === requested);
+    const destination = enabledRequested ?? clientMenuItems[0];
+
+    if (destination?.route) {
+      navigate(destination.route, { replace: true });
+      return;
     }
-  }, [location.state?.tab]);
+    if (destination && destination.id !== activeTab) {
+      setActiveTab(destination.id);
+    }
+    if (incoming) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [
+    activeTab,
+    clientMenuItems,
+    entitlementsLoading,
+    location.pathname,
+    location.state?.tab,
+    navigate,
+  ]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Data is loading if any query hasn't returned yet
-  const loading = profile === undefined || rawLoans === undefined || portfolioSummary === undefined;
+  const loading =
+    profile === undefined ||
+    rawLoans === undefined ||
+    portfolioSummary === undefined ||
+    entitlementsLoading;
 
   // KYC eligibility for status indicator
   const {
@@ -203,26 +228,17 @@ export default function Dashboard() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const pendingLoan = loanApplications.find((app) => app.status === 'pending');
+  const activeMenuItem = clientMenuItems.find((item) => item.id === activeTab);
 
   const handleTabChange = (tab: string) => {
-    // Handle sidebar menu items that map to different tab names
-    if (tab === 'dashboard') {
-      setActiveTab('overview');
+    const normalized = normalizeClientTab(tab);
+    const destination = clientMenuItems.find((item) => item.id === normalized);
+    if (!destination) return;
+    if (destination.route) {
+      navigate(destination.route);
       return;
     }
-
-    // Handle sidebar items that route to external pages
-    if (tab === 'budget') {
-      navigate('/budget');
-      return;
-    }
-    if (tab === 'documents') {
-      navigate('/kyc');
-      return;
-    }
-
-    // Handle internal tabs (self-service, profile, loans, payments, etc.)
-    setActiveTab(tab);
+    setActiveTab(destination.id);
   };
 
   // Render Content based on Active Tab
@@ -244,13 +260,15 @@ export default function Dashboard() {
                 </h2>
                 <p className="text-muted-foreground mt-2 text-base md:text-lg">{t('subtitle')}</p>
               </div>
-              <ThemedButton
-                onClick={() => navigate('/loan-application')}
-                variant="primary"
-                className="w-full md:w-auto rounded-full shadow-lg shadow-primary/20"
-              >
-                <Plus size={20} /> <span className="md:inline">{t('newApplication')}</span>
-              </ThemedButton>
+              {hasFeature('clientApplications') && (
+                <ThemedButton
+                  onClick={() => navigate('/loan-application')}
+                  variant="primary"
+                  className="w-full md:w-auto rounded-full shadow-lg shadow-primary/20"
+                >
+                  <Plus size={20} /> <span className="md:inline">{t('newApplication')}</span>
+                </ThemedButton>
+              )}
             </div>
 
             {/* Stat Cards */}
@@ -329,14 +347,16 @@ export default function Dashboard() {
                         </p>
                       </div>
                     )}
-                    <ThemedButton
-                      onClick={() => navigate('/kyc')}
-                      variant="secondary"
-                      className="whitespace-nowrap"
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      {t('kyc.uploadButton')}
-                    </ThemedButton>
+                    {hasFeature('clientDocuments') && (
+                      <ThemedButton
+                        onClick={() => navigate('/kyc')}
+                        variant="secondary"
+                        className="whitespace-nowrap"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        {t('kyc.uploadButton')}
+                      </ThemedButton>
+                    )}
                   </div>
                 </div>
               </ThemedCard>
@@ -457,7 +477,7 @@ export default function Dashboard() {
                           <div className="bg-white h-full w-2/3 animate-pulse"></div>
                         </div>
                       </div>
-                    ) : (
+                    ) : hasFeature('clientApplications') ? (
                       <ThemedButton
                         variant="secondary"
                         onClick={() => navigate('/loan-application')}
@@ -465,7 +485,7 @@ export default function Dashboard() {
                       >
                         {t('needFunds.applyNow')} <ArrowUpRight size={16} />
                       </ThemedButton>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
@@ -474,27 +494,31 @@ export default function Dashboard() {
                     {t('quickActions.title')}
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <ThemedButton
-                      variant="ghost"
-                      onClick={() => setShowPaymentModal(true)}
-                      disabled={!activeLoan}
-                      className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
-                    >
-                      <Wallet className="text-muted-foreground" size={24} />
-                      <span className="text-xs font-medium text-foreground">
-                        {t('quickActions.makePayment')}
-                      </span>
-                    </ThemedButton>
-                    <ThemedButton
-                      variant="ghost"
-                      onClick={() => navigate('/kyc')}
-                      className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
-                    >
-                      <FileText className="text-muted-foreground" size={24} />
-                      <span className="text-xs font-medium text-foreground">
-                        {t('quickActions.documents')}
-                      </span>
-                    </ThemedButton>
+                    {hasFeature('clientPayments') && (
+                      <ThemedButton
+                        variant="ghost"
+                        onClick={() => setShowPaymentModal(true)}
+                        disabled={!activeLoan}
+                        className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
+                      >
+                        <Wallet className="text-muted-foreground" size={24} />
+                        <span className="text-xs font-medium text-foreground">
+                          {t('quickActions.makePayment')}
+                        </span>
+                      </ThemedButton>
+                    )}
+                    {hasFeature('clientDocuments') && (
+                      <ThemedButton
+                        variant="ghost"
+                        onClick={() => navigate('/kyc')}
+                        className="h-auto p-4 flex flex-col items-center justify-center gap-2 bg-muted hover:bg-muted/80"
+                      >
+                        <FileText className="text-muted-foreground" size={24} />
+                        <span className="text-xs font-medium text-foreground">
+                          {t('quickActions.documents')}
+                        </span>
+                      </ThemedButton>
+                    )}
                   </div>
                 </ThemedCard>
               </div>
@@ -606,7 +630,7 @@ export default function Dashboard() {
                             <FileText className="h-4 w-4 mr-2" />
                             View details
                           </ThemedButton>
-                          {isActive && (
+                          {isActive && hasFeature('clientPayments') && (
                             <ThemedButton
                               className="w-full"
                               variant="secondary"
@@ -641,9 +665,11 @@ export default function Dashboard() {
                   {t('loans.noLoansTitle')}
                 </h3>
                 <p className="text-muted-foreground mb-4">{t('loans.noLoansDescription')}</p>
-                <ThemedButton onClick={() => navigate('/loan-application')}>
-                  {t('loans.applyForLoan')}
-                </ThemedButton>
+                {hasFeature('clientApplications') && (
+                  <ThemedButton onClick={() => navigate('/loan-application')}>
+                    {t('loans.applyForLoan')}
+                  </ThemedButton>
+                )}
               </ThemedCard>
             )}
           </div>
@@ -766,10 +792,7 @@ export default function Dashboard() {
         return <ClientProfileDashboard />;
 
       default:
-        // Unknown tab — reset to overview to prevent blank content
-        if (activeTab !== 'overview') {
-          setActiveTab('overview');
-        }
+        // The entitlement-normalization effect selects the first enabled catalogue item.
         return null;
     }
   };
@@ -779,24 +802,55 @@ export default function Dashboard() {
       activeTab={activeTab}
       onTabChange={handleTabChange}
       variant="client"
+      menuItems={[...clientMenuItems]}
       userName={profile?.fullName ?? (profile?.email ? profile.email.split('@')[0] : undefined)}
     >
-      {!isMobile && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="hidden xl:block absolute top-20 right-10 2xl:right-20 opacity-50 2xl:opacity-60 scale-75 2xl:scale-100 z-0 animate-float">
-            <HeroCard />
+      {clientMenuItems.length === 0 ? (
+        <ThemedCard
+          className="mx-auto flex min-h-[50vh] max-w-xl flex-col items-center justify-center gap-4 text-center"
+          data-testid="no-client-features"
+        >
+          <Shield className="h-12 w-12 text-muted-foreground" />
+          <div>
+            <h2 className="font-sans text-2xl font-bold text-[#274F35]">No features available</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your organisation has not enabled any Client Portal features. Contact support for help
+              or sign out of this account.
+            </p>
           </div>
+          <ThemedButton variant="secondary" onClick={() => void signOut()}>
+            Sign out
+          </ThemedButton>
+        </ThemedCard>
+      ) : !activeMenuItem ? (
+        <div
+          className="flex min-h-[50vh] items-center justify-center"
+          data-testid="client-feature-fallback-loading"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Loading feature" />
         </div>
+      ) : (
+        <>
+          {!isMobile && (
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+              <div className="hidden xl:block absolute top-20 right-10 2xl:right-20 opacity-50 2xl:opacity-60 scale-75 2xl:scale-100 z-0 animate-float">
+                <HeroCard />
+              </div>
+            </div>
+          )}
+
+          <div className="relative z-10">{renderContent()}</div>
+
+          {hasFeature('clientPayments') && (
+            <PaymentModal
+              isOpen={showPaymentModal}
+              onClose={() => setShowPaymentModal(false)}
+              userId={user?.id || ''}
+              onPaymentSuccess={() => setShowPaymentModal(false)}
+            />
+          )}
+        </>
       )}
-
-      <div className="relative z-10">{renderContent()}</div>
-
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        userId={user?.id || ''}
-        onPaymentSuccess={() => setShowPaymentModal(false)}
-      />
     </DashboardLayout>
   );
 }

@@ -12,11 +12,12 @@ import { EmploymentSection } from '@/components/client/sections/EmploymentSectio
 import { OverviewSection } from '@/components/client/sections/OverviewSection';
 import { PersonalSection } from '@/components/client/sections/PersonalSection';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useKYCEligibility } from '@/hooks/useKYCEligibility';
 import { useProfileEdit } from '@/hooks/useProfileEdit';
 import { api } from '@/integrations/convex/api';
 import { useQuery as useConvexQuery } from 'convex/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface ExtendedProfile {
   id: string;
@@ -49,7 +50,13 @@ interface ExtendedProfile {
 
 export default function ClientProfileDashboard() {
   const { user } = useAuth();
+  const { hasFeature } = useEntitlements();
+  const documentsEnabled = hasFeature('clientDocuments');
   const [activeSection, setActiveSection] = useState('overview');
+
+  useEffect(() => {
+    if (!documentsEnabled && activeSection === 'documents') setActiveSection('overview');
+  }, [activeSection, documentsEnabled]);
 
   const {
     editingSection,
@@ -180,7 +187,7 @@ export default function ClientProfileDashboard() {
             />
           )}
 
-          {activeSection === 'documents' && <DocumentsSection />}
+          {documentsEnabled && activeSection === 'documents' && <DocumentsSection />}
         </div>
       </div>
     </div>

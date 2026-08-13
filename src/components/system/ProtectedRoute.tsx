@@ -7,6 +7,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  /** Client portal routes are reserved for the tenant `client` role. */
+  requireClient?: boolean;
   requireAdmin?: boolean;
   requireLoanOfficer?: boolean;
   /** Platform (control-plane) gates — orthogonal to the tenant-role gates above. */
@@ -42,6 +44,7 @@ const AccessDenied = ({ detail, flags }: { detail: string; flags: RoleFlags }) =
 
 export const ProtectedRoute = ({
   children,
+  requireClient = false,
   requireAdmin = false,
   requireLoanOfficer = false,
   requirePlatform = false,
@@ -53,6 +56,7 @@ export const ProtectedRoute = ({
     isAuthenticated,
     profileMissing,
     roleLoading,
+    userRole,
     isAdmin,
     isLoanOfficer,
     isPlatformStaff,
@@ -62,7 +66,7 @@ export const ProtectedRoute = ({
   } = useAuth();
   const location = useLocation();
   const requiresPlatform = requirePlatform || requirePlatformOwner;
-  const requiresRole = requireAdmin || requireLoanOfficer || requiresPlatform;
+  const requiresRole = requireClient || requireAdmin || requireLoanOfficer || requiresPlatform;
   const flags: RoleFlags = { isPlatformStaff, isLoanOfficer };
 
   if (loading || (requiresRole && roleLoading) || (requiresPlatform && platformRoleLoading)) {
@@ -126,6 +130,9 @@ export const ProtectedRoute = ({
 
   if (requireAdmin && !isAdmin) {
     return <AccessDenied detail="Admin privileges required." flags={flags} />;
+  }
+  if (requireClient && userRole !== 'client') {
+    return <AccessDenied detail="Client privileges required." flags={flags} />;
   }
   if (requireLoanOfficer && !isLoanOfficer) {
     return <AccessDenied detail="Loan officer privileges required." flags={flags} />;

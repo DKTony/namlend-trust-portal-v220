@@ -1,12 +1,13 @@
 import { DocumentPreviewDialog } from '@/components/documents/DocumentPreviewDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
 import { useMutation, useQuery } from 'convex/react';
 import { AlertCircle, CheckCircle, Eye, FileText, ShieldCheck, Upload } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const LABELS: Record<string, string> = {
@@ -34,7 +35,9 @@ function formatDocumentMetadata(document: DocumentViewItem) {
 
 export function DocumentsSection() {
   const navigate = useNavigate();
-  const overview = useQuery(api.kycDocuments.getMyKycOverview, {});
+  const { hasFeature } = useEntitlements();
+  const documentsEnabled = hasFeature('clientDocuments');
+  const overview = useQuery(api.kycDocuments.getMyKycOverview, documentsEnabled ? {} : 'skip');
   const requestDocumentAccess = useMutation(api.kycDocuments.requestDocumentAccess);
   const [previewDocument, setPreviewDocument] = useState<DocumentViewItem | null>(null);
   const documentByType = useMemo(
@@ -48,14 +51,25 @@ export function DocumentsSection() {
     [overview?.documents]
   );
 
+  useEffect(() => {
+    if (!documentsEnabled) setPreviewDocument(null);
+  }, [documentsEnabled]);
+
   const requestAccess = async (
     documentId: string,
     intent: 'preview' | 'download'
-  ): Promise<DocumentAccessResult> =>
-    requestDocumentAccess({ documentId: documentId as Id<'kycDocuments'>, intent });
+  ): Promise<DocumentAccessResult> => {
+    if (!documentsEnabled) throw new Error('FEATURE_NOT_ENABLED');
+    return requestDocumentAccess({ documentId: documentId as Id<'kycDocuments'>, intent });
+  };
+
+  if (!documentsEnabled) return null;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div
+      className="overflow-hidden rounded-2xl border border-border bg-card animate-in fade-in slide-in-from-bottom-4 duration-500"
+      data-testid="documents-section"
+    >
       <div className="flex items-center justify-between border-b border-border bg-muted/30 p-6">
         <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
           <ShieldCheck className="h-5 w-5 text-blue-500" />

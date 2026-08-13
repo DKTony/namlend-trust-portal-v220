@@ -5,7 +5,12 @@
 
 import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
-import { isValidFeatureKey } from '../lib/features';
+import { scheduleAuditEntry } from '../lib/audit';
+import {
+  ALWAYS_ON_FEATURES,
+  getMissingFeatureDependencies,
+  isTenantGrantableFeatureKey,
+} from '../lib/features';
 import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 
 /** List plans (platform staff). */
@@ -30,13 +35,30 @@ export const upsertPlan = mutation({
     limits: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    await assertPlatformOwner(ctx);
+    const ownerId = await assertPlatformOwner(ctx);
 
-    const invalid = args.defaultFeatures.filter((k) => !isValidFeatureKey(k));
+    const invalid = args.defaultFeatures.filter((key) => !isTenantGrantableFeatureKey(key));
     if (invalid.length > 0) {
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
-        message: `Unknown feature keys (not in code manifest): ${invalid.join(', ')}`,
+        message: `Features are unknown or not tenant-grantable: ${invalid.join(', ')}`,
+      });
+    }
+
+    const defaultFeatures = [...new Set(args.defaultFeatures)];
+    const missingDependencies = getMissingFeatureDependencies([
+      ...ALWAYS_ON_FEATURES,
+      ...defaultFeatures,
+    ]);
+    if (missingDependencies.length > 0) {
+      const first = missingDependencies[0];
+      throw new ConvexError({
+        code: 'FEATURE_DEPENDENCY_MISSING',
+        message: `Feature '${first.featureKey}' requires '${first.dependency}'.`,
+        missingDependencies: missingDependencies.map(({ featureKey, dependency }) => ({
+          featureKey,
+          dependency,
+        })),
       });
     }
 
@@ -47,18 +69,38 @@ export const upsertPlan = mutation({
     if (existing) {
       await ctx.db.patch(existing._id, {
         name: args.name,
-        defaultFeatures: args.defaultFeatures,
+        defaultFeatures,
         limits: args.limits,
+      });
+      scheduleAuditEntry(ctx, {
+        entityType: 'plans',
+        entityId: existing._id,
+        action: 'UPDATE_PLAN',
+        oldState: {
+          name: existing.name,
+          defaultFeatures: existing.defaultFeatures,
+          limits: existing.limits,
+        },
+        newState: { name: args.name, defaultFeatures, limits: args.limits },
+        userId: ownerId,
       });
       return existing._id;
     }
-    return ctx.db.insert('plans', {
+    const planId = await ctx.db.insert('plans', {
       planCode: args.planCode,
       name: args.name,
       status: 'active',
-      defaultFeatures: args.defaultFeatures,
+      defaultFeatures,
       limits: args.limits,
       effectiveFrom: Date.now(),
     });
+    scheduleAuditEntry(ctx, {
+      entityType: 'plans',
+      entityId: planId,
+      action: 'CREATE_PLAN',
+      newState: { planCode: args.planCode, name: args.name, defaultFeatures },
+      userId: ownerId,
+    });
+    return planId;
   },
 });

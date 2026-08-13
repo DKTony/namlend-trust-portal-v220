@@ -1,17 +1,17 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `6cf39da9c340a62b9a9a0e2567fbc1df60fc9339`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `79dcf930f619cb7eb66396071b3848d899e2dd43`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |
 | Effective Convex tables |    92 |
 | Convex indexes          |   198 |
-| Convex functions        |   494 |
+| Convex functions        |   501 |
 | Web routes              |    40 |
-| React components        |   249 |
-| Features                |    23 |
+| React components        |   257 |
+| Features                |    32 |
 | Seeded plans            |     4 |
-| Named tests             |   743 |
+| Named tests             |   825 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 
@@ -42,13 +42,13 @@ flowchart LR
   n_function_convex_ontology_mandates_createMandate["createMandate"]
   n_route__admin_consent["/admin/consent"]
   n_function_convex_settlement_settlementAcknowledgements_listAcknowledgementsByRun["listAcknowledgementsByRun"]
-  n_function_convex_tigerbeetle_outbox_listDeadLetterEntries["listDeadLetterEntries"]
   n_function_convex_analytics_getPaymentsTotalSince["getPaymentsTotalSince"]
   n_function_convex_systemConfig_getConfigValue["getConfigValue"]
   n_function_convex_collections_getCollectionsStats["getCollectionsStats"]
   n_function_convex_tigerbeetle_outbox_getReconciliationReport["getReconciliationReport"]
   n_role_platform_platform_owner["platform_owner"]
   n_function_convex_ips_ipsAlerts_getActiveAlerts["getActiveAlerts"]
+  n_function_convex_tigerbeetle_outbox_listDeadLetterEntries["listDeadLetterEntries"]
   n_function_convex_ontology_relationships_seedExistingRelationships["seedExistingRelationships"]
   n_function_convex_ips_ipsTransactions_initiateIpsRepayment["initiateIpsRepayment"]
   n_function_convex_notifications_listNotificationTemplates["listNotificationTemplates"]
@@ -74,7 +74,6 @@ flowchart LR
   n_function_convex_ontology_mandates_createMandate -- "GATED_BY" --> n_access_policy_authenticated
   n_route__admin_consent -- "GATED_BY" --> n_role_tenant_tenant_admin
   n_function_convex_settlement_settlementAcknowledgements_listAcknowledgementsByRun -- "GATED_BY" --> n_access_policy_authenticated
-  n_function_convex_tigerbeetle_outbox_listDeadLetterEntries -- "GATED_BY" --> n_role_tenant_tenant_admin
   n_function_convex_analytics_getPaymentsTotalSince -- "GATED_BY" --> n_role_tenant_tenant_admin
   n_function_convex_systemConfig_getConfigValue -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_collections_getCollectionsStats -- "GATED_BY" --> n_role_tenant_loan_officer
@@ -89,7 +88,6 @@ flowchart LR
   n_route__admin_products -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_ontology_accounts_getAccountsByOwner -- "GATED_BY" --> n_access_policy_authenticated
   n_function_convex_ontology_relationships_seedExistingRelationships -- "GATED_BY" --> n_role_tenant_tenant_admin
-  n_function_convex_tigerbeetle_outbox_listDeadLetterEntries -- "GATED_BY" --> n_role_tenant_loan_officer
 ```
 
 ### Tenancy and entitlements
@@ -100,6 +98,7 @@ flowchart LR
   n_feature_ippOnboarding["IPP / IPS Onboarding"]
   n_function_convex_tenantConfig_setMyCreditPolicy["setMyCreditPolicy"]
   n_feature_creditPolicy["Credit Policy"]
+  n_function_convex_ips_ipsOnboarding_submitOtp["submitOtp"]
   n_function_convex_approvalWorkflow_listWorkflowDefinitions["listWorkflowDefinitions"]
   n_feature_workflows["Workflow Builder"]
   n_function_convex_analytics_getRevenueMetrics["getRevenueMetrics"]
@@ -110,58 +109,57 @@ flowchart LR
   n_feature_tenantReconciliation["Reconciliation"]
   n_function_convex_reconciliation_getBankTransaction["getBankTransaction"]
   n_function_convex_reconciliation_createReconciliationRun["createReconciliationRun"]
+  n_function_convex_ips_ipsOnboarding_completeDeviceBinding["completeDeviceBinding"]
   n_function_convex_ontology_mandates_getMandatesByLoan["getMandatesByLoan"]
   n_feature_mandates["Mandates / Debit Orders"]
   n_function_convex_analytics_getIpsAnalytics["getIpsAnalytics"]
   n_function_convex_collections_listOverdueReminders["listOverdueReminders"]
   n_function_convex_collections_createPromiseToPay["createPromiseToPay"]
   n_function_convex_collections_markPromiseFulfilled["markPromiseFulfilled"]
+  n_function_convex_ips_ipsAliasDirectory_adminListAliases["adminListAliases"]
   n_function_convex_reconciliation_disputeTransaction["disputeTransaction"]
   n_function_convex_ontology_mandates_authorizeMandate["authorizeMandate"]
+  n_function_convex_ips_ipsAliasDirectory_blockAlias["blockAlias"]
   n_function_convex_ontology_mandates_listMandates["listMandates"]
   n_function_convex_collections_markReminderSent["markReminderSent"]
+  n_function_convex_ips_ipsTransactions_adminListIpsTransactions["adminListIpsTransactions"]
+  n_function_convex_collections_reviewRescheduleRequest["reviewRescheduleRequest"]
+  n_function_convex_ips_ipsVpa_deleteVpa["deleteVpa"]
   n_function_convex_reconciliation_importBankTransactions["importBankTransactions"]
   n_function_convex_reconciliation_listReconciliationRuns["listReconciliationRuns"]
   n_function_convex_ontology_mandates_suspendMandate["suspendMandate"]
-  n_function_convex_reconciliation_matchTransaction["matchTransaction"]
-  n_function_convex_ontology_mandates_reactivateMandate["reactivateMandate"]
-  n_function_convex_reconciliation_excludeTransaction["excludeTransaction"]
-  n_function_convex_collections_listPromisesToPay["listPromisesToPay"]
-  n_function_convex_collections_getCollectionsQueue["getCollectionsQueue"]
-  n_function_convex_reconciliation_getReconciliationStats["getReconciliationStats"]
-  n_function_convex_analytics_getClientMetrics["getClientMetrics"]
-  n_function_convex_ontology_mandates_revokeMandate["revokeMandate"]
-  n_function_convex_reconciliation_getReconciliationRun["getReconciliationRun"]
+  n_function_convex_ips_ipsVpa_upsertVpa["upsertVpa"]
+  n_function_convex_ips_ipsAliasDirectory_registerLocalAlias["registerLocalAlias"]
   n_function_convex_ips_ipsOnboarding_adminListOnboarding -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_tenantConfig_setMyCreditPolicy -- "DEPENDS_ON" --> n_feature_creditPolicy
+  n_function_convex_ips_ipsOnboarding_submitOtp -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_approvalWorkflow_listWorkflowDefinitions -- "DEPENDS_ON" --> n_feature_workflows
   n_function_convex_analytics_getRevenueMetrics -- "DEPENDS_ON" --> n_feature_advancedAnalytics
   n_function_convex_collections_getCollectionsStats -- "DEPENDS_ON" --> n_feature_collections
   n_function_convex_reconciliation_listBankTransactions -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_reconciliation_getBankTransaction -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_reconciliation_createReconciliationRun -- "DEPENDS_ON" --> n_feature_tenantReconciliation
+  n_function_convex_ips_ipsOnboarding_completeDeviceBinding -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_ontology_mandates_getMandatesByLoan -- "DEPENDS_ON" --> n_feature_mandates
   n_function_convex_analytics_getIpsAnalytics -- "DEPENDS_ON" --> n_feature_advancedAnalytics
   n_function_convex_collections_listOverdueReminders -- "DEPENDS_ON" --> n_feature_collections
   n_feature_mandates -- "DEPENDS_ON" --> n_feature_collections
   n_function_convex_collections_createPromiseToPay -- "DEPENDS_ON" --> n_feature_collections
   n_function_convex_collections_markPromiseFulfilled -- "DEPENDS_ON" --> n_feature_collections
+  n_function_convex_ips_ipsAliasDirectory_adminListAliases -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_reconciliation_disputeTransaction -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_ontology_mandates_authorizeMandate -- "DEPENDS_ON" --> n_feature_mandates
+  n_function_convex_ips_ipsAliasDirectory_blockAlias -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_ontology_mandates_listMandates -- "DEPENDS_ON" --> n_feature_mandates
   n_function_convex_collections_markReminderSent -- "DEPENDS_ON" --> n_feature_collections
+  n_function_convex_ips_ipsTransactions_adminListIpsTransactions -- "DEPENDS_ON" --> n_feature_ippOnboarding
+  n_function_convex_collections_reviewRescheduleRequest -- "DEPENDS_ON" --> n_feature_collections
+  n_function_convex_ips_ipsVpa_deleteVpa -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_reconciliation_importBankTransactions -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_reconciliation_listReconciliationRuns -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_ontology_mandates_suspendMandate -- "DEPENDS_ON" --> n_feature_mandates
-  n_function_convex_reconciliation_matchTransaction -- "DEPENDS_ON" --> n_feature_tenantReconciliation
-  n_function_convex_ontology_mandates_reactivateMandate -- "DEPENDS_ON" --> n_feature_mandates
-  n_function_convex_reconciliation_excludeTransaction -- "DEPENDS_ON" --> n_feature_tenantReconciliation
-  n_function_convex_collections_listPromisesToPay -- "DEPENDS_ON" --> n_feature_collections
-  n_function_convex_collections_getCollectionsQueue -- "DEPENDS_ON" --> n_feature_collections
-  n_function_convex_reconciliation_getReconciliationStats -- "DEPENDS_ON" --> n_feature_tenantReconciliation
-  n_function_convex_analytics_getClientMetrics -- "DEPENDS_ON" --> n_feature_advancedAnalytics
-  n_function_convex_ontology_mandates_revokeMandate -- "DEPENDS_ON" --> n_feature_mandates
-  n_function_convex_reconciliation_getReconciliationRun -- "DEPENDS_ON" --> n_feature_tenantReconciliation
+  n_function_convex_ips_ipsVpa_upsertVpa -- "DEPENDS_ON" --> n_feature_ippOnboarding
+  n_function_convex_ips_ipsAliasDirectory_registerLocalAlias -- "DEPENDS_ON" --> n_feature_ippOnboarding
 ```
 
 ### Lending lifecycle
@@ -424,10 +422,12 @@ flowchart LR
   n_ci_job_ci_web_ontology["Ontology & Evidence Contract"]
   n_deployment_netlify_production["Netlify production"]
   n_ci_job_ci_web_behavior_proof["Current-SHA Behaviour Proof"]
+  n_ci_job_e2e_e2e_trusted["Full E2E (protected disposable preview)"]
   n_deployment_local_web["Local Vite development"]
   n_ci_job_ci_web_schema_type_check["Schema & Type Alignment"]
-  n_ci_job_ci_web_production_build["Production Build"]
   n_system_namlend_convex["NamLend Convex backend"]
+  n_deployment_convex_e2e_preview["Convex disposable E2E previews"]
+  n_ci_job_ci_web_production_build["Production Build"]
   n_deployment_convex_production_linked["Convex production-linked deployment"]
   n_ci_job_ci_web_playwright_api_smoke["Playwright API Smoke Tests"]
   n_ci_job_ci_web_lint_and_typecheck["Lint & TypeCheck"]
@@ -435,14 +435,14 @@ flowchart LR
   n_ci_job_e2e_e2e["e2e"]
   n_ci_job_ci_web_convex_tests["Convex Tests"]
   n_ci_job_ci_web_evidence_ledger["Current-SHA Evidence Ledger"]
-  n_ci_job_ci_web_playwright_full_e2e["Full E2E Test Suite"]
   n_ci_job_ci_web_unit_tests["Unit Tests"]
-  n_deployment_convex_e2e["Convex isolated E2E deployment"]
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_ontology
   n_system_namlend_web -- "DEPLOYED_BY" --> n_deployment_netlify_production
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_behavior_proof
+  n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_e2e_e2e_trusted
   n_system_namlend_web -- "DEPLOYED_BY" --> n_deployment_local_web
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_schema_type_check
+  n_system_namlend_convex -- "DEPLOYED_BY" --> n_deployment_convex_e2e_preview
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_production_build
   n_system_namlend_convex -- "DEPLOYED_BY" --> n_deployment_convex_production_linked
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_playwright_api_smoke
@@ -451,7 +451,5 @@ flowchart LR
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_e2e_e2e
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_convex_tests
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_evidence_ledger
-  n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_playwright_full_e2e
   n_system_namlend_web -- "DEPLOYED_BY" --> n_ci_job_ci_web_unit_tests
-  n_system_namlend_convex -- "DEPLOYED_BY" --> n_deployment_convex_e2e
 ```

@@ -136,6 +136,45 @@ const nodes = new Map(nodeSnapshot.nodes.map((node) => [node.id, node]));
 const edges = edgeSnapshot.edges;
 const evidence = new Map(ledger.evidence.map((item) => [item.id, item]));
 const byType = (type: string) => nodeSnapshot.nodes.filter((node) => node.type === type);
+const CLIENT_FEATURE_KEYS = [
+  'clientOverview',
+  'clientLoans',
+  'clientApplications',
+  'clientPayments',
+  'clientBanking',
+  'clientBudget',
+  'clientDocuments',
+  'clientSelfService',
+  'clientProfile',
+] as const;
+const ALWAYS_ON_FEATURE_KEYS = [
+  'loans',
+  'clients',
+  'payments',
+  'approvals',
+  'tenantUsers',
+  'batchOps',
+] as const;
+const ALL_TENANT_FEATURE_KEYS = [
+  ...ALWAYS_ON_FEATURE_KEYS,
+  'collections',
+  'mandates',
+  'ippOnboarding',
+  'products',
+  'whiteLabelBranding',
+  'creditPolicy',
+  'popiaConsent',
+  'advancedAnalytics',
+  'tenantReconciliation',
+  'workflows',
+  ...CLIENT_FEATURE_KEYS,
+] as const;
+
+const planDefaults = (planCode: string): string[] => {
+  const plan = nodes.get(`plan:${planCode}`);
+  expect(plan, `plan:${planCode}`).toBeDefined();
+  return [...((plan?.attributes.defaultFeatures as string[] | undefined) ?? [])].sort();
+};
 
 describe('T1 inventory', () => {
   test('effective schema, feature, plan, role, function, and route inventories match the code manifests', () => {
@@ -145,13 +184,40 @@ describe('T1 inventory', () => {
     expect(byType('Index')).toHaveLength(metrics.effectiveIndexCount as number);
     expect(metrics.applicationIndexCount).toBe(187);
     expect(metrics.authIndexCount).toBe(11);
-    expect(byType('Feature')).toHaveLength(23);
+    expect(byType('Feature')).toHaveLength(32);
     expect(byType('Plan')).toHaveLength(4);
     expect(byType('Role')).toHaveLength(6);
     expect(byType('Function')).toHaveLength(metrics.functionCount as number);
     expect(byType('Route')).toHaveLength(metrics.routeCount as number);
     expect(metrics.applicationTableCount).toBe(85);
     expect(metrics.authTableCount).toBe(7);
+  });
+
+  test('client catalogue and seeded plan defaults match the commercial contract exactly', () => {
+    const clientFeatures = byType('Feature')
+      .filter((feature) => feature.attributes.console === 'client')
+      .map((feature) => feature.attributes.key as string)
+      .sort();
+    expect(clientFeatures).toEqual([...CLIENT_FEATURE_KEYS].sort());
+
+    const starter = [
+      ...ALWAYS_ON_FEATURE_KEYS,
+      ...CLIENT_FEATURE_KEYS,
+      // clientBanking depends on this backoffice payment-rail capability.
+      'ippOnboarding',
+    ].sort();
+    const pro = [...starter, 'collections', 'products', 'advancedAnalytics', 'creditPolicy'].sort();
+    const allTenant = [...ALL_TENANT_FEATURE_KEYS].sort();
+
+    expect(planDefaults('starter')).toEqual(starter);
+    expect(planDefaults('pro')).toEqual(pro);
+    expect(planDefaults('enterprise')).toEqual(allTenant);
+    expect(planDefaults('all_features')).toEqual(allTenant);
+    for (const planCode of ['starter', 'pro', 'enterprise', 'all_features']) {
+      expect(planDefaults(planCode)).toEqual(
+        expect.arrayContaining([...CLIENT_FEATURE_KEYS, 'ippOnboarding'])
+      );
+    }
   });
 
   test('supplied numeric claims are verified or registered as contradicted', () => {

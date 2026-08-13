@@ -8,7 +8,7 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":85,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":79,"tier":"E2","source":"https://app.notion.com/p/37f83bbf405781698ceccec5515e39e8"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:cafdbc1b5b066d61`
@@ -19,7 +19,7 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":117,"tier":"E1","source":"current CI evidence"}`
 - Contradicted source: `{"value":110,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:f6a6b95e52dcf3e6`
@@ -30,7 +30,7 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":206,"tier":"E1","source":"current CI evidence"}`
 - Contradicted source: `{"value":204,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:f6a6b95e52dcf3e6`
@@ -41,7 +41,7 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":92,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":86,"tier":"E2","source":"https://app.notion.com/p/37f83bbf405781698ceccec5515e39e8"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:cafdbc1b5b066d61`
@@ -52,18 +52,29 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":92,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":86,"tier":"E2","source":"https://app.notion.com/p/38083bbf40578138b99ce861927b22df"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:fda3ea76613fb681`
+
+## CONFLICT-HAS_FEATURE_COUNT-4
+
+- Subject: `system:namlend-web` / `HAS_FEATURE_COUNT`
+- Status: resolved
+- Winner: `{"value":32,"tier":"E0","source":"current extraction"}`
+- Contradicted source: `{"value":23,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a58e6fff94949afced"}`
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
+- Owner: NamLend Engineering
+- Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
+- Evidence: `evidence:6821a6c4d4d38244`
 
 ## CONFLICT-HAS_GATED_ENTRY_POINT_COUNT-4
 
 - Subject: `system:namlend-convex` / `HAS_GATED_ENTRY_POINT_COUNT`
 - Status: resolved
-- Winner: `{"value":43,"tier":"E0","source":"current extraction"}`
+- Winner: `{"value":62,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":42,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a58e6fff94949afced"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:6821a6c4d4d38244`
@@ -72,20 +83,31 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 
 - Subject: `system:namlend-convex` / `HAS_GATED_ENTRY_POINT_COUNT`
 - Status: resolved
-- Winner: `{"value":43,"tier":"E0","source":"current extraction"}`
+- Winner: `{"value":62,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":41,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:f6a6b95e52dcf3e6`
+
+## CONFLICT-HAS_GATED_FEATURE_COUNT-4
+
+- Subject: `system:namlend-convex` / `HAS_GATED_FEATURE_COUNT`
+- Status: resolved
+- Winner: `{"value":10,"tier":"E0","source":"current extraction"}`
+- Contradicted source: `{"value":8,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a58e6fff94949afced"}`
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
+- Owner: NamLend Engineering
+- Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
+- Evidence: `evidence:6821a6c4d4d38244`
 
 ## CONFLICT-HAS_GATED_FEATURE_COUNT-7
 
 - Subject: `system:namlend-convex` / `HAS_GATED_FEATURE_COUNT`
 - Status: resolved
-- Winner: `{"value":8,"tier":"E0","source":"current extraction"}`
+- Winner: `{"value":10,"tier":"E0","source":"current extraction"}`
 - Contradicted source: `{"value":7,"tier":"E2","source":"https://app.notion.com/p/38083bbf405781a38abaef6b84eafb56"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:f6a6b95e52dcf3e6`
@@ -96,7 +118,7 @@ Code-derived E0 and named execution E1 evidence take precedence over E2 document
 - Status: resolved
 - Winner: `{"value":296,"tier":"E1","source":"current CI evidence"}`
 - Contradicted source: `{"value":200,"tier":"E2","source":"https://app.notion.com/p/38083bbf40578138b99ce861927b22df"}`
-- Resolution: Current code at 6cf39da9c340a62b9a9a0e2567fbc1df60fc9339 wins over the older documented count.
+- Resolution: Current code at 79dcf930f619cb7eb66396071b3848d899e2dd43 wins over the older documented count.
 - Owner: NamLend Engineering
 - Next action: Refresh the Notion page from the current generated coverage report; this implementation remains read-only.
 - Evidence: `evidence:fda3ea76613fb681`

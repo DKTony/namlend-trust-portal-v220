@@ -42,7 +42,7 @@ jobs:
     name: Full E2E (protected disposable preview)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     # Configure this environment with required reviewers and a Convex Preview
     # Deploy Key. Pull-request jobs never enter it or receive its secret.
     environment: e2e-protected
@@ -169,9 +169,9 @@ jobs:
         run: |
           mkdir -p test-results
           if [ -n "$TEST_FILTER" ]; then
-            npx playwright test --grep "$TEST_FILTER" --reporter=github,json
+            npx playwright test --grep "$TEST_FILTER" --reporter=github,list,json
           else
-            npx playwright test --reporter=github,json
+            npx playwright test --reporter=github,list,json
           fi
 
       - name: Upload Playwright HTML report

@@ -1,6 +1,6 @@
 import { convexTest } from 'convex-test';
 import { describe, expect, test, vi } from 'vitest';
-import { api } from './_generated/api';
+import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import schema from './schema';
 
@@ -420,5 +420,30 @@ describe('control-plane audit attribution', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('disposable preview fixture', () => {
+  test('enables both protected gates only through the internal preview seed helper', async () => {
+    const t = convexTest(schema, modules);
+
+    await t.mutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
+
+    const rules = await t.run((ctx) =>
+      ctx.db
+        .query('businessRules')
+        .filter((q) =>
+          q.or(
+            q.eq(q.field('ruleCode'), 'TENANCY_ENFORCEMENT'),
+            q.eq(q.field('ruleCode'), 'ENTITLEMENT_ENFORCEMENT')
+          )
+        )
+        .collect()
+    );
+    expect(rules).toHaveLength(2);
+    expect(rules.every((rule) => rule.valueType === 'boolean' && rule.value === 'true')).toBe(true);
+    expect(rules.every((rule) => /Disposable Convex preview/.test(rule.description ?? ''))).toBe(
+      true
+    );
   });
 });

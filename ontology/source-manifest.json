@@ -128,7 +128,7 @@
       "claims": [
         { "subjectId": "deployment:netlify-production", "predicate": "URL", "object": "https://namlend-trust-portal-v220.netlify.app" },
         { "subjectId": "deployment:convex-production-linked", "predicate": "DEPLOYMENT_NAME", "object": "aromatic-okapi-265" },
-        { "subjectId": "deployment:convex-e2e", "predicate": "DEPLOYMENT_NAME", "object": "brave-mole-108" }
+        { "subjectId": "deployment:convex-e2e-legacy", "predicate": "DEPLOYMENT_NAME", "object": "brave-mole-108" }
       ]
     }
   ],

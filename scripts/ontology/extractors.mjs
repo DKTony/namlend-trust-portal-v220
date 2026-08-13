@@ -468,6 +468,43 @@ export function extractFeaturesPlansFlagsRoles(graph, root, files) {
   const plans = [];
   const alwaysOn = features.filter((feature) => feature.alwaysOn).map((feature) => feature.key);
   const backoffice = features.filter((feature) => feature.console === 'backoffice').map((feature) => feature.key);
+  const client = features.filter((feature) => feature.console === 'client').map((feature) => feature.key);
+  const tenantGrantable = features.filter((feature) => feature.console !== 'platform').map((feature) => feature.key);
+  const featureDependencies = new Map(
+    features.map((feature) => [feature.key, feature.dependsOn ?? []])
+  );
+  const withDependencyClosure = (featureKeys) => {
+    const closed = new Set();
+    const visit = (featureKey) => {
+      if (closed.has(featureKey)) return;
+      closed.add(featureKey);
+      for (const dependency of featureDependencies.get(featureKey) ?? []) visit(dependency);
+    };
+    for (const featureKey of featureKeys) visit(featureKey);
+    return [...closed];
+  };
+  const expandFeatureExpression = (expression) => {
+    const value = unwrap(expression);
+    if (!value) return [];
+    if (ts.isArrayLiteralExpression(value)) {
+      return value.elements.flatMap((item) => {
+        if (ts.isSpreadElement(item)) return expandFeatureExpression(item.expression);
+        const literalValue = literal(item, seedSf);
+        return typeof literalValue === 'string' ? [literalValue] : [];
+      });
+    }
+    if (ts.isCallExpression(value) && callName(value, seedSf) === 'withFeatureDependencyClosure') {
+      return withDependencyClosure(
+        value.arguments.flatMap((argument) => expandFeatureExpression(argument))
+      );
+    }
+    const symbol = value.getText(seedSf);
+    if (symbol === 'ALWAYS_ON_FEATURES') return alwaysOn;
+    if (symbol === 'BACKOFFICE_FEATURES') return backoffice;
+    if (symbol === 'CLIENT_FEATURE_KEYS') return client;
+    if (symbol === 'ALL_TENANT_FEATURES') return tenantGrantable;
+    return [];
+  };
   for (const element of planArray.array.elements) {
     const object = unwrap(element);
     if (!ts.isObjectLiteralExpression(object)) continue;
@@ -476,20 +513,7 @@ export function extractFeaturesPlansFlagsRoles(graph, root, files) {
     const featuresProperty = objectProperty(object, 'features', seedSf);
     const planCode = literal(planCodeProperty?.initializer, seedSf);
     if (!planCode) continue;
-    const defaultFeatures = [];
-    const featureExpression = unwrap(featuresProperty?.initializer);
-    if (featureExpression && ts.isArrayLiteralExpression(featureExpression)) {
-      for (const item of featureExpression.elements) {
-        if (ts.isSpreadElement(item) && item.expression.getText(seedSf) === 'ALWAYS_ON_FEATURES') {
-          defaultFeatures.push(...alwaysOn);
-        } else {
-          const value = literal(item, seedSf);
-          if (typeof value === 'string') defaultFeatures.push(value);
-        }
-      }
-    } else if (featureExpression?.getText(seedSf) === 'BACKOFFICE_FEATURES') {
-      defaultFeatures.push(...backoffice);
-    }
+    const defaultFeatures = expandFeatureExpression(featuresProperty?.initializer);
     const evidence = evidenceFor(graph, seedFile, seedSf, object, planCode);
     const id = `plan:${planCode}`;
     graph.addNode(
@@ -1567,7 +1591,8 @@ export function extractCiDocumentsDeployments(graph, root, files, manifest) {
     ['deployment:local-web', 'Local Vite development', 'http://localhost:8080', 'Runs the current checkout for local web development.', 'E0', 'package.json'],
     ['deployment:netlify-production', 'Netlify production', 'https://namlend-trust-portal-v220.netlify.app', 'Hosts the production web bundle built from main.', 'E2', manifest.notionPages[7].url],
     ['deployment:convex-production-linked', 'Convex production-linked deployment', 'aromatic-okapi-265', 'Hosts the shared production-linked Convex backend described by the operator runbook.', 'E2', manifest.notionPages[7].url],
-    ['deployment:convex-e2e', 'Convex isolated E2E deployment', 'brave-mole-108', 'Hosts isolated mutable test data for Playwright verification.', 'E0', '.github/workflows/e2e.yml'],
+    ['deployment:convex-e2e-preview', 'Convex disposable E2E previews', 'preview:e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}', 'Creates a fresh, seeded Convex preview for each protected manual Playwright run; no shared or production deployment receives E2E mutations.', 'E0', '.github/workflows/e2e.yml'],
+    ['deployment:convex-e2e-legacy', 'Retired shared Convex E2E deployment', 'brave-mole-108', 'Records the historical shared E2E target documented by the operations runbook; current setup safety explicitly rejects it.', 'E2', manifest.notionPages[7].url],
   ];
   for (const [id, name, deploymentPath, purpose, tier, source] of deploymentDefs) {
     const evidence = graph.addEvidence({
@@ -1580,7 +1605,7 @@ export function extractCiDocumentsDeployments(graph, root, files, manifest) {
   graph.addEdge({ type: 'DEPLOYED_BY', from: 'system:namlend-web', to: 'deployment:local-web', purpose: 'The web application runs locally through Vite.' }, graph.nodes.get('deployment:local-web').evidenceRefs);
   graph.addEdge({ type: 'DEPLOYED_BY', from: 'system:namlend-web', to: 'deployment:netlify-production', purpose: 'The web application is hosted by Netlify in production.' }, graph.nodes.get('deployment:netlify-production').evidenceRefs);
   graph.addEdge({ type: 'DEPLOYED_BY', from: 'system:namlend-convex', to: 'deployment:convex-production-linked', purpose: 'Convex backend code targets the documented production-linked deployment.' }, graph.nodes.get('deployment:convex-production-linked').evidenceRefs);
-  graph.addEdge({ type: 'DEPLOYED_BY', from: 'system:namlend-convex', to: 'deployment:convex-e2e', purpose: 'Convex backend code is exercised against the isolated E2E deployment.' }, graph.nodes.get('deployment:convex-e2e').evidenceRefs);
+  graph.addEdge({ type: 'DEPLOYED_BY', from: 'system:namlend-convex', to: 'deployment:convex-e2e-preview', purpose: 'Convex backend code is exercised only against a fresh preview created for the protected E2E run.' }, graph.nodes.get('deployment:convex-e2e-preview').evidenceRefs);
 
   for (const file of manifest.activeDocuments.filter((candidate) => files.includes(candidate))) {
     const text = fs.readFileSync(path.join(root, file), 'utf8');

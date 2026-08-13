@@ -23,7 +23,7 @@ export const markProfileAsGoogleSignup = internalMutation({
       .query('profiles')
       .filter((q) => q.eq(q.field('email'), email))
       .first();
-    if (!profile) throw new Error(`[seed] no profile for ${email}`);
+    if (!profile) throw new Error('[seed] Test profile not found');
     await ctx.db.patch(profile._id, {
       signupSource: 'google',
       onboardingCompletedAt: undefined,
@@ -47,7 +47,7 @@ export const elevateRole = internalMutation({
       .first();
 
     if (!profile) {
-      throw new Error(`No profile found for ${email}. Sign up via the app first.`);
+      throw new Error('Test profile not found. Sign up via the app first.');
     }
 
     const existing = await ctx.db
@@ -57,14 +57,14 @@ export const elevateRole = internalMutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, { role });
-      console.log(`[seed] Updated ${email} role to '${role}'`);
+      console.log(`[seed] Updated test-user role to '${role}'`);
     } else {
       await ctx.db.insert('userRoles', {
         userId: profile.userId,
         role,
         createdAt: Date.now(),
       });
-      console.log(`[seed] Created ${email} role as '${role}'`);
+      console.log(`[seed] Created test-user role as '${role}'`);
     }
   },
 });
@@ -84,14 +84,14 @@ export const createTestUser = internalMutation({
       .filter((q) => q.eq(q.field('email'), email))
       .first();
     if (existingProfile) {
-      console.log(`[seed] User ${email} already exists, skipping`);
+      console.log('[seed] Test user already exists, skipping');
       const existingRole = await ctx.db
         .query('userRoles')
         .withIndex('by_userId', (q) => q.eq('userId', existingProfile.userId))
         .first();
       if (existingRole) {
         await ctx.db.patch(existingRole._id, { role, institutionId });
-        console.log(`[seed] Bound ${email} to tenant as '${role}'`);
+        console.log(`[seed] Bound existing test user to tenant as '${role}'`);
       } else {
         await ctx.db.insert('userRoles', {
           userId: existingProfile.userId,
@@ -105,7 +105,7 @@ export const createTestUser = internalMutation({
       // editable income input the E2E specs fill (getByTestId('income-input')).
       if (existingProfile.monthlyIncome != null) {
         await ctx.db.patch(existingProfile._id, { monthlyIncome: undefined });
-        console.log(`[seed] Cleared stale monthlyIncome for ${email}`);
+        console.log('[seed] Cleared stale monthlyIncome for existing test user');
       }
       // Backfill phone/idNumber on already-seeded deployments: submitMyKyc now
       // asserts both server-side, so a legacy seed without them would strand every
@@ -116,7 +116,7 @@ export const createTestUser = internalMutation({
           idNumber: existingProfile.idNumber?.trim() || '90010100001',
           updatedAt: Date.now(),
         });
-        console.log(`[seed] Backfilled phone/idNumber for ${email}`);
+        console.log('[seed] Backfilled required test-user identity fields');
       }
       return;
     }
@@ -154,7 +154,7 @@ export const createTestUser = internalMutation({
       createdAt: now,
     });
 
-    console.log(`[seed] Created user ${email} with role '${role}'`);
+    console.log(`[seed] Created test user with role '${role}'`);
   },
 });
 
@@ -237,7 +237,7 @@ export const seedPlatformOwnerForE2E = internalMutation({
       });
     }
 
-    console.log(`[seed] platform_owner ready for ${ownerEmail} (userId=${userId})`);
+    console.log('[seed] Platform-owner test account is ready');
     return { userId, email: ownerEmail };
   },
 });
@@ -254,7 +254,7 @@ export const seedKycDocuments = internalMutation({
       .first();
 
     if (!profile) {
-      throw new Error(`No profile found for ${email}`);
+      throw new Error('Test profile not found');
     }
 
     const now = Date.now();
@@ -278,7 +278,7 @@ export const seedKycDocuments = internalMutation({
         createdAt: now,
         updatedAt: now,
       });
-      console.log(`[seed] Created approved ID card for ${email}`);
+      console.log('[seed] Created approved test ID card');
     }
 
     // Create proof of income document if missing
@@ -290,7 +290,7 @@ export const seedKycDocuments = internalMutation({
         createdAt: now,
         updatedAt: now,
       });
-      console.log(`[seed] Created approved proof of income for ${email}`);
+      console.log('[seed] Created approved test proof of income');
     }
 
     // Deterministic reset: withdraw any KYC approval request left open by a previous
@@ -308,7 +308,7 @@ export const seedKycDocuments = internalMutation({
         (request.status === 'pending' || request.status === 'escalated')
       ) {
         await ctx.db.patch(request._id, { status: 'withdrawn', updatedAt: now });
-        console.log(`[seed] Withdrew stale open KYC request for ${email}`);
+        console.log('[seed] Withdrew stale open test KYC request');
       }
     }
 
@@ -318,7 +318,7 @@ export const seedKycDocuments = internalMutation({
       updatedAt: now,
     });
 
-    console.log(`[seed] KYC documents seeded for ${email}`);
+    console.log('[seed] Test KYC documents are ready');
   },
 });
 
@@ -347,7 +347,7 @@ export const seedReviewableLoanForE2E = internalMutation({
       .query('profiles')
       .filter((q) => q.eq(q.field('email'), email))
       .first();
-    if (!profile) throw new Error(`No profile found for ${email}`);
+    if (!profile) throw new Error('Test profile not found');
 
     const existing = (
       await ctx.db
@@ -359,7 +359,7 @@ export const seedReviewableLoanForE2E = internalMutation({
       // Re-arm it: an earlier run may have advanced the status out of the editable set.
       if (existing.status !== 'submitted') {
         await ctx.db.patch(existing._id, { status: 'submitted', updatedAt: Date.now() });
-        console.log(`[seed] Reset reviewable E2E loan to 'submitted' for ${email}`);
+        console.log("[seed] Reset reviewable E2E loan to 'submitted'");
       }
       return existing._id;
     }
@@ -384,7 +384,7 @@ export const seedReviewableLoanForE2E = internalMutation({
       createdAt: now,
       updatedAt: now,
     });
-    console.log(`[seed] Created reviewable ('submitted') E2E loan for ${email}`);
+    console.log("[seed] Created reviewable ('submitted') E2E loan");
     return loanId;
   },
 });
@@ -400,7 +400,7 @@ export const seedActiveLoanForE2E = internalMutation({
       .first();
 
     if (!profile) {
-      throw new Error(`No profile found for ${email}`);
+      throw new Error('Test profile not found');
     }
 
     const existing = (
@@ -410,7 +410,7 @@ export const seedActiveLoanForE2E = internalMutation({
         .collect()
     ).find((l) => l.purpose === E2E_LOAN_PURPOSE);
     if (existing) {
-      console.log(`[seed] Active E2E loan already exists for ${email}`);
+      console.log('[seed] Active E2E loan already exists');
       return existing._id;
     }
 
@@ -482,9 +482,7 @@ export const seedActiveLoanForE2E = internalMutation({
       });
     }
 
-    console.log(
-      `[seed] Created active E2E loan for ${email}: N$${principal} @ ${interestRate}% × ${termMonths}mo, installment 1 paid`
-    );
+    console.log('[seed] Created active E2E loan with first installment paid');
     return loanId;
   },
 });
@@ -510,7 +508,7 @@ export const seedConfirmedIpsAlias = internalMutation({
       .first();
 
     if (!profile) {
-      throw new Error(`No profile found for ${email}`);
+      throw new Error('Test profile not found');
     }
 
     const now = Date.now();
@@ -561,7 +559,7 @@ export const seedConfirmedIpsAlias = internalMutation({
       }
 
       await ctx.db.patch(existing._id, confirmedAlias);
-      console.log(`[seed] Confirmed IPP alias ${aliasAddr} for ${email}`);
+      console.log('[seed] Confirmed existing test IPP alias');
       return existing._id;
     }
 
@@ -569,8 +567,45 @@ export const seedConfirmedIpsAlias = internalMutation({
       ...confirmedAlias,
       createdAt: now,
     });
-    console.log(`[seed] Created confirmed IPP alias ${aliasAddr} for ${email}`);
+    console.log('[seed] Created confirmed test IPP alias');
     return aliasId;
+  },
+});
+
+/**
+ * Enable tenancy and entitlement enforcement only for the disposable E2E preview seed.
+ *
+ * This is deliberately internal and is invoked solely by `seedDisposableE2EPreview` after a
+ * fresh Convex preview has been created. Production activation continues to use the audited,
+ * readiness-gated platform-owner mutations.
+ */
+export const enableDisposableE2EEnforcement = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    for (const ruleCode of ['TENANCY_ENFORCEMENT', 'ENTITLEMENT_ENFORCEMENT'] as const) {
+      const rules = await ctx.db
+        .query('businessRules')
+        .withIndex('by_ruleCode', (q) => q.eq('ruleCode', ruleCode))
+        .collect();
+      const current = rules.find((rule) => rule.effectiveTo === undefined);
+      if (current?.valueType === 'boolean' && current.value === 'true') continue;
+      if (current) await ctx.db.patch(current._id, { effectiveTo: now });
+      await ctx.db.insert('businessRules', {
+        ruleCode,
+        category: 'platform',
+        displayName:
+          ruleCode === 'TENANCY_ENFORCEMENT'
+            ? 'Tenancy Enforcement (disposable E2E)'
+            : 'Entitlement Enforcement (disposable E2E)',
+        description: 'Disposable Convex preview test fixture; never a production activation path.',
+        valueType: 'boolean',
+        value: 'true',
+        effectiveFrom: now,
+        version: (current?.version ?? 0) + 1,
+        createdAt: now,
+      });
+    }
   },
 });
 

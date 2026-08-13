@@ -52,40 +52,51 @@ async function globalSetup() {
   // Seed test users + deterministic IPP aliases so browser flows do not depend
   // on live external callback availability.
   // -------------------------------------------------------------------------
-  if (!shouldSeedConvex(process.env)) {
-    throw new Error(
-      'E2E_ALLOW_MUTATING_SEED=true is required to seed Convex. Confirm the staging target first.'
-    );
+  if (process.env.E2E_ALLOW_MUTATING_SEED !== 'true') {
+    throw new Error('E2E_ALLOW_MUTATING_SEED=true is required for the mutating global setup.');
   }
 
-  try {
-    console.log('  Seeding Convex test users and IPP aliases...');
-    const seedArgs = [
-      'convex',
-      'run',
-      'seed:seedTestUsers',
-      '--push',
-      '--typecheck',
-      'disable',
-      '--codegen',
-      'disable',
-    ];
-    // In CI, CONVEX_DEPLOY_KEY authenticates AND pins the deployment; the
-    // --deployment flag would make the CLI resolve it via the dashboard API,
-    // which needs a user access token and fails with "AccessTokenInvalid".
-    // Locally (logged-in CLI, no deploy key) the flag selects the deployment.
-    if (!process.env.CONVEX_DEPLOY_KEY) {
-      seedArgs.push('--deployment', convexDeploymentName);
+  if (!shouldSeedConvex(process.env)) {
+    if (process.env.E2E_PRESEEDED_CONVEX_PREVIEW === 'true') {
+      console.log('  Convex preview was seeded atomically during deployment');
+    } else {
+      throw new Error(
+        'E2E_ALLOW_MUTATING_SEED=true is required to seed Convex. Confirm the disposable preview target first.'
+      );
     }
-    execFileSync('npx', seedArgs, {
-      stdio: 'pipe',
-      cwd: process.cwd(),
-      env: process.env,
-    });
-    console.log('  ✅ Convex test users and IPP aliases seeded');
-  } catch (error) {
-    console.warn('  ⚠️  Convex seeding failed:', error instanceof Error ? error.message : error);
-    console.warn('      UI tests may fail if test users or aliases are missing.');
+  }
+
+  if (shouldSeedConvex(process.env)) {
+    try {
+      console.log('  Seeding Convex test users and IPP aliases...');
+      const seedArgs = [
+        'convex',
+        'run',
+        'seed:seedTestUsers',
+        '--push',
+        '--typecheck',
+        'disable',
+        '--codegen',
+        'disable',
+      ];
+      // In CI, CONVEX_DEPLOY_KEY authenticates AND pins the deployment; the
+      // --deployment flag would make the CLI resolve it via the dashboard API,
+      // which needs a user access token and fails with "AccessTokenInvalid".
+      // Locally (logged-in CLI, no deploy key) the flag selects the deployment.
+      if (!process.env.CONVEX_DEPLOY_KEY) {
+        seedArgs.push('--deployment', convexDeploymentName);
+      }
+      execFileSync('npx', seedArgs, {
+        stdio: 'pipe',
+        cwd: process.cwd(),
+        env: process.env,
+      });
+      console.log('  ✅ Convex test users and IPP aliases seeded');
+    } catch (error) {
+      throw new Error('Convex E2E seeding failed; refusing to continue with partial test data.', {
+        cause: error,
+      });
+    }
   }
 
   console.log('  ✅ Convex backend configured - UI tests will authenticate via login form');

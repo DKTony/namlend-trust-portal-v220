@@ -64,7 +64,7 @@ export const seedTestUsers = internalAction({
       });
       console.log('[seed] KYC documents seeded successfully');
     } catch (error) {
-      console.error('[seed] Failed to seed KYC documents:', error);
+      console.error('[seed] Failed to seed test KYC documents');
       throw error;
     }
 
@@ -114,5 +114,19 @@ export const seedTestUsers = internalAction({
     console.log('[seed] Reviewable loan seeded successfully');
 
     console.log('[seed] All test users seeded successfully');
+  },
+});
+
+/**
+ * Fresh-preview fixture used by the protected E2E workflow. It builds the normal deterministic
+ * test tenant first, then enables enforcement inside that disposable deployment so the Banking
+ * dispatch scenario exercises the real UI and server gates.
+ */
+export const seedDisposableE2EPreview = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runAction(internal.seed.seedTestUsers, {});
+    await ctx.runMutation(internal.seedMutations.enableDisposableE2EEnforcement, {});
+    console.log('[seed] Disposable E2E preview enforcement is enabled');
   },
 });

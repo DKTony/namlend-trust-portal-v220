@@ -447,6 +447,7 @@ export const getMyRescheduleRequests = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientSelfService');
     return (
       await ctx.db
         .query('rescheduleRequests')

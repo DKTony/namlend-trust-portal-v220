@@ -14,11 +14,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AdaptiveTabs } from '@/components/adaptive/AdaptiveTabs';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import type { Id, QueryItem } from '@/types/convex';
 import { useQuery } from 'convex/react';
 import { Eye, Loader2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LoanSummaryCards } from './components/LoanSummaryCards';
 import { CollectionsTab } from './tabs/CollectionsTab';
 import { DocumentsTab } from './tabs/DocumentsTab';
@@ -35,6 +36,8 @@ interface Loan360Props {
 
 export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   const [activeTab, setActiveTab] = useState('overview');
+  const { hasFeature } = useEntitlements();
+  const collectionsEnabled = hasFeature('collections');
 
   // Convex reactive queries — skip when dialog is closed
   const rawLoan = useQuery(
@@ -60,12 +63,12 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
 
   const rawInteractions = useQuery(
     api.collections.listInteractionsByLoan,
-    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+    isOpen && loanId && collectionsEnabled ? { loanId: loanId as Id<'loans'> } : 'skip'
   );
 
   const rawPromises = useQuery(
     api.collections.listPromisesToPay,
-    isOpen && loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+    isOpen && loanId && collectionsEnabled ? { loanId: loanId as Id<'loans'> } : 'skip'
   );
 
   const loading = isOpen && loanId ? rawLoan === undefined : false;
@@ -170,6 +173,12 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
   const progressPercent = loan ? (totalPaid / loan.total_repayment) * 100 : 0;
   const paymentsMade = payments.filter((p) => p.status === 'completed').length;
 
+  useEffect(() => {
+    if (!collectionsEnabled && (activeTab === 'collections' || activeTab === 'promises')) {
+      setActiveTab('overview');
+    }
+  }, [activeTab, collectionsEnabled]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -233,12 +242,16 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
                     label: `Documents (${documents.length})`,
                     shortLabel: `Docs (${documents.length})`,
                   },
-                  {
-                    value: 'collections',
-                    label: `Collections (${interactions.length})`,
-                    shortLabel: `Coll (${interactions.length})`,
-                  },
-                  { value: 'promises', label: `PTP (${promises.length})` },
+                  ...(collectionsEnabled
+                    ? [
+                        {
+                          value: 'collections',
+                          label: `Collections (${interactions.length})`,
+                          shortLabel: `Coll (${interactions.length})`,
+                        },
+                        { value: 'promises', label: `PTP (${promises.length})` },
+                      ]
+                    : []),
                   { value: 'timeline', label: 'Timeline' },
                 ]}
               />
@@ -263,12 +276,16 @@ export function Loan360View({ loanId, isOpen, onClose }: Loan360Props) {
                 <TabsContent value="documents" className="mt-0">
                   <DocumentsTab loanId={loanId} />
                 </TabsContent>
-                <TabsContent value="collections" className="mt-0">
-                  <CollectionsTab interactions={interactions} />
-                </TabsContent>
-                <TabsContent value="promises" className="mt-0">
-                  <PromisesTab promises={promises} />
-                </TabsContent>
+                {collectionsEnabled && (
+                  <>
+                    <TabsContent value="collections" className="mt-0">
+                      <CollectionsTab interactions={interactions} />
+                    </TabsContent>
+                    <TabsContent value="promises" className="mt-0">
+                      <PromisesTab promises={promises} />
+                    </TabsContent>
+                  </>
+                )}
                 <TabsContent value="timeline" className="mt-0">
                   <TimelineTab loan={loan} />
                 </TabsContent>

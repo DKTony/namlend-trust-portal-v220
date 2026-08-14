@@ -112,6 +112,7 @@ export const getMyKycOverview = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     return buildOverview(ctx, userId);
   },
 });

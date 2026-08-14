@@ -66,13 +66,23 @@ export default function Dashboard() {
   const { t } = useTranslation('dashboard');
   const { hasFeature, isLoading: entitlementsLoading } = useEntitlements();
   const clientMenuItems = useMemo(() => getEnabledClientNavItems(hasFeature), [hasFeature]);
+  const loansEnabled = hasFeature('clientLoans');
+  const paymentsEnabled = hasFeature('clientPayments');
+  const applicationsEnabled = hasFeature('clientApplications');
+  const documentsEnabled = hasFeature('clientDocuments');
 
-  // Convex reactive queries — no as any (N2)
+  // Convex reactive queries — skip commercial surfaces the tenant is not entitled to.
   const profile = useQuery(api.users.getMyProfile);
-  const rawLoans = useQuery(api.loans.getMyLoans, {});
-  const portfolioSummary = useQuery(api.loans.getMyPortfolioSummary, {});
-  const rawApprovals = useQuery(api.approvalWorkflow.getMyApprovalRequests, { status: 'pending' });
-  const rawPayments = useQuery(api.payments.getMyPayments, { limit: 50 });
+  const rawLoans = useQuery(api.loans.getMyLoans, loansEnabled ? {} : 'skip');
+  const portfolioSummary = useQuery(api.loans.getMyPortfolioSummary, loansEnabled ? {} : 'skip');
+  const rawApprovals = useQuery(
+    api.approvalWorkflow.getMyApprovalRequests,
+    applicationsEnabled ? { status: 'pending' } : 'skip'
+  );
+  const rawPayments = useQuery(
+    api.payments.getMyPayments,
+    paymentsEnabled ? { limit: 50 } : 'skip'
+  );
 
   const loans = rawLoans ?? [];
   const payments = useMemo(() => rawPayments ?? [], [rawPayments]);
@@ -137,9 +147,8 @@ export default function Dashboard() {
   // Data is loading if any query hasn't returned yet
   const loading =
     profile === undefined ||
-    rawLoans === undefined ||
-    portfolioSummary === undefined ||
-    entitlementsLoading;
+    entitlementsLoading ||
+    (loansEnabled && (rawLoans === undefined || portfolioSummary === undefined));
 
   // KYC eligibility for status indicator
   const {
@@ -272,51 +281,53 @@ export default function Dashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              <StatCard
-                label={t('stats.totalBalance')}
-                value={formatNAD(portfolioSummary?.outstandingPrincipal ?? 0)}
-                icon={Wallet}
-                color="black"
-              />
-              <StatCard
-                label={t('stats.creditScore')}
-                value={(() => {
-                  return portfolioSummary?.latestCreditScore ?? 'N/A';
-                })()}
-                subValue={(() => {
-                  const score = portfolioSummary?.latestCreditScore;
-                  if (!score) return '';
-                  if (score >= 750) return 'Excellent';
-                  if (score >= 670) return 'Good';
-                  if (score >= 580) return 'Fair';
-                  return 'Poor';
-                })()}
-                icon={TrendingUp}
-                color="green"
-              />
-              <StatCard
-                label={t('stats.nextPayment')}
-                value={
-                  nextPaymentDate
-                    ? nextPaymentDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : '--'
-                }
-                subValue={
-                  portfolioSummary?.nextInstallment
-                    ? formatNAD(portfolioSummary.nextInstallment.amountDue)
-                    : ''
-                }
-                icon={Calendar}
-                color="blue"
-              />
-            </div>
+            {loansEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <StatCard
+                  label={t('stats.totalBalance')}
+                  value={formatNAD(portfolioSummary?.outstandingPrincipal ?? 0)}
+                  icon={Wallet}
+                  color="black"
+                />
+                <StatCard
+                  label={t('stats.creditScore')}
+                  value={(() => {
+                    return portfolioSummary?.latestCreditScore ?? 'N/A';
+                  })()}
+                  subValue={(() => {
+                    const score = portfolioSummary?.latestCreditScore;
+                    if (!score) return '';
+                    if (score >= 750) return 'Excellent';
+                    if (score >= 670) return 'Good';
+                    if (score >= 580) return 'Fair';
+                    return 'Poor';
+                  })()}
+                  icon={TrendingUp}
+                  color="green"
+                />
+                <StatCard
+                  label={t('stats.nextPayment')}
+                  value={
+                    nextPaymentDate
+                      ? nextPaymentDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : '--'
+                  }
+                  subValue={
+                    portfolioSummary?.nextInstallment
+                      ? formatNAD(portfolioSummary.nextInstallment.amountDue)
+                      : ''
+                  }
+                  icon={Calendar}
+                  color="blue"
+                />
+              </div>
+            )}
 
             {/* KYC Verification Status Card */}
-            {!eligibilityLoading && !isEligible && (
+            {documentsEnabled && !eligibilityLoading && !isEligible && (
               <ThemedCard className="border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 to-transparent">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">

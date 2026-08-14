@@ -540,6 +540,7 @@ export const getTransactionsByLoan = query({
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
     await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     return ctx.db
       .query('ipsTransactions')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))

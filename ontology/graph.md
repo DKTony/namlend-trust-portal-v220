@@ -1,6 +1,6 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `f96f43a8c8ee2729cd45fa9ec1e4527e8190e07f`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `7eef7e98b2bd5887939fea330193d80725c995fe`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |
@@ -11,7 +11,7 @@ Generated from active web, Convex, test, workflow, document, and redacted source
 | React components        |   257 |
 | Features                |    32 |
 | Seeded plans            |     4 |
-| Named tests             |   837 |
+| Named tests             |   848 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 
@@ -149,6 +149,7 @@ flowchart LR
   n_function_convex_ips_ipsAliasDirectory_adminListAliases -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_reconciliation_disputeTransaction -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_ontology_mandates_authorizeMandate -- "DEPENDS_ON" --> n_feature_mandates
+  n_function_convex_ontology_mandates_authorizeMandate -- "DEPENDS_ON" --> n_feature_collections
   n_function_convex_ips_ipsAliasDirectory_blockAlias -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_ontology_mandates_listMandates -- "DEPENDS_ON" --> n_feature_mandates
   n_function_convex_collections_markReminderSent -- "DEPENDS_ON" --> n_feature_collections
@@ -160,6 +161,7 @@ flowchart LR
   n_function_convex_ontology_mandates_suspendMandate -- "DEPENDS_ON" --> n_feature_mandates
   n_function_convex_ips_ipsVpa_upsertVpa -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_ips_ipsAliasDirectory_registerLocalAlias -- "DEPENDS_ON" --> n_feature_ippOnboarding
+  n_function_convex_ontology_mandates_suspendMandate -- "DEPENDS_ON" --> n_feature_collections
 ```
 
 ### Lending lifecycle

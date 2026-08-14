@@ -398,6 +398,36 @@ export function withFeatureDependencyClosure(featureKeys: Iterable<string>): str
   return [...expanded];
 }
 
+export type FeatureCouplingClass = 'always-on' | 'declared-edge' | 'runtime-leak' | 'independent';
+
+/** Owner-facing copy when a kill-switchable UI key leaves a safety-net API live. */
+export const FEATURE_SAFETY_NETS: Readonly<Record<string, string>> = {
+  clientPayments: 'UI off still allows repayment APIs.',
+  creditPolicy: 'Policy still enforces on loan writes when the editor is off.',
+  popiaConsent: 'Client grant/withdraw stay available when the staff dashboard is off.',
+  products: 'Product reads and eligibility stay available when the catalog editor is off.',
+  workflows: 'Live approval queue stays on when the builder is off.',
+  clientProfile: 'Profile update and enrollment stay available for KYC completion.',
+};
+
+export const ALWAYS_ON_FEATURE_DEFS: readonly FeatureDef[] = FEATURES.filter(
+  (feature) => feature.alwaysOn
+);
+
+/** Tenant-grantable features that depend on this key. */
+export function getReverseDependents(featureKey: string): FeatureDef[] {
+  return TENANT_GRANTABLE_FEATURES.filter((feature) => feature.dependsOn?.includes(featureKey));
+}
+
+export function getFeatureCouplingClass(feature: FeatureDef): FeatureCouplingClass {
+  if (feature.alwaysOn) return 'always-on';
+  if ((feature.dependsOn?.length ?? 0) > 0 || getReverseDependents(feature.key).length > 0) {
+    return 'declared-edge';
+  }
+  if (FEATURE_SAFETY_NETS[feature.key]) return 'runtime-leak';
+  return 'independent';
+}
+
 /** Serializable catalogue metadata derived from the canonical manifest. */
 export function getFeatureCatalogMetadata(feature: FeatureDef): Record<string, unknown> {
   return {

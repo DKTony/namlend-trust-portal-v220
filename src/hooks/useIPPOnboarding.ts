@@ -8,6 +8,7 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import {
   IPPOnboardingState,
@@ -220,6 +221,7 @@ function deriveVerificationMethods(
 export function useIPPOnboarding() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { hasFeature } = useEntitlements();
 
   const [showActionDialogRaw, setShowActionDialogRaw] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
@@ -235,7 +237,10 @@ export function useIPPOnboarding() {
   const [ipsPinConfirm, setIpsPinConfirm] = useState('');
   const [vpaUsername, setVpaUsername] = useState('');
 
-  const rawOnboarding = useQuery(api.ips.ipsOnboarding.getMyOnboarding, {});
+  const rawOnboarding = useQuery(
+    api.ips.ipsOnboarding.getMyOnboarding,
+    hasFeature('clientBanking') ? {} : 'skip'
+  );
 
   const startOnboardingMutation = useMutation(api.ips.ipsOnboarding.startOnboarding);
   const completeDeviceBindingMutation = useMutation(api.ips.ipsOnboarding.completeDeviceBinding);
@@ -250,7 +255,7 @@ export function useIPPOnboarding() {
   const confirmOnboardingMutation = useMutation(api.ips.ipsOnboarding.confirmOnboarding);
   const advanceStepMutation = useMutation(api.ips.ipsOnboarding.advanceOnboardingStep);
 
-  const loading = rawOnboarding === undefined;
+  const loading = hasFeature('clientBanking') && rawOnboarding === undefined;
 
   const onboardingData = useMemo<OnboardingData | null>(() => {
     if (!rawOnboarding) return null;

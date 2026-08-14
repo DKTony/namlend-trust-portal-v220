@@ -93,15 +93,17 @@ const AdminLayout: React.FC = () => {
           <RefreshCw className={cn('h-3.5 w-3.5', !layout.isCompact && 'mr-2')} />
           {!layout.isCompact && 'Refresh'}
         </ThemedButton>
-        <ThemedButton
-          variant="secondary"
-          className="hidden h-9 px-3 text-xs sm:inline-flex"
-          aria-label="Reports"
-          onClick={() => navigate('/admin/analytics?tab=reports')}
-        >
-          <BarChart3 className="mr-2 h-3.5 w-3.5" />
-          Reports
-        </ThemedButton>
+        {hasFeature('advancedAnalytics') && (
+          <ThemedButton
+            variant="secondary"
+            className="hidden h-9 px-3 text-xs sm:inline-flex"
+            aria-label="Reports"
+            onClick={() => navigate('/admin/analytics?tab=reports')}
+          >
+            <BarChart3 className="mr-2 h-3.5 w-3.5" />
+            Reports
+          </ThemedButton>
+        )}
         <NotificationBell />
       </div>
     </header>

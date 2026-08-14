@@ -1,6 +1,8 @@
+import { FeatureGate } from '@/components/system/FeatureGate';
 import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import {
   AlertTriangle,
   BadgeCheck,
@@ -14,10 +16,10 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Sub-components
-import { ReconciliationDashboard } from '../Reconciliation';
+import BankMatchReconciliation from './ReconciliationDashboard';
 import CollectionsCenter from './CollectionsCenter';
 import DisbursementManager from './DisbursementManager';
 import OverdueManager from './OverdueManager';
@@ -33,6 +35,9 @@ interface PaymentManagementDashboardProps {
 const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
   onPaymentSelect,
 }) => {
+  const { hasFeature } = useEntitlements();
+  const collectionsEnabled = hasFeature('collections');
+  const reconciliationEnabled = hasFeature('tenantReconciliation');
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<
@@ -48,7 +53,49 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
     setHasNewPayments(false);
   };
 
+  useEffect(() => {
+    if (
+      (!collectionsEnabled && (activeTab === 'collections' || activeTab === 'reschedules')) ||
+      (!reconciliationEnabled && activeTab === 'reconciliation')
+    ) {
+      setActiveTab('overview');
+    }
+  }, [activeTab, collectionsEnabled, reconciliationEnabled]);
+
   // Note: Convex provides automatic reactivity — no manual subscription needed
+
+  const tabItems = [
+    { value: 'overview', label: 'All Payments', shortLabel: 'Payments', icon: CreditCard },
+    {
+      value: 'disbursements',
+      label: 'Disbursements',
+      shortLabel: 'Disburse',
+      icon: TrendingUp,
+    },
+    { value: 'settled', label: 'Settled Loans', shortLabel: 'Settled', icon: BadgeCheck },
+    { value: 'overdue', label: 'Overdue', icon: AlertTriangle },
+    ...(collectionsEnabled
+      ? [
+          { value: 'collections', label: 'Collections', icon: Users },
+          {
+            value: 'reschedules',
+            label: 'Reschedules',
+            shortLabel: 'Reschedule',
+            icon: CalendarClock,
+          },
+        ]
+      : []),
+    ...(reconciliationEnabled
+      ? [
+          {
+            value: 'reconciliation',
+            label: 'Reconciliation',
+            shortLabel: 'Recon',
+            icon: CheckCircle,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-6">
@@ -87,33 +134,7 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <AdaptiveTabs
-          desktopColumns={7}
-          items={[
-            { value: 'overview', label: 'All Payments', shortLabel: 'Payments', icon: CreditCard },
-            {
-              value: 'disbursements',
-              label: 'Disbursements',
-              shortLabel: 'Disburse',
-              icon: TrendingUp,
-            },
-            { value: 'settled', label: 'Settled Loans', shortLabel: 'Settled', icon: BadgeCheck },
-            { value: 'overdue', label: 'Overdue', icon: AlertTriangle },
-            { value: 'collections', label: 'Collections', icon: Users },
-            {
-              value: 'reschedules',
-              label: 'Reschedules',
-              shortLabel: 'Reschedule',
-              icon: CalendarClock,
-            },
-            {
-              value: 'reconciliation',
-              label: 'Reconciliation',
-              shortLabel: 'Recon',
-              icon: CheckCircle,
-            },
-          ]}
-        />
+        <AdaptiveTabs desktopColumns={tabItems.length} items={tabItems} />
 
         {/* Search and Filter Bar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -158,15 +179,21 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
         </TabsContent>
 
         <TabsContent value="collections" className="space-y-4">
-          <CollectionsCenter />
+          <FeatureGate feature="collections">
+            <CollectionsCenter />
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="reschedules" className="space-y-4">
-          <RescheduleRequests />
+          <FeatureGate feature="collections">
+            <RescheduleRequests />
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="reconciliation" className="space-y-4">
-          <ReconciliationDashboard />
+          <FeatureGate feature="tenantReconciliation">
+            <BankMatchReconciliation />
+          </FeatureGate>
         </TabsContent>
       </Tabs>
     </div>

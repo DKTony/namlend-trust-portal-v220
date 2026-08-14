@@ -226,6 +226,7 @@ export const createLoan = mutation({
   handler: async (ctx, args) => {
     const userId = await assertClient(ctx);
     await assertCallerClientFeatureEnabled(ctx, 'clientApplications');
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     // KYC is enforced at submission and beyond (not at draft creation) so applicants
     // can build a draft while verification is in progress. See submitLoan / approveLoanCore.
 
@@ -386,6 +387,7 @@ export const submitLoan = mutation({
   handler: async (ctx, { loanId }) => {
     await assertClient(ctx);
     await assertCallerClientFeatureEnabled(ctx, 'clientApplications');
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     const loan = await ctx.db.get(loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertOwner(ctx, loan.userId);

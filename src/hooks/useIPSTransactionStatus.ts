@@ -5,6 +5,7 @@
  */
 
 import { api, type Id } from '@/integrations/convex/api';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import type { IPSTransactionStatus, IPSTransactionStatusResult } from '@/types/ips';
 import { isIPSStatusFinal } from '@/types/ips';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -149,9 +150,14 @@ export function useIPSTransactionStatus(
  * Hook for fetching all IPS transactions for a loan
  */
 export function useLoanIPSTransactions(loanId: string | null | undefined) {
+  const { hasFeature } = useEntitlements();
   const raw = useConvexQuery(
     api.ips.ipsTransactions.getTransactionsByLoan,
-    loanId ? { loanId: loanId as Id<'loans'> } : 'skip'
+    loanId && hasFeature('clientBanking') ? { loanId: loanId as Id<'loans'> } : 'skip'
   );
-  return { data: raw, isLoading: raw === undefined, isError: false };
+  return {
+    data: raw,
+    isLoading: Boolean(loanId) && hasFeature('clientBanking') && raw === undefined,
+    isError: false,
+  };
 }

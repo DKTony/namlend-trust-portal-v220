@@ -73,6 +73,7 @@ export const getMySavedVpas = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
 
     const [aliases, legacy] = await Promise.all([
       ctx.db

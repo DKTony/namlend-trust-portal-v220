@@ -1,4 +1,5 @@
 import { api } from '@/integrations/convex/api';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useQuery } from 'convex/react';
 
 interface FinancialMetrics {
@@ -19,9 +20,16 @@ interface RevenueData {
 }
 
 export const useFinancialMetrics = () => {
+  const { hasFeature } = useEntitlements();
   const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
-  const risk = useQuery(api.analytics.getRiskMetrics);
-  const trends = useQuery(api.analytics.getMonthlyTrends, { months: 6 });
+  const risk = useQuery(
+    api.analytics.getRiskMetrics,
+    hasFeature('advancedAnalytics') ? {} : 'skip'
+  );
+  const trends = useQuery(
+    api.analytics.getMonthlyTrends,
+    hasFeature('advancedAnalytics') ? { months: 6 } : 'skip'
+  );
   const clientMetrics = useQuery(api.analytics.getClientMetrics);
 
   const loading = portfolio === undefined;

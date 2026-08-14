@@ -1,4 +1,5 @@
 import { api } from '@/integrations/convex/api';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { useQuery } from 'convex/react';
 
 interface KPIData {
@@ -10,9 +11,13 @@ interface KPIData {
 }
 
 export const useKPIData = () => {
+  const { hasFeature } = useEntitlements();
   const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
   const clientMetrics = useQuery(api.analytics.getClientMetrics);
-  const risk = useQuery(api.analytics.getRiskMetrics);
+  const risk = useQuery(
+    api.analytics.getRiskMetrics,
+    hasFeature('advancedAnalytics') ? {} : 'skip'
+  );
 
   const loading = portfolio === undefined;
   const error: string | null = null;

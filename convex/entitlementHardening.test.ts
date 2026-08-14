@@ -485,3 +485,172 @@ describe('disposable preview fixture', () => {
     );
   });
 });
+
+describe('independence matrix — kill-switchable features', () => {
+  const mandateArgs = {
+    mandateType: 'debit_order' as const,
+    creditorEntityType: 'institution',
+    creditorEntityId: 'ogfs',
+    amount: 250,
+  };
+
+  test('mandates writes require collections; listing still uses the mandates key', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'MANDATE_DEP');
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
+    await enableEnforcement(t);
+    await grantFeature(t, inst, 'mandates');
+
+    await expect(
+      asUser(t, staff).query(api.ontology.mandates.listMandates, {})
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, staff).mutation(api.ontology.mandates.createMandate, mandateArgs)
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+
+    await grantFeature(t, inst, 'collections');
+    await expect(
+      asUser(t, staff).mutation(api.ontology.mandates.createMandate, mandateArgs)
+    ).resolves.toBeDefined();
+  });
+
+  test('clientApplications writes also require clientDocuments', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'APP_DOCS');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    await enableEnforcement(t);
+    await grantFeature(t, inst, 'clientApplications');
+
+    await expect(
+      asUser(t, borrower).mutation(api.loans.createLoan, {
+        principal: 5000,
+        interestRate: 20,
+        termMonths: 12,
+      })
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+
+    await grantFeature(t, inst, 'clientDocuments');
+    await expect(
+      asUser(t, borrower).mutation(api.loans.createLoan, {
+        principal: 5000,
+        interestRate: 20,
+        termMonths: 12,
+      })
+    ).resolves.toBeDefined();
+  });
+
+  test('commercial client reads stay off until their own key is granted', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'CLIENT_READS');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    await enableEnforcement(t);
+
+    await expect(
+      asUser(t, borrower).query(api.kycDocuments.getMyKycOverview, {})
+    ).rejects.toMatchObject({
+      data: { code: 'FEATURE_NOT_ENABLED' },
+    });
+    await expect(
+      asUser(t, borrower).query(api.collections.getMyRescheduleRequests, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await expect(
+      asUser(t, borrower).query(api.ips.ipsOnboarding.getMyOnboarding, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+
+    await grantFeature(t, inst, 'clientDocuments');
+    await grantFeature(t, inst, 'clientSelfService');
+    await grantFeature(t, inst, 'ippOnboarding');
+    await grantFeature(t, inst, 'clientBanking');
+    await expect(
+      asUser(t, borrower).query(api.kycDocuments.getMyKycOverview, {})
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, borrower).query(api.collections.getMyRescheduleRequests, {})
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, borrower).query(api.ips.ipsOnboarding.getMyOnboarding, {})
+    ).resolves.toBeNull();
+  });
+
+  test('a sibling add-on stays denied when only collections is granted', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'SIBLING');
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
+    await enableEnforcement(t);
+    await grantFeature(t, inst, 'collections');
+
+    await expect(
+      asUser(t, staff).query(api.collections.getCollectionsQueue, {})
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, staff).query(api.ontology.mandates.listMandates, {})
+    ).rejects.toMatchObject({
+      data: { code: 'FEATURE_NOT_ENABLED' },
+    });
+    await expect(
+      asUser(t, staff).query(api.ips.ipsOnboarding.adminListOnboarding, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await expect(
+      asUser(t, staff).query(api.reconciliation.listBankTransactions, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+  });
+
+  test('cannot disable ippOnboarding while clientBanking remains granted', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'BANKING_PARENT');
+    const owner = await seedUser(t, { platformOwner: true });
+    await grantFeature(t, inst, 'ippOnboarding');
+    await grantFeature(t, inst, 'clientBanking');
+
+    await expect(
+      asUser(t, owner).mutation(api.platform.entitlements.setTenantEntitlement, {
+        institutionId: inst,
+        featureKey: 'ippOnboarding',
+        source: 'manual_override',
+        enabled: false,
+        rolloutState: 'off',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_DEPENDENCY_MISSING' } });
+  });
+
+  test('safety-net APIs stay live when their UI keys are off', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'SAFETY');
+    const borrower = await seedUser(t, { role: 'client', institutionId: inst });
+    const staff = await seedUser(t, { role: 'tenant_admin', institutionId: inst });
+    const loan = await t.run(async (ctx) => {
+      const now = Date.now();
+      return ctx.db.insert('loans', {
+        userId: borrower,
+        institutionId: inst,
+        principal: 1000,
+        interestRate: 20,
+        termMonths: 6,
+        status: 'active',
+        outstandingBalance: 1000,
+        totalPaid: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+    await enableEnforcement(t);
+
+    await expect(
+      asUser(t, borrower).mutation(api.payments.recordPayment, {
+        loanId: loan,
+        amount: 50,
+        method: 'cash',
+      })
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, borrower).mutation(api.ontology.consentRecords.grantConsent, {
+        consentType: 'data_processing',
+        description: 'I consent to data processing for lending compliance.',
+        collectionMethod: 'digital_acceptance',
+      })
+    ).resolves.toBeDefined();
+    await expect(
+      asUser(t, staff).query(api.ontology.products.listProducts, {})
+    ).resolves.toBeDefined();
+  });
+});

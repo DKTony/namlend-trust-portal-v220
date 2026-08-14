@@ -39,6 +39,7 @@ export const getMyAliases = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     return ctx.db
       .query('ipsAliasDirectory')
       .withIndex('by_userId', (q) => q.eq('userId', userId))

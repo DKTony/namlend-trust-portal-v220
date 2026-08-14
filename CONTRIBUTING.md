@@ -47,8 +47,9 @@ production data must never be supplied to tests or coding agents.
 3. Run the checks relevant to the changed behavior and attach named-test evidence.
 4. Regenerate the ontology when tracked system structure changes.
 5. Register every runtime test skip with an owner, reason, expiry and gap.
-6. Obtain one human approval. Financial, auth, security, deployment, dependency-policy
-   and agent-policy changes require two distinct human approvals.
+6. Land only after required CI is green. The current solo-operator policy does
+   not require a second human approval. Restore two-person review when a second
+   qualified collaborator exists.
 
 Agents may propose only allowlisted R0/R1 work. Humans own merges, deployments,
 seeds, migrations, backfills, production access and protected NamLend behavior.

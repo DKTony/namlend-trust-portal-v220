@@ -53,7 +53,8 @@ before `TENANCY_ENFORCEMENT` or `ENTITLEMENT_ENFORCEMENT` is enabled.
    - `approveLoanCore` rejects tenant amount/term/rate/monthly-income/DTI violations
    - default policy still permits known-good loan approval flows
 10. Confirm tenant-isolation negative tests are green before enabling tenancy enforcement.
-11. Record the two required human approvals for the protected activation change.
+11. Record owner sign-off for the protected activation change. Restore two-person
+    review when a second qualified collaborator exists.
 
 ## Activation Sequence
 

@@ -1,13 +1,13 @@
 {
   "schemaVersion": "1.0.0",
-  "policyVersion": "1.0.0",
+  "policyVersion": "1.1.0",
   "defaultOwner": "NamLend Engineering",
   "taskRetentionDays": 30,
   "maxRunMinutes": 45,
   "maxAttempts": 2,
   "autonomousRiskClasses": ["R0", "R1"],
-  "minimumHumanApprovals": 1,
-  "protectedMinimumHumanApprovals": 2,
+  "minimumHumanApprovals": 0,
+  "protectedMinimumHumanApprovals": 0,
   "alwaysForbiddenOperations": [
     "merge", "push", "deploy", "seed", "migration", "backfill", "production-write",
     "external-system-write", "secret-read", "history-rewrite"

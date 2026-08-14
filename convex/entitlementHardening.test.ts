@@ -514,6 +514,36 @@ describe('independence matrix — kill-switchable features', () => {
     ).resolves.toBeDefined();
   });
 
+  test('mandate executor skips tenants without mandates when enforcement is on', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t, 'MANDATE_CRON');
+    await expect(
+      t.query(internal.lib.entitlements.shouldExecuteMandateForInstitution, {
+        institutionId: inst,
+      })
+    ).resolves.toBe(true);
+    await expect(
+      t.query(internal.lib.entitlements.shouldExecuteMandateForInstitution, {})
+    ).resolves.toBe(true);
+
+    await enableEnforcement(t);
+    await expect(
+      t.query(internal.lib.entitlements.shouldExecuteMandateForInstitution, {})
+    ).resolves.toBe(false);
+    await expect(
+      t.query(internal.lib.entitlements.shouldExecuteMandateForInstitution, {
+        institutionId: inst,
+      })
+    ).resolves.toBe(false);
+
+    await grantFeature(t, inst, 'mandates');
+    await expect(
+      t.query(internal.lib.entitlements.shouldExecuteMandateForInstitution, {
+        institutionId: inst,
+      })
+    ).resolves.toBe(true);
+  });
+
   test('clientApplications writes also require clientDocuments', async () => {
     const t = convexTest(schema, modules);
     const inst = await seedInstitution(t, 'APP_DOCS');
@@ -556,11 +586,15 @@ describe('independence matrix — kill-switchable features', () => {
     await expect(
       asUser(t, borrower).query(api.ips.ipsOnboarding.getMyOnboarding, {})
     ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await expect(asUser(t, borrower).query(api.loans.getMyLoans, {})).rejects.toMatchObject({
+      data: { code: 'FEATURE_NOT_ENABLED' },
+    });
 
     await grantFeature(t, inst, 'clientDocuments');
     await grantFeature(t, inst, 'clientSelfService');
     await grantFeature(t, inst, 'ippOnboarding');
     await grantFeature(t, inst, 'clientBanking');
+    await grantFeature(t, inst, 'clientLoans');
     await expect(
       asUser(t, borrower).query(api.kycDocuments.getMyKycOverview, {})
     ).resolves.toBeDefined();
@@ -570,6 +604,7 @@ describe('independence matrix — kill-switchable features', () => {
     await expect(
       asUser(t, borrower).query(api.ips.ipsOnboarding.getMyOnboarding, {})
     ).resolves.toBeNull();
+    await expect(asUser(t, borrower).query(api.loans.getMyLoans, {})).resolves.toEqual([]);
   });
 
   test('a sibling add-on stays denied when only collections is granted', async () => {

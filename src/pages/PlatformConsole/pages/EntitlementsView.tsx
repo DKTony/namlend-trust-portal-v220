@@ -15,7 +15,7 @@ import {
   FEATURES,
   FEATURE_SAFETY_NETS,
   getFeature,
-  getFeatureCouplingClass,
+  getFeatureCouplingLabel,
   getReverseDependents,
 } from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
@@ -54,19 +54,12 @@ function formatDate(ms?: number) {
   return ms ? new Date(ms).toLocaleDateString() : 'open-ended';
 }
 
-function couplingBadge(featureKey: string) {
-  const feature = getFeature(featureKey);
-  if (!feature) return null;
-  const coupling = getFeatureCouplingClass(feature);
-  const labels: Record<string, string> = {
-    'always-on': 'Core (locked)',
-    'declared-edge': 'Declared dependency',
-    'runtime-leak': 'Safety-net API',
-    independent: 'Independent',
-  };
-  return labels[coupling];
-}
-
+/**
+ * OGFS dispatch on aromatic-okapi-265 (enforcement stays off):
+ * cores locked; keep clientPayments / clientBanking / clientBudget off if that remains the
+ * intended OGFS client shape; keep Self Service and the other Client Portal keys on.
+ * Do not seedControlPlane the unbound platformowner@test.namlend.com client role.
+ */
 const EntitlementsView: React.FC = () => {
   const { isPlatformOwner } = useAuth();
   const { toast } = useToast();
@@ -315,7 +308,7 @@ const EntitlementsView: React.FC = () => {
                             <p className="truncate text-sm font-medium">{f.name}</p>
                             <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              {couplingBadge(f.key)}
+                              {getFeatureCouplingLabel(f.key)}
                             </p>
                           </div>
                           <Switch
@@ -353,7 +346,7 @@ const EntitlementsView: React.FC = () => {
                                 <p className="truncate text-sm font-medium">{f.name}</p>
                                 <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  {couplingBadge(f.key)}
+                                  {getFeatureCouplingLabel(f.key)}
                                 </p>
                                 {(f.dependsOn?.length ?? 0) > 0 && (
                                   <p

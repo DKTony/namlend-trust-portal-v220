@@ -28,6 +28,7 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
 import { useMutation, useQuery as useConvexQuery } from 'convex/react';
@@ -84,6 +85,9 @@ interface Payment {
 export function SelfServicePortal() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { hasFeature } = useEntitlements();
+  const loansEnabled = hasFeature('clientLoans');
+  const selfServiceEnabled = hasFeature('clientSelfService');
   const [activeTab, setActiveTab] = useState('statements');
 
   // Reschedule dialog state
@@ -95,9 +99,12 @@ export function SelfServicePortal() {
   const [submitting, setSubmitting] = useState(false);
 
   // Convex reactive queries
-  const rawLoans = useConvexQuery(api.loans.getMyLoans, {});
+  const rawLoans = useConvexQuery(api.loans.getMyLoans, loansEnabled ? {} : 'skip');
   const rawPayments = useConvexQuery(api.payments.getMyPayments, {});
-  const rawRescheduleRequests = useConvexQuery(api.collections.getMyRescheduleRequests, {});
+  const rawRescheduleRequests = useConvexQuery(
+    api.collections.getMyRescheduleRequests,
+    selfServiceEnabled ? {} : 'skip'
+  );
   const requestRescheduleMutation = useMutation(api.collections.requestReschedule);
 
   const rescheduleRequests: RescheduleRequest[] = useMemo(
@@ -116,7 +123,7 @@ export function SelfServicePortal() {
     [rawRescheduleRequests]
   );
 
-  const loading = rawLoans === undefined;
+  const loading = loansEnabled && rawLoans === undefined;
 
   const loans: Loan[] = useMemo(() => {
     if (!rawLoans) return [];

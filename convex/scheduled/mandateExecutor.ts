@@ -45,8 +45,18 @@ export const processDueMandates = internalAction({
     let expiredCount = 0;
     let executedCount = 0;
     let failedCount = 0;
+    let skippedCount = 0;
 
     for (const mandate of activeMandates) {
+      const mayExecute = await ctx.runQuery(
+        internal.lib.entitlements.shouldExecuteMandateForInstitution,
+        { institutionId: mandate.institutionId }
+      );
+      if (!mayExecute) {
+        skippedCount++;
+        continue;
+      }
+
       // Check expiry
       if (mandate.expiresAt && mandate.expiresAt <= now) {
         await ctx.runMutation(internal.ontology.mandates.expireMandate, {
@@ -78,7 +88,7 @@ export const processDueMandates = internalAction({
     }
 
     console.log(
-      `[mandate-executor] Processed: ${executedCount} executed, ${expiredCount} expired, ${failedCount} failed`
+      `[mandate-executor] Processed: ${executedCount} executed, ${expiredCount} expired, ${failedCount} failed, ${skippedCount} skipped (unentitled tenant)`
     );
   },
 });

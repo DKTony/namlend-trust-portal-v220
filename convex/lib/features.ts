@@ -400,6 +400,14 @@ export function withFeatureDependencyClosure(featureKeys: Iterable<string>): str
 
 export type FeatureCouplingClass = 'always-on' | 'declared-edge' | 'runtime-leak' | 'independent';
 
+/** Owner-facing labels for the coupling class shown on Entitlements and Plans. */
+export const FEATURE_COUPLING_LABELS: Readonly<Record<FeatureCouplingClass, string>> = {
+  'always-on': 'Core (locked)',
+  'declared-edge': 'Declared dependency',
+  'runtime-leak': 'Safety-net API',
+  independent: 'Independent',
+};
+
 /** Owner-facing copy when a kill-switchable UI key leaves a safety-net API live. */
 export const FEATURE_SAFETY_NETS: Readonly<Record<string, string>> = {
   clientPayments: 'UI off still allows repayment APIs.',
@@ -426,6 +434,12 @@ export function getFeatureCouplingClass(feature: FeatureDef): FeatureCouplingCla
   }
   if (FEATURE_SAFETY_NETS[feature.key]) return 'runtime-leak';
   return 'independent';
+}
+
+export function getFeatureCouplingLabel(featureKey: string): string | null {
+  const feature = getFeature(featureKey);
+  if (!feature) return null;
+  return FEATURE_COUPLING_LABELS[getFeatureCouplingClass(feature)];
 }
 
 /** Serializable catalogue metadata derived from the canonical manifest. */

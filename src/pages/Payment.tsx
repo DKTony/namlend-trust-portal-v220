@@ -57,8 +57,9 @@ export default function Payment() {
   const { hasFeature } = useEntitlements();
   const bankingEnabled = hasFeature('clientBanking');
   const applicationsEnabled = hasFeature('clientApplications');
+  const loansEnabled = hasFeature('clientLoans');
   // Convex reactive queries
-  const rawLoans = useQuery(api.loans.getMyLoans, {});
+  const rawLoans = useQuery(api.loans.getMyLoans, loansEnabled ? {} : 'skip');
   const recordPaymentMutation = useMutation(api.payments.recordPayment);
 
   // Filter to loans that can be repaid via the server-side IPP repayment state machine.
@@ -243,7 +244,7 @@ export default function Payment() {
 
   // Distinguish "still loading" from "genuinely no loans" — otherwise the
   // empty state flashes while the query is in flight.
-  if (rawLoans === undefined) {
+  if (loansEnabled && rawLoans === undefined) {
     return (
       <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title={t('title')}>
         <div className="flex items-center justify-center py-16">

@@ -58,7 +58,8 @@ Only R0/R1 tasks may enter an unattended runner. Agents cannot push, merge,
 deploy, seed, migrate, backfill, rewrite history, read secrets, mutate production,
 or write to external systems. The current solo-operator policy requires zero
 non-author human approvals so a single qualified collaborator can merge after CI
-is green. Two-person review is a future hiring gate, not the current merge gate.
+is green. Current-SHA Evidence Ledger therefore names the human merger as the
+operator on `main`. Two-person review is a future hiring gate, not the current merge gate.
 
 ## Operating loop
 

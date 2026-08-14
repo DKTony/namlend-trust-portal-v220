@@ -25,5 +25,8 @@ merge gate.
 ## Consequences
 
 CI, linear history, and agent forbidden operations remain the merge controls.
+Current-SHA Evidence Ledger records the human merger as the named operator when
+the configured minimum is zero; non-author current-head reviews remain required
+when that minimum is raised.
 A severe violation disables dispatch and requires incident review plus
 reevaluation.

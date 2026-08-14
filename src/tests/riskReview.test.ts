@@ -6,7 +6,14 @@ import { describe, expect, it, vi } from 'vitest';
 // @ts-expect-error No TypeScript declaration is emitted for the script module.
 import * as riskReview from '../../scripts/agent-harness/risk-review.mjs';
 
-const { currentApprovers, githubPages, requiredApprovals, validateRiskReviewInputs } = riskReview;
+const {
+  currentApprovers,
+  githubPages,
+  humanOperatorLogin,
+  mergeReceiptApprovers,
+  requiredApprovals,
+  validateRiskReviewInputs,
+} = riskReview;
 
 const HEAD_SHA = 'a'.repeat(40);
 
@@ -69,6 +76,44 @@ describe('risk-review policy inputs and provenance', () => {
       required: 0,
       protectedFiles: ['agent-harness/policy.json'],
     });
+  });
+
+  it('records the human merger as the solo-operator merge-receipt approver', () => {
+    expect(
+      mergeReceiptApprovers({
+        required: 0,
+        reviewApprovers: [],
+        mergedBy: { login: 'DKTony', type: 'User' },
+      })
+    ).toEqual(['DKTony']);
+  });
+
+  it('rejects a bot merger when solo-operator policy requires a human operator', () => {
+    expect(() =>
+      mergeReceiptApprovers({
+        required: 0,
+        reviewApprovers: [],
+        mergedBy: { login: 'cursor[bot]', type: 'Bot' },
+      })
+    ).toThrow(/human collaborator merger/);
+    expect(humanOperatorLogin({ login: 'cursor[bot]', type: 'Bot' })).toBeNull();
+  });
+
+  it('still requires current-head non-author reviews when policy asks for them', () => {
+    expect(
+      mergeReceiptApprovers({
+        required: 1,
+        reviewApprovers: ['reviewer'],
+        mergedBy: { login: 'DKTony', type: 'User' },
+      })
+    ).toEqual(['reviewer']);
+    expect(() =>
+      mergeReceiptApprovers({
+        required: 1,
+        reviewApprovers: [],
+        mergedBy: { login: 'DKTony', type: 'User' },
+      })
+    ).toThrow(/exact PR head/);
   });
 
   it('counts only current-head non-author human collaborator approvals', () => {

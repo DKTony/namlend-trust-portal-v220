@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 // @ts-expect-error No TypeScript declaration is emitted for the script module.
 import * as riskReview from '../../scripts/agent-harness/risk-review.mjs';
 
-const { currentApprovers, githubPages, validateRiskReviewInputs } = riskReview;
+const { currentApprovers, githubPages, requiredApprovals, validateRiskReviewInputs } = riskReview;
 
 const HEAD_SHA = 'a'.repeat(40);
 
@@ -55,6 +55,20 @@ describe('risk-review policy inputs and provenance', () => {
         ...override,
       })
     ).toThrow(/Invalid/);
+  });
+
+  it('treats solo-operator policy as zero required approvals for protected files', () => {
+    const classification = requiredApprovals(['agent-harness/policy.json', 'docs/README.md'], {
+      minimumHumanApprovals: 0,
+      protectedMinimumHumanApprovals: 0,
+      protectedPatterns: ['agent-harness/**'],
+    });
+
+    expect(classification).toMatchObject({
+      riskClass: 'PROTECTED',
+      required: 0,
+      protectedFiles: ['agent-harness/policy.json'],
+    });
   });
 
   it('counts only current-head non-author human collaborator approvals', () => {

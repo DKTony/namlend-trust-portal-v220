@@ -23,4 +23,4 @@
 ## Human authority
 
 - [ ] No agent merged, deployed, seeded, migrated, backfilled or accessed production.
-- [ ] Protected changes have two distinct human approvals.
+- [ ] Required CI is green. Two-person review is a future hiring gate, not the current merge gate.

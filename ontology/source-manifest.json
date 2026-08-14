@@ -314,6 +314,38 @@
           "results": {}
         }
       ]
+    },
+    {
+      "id": 31739006960,
+      "workflow": "Secret Detection",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31739006960",
+      "headSha": "2fd2b18486ed149d646a68e2323d56e34c7453c3",
+      "conclusion": "success",
+      "completedAt": "2026-08-13T20:04:43.000Z",
+      "jobs": [
+        {
+          "id": 94577491845,
+          "name": "Secret Detection",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31739006960/job/94577491845",
+          "results": {}
+        }
+      ]
+    },
+    {
+      "id": 31739006967,
+      "workflow": "CodeQL",
+      "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31739006967",
+      "headSha": "2fd2b18486ed149d646a68e2323d56e34c7453c3",
+      "conclusion": "success",
+      "completedAt": "2026-08-13T20:06:12.000Z",
+      "jobs": [
+        {
+          "id": 94577492054,
+          "name": "CodeQL JavaScript/TypeScript",
+          "url": "https://github.com/DKTony/namlend-trust-portal-v220/actions/runs/31739006967/job/94577492054",
+          "results": {}
+        }
+      ]
     }
   ],
   "activeDocuments": [

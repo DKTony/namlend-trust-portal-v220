@@ -515,7 +515,9 @@ export function semanticSnapshot(value) {
     if (!item || typeof item !== 'object') return item;
     return Object.fromEntries(
       Object.entries(item)
-        .filter(([key]) => key !== 'extractedAt')
+        // commitSha is restamped on extract; rebase-merge orphans the recorded SHA
+        // even when graph content is unchanged. E1 age still uses the real SHA.
+        .filter(([key]) => key !== 'extractedAt' && key !== 'commitSha')
         .map(([key, child]) => [key, omitVolatile(child)])
     );
   };

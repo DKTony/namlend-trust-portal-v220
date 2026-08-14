@@ -18,7 +18,7 @@ user_input_policy: fail-and-handoff
 
 This contract is intentionally disabled. It is staged for a future read-only R0
 shadow trial after the repository evaluation and external runner isolation have
-been reviewed. Enabling it requires a protected two-human policy change.
+been reviewed. Enabling it requires a protected owner policy change.
 
 When enabled, validate the issue-derived task contract, retrieve a current cited
 context packet, perform read-only analysis, run only declared acceptance checks,

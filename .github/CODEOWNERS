@@ -1,8 +1,10 @@
 # Default human owner
 * @DKTony
 
-# A second qualified reviewer must be added before protected changes can merge.
-# The risk-review check enforces two distinct current-head human approvals below.
+# CODEOWNERS names the human owner. GitHub code-owner review is not a merge gate
+# while this repository is solo-operated. Restore two-person review when a second
+# qualified collaborator exists. The risk-review check reads
+# agent-harness/policy.json (currently 0/0 approvals).
 
 # Protected lending, identity, data and integration boundaries
 /convex/ @DKTony

@@ -23,6 +23,8 @@ interface DocumentPreviewDialogProps {
     documentId: string,
     intent: DocumentAccessIntent
   ) => Promise<DocumentAccessResult>;
+  /** Set when this preview is opened from another dialog so nested overlays stay clickable. */
+  nested?: boolean;
 }
 
 function formatBytes(value?: number) {
@@ -46,6 +48,7 @@ export function DocumentPreviewDialog({
   open,
   onOpenChange,
   requestAccess,
+  nested = false,
 }: DocumentPreviewDialogProps) {
   const [access, setAccess] = useState<DocumentAccessResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -141,8 +144,8 @@ export function DocumentPreviewDialog({
   const isPdf = mimeType === 'application/pdf';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(92vh,900px)] max-w-5xl flex-col overflow-hidden p-0">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={!nested}>
+      <DialogContent className="pointer-events-auto z-[70] flex max-h-[min(92vh,900px)] max-w-5xl flex-col overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-5 py-4 pr-12">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle className="truncate text-base sm:text-lg">

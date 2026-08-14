@@ -104,6 +104,7 @@ test.describe.serial('KYC document lifecycle mutation journey', () => {
     await page.getByTestId('approvals-filter-type').click();
     await page.getByRole('option', { name: 'KYC Packages' }).click();
     await page.locator('[data-testid^="approvals-request-"]').first().click();
+    await expect(page.getByTestId('approvals-review-dialog')).toBeVisible({ timeout: 10_000 });
 
     const approveButton = page.getByRole('button', { name: /^Approve$/ });
     // Wait for the document rows before counting. `locator.count()` is one of the few

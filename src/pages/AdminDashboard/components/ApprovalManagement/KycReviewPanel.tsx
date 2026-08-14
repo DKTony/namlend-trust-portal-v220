@@ -244,7 +244,7 @@ export function KycReviewPanel({
               Complete package review
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="pointer-events-auto z-[70]">
             <AlertDialogHeader>
               <AlertDialogTitle>Complete this KYC review?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -275,15 +275,17 @@ export function KycReviewPanel({
       <DocumentPreviewDialog
         document={previewDocument}
         open={Boolean(previewDocument)}
-        onOpenChange={(open) => !open && setPreviewDocument(null)}
+        onOpenChange={(nextOpen) => !nextOpen && setPreviewDocument(null)}
         requestAccess={requestAccess}
+        nested
       />
 
       <Dialog
         open={Boolean(rejectDocument)}
-        onOpenChange={(open) => !open && setRejectDocument(null)}
+        onOpenChange={(nextOpen) => !nextOpen && setRejectDocument(null)}
+        modal={false}
       >
-        <DialogContent>
+        <DialogContent className="pointer-events-auto z-[70]">
           <DialogHeader>
             <DialogTitle>Reject document</DialogTitle>
             <DialogDescription>

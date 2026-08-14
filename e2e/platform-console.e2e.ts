@@ -85,6 +85,18 @@ test.describe('Platform Console — sections render for the owner (guard widenin
   });
 });
 
+test.describe('Platform Console — entitlements catalog', () => {
+  test('client payment and self-service switches render', async ({ page }) => {
+    await loginAsPlatformOwner(page);
+    await openSection(page, '/platform/entitlements');
+    await expect(page.getByTestId('platform-entitlements')).toBeVisible();
+    await expect(page.getByTestId('entitlement-switch-clientPayments')).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.getByTestId('entitlement-switch-clientSelfService')).toBeVisible();
+  });
+});
+
 test.describe('Platform Console — owner write flow', () => {
   test('owner can provision a tenant', async ({ page }) => {
     await loginAsPlatformOwner(page);

@@ -87,6 +87,14 @@ const PlatformLayout: React.FC = () => {
       }
       header={header}
     >
+      {!isPlatformOwner && (
+        <div
+          data-testid="platform-support-readonly-banner"
+          className="mx-4 mt-4 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground sm:mx-6"
+        >
+          Read-only access. Dispatch, provisioning, and plan edits require a platform owner.
+        </div>
+      )}
       <Outlet />
     </AdaptiveShell>
   );

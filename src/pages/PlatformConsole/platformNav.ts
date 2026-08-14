@@ -4,7 +4,7 @@
  * This nav is gated by PLATFORM ROLE (see ProtectedRoute requirePlatform), NOT by tenant
  * entitlements — "can this person run the platform" is orthogonal to "did a tenant buy a
  * feature". Sections mirror the `console: 'platform'` features in the manifest
- * (convex/lib/features.ts): tenant registry, plans/catalog, entitlement dispatch, guardrails,
+ * (convex/lib/features.ts): tenant registry, plans/catalog, entitlement dispatch, business rules,
  * ledger/settlement infra, and support.
  */
 
@@ -53,7 +53,12 @@ const allGroups: NavGroup[] = [
     id: 'governance',
     label: 'Governance',
     items: [
-      { id: 'guardrails', label: 'Guardrails', path: '/platform/guardrails', icon: ShieldCheck },
+      {
+        id: 'guardrails',
+        label: 'Business Rules',
+        path: '/platform/guardrails',
+        icon: ShieldCheck,
+      },
     ],
   },
   {
@@ -79,9 +84,8 @@ const allGroups: NavGroup[] = [
 ];
 
 /**
- * Returns the platform nav groups. In Phase 3 every section is read-only, so owner and
- * support see the same set; the `isPlatformOwner` arg is accepted now so Phase 4 can hide
- * owner-only management items without touching call sites.
+ * Returns the platform nav groups. Owner and support see the same sections so support can
+ * inspect commercial and infrastructure surfaces; write affordances stay owner-only in each page.
  */
 export function getPlatformNavGroups(_isPlatformOwner: boolean): NavGroup[] {
   return allGroups;

@@ -1,8 +1,8 @@
 /**
  * Entitlement reads + owner-guarded dispatch.
  *
- * `resolveMyEntitlements` is what the Backoffice Console (`useEntitlements`) will read to
- * filter nav/routes in Phase 3. `setTenantEntitlement` is the owner's dispatch lever.
+ * `resolveMyEntitlements` is what the Backoffice Console (`useEntitlements`) reads to
+ * filter nav/routes. `setTenantEntitlement` is the owner's dispatch lever.
  */
 
 import { ConvexError, v } from 'convex/values';
@@ -17,9 +17,10 @@ import {
   getFeatureCatalogMetadata,
   getMissingFeatureDependencies,
   isTenantGrantableFeatureKey,
+  TENANT_GRANTABLE_FEATURE_KEYS,
   withFeatureDependencyClosure,
 } from '../lib/features';
-import { assertPlatformOwner } from '../lib/platformAuth';
+import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 import { getBooleanRule } from '../lib/ruleEvaluator';
 import { assertTenantSupportReadAccess } from '../lib/supportAudit';
 import { getCallerInstitution } from '../lib/tenancy';
@@ -38,12 +39,25 @@ export const resolveMyEntitlements = query({
 /**
  * Whether tenant entitlement enforcement is switched on (the `ENTITLEMENT_ENFORCEMENT`
  * kill-switch, default false → inert). The Backoffice nav reads this so feature-based
- * hiding stays dormant until the owner flips the flag in Phase 2 — no later code change.
+ * hiding stays dormant until the owner flips the flag — no later code change.
  */
 export const isEntitlementEnforcementOn = query({
   args: {},
   handler: async (ctx) => {
     return getBooleanRule(ctx, 'ENTITLEMENT_ENFORCEMENT', false);
+  },
+});
+
+/**
+ * Server copy of tenant-grantable feature keys. The Platform Console compares this against
+ * the Vite-bundled manifest so a stale Convex deploy cannot silently reject client toggles.
+ */
+export const listManifestKeys = query({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    await assertPlatformSupport(ctx);
+    return [...TENANT_GRANTABLE_FEATURE_KEYS];
   },
 });
 

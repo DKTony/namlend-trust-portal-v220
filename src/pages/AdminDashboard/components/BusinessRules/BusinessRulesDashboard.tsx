@@ -19,18 +19,25 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const CATEGORY_LABELS: Record<string, string> = {
   regulatory: 'Regulatory',
   scoring: 'Credit Scoring',
   routing: 'Payment Routing',
+  platform: 'Platform',
+  payments: 'Payments',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
   regulatory: 'bg-red-100  text-red-800  border-red-200 ',
   scoring: 'bg-blue-100  text-blue-800  border-blue-200 ',
   routing: 'bg-purple-100  text-purple-800  border-purple-200 ',
+  platform: 'bg-emerald-100  text-emerald-800  border-emerald-200 ',
+  payments: 'bg-teal-100  text-teal-800  border-teal-200 ',
 };
+
+const PROTECTED_ENFORCEMENT_RULES = new Set(['TENANCY_ENFORCEMENT', 'ENTITLEMENT_ENFORCEMENT']);
 
 export function BusinessRulesDashboard() {
   const rules = useQuery(api.ontology.businessRules.listAllRules);
@@ -38,6 +45,8 @@ export function BusinessRulesDashboard() {
   const seedRules = useMutation(api.ontology.businessRules.seedDefaultRules);
   const { toast } = useToast();
   const { isPlatformSupport } = useAuth();
+  const location = useLocation();
+  const onPlatformConsole = location.pathname.startsWith('/platform');
   const [seeding, setSeeding] = useState(false);
   const [editingRule, setEditingRule] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -62,6 +71,7 @@ export function BusinessRulesDashboard() {
 
   const handleSave = async (ruleCode: string) => {
     if (isPlatformSupport) return;
+    if (PROTECTED_ENFORCEMENT_RULES.has(ruleCode)) return;
     try {
       await updateRule({ ruleCode, value: editValue });
       toast({ title: 'Updated', description: `Rule ${ruleCode} updated successfully.` });
@@ -103,7 +113,24 @@ export function BusinessRulesDashboard() {
   }, {});
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-6', onPlatformConsole && 'p-4 sm:p-6')}>
+      {onPlatformConsole && (
+        <div
+          data-testid="platform-business-rules-banner"
+          className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+        >
+          These are platform-wide operational rules (APR cap, retention, scoring). Tenancy and
+          entitlement kill-switches are managed from{' '}
+          <Link to="/platform/overview" className="font-medium text-foreground underline">
+            Overview
+          </Link>{' '}
+          or{' '}
+          <Link to="/platform/entitlements" className="font-medium text-foreground underline">
+            Entitlements
+          </Link>
+          .
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -164,6 +191,7 @@ export function BusinessRulesDashboard() {
                 {catRules.map((rule) => {
                   const isEditing = editingRule === rule.ruleCode;
                   const isExpanded = expandedRule === rule.ruleCode;
+                  const isProtectedEnforcement = PROTECTED_ENFORCEMENT_RULES.has(rule.ruleCode);
                   const ruleHistory = historicalRules
                     .filter((r) => r.ruleCode === rule.ruleCode)
                     .sort((a, b) => (b.effectiveFrom ?? 0) - (a.effectiveFrom ?? 0));
@@ -190,7 +218,20 @@ export function BusinessRulesDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {isEditing ? (
+                          {isProtectedEnforcement ? (
+                            <>
+                              <Badge variant="secondary" className="text-xs font-mono">
+                                {rule.value}
+                              </Badge>
+                              <Link
+                                to="/platform/overview"
+                                className="text-xs text-muted-foreground underline"
+                                data-testid={`protected-rule-link-${rule.ruleCode}`}
+                              >
+                                Manage on Overview
+                              </Link>
+                            </>
+                          ) : isEditing ? (
                             <>
                               <Input
                                 value={editValue}

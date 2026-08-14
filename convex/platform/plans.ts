@@ -1,6 +1,5 @@
 /**
- * Plan/tier catalog reads + owner-guarded upsert (Platform Console). Full owner-console CRUD
- * (subscriptions UI, etc.) lands in Phase 4; Phase 0 ships reads + a guarded upsert.
+ * Plan/tier catalog reads + owner-guarded upsert (Platform Console).
  */
 
 import { ConvexError, v } from 'convex/values';

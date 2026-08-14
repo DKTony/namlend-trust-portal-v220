@@ -1,9 +1,8 @@
 /**
- * Platform Overview — the owner console landing page (read-only, Phase 3).
+ * Platform Overview — the owner console landing page.
  *
- * Composes existing platform-staff reads (tenant registry, plans, entitlement-enforcement
- * flag) into an at-a-glance health card plus orientation. Provisioning/management actions
- * arrive in Phase 4.
+ * Composes platform-staff reads (tenant registry, plans, entitlement-enforcement
+ * flag, readiness) into an at-a-glance health card plus owner kill-switch controls.
  */
 
 import { ThemedCard } from '@/components/ui/ThemedCard';
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
+import EnforcementControls from '../components/EnforcementControls';
 
 function StatCard({
   label,
@@ -89,7 +89,7 @@ const PlatformOverview: React.FC = () => {
           hint={
             entitlementEnforced
               ? 'Tenants see only entitled features'
-              : 'Flip in Phase 2 to enforce feature gating'
+              : 'Use the kill-switches below when go-live is ready'
           }
           icon={
             entitlementEnforced ? (
@@ -121,6 +121,8 @@ const PlatformOverview: React.FC = () => {
         />
       </div>
 
+      <EnforcementControls />
+
       {readiness && readiness.blockers.length > 0 && (
         <ThemedCard>
           <h3 className="text-sm font-semibold">Activation blockers</h3>
@@ -139,7 +141,7 @@ const PlatformOverview: React.FC = () => {
             { to: '/platform/tenants', label: 'Manage tenant registry' },
             { to: '/platform/plans', label: 'Review plans & feature catalog' },
             { to: '/platform/entitlements', label: 'Inspect tenant entitlements' },
-            { to: '/platform/guardrails', label: 'Platform guardrails (business rules)' },
+            { to: '/platform/guardrails', label: 'Business rules' },
           ].map((l) => (
             <li key={l.to}>
               <Link
@@ -156,7 +158,7 @@ const PlatformOverview: React.FC = () => {
 
       <p className="text-xs text-muted-foreground">
         Owner console. Provision tenants, edit plans, and dispatch entitlements from the sections
-        above. Enforcement is inert until the kill-switch flags are flipped at go-live.
+        above. Enforcement stays inert until the kill-switches above are flipped at go-live.
       </p>
     </div>
   );

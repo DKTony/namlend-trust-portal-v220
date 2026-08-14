@@ -1,5 +1,5 @@
 /**
- * Entitlements (Phase 4) — inspect AND dispatch a tenant's feature set.
+ * Entitlements — inspect AND dispatch a tenant's feature set.
  *
  * Pick a tenant (deep-linkable via ?tenant=), see the resolved feature set
  * (`getResolvedEntitlements`) and the raw override rows (`getTenantEntitlements`). Owners can
@@ -14,12 +14,13 @@ import { FEATURES, getFeature } from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
-import { handleMutationError } from '@/lib/mutationError';
+import { BACKEND_CATALOG_STALE_HINT, handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 import type { Doc, Id } from '@/types/convex';
 import { useMutation, useQuery } from 'convex/react';
-import React, { useEffect, useState } from 'react';
+import React, { Component, type ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import EnforcementControls from '../components/EnforcementControls';
 
 /** Tenant-grantable switches (core/always-on features cannot be revoked). */
 const DISPATCHABLE = FEATURES.filter((f) => f.console !== 'platform' && !f.alwaysOn);
@@ -47,52 +48,67 @@ function formatDate(ms?: number) {
   return ms ? new Date(ms).toLocaleDateString() : 'open-ended';
 }
 
-const EntitlementsView: React.FC = () => {
-  const { isPlatformOwner } = useAuth();
+function CatalogStaleBanner() {
+  return (
+    <div
+      data-testid="catalog-stale-banner"
+      className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800"
+    >
+      {BACKEND_CATALOG_STALE_HINT}
+    </div>
+  );
+}
+
+class CatalogHandshakeBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children;
+  }
+}
+
+interface DispatchPanelProps {
+  selected: TenantOption;
+  resolved: string[] | undefined;
+  rows: Doc<'tenantEntitlements'>[] | undefined;
+  subscription:
+    | {
+        planCode?: string;
+        status: string;
+        effectiveFrom: number;
+        effectiveTo?: number;
+      }
+    | null
+    | undefined;
+  enforcementOn: boolean | undefined;
+  forceStale?: boolean;
+  serverKeys?: Set<string> | null;
+}
+
+const DispatchSwitches: React.FC<{
+  selected: TenantOption;
+  resolved: string[];
+  rows: Doc<'tenantEntitlements'>[] | undefined;
+  serverKeys: Set<string> | null;
+  forceDisabled: boolean;
+}> = ({ selected, resolved, rows, serverKeys, forceDisabled }) => {
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Platform-gated tenant read (a pure platform_owner is not tenant staff).
-  const tenants = useQuery(api.platform.tenants.listTenants, {}) as TenantOption[] | undefined;
   const setTenantEntitlement = useMutation(api.platform.entitlements.setTenantEntitlement);
-  const backfillClientFeatures = useMutation(
-    api.platform.entitlements.backfillClientFeatureDefaults
-  );
-
-  const [selectedId, setSelectedId] = useState<string>(searchParams.get('tenant') ?? '');
   const [pending, setPending] = useState<string | null>(null);
-  const [migrationBusy, setMigrationBusy] = useState(false);
-  const [migrationReport, setMigrationReport] = useState<{
-    dryRun: boolean;
-    counts: { catalogToInsert: number; plansToUpdate: number; overrideConflicts: number };
-  } | null>(null);
+  const resolvedSet = new Set(resolved);
 
-  // Default to the first tenant once the list loads (unless one is deep-linked).
-  useEffect(() => {
-    if (!selectedId && tenants && tenants.length > 0) setSelectedId(tenants[0]._id);
-  }, [tenants, selectedId]);
-
-  const selected = tenants?.find((t: TenantOption) => t._id === selectedId);
-  const resolved = useQuery(
-    api.platform.entitlements.getResolvedEntitlements,
-    selected ? { institutionId: selected._id } : 'skip'
-  );
-  const rows = useQuery(
-    api.platform.entitlements.getTenantEntitlements,
-    selected ? { institutionId: selected._id } : 'skip'
-  ) as Doc<'tenantEntitlements'>[] | undefined;
-  const subscription = useQuery(
-    api.platform.tenants.getTenantSubscription,
-    selected ? { institutionId: selected._id } : 'skip'
-  );
-  const enforcementOn = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
-
-  const onSelect = (id: string) => {
-    setSelectedId(id);
-    setSearchParams(id ? { tenant: id } : {}, { replace: true });
-  };
+  const canDispatch = (key: string) =>
+    !forceDisabled && (serverKeys === null || serverKeys.has(key));
 
   const dispatch = async (featureKey: string, enabled: boolean) => {
-    if (!selected) return;
+    if (!canDispatch(featureKey)) return;
     const feature = getFeature(featureKey);
     const missingDependencies = (feature?.dependsOn ?? []).filter((key) => !resolvedSet.has(key));
     if (enabled && missingDependencies.length > 0) {
@@ -139,6 +155,174 @@ const EntitlementsView: React.FC = () => {
     }
   };
 
+  return (
+    <div className="space-y-5">
+      {DISPATCH_GROUPS.map((group) => (
+        <section key={group.console}>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {group.label}
+          </h4>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {group.features.map((f) => {
+              const missingDependencies = (f.dependsOn ?? []).filter(
+                (key) => !resolvedSet.has(key)
+              );
+              const row = (rows ?? []).find(
+                (r: Doc<'tenantEntitlements'>) => r.featureKey === f.key && !r.effectiveTo
+              );
+              const unknownToBackend = serverKeys !== null && !serverKeys.has(f.key);
+              return (
+                <div
+                  key={f.key}
+                  className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{f.name}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                    {(f.dependsOn?.length ?? 0) > 0 && (
+                      <p
+                        className={cn(
+                          'mt-1 text-xs',
+                          missingDependencies.length > 0
+                            ? 'text-amber-600'
+                            : 'text-muted-foreground'
+                        )}
+                      >
+                        Depends on {f.dependsOn?.join(', ')}
+                      </p>
+                    )}
+                    {unknownToBackend && (
+                      <p className="mt-1 text-xs text-amber-700">Not in backend catalog</p>
+                    )}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Rollout: {row?.rolloutState ?? 'plan/default'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={resolvedSet.has(f.key)}
+                    disabled={pending === f.key || !canDispatch(f.key)}
+                    onCheckedChange={(v) => dispatch(f.key, v)}
+                    aria-label={`Toggle ${f.name}`}
+                    data-testid={`entitlement-switch-${f.key}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+};
+
+const HandshakeDispatch: React.FC<Omit<DispatchPanelProps, 'forceStale' | 'serverKeys'>> = (
+  props
+) => {
+  const manifestKeys = useQuery(api.platform.entitlements.listManifestKeys, {});
+  const serverKeys = manifestKeys === undefined ? null : new Set(manifestKeys);
+  const catalogStale =
+    serverKeys !== null && DISPATCHABLE.some((feature) => !serverKeys.has(feature.key));
+
+  return <DispatchPanelBody {...props} serverKeys={serverKeys} forceStale={catalogStale} />;
+};
+
+const DispatchPanelBody: React.FC<DispatchPanelProps> = ({
+  selected,
+  resolved,
+  rows,
+  subscription,
+  enforcementOn,
+  forceStale = false,
+  serverKeys = null,
+}) => (
+  <ThemedCard className="space-y-3">
+    <h3 className="text-sm font-semibold">Dispatch add-ons</h3>
+    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+      <div className="rounded-md border px-3 py-2">
+        <p className="text-muted-foreground">Enforcement</p>
+        <p className="mt-1 font-medium">
+          {enforcementOn === undefined ? 'Checking…' : enforcementOn ? 'On' : 'Off (inert)'}
+        </p>
+      </div>
+      <div className="rounded-md border px-3 py-2">
+        <p className="text-muted-foreground">Active plan</p>
+        <p className="mt-1 font-medium">
+          {subscription === undefined
+            ? 'Loading…'
+            : (subscription?.planCode ?? 'No active subscription')}
+        </p>
+      </div>
+      <div className="rounded-md border px-3 py-2">
+        <p className="text-muted-foreground">Subscription window</p>
+        <p className="mt-1 font-medium">
+          {subscription
+            ? `${subscription.status} · ${formatDate(subscription.effectiveFrom)} to ${formatDate(subscription.effectiveTo)}`
+            : 'No active/trial row'}
+        </p>
+      </div>
+    </div>
+    <p className="text-xs text-muted-foreground">
+      Toggling writes a manual override for this tenant. Unknown feature keys are rejected
+      server-side by the code manifest authority rule.
+    </p>
+    {forceStale && <CatalogStaleBanner />}
+    {resolved === undefined ? (
+      <p className="text-sm text-muted-foreground" data-testid="entitlements-resolving">
+        Resolving feature switches…
+      </p>
+    ) : (
+      <DispatchSwitches
+        selected={selected}
+        resolved={resolved}
+        rows={rows}
+        serverKeys={serverKeys}
+        forceDisabled={forceStale && serverKeys === null}
+      />
+    )}
+  </ThemedCard>
+);
+
+const EntitlementsView: React.FC = () => {
+  const { isPlatformOwner } = useAuth();
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tenants = useQuery(api.platform.tenants.listTenants, {}) as TenantOption[] | undefined;
+  const backfillClientFeatures = useMutation(
+    api.platform.entitlements.backfillClientFeatureDefaults
+  );
+  const readiness = useQuery(api.platform.readiness.getEnforcementReadiness, {});
+
+  const [selectedId, setSelectedId] = useState<string>(searchParams.get('tenant') ?? '');
+  const [migrationBusy, setMigrationBusy] = useState(false);
+  const [migrationReport, setMigrationReport] = useState<{
+    dryRun: boolean;
+    counts: { catalogToInsert: number; plansToUpdate: number; overrideConflicts: number };
+  } | null>(null);
+
+  useEffect(() => {
+    if (!selectedId && tenants && tenants.length > 0) setSelectedId(tenants[0]._id);
+  }, [tenants, selectedId]);
+
+  const selected = tenants?.find((t: TenantOption) => t._id === selectedId);
+  const resolved = useQuery(
+    api.platform.entitlements.getResolvedEntitlements,
+    selected ? { institutionId: selected._id } : 'skip'
+  );
+  const rows = useQuery(
+    api.platform.entitlements.getTenantEntitlements,
+    selected ? { institutionId: selected._id } : 'skip'
+  ) as Doc<'tenantEntitlements'>[] | undefined;
+  const subscription = useQuery(
+    api.platform.tenants.getTenantSubscription,
+    selected ? { institutionId: selected._id } : 'skip'
+  );
+  const enforcementOn = useQuery(api.platform.entitlements.isEntitlementEnforcementOn, {});
+
+  const onSelect = (id: string) => {
+    setSelectedId(id);
+    setSearchParams(id ? { tenant: id } : {}, { replace: true });
+  };
+
   const runClientFeatureBackfill = async (dryRun: boolean) => {
     setMigrationBusy(true);
     try {
@@ -158,8 +342,6 @@ const EntitlementsView: React.FC = () => {
       setMigrationBusy(false);
     }
   };
-
-  const resolvedSet = new Set(resolved ?? []);
 
   return (
     <div data-testid="platform-entitlements" className="space-y-6 p-4 sm:p-6">
@@ -186,6 +368,23 @@ const EntitlementsView: React.FC = () => {
           </select>
         </label>
       </div>
+
+      {isPlatformOwner && <EnforcementControls />}
+
+      {readiness && readiness.blockers.length > 0 && (
+        <ThemedCard data-testid="entitlements-readiness-blockers">
+          <h3 className="text-sm font-semibold">Activation blockers</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Missing catalogue or plan defaults are usually fixed by the client-feature backfill
+            below.
+          </p>
+          <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+            {readiness.blockers.map((blocker: string) => (
+              <li key={blocker}>{blocker}</li>
+            ))}
+          </ul>
+        </ThemedCard>
+      )}
 
       {isPlatformOwner && (
         <ThemedCard className="space-y-3">
@@ -235,100 +434,27 @@ const EntitlementsView: React.FC = () => {
       ) : (
         <>
           {isPlatformOwner && (
-            <ThemedCard className="space-y-3">
-              <h3 className="text-sm font-semibold">Dispatch add-ons</h3>
-              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
-                <div className="rounded-md border px-3 py-2">
-                  <p className="text-muted-foreground">Enforcement</p>
-                  <p className="mt-1 font-medium">
-                    {enforcementOn === undefined
-                      ? 'Checking…'
-                      : enforcementOn
-                        ? 'On'
-                        : 'Off (inert)'}
-                  </p>
-                </div>
-                <div className="rounded-md border px-3 py-2">
-                  <p className="text-muted-foreground">Active plan</p>
-                  <p className="mt-1 font-medium">
-                    {subscription === undefined
-                      ? 'Loading…'
-                      : (subscription?.planCode ?? 'No active subscription')}
-                  </p>
-                </div>
-                <div className="rounded-md border px-3 py-2">
-                  <p className="text-muted-foreground">Subscription window</p>
-                  <p className="mt-1 font-medium">
-                    {subscription
-                      ? `${subscription.status} · ${formatDate(subscription.effectiveFrom)} to ${formatDate(subscription.effectiveTo)}`
-                      : 'No active/trial row'}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Toggling writes a manual override for this tenant. Unknown feature keys are rejected
-                server-side by the code manifest authority rule.
-              </p>
-              {resolved === undefined ? (
-                <p className="text-sm text-muted-foreground" data-testid="entitlements-resolving">
-                  Resolving feature switches…
-                </p>
-              ) : (
-                <div className="space-y-5">
-                  {DISPATCH_GROUPS.map((group) => (
-                    <section key={group.console}>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {group.label}
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {group.features.map((f) => {
-                          const missingDependencies = (f.dependsOn ?? []).filter(
-                            (key) => !resolvedSet.has(key)
-                          );
-                          const row = (rows ?? []).find(
-                            (r: Doc<'tenantEntitlements'>) =>
-                              r.featureKey === f.key && !r.effectiveTo
-                          );
-                          return (
-                            <div
-                              key={f.key}
-                              className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                            >
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-medium">{f.name}</p>
-                                <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
-                                {(f.dependsOn?.length ?? 0) > 0 && (
-                                  <p
-                                    className={cn(
-                                      'mt-1 text-xs',
-                                      missingDependencies.length > 0
-                                        ? 'text-amber-600'
-                                        : 'text-muted-foreground'
-                                    )}
-                                  >
-                                    Depends on {f.dependsOn?.join(', ')}
-                                  </p>
-                                )}
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  Rollout: {row?.rolloutState ?? 'plan/default'}
-                                </p>
-                              </div>
-                              <Switch
-                                checked={resolvedSet.has(f.key)}
-                                disabled={pending === f.key}
-                                onCheckedChange={(v) => dispatch(f.key, v)}
-                                aria-label={`Toggle ${f.name}`}
-                                data-testid={`entitlement-switch-${f.key}`}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  ))}
-                </div>
-              )}
-            </ThemedCard>
+            <CatalogHandshakeBoundary
+              fallback={
+                <DispatchPanelBody
+                  selected={selected}
+                  resolved={resolved}
+                  rows={rows}
+                  subscription={subscription}
+                  enforcementOn={enforcementOn}
+                  forceStale
+                  serverKeys={null}
+                />
+              }
+            >
+              <HandshakeDispatch
+                selected={selected}
+                resolved={resolved}
+                rows={rows}
+                subscription={subscription}
+                enforcementOn={enforcementOn}
+              />
+            </CatalogHandshakeBoundary>
           )}
 
           <ThemedCard className="space-y-3">

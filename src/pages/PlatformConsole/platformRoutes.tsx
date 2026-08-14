@@ -2,9 +2,8 @@
  * Platform Console route definitions (nested under /platform, lazy-loaded).
  *
  * The whole subtree is gated once at the mount point (<ProtectedRoute requirePlatform>), so
- * these routes carry no per-route guard. Tenant/Guardrails/Infra REUSE the same dashboard
- * components the backoffice loads — Phase 3 is a structural split, not a rebuild — while
- * Overview/Plans/Entitlements/Support are platform-only pages.
+ * these routes carry no per-route guard. Tenant/Business Rules/Infra reuse the same dashboard
+ * components the backoffice loads, while Overview/Plans/Entitlements/Support are platform-only.
  */
 
 import ConvexErrorBoundary from '@/components/system/ConvexErrorBoundary';

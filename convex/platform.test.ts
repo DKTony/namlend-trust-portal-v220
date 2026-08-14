@@ -105,6 +105,17 @@ describe('feature manifest', () => {
       'clientProfile',
     ]);
   });
+  test('listManifestKeys returns tenant-grantable keys including client surfaces', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    const keys = await asUser(t, owner).query(api.platform.entitlements.listManifestKeys, {});
+    expect(keys).toEqual(
+      expect.arrayContaining(['clientPayments', 'clientSelfService', 'loans', 'collections'])
+    );
+    expect(keys).not.toContain('tenantRegistry');
+    expect(keys).not.toContain('entitlementDispatch');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -116,6 +127,16 @@ describe('platform guards', () => {
     const t = convexTest(schema, modules);
     const user = await seedTenantUser(t, { role: 'tenant_admin' });
     await expect(asUser(t, user).query(api.platform.plans.listPlans, {})).rejects.toMatchObject({
+      data: { code: 'FORBIDDEN' },
+    });
+  });
+
+  test('non-platform user cannot list the feature manifest', async () => {
+    const t = convexTest(schema, modules);
+    const user = await seedTenantUser(t, { role: 'tenant_admin' });
+    await expect(
+      asUser(t, user).query(api.platform.entitlements.listManifestKeys, {})
+    ).rejects.toMatchObject({
       data: { code: 'FORBIDDEN' },
     });
   });

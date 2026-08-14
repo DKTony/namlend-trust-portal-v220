@@ -1,4 +1,3 @@
-import LoanDetailsModal from '@/components/modals/LoanDetailsModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
 import { formatNAD } from '@/utils/currency';
@@ -31,25 +29,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { KycReviewPanel } from './KycReviewPanel';
-
-// ---------------------------------------------------------------------------
-// Local view model — typed to match actual Convex approvalRequests schema (N2)
-// ---------------------------------------------------------------------------
-interface ApprovalRequest {
-  id: string;
-  /** Convex entityType field */
-  request_type: string;
-  entity_id: string;
-  requested_by: string;
-  status: 'pending' | 'approved' | 'rejected' | 'escalated' | 'withdrawn';
-  priority: 'low' | 'medium' | 'high' | 'urgent' | 'normal';
-  /** Convex metadata field — typed as unknown, accessed safely */
-  request_data: Record<string, unknown>;
-  reviewer_notes?: string;
-  created_at: string;
-  updated_at: string;
-}
+import { ApprovalRequestDialog } from './ApprovalRequestDialog';
+import {
+  type ApprovalRequest,
+  formatRequestTypeLabel,
+  isLoanRequestType,
+  matchesRequestTypeFilter,
+  parseLoanApprovalFields,
+} from './approvalRequestView';
 
 interface ApprovalStats {
   total: number;
@@ -67,10 +54,6 @@ export default function ApprovalManagementDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<ApprovalRequest | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [loanDetailsModalOpen, setLoanDetailsModalOpen] = useState(false);
-  const [selectedLoanForModal, setSelectedLoanForModal] = useState<Record<string, unknown> | null>(
-    null
-  );
   const [filters, setFilters] = useState({
     status: 'all',
     type: 'all',
@@ -78,7 +61,6 @@ export default function ApprovalManagementDashboard() {
     search: '',
   });
 
-  // Convex reactive query — pass status filter only when not 'all'
   const rawApprovals = useConvexQuery(
     api.approvalWorkflow.adminListApprovals,
     filters.status !== 'all'
@@ -92,13 +74,12 @@ export default function ApprovalManagementDashboard() {
 
   const loading = rawApprovals === undefined;
 
-  // Derive typed view model from Convex query result (N2 — no as any)
   const requests: ApprovalRequest[] = useMemo(() => {
     if (!rawApprovals) return [];
 
     let mapped: ApprovalRequest[] = rawApprovals.map((r) => ({
       id: String(r._id),
-      request_type: r.entityType ?? 'loan_application',
+      request_type: r.entityType ?? 'loan',
       entity_id: String(r.entityId ?? ''),
       requested_by: String(r.requestedBy),
       status: r.status as ApprovalRequest['status'],
@@ -109,13 +90,16 @@ export default function ApprovalManagementDashboard() {
       updated_at: r.updatedAt ? new Date(r.updatedAt).toISOString() : new Date().toISOString(),
     }));
 
-    if (filters.type !== 'all') mapped = mapped.filter((r) => r.request_type === filters.type);
+    if (filters.type !== 'all') {
+      mapped = mapped.filter((r) => matchesRequestTypeFilter(r.request_type, filters.type));
+    }
     if (filters.priority !== 'all') mapped = mapped.filter((r) => r.priority === filters.priority);
     if (filters.search) {
       const lower = filters.search.toLowerCase();
       mapped = mapped.filter(
         (r) =>
           r.request_type.toLowerCase().includes(lower) ||
+          formatRequestTypeLabel(r.request_type).toLowerCase().includes(lower) ||
           r.status.toLowerCase().includes(lower) ||
           r.entity_id.toLowerCase().includes(lower)
       );
@@ -124,7 +108,6 @@ export default function ApprovalManagementDashboard() {
     return mapped;
   }, [rawApprovals, filters]);
 
-  // Derive stats from the same reactive data
   const stats: ApprovalStats | null = useMemo(() => {
     if (!rawApprovals) return null;
     return {
@@ -139,6 +122,16 @@ export default function ApprovalManagementDashboard() {
     };
   }, [rawApprovals]);
 
+  const closeReview = () => {
+    setSelectedRequest(null);
+    setReviewNotes('');
+  };
+
+  const openReview = (request: ApprovalRequest) => {
+    setSelectedRequest(request);
+    setReviewNotes('');
+  };
+
   const handleStatusUpdate = async (requestId: string, newStatus: ApprovalRequest['status']) => {
     if (processing) return;
     setProcessing(true);
@@ -152,15 +145,39 @@ export default function ApprovalManagementDashboard() {
         title: 'Status Updated',
         description:
           newStatus === 'approved'
-            ? `Request approved and ${selectedRequest?.request_type === 'loan_application' ? 'loan created' : 'processed'} successfully`
+            ? `Request approved and ${isLoanRequestType(selectedRequest?.request_type ?? '') ? 'loan created' : 'processed'} successfully`
             : `Request has been ${newStatus}`,
       });
-      setSelectedRequest(null);
-      setReviewNotes('');
+      closeReview();
     } catch {
       toast({
         title: 'Error',
         description: 'Failed to update request status',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleEscalate = async () => {
+    if (!selectedRequest || processing) return;
+    setProcessing(true);
+    try {
+      await processApprovalMutation({
+        requestId: selectedRequest.id as Parameters<typeof processApprovalMutation>[0]['requestId'],
+        action: 'escalate',
+        notes: reviewNotes || 'Escalated for additional review',
+      });
+      toast({
+        title: 'Escalated',
+        description: 'Request escalated for senior review',
+      });
+      closeReview();
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to escalate request',
         variant: 'destructive',
       });
     } finally {
@@ -230,7 +247,8 @@ export default function ApprovalManagementDashboard() {
   };
 
   const getRequestTypeIcon = (type: string) => {
-    const icons: Record<string, any> = {
+    const icons: Record<string, React.ElementType> = {
+      loan: DollarSign,
       loan_application: DollarSign,
       kyc: FileText,
       profile_update: User,
@@ -244,9 +262,9 @@ export default function ApprovalManagementDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <Clock className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <Clock className="mx-auto mb-2 h-8 w-8 animate-spin" />
           <p>Loading approval requests...</p>
         </div>
       </div>
@@ -255,16 +273,15 @@ export default function ApprovalManagementDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+              <div className="truncate text-xl font-bold tabular-nums sm:text-2xl">
                 {stats.total}
               </div>
             </CardContent>
@@ -276,7 +293,7 @@ export default function ApprovalManagementDashboard() {
               <Clock className="h-4 w-4 text-yellow-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-yellow-600  truncate tabular-nums">
+              <div className="truncate text-xl font-bold tabular-nums text-yellow-600 sm:text-2xl">
                 {stats.pending}
               </div>
             </CardContent>
@@ -288,7 +305,7 @@ export default function ApprovalManagementDashboard() {
               <Eye className="h-4 w-4 text-blue-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
+              <div className="truncate text-xl font-bold tabular-nums text-blue-600 sm:text-2xl">
                 {stats.underReview}
               </div>
             </CardContent>
@@ -300,7 +317,7 @@ export default function ApprovalManagementDashboard() {
               <CheckCircle className="h-4 w-4 text-green-600 " />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-green-600  truncate tabular-nums">
+              <div className="truncate text-xl font-bold tabular-nums text-green-600 sm:text-2xl">
                 {stats.approved}
               </div>
             </CardContent>
@@ -312,7 +329,7 @@ export default function ApprovalManagementDashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold truncate tabular-nums">
+              <div className="truncate text-xl font-bold tabular-nums sm:text-2xl">
                 {Math.round(stats.avgProcessingTime)}h
               </div>
             </CardContent>
@@ -320,7 +337,6 @@ export default function ApprovalManagementDashboard() {
         </div>
       )}
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -329,7 +345,7 @@ export default function ApprovalManagementDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label>Status</Label>
               <Select
@@ -360,7 +376,7 @@ export default function ApprovalManagementDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="loan_application">Loan Applications</SelectItem>
+                  <SelectItem value="loan">Loan Applications</SelectItem>
                   <SelectItem value="kyc">KYC Packages</SelectItem>
                   <SelectItem value="profile_update">Profile Updates</SelectItem>
                   <SelectItem value="payment">Payments</SelectItem>
@@ -405,270 +421,100 @@ export default function ApprovalManagementDashboard() {
         </CardContent>
       </Card>
 
-      {/* Requests List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Approval Requests</CardTitle>
-            <CardDescription>{requests.length} requests found</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {requests.map((request) => (
+      <Card>
+        <CardHeader>
+          <CardTitle>Approval Requests</CardTitle>
+          <CardDescription>{requests.length} requests found</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[min(40rem,calc(100dvh-20rem))] space-y-4 overflow-y-auto">
+            {requests.map((request) => {
+              const loanAmount = isLoanRequestType(request.request_type)
+                ? parseLoanApprovalFields(request.request_data).amount
+                : null;
+
+              return (
                 <div
                   key={request.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  className={`cursor-pointer rounded-lg border p-4 transition-colors ${
                     selectedRequest?.id === request.id ? 'bg-muted' : 'hover:bg-muted/50'
                   }`}
-                  onClick={() => setSelectedRequest(request)}
+                  onClick={() => openReview(request)}
                   data-testid={`approvals-request-${request.id}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="mr-2 flex min-w-0 flex-1 items-center gap-2">
                       <div className="shrink-0">{getRequestTypeIcon(request.request_type)}</div>
                       <div className="min-w-0 flex-1">
                         <p
-                          className="font-medium truncate"
-                          title={request.request_type.replace('_', ' ').toUpperCase()}
+                          className="truncate font-medium"
+                          title={formatRequestTypeLabel(request.request_type)}
                         >
-                          {request.request_type.replace('_', ' ').toUpperCase()}
+                          {formatRequestTypeLabel(request.request_type)}
                         </p>
                         <p
-                          className="text-sm text-muted-foreground truncate"
+                          className="truncate text-sm text-muted-foreground"
                           title={request.entity_id}
                         >
                           {request.entity_id.slice(-12) || 'Unknown entity'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex shrink-0 flex-col items-end gap-1">
                       {getStatusBadge(request.status)}
                       {getPriorityBadge(request.priority)}
                     </div>
                   </div>
 
-                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="mt-3 flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <span className="truncate tabular-nums">
                       {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                     </span>
-                    {request.request_type === 'loan_application' && (
-                      <span className="truncate tabular-nums ml-2">
-                        {formatNAD(Number(request.request_data.amount) || 0)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {requests.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-8 w-8 mx-auto mb-2" />
-                  <p>No approval requests found</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Request Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Request Details</CardTitle>
-            <CardDescription>
-              {selectedRequest ? 'Review and take action' : 'Select a request to view details'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {selectedRequest ? (
-              selectedRequest.request_type === 'kyc' ? (
-                <KycReviewPanel
-                  userId={selectedRequest.requested_by}
-                  requestId={selectedRequest.id}
-                  readOnly={
-                    selectedRequest.status !== 'pending' && selectedRequest.status !== 'escalated'
-                  }
-                  onComplete={() => {
-                    const nextRequest = requests.find(
-                      (request) =>
-                        request.id !== selectedRequest.id &&
-                        request.request_type === 'kyc' &&
-                        (request.status === 'pending' || request.status === 'escalated')
-                    );
-                    setSelectedRequest(nextRequest ?? null);
-                  }}
-                />
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">TYPE</Label>
-                      <p className="font-medium">
-                        {selectedRequest.request_type.replace('_', ' ')}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">STATUS</Label>
-                      <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">PRIORITY</Label>
-                      <div className="mt-1">{getPriorityBadge(selectedRequest.priority)}</div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">SUBMITTED</Label>
-                      <p className="text-sm">
-                        {formatDistanceToNow(new Date(selectedRequest.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs text-muted-foreground">ENTITY ID</Label>
-                    <p className="font-medium font-mono text-sm">{selectedRequest.entity_id}</p>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs text-muted-foreground">REQUEST DATA</Label>
-                    <div className="mt-2">
-                      {selectedRequest.request_type === 'loan_application' ? (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => {
-                            setSelectedLoanForModal({
-                              id: selectedRequest.entity_id,
-                              status: selectedRequest.status,
-                              created_at: selectedRequest.created_at,
-                              approved_at:
-                                selectedRequest.status === 'approved'
-                                  ? selectedRequest.updated_at
-                                  : undefined,
-                            });
-                            setLoanDetailsModalOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Loan Application Details
-                        </Button>
-                      ) : (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <pre className="text-xs overflow-x-auto">
-                            {JSON.stringify(selectedRequest.request_data, null, 2)}
-                          </pre>
-                        </div>
+                    <div className="flex items-center gap-2">
+                      {loanAmount !== null && (
+                        <span className="truncate tabular-nums">{formatNAD(loanAmount)}</span>
                       )}
-                    </div>
-                  </div>
-
-                  {selectedRequest.reviewer_notes && (
-                    <div>
-                      <Label className="text-xs text-muted-foreground">PREVIOUS NOTES</Label>
-                      <p className="text-sm mt-1">{selectedRequest.reviewer_notes}</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="review-notes">Review Notes</Label>
-                    <Textarea
-                      id="review-notes"
-                      placeholder="Add your review notes..."
-                      value={reviewNotes}
-                      onChange={(e) => setReviewNotes(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Only show action buttons if request is not already approved/rejected */}
-                  {selectedRequest.status !== 'approved' &&
-                  selectedRequest.status !== 'rejected' ? (
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <Button
-                        onClick={() => handleStatusUpdate(selectedRequest.id, 'approved')}
-                        disabled={processing}
-                        className="w-full flex-1"
-                        data-testid="approvals-approve-btn"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleStatusUpdate(selectedRequest.id, 'rejected')}
-                        disabled={processing}
-                        className="w-full flex-1"
-                        data-testid="approvals-reject-btn"
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Reject
-                      </Button>
                       <Button
                         variant="outline"
-                        onClick={async () => {
-                          if (processing) return;
-                          setProcessing(true);
-                          try {
-                            await processApprovalMutation({
-                              requestId: selectedRequest.id as Parameters<
-                                typeof processApprovalMutation
-                              >[0]['requestId'],
-                              action: 'escalate',
-                              notes: reviewNotes || 'Escalated for additional review',
-                            });
-                            toast({
-                              title: 'Escalated',
-                              description: 'Request escalated for senior review',
-                            });
-                            setSelectedRequest(null);
-                            setReviewNotes('');
-                          } catch {
-                            toast({
-                              title: 'Error',
-                              description: 'Failed to escalate request',
-                              variant: 'destructive',
-                            });
-                          } finally {
-                            setProcessing(false);
-                          }
+                        size="sm"
+                        data-testid={`approvals-review-${request.id}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openReview(request);
                         }}
-                        disabled={processing}
-                        className="w-full sm:w-auto"
-                        data-testid="approvals-requestinfo-btn"
                       >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Escalate
+                        <Eye className="mr-2 h-4 w-4" />
+                        Review
                       </Button>
                     </div>
-                  ) : (
-                    <div
-                      className="p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground"
-                      data-testid="approvals-processed-state"
-                    >
-                      <CheckCircle className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                      This request has been {selectedRequest.status}. No further action required.
-                    </div>
-                  )}
+                  </div>
                 </div>
-              )
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Eye className="h-8 w-8 mx-auto mb-2" />
-                <p>Select a request to view details and take action</p>
+              );
+            })}
+
+            {requests.length === 0 && (
+              <div className="py-8 text-center text-muted-foreground">
+                <FileText className="mx-auto mb-2 h-8 w-8" />
+                <p>No approval requests found</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Loan Details Modal */}
-      <LoanDetailsModal
-        open={loanDetailsModalOpen}
-        onClose={() => {
-          setLoanDetailsModalOpen(false);
-          setSelectedLoanForModal(null);
-        }}
-        loan={selectedLoanForModal as React.ComponentProps<typeof LoanDetailsModal>['loan']}
+      <ApprovalRequestDialog
+        request={selectedRequest}
+        open={selectedRequest !== null}
+        onClose={closeReview}
+        reviewNotes={reviewNotes}
+        onReviewNotesChange={setReviewNotes}
+        processing={processing}
+        onApprove={() => selectedRequest && handleStatusUpdate(selectedRequest.id, 'approved')}
+        onReject={() => selectedRequest && handleStatusUpdate(selectedRequest.id, 'rejected')}
+        onEscalate={handleEscalate}
+        onKycComplete={closeReview}
+        statusBadge={selectedRequest ? getStatusBadge(selectedRequest.status) : null}
+        priorityBadge={selectedRequest ? getPriorityBadge(selectedRequest.priority) : null}
       />
     </div>
   );

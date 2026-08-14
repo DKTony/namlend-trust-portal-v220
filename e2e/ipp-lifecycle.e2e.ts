@@ -180,11 +180,11 @@ test.describe('IPP Full Lifecycle', () => {
     if (hasRequests) {
       console.log('Phase 2: Found approval requests in Approvals tab');
 
-      // Click the first pending request to select it
+      // Click the first pending request to open the review dialog
       await approvalRequests.first().click();
-      await page.waitForTimeout(1000);
+      await expect(page.getByTestId('approvals-review-dialog')).toBeVisible({ timeout: 10_000 });
 
-      // Look for the Approve button in the request detail panel
+      // Look for the Approve button in the review dialog
       const approvalsApproveBtn = page.getByTestId('approvals-approve-btn');
       const canApprove = await approvalsApproveBtn
         .isVisible({ timeout: 10_000 })

@@ -44,10 +44,11 @@ test.describe('Admin Approvals actions (non-mutating)', () => {
       }
     });
 
-    // Open first request details
+    // Open first request details in the review dialog
     await requests.first().click();
+    await expect(page.getByTestId('approvals-review-dialog')).toBeVisible({ timeout: 10_000 });
 
-    // Three possible shapes for the detail pane:
+    // Three possible shapes for the review dialog:
     //   pending   → generic approve / reject / request-info controls
     //   processed → read-only decision summary
     //   kyc       → KycReviewPanel, whose actions are per-document plus "Complete package

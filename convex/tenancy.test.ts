@@ -227,6 +227,41 @@ describe('backfill', () => {
     const r2 = await t.mutation(internal.platform.backfill.backfillTenancyFinancialCore, {});
     expect(r2.stamped?.loans).toBe(0);
   });
+
+  test('refuses auto-detect when two lenders exist, then stamps the explicit target', async () => {
+    const t = convexTest(schema, modules);
+    const og = await seedInstitution(t, 'OGFS');
+    await seedInstitution(t, 'ACME');
+    const borrower = await seedUser(t, { role: 'client', institutionId: og });
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert('loans', {
+        userId: borrower,
+        principal: 1,
+        interestRate: 10,
+        termMonths: 1,
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const refused = await t.mutation(internal.platform.backfill.backfillTenancyFinancialCore, {});
+    expect(refused.ok).toBe(false);
+
+    const stamped = await t.mutation(internal.platform.backfill.backfillTenancyFinancialCore, {
+      institutionId: og,
+    });
+    expect(stamped.ok).toBe(true);
+    expect(stamped.stamped?.loans).toBe(1);
+    expect(stamped.needsRerun).toBe(false);
+
+    const stampedInst = await t.run(async (ctx) => {
+      const loan = await ctx.db.query('loans').first();
+      return loan?.institutionId;
+    });
+    expect(stampedInst).toBe(og);
+  });
 });
 
 // ---------------------------------------------------------------------------

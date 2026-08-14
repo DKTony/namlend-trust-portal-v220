@@ -10,7 +10,14 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { FEATURES, getFeature } from '@/config/features';
+import {
+  ALWAYS_ON_FEATURE_DEFS,
+  FEATURES,
+  FEATURE_SAFETY_NETS,
+  getFeature,
+  getFeatureCouplingClass,
+  getReverseDependents,
+} from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
@@ -45,6 +52,19 @@ interface TenantOption {
 
 function formatDate(ms?: number) {
   return ms ? new Date(ms).toLocaleDateString() : 'open-ended';
+}
+
+function couplingBadge(featureKey: string) {
+  const feature = getFeature(featureKey);
+  if (!feature) return null;
+  const coupling = getFeatureCouplingClass(feature);
+  const labels: Record<string, string> = {
+    'always-on': 'Core (locked)',
+    'declared-edge': 'Declared dependency',
+    'runtime-leak': 'Safety-net API',
+    independent: 'Independent',
+  };
+  return labels[coupling];
 }
 
 const EntitlementsView: React.FC = () => {
@@ -103,13 +123,15 @@ const EntitlementsView: React.FC = () => {
       });
       return;
     }
-    const activeDependent = DISPATCHABLE.find(
-      (candidate) => resolvedSet.has(candidate.key) && candidate.dependsOn?.includes(featureKey)
+    const activeDependents = getReverseDependents(featureKey).filter((candidate) =>
+      resolvedSet.has(candidate.key)
     );
-    if (!enabled && activeDependent) {
+    if (!enabled && activeDependents.length > 0) {
       toast({
         title: 'Dependency still in use',
-        description: `${feature?.name ?? featureKey} cannot be disabled while ${activeDependent.name} remains enabled.`,
+        description: `${feature?.name ?? featureKey} cannot be disabled while ${activeDependents
+          .map((dependent) => dependent.name)
+          .join(', ')} remain enabled.`,
         variant: 'destructive',
       });
       return;
@@ -275,6 +297,37 @@ const EntitlementsView: React.FC = () => {
                 </p>
               ) : (
                 <div className="space-y-5">
+                  <section>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Core lending (always on)
+                    </h4>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      These capabilities are the lending OS and cannot be revoked per tenant.
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {ALWAYS_ON_FEATURE_DEFS.map((f) => (
+                        <div
+                          key={f.key}
+                          className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                          data-testid={`entitlement-core-${f.key}`}
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{f.name}</p>
+                            <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {couplingBadge(f.key)}
+                            </p>
+                          </div>
+                          <Switch
+                            checked
+                            disabled
+                            aria-label={`${f.name} locked on`}
+                            data-testid={`entitlement-switch-${f.key}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                   {DISPATCH_GROUPS.map((group) => (
                     <section key={group.console}>
                       <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -285,10 +338,12 @@ const EntitlementsView: React.FC = () => {
                           const missingDependencies = (f.dependsOn ?? []).filter(
                             (key) => !resolvedSet.has(key)
                           );
+                          const reverseDependents = getReverseDependents(f.key);
                           const row = (rows ?? []).find(
                             (r: Doc<'tenantEntitlements'>) =>
                               r.featureKey === f.key && !r.effectiveTo
                           );
+                          const safetyNet = FEATURE_SAFETY_NETS[f.key];
                           return (
                             <div
                               key={f.key}
@@ -297,6 +352,9 @@ const EntitlementsView: React.FC = () => {
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-medium">{f.name}</p>
                                 <p className="font-mono text-xs text-muted-foreground">{f.key}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {couplingBadge(f.key)}
+                                </p>
                                 {(f.dependsOn?.length ?? 0) > 0 && (
                                   <p
                                     className={cn(
@@ -308,6 +366,14 @@ const EntitlementsView: React.FC = () => {
                                   >
                                     Depends on {f.dependsOn?.join(', ')}
                                   </p>
+                                )}
+                                {reverseDependents.length > 0 && (
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Required by {reverseDependents.map((d) => d.key).join(', ')}
+                                  </p>
+                                )}
+                                {safetyNet && (
+                                  <p className="mt-1 text-xs text-muted-foreground">{safetyNet}</p>
                                 )}
                                 <p className="mt-1 text-xs text-muted-foreground">
                                   Rollout: {row?.rolloutState ?? 'plan/default'}

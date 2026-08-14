@@ -3,9 +3,11 @@
  * Main component for the IRCS Back Office reconciliation and settlement management
  */
 
+import { FeatureGate } from '@/components/system/FeatureGate';
 import { AdaptiveTabs } from '@/components/adaptive';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { formatNAD } from '@/utils/currency';
 import { useSettlementStatistics } from '@/hooks/useSettlement';
 import {
@@ -21,7 +23,7 @@ import {
   ShieldAlert,
   XCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Sub-components
 import { AcknowledgementsViewer } from './AcknowledgementsViewer';
@@ -39,6 +41,8 @@ import { TimeoutReportViewer } from './TimeoutReportViewer';
 
 export function ReconciliationDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const { hasFeature } = useEntitlements();
+  const ipsEnabled = hasFeature('ippOnboarding');
 
   // Get 30-day statistics
   const thirtyDaysAgo = new Date();
@@ -51,6 +55,12 @@ export function ReconciliationDashboard() {
     thirtyDaysAgo.toISOString().split('T')[0],
     new Date().toISOString().split('T')[0]
   );
+
+  useEffect(() => {
+    if (!ipsEnabled && (activeTab === 'ips' || activeTab === 'ipp-ops')) {
+      setActiveTab('overview');
+    }
+  }, [activeTab, ipsEnabled]);
 
   return (
     <div className="space-y-6">
@@ -140,9 +150,11 @@ export function ReconciliationDashboard() {
       </div>
 
       {/* IPS Health Widget */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <IPSHealthWidget />
-      </div>
+      {ipsEnabled && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <IPSHealthWidget />
+        </div>
+      )}
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -179,8 +191,22 @@ export function ReconciliationDashboard() {
               shortLabel: 'Acks',
               icon: stats?.runs?.failed ? XCircle : CheckCircle,
             },
-            { value: 'ips', label: 'IPS Transactions', shortLabel: 'IPS', icon: FileSpreadsheet },
-            { value: 'ipp-ops', label: 'IPP Operations', shortLabel: 'Ops', icon: ShieldAlert },
+            ...(ipsEnabled
+              ? [
+                  {
+                    value: 'ips',
+                    label: 'IPS Transactions',
+                    shortLabel: 'IPS',
+                    icon: FileSpreadsheet,
+                  },
+                  {
+                    value: 'ipp-ops',
+                    label: 'IPP Operations',
+                    shortLabel: 'Ops',
+                    icon: ShieldAlert,
+                  },
+                ]
+              : []),
           ]}
         />
 
@@ -220,13 +246,20 @@ export function ReconciliationDashboard() {
           <AcknowledgementsViewer />
         </TabsContent>
 
-        <TabsContent value="ips" className="space-y-4">
-          <IPSTransactionsViewer />
-        </TabsContent>
-
-        <TabsContent value="ipp-ops" className="space-y-4">
-          <IPPOperationsControlCenter />
-        </TabsContent>
+        {ipsEnabled && (
+          <>
+            <TabsContent value="ips" className="space-y-4">
+              <FeatureGate feature="ippOnboarding">
+                <IPSTransactionsViewer />
+              </FeatureGate>
+            </TabsContent>
+            <TabsContent value="ipp-ops" className="space-y-4">
+              <FeatureGate feature="ippOnboarding">
+                <IPPOperationsControlCenter />
+              </FeatureGate>
+            </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );

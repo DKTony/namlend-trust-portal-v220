@@ -84,6 +84,7 @@ export const getMyOnboarding = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientBanking', 'ippOnboarding');
     return ctx.db
       .query('ipsOnboardingApplications')
       .withIndex('by_userId', (q) => q.eq('userId', userId))

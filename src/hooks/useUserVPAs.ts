@@ -6,6 +6,7 @@
  */
 
 import { useToast } from '@/hooks/use-toast';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import type {
   IPSAdapterValidateVPAResponse,
@@ -17,7 +18,8 @@ import { useAction, useMutation, useQuery } from 'convex/react';
 import { useCallback, useMemo, useState } from 'react';
 
 export function useUserVPAs() {
-  const raw = useQuery(api.ips.ipsVpa.getMySavedVpas, {});
+  const { hasFeature } = useEntitlements();
+  const raw = useQuery(api.ips.ipsVpa.getMySavedVpas, hasFeature('clientBanking') ? {} : 'skip');
 
   const data = useMemo<UserVPAsResult>(() => {
     if (!raw) {
@@ -28,7 +30,7 @@ export function useUserVPAs() {
 
   return {
     data,
-    isLoading: raw === undefined,
+    isLoading: hasFeature('clientBanking') && raw === undefined,
     error: null,
   };
 }

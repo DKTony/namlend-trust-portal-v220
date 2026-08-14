@@ -35,6 +35,11 @@ import {
 } from '../lib/tenancy';
 import { mandateFrequency, mandateStatus, mandateType } from '../schema';
 
+async function assertMandateWriteEnabled(ctx: any) {
+  await assertCallerFeatureEnabled(ctx, 'mandates');
+  await assertCallerFeatureEnabled(ctx, 'collections');
+}
+
 // ---------------------------------------------------------------------------
 // Mutations
 // ---------------------------------------------------------------------------
@@ -63,7 +68,7 @@ export const createMandate = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const now = Date.now();
     const mandateRef = generateMandateRef();
     const correlationId = generateCorrelationId();
@@ -180,7 +185,7 @@ export const submitMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const userId = await assertAuthenticated(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -231,7 +236,7 @@ export const authorizeMandate = mutation({
   },
   handler: async (ctx, { mandateId, authorizedVia }) => {
     const userId = await assertAuthenticated(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -298,7 +303,7 @@ export const suspendMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const staffId = await assertStaff(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -344,7 +349,7 @@ export const reactivateMandate = mutation({
   },
   handler: async (ctx, { mandateId }) => {
     const staffId = await assertStaff(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 
@@ -401,7 +406,7 @@ export const revokeMandate = mutation({
   },
   handler: async (ctx, { mandateId, reason }) => {
     const userId = await assertAuthenticated(ctx);
-    await assertCallerFeatureEnabled(ctx, 'mandates');
+    await assertMandateWriteEnabled(ctx);
     const mandate = await ctx.db.get(mandateId);
     if (!mandate) throw new ConvexError({ code: 'NOT_FOUND', message: 'Mandate not found' });
 

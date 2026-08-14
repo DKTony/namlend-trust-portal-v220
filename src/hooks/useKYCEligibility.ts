@@ -1,6 +1,7 @@
 /** Canonical Convex-backed KYC eligibility projection. */
 
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import type { QueryData } from '@/types/convex';
 import { useQuery } from 'convex/react';
@@ -29,9 +30,15 @@ interface UseKYCEligibilityReturn {
 
 export function useKYCEligibility(): UseKYCEligibilityReturn {
   const { user } = useAuth();
-  const overview = useQuery(api.kycDocuments.getMyKycOverview, user ? {} : 'skip');
+  const { hasFeature } = useEntitlements();
+  const documentsEnabled = hasFeature('clientDocuments');
+  const overview = useQuery(
+    api.kycDocuments.getMyKycOverview,
+    user && documentsEnabled ? {} : 'skip'
+  );
   const profile = useQuery(api.users.getMyProfile, user ? {} : 'skip');
-  const loading = user ? overview === undefined || profile === undefined : false;
+  const loading =
+    user && documentsEnabled ? overview === undefined || profile === undefined : false;
 
   const eligibility = useMemo((): KYCEligibility | null => {
     if (!user || !overview) return null;

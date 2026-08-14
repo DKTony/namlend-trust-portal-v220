@@ -55,10 +55,11 @@ function formatDate(ms?: number) {
 }
 
 /**
- * OGFS dispatch on aromatic-okapi-265 (enforcement stays off):
- * cores locked; keep clientPayments / clientBanking / clientBudget off if that remains the
- * intended OGFS client shape; keep Self Service and the other Client Portal keys on.
- * Do not seedControlPlane the unbound platformowner@test.namlend.com client role.
+ * OGFS dispatch on aromatic-okapi-265 (enforcement stays off; businessRules unseeded):
+ * cores locked; plan `all_features`; keep clientPayments / clientBanking / clientBudget off;
+ * keep Self Service plus the other Client Portal keys on (Overview, Loans, Applications,
+ * Documents, Profile). Collections and mandates remain on. Do not seedControlPlane the
+ * unbound platformowner@test.namlend.com client role.
  */
 const EntitlementsView: React.FC = () => {
   const { isPlatformOwner } = useAuth();

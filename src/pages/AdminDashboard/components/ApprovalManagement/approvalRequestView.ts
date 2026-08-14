@@ -53,6 +53,10 @@ export function isKycRequestType(type: string): boolean {
   return type === 'kyc';
 }
 
+export function isActionableApprovalStatus(status: ApprovalRequest['status']): boolean {
+  return status === 'pending' || status === 'escalated';
+}
+
 export function matchesRequestTypeFilter(requestType: string, filterType: string): boolean {
   if (filterType === 'all') return true;
   if (filterType === 'loan') return isLoanRequestType(requestType);
@@ -87,10 +91,10 @@ export function parseLoanApprovalFields(data: Record<string, unknown>): LoanAppr
 
   return {
     amount: asFiniteNumber(data.amount),
-    monthlyPayment: asFiniteNumber(data.monthlyPayment),
-    termMonths: asFiniteNumber(data.termMonths),
-    interestRate: asFiniteNumber(data.interestRate),
-    creditScore: asFiniteNumber(data.creditScore),
+    monthlyPayment: asFiniteNumber(data.monthlyPayment ?? data.monthly_payment),
+    termMonths: asFiniteNumber(data.termMonths ?? data.term_months),
+    interestRate: asFiniteNumber(data.interestRate ?? data.interest_rate),
+    creditScore: asFiniteNumber(data.creditScore ?? data.credit_score),
     dti: asFiniteNumber(data.dti),
     recommendation,
   };

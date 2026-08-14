@@ -244,7 +244,7 @@ export function KycReviewPanel({
               Complete package review
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="pointer-events-auto z-[70]">
+          <AlertDialogContent className="pointer-events-auto z-[70]" overlayClassName="z-[70]">
             <AlertDialogHeader>
               <AlertDialogTitle>Complete this KYC review?</AlertDialogTitle>
               <AlertDialogDescription>

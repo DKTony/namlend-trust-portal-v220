@@ -8,6 +8,7 @@ import {
   getCreditScoreBand,
   getRecommendationConfig,
   humanizeMetadataKey,
+  isActionableApprovalStatus,
   isKycRequestType,
   isLoanRequestType,
   listMetadataRows,
@@ -48,6 +49,14 @@ describe('approval request type helpers', () => {
     expect(getApprovalDialogTitle('kyc')).toBe('KYC Review');
     expect(getApprovalDialogTitle('payment')).toBe('Request Details');
   });
+
+  it('only treats pending and escalated requests as actionable', () => {
+    expect(isActionableApprovalStatus('pending')).toBe(true);
+    expect(isActionableApprovalStatus('escalated')).toBe(true);
+    expect(isActionableApprovalStatus('approved')).toBe(false);
+    expect(isActionableApprovalStatus('rejected')).toBe(false);
+    expect(isActionableApprovalStatus('withdrawn')).toBe(false);
+  });
 });
 
 describe('loan approval field parsing', () => {
@@ -79,6 +88,24 @@ describe('loan approval field parsing', () => {
       termMonths: 6,
       monthlyPayment: null,
       recommendation: null,
+    });
+  });
+
+  it('reads snake_case loan metadata keys used by older payloads', () => {
+    expect(
+      parseLoanApprovalFields({
+        amount: 2000,
+        monthly_payment: 500,
+        term_months: 6,
+        interest_rate: 24,
+        credit_score: 700,
+      })
+    ).toMatchObject({
+      amount: 2000,
+      monthlyPayment: 500,
+      termMonths: 6,
+      interestRate: 24,
+      creditScore: 700,
     });
   });
 

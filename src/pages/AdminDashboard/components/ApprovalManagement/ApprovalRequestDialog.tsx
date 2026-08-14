@@ -35,6 +35,7 @@ import {
   getApprovalDialogTitle,
   getCreditScoreBand,
   getRecommendationConfig,
+  isActionableApprovalStatus,
   isKycRequestType,
   isLoanRequestType,
   listMetadataRows,
@@ -214,7 +215,7 @@ export function ApprovalRequestDialog({
 }: ApprovalRequestDialogProps) {
   const isKyc = request ? isKycRequestType(request.request_type) : false;
   const isLoan = request ? isLoanRequestType(request.request_type) : false;
-  const canAct = request !== null && request.status !== 'approved' && request.status !== 'rejected';
+  const canAct = request !== null && isActionableApprovalStatus(request.status);
 
   return (
     <Dialog
@@ -232,6 +233,15 @@ export function ApprovalRequestDialog({
             ? 'max-w-5xl max-h-[min(90vh,calc(100dvh-2rem))]'
             : 'max-w-3xl max-h-[min(90vh,calc(100dvh-2rem))]'
         )}
+        onPointerDownOutside={(event) => {
+          if (isKyc) event.preventDefault();
+        }}
+        onFocusOutside={(event) => {
+          if (isKyc) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (isKyc) event.preventDefault();
+        }}
       >
         {request && (
           <>
@@ -350,16 +360,18 @@ export function ApprovalRequestDialog({
                         Escalate
                       </Button>
                     </div>
-                  ) : (
-                    <div
-                      className="rounded-lg bg-muted p-3 text-center text-sm text-muted-foreground"
-                      data-testid="approvals-processed-state"
-                    >
-                      <CheckCircle className="mx-auto mb-1 h-5 w-5 text-green-500" />
-                      This request has been {request.status}. No further action required.
-                    </div>
-                  )}
+                  ) : null}
                 </>
+              )}
+
+              {!canAct && (
+                <div
+                  className="rounded-lg bg-muted p-3 text-center text-sm text-muted-foreground"
+                  data-testid="approvals-processed-state"
+                >
+                  <CheckCircle className="mx-auto mb-1 h-5 w-5 text-green-500" />
+                  This request has been {request.status}. No further action required.
+                </div>
               )}
             </div>
           </>

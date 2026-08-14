@@ -466,7 +466,7 @@ export default function ApprovalManagementDashboard() {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="mt-3 flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <span className="truncate tabular-nums">
                       {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
                     </span>

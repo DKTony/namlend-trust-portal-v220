@@ -14,8 +14,9 @@
  */
 
 import { GenericMutationCtx, GenericQueryCtx } from 'convex/server';
-import { ConvexError } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { DataModel, Doc, Id } from '../_generated/dataModel';
+import { internalQuery } from '../_generated/server';
 import { ALWAYS_ON_FEATURES, isTenantGrantableFeatureKey } from './features';
 import { getBooleanRule } from './ruleEvaluator';
 import { getCallerInstitution } from './tenancy';
@@ -205,3 +206,17 @@ export async function assertCallerClientFeatureEnabled(
   }
   await assertFeatureEnabled(ctx, caller.institutionId, featureKey);
 }
+
+/**
+ * Mandate executor skip. When entitlement enforcement is on, only tenants with `mandates`
+ * resolved may expire or execute due mandates. Missing `institutionId` fails closed.
+ * Mandate rows are never deleted. Inert while the kill-switch is off.
+ */
+export const shouldExecuteMandateForInstitution = internalQuery({
+  args: { institutionId: v.optional(v.id('institutions')) },
+  handler: async (ctx, { institutionId }) => {
+    if (!(await getBooleanRule(ctx, 'ENTITLEMENT_ENFORCEMENT', false))) return true;
+    if (!institutionId) return false;
+    return isFeatureEnabled(ctx, institutionId, 'mandates');
+  },
+});

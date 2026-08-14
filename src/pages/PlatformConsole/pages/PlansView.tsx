@@ -18,7 +18,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FEATURES, getFeature, getMissingFeatureDependencies } from '@/config/features';
+import {
+  FEATURES,
+  FEATURE_SAFETY_NETS,
+  getFeature,
+  getFeatureCouplingLabel,
+  getMissingFeatureDependencies,
+  getReverseDependents,
+} from '@/config/features';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
@@ -162,24 +169,49 @@ const PlanDialog: React.FC<{ existing?: Doc<'plans'>; trigger: React.ReactNode }
                       {group.label}
                     </p>
                     <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-                      {group.features.map((f) => (
-                        <label
-                          key={f.key}
-                          className="flex items-center gap-2 rounded border px-2 py-1 text-sm"
-                          title={`${f.category} · ${f.console}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={f.alwaysOn || selected.has(f.key)}
-                            disabled={f.alwaysOn}
-                            onChange={() => toggle(f.key)}
-                          />
-                          <span className={cn(f.alwaysOn && 'text-muted-foreground')}>
-                            {f.name}
-                            {f.alwaysOn && ' (core)'}
-                          </span>
-                        </label>
-                      ))}
+                      {group.features.map((f) => {
+                        const reverseDependents = getReverseDependents(f.key);
+                        const safetyNet = FEATURE_SAFETY_NETS[f.key];
+                        return (
+                          <label
+                            key={f.key}
+                            className="flex items-start gap-2 rounded border px-2 py-1 text-sm"
+                            title={`${f.category} · ${f.console}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1"
+                              checked={f.alwaysOn || selected.has(f.key)}
+                              disabled={f.alwaysOn}
+                              onChange={() => toggle(f.key)}
+                            />
+                            <span className={cn('min-w-0', f.alwaysOn && 'text-muted-foreground')}>
+                              <span className="block">
+                                {f.name}
+                                {f.alwaysOn && ' (core)'}
+                              </span>
+                              <span className="block text-xs text-muted-foreground">
+                                {getFeatureCouplingLabel(f.key)}
+                              </span>
+                              {(f.dependsOn?.length ?? 0) > 0 && (
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  Depends on {f.dependsOn?.join(', ')}
+                                </span>
+                              )}
+                              {reverseDependents.length > 0 && (
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  Required by {reverseDependents.map((d) => d.key).join(', ')}
+                                </span>
+                              )}
+                              {safetyNet && (
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  {safetyNet}
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </section>
                 ))}
@@ -288,7 +320,7 @@ const PlansView: React.FC = () => {
                           {keys.map((key: string) => (
                             <span
                               key={key}
-                              title={`${getFeature(key)?.name} · ${getFeature(key)?.category}`}
+                              title={`${getFeature(key)?.name} · ${getFeature(key)?.category} · ${getFeatureCouplingLabel(key) ?? ''}`}
                               className="rounded border border-border px-2 py-0.5 text-xs text-foreground"
                             >
                               {getFeature(key)?.name}

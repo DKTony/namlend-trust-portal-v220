@@ -12,7 +12,7 @@ variants or cross-tenant/global branding writes.
 | Key                  | Client surface   | Direct route or tab                   | Client write enforcement                        | Dependencies      |
 | -------------------- | ---------------- | ------------------------------------- | ----------------------------------------------- | ----------------- |
 | `clientOverview`     | Overview         | `/dashboard` → overview               | none; quick actions use their own keys          | none              |
-| `clientLoans`        | My Loans         | loans tab, `/loans/:id`               | none; retained own-loan reads                   | none              |
+| `clientLoans`        | My Loans         | loans tab, `/loans/:id`               | own-loan reads gated when enforcement is on     | none              |
 | `clientApplications` | Applications     | applications tab, `/loan-application` | draft creation and submission                   | `clientDocuments` |
 | `clientPayments`     | Payments         | payments tab, `/payment`              | UI only; repayment processing remains available | none              |
 | `clientBanking`      | Banking          | banking tab, IPP payment method       | onboarding, aliases, client IPP transactions    | `ippOnboarding`   |

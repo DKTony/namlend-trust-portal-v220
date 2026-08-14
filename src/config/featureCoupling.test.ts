@@ -3,6 +3,7 @@ import {
   FEATURE_SAFETY_NETS,
   getFeature,
   getFeatureCouplingClass,
+  getFeatureCouplingLabel,
   getReverseDependents,
 } from '@/config/features';
 import { describe, expect, test } from 'vitest';
@@ -39,5 +40,9 @@ describe('feature coupling graph', () => {
     expect(getFeatureCouplingClass(getFeature('clientBudget')!)).toBe('independent');
     expect(FEATURE_SAFETY_NETS.clientPayments).toMatch(/repayment/i);
     expect(FEATURE_SAFETY_NETS.workflows).toMatch(/approval/i);
+    expect(getFeatureCouplingLabel('loans')).toBe('Core (locked)');
+    expect(getFeatureCouplingLabel('clientBanking')).toBe('Declared dependency');
+    expect(getFeatureCouplingLabel('clientPayments')).toBe('Safety-net API');
+    expect(getFeatureCouplingLabel('clientBudget')).toBe('Independent');
   });
 });

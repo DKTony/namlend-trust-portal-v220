@@ -327,7 +327,23 @@ describe('entitlement gating — always-on preservation', () => {
       termMonths: 12,
     });
     expect(loanId).toBeDefined();
+    await expect(asUser(t, borrower).query(api.loans.getMyLoans, {})).rejects.toMatchObject({
+      data: { code: 'FEATURE_NOT_ENABLED' },
+    });
+    await expect(
+      asUser(t, borrower).query(api.loans.getMyPortfolioSummary, {})
+    ).rejects.toMatchObject({ data: { code: 'FEATURE_NOT_ENABLED' } });
+    await expect(asUser(t, borrower).query(api.loans.getLoan, { loanId })).rejects.toMatchObject({
+      data: { code: 'FEATURE_NOT_ENABLED' },
+    });
+    await expect(asUser(t, staff).query(api.loans.getLoan, { loanId })).resolves.toMatchObject({
+      _id: loanId,
+    });
+    await grantFeature(t, inst, 'clientLoans');
     await expect(asUser(t, borrower).query(api.loans.getMyLoans, {})).resolves.toHaveLength(1);
+    await expect(
+      asUser(t, borrower).query(api.loans.getMyPortfolioSummary, {})
+    ).resolves.toMatchObject({ activeLoanCount: expect.any(Number) });
   });
 
   test('client document writes are gated but staff workflows bypass Client Portal keys', async () => {

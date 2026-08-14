@@ -1,3 +1,4 @@
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { api } from '@/integrations/convex/api';
 import { useQuery } from 'convex/react';
 import { useMemo, useState } from 'react';
@@ -53,9 +54,11 @@ export function useFetchActiveLoans({
   excludeSettled = true,
 }: UseFetchActiveLoansOptions): UseFetchActiveLoansResult {
   const [selectedLoanId, setSelectedLoanId] = useState<string>('');
+  const { hasFeature } = useEntitlements();
+  const loansEnabled = hasFeature('clientLoans');
 
   // Convex reactive query — replaces Supabase imperative fetch
-  const rawLoans = useQuery(api.loans.getMyLoans, enabled && userId ? {} : 'skip');
+  const rawLoans = useQuery(api.loans.getMyLoans, enabled && userId && loansEnabled ? {} : 'skip');
 
   // Map Convex loan documents to LoanWithDetails shape
   const loans: LoanWithDetails[] = useMemo(() => {
@@ -89,7 +92,7 @@ export function useFetchActiveLoans({
       .filter((l: LoanWithDetails) => !(excludeSettled && l.is_settled));
   }, [rawLoans, excludeSettled]);
 
-  const isLoading = enabled && userId ? rawLoans === undefined : false;
+  const isLoading = enabled && userId && loansEnabled ? rawLoans === undefined : false;
 
   // Find selected loan from list
   const selectedLoan = loans.find((loan) => loan.id === selectedLoanId) || null;

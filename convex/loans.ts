@@ -38,13 +38,14 @@ import { loanRecommendation, loanStatus } from './schema';
 // Queries
 // ---------------------------------------------------------------------------
 
-/** Client's own active loans. */
+/** Client's own active loans. Gated by Client Portal `clientLoans`; staff use staff loan APIs. */
 export const getMyLoans = query({
   args: {
     status: v.optional(v.string()),
   },
   handler: async (ctx, { status }) => {
     const userId = await assertClient(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientLoans');
     const q = ctx.db.query('loans').withIndex('by_userId', (q) => q.eq('userId', userId));
 
     const loans = await q.order('desc').collect();
@@ -60,6 +61,7 @@ export const getMyPortfolioSummary = query({
   args: {},
   handler: async (ctx) => {
     const userId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientLoans');
     const loans = await ctx.db
       .query('loans')
       .withIndex('by_userId', (q) => q.eq('userId', userId))
@@ -110,13 +112,14 @@ export const getMyPortfolioSummary = query({
   },
 });
 
-/** Get a single loan by ID (owner or staff). */
+/** Get a single loan by ID (owner or staff). Clients require `clientLoans`; staff stay on the loans core. */
 export const getLoan = query({
   args: { loanId: v.id('loans') },
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
     await assertOwnerOrStaff(ctx, loan.userId);
+    await assertCallerClientFeatureEnabled(ctx, 'clientLoans');
     // Defense-in-depth: a staff member from another tenant cannot fetch this loan by id.
     assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
     return loan;

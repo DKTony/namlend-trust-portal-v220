@@ -1,5 +1,6 @@
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { useAuth } from '@/hooks/useAuth';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { getLandingLabel, getLandingRoute } from '@/lib/routing';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import SignOutButton from './shared/SignOutButton';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isLoanOfficer, isPlatformStaff } = useAuth();
+  const { hasFeature } = useEntitlements();
   const navigate = useNavigate();
 
   // "My console", not always the client dashboard — staff and platform users were being sent
@@ -17,6 +19,7 @@ const Header = () => {
   const roleFlags = { isPlatformStaff, isLoanOfficer };
   const homeRoute = getLandingRoute(roleFlags);
   const homeLabel = getLandingLabel(roleFlags);
+  const applicationsEnabled = hasFeature('clientApplications');
 
   const handleSignIn = () => {
     navigate('/auth');
@@ -24,7 +27,7 @@ const Header = () => {
 
   const handleApplyNow = () => {
     if (user) {
-      navigate('/loan-application');
+      navigate(applicationsEnabled ? '/loan-application' : homeRoute);
     } else {
       navigate('/auth');
     }

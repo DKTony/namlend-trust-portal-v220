@@ -80,6 +80,7 @@ export default function LoanDetails() {
   const bankingEnabled = hasFeature('clientBanking');
   const ipsEnabled = paymentsEnabled && bankingEnabled;
   const documentsEnabled = hasFeature('clientDocuments');
+  const loansEnabled = hasFeature('clientLoans');
 
   // Validate ID format before passing to Convex (prevents ArgumentValidationError on invalid URLs)
   const isValidConvexId = id ? /^[a-zA-Z0-9_-]{10,}$/.test(id) : false;
@@ -87,7 +88,7 @@ export default function LoanDetails() {
   // Convex reactive queries — skip if ID is missing or malformed
   const rawLoan = useQuery(
     api.loans.getLoan,
-    isValidConvexId ? { loanId: id as Id<'loans'> } : 'skip'
+    loansEnabled && isValidConvexId ? { loanId: id as Id<'loans'> } : 'skip'
   );
   const rawPayments = useQuery(
     api.payments.getPaymentsByLoan,

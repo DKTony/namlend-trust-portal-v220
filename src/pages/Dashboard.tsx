@@ -693,13 +693,15 @@ export default function Dashboard() {
               <h2 className={cn('text-2xl font-bold', 'font-sans text-[#274F35]')}>
                 {t('applications.title')}
               </h2>
-              <ThemedButton
-                onClick={() => navigate('/loan-application')}
-                variant="secondary"
-                className="rounded-full"
-              >
-                <Plus size={16} className="mr-2" /> {t('applications.newApplication')}
-              </ThemedButton>
+              {applicationsEnabled && (
+                <ThemedButton
+                  onClick={() => navigate('/loan-application')}
+                  variant="secondary"
+                  className="rounded-full"
+                >
+                  <Plus size={16} className="mr-2" /> {t('applications.newApplication')}
+                </ThemedButton>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -737,12 +739,14 @@ export default function Dashboard() {
                   <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
                     {t('applications.noPendingTitle')}
                   </h3>
-                  <ThemedButton
-                    onClick={() => navigate('/loan-application')}
-                    className="mt-4 rounded-full"
-                  >
-                    {t('applications.startApplication')}
-                  </ThemedButton>
+                  {applicationsEnabled && (
+                    <ThemedButton
+                      onClick={() => navigate('/loan-application')}
+                      className="mt-4 rounded-full"
+                    >
+                      {t('applications.startApplication')}
+                    </ThemedButton>
+                  )}
                 </ThemedCard>
               )}
             </div>

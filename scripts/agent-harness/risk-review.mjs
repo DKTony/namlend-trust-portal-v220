@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import path from 'node:path';
 import { matchesAny, readJson, ROOT } from './lib.mjs';
 
@@ -71,7 +72,7 @@ export function validateRiskReviewInputs({ repository, pullNumber, headSha, auth
   };
 }
 
-export async function githubPages(pathname, token, fetchImplementation = globalThis.fetch) {
+function githubRequestUrl(pathname) {
   if (
     typeof pathname !== 'string' ||
     !pathname.startsWith('/') ||
@@ -80,33 +81,149 @@ export async function githubPages(pathname, token, fetchImplementation = globalT
   ) {
     throw new Error('Refusing an invalid GitHub API path.');
   }
+  const url = new URL(pathname, GITHUB_API_ORIGIN);
+  if (
+    url.origin !== GITHUB_API_ORIGIN ||
+    url.username ||
+    url.password ||
+    !url.pathname.startsWith('/repos/')
+  ) {
+    throw new Error('Refusing a non-GitHub API origin or repository path.');
+  }
+  return url;
+}
+
+async function githubFetch(url, token, fetchImplementation) {
+  const response = await fetchImplementation(url, {
+    headers: {
+      accept: 'application/vnd.github+json',
+      authorization: `Bearer ${token}`,
+      'x-github-api-version': '2022-11-28',
+    },
+  });
+  if (!response.ok)
+    throw new Error(`GitHub API ${response.status} while evaluating review policy.`);
+  return response.json();
+}
+
+export async function githubPages(pathname, token, fetchImplementation = globalThis.fetch) {
   const values = [];
   for (let page = 1; ; page += 1) {
-    const url = new URL(pathname, GITHUB_API_ORIGIN);
-    if (
-      url.origin !== GITHUB_API_ORIGIN ||
-      url.username ||
-      url.password ||
-      !url.pathname.startsWith('/repos/')
-    ) {
-      throw new Error('Refusing a non-GitHub API origin or repository path.');
-    }
+    const url = githubRequestUrl(pathname);
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', String(page));
-    const response = await fetchImplementation(url, {
-      headers: {
-        accept: 'application/vnd.github+json',
-        authorization: `Bearer ${token}`,
-        'x-github-api-version': '2022-11-28',
-      },
-    });
-    if (!response.ok)
-      throw new Error(`GitHub API ${response.status} while evaluating review policy.`);
-    const pageValues = await response.json();
+    const pageValues = await githubFetch(url, token, fetchImplementation);
     if (!Array.isArray(pageValues)) throw new Error('GitHub API returned a non-list response.');
     values.push(...pageValues);
     if (pageValues.length < 100) return values;
   }
+}
+
+export function humanOperatorLogin(user) {
+  const login = user?.login;
+  if (typeof login !== 'string' || !LOGIN_PATTERN.test(login)) return null;
+  if (user?.type === 'Bot' || login.endsWith('[bot]')) return null;
+  return login;
+}
+
+export function mergeReceiptApprovers({ required, reviewApprovers, mergedBy }) {
+  if (!Number.isInteger(required) || required < 0) {
+    throw new Error('Invalid required approval count.');
+  }
+  if (required > 0) {
+    if (!Array.isArray(reviewApprovers) || reviewApprovers.length < required) {
+      throw new Error(
+        `No non-author human collaborator approved exact PR head; required ${required}, found ${reviewApprovers?.length ?? 0}.`
+      );
+    }
+    return [...reviewApprovers];
+  }
+  const operator = humanOperatorLogin(mergedBy);
+  if (!operator) {
+    throw new Error('Solo-operator merge receipt requires a human collaborator merger.');
+  }
+  return [operator];
+}
+
+function appendGithubEnv(entries) {
+  const lines = Object.entries(entries).map(([key, value]) => {
+    if (!/^[A-Z][A-Z0-9_]*$/.test(key) || /[\r\n]/.test(String(value))) {
+      throw new Error('Refusing to write an unsafe GitHub Actions environment entry.');
+    }
+    return `${key}=${value}`;
+  });
+  const payload = `${lines.join('\n')}\n`;
+  const file = process.env.GITHUB_ENV;
+  if (file) fs.appendFileSync(file, payload);
+  else process.stdout.write(payload);
+}
+
+async function writeMergeReceiptProvenance(fetchImplementation = globalThis.fetch) {
+  const token = process.env.GITHUB_TOKEN;
+  const repository = process.env.GITHUB_REPOSITORY;
+  const mergeSha = process.env.GITHUB_SHA;
+  if (!token || !repository || !mergeSha) {
+    throw new Error('GITHUB_TOKEN, GITHUB_REPOSITORY, and GITHUB_SHA are required.');
+  }
+  if (!SHA_PATTERN.test(mergeSha)) throw new Error('Invalid GITHUB_SHA.');
+  const repositoryInputs = validateRiskReviewInputs({
+    repository,
+    pullNumber: '1',
+    headSha: mergeSha,
+    author: 'placeholder',
+  });
+
+  const associatedPulls = await githubPages(
+    `/repos/${repositoryInputs.repository}/commits/${mergeSha}/pulls`,
+    token,
+    fetchImplementation
+  );
+  const associated = associatedPulls[0];
+  if (!associated?.number) {
+    throw new Error(`No reviewed pull request is associated with ${mergeSha}.`);
+  }
+
+  const pullNumber = String(associated.number);
+  const pull = await githubFetch(
+    githubRequestUrl(`/repos/${repositoryInputs.repository}/pulls/${pullNumber}`),
+    token,
+    fetchImplementation
+  );
+  const author = pull.user?.login;
+  const headSha = pull.head?.sha;
+  if (!author || !headSha) {
+    throw new Error(`Unable to resolve PR author and exact reviewed head for PR ${pullNumber}.`);
+  }
+  const validated = validateRiskReviewInputs({
+    repository: repositoryInputs.repository,
+    pullNumber,
+    headSha,
+    author,
+  });
+  const base = `/repos/${validated.repository}/pulls/${validated.pullNumber}`;
+  const [fileRecords, reviews] = await Promise.all([
+    githubPages(`${base}/files`, token, fetchImplementation),
+    githubPages(`${base}/reviews`, token, fetchImplementation),
+  ]);
+  const policy = readJson(path.join(ROOT, 'agent-harness', 'policy.json'));
+  const classification = requiredApprovals(
+    fileRecords.map((item) => item.filename),
+    policy
+  );
+  const reviewApprovers = currentApprovers(reviews, validated.headSha, validated.author);
+  const approvers = mergeReceiptApprovers({
+    required: classification.required,
+    reviewApprovers,
+    mergedBy: pull.merged_by,
+  });
+  const server = process.env.GITHUB_SERVER_URL || 'https://github.com';
+  if (!/^https:\/\/github\.com$/.test(server.replace(/\/$/, ''))) {
+    throw new Error('Refusing a non-GitHub server URL.');
+  }
+  appendGithubEnv({
+    HUMAN_APPROVERS: approvers.join(','),
+    MERGED_PULL_REQUEST_URL: `${server.replace(/\/$/, '')}/${validated.repository}/pull/${validated.pullNumber}`,
+  });
 }
 
 async function main() {
@@ -155,7 +272,8 @@ if (
   process.argv[1] &&
   path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)
 ) {
-  main().catch((error) => {
+  const run = process.argv.includes('--merge-receipt') ? writeMergeReceiptProvenance : main;
+  run().catch((error) => {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;
   });

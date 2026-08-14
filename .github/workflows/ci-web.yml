@@ -321,52 +321,8 @@ jobs:
 
       - name: Resolve reviewed merge provenance
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          PR_NUMBER=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" --jq '.[0].number // empty')
-          test -n "$PR_NUMBER" || { echo "No reviewed pull request is associated with ${GITHUB_SHA}."; exit 1; }
-          PR_METADATA=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
-          PR_AUTHOR=$(printf '%s' "$PR_METADATA" | jq -r '.user.login')
-          PR_HEAD_SHA=$(printf '%s' "$PR_METADATA" | jq -r '.head.sha')
-          test -n "$PR_AUTHOR" && test -n "$PR_HEAD_SHA" || {
-            echo "Unable to resolve PR author and exact reviewed head for PR ${PR_NUMBER}."
-            exit 1
-          }
-
-          # Count only each reviewer's latest decisive review. The approval must
-          # be from a non-author human collaborator and target the final PR head;
-          # stale, dismissed, superseded, author, and bot approvals never count.
-          APPROVERS=$(
-            gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/reviews" |
-              jq -r --arg author "$PR_AUTHOR" --arg head "$PR_HEAD_SHA" '
-                (add // [])
-                | map(select(.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED"))
-                | sort_by(.submitted_at // "")
-                | reduce .[] as $review ({}; .[$review.user.login] = $review)
-                | to_entries
-                | map(select(
-                    .key != $author
-                    and (.value.user.type // "") != "Bot"
-                    and (.key | endswith("[bot]") | not)
-                    and (
-                      .value.author_association == "OWNER"
-                      or .value.author_association == "MEMBER"
-                      or .value.author_association == "COLLABORATOR"
-                    )
-                    and .value.state == "APPROVED"
-                    and .value.commit_id == $head
-                  ))
-                | map(.key)
-                | sort
-                | join(",")
-              '
-          )
-          test -n "$APPROVERS" || {
-            echo "No non-author human collaborator approved exact PR head ${PR_HEAD_SHA}."
-            exit 1
-          }
-          printf 'HUMAN_APPROVERS=%s\n' "$APPROVERS" >> "$GITHUB_ENV"
-          printf 'MERGED_PULL_REQUEST_URL=%s/%s/pull/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$PR_NUMBER" >> "$GITHUB_ENV"
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/agent-harness/risk-review.mjs --merge-receipt
 
       - name: Build current-SHA E1 ledger and semantic diff artifact
         run: |

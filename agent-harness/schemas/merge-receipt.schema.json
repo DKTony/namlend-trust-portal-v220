@@ -24,7 +24,12 @@
         "properties": {
           "workflow": { "type": "string" },
           "job": { "type": "string" },
-          "runId": { "type": ["string", "integer"] },
+          "runId": {
+            "anyOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "integer", "minimum": 1 }
+            ]
+          },
           "headSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
           "conclusion": { "const": "success" },
           "testIdentities": { "type": "array", "items": { "type": "string" } }

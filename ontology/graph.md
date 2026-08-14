@@ -1,6 +1,6 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `2fd2b18486ed149d646a68e2323d56e34c7453c3`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `096d88833905b7f59a61e5429f025440118a62f8`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |

@@ -1,10 +1,10 @@
 {
-  "commitSha": "f96f43a8c8ee2729cd45fa9ec1e4527e8190e07f",
-  "extractedAt": "2026-08-14T04:12:36.126Z",
+  "commitSha": "7eef7e98b2bd5887939fea330193d80725c995fe",
+  "extractedAt": "2026-08-14T11:45:27.251Z",
   "gaps": [
     {
       "evidenceRefs": [
-        "evidence:3c79ebbbbba2d9cd"
+        "evidence:bad4c5ed40874e2d"
       ],
       "id": "GAP-0153FC69A0F7",
       "issue": "./gap-register.md#gap-0153fc69a0f7",
@@ -19,7 +19,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:36b91a264a798e1d"
+        "evidence:7bfa06f994a6ca15"
       ],
       "id": "GAP-0184D120DA92",
       "issue": "./gap-register.md#gap-0184d120da92",
@@ -34,7 +34,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:534cec4988b18cce"
+        "evidence:7df20010936b0d9f"
       ],
       "id": "GAP-039C753A8E3B",
       "issue": "./gap-register.md#gap-039c753a8e3b",
@@ -49,7 +49,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:67bcffa7da53aa16"
+        "evidence:580a5e52c0cdce63"
       ],
       "id": "GAP-062E3A42BE71",
       "issue": "./gap-register.md#gap-062e3a42be71",
@@ -64,7 +64,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:991bebcdb14232da"
+        "evidence:fb91ff39078196b0"
       ],
       "id": "GAP-08A6D72E84E7",
       "issue": "./gap-register.md#gap-08a6d72e84e7",
@@ -79,7 +79,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:72a7368ff6311068"
+        "evidence:9af246f267ca37ed"
       ],
       "id": "GAP-0EEB6CAF8B87",
       "issue": "./gap-register.md#gap-0eeb6caf8b87",
@@ -94,7 +94,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8217acdd45d9a8e3"
+        "evidence:2def4fd2fdea338f"
       ],
       "id": "GAP-11D918D3E45C",
       "issue": "./gap-register.md#gap-11d918d3e45c",
@@ -109,7 +109,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b1803300a191de9c"
+        "evidence:b89b1395f4915241"
       ],
       "id": "GAP-14F4AE331785",
       "issue": "./gap-register.md#gap-14f4ae331785",
@@ -124,7 +124,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8bc9651356f21e4a"
+        "evidence:cb0d06b65a72f2f3"
       ],
       "id": "GAP-1592DE439864",
       "issue": "./gap-register.md#gap-1592de439864",
@@ -139,7 +139,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:12495f347cfae59f"
+        "evidence:6f636f2be62937d0"
       ],
       "id": "GAP-16D7E87B04AB",
       "issue": "./gap-register.md#gap-16d7e87b04ab",
@@ -154,7 +154,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:879536107d8f05f6"
+        "evidence:a2e9b505c8668b5a"
       ],
       "id": "GAP-17FC56BB9F3D",
       "issue": "./gap-register.md#gap-17fc56bb9f3d",
@@ -169,7 +169,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f5fe3d1710e41a6d"
+        "evidence:2a0b4272dae380e0"
       ],
       "id": "GAP-1964130F3CFA",
       "issue": "./gap-register.md#gap-1964130f3cfa",
@@ -184,7 +184,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:317d22f00164cc6f"
+        "evidence:c6a3e8baf92c56d0"
       ],
       "id": "GAP-1AC306484B08",
       "issue": "./gap-register.md#gap-1ac306484b08",
@@ -199,7 +199,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a5060ca823907d66"
+        "evidence:91b0b470547a53e4"
       ],
       "id": "GAP-1B00EC98F59D",
       "issue": "./gap-register.md#gap-1b00ec98f59d",
@@ -214,7 +214,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7a7fde550f9ac495"
+        "evidence:a34dd58b67501dd4"
       ],
       "id": "GAP-1D4E2E185541",
       "issue": "./gap-register.md#gap-1d4e2e185541",
@@ -229,7 +229,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ff26c6728d339e15"
+        "evidence:8f58ea683b652e9a"
       ],
       "id": "GAP-1E2A92D5A921",
       "issue": "./gap-register.md#gap-1e2a92d5a921",
@@ -244,7 +244,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ebd8a422a0c5d25e"
+        "evidence:36686f6804d43406"
       ],
       "id": "GAP-22965BD4367B",
       "issue": "./gap-register.md#gap-22965bd4367b",
@@ -259,7 +259,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:db4b1c7cf8cf760e"
+        "evidence:3207c59550d40080"
       ],
       "id": "GAP-238E10756E27",
       "issue": "./gap-register.md#gap-238e10756e27",
@@ -274,7 +274,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:562630434c58c5e0"
+        "evidence:3b87f0d91716beb7"
       ],
       "id": "GAP-24582697D5BF",
       "issue": "./gap-register.md#gap-24582697d5bf",
@@ -289,7 +289,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2173590d20b051ca"
+        "evidence:9d35419d01595d8d"
       ],
       "id": "GAP-2D9C34AE5B16",
       "issue": "./gap-register.md#gap-2d9c34ae5b16",
@@ -304,7 +304,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4b41b77e1829b8c7"
+        "evidence:c16cc5bc76dda147"
       ],
       "id": "GAP-2E899E24A27D",
       "issue": "./gap-register.md#gap-2e899e24a27d",
@@ -319,7 +319,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4315819c1dfc94e0"
+        "evidence:2433dd6da4baef20"
       ],
       "id": "GAP-3171A1D9F062",
       "issue": "./gap-register.md#gap-3171a1d9f062",
@@ -334,7 +334,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:85a5f8142b13bc16"
+        "evidence:29aca7ac377d3330"
       ],
       "id": "GAP-32A6290D3D61",
       "issue": "./gap-register.md#gap-32a6290d3d61",
@@ -349,7 +349,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8155fb0209fab066"
+        "evidence:7a82876af9a72214"
       ],
       "id": "GAP-39449359F3B3",
       "issue": "./gap-register.md#gap-39449359f3b3",
@@ -364,7 +364,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:72329a37147d3bbc"
+        "evidence:98db813462aa2dc7"
       ],
       "id": "GAP-3BE0309E5F41",
       "issue": "./gap-register.md#gap-3be0309e5f41",
@@ -379,7 +379,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:09d0afd3648e6481"
+        "evidence:21c53b0cdf01a006"
       ],
       "id": "GAP-4185E989BBBD",
       "issue": "./gap-register.md#gap-4185e989bbbd",
@@ -394,7 +394,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0bd80aa0b0151dde"
+        "evidence:3ae8f3c8d796c4cc"
       ],
       "id": "GAP-4333C84CCF3F",
       "issue": "./gap-register.md#gap-4333c84ccf3f",
@@ -409,7 +409,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6079d20448cba119"
+        "evidence:13a935af40dd5890"
       ],
       "id": "GAP-4A458E370CCD",
       "issue": "./gap-register.md#gap-4a458e370ccd",
@@ -424,7 +424,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b9f3648b61f356f7"
+        "evidence:8089fa4c298f3da2"
       ],
       "id": "GAP-4BBE145E73CF",
       "issue": "./gap-register.md#gap-4bbe145e73cf",
@@ -439,7 +439,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a353c0cd6cf20a29"
+        "evidence:9d89bc4263cc756b"
       ],
       "id": "GAP-4DE4D174E8E0",
       "issue": "./gap-register.md#gap-4de4d174e8e0",
@@ -454,7 +454,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:efac572d90347946"
+        "evidence:bc314219301728db"
       ],
       "id": "GAP-509E5E4A37C1",
       "issue": "./gap-register.md#gap-509e5e4a37c1",
@@ -469,7 +469,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4b074157318aab19"
+        "evidence:6cd5fea0d62f09e3"
       ],
       "id": "GAP-512E383B3BA8",
       "issue": "./gap-register.md#gap-512e383b3ba8",
@@ -484,7 +484,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f856b9cbc160c623"
+        "evidence:a10a9cbe87ed9804"
       ],
       "id": "GAP-5513CC12071A",
       "issue": "./gap-register.md#gap-5513cc12071a",
@@ -499,7 +499,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:535a209f103278e9"
+        "evidence:3b921caa3e91c941"
       ],
       "id": "GAP-575539C89D81",
       "issue": "./gap-register.md#gap-575539c89d81",
@@ -514,7 +514,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6909b536591e6f8b"
+        "evidence:a7ff88b95e0289c6"
       ],
       "id": "GAP-5A82777A6897",
       "issue": "./gap-register.md#gap-5a82777a6897",
@@ -529,7 +529,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b51bfa69a34e95bc"
+        "evidence:1e793431fe4063fe"
       ],
       "id": "GAP-5D05082EAEB4",
       "issue": "./gap-register.md#gap-5d05082eaeb4",
@@ -544,7 +544,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d7a3ce7c2811a667"
+        "evidence:838b9cd96b043138"
       ],
       "id": "GAP-5ED42AFE4B1E",
       "issue": "./gap-register.md#gap-5ed42afe4b1e",
@@ -559,7 +559,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7e8c6840fa3700ff"
+        "evidence:58486d335b0a661a"
       ],
       "id": "GAP-5FF34CA28295",
       "issue": "./gap-register.md#gap-5ff34ca28295",
@@ -574,7 +574,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:14578380292f165a"
+        "evidence:f412d05029088ed0"
       ],
       "id": "GAP-60A903DE4A5C",
       "issue": "./gap-register.md#gap-60a903de4a5c",
@@ -589,7 +589,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9adf7ccd0123374e"
+        "evidence:61beb727d5312ed6"
       ],
       "id": "GAP-63620DA82BF7",
       "issue": "./gap-register.md#gap-63620da82bf7",
@@ -604,7 +604,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e6a601c025451f1d"
+        "evidence:a8d9b6dfdd329c33"
       ],
       "id": "GAP-643F0A4913E7",
       "issue": "./gap-register.md#gap-643f0a4913e7",
@@ -619,7 +619,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f4959b1f7def72d3"
+        "evidence:0103a194dd0eba29"
       ],
       "id": "GAP-654E339096D9",
       "issue": "./gap-register.md#gap-654e339096d9",
@@ -634,7 +634,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dea093234308b64c"
+        "evidence:5116fe42a3138ca7"
       ],
       "id": "GAP-663906D9E906",
       "issue": "./gap-register.md#gap-663906d9e906",
@@ -649,7 +649,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4b8e40b4eacd6af4"
+        "evidence:5de58a0a8593275c"
       ],
       "id": "GAP-672C2C92B901",
       "issue": "./gap-register.md#gap-672c2c92b901",
@@ -664,7 +664,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0e1626d8f5b0698b"
+        "evidence:049d5a00c3aa10c6"
       ],
       "id": "GAP-6E9968E73AA1",
       "issue": "./gap-register.md#gap-6e9968e73aa1",
@@ -679,7 +679,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:54a61ececd7a8ac1"
+        "evidence:484bf94cf281137b"
       ],
       "id": "GAP-7320B29C86FA",
       "issue": "./gap-register.md#gap-7320b29c86fa",
@@ -694,7 +694,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:542a4c6f9795006a"
+        "evidence:9b3ab89e97570f8b"
       ],
       "id": "GAP-73D98AC3584D",
       "issue": "./gap-register.md#gap-73d98ac3584d",
@@ -709,7 +709,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3ae47266bbc17e03"
+        "evidence:cc73945921644cfd"
       ],
       "id": "GAP-78B9506A12EE",
       "issue": "./gap-register.md#gap-78b9506a12ee",
@@ -724,7 +724,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0727416ff63cbde9"
+        "evidence:2db802dbf29ac395"
       ],
       "id": "GAP-796045585AE7",
       "issue": "./gap-register.md#gap-796045585ae7",
@@ -739,7 +739,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:05a0a5cac86c56b8"
+        "evidence:1a73cb2d7ded88df"
       ],
       "id": "GAP-7B575E2B614F",
       "issue": "./gap-register.md#gap-7b575e2b614f",
@@ -754,7 +754,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d591549226ac22c3"
+        "evidence:23afbbbc4d94af84"
       ],
       "id": "GAP-7C9FA28037F9",
       "issue": "./gap-register.md#gap-7c9fa28037f9",
@@ -769,7 +769,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7b5116ca41748226"
+        "evidence:beddd5231c440d8f"
       ],
       "id": "GAP-7D0721F9D61D",
       "issue": "./gap-register.md#gap-7d0721f9d61d",
@@ -784,7 +784,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dfed37ad855616fd"
+        "evidence:7550d6a8d6829d5c"
       ],
       "id": "GAP-84CA492122F7",
       "issue": "./gap-register.md#gap-84ca492122f7",
@@ -799,7 +799,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:496fc70d95992b47"
+        "evidence:cce219be8fcf1c62"
       ],
       "id": "GAP-8709371ECE82",
       "issue": "./gap-register.md#gap-8709371ece82",
@@ -814,7 +814,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:027e7c2c5fd847ac"
+        "evidence:4ad7eb29f0acad44"
       ],
       "id": "GAP-8A22DEBFF04F",
       "issue": "./gap-register.md#gap-8a22debff04f",
@@ -829,7 +829,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:88c32c87ddbb0cc0"
+        "evidence:d722e6fced262668"
       ],
       "id": "GAP-8BFDBA24F880",
       "issue": "./gap-register.md#gap-8bfdba24f880",
@@ -844,7 +844,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0e31fd5d31b11bd0"
+        "evidence:cec1f2e90bb71980"
       ],
       "id": "GAP-939E37284B06",
       "issue": "./gap-register.md#gap-939e37284b06",
@@ -859,7 +859,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dc6b4241d83c3fb4"
+        "evidence:46d805a0e0f7ae2d"
       ],
       "id": "GAP-947A14594ECA",
       "issue": "./gap-register.md#gap-947a14594eca",
@@ -874,7 +874,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:94c940820ea127d6"
+        "evidence:ffccbbc083ac5072"
       ],
       "id": "GAP-9AE2A0BB6042",
       "issue": "./gap-register.md#gap-9ae2a0bb6042",
@@ -889,7 +889,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5f9fdfb98b760bf5"
+        "evidence:a77ee6c2f09039c3"
       ],
       "id": "GAP-9C08D9903B2B",
       "issue": "./gap-register.md#gap-9c08d9903b2b",
@@ -904,7 +904,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ce32f08721cc7c01"
+        "evidence:f718cf02f713d21f"
       ],
       "id": "GAP-9CE9EC58D0D4",
       "issue": "./gap-register.md#gap-9ce9ec58d0d4",
@@ -919,7 +919,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:29194522dd6714f9"
+        "evidence:76f3d442c2562bd4"
       ],
       "id": "GAP-A17289C7879F",
       "issue": "./gap-register.md#gap-a17289c7879f",
@@ -934,7 +934,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9f8e5d09de9be1b7"
+        "evidence:d6121ec5747007d8"
       ],
       "id": "GAP-A8CCFF7D4090",
       "issue": "./gap-register.md#gap-a8ccff7d4090",
@@ -949,7 +949,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:27cdcc309f7a7767"
+        "evidence:384f9af4aff9d554"
       ],
       "id": "GAP-AA1015CAC102",
       "issue": "./gap-register.md#gap-aa1015cac102",
@@ -964,7 +964,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:52c2ff80eac657c3"
+        "evidence:798b0f423ee42dd1"
       ],
       "id": "GAP-AA7E673FDCB1",
       "issue": "./gap-register.md#gap-aa7e673fdcb1",
@@ -979,7 +979,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d6d394df3ebb5f28"
+        "evidence:b75263af7b93353b"
       ],
       "id": "GAP-AD668C77830E",
       "issue": "./gap-register.md#gap-ad668c77830e",
@@ -994,7 +994,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:67496eec47c0de38"
+        "evidence:96cd6e0c37797534"
       ],
       "id": "GAP-AF4636D503EA",
       "issue": "./gap-register.md#gap-af4636d503ea",
@@ -1009,7 +1009,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5eaac9130a5626ed"
+        "evidence:9e940525f13a35b0"
       ],
       "id": "GAP-B122BFAD3CBD",
       "issue": "./gap-register.md#gap-b122bfad3cbd",
@@ -1024,7 +1024,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f7f01ecc73b66eca"
+        "evidence:c3b07989d3ef8380"
       ],
       "id": "GAP-B43C9B7D2C4C",
       "issue": "./gap-register.md#gap-b43c9b7d2c4c",
@@ -1039,7 +1039,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f4eae52e26c043dc"
+        "evidence:27ac9c05f74f0487"
       ],
       "id": "GAP-B4DF123AACE9",
       "issue": "./gap-register.md#gap-b4df123aace9",
@@ -1054,7 +1054,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:68c997e17bb24032"
+        "evidence:969cc395ee930852"
       ],
       "id": "GAP-B84ECDA9DE68",
       "issue": "./gap-register.md#gap-b84ecda9de68",
@@ -1069,7 +1069,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c9a3883de9b58bfc"
+        "evidence:3621ac9b9e898dc0"
       ],
       "id": "GAP-B9D9B6372F9B",
       "issue": "./gap-register.md#gap-b9d9b6372f9b",
@@ -1084,7 +1084,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3271748dc9ae0a78"
+        "evidence:4cce19abd4d33702"
       ],
       "id": "GAP-BE3C89DD7FE9",
       "issue": "./gap-register.md#gap-be3c89dd7fe9",
@@ -1099,7 +1099,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:655f44fad7617301"
+        "evidence:e8690d4b8f1e08a2"
       ],
       "id": "GAP-BE718391872B",
       "issue": "./gap-register.md#gap-be718391872b",
@@ -1114,7 +1114,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e4789cda7c23395d"
+        "evidence:32e69c997148b4d6"
       ],
       "id": "GAP-BF201BD7AD8E",
       "issue": "./gap-register.md#gap-bf201bd7ad8e",
@@ -1129,7 +1129,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f0da73fbc5db5885"
+        "evidence:f07073e3d20103bb"
       ],
       "id": "GAP-C3841134CDA6",
       "issue": "./gap-register.md#gap-c3841134cda6",
@@ -1144,7 +1144,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:595d11e086e7587c"
+        "evidence:121e1dc4194aea6c"
       ],
       "id": "GAP-CCBAC3FD1BBD",
       "issue": "./gap-register.md#gap-ccbac3fd1bbd",
@@ -1174,7 +1174,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9d85e3c1052fceaa"
+        "evidence:72a724316079f189"
       ],
       "id": "GAP-D1CF003240B8",
       "issue": "./gap-register.md#gap-d1cf003240b8",
@@ -1189,7 +1189,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2b307c1d74f728fc"
+        "evidence:1a344708e4efc00f"
       ],
       "id": "GAP-D249B07F105A",
       "issue": "./gap-register.md#gap-d249b07f105a",
@@ -1204,7 +1204,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:723ac9eedce199cd"
+        "evidence:b82990b12572fbf7"
       ],
       "id": "GAP-D4F6639562B9",
       "issue": "./gap-register.md#gap-d4f6639562b9",
@@ -1219,7 +1219,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5c0dd73549df5971"
+        "evidence:9e01a1d3617c1aed"
       ],
       "id": "GAP-D5A40B98DEC8",
       "issue": "./gap-register.md#gap-d5a40b98dec8",
@@ -1234,7 +1234,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:477ce955ae158b11"
+        "evidence:3cef9a2b4a8e8216"
       ],
       "id": "GAP-D8F708FD4E34",
       "issue": "./gap-register.md#gap-d8f708fd4e34",
@@ -1249,22 +1249,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e5144f6657c5676f"
-      ],
-      "id": "GAP-DB7A52A6FEE9",
-      "issue": "./gap-register.md#gap-db7a52a6fee9",
-      "kind": "FUNCTIONAL_ORPHAN",
-      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
-      "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
-      "severity": "medium",
-      "status": "open",
-      "subjectId": "component:src/components/system/FeatureGate.tsx#FeatureGate",
-      "summary": "component:src/components/system/FeatureGate.tsx#FeatureGate has no statically resolved functional edge."
-    },
-    {
-      "evidenceRefs": [
-        "evidence:eb48fff8c902c85f"
+        "evidence:1562f4075e40b763"
       ],
       "id": "GAP-E4BAF2AD052C",
       "issue": "./gap-register.md#gap-e4baf2ad052c",
@@ -1279,7 +1264,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a53bf6e8645efcaf"
+        "evidence:6cf1f4c3f8e9ab3d"
       ],
       "id": "GAP-E5094CAFD862",
       "issue": "./gap-register.md#gap-e5094cafd862",
@@ -1294,7 +1279,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a225cc323a22a8d6"
+        "evidence:db249ebe7caeb952"
       ],
       "id": "GAP-E6407C27B0A0",
       "issue": "./gap-register.md#gap-e6407c27b0a0",
@@ -1309,7 +1294,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5c690707af2045fc"
+        "evidence:dd7f378e5f052002"
       ],
       "id": "GAP-E78676534A3D",
       "issue": "./gap-register.md#gap-e78676534a3d",
@@ -1324,7 +1309,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4f8a3fa229fce46a"
+        "evidence:fc30119e5c1b3a66"
       ],
       "id": "GAP-E8EA4EBF9E5B",
       "issue": "./gap-register.md#gap-e8ea4ebf9e5b",
@@ -1339,7 +1324,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4a9ebf8fcd12dc05"
+        "evidence:d7d7d0aa240e6348"
       ],
       "id": "GAP-ECCA22B9BF5C",
       "issue": "./gap-register.md#gap-ecca22b9bf5c",
@@ -1354,7 +1339,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:65c5d4bcd4fe053c"
+        "evidence:d9d378d6ad11a360"
       ],
       "id": "GAP-F233CCF8F300",
       "issue": "./gap-register.md#gap-f233ccf8f300",
@@ -1369,7 +1354,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f8245d979757f350"
+        "evidence:95e69bca72370006"
       ],
       "id": "GAP-F565DE673FC4",
       "issue": "./gap-register.md#gap-f565de673fc4",
@@ -1384,7 +1369,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f5c2234682c7fb0f"
+        "evidence:b1b7233f005c3fd3"
       ],
       "id": "GAP-F87A7F4D9DAF",
       "issue": "./gap-register.md#gap-f87a7f4d9daf",
@@ -1414,7 +1399,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0eed92078fd42c44"
+        "evidence:1278796cf1a788d3"
       ],
       "id": "GAP-TEST-SKIP-016584717742",
       "issue": "./gap-register.md#gap-test-skip-016584717742",
@@ -1429,7 +1414,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a6f75cbf1236a81a"
+        "evidence:3962169163e41662"
       ],
       "id": "GAP-TEST-SKIP-0AB13266E74B",
       "issue": "./gap-register.md#gap-test-skip-0ab13266e74b",
@@ -1444,7 +1429,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4e7d212a896439fd"
+        "evidence:8a04bc05054453fb"
       ],
       "id": "GAP-TEST-SKIP-0C4650D6E88D",
       "issue": "./gap-register.md#gap-test-skip-0c4650d6e88d",
@@ -1459,7 +1444,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2ed9b6bf31749dfe"
+        "evidence:310ecc995d99476b"
       ],
       "id": "GAP-TEST-SKIP-0E05D081D7B9",
       "issue": "./gap-register.md#gap-test-skip-0e05d081d7b9",
@@ -1474,7 +1459,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3344cfb640c2cb5d"
+        "evidence:79c125116fbe1ebe"
       ],
       "id": "GAP-TEST-SKIP-1030E0B6067F",
       "issue": "./gap-register.md#gap-test-skip-1030e0b6067f",
@@ -1489,7 +1474,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7fd96ed9436572f1"
+        "evidence:2a101e58603d2b00"
       ],
       "id": "GAP-TEST-SKIP-11B2B5A24EDD",
       "issue": "./gap-register.md#gap-test-skip-11b2b5a24edd",
@@ -1504,7 +1489,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0ce7a0f682a1d60f"
+        "evidence:85c460ee95556e71"
       ],
       "id": "GAP-TEST-SKIP-135335D56AAA",
       "issue": "./gap-register.md#gap-test-skip-135335d56aaa",
@@ -1519,7 +1504,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:70ed8d04a9fc612e"
+        "evidence:79f401a9a468f327"
       ],
       "id": "GAP-TEST-SKIP-14E0BC715785",
       "issue": "./gap-register.md#gap-test-skip-14e0bc715785",
@@ -1534,7 +1519,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5eab56fee4ee5377"
+        "evidence:bba5cbca76e2e162"
       ],
       "id": "GAP-TEST-SKIP-17B4FB8E1043",
       "issue": "./gap-register.md#gap-test-skip-17b4fb8e1043",
@@ -1549,7 +1534,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9869f5ac62e4aff3"
+        "evidence:7ee56ec2429c7345"
       ],
       "id": "GAP-TEST-SKIP-18153F20C1FA",
       "issue": "./gap-register.md#gap-test-skip-18153f20c1fa",
@@ -1564,7 +1549,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:27652c8d47f47a8b"
+        "evidence:c2dab7324b200c8c"
       ],
       "id": "GAP-TEST-SKIP-1A3353D88CF3",
       "issue": "./gap-register.md#gap-test-skip-1a3353d88cf3",
@@ -1579,7 +1564,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e8db924aba65fcf8"
+        "evidence:61aa80840879cef3"
       ],
       "id": "GAP-TEST-SKIP-1B985C7BF34B",
       "issue": "./gap-register.md#gap-test-skip-1b985c7bf34b",
@@ -1594,7 +1579,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:fc372fb496d4c368"
+        "evidence:7202623c5bcb9376"
       ],
       "id": "GAP-TEST-SKIP-1DA3ED8ACED2",
       "issue": "./gap-register.md#gap-test-skip-1da3ed8aced2",
@@ -1609,7 +1594,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:95fb13a4e3e9db9c"
+        "evidence:983ea4236e438375"
       ],
       "id": "GAP-TEST-SKIP-1F91982DD5A5",
       "issue": "./gap-register.md#gap-test-skip-1f91982dd5a5",
@@ -1624,7 +1609,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6efddfafd0cf957e"
+        "evidence:e15e3fd5837e61a0"
       ],
       "id": "GAP-TEST-SKIP-260208BCB066",
       "issue": "./gap-register.md#gap-test-skip-260208bcb066",
@@ -1639,7 +1624,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:eb8148b507e5a5b1"
+        "evidence:b9cb8f6d93018bbb"
       ],
       "id": "GAP-TEST-SKIP-273C5A8DF1A8",
       "issue": "./gap-register.md#gap-test-skip-273c5a8df1a8",
@@ -1654,7 +1639,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8ddd2881ebd5b8de"
+        "evidence:d6ebe041df43c7e3"
       ],
       "id": "GAP-TEST-SKIP-28E0579B749B",
       "issue": "./gap-register.md#gap-test-skip-28e0579b749b",
@@ -1669,7 +1654,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b71af07cb2f0a7aa"
+        "evidence:b32a494110958866"
       ],
       "id": "GAP-TEST-SKIP-30BCAF6B1CBC",
       "issue": "./gap-register.md#gap-test-skip-30bcaf6b1cbc",
@@ -1684,7 +1669,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b2b0b44bdcc9273a"
+        "evidence:5f75aa4627897601"
       ],
       "id": "GAP-TEST-SKIP-329CB62DAB03",
       "issue": "./gap-register.md#gap-test-skip-329cb62dab03",
@@ -1699,7 +1684,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:16e61cc34ab41ba5"
+        "evidence:4259669b8f4593f9"
       ],
       "id": "GAP-TEST-SKIP-331493CB0B90",
       "issue": "./gap-register.md#gap-test-skip-331493cb0b90",
@@ -1714,7 +1699,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6eb52c21a2af5f9d"
+        "evidence:8674789acd6a5204"
       ],
       "id": "GAP-TEST-SKIP-36E46058896B",
       "issue": "./gap-register.md#gap-test-skip-36e46058896b",
@@ -1729,7 +1714,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9612ba06c304ce39"
+        "evidence:3b6fb09b55ac0f78"
       ],
       "id": "GAP-TEST-SKIP-3E4492CF1400",
       "issue": "./gap-register.md#gap-test-skip-3e4492cf1400",
@@ -1744,7 +1729,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2f9c451c10975c2d"
+        "evidence:d35f8a666b73620d"
       ],
       "id": "GAP-TEST-SKIP-44C1DC77E008",
       "issue": "./gap-register.md#gap-test-skip-44c1dc77e008",
@@ -1759,7 +1744,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:85b5b4eaf38a2880"
+        "evidence:abe29f3f6badb945"
       ],
       "id": "GAP-TEST-SKIP-4AC271411657",
       "issue": "./gap-register.md#gap-test-skip-4ac271411657",
@@ -1774,7 +1759,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a1531f9b0b6b6a26"
+        "evidence:39e484b64834069d"
       ],
       "id": "GAP-TEST-SKIP-4FE350A1F082",
       "issue": "./gap-register.md#gap-test-skip-4fe350a1f082",
@@ -1789,7 +1774,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b5e7514136f5893e"
+        "evidence:994cb0892accc624"
       ],
       "id": "GAP-TEST-SKIP-50906E245BCC",
       "issue": "./gap-register.md#gap-test-skip-50906e245bcc",
@@ -1804,7 +1789,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:edc3819b65c86321"
+        "evidence:c35ca2fb3bf34eb0"
       ],
       "id": "GAP-TEST-SKIP-592207B673A6",
       "issue": "./gap-register.md#gap-test-skip-592207b673a6",
@@ -1819,7 +1804,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:84308373bdfcbceb"
+        "evidence:321400bade56f427"
       ],
       "id": "GAP-TEST-SKIP-5DA5AA0CB931",
       "issue": "./gap-register.md#gap-test-skip-5da5aa0cb931",
@@ -1834,7 +1819,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1ef46eb06e153704"
+        "evidence:21c84ceedaae6879"
       ],
       "id": "GAP-TEST-SKIP-61BF2CC58555",
       "issue": "./gap-register.md#gap-test-skip-61bf2cc58555",
@@ -1849,7 +1834,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:22bb607dc33537dc"
+        "evidence:c1f2f525ca914735"
       ],
       "id": "GAP-TEST-SKIP-644B6B9CBA2C",
       "issue": "./gap-register.md#gap-test-skip-644b6b9cba2c",
@@ -1864,7 +1849,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c762015fa71a42f4"
+        "evidence:fca608288594e7a0"
       ],
       "id": "GAP-TEST-SKIP-65745748479E",
       "issue": "./gap-register.md#gap-test-skip-65745748479e",
@@ -1879,7 +1864,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:83536b4dd9f44054"
+        "evidence:9e1afa7a6e8b1298"
       ],
       "id": "GAP-TEST-SKIP-66ECE02E5B35",
       "issue": "./gap-register.md#gap-test-skip-66ece02e5b35",
@@ -1894,7 +1879,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c596b0260120a5c4"
+        "evidence:10a0170861b9e996"
       ],
       "id": "GAP-TEST-SKIP-7CDBC3BA8C34",
       "issue": "./gap-register.md#gap-test-skip-7cdbc3ba8c34",
@@ -1909,7 +1894,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e5351f23e6d7e590"
+        "evidence:3b093be011e02f92"
       ],
       "id": "GAP-TEST-SKIP-809A16F9F73B",
       "issue": "./gap-register.md#gap-test-skip-809a16f9f73b",
@@ -1924,7 +1909,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e4cadb76de8d42f7"
+        "evidence:526d745e2ea0f848"
       ],
       "id": "GAP-TEST-SKIP-8BBAEA62C90D",
       "issue": "./gap-register.md#gap-test-skip-8bbaea62c90d",
@@ -1939,7 +1924,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:22231c5210470765"
+        "evidence:8a76308bd9ca15eb"
       ],
       "id": "GAP-TEST-SKIP-957EA5B9B8D6",
       "issue": "./gap-register.md#gap-test-skip-957ea5b9b8d6",
@@ -1954,7 +1939,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f45100deab9d40be"
+        "evidence:4d73ee4273656232"
       ],
       "id": "GAP-TEST-SKIP-9C5CBA1D2839",
       "issue": "./gap-register.md#gap-test-skip-9c5cba1d2839",
@@ -1969,7 +1954,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:85595c850aa99433"
+        "evidence:4663b7591e63d63a"
       ],
       "id": "GAP-TEST-SKIP-A441A42ACAE4",
       "issue": "./gap-register.md#gap-test-skip-a441a42acae4",
@@ -1984,7 +1969,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f42cf90150f207fc"
+        "evidence:932e6fb58a95a7d9"
       ],
       "id": "GAP-TEST-SKIP-A44C9F48242A",
       "issue": "./gap-register.md#gap-test-skip-a44c9f48242a",
@@ -1999,7 +1984,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:83cb433a80f3075f"
+        "evidence:08c8b9a6e0ebdea0"
       ],
       "id": "GAP-TEST-SKIP-AFD5DE5CF407",
       "issue": "./gap-register.md#gap-test-skip-afd5de5cf407",
@@ -2014,7 +1999,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6ed737dd4c71a7a6"
+        "evidence:f573a759cdb42f5f"
       ],
       "id": "GAP-TEST-SKIP-B17FA18CDC90",
       "issue": "./gap-register.md#gap-test-skip-b17fa18cdc90",
@@ -2029,7 +2014,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:265fb1245d023bf3"
+        "evidence:a0e09a409ceb72e4"
       ],
       "id": "GAP-TEST-SKIP-B9868B950879",
       "issue": "./gap-register.md#gap-test-skip-b9868b950879",
@@ -2044,7 +2029,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e88ac3f1b9d0d6ed"
+        "evidence:7614e9fc59b01ffe"
       ],
       "id": "GAP-TEST-SKIP-B9E0E6189678",
       "issue": "./gap-register.md#gap-test-skip-b9e0e6189678",
@@ -2059,7 +2044,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2b0084f225529fbd"
+        "evidence:9de5d84f6abb893a"
       ],
       "id": "GAP-TEST-SKIP-BCDD1600A486",
       "issue": "./gap-register.md#gap-test-skip-bcdd1600a486",
@@ -2074,7 +2059,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:eecd1d25fe69d3d1"
+        "evidence:910528f33c4eec2b"
       ],
       "id": "GAP-TEST-SKIP-C3C27E369DAD",
       "issue": "./gap-register.md#gap-test-skip-c3c27e369dad",
@@ -2089,7 +2074,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0003c617908e51ba"
+        "evidence:999a113fc1f34870"
       ],
       "id": "GAP-TEST-SKIP-C4D9734CF8C7",
       "issue": "./gap-register.md#gap-test-skip-c4d9734cf8c7",
@@ -2104,7 +2089,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7512baa11edf9dd1"
+        "evidence:849712e53f3599c5"
       ],
       "id": "GAP-TEST-SKIP-D6F38F31475E",
       "issue": "./gap-register.md#gap-test-skip-d6f38f31475e",
@@ -2119,7 +2104,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c8385456ce15e75c"
+        "evidence:1eaddd775cad9060"
       ],
       "id": "GAP-TEST-SKIP-DE991873782B",
       "issue": "./gap-register.md#gap-test-skip-de991873782b",
@@ -2134,7 +2119,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:98e3c6714d08c52f"
+        "evidence:e5cc619f7e3b3542"
       ],
       "id": "GAP-TEST-SKIP-E213A3F64664",
       "issue": "./gap-register.md#gap-test-skip-e213a3f64664",
@@ -2149,7 +2134,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c1832447101240cf"
+        "evidence:43896a1f6e235fca"
       ],
       "id": "GAP-TEST-SKIP-E598AC46FAFC",
       "issue": "./gap-register.md#gap-test-skip-e598ac46fafc",
@@ -2164,7 +2149,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:82688e555a53e407"
+        "evidence:0327b3a1eb810f7f"
       ],
       "id": "GAP-TEST-SKIP-FAB9EFD5A386",
       "issue": "./gap-register.md#gap-test-skip-fab9efd5a386",

@@ -99,7 +99,11 @@ export function strongestTier(a, b) {
 }
 
 export function stableHash(value, length = 16) {
-  return crypto.createHash('sha256').update(Buffer.isBuffer(value) ? value : String(value)).digest('hex').slice(0, length);
+  return crypto
+    .createHash('sha256')
+    .update(Buffer.isBuffer(value) ? value : String(value))
+    .digest('hex')
+    .slice(0, length);
 }
 
 export function canonical(value) {
@@ -128,7 +132,11 @@ export function readJson(file, fallback = undefined) {
 
 export function git(root, args, fallback = '') {
   try {
-    return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    return execFileSync('git', args, {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
   } catch {
     return fallback;
   }
@@ -147,8 +155,16 @@ export function activeFiles(root) {
   // artifacts before the per-extractor filters run.
   const tracked = new Set();
   const roots = [
-    'src', 'convex', 'e2e', 'docs', 'scripts/ontology', '.github/workflows',
-    'agent-harness', 'scripts/agent-harness', 'scripts/graphify', 'tools/graphify'
+    'src',
+    'convex',
+    'e2e',
+    'docs',
+    'scripts/ontology',
+    '.github/workflows',
+    'agent-harness',
+    'scripts/agent-harness',
+    'scripts/graphify',
+    'tools/graphify',
   ];
   const visit = (relative) => {
     const absolute = path.join(root, relative);
@@ -164,7 +180,19 @@ export function activeFiles(root) {
     if (stat.isSymbolicLink()) return;
     if (stat.isDirectory()) {
       for (const name of fs.readdirSync(absolute).sort()) {
-        if (['node_modules', '_generated', '.venv', '.cache', 'dist', 'test-results', 'playwright-report', 'ci-artifact'].includes(name)) continue;
+        if (
+          [
+            'node_modules',
+            '_generated',
+            '.venv',
+            '.cache',
+            'dist',
+            'test-results',
+            'playwright-report',
+            'ci-artifact',
+          ].includes(name)
+        )
+          continue;
         visit(path.posix.join(relative, name));
       }
       return;
@@ -173,10 +201,19 @@ export function activeFiles(root) {
   };
   for (const relative of roots) visit(relative);
   for (const rootFile of [
-    'package.json', 'netlify.toml', 'vite.config.ts', 'AGENTS.md', 'CLAUDE.MD',
-    'CONTRIBUTING.md', 'WORKFLOW.md', '.nvmrc', '.npmrc',
-    'ontology/ontology.test.ts', 'scripts/safe-files.mjs'
-  ]) visit(rootFile);
+    'package.json',
+    'netlify.toml',
+    'vite.config.ts',
+    'AGENTS.md',
+    'CLAUDE.MD',
+    'CONTRIBUTING.md',
+    'WORKFLOW.md',
+    '.nvmrc',
+    '.npmrc',
+    'ontology/ontology.test.ts',
+    'scripts/safe-files.mjs',
+  ])
+    visit(rootFile);
   return [...tracked].sort();
 }
 
@@ -269,7 +306,16 @@ export class OntologyGraph {
     this.shaTimestampCache = new Map();
   }
 
-  addEvidence({ tier = 'E0', source, path: sourcePath, symbol, line, commitSha, status = 'CURRENT', ...extra }) {
+  addEvidence({
+    tier = 'E0',
+    source,
+    path: sourcePath,
+    symbol,
+    line,
+    commitSha,
+    status = 'CURRENT',
+    ...extra
+  }) {
     let pathDigest;
     if (tier === 'E0' && sourcePath) {
       if (!this.pathDigestCache.has(sourcePath)) {
@@ -304,7 +350,7 @@ export class OntologyGraph {
     if (!node.id || !node.name || !node.path || !node.purpose) {
       throw new Error(`Incomplete ${node.type} node: ${JSON.stringify(node)}`);
     }
-    const refs = [...new Set(evidenceIds.length ? evidenceIds : node.evidenceRefs ?? [])].sort();
+    const refs = [...new Set(evidenceIds.length ? evidenceIds : (node.evidenceRefs ?? []))].sort();
     const tier = refs.reduce(
       (best, id) => strongestTier(best, this.evidence.get(id)?.tier ?? 'NONE'),
       node.evidenceTier ?? 'NONE'
@@ -346,8 +392,9 @@ export class OntologyGraph {
     if (!edge.from || !edge.to || !edge.purpose) {
       throw new Error(`Incomplete ${edge.type} edge: ${JSON.stringify(edge)}`);
     }
-    const id = edge.id ?? `edge:${edge.type.toLowerCase()}:${stableHash(`${edge.from}|${edge.to}`)}`;
-    const refs = [...new Set(evidenceIds.length ? evidenceIds : edge.evidenceRefs ?? [])].sort();
+    const id =
+      edge.id ?? `edge:${edge.type.toLowerCase()}:${stableHash(`${edge.from}|${edge.to}`)}`;
+    const refs = [...new Set(evidenceIds.length ? evidenceIds : (edge.evidenceRefs ?? []))].sort();
     const tier = refs.reduce(
       (best, evidenceId) => strongestTier(best, this.evidence.get(evidenceId)?.tier ?? 'NONE'),
       edge.evidenceTier ?? 'NONE'
@@ -367,7 +414,11 @@ export class OntologyGraph {
       evidenceTier: tier,
       evidenceRefs: [...new Set([...(current?.evidenceRefs ?? []), ...refs])].sort(),
       commitSha: edge.commitSha ?? this.evidence.get(refs[0])?.commitSha ?? this.commitSha,
-      attributes: { dependencySemantics, ...(current?.attributes ?? {}), ...(edge.attributes ?? {}) },
+      attributes: {
+        dependencySemantics,
+        ...(current?.attributes ?? {}),
+        ...(edge.attributes ?? {}),
+      },
     };
     this.edges.set(id, merged);
     this.addClaim({
@@ -380,14 +431,27 @@ export class OntologyGraph {
     return merged;
   }
 
-  addClaim({ subject, predicate, object, tier = 'NONE', evidenceRefs = [], status = 'CURRENT', reasoning }) {
+  addClaim({
+    subject,
+    predicate,
+    object,
+    tier = 'NONE',
+    evidenceRefs = [],
+    status = 'CURRENT',
+    reasoning,
+  }) {
     const key = JSON.stringify({ subject, predicate, object });
     const id = `claim:${stableHash(key, 20)}`;
     const current = this.claims.get(id);
     const mergedTier = strongestTier(current?.tier ?? 'NONE', tier);
-    const mergedEvidenceRefs = [...new Set([...(current?.evidenceRefs ?? []), ...evidenceRefs])].sort();
-    const supportingEvidence = mergedEvidenceRefs.map((evidenceId) => this.evidence.get(evidenceId)).filter(Boolean);
-    const primaryEvidence = supportingEvidence.find((item) => item.tier === mergedTier) ?? supportingEvidence[0];
+    const mergedEvidenceRefs = [
+      ...new Set([...(current?.evidenceRefs ?? []), ...evidenceRefs]),
+    ].sort();
+    const supportingEvidence = mergedEvidenceRefs
+      .map((evidenceId) => this.evidence.get(evidenceId))
+      .filter(Boolean);
+    const primaryEvidence =
+      supportingEvidence.find((item) => item.tier === mergedTier) ?? supportingEvidence[0];
     const claimSha = primaryEvidence?.commitSha ?? current?.commitSha ?? this.commitSha;
     if (!this.shaTimestampCache.has(claimSha)) {
       this.shaTimestampCache.set(
@@ -406,13 +470,19 @@ export class OntologyGraph {
       reasoning,
       source: primaryEvidence?.source ?? current?.source ?? 'derived:ontology-extractor',
       commitSha: claimSha,
-      timestamp: primaryEvidence?.completedAt ?? primaryEvidence?.sourceRevision ?? current?.timestamp ?? this.shaTimestampCache.get(claimSha),
+      timestamp:
+        primaryEvidence?.completedAt ??
+        primaryEvidence?.sourceRevision ??
+        current?.timestamp ??
+        this.shaTimestampCache.get(claimSha),
     });
     return id;
   }
 
   addGap(gap) {
-    const id = gap.id ?? `GAP-${stableHash(`${gap.kind}|${gap.subjectId}|${gap.summary}`, 12).toUpperCase()}`;
+    const id =
+      gap.id ??
+      `GAP-${stableHash(`${gap.kind}|${gap.subjectId}|${gap.summary}`, 12).toUpperCase()}`;
     this.gaps.set(id, {
       id,
       severity: gap.severity ?? 'medium',
@@ -430,7 +500,9 @@ export class OntologyGraph {
   }
 
   addConflict(conflict) {
-    const id = conflict.id ?? `CONFLICT-${stableHash(`${conflict.subjectId}|${conflict.predicate}`, 12).toUpperCase()}`;
+    const id =
+      conflict.id ??
+      `CONFLICT-${stableHash(`${conflict.subjectId}|${conflict.predicate}`, 12).toUpperCase()}`;
     this.conflicts.set(id, {
       id,
       subjectId: conflict.subjectId,
@@ -439,7 +511,8 @@ export class OntologyGraph {
       loser: conflict.loser,
       resolution: conflict.resolution,
       owner: conflict.owner ?? this.manifest.defaults.gapOwner,
-      nextAction: conflict.nextAction ?? 'Refresh the lower-precedence source from current E0/E1 evidence.',
+      nextAction:
+        conflict.nextAction ?? 'Refresh the lower-precedence source from current E0/E1 evidence.',
       evidenceRefs: [...new Set(conflict.evidenceRefs ?? [])].sort(),
       status: conflict.status ?? 'resolved',
     });
@@ -463,7 +536,8 @@ export class OntologyGraph {
         if (visited.has(item.id) || item.id === node.id) continue;
         visited.add(item.id);
         depthById[item.id] = item.depth;
-        for (const next of reverse.get(item.id) ?? []) queue.push({ id: next, depth: item.depth + 1 });
+        for (const next of reverse.get(item.id) ?? [])
+          queue.push({ id: next, depth: item.depth + 1 });
       }
       node.impact = {
         directDependents: direct,
@@ -479,12 +553,14 @@ export class OntologyGraph {
       if (!this.nodes.has(edge.from)) errors.push(`${edge.id} has missing source ${edge.from}`);
       if (!this.nodes.has(edge.to)) errors.push(`${edge.id} has missing target ${edge.to}`);
       for (const evidenceId of edge.evidenceRefs) {
-        if (!this.evidence.has(evidenceId)) errors.push(`${edge.id} has missing evidence ${evidenceId}`);
+        if (!this.evidence.has(evidenceId))
+          errors.push(`${edge.id} has missing evidence ${evidenceId}`);
       }
     }
     for (const node of this.nodes.values()) {
       for (const evidenceId of node.evidenceRefs) {
-        if (!this.evidence.has(evidenceId)) errors.push(`${node.id} has missing evidence ${evidenceId}`);
+        if (!this.evidence.has(evidenceId))
+          errors.push(`${node.id} has missing evidence ${evidenceId}`);
       }
     }
     return errors;
@@ -498,8 +574,14 @@ export class OntologyGraph {
       extractedAt: this.extractedAt,
     };
     return {
-      nodes: { ...snapshot, nodes: [...this.nodes.values()].sort((a, b) => a.id.localeCompare(b.id)) },
-      edges: { ...snapshot, edges: [...this.edges.values()].sort((a, b) => a.id.localeCompare(b.id)) },
+      nodes: {
+        ...snapshot,
+        nodes: [...this.nodes.values()].sort((a, b) => a.id.localeCompare(b.id)),
+      },
+      edges: {
+        ...snapshot,
+        edges: [...this.edges.values()].sort((a, b) => a.id.localeCompare(b.id)),
+      },
       ledger: {
         ...snapshot,
         evidence: [...this.evidence.values()].sort((a, b) => a.id.localeCompare(b.id)),
@@ -517,7 +599,8 @@ export function semanticSnapshot(value) {
       Object.entries(item)
         // commitSha is restamped on extract; rebase-merge orphans the recorded SHA
         // even when graph content is unchanged. E1 age still uses the real SHA.
-        .filter(([key]) => key !== 'extractedAt' && key !== 'commitSha')
+        // timestamp follows git %cI, which GitHub runners may format as Z vs +00:00.
+        .filter(([key]) => key !== 'extractedAt' && key !== 'commitSha' && key !== 'timestamp')
         .map(([key, child]) => [key, omitVolatile(child)])
     );
   };

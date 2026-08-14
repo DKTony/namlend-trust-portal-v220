@@ -168,3 +168,32 @@ typecheck` (`tsc -b`), and backend tests run via `npm run test:convex`.
 ### Ports
 
 - `8080` Vite dev server, `3210` Convex backend, `3211` Convex HTTP actions.
+
+### Seeded test accounts (local demos / E2E)
+
+- `npx convex run seed:seedTestUsers` (internalAction, run with `CONVEX_AGENT_MODE=anonymous`)
+  is idempotent and creates the standard fixtures on the local deployment, all with password
+  `Test1234!`: `client1@test.namlend.com` (client, and auto KYC-`verified` so the loan
+  application form is not gated behind `/kyc`), `client2@...`, `admin@...`,
+  `loan_officer@...` (staff, the "operator" role for approvals), and
+  `platformowner@...`. It also seeds an OG tenant plus an active and a `submitted`
+  ("reviewable") loan for `client1`, so the approvals/loans queues are not empty on a fresh DB.
+- Loan lifecycle for demos: client submits at `/loan-application` -> staff get a "New Loan
+  Application" notification and work the queue at `/admin/approvals` -> approving there
+  (`approvalWorkflow.processApprovalRequest`) notifies the client "Loan Approved". Approving
+  from `/admin/loans` directly does NOT notify the client, so use `/admin/approvals`.
+
+### Vite dev "Failed to fetch dynamically imported module" (lazy admin routes)
+
+- After a long-running dev session (or once Vite re-optimizes deps mid-session), lazily
+  imported route chunks (e.g. `/admin/*` pages) can fail with "Failed to fetch dynamically
+  imported module" even though the module transforms fine server-side. This is stale dep-
+  optimization state, not a code bug. Fix: restart the Vite dev server (optionally
+  `rm -rf node_modules/.vite` first) and hard-reload the page.
+
+### Screen recordings
+
+- Keep screen recordings short (roughly a few minutes each); very long captures can exceed
+  the save/render pipeline limits. For multi-part flows, record short per-part clips and
+  concatenate them with `ffmpeg -f concat` (clips share codec/resolution/fps, so `-c copy`
+  works). `videoReview` rejects videos over 15 MB, so review the individual clips.

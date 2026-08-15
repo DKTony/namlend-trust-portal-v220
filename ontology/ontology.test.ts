@@ -178,18 +178,18 @@ const planDefaults = (planCode: string): string[] => {
 
 describe('T1 inventory', () => {
   test('effective schema, feature, plan, role, function, and route inventories match the code manifests', () => {
-    expect(byType('Table')).toHaveLength(92);
+    expect(byType('Table')).toHaveLength(95);
     // Convex Auth 0.0.95 adds Auth-owned indexes to the application index baseline.
     // baseline. The dependency-derived inventory is the current E0 fact.
     expect(byType('Index')).toHaveLength(metrics.effectiveIndexCount as number);
-    expect(metrics.applicationIndexCount).toBe(187);
+    expect(metrics.applicationIndexCount).toBe(190);
     expect(metrics.authIndexCount).toBe(11);
     expect(byType('Feature')).toHaveLength(32);
     expect(byType('Plan')).toHaveLength(4);
     expect(byType('Role')).toHaveLength(6);
     expect(byType('Function')).toHaveLength(metrics.functionCount as number);
     expect(byType('Route')).toHaveLength(metrics.routeCount as number);
-    expect(metrics.applicationTableCount).toBe(85);
+    expect(metrics.applicationTableCount).toBe(88);
     expect(metrics.authTableCount).toBe(7);
   });
 
@@ -248,7 +248,7 @@ describe('T1 inventory', () => {
         (conflict) =>
           conflict.predicate === 'HAS_EFFECTIVE_TABLE_COUNT' &&
           JSON.stringify(conflict.loser).includes('86') &&
-          JSON.stringify(conflict.winner).includes('92')
+          JSON.stringify(conflict.winner).includes('95')
       )
     ).toBe(true);
   });

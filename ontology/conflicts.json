@@ -1,5 +1,5 @@
 {
-  "commitSha": "d38bc135737783f3fb04f44da6232d1e6b66c682",
+  "commitSha": "15c085f909c508b33611269c9c5ffdbe7c13f746",
   "conflicts": [
     {
       "evidenceRefs": [
@@ -14,7 +14,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_APPLICATION_TABLE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -36,7 +36,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_E2E_PASS_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-tests",
       "winner": {
@@ -58,7 +58,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_E2E_SKIP_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-tests",
       "winner": {
@@ -80,7 +80,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -102,7 +102,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_EFFECTIVE_TABLE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -124,7 +124,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_FEATURE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-web",
       "winner": {
@@ -146,7 +146,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -168,7 +168,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_GATED_ENTRY_POINT_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -190,7 +190,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_GATED_FEATURE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -212,7 +212,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_GATED_FEATURE_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-convex",
       "winner": {
@@ -234,7 +234,7 @@
       "nextAction": "Refresh the Notion page from the current generated coverage report; this implementation remains read-only.",
       "owner": "NamLend Engineering",
       "predicate": "HAS_UNIT_PASS_COUNT",
-      "resolution": "Current code at d38bc135737783f3fb04f44da6232d1e6b66c682 wins over the older documented count.",
+      "resolution": "Current code at 15c085f909c508b33611269c9c5ffdbe7c13f746 wins over the older documented count.",
       "status": "resolved",
       "subjectId": "system:namlend-tests",
       "winner": {
@@ -244,6 +244,6 @@
       }
     }
   ],
-  "extractedAt": "2026-08-15T06:09:31.081Z",
+  "extractedAt": "2026-08-15T06:13:34.353Z",
   "schemaVersion": "1.0.0"
 }

@@ -75,12 +75,32 @@ export function sanitizeNextPath(raw: string | null | undefined): string | null 
 }
 
 /**
+ * Client self-service routes mounted with `requireClient` in `App.tsx`. Staff and platform
+ * identities must not be sent here as `?next=` — a `tenant_admin` / `platform_owner` hitting
+ * `/dashboard` after Google OAuth is an Access Denied dead end.
+ */
+function isClientPortalPath(pathname: string): boolean {
+  return (
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/') ||
+    pathname === '/kyc' ||
+    pathname.startsWith('/kyc/') ||
+    pathname === '/loan-application' ||
+    pathname.startsWith('/loan-application/') ||
+    pathname === '/payment' ||
+    pathname.startsWith('/payment/') ||
+    pathname === '/loans' ||
+    pathname.startsWith('/loans/')
+  );
+}
+
+/**
  * Whether `flags` may open `path`.
  *
  * Mirrors the guards mounted in `App.tsx` — `/platform/*` needs platform staff, `/admin/*` needs
- * tenant staff, everything else only needs a session. Sub-sections of `/admin` that additionally
- * require `requireAdmin` are intentionally not modelled here: this answers "should we send them
- * there at all", and `ProtectedRoute` remains the enforcement point.
+ * tenant staff, client-portal paths need a non-staff identity. Sub-sections of `/admin` that
+ * additionally require `requireAdmin` are intentionally not modelled here: this answers "should
+ * we send them there at all", and `ProtectedRoute` remains the enforcement point.
  */
 export function canAccessPath(path: string, flags: RoleFlags): boolean {
   const [pathname] = path.split(/[?#]/);
@@ -90,6 +110,9 @@ export function canAccessPath(path: string, flags: RoleFlags): boolean {
   }
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     return flags.isLoanOfficer;
+  }
+  if (isClientPortalPath(pathname)) {
+    return !flags.isPlatformStaff && !flags.isLoanOfficer;
   }
   return true;
 }

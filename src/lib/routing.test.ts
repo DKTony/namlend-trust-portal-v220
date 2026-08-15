@@ -99,9 +99,16 @@ describe('canAccessPath', () => {
     expect(canAccessPath('/platformer', CLIENT)).toBe(true);
   });
 
-  it('allows shared authenticated routes for everyone', () => {
+  it('allows client-portal routes for clients only', () => {
     expect(canAccessPath('/dashboard', CLIENT)).toBe(true);
+    expect(canAccessPath('/kyc', CLIENT)).toBe(true);
+    expect(canAccessPath('/loan-application', CLIENT)).toBe(true);
+    expect(canAccessPath('/payment', CLIENT)).toBe(true);
     expect(canAccessPath('/loans/abc123', CLIENT)).toBe(true);
+    expect(canAccessPath('/dashboard', STAFF)).toBe(false);
+    expect(canAccessPath('/dashboard', PLATFORM)).toBe(false);
+    expect(canAccessPath('/kyc', DUAL)).toBe(false);
+    expect(canAccessPath('/loans/abc123', STAFF)).toBe(false);
   });
 
   it('ignores query and hash when checking the prefix', () => {
@@ -132,6 +139,13 @@ describe('resolvePostLoginRoute', () => {
     expect(resolvePostLoginRoute(null, CLIENT)).toBe('/dashboard');
     expect(resolvePostLoginRoute(null, STAFF)).toBe('/admin');
     expect(resolvePostLoginRoute(null, PLATFORM)).toBe('/platform');
+  });
+
+  it('does not send staff or platform identities to /dashboard as next', () => {
+    expect(resolvePostLoginRoute('/dashboard', CLIENT)).toBe('/dashboard');
+    expect(resolvePostLoginRoute('/dashboard', STAFF)).toBe('/admin');
+    expect(resolvePostLoginRoute('/dashboard', PLATFORM)).toBe('/platform');
+    expect(resolvePostLoginRoute('/dashboard', DUAL)).toBe('/platform');
   });
 });
 

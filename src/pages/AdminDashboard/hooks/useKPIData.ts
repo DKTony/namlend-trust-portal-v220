@@ -23,11 +23,6 @@ export const useKPIData = () => {
   const approvalRate = totalLoans > 0 ? (approvedLoans / totalLoans) * 100 : 0;
   const avgLoanSize = portfolio?.portfolio?.averageLoanSize ?? 0;
 
-  // Mock previous period for trend comparison
-  const previousApprovalRate = 65;
-  const previousAvgLoan = 15000;
-  const previousPendingLoans = 8;
-
   const nplRatio = risk?.nplRatio ?? 0;
   const portfolioHealth = (1 - nplRatio) * 100;
 
@@ -36,44 +31,29 @@ export const useKPIData = () => {
         {
           title: 'Loan Approval Rate',
           value: `${approvalRate.toFixed(1)}%`,
-          trend:
-            approvalRate > previousApprovalRate
-              ? 'up'
-              : approvalRate < previousApprovalRate
-                ? 'down'
-                : 'stable',
-          trendValue: `${Math.abs(approvalRate - previousApprovalRate).toFixed(1)}% from last month`,
+          trend: 'stable',
+          trendValue: `${approvedLoans} of ${totalLoans} loans approved`,
           description: 'Percentage of approved loan applications',
         },
         {
           title: 'Average Loan Amount',
           value: `N$${avgLoanSize.toLocaleString('en-NA')}`,
-          trend:
-            avgLoanSize > previousAvgLoan
-              ? 'up'
-              : avgLoanSize < previousAvgLoan
-                ? 'down'
-                : 'stable',
-          trendValue: `N$${Math.abs(avgLoanSize - previousAvgLoan).toLocaleString('en-NA')} from last month`,
+          trend: 'stable',
+          trendValue: 'Current portfolio average',
           description: 'Average amount per approved loan',
         },
         {
           title: 'Pending Applications',
           value: pendingLoans,
-          trend:
-            pendingLoans < previousPendingLoans
-              ? 'up'
-              : pendingLoans > previousPendingLoans
-                ? 'down'
-                : 'stable',
-          trendValue: `${Math.abs(pendingLoans - previousPendingLoans)} from last month`,
+          trend: 'stable',
+          trendValue: 'Awaiting staff review',
           description: 'Applications awaiting review',
         },
         {
           title: 'Total Active Clients',
           value: clientMetrics?.totalClients ?? 0,
-          trend: 'up',
-          trendValue: '12% growth this month',
+          trend: 'stable',
+          trendValue: `${clientMetrics?.newThisMonth ?? 0} new in the last 30 days`,
           description: 'Registered users on platform',
         },
         {

@@ -10,7 +10,7 @@ import { ConvexError, v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 import { internalMutation, internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { assertAdmin, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertAdmin, assertOwnerOrTenantStaffForUser, assertStaff } from './lib/auth';
 import {
   dueDaysForIppCase,
   requiresSettlementAdjustmentForIppCase,
@@ -755,7 +755,7 @@ export const listReceipts = query({
   },
   handler: async (ctx, args) => {
     if (args.userId) {
-      await assertOwnerOrStaff(ctx, args.userId);
+      await assertOwnerOrTenantStaffForUser(ctx, args.userId);
       return ctx.db
         .query('ippTransactionReceipts')
         .withIndex('by_userId', (q) => q.eq('userId', args.userId))

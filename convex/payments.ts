@@ -12,7 +12,12 @@ import { ConvexError, v } from 'convex/values';
 import { internalMutation, mutation, query } from './_generated/server';
 import { fromCents, toCents } from './lib/amortization';
 import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
-import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import {
+  assertAdmin,
+  assertAuthenticated,
+  assertOwnerOrTenantStaff,
+  assertStaff,
+} from './lib/auth';
 import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { enqueueOutboxIdempotent } from './lib/outbox';
 import { computePayoffQuoteNAD, decomposePaidAmount } from './lib/paymentAllocation';
@@ -46,7 +51,7 @@ export const getPaymentsByLoan = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     return ctx.db
       .query('paymentTransactions')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
@@ -107,7 +112,7 @@ export const getPaymentSchedule = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     return ctx.db
       .query('paymentSchedules')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))
@@ -118,10 +123,9 @@ export const getPaymentSchedule = query({
 
 /** Get overdue payments (replaces get_overdue_payments RPC). */
 export const getOverduePayments = query({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, { limit }) => {
+  args: { limit: v.optional(v.number()), asOf: v.number() },
+  handler: async (ctx, { limit, asOf }) => {
     await assertStaff(ctx);
-    const now = Date.now();
     const scope = await tenantReadScope(ctx);
     // partially_paid is sticky (never cron-flipped to 'overdue'), so past-due
     // partially paid installments must be surfaced here explicitly.
@@ -135,10 +139,39 @@ export const getOverduePayments = query({
         .withIndex('by_status', (q) => q.eq('status', 'partially_paid'))
         .collect(),
     ]);
-    return applyTenantScope([...scheduled, ...partiallyPaid], scope)
-      .filter((s) => s.dueDate < now)
+    const overdue = applyTenantScope([...scheduled, ...partiallyPaid], scope)
+      .filter((s) => s.dueDate < asOf)
       .sort((a, b) => a.dueDate - b.dueDate)
       .slice(0, limit ?? 100);
+
+    const MS_PER_DAY = 86_400_000;
+    return Promise.all(
+      overdue.map(async (schedule) => {
+        const loan = await ctx.db.get(schedule.loanId);
+        const profile = loan
+          ? await ctx.db
+              .query('profiles')
+              .withIndex('by_userId', (q) => q.eq('userId', loan.userId))
+              .first()
+          : null;
+        const remainingAmount = Math.max(0, (schedule.totalDue ?? 0) - (schedule.paidAmount ?? 0));
+        const daysOverdue = Math.max(1, Math.floor((asOf - schedule.dueDate) / MS_PER_DAY));
+        const riskLevel = daysOverdue > 30 ? 'high' : daysOverdue > 7 ? 'medium' : 'low';
+        return {
+          _id: schedule._id,
+          loanId: schedule.loanId,
+          clientUserId: loan?.userId ?? null,
+          clientName: profile?.fullName || profile?.email || 'Unknown',
+          installmentNumber: schedule.installmentNumber,
+          dueDate: schedule.dueDate,
+          remainingAmount,
+          totalDue: schedule.totalDue,
+          daysOverdue,
+          riskLevel,
+          outstandingBalance: loan?.outstandingBalance ?? loan?.principal ?? remainingAmount,
+        };
+      })
+    );
   },
 });
 
@@ -166,7 +199,7 @@ export const recordPayment = mutation({
     await assertAuthenticated(ctx);
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
 
     if (!['active', 'funded'].includes(loan.status)) {
       throw new ConvexError({
@@ -768,7 +801,7 @@ export const getPayoffQuote = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     const rows = await ctx.db
       .query('paymentSchedules')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))

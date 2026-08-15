@@ -60,7 +60,6 @@ interface IPSAlert {
 }
 
 export function IPSHealthWidget() {
-  const [runCheckPending, setRunCheckPending] = useState(false);
   const [acknowledgePending, setAcknowledgePending] = useState(false);
   const [resolvePending, setResolvePending] = useState(false);
 
@@ -171,16 +170,6 @@ export function IPSHealthWidget() {
     },
   };
 
-  // Run manual check (no-op for now — Convex provides automatic reactivity)
-  const runCheckMutation = {
-    isPending: runCheckPending,
-    mutate: () => {
-      setRunCheckPending(true);
-      toast.success('Check complete - data is reactive via Convex');
-      setTimeout(() => setRunCheckPending(false), 500);
-    },
-  };
-
   const getHealthStatus = () => {
     if (!healthData) return { status: 'unknown', color: 'bg-gray-500' };
 
@@ -243,15 +232,13 @@ export function IPSHealthWidget() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => runCheckMutation.mutate()}
-                  disabled={runCheckMutation.isPending}
+                  disabled
+                  title="IPS health is live via Convex; there is no extra probe"
                 >
-                  <RefreshCw
-                    className={`h-4 w-4 ${runCheckMutation.isPending ? 'animate-spin' : ''}`}
-                  />
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Run manual check</TooltipContent>
+              <TooltipContent>Health is live via Convex; there is no extra probe</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>

@@ -86,45 +86,39 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
     },
   ];
 
-  // Mock CSV data for demonstration
-  const mockImportUsers: ImportUser[] = [
-    {
-      fullName: 'John Smith',
-      email: 'john.smith@example.com',
-      phone: '+264 81 123 4567',
-      role: 'client',
-      department: 'N/A',
-      status: 'valid',
-      errors: [],
-      warnings: [],
-    },
-    {
-      fullName: 'Jane Doe',
-      email: 'jane.doe@namlend.com',
-      phone: '+264 81 234 5678',
-      role: 'loan_officer',
-      department: 'Loan Operations',
-      status: 'valid',
-      errors: [],
-      warnings: [],
-    },
-    {
-      fullName: 'Bob Johnson',
-      email: 'invalid-email',
-      role: 'client',
-      status: 'error',
-      errors: ['Invalid email format'],
-      warnings: [],
-    },
-    {
-      fullName: 'Alice Wilson',
-      email: 'alice.wilson@example.com',
-      role: 'unknown_role',
-      status: 'warning',
-      errors: [],
-      warnings: ['Unknown role, will default to client'],
-    },
-  ];
+  const parseCsv = (text: string): ImportUser[] => {
+    const lines = text.split(/\r?\n/).filter((line) => line.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+    const emailIdx = headers.findIndex((h) => h.includes('email'));
+    const nameIdx = headers.findIndex((h) => h.includes('name'));
+    const roleIdx = headers.findIndex((h) => h.includes('role'));
+    const phoneIdx = headers.findIndex((h) => h.includes('phone'));
+    const allowedRoles = new Set(['client', 'loan_officer', 'admin', 'tenant_admin']);
+    const rows: ImportUser[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map((c) => c.trim().replace(/^"|"$/g, ''));
+      const email = emailIdx >= 0 ? (cols[emailIdx] ?? '') : (cols[0] ?? '');
+      const fullName = nameIdx >= 0 ? (cols[nameIdx] ?? '') : (cols[1] ?? '');
+      const role = (roleIdx >= 0 ? (cols[roleIdx] ?? 'client') : 'client').toLowerCase();
+      const phone = phoneIdx >= 0 ? cols[phoneIdx] : undefined;
+      const errors: string[] = [];
+      const warnings: string[] = [];
+      if (!email.includes('@')) errors.push('Invalid email format');
+      if (!fullName) errors.push('Name is required');
+      if (!allowedRoles.has(role)) warnings.push('Unknown role, would default to client');
+      rows.push({
+        fullName,
+        email,
+        phone,
+        role: allowedRoles.has(role) ? role : 'client',
+        status: errors.length ? 'error' : warnings.length ? 'warning' : 'valid',
+        errors,
+        warnings,
+      });
+    }
+    return rows;
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -133,23 +127,24 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
     }
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep === 1 && importFile) {
-      // Simulate file processing
       setProcessing(true);
-      setTimeout(() => {
-        setImportUsers(mockImportUsers);
-        const valid = mockImportUsers.filter((u) => u.status === 'valid').length;
-        const warnings = mockImportUsers.filter((u) => u.status === 'warning').length;
-        const errors = mockImportUsers.filter((u) => u.status === 'error').length;
-        setValidationResults({ valid, warnings, errors });
-        setProcessing(false);
+      try {
+        const parsed = parseCsv(await importFile.text());
+        setImportUsers(parsed);
+        setValidationResults({
+          valid: parsed.filter((u) => u.status === 'valid').length,
+          warnings: parsed.filter((u) => u.status === 'warning').length,
+          errors: parsed.filter((u) => u.status === 'error').length,
+        });
         setCurrentStep(2);
-      }, 2000);
+      } finally {
+        setProcessing(false);
+      }
     } else if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Complete import
       onComplete(importUsers.filter((u) => u.status !== 'error'));
     }
   };
@@ -543,7 +538,7 @@ const UserImportWizard: React.FC<UserImportWizardProps> = ({ onClose, onComplete
               onClick={handleNextStep}
               disabled={(currentStep === 1 && !importFile) || processing}
             >
-              {currentStep === 4 ? 'Import Users' : 'Next'}
+              {currentStep === 4 ? 'Finish preview' : 'Next'}
               {currentStep < 4 && <ArrowRight className="h-4 w-4 ml-2" />}
               {currentStep === 4 && <Users className="h-4 w-4 ml-2" />}
             </Button>

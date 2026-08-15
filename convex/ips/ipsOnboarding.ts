@@ -17,7 +17,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import { internalMutation, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertAuthenticated, assertOwnerOrTenantStaffForUser, assertStaff } from '../lib/auth';
 import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from '../lib/entitlements';
 import { assertAliasAvailable, validateIpsHandle } from '../lib/ipsAliasRules';
 import { isValidNamibianMobile, normalizeNamibianMobile } from '../lib/ipsPhoneNormalize';
@@ -103,8 +103,21 @@ export const adminListOnboarding = query({
       .query('ipsOnboardingApplications')
       .order('desc')
       .take(limit ?? 100);
-    if (status) return all.filter((a) => a.status === status);
-    return all;
+    const filtered = status ? all.filter((a) => a.status === status) : all;
+    return Promise.all(
+      filtered.map(async (app) => {
+        const profile = await ctx.db
+          .query('profiles')
+          .withIndex('by_userId', (q) => q.eq('userId', app.userId))
+          .first();
+        return {
+          ...app,
+          email: profile?.email,
+          fullName: profile?.fullName,
+          phone: profile?.phone,
+        };
+      })
+    );
   },
 });
 
@@ -140,6 +153,62 @@ export const startOnboarding = mutation({
   },
 });
 
+export const adminStartOnboarding = mutation({
+  args: {
+    userId: v.id('users'),
+    mobileNumber: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId, mobileNumber }) => {
+    await assertStaff(ctx);
+    await assertOnboardingWriteEnabled(ctx);
+
+    const user = await ctx.db.get(userId);
+    if (!user) throw new ConvexError({ code: 'NOT_FOUND', message: 'User not found.' });
+
+    const existing = await ctx.db
+      .query('ipsOnboardingApplications')
+      .withIndex('by_userId', (q) => q.eq('userId', userId))
+      .first();
+
+    if (existing && existing.status !== 'rejected' && existing.status !== 'DEREGISTERED') {
+      throw new ConvexError({
+        code: 'ALREADY_EXISTS',
+        message: 'An active onboarding application already exists.',
+      });
+    }
+
+    let mobileNumberNormalized: string | undefined;
+    if (mobileNumber) {
+      const normalized = normalizeNamibianMobile(mobileNumber);
+      if (!normalized || !isValidNamibianMobile(normalized)) {
+        throw new ConvexError({
+          code: 'INVALID_MOBILE',
+          message: 'Invalid Namibian mobile number.',
+        });
+      }
+      mobileNumberNormalized = normalized;
+    }
+
+    const now = Date.now();
+    const applicationId = await ctx.db.insert('ipsOnboardingApplications', {
+      userId,
+      status: 'DEVICE_BINDING_REQUIRED',
+      mobileNumberNormalized,
+      createdAt: now,
+      updatedAt: now,
+    });
+    scheduleAuditLog(
+      ctx,
+      'ips_onboarding',
+      applicationId,
+      'ADMIN_START',
+      'none',
+      'DEVICE_BINDING_REQUIRED'
+    );
+    return applicationId;
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Step 1: Complete Device Binding
 // ---------------------------------------------------------------------------
@@ -157,7 +226,7 @@ export const completeDeviceBinding = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     assertValidTransition(app.status, 'DEVICE_BOUND');
 
     // Normalize mobile
@@ -220,7 +289,7 @@ export const requestSovProviders = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
 
     if (!app.mobileNumberNormalized) {
       throw new ConvexError({
@@ -270,7 +339,7 @@ export const selectSovProvider = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     assertValidTransition(app.status, 'SOV_SELECTED');
 
     const now = Date.now();
@@ -317,7 +386,7 @@ export const selectAccount = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     assertValidTransition(app.status, 'ACCOUNTS_LISTED');
 
     const cachedAccount = (app.availableAccounts ?? []).find(
@@ -374,7 +443,7 @@ export const startVerification = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     assertValidTransition(app.status, 'VERIFICATION_PENDING');
 
     const allowedMethods = new Set<string>();
@@ -439,7 +508,7 @@ export const submitOtp = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
 
     if (app.status !== 'VERIFICATION_PENDING') {
       throw new ConvexError({
@@ -480,7 +549,7 @@ export const setupIpsPin = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     // Two-stage transition: VERIFIED → IPS_PIN_SETTING → (action callback) → IPS_PIN_SET
     assertValidTransition(app.status, 'IPS_PIN_SETTING');
     const mode = await getProtocolMode(ctx);
@@ -543,7 +612,7 @@ export const createHandle = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
     assertValidTransition(app.status, 'ALIAS_REGISTRATION_PENDING');
 
     const { handle: vpaUsername } = validateIpsHandle(args.vpaUsername);
@@ -609,7 +678,7 @@ export const registerAlias = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
 
     if (app.status !== 'ALIAS_REGISTRATION_PENDING' || !app.aliasAddr) {
       throw new ConvexError({
@@ -701,7 +770,7 @@ export const confirmOnboarding = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(args.applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
 
     if (app.status !== 'ALIAS_REGISTERED') {
       throw new ConvexError({
@@ -964,7 +1033,7 @@ export const advanceOnboardingStep = mutation({
     await assertOnboardingWriteEnabled(ctx);
     const app = await ctx.db.get(applicationId);
     if (!app) throw new ConvexError({ code: 'NOT_FOUND', message: 'Application not found.' });
-    await assertOwnerOrStaff(ctx, app.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, app.userId);
 
     const nextStep = LEGACY_TRANSITIONS[app.status];
     if (!nextStep) {

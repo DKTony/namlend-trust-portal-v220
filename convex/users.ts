@@ -11,7 +11,12 @@ import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { internalQuery, mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { assertAdmin, assertAuthenticated, assertOwnerOrStaff, assertStaff } from './lib/auth';
+import {
+  assertAdmin,
+  assertAuthenticated,
+  assertOwnerOrTenantStaffForUser,
+  assertStaff,
+} from './lib/auth';
 import { kycDocumentTypeValidator } from './lib/documentPolicy';
 import { emitDomainEvent } from './lib/domainEvents';
 import { enrollUser } from './lib/enrollment';
@@ -51,7 +56,7 @@ export const getMyRole = query({
 export const getUserProfile = query({
   args: { userId: v.id('users') },
   handler: async (ctx, { userId }) => {
-    await assertOwnerOrStaff(ctx, userId);
+    await assertOwnerOrTenantStaffForUser(ctx, userId);
     return ctx.db
       .query('profiles')
       .withIndex('by_userId', (q) => q.eq('userId', userId))

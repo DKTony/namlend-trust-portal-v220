@@ -18,7 +18,6 @@ const ClientPortfolioOverview: React.FC = () => {
       color: 'text-blue-600 ',
       bgColor: 'bg-blue-50 ',
       description: 'All registered clients',
-      trend: '+12% this month',
     },
     {
       title: 'Active Clients',
@@ -27,7 +26,6 @@ const ClientPortfolioOverview: React.FC = () => {
       color: 'text-green-600 ',
       bgColor: 'bg-green-50 ',
       description: 'Currently active accounts',
-      trend: '+8% this month',
     },
     {
       title: 'Total Client Value',
@@ -36,7 +34,6 @@ const ClientPortfolioOverview: React.FC = () => {
       color: 'text-emerald-600 ',
       bgColor: 'bg-emerald-50 ',
       description: 'Combined portfolio value',
-      trend: '+15% this month',
     },
     {
       title: 'Average Client Value',
@@ -45,7 +42,6 @@ const ClientPortfolioOverview: React.FC = () => {
       color: 'text-purple-600 ',
       bgColor: 'bg-purple-50 ',
       description: 'Per client portfolio',
-      trend: '+5% this month',
     },
     {
       title: 'Premium Clients',
@@ -54,7 +50,6 @@ const ClientPortfolioOverview: React.FC = () => {
       color: 'text-yellow-600 ',
       bgColor: 'bg-yellow-50 ',
       description: 'High-value clients',
-      trend: '+3 this month',
     },
     {
       title: 'Pending Verifications',
@@ -139,11 +134,6 @@ const ClientPortfolioOverview: React.FC = () => {
               <p className="text-xs text-muted-foreground mb-1 truncate" title={card.description}>
                 {card.description}
               </p>
-              {card.trend && (
-                <p className="text-xs text-green-600  font-medium truncate" title={card.trend}>
-                  {card.trend}
-                </p>
-              )}
             </div>
           </ThemedCard>
         );

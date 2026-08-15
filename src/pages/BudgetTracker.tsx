@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
 import type {
   BudgetLimit,
   SavingsGoal,
@@ -35,6 +36,7 @@ import type {
   UnifiedTransaction,
 } from '@/types/finance';
 import { formatNAD } from '@/utils/currency';
+import { useMutation, useQuery } from 'convex/react';
 import {
   AlertCircle,
   Download,
@@ -62,88 +64,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const INITIAL_TRANSACTIONS: UnifiedTransaction[] = [
-  {
-    id: '1',
-    date: '2026-01-13',
-    description: 'Salary Deposit',
-    category: 'Income',
-    source: 'System',
-    type: 'in',
-    amount: 25000.0,
-  },
-  {
-    id: '2',
-    date: '2026-01-12',
-    description: 'Pick n Pay Groceries',
-    category: 'Groceries',
-    source: 'Statement Upload',
-    type: 'out',
-    amount: 1250.5,
-  },
-  {
-    id: '3',
-    date: '2026-01-11',
-    description: 'Shell Fuel Station',
-    category: 'Transport',
-    source: 'Statement Upload',
-    type: 'out',
-    amount: 850.0,
-  },
-  {
-    id: '4',
-    date: '2026-01-10',
-    description: 'Telecom Namibia',
-    category: 'Utilities',
-    source: 'System',
-    type: 'out',
-    amount: 450.0,
-  },
-  {
-    id: '5',
-    date: '2026-01-09',
-    description: 'OG Financial Services Loan Repayment',
-    category: 'Loan',
-    source: 'System',
-    type: 'out',
-    amount: 2500.0,
-  },
-];
-
-const INITIAL_BUDGETS: BudgetLimit[] = [
-  { id: '1', category: 'Groceries', limit: 4000, spent: 2850, color: '#10b981' },
-  { id: '2', category: 'Transport', limit: 2000, spent: 1650, color: '#3b82f6' },
-  { id: '3', category: 'Utilities', limit: 1500, spent: 980, color: '#8b5cf6' },
-  { id: '4', category: 'Entertainment', limit: 1000, spent: 1250, color: '#f59e0b' },
-  { id: '5', category: 'Loan', limit: 3000, spent: 2500, color: '#ef4444' },
-];
-
-const INITIAL_SAVINGS: SavingsGoal[] = [
-  {
-    id: '1',
-    name: 'Holiday Fund',
-    targetAmount: 15000,
-    currentAmount: 8500,
-    deadline: 'Dec 2026',
-    icon: 'plane',
-  },
-  {
-    id: '2',
-    name: 'New Laptop',
-    targetAmount: 12000,
-    currentAmount: 4200,
-    deadline: 'Jun 2026',
-    icon: 'laptop',
-  },
-  {
-    id: '3',
-    name: 'Emergency Fund',
-    targetAmount: 50000,
-    currentAmount: 32000,
-    deadline: 'Ongoing',
-    icon: 'home',
-  },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  Groceries: '#10b981',
+  Transport: '#3b82f6',
+  Utilities: '#8b5cf6',
+  Entertainment: '#f59e0b',
+  Loan: '#ef4444',
+  Food: '#14b8a6',
+  Shopping: '#f97316',
+  Other: '#6b7280',
+};
 
 function categorizeTransaction(description: string): TransactionCategory {
   const desc = description.toLowerCase();
@@ -185,10 +115,42 @@ export const BudgetTracker: React.FC = () => {
   const isMobile = useIsMobile();
   const { t } = useTranslation('budget');
   const navigate = useNavigate();
+  const rawEntries = useQuery(api.budget.listMyBudgetEntries);
+  const rawGoals = useQuery(api.budget.listMySavingsGoals);
+  const rawLimits = useQuery(api.budget.listMyBudgetLimits);
+  const importEntries = useMutation(api.budget.importBudgetEntries);
+  const createGoal = useMutation(api.budget.createSavingsGoal);
+  const addFunds = useMutation(api.budget.addFundsToGoal);
 
-  const [transactions, setTransactions] = useState<UnifiedTransaction[]>(INITIAL_TRANSACTIONS);
-  const [budgets] = useState<BudgetLimit[]>(INITIAL_BUDGETS);
-  const [savings, setSavings] = useState<SavingsGoal[]>(INITIAL_SAVINGS);
+  const transactions: UnifiedTransaction[] = (rawEntries ?? []).map((row) => ({
+    id: row._id,
+    date: row.date,
+    description: row.description,
+    category: row.category as TransactionCategory,
+    source: row.source,
+    type: row.type,
+    amount: row.amount,
+  }));
+  const spentByCategory = transactions.reduce<Record<string, number>>((acc, tx) => {
+    if (tx.type === 'out') acc[tx.category] = (acc[tx.category] ?? 0) + tx.amount;
+    return acc;
+  }, {});
+  const budgets: BudgetLimit[] = (rawLimits ?? []).map((row) => ({
+    id: row._id,
+    category: row.category,
+    limit: row.limit,
+    spent: spentByCategory[row.category] ?? 0,
+    color: row.color ?? CATEGORY_COLORS[row.category] ?? '#6b7280',
+  }));
+  const savings: SavingsGoal[] = (rawGoals ?? []).map((row) => ({
+    id: row._id,
+    name: row.name,
+    targetAmount: row.targetAmount,
+    currentAmount: row.currentAmount,
+    deadline: row.deadline ?? 'Ongoing',
+    icon: row.icon ?? 'target',
+  }));
+
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('budget');
@@ -254,11 +216,18 @@ export const BudgetTracker: React.FC = () => {
   const processFile = async (file: File) => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 100));
       const text = await file.text();
       const lines = text.split('\n').filter((line) => line.trim());
       if (lines.length >= 2) {
-        const parsed: UnifiedTransaction[] = [];
+        const parsed: Array<{
+          date: string;
+          description: string;
+          category: string;
+          type: 'in' | 'out';
+          amount: number;
+          source: string;
+        }> = [];
         let skipped = 0;
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(',').map((c) => c.trim().replace(/"/g, ''));
@@ -268,7 +237,6 @@ export const BudgetTracker: React.FC = () => {
             continue;
           }
           parsed.push({
-            id: `upload-${Date.now()}-${i}`,
             date: cols[0] || new Date().toISOString().split('T')[0],
             description: cols[1] || 'Unknown',
             category: categorizeTransaction(cols[1] || ''),
@@ -277,14 +245,14 @@ export const BudgetTracker: React.FC = () => {
             amount: Math.abs(amount),
           });
         }
-        setTransactions((prev) => [...parsed, ...prev]);
+        const result = await importEntries({ entries: parsed });
         toast({
-          title: `Imported ${parsed.length} transaction${parsed.length === 1 ? '' : 's'}`,
+          title: `Imported ${result.imported} transaction${result.imported === 1 ? '' : 's'}`,
           description:
             skipped > 0
               ? `${skipped} row${skipped === 1 ? '' : 's'} skipped (invalid format).`
               : undefined,
-          variant: parsed.length === 0 ? 'destructive' : undefined,
+          variant: result.imported === 0 ? 'destructive' : undefined,
         });
       } else {
         toast({
@@ -342,26 +310,16 @@ export const BudgetTracker: React.FC = () => {
 
     setAddFundsLoading(true);
     try {
-      const goalExists = savings.some((g) => g.id === addFundsGoalId);
-      if (goalExists) {
-        setSavings((prev) =>
-          prev.map((g) =>
-            g.id === addFundsGoalId ? { ...g, currentAmount: g.currentAmount + amount } : g
-          )
-        );
-        toast({
-          title: t('toast.fundsAddedTitle'),
-          description: t('toast.fundsAddedDescription', { amount: formatNAD(amount) }),
-        });
-        setAddFundsGoalId(null);
-        setAddFundsAmount('');
-      } else {
-        toast({
-          title: t('toast.fundsFailedTitle'),
-          description: t('toast.fundsFailedDescription'),
-          variant: 'destructive',
-        });
-      }
+      await addFunds({
+        goalId: addFundsGoalId as Parameters<typeof addFunds>[0]['goalId'],
+        amount,
+      });
+      toast({
+        title: t('toast.fundsAddedTitle'),
+        description: t('toast.fundsAddedDescription', { amount: formatNAD(amount) }),
+      });
+      setAddFundsGoalId(null);
+      setAddFundsAmount('');
     } catch (error) {
       console.error('Error adding funds:', error);
       toast({
@@ -396,18 +354,15 @@ export const BudgetTracker: React.FC = () => {
 
     setCreateGoalLoading(true);
     try {
-      const newGoal: SavingsGoal = {
-        id: `goal-${Date.now()}`,
+      await createGoal({
         name: newGoalName,
         targetAmount,
-        currentAmount: 0,
-        deadline: newGoalDeadline || 'Ongoing',
+        deadline: newGoalDeadline || undefined,
         icon: newGoalIcon,
-      };
-      setSavings((prev) => [...prev, newGoal]);
+      });
       toast({
         title: t('toast.goalCreatedTitle'),
-        description: t('toast.goalCreatedDescription', { name: newGoal.name }),
+        description: t('toast.goalCreatedDescription', { name: newGoalName }),
       });
       setShowCreateGoalDialog(false);
       setNewGoalName('');

@@ -53,15 +53,29 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
         }
         actions={
           <>
-            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <ThemedButton
+              variant="secondary"
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Extra client filters are not implemented; use search and status below"
+            >
               <Filter className="mr-2 h-3.5 w-3.5" />
               Filters
             </ThemedButton>
-            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <ThemedButton
+              variant="secondary"
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Client CSV export is not implemented"
+            >
               <Download className="mr-2 h-3.5 w-3.5" />
               Export
             </ThemedButton>
-            <ThemedButton className="h-9 px-3 text-xs">
+            <ThemedButton
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Clients register at /auth; there is no invite mailer"
+            >
               <Plus className="mr-2 h-3.5 w-3.5" />
               Add Client
             </ThemedButton>

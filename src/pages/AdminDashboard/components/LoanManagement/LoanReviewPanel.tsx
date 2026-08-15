@@ -141,8 +141,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
   const handleApprove = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      onApprove(loanId, comments);
+      await onApprove(loanId, comments);
     } finally {
       setLoading(false);
     }
@@ -153,8 +152,7 @@ const LoanReviewPanel: React.FC<LoanReviewPanelProps> = ({
 
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      onReject(loanId, rejectionReason);
+      await onReject(loanId, rejectionReason);
     } finally {
       setLoading(false);
     }

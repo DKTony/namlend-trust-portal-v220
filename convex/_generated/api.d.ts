@@ -20,6 +20,7 @@ import type * as approvalWorkflow from '../approvalWorkflow.js';
 import type * as audit from '../audit.js';
 import type * as auth from '../auth.js';
 import type * as authProviders from '../authProviders.js';
+import type * as budget from '../budget.js';
 import type * as collections from '../collections.js';
 import type * as communications from '../communications.js';
 import type * as crons from '../crons.js';
@@ -149,6 +150,7 @@ declare const fullApi: ApiFromModules<{
   audit: typeof audit;
   auth: typeof auth;
   authProviders: typeof authProviders;
+  budget: typeof budget;
   collections: typeof collections;
   communications: typeof communications;
   crons: typeof crons;

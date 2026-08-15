@@ -145,7 +145,7 @@ export default function ApprovalManagementDashboard() {
         title: 'Status Updated',
         description:
           newStatus === 'approved'
-            ? `Request approved and ${isLoanRequestType(selectedRequest?.request_type ?? '') ? 'loan created' : 'processed'} successfully`
+            ? `Request approved and ${isLoanRequestType(selectedRequest?.request_type ?? '') ? 'loan marked approved' : 'processed'} successfully`
             : `Request has been ${newStatus}`,
       });
       closeReview();

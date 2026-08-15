@@ -1,3 +1,7 @@
+/**
+ * Institutions registry UI. Not mounted on /admin — live tenant registry is
+ * `/platform/tenants`. Kept as a Convex-backed component for reuse.
+ */
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

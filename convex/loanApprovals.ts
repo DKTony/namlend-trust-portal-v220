@@ -6,14 +6,14 @@
 
 import { v } from 'convex/values';
 import { query } from './_generated/server';
-import { assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertOwnerOrTenantStaff, assertStaff } from './lib/auth';
 
 export const getLoanApprovals = query({
   args: { loanId: v.id('loans') },
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
 
     return ctx.db
       .query('loanApprovals')

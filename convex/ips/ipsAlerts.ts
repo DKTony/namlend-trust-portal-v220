@@ -2,9 +2,9 @@
  * IPS Alerts — transaction threshold monitoring.
  */
 
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
-import { assertStaff } from '../lib/auth';
+import { assertOwnerOrTenantStaff, assertStaff, assertTenantStaff } from '../lib/auth';
 
 export const getActiveAlerts = query({
   args: {},
@@ -28,6 +28,17 @@ export const createAlert = mutation({
   },
   handler: async (ctx, args) => {
     await assertStaff(ctx);
+    if (args.transactionId) {
+      const tx = await ctx.db.get(args.transactionId);
+      if (!tx) {
+        throw new ConvexError({ code: 'NOT_FOUND', message: 'IPS transaction not found.' });
+      }
+      if (tx.userId) {
+        await assertOwnerOrTenantStaff(ctx, tx.userId, tx.institutionId);
+      } else if (tx.institutionId) {
+        await assertTenantStaff(ctx, tx.institutionId);
+      }
+    }
     return ctx.db.insert('ipsAlerts', {
       ...args,
       isResolved: false,

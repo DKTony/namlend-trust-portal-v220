@@ -16,7 +16,6 @@ import { scheduleAuditEntry, scheduleAuditLog } from './lib/audit';
 import {
   assertAdmin,
   assertAuthenticated,
-  assertOwnerOrStaff,
   assertOwnerOrTenantStaff,
   assertStaff,
 } from './lib/auth';
@@ -71,7 +70,7 @@ export const getApprovalRequest = query({
       try {
         const loan = await ctx.db.get(request.entityId as Id<'loans'>);
         if (loan) {
-          await assertOwnerOrStaff(ctx, loan.userId);
+          await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
           return request;
         }
       } catch {
@@ -248,7 +247,7 @@ export const submitForApproval = mutation({
       if (!loan) {
         throw new ConvexError({ code: 'NOT_FOUND', message: 'Referenced loan not found.' });
       }
-      await assertOwnerOrStaff(ctx, loan.userId);
+      await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
       const TERMINAL = ['approved', 'funded', 'active', 'paid_off', 'written_off', 'rejected'];
       if (TERMINAL.includes(loan.status)) {
         throw new ConvexError({
@@ -439,6 +438,13 @@ export const processApprovalRequest = mutation({
             notes,
           });
         } else if (action === 'reject') {
+          const rejectable = ['submitted', 'under_review', 'approved'];
+          if (!rejectable.includes(loan.status)) {
+            throw new ConvexError({
+              code: 'INVALID_STATE',
+              message: `Loan cannot be rejected from status '${loan.status}'.`,
+            });
+          }
           await ctx.db.patch(loanId, {
             status: 'rejected',
             rejectionReason: notes ?? 'Application rejected',
@@ -538,6 +544,62 @@ export const createWorkflowDefinition = mutation({
       { entityType: args.entityType }
     );
     return id;
+  },
+});
+
+export const updateWorkflowDefinition = mutation({
+  args: {
+    workflowId: v.id('workflowDefinitions'),
+    name: v.optional(v.string()),
+    entityType: v.optional(v.string()),
+    stages: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          order: v.number(),
+          requiredRole: v.string(),
+          actions: v.array(v.string()),
+          conditions: v.optional(v.any()),
+        })
+      )
+    ),
+    isActive: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    await assertAdmin(ctx);
+    await assertCallerFeatureEnabled(ctx, 'workflows');
+    const existing = await ctx.db.get(args.workflowId);
+    if (!existing) {
+      throw new ConvexError({ code: 'NOT_FOUND', message: 'Workflow definition not found.' });
+    }
+    const patch: {
+      name?: string;
+      entityType?: string;
+      stages?: typeof args.stages;
+      isActive?: boolean;
+      updatedAt: number;
+    } = { updatedAt: Date.now() };
+    if (args.name !== undefined) patch.name = args.name;
+    if (args.entityType !== undefined) patch.entityType = args.entityType;
+    if (args.stages !== undefined) patch.stages = args.stages;
+    if (args.isActive !== undefined) patch.isActive = args.isActive;
+    await ctx.db.patch(args.workflowId, patch);
+    scheduleAuditEntry(ctx, {
+      entityType: 'workflowDefinitions',
+      entityId: args.workflowId,
+      action: 'UPDATE',
+      oldState: {
+        name: existing.name,
+        entityType: existing.entityType,
+        stageCount: existing.stages.length,
+      },
+      newState: {
+        name: args.name ?? existing.name,
+        entityType: args.entityType ?? existing.entityType,
+        stageCount: (args.stages ?? existing.stages).length,
+      },
+    });
+    return args.workflowId;
   },
 });
 

@@ -11,7 +11,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from '../_generated/api';
 import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertAuthenticated, assertOwnerOrTenantStaffForUser, assertStaff } from '../lib/auth';
 import { assertCallerClientFeatureEnabled, assertCallerFeatureEnabled } from '../lib/entitlements';
 import { assertAliasAvailable, assertAliasUsable, validateIpsHandle } from '../lib/ipsAliasRules';
 import { isValidNamibianMobile, normalizeNamibianMobile } from '../lib/ipsPhoneNormalize';
@@ -58,15 +58,13 @@ export const getAliasByAddr = query({
     if (!alias) return null;
 
     try {
-      await assertOwnerOrStaff(ctx, alias.userId);
+      await assertOwnerOrTenantStaffForUser(ctx, alias.userId);
       return alias;
     } catch {
+      // Payee lookup only: never leak entity type or IPS sync state to strangers.
       return {
         addr: alias.addr,
-        entityType: alias.entityType,
         status: alias.status,
-        syncedWithIps: alias.syncedWithIps,
-        isDefault: false,
       };
     }
   },
@@ -298,7 +296,7 @@ export const deregisterAlias = mutation({
     await assertAliasWriteEnabled(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
-    await assertOwnerOrStaff(ctx, alias.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, alias.userId);
 
     if (alias.status === 'DEREGISTERED') {
       throw new ConvexError({
@@ -375,7 +373,7 @@ export const setDefaultAlias = mutation({
     await assertAliasWriteEnabled(ctx);
     const alias = await ctx.db.get(aliasId);
     if (!alias) throw new ConvexError({ code: 'NOT_FOUND', message: 'Alias not found.' });
-    await assertOwnerOrStaff(ctx, alias.userId);
+    await assertOwnerOrTenantStaffForUser(ctx, alias.userId);
     assertAliasUsable(alias);
 
     // Clear existing default

@@ -16,7 +16,7 @@ import {
   assertAuthenticated,
   assertClient,
   assertOwner,
-  assertOwnerOrStaff,
+  assertOwnerOrTenantStaff,
   assertStaff,
 } from './lib/auth';
 import { assertLoanWithinCreditPolicy } from './lib/creditPolicy';
@@ -116,7 +116,7 @@ export const getLoan = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return null;
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     // Defense-in-depth: a staff member from another tenant cannot fetch this loan by id.
     assertSameTenant(await tenantReadScope(ctx), loan.institutionId);
     return loan;
@@ -494,6 +494,14 @@ export const rejectLoan = mutation({
     const staffId = await assertStaff(ctx);
     const loan = await ctx.db.get(loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
+
+    const rejectable = ['submitted', 'under_review', 'approved'];
+    if (!rejectable.includes(loan.status)) {
+      throw new ConvexError({
+        code: 'INVALID_STATE',
+        message: `Loan cannot be rejected from status '${loan.status}'.`,
+      });
+    }
 
     await ctx.db.patch(loanId, {
       status: 'rejected',

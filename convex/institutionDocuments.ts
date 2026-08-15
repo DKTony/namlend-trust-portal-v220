@@ -56,14 +56,21 @@ async function resolveTenantAccess(
 
   const isPlatformOwner =
     platformAdmin?.status === 'active' && platformAdmin.platformRole === 'platform_owner';
+  const role = tenantRole?.role as string | undefined;
+  const isBoundTenantStaff =
+    !!role && TENANT_STAFF_ROLES.includes(role) && !!tenantRole?.institutionId;
+
   if (isPlatformOwner) {
-    if (!requestedInstitutionId) {
+    if (requestedInstitutionId) {
+      return { actorId, institutionId: requestedInstitutionId, canManage: true };
+    }
+    if (!isBoundTenantStaff) {
       throw new ConvexError({
         code: 'VALIDATION_ERROR',
         message: 'Select a tenant before opening Tenant Info.',
       });
     }
-    return { actorId, institutionId: requestedInstitutionId, canManage: true };
+    // Dual-hat: /admin/tenant-info has no :institutionId — use the bound tenant.
   }
   if (platformAdmin?.status === 'active' && platformAdmin.platformRole === 'platform_support') {
     throw new ConvexError({
@@ -72,14 +79,14 @@ async function resolveTenantAccess(
     });
   }
 
-  const role = tenantRole?.role as string | undefined;
-  if (!role || !TENANT_STAFF_ROLES.includes(role) || !tenantRole?.institutionId) {
+  const boundInstitutionId = tenantRole?.institutionId;
+  if (!isBoundTenantStaff || !role || !boundInstitutionId) {
     throw new ConvexError({
       code: 'FORBIDDEN',
       message: 'Tenant Info is available only to authorized tenant staff and the platform owner.',
     });
   }
-  if (requestedInstitutionId && requestedInstitutionId !== tenantRole.institutionId) {
+  if (requestedInstitutionId && requestedInstitutionId !== boundInstitutionId) {
     throw new ConvexError({ code: 'FORBIDDEN', message: 'You do not have access to this tenant.' });
   }
 
@@ -90,7 +97,7 @@ async function resolveTenantAccess(
       message: 'Replacing tenant documents requires tenant admin or platform owner privileges.',
     });
   }
-  return { actorId, institutionId: tenantRole.institutionId, canManage };
+  return { actorId, institutionId: boundInstitutionId, canManage };
 }
 
 function cleanText(value: string | undefined, label: string, maxLength = 180) {

@@ -14,7 +14,7 @@ import {
   Loader2,
   TrendingUp,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 interface OutboxStats {
   pending: number;
@@ -39,10 +39,6 @@ interface ReconciliationRun {
 }
 
 export function LedgerDashboard() {
-  const [processingOutbox, setProcessingOutbox] = useState(false);
-  const [runningRecon, setRunningRecon] = useState(false);
-
-  // Convex reactive queries for TigerBeetle data
   const rawOutboxStats = useConvexQuery(api.tigerbeetle.outbox.getOutboxStats);
   const rawReconciliations = useConvexQuery(api.tigerbeetle.reconciliation.listReconciliations, {
     limit: 10,
@@ -69,31 +65,6 @@ export function LedgerDashboard() {
     }));
   }, [rawReconciliations]);
   const loading = rawOutboxStats === undefined;
-
-  async function processOutbox() {
-    setProcessingOutbox(true);
-    try {
-      // Outbox processing is handled by the scheduled cron job (every 30s)
-      // Manual trigger simulates a wait for the next cycle
-      await new Promise((r) => setTimeout(r, 1000));
-    } catch (error) {
-      console.error('Failed to process outbox:', error);
-    } finally {
-      setProcessingOutbox(false);
-    }
-  }
-
-  async function runReconciliation() {
-    setRunningRecon(true);
-    try {
-      // Reconciliation runs are created via the reconciliation mutation
-      await new Promise((r) => setTimeout(r, 1000));
-    } catch (error) {
-      console.error('Failed to run reconciliation:', error);
-    } finally {
-      setRunningRecon(false);
-    }
-  }
 
   if (loading) {
     return (
@@ -208,15 +179,15 @@ export function LedgerDashboard() {
                 <div>
                   <CardTitle>Transfer Queue</CardTitle>
                   <CardDescription>
-                    Pending transfers waiting to be posted to TigerBeetle
+                    Pending transfers wait for the scheduled outbox worker (every 30s). There is no
+                    client mutation that drains the queue.
                   </CardDescription>
                 </div>
-                <Button onClick={processOutbox} disabled={processingOutbox}>
-                  {processingOutbox ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                  )}
+                <Button
+                  disabled
+                  title="Outbox posting is a scheduled internal worker, not a dashboard action"
+                >
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
                   Process Queue
                 </Button>
               </div>
@@ -253,15 +224,12 @@ export function LedgerDashboard() {
                 <div>
                   <CardTitle>Reconciliation History</CardTitle>
                   <CardDescription>
-                    Compare Supabase records with TigerBeetle balances
+                    Convex vs shadow-ledger snapshots. Live TigerBeetle cluster compare is not a
+                    dashboard action.
                   </CardDescription>
                 </div>
-                <Button onClick={runReconciliation} disabled={runningRecon}>
-                  {runningRecon ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <FileCheck className="h-4 w-4 mr-2" />
-                  )}
+                <Button disabled title="Manual reconciliation is not exposed as a client mutation">
+                  <FileCheck className="h-4 w-4 mr-2" />
                   Run Reconciliation
                 </Button>
               </div>
@@ -271,7 +239,10 @@ export function LedgerDashboard() {
                 <div className="text-center py-8 text-muted-foreground">
                   <FileCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No reconciliation runs yet</p>
-                  <p className="text-sm">Run your first reconciliation to compare data</p>
+                  <p className="text-sm">
+                    Rows appear when platform owners record a snapshot via Convex, not from this
+                    button.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">

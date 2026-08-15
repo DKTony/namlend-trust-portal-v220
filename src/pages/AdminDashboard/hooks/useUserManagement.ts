@@ -169,7 +169,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const users: User[] = useMemo(() => {
     if (!rawUsers) return [];
     return rawUsers.map((u) => ({
-      id: String(u._id),
+      id: String(u.userId),
       fullName: u.fullName || 'Unknown User',
       email: u.email || 'No email',
       phone: u.phone ?? undefined,
@@ -233,12 +233,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const refetch = () => {};
 
   const createUser = async (userData: Partial<User>) => {
-    // User creation happens through Convex Auth sign-up flow
-    // This stub is kept for the UI interface — actual creation requires auth enrollment
-    console.warn(
-      'createUser: Users are created through the auth sign-up flow, not admin panel',
-      userData
-    );
+    void userData;
     throw new Error(
       'User creation is handled through the sign-up flow. Invite the user to register.'
     );
@@ -296,18 +291,20 @@ export const useUserManagement = (): UseUserManagementReturn => {
     await assignRole(userId, 'client');
   };
 
-  const createRole = async (roleData: Partial<Role>) => {
-    console.warn('createRole not yet implemented for Convex', roleData);
+  const createRole = async (_roleData: Partial<Role>) => {
+    throw new Error(
+      'Roles are defined in code (client, loan_officer, admin, tenant_admin). Assign an existing role instead of creating a new one.'
+    );
   };
 
-  const updateRole = async (roleId: string, updates: Partial<Role>) => {
-    console.warn('updateRole not yet implemented for Convex', roleId, updates);
+  const updateRole = async (_roleId: string, _updates: Partial<Role>) => {
+    throw new Error('Built-in roles cannot be renamed or edited from this screen.');
   };
 
   const deleteRole = async (roleId: string) => {
     const role = roles.find((r) => r.id === roleId);
     if (role?.isSystem) throw new Error('Cannot delete system roles');
-    console.warn('deleteRole not yet implemented for Convex', roleId);
+    throw new Error('Built-in roles cannot be deleted.');
   };
 
   return {

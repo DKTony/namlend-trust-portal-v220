@@ -210,7 +210,12 @@ export function IPSTransactionStatus({
         {/* Retry option for failed transactions */}
         {status === 'failed' && data.is_retryable && (
           <div className="flex justify-end pt-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              title="Retry is not implemented; start a new IPS payment"
+            >
               Retry Payment
             </Button>
           </div>

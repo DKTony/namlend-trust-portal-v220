@@ -2,7 +2,10 @@ import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
+import type { Id } from '@/types/convex';
+import { useMutation } from 'convex/react';
 import {
   CheckCircle,
   Clock,
@@ -19,6 +22,7 @@ import React, { useState } from 'react';
 import BulkActionsPanel from './BulkActionsPanel';
 import LoanApplicationsList from './LoanApplicationsList';
 import LoanPortfolioOverview from './LoanPortfolioOverview';
+import { useLoanActions } from '../../hooks/useLoanActions';
 
 interface LoanManagementDashboardProps {
   onLoanSelect?: (loanId: string) => void;
@@ -42,6 +46,9 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasNewItems, setHasNewItems] = useState(false);
 
+  const { bulkApproveLoan, bulkRejectLoan } = useLoanActions();
+  const moveToReview = useMutation(api.loans.moveToReview);
+
   const handleLoanSelection = (loanId: string, selected: boolean) => {
     if (selected) {
       setSelectedLoans((prev) => [...prev, loanId]);
@@ -50,9 +57,18 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
     }
   };
 
-  const handleBulkAction = (action: 'approve' | 'reject' | 'review') => {
-    console.log(`Bulk ${action} for loans:`, selectedLoans);
-    // Implementation will be added in the specific components
+  const handleBulkAction = async (action: 'approve' | 'reject' | 'review') => {
+    if (selectedLoans.length === 0) return false;
+    try {
+      if (action === 'approve') return bulkApproveLoan(selectedLoans);
+      if (action === 'reject') return bulkRejectLoan(selectedLoans);
+      await Promise.all(
+        selectedLoans.map((loanId) => moveToReview({ loanId: loanId as Id<'loans'> }))
+      );
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const clearSelection = () => {
@@ -96,7 +112,12 @@ const LoanManagementDashboard: React.FC<LoanManagementDashboardProps> = ({ onLoa
               <Filter className="mr-2 h-3.5 w-3.5" />
               Filters
             </ThemedButton>
-            <ThemedButton variant="secondary" className="h-9 px-3 text-xs">
+            <ThemedButton
+              variant="secondary"
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Loan CSV export is not implemented"
+            >
               <Download className="mr-2 h-3.5 w-3.5" />
               Export
             </ThemedButton>

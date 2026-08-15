@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import { useQuery as useConvexQuery } from 'convex/react';
@@ -72,11 +71,10 @@ const DOCUMENT_TYPES = {
   },
 };
 
-export default function DocumentVerificationSystem({ onDocumentUploaded }: DocumentUploadProps) {
-  const { user } = useAuth();
+export default function DocumentVerificationSystem(_props: DocumentUploadProps) {
   const { toast } = useToast();
   const documents: DocumentRequirement[] = [];
-  const [uploading, setUploading] = useState<string | null>(null);
+  const uploading: string | null = null;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingDocType, setUploadingDocType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,33 +111,14 @@ export default function DocumentVerificationSystem({ onDocumentUploaded }: Docum
     }
   }, [rawProfile]);
 
-  const handleFileUpload = async (docType: string, file: File) => {
-    if (!user || !file) return;
-
-    setUploading(docType);
-    try {
-      // TODO: Implement Convex file storage upload for KYC documents
-      // For now, log warning and simulate success
-      console.warn('Document upload not yet migrated to Convex storage', docType, file.name);
-
-      onDocumentUploaded();
-
-      toast({
-        title: 'Document Uploaded',
-        description: `Your ${DOCUMENT_TYPES[docType as keyof typeof DOCUMENT_TYPES]?.label} has been uploaded successfully.`,
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Failed to upload document. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(null);
-      setSelectedFile(null);
-      setUploadingDocType(null);
-    }
+  const handleFileUpload = async (_docType: string, _file: File) => {
+    toast({
+      title: 'Upload not available here',
+      description: 'This panel is not wired. Use KYC Verification at /kyc to submit documents.',
+      variant: 'destructive',
+    });
+    setSelectedFile(null);
+    setUploadingDocType(null);
   };
 
   const getDocumentStatus = (doc: DocumentRequirement) => {
@@ -209,6 +188,10 @@ export default function DocumentVerificationSystem({ onDocumentUploaded }: Docum
         </div>
 
         <div className="relative z-10">
+          <p className="mb-4 text-sm text-amber-700">
+            This component is not mounted on a live route. KYC uploads go through{' '}
+            <span className="font-medium">/kyc</span>. Buttons here do not persist files.
+          </p>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">

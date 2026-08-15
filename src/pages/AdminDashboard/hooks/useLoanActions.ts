@@ -10,6 +10,7 @@ export const useLoanActions = () => {
   const approveMutation = useMutation(api.loans.approveLoan);
   const rejectMutation = useMutation(api.loans.rejectLoan);
   const initiateDisbursementMutation = useMutation(api.disbursements.initiateDisbursement);
+  const moveToReviewMutation = useMutation(api.loans.moveToReview);
 
   const approveLoan = async (loanId: string) => {
     try {
@@ -55,13 +56,12 @@ export const useLoanActions = () => {
     }
   };
 
-  const disburseLoan = async (loanId: string) => {
+  const disburseLoan = async (loanId: string, amount: number) => {
     try {
       setLoading(true);
-      // Initiate disbursement for the approved loan (creates a pending disbursement record)
       await initiateDisbursementMutation({
         loanId: loanId as Id<'loans'>,
-        amount: 0, // Amount is pulled from the loan record inside the mutation
+        amount,
         method: 'bank_transfer',
       });
       toast({
@@ -136,6 +136,27 @@ export const useLoanActions = () => {
     disburseLoan,
     bulkApproveLoan,
     bulkRejectLoan,
+    moveToReview: async (loanId: string) => {
+      try {
+        setLoading(true);
+        await moveToReviewMutation({ loanId: loanId as Id<'loans'> });
+        toast({
+          title: 'Moved to review',
+          description: 'The application is now under review.',
+        });
+        return true;
+      } catch (error) {
+        console.error('Error moving loan to review:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to move the loan to review.',
+          variant: 'destructive',
+        });
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
     loading,
   };
 };

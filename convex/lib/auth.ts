@@ -157,6 +157,33 @@ export async function assertOwnerOrTenantStaff(
   return caller.userId;
 }
 
+/** Bound tenant for a user from `userRoles`, if any. */
+export async function institutionIdForUser(
+  ctx: AnyCtx,
+  userId: Id<'users'>
+): Promise<Id<'institutions'> | undefined> {
+  const roleDoc = await ctx.db
+    .query('userRoles')
+    .withIndex('by_userId', (q) => q.eq('userId', userId))
+    .first();
+  return roleDoc?.institutionId;
+}
+
+/**
+ * Owner-or-tenant-staff using the resource owner's `userRoles.institutionId`.
+ * Use when the row itself has no `institutionId` column.
+ */
+export async function assertOwnerOrTenantStaffForUser(
+  ctx: AnyCtx,
+  resourceUserId: Id<'users'>
+): Promise<Id<'users'>> {
+  return assertOwnerOrTenantStaff(
+    ctx,
+    resourceUserId,
+    await institutionIdForUser(ctx, resourceUserId)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Tenant-scoped role assertions (multi-tenant — Phase 0 additive)
 // ---------------------------------------------------------------------------

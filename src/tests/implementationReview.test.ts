@@ -190,7 +190,7 @@ describe('Tier 5 — Financial Safety', () => {
   });
 
   it('approval request reads resolve loan ownership or require staff', () => {
-    expect(approvalWorkflow).toContain('assertOwnerOrStaff');
+    expect(approvalWorkflow).toContain('assertOwnerOrTenantStaff');
     expect(approvalWorkflow).toContain("request.entityType === 'loan'");
     expect(approvalWorkflow).toContain('await assertStaff(ctx)');
   });
@@ -198,7 +198,7 @@ describe('Tier 5 — Financial Safety', () => {
   it('mandate and relationship probes are not public unauthenticated queries', () => {
     expect(mandates).toContain('hasActiveMandate = internalQuery');
     expect(relationships).toContain('hasRelationship = internalQuery');
-    expect(mandates).toContain('assertOwnerOrStaff');
+    expect(mandates).toContain('assertOwnerOrTenantStaff');
   });
 
   it('IPS alerts are staff-only and mandate debits never post the ledger at initiation', () => {
@@ -254,18 +254,20 @@ describe('Tier 5 — Financial Safety', () => {
 describe('Auth Guards', () => {
   it('payments.ts has auth guards on all public functions', () => {
     const payments = readSrc('convex/payments.ts');
-    // Every handler should call assertAuthenticated, assertStaff, or assertOwnerOrStaff
+    // Every handler should call assertAuthenticated, assertStaff, or tenant-aware owner/staff
     const handlerCount = (payments.match(/handler:\s*async/g) || []).length;
-    const guardCount = (payments.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff)/g) || [])
-      .length;
+    const guardCount = (
+      payments.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff|OwnerOrTenantStaff)/g) || []
+    ).length;
     expect(guardCount).toBeGreaterThanOrEqual(handlerCount);
   });
 
   it('users.ts has auth guards on all public functions', () => {
     const users = readSrc('convex/users.ts');
     const handlerCount = (users.match(/handler:\s*async/g) || []).length;
-    const guardCount = (users.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff)/g) || [])
-      .length;
+    const guardCount = (
+      users.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff|OwnerOrTenantStaff)/g) || []
+    ).length;
     // Internal queries don't need guards, so guards >= handlers - internalCount
     const internalCount = (users.match(/internal(Query|Mutation)/g) || []).length;
     expect(guardCount).toBeGreaterThanOrEqual(handlerCount - internalCount);
@@ -274,8 +276,9 @@ describe('Auth Guards', () => {
   it('loans.ts has auth guards on all public functions', () => {
     const loans = readSrc('convex/loans.ts');
     const handlerCount = (loans.match(/handler:\s*async/g) || []).length;
-    const guardCount = (loans.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff)/g) || [])
-      .length;
+    const guardCount = (
+      loans.match(/assert(Authenticated|Staff|Admin|OwnerOrStaff|OwnerOrTenantStaff)/g) || []
+    ).length;
     const internalCount = (loans.match(/internal(Query|Mutation)/g) || []).length;
     expect(guardCount).toBeGreaterThanOrEqual(handlerCount - internalCount);
   });

@@ -311,10 +311,20 @@ const UsersList: React.FC<UsersListProps> = ({
               </div>
               {selectedUsers.length > 0 && (
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    title="Bulk user edit is not implemented"
+                  >
                     Bulk Edit
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    title="Selected-user CSV export is not implemented"
+                  >
                     Export Selected
                   </Button>
                 </div>

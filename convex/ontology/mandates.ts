@@ -17,7 +17,7 @@
 import { ConvexError, v } from 'convex/values';
 import { internalMutation, internalQuery, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { assertAuthenticated, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import { assertAuthenticated, assertOwnerOrTenantStaff, assertStaff } from '../lib/auth';
 import { assertCallerFeatureEnabled } from '../lib/entitlements';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import {
@@ -76,7 +76,7 @@ export const createMandate = mutation({
       if (!loan) {
         throw new ConvexError({ code: 'NOT_FOUND', message: 'Linked loan not found' });
       }
-      await assertOwnerOrStaff(ctx, loan.userId);
+      await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
       debtorUserId = loan.userId;
     }
 

@@ -1,32 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Activity,
   BarChart3,
   Clock,
   Download,
   PieChart as PieChartIcon,
   Shield,
-  TrendingDown,
   TrendingUp,
   UserCheck,
   Users,
   UserX,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import React from 'react';
 
 interface UserMetric {
   label: string;
   value: number;
-  change: number;
-  trend: 'up' | 'down' | 'stable';
   icon: React.ReactNode;
   color: string;
 }
@@ -38,109 +30,96 @@ interface ChartData {
 }
 
 const UserAnalytics: React.FC = () => {
-  const [timeRange, setTimeRange] = useState('30d');
+  const clientMetrics = useQuery(api.analytics.getClientMetrics);
+  const users = useQuery(api.users.listUsers, { limit: 500 });
+  const auditLogs = useQuery(api.audit.getAuditLogs, { limit: 200 });
 
-  // Mock analytics data
+  const roleCounts = (users ?? []).reduce(
+    (acc, user) => {
+      const role = user.role ?? 'client';
+      acc[role] = (acc[role] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   const userMetrics: UserMetric[] = [
     {
       label: 'Total Users',
-      value: 1284,
-      change: 12.5,
-      trend: 'up',
+      value: clientMetrics?.totalClients ?? users?.length ?? 0,
       icon: <Users className="h-5 w-5" />,
       color: 'text-blue-600 ',
     },
     {
-      label: 'Active Users',
-      value: 892,
-      change: 8.3,
-      trend: 'up',
+      label: 'KYC verified',
+      value: clientMetrics?.kycApproved ?? 0,
       icon: <UserCheck className="h-5 w-5" />,
       color: 'text-green-600 ',
     },
     {
-      label: 'New Registrations',
-      value: 47,
-      change: -5.2,
-      trend: 'down',
+      label: 'New (30 days)',
+      value: clientMetrics?.newThisMonth ?? 0,
       icon: <TrendingUp className="h-5 w-5" />,
       color: 'text-purple-600 ',
     },
     {
-      label: 'Suspended Users',
-      value: 23,
-      change: 15.8,
-      trend: 'up',
+      label: 'KYC pending',
+      value: clientMetrics?.kycPending ?? 0,
       icon: <UserX className="h-5 w-5" />,
       color: 'text-red-600 ',
     },
     {
-      label: 'Avg Session Duration',
-      value: 24,
-      change: 3.7,
-      trend: 'up',
+      label: 'With active loans',
+      value: clientMetrics?.withActiveLoans ?? 0,
       icon: <Clock className="h-5 w-5" />,
       color: 'text-orange-600 ',
     },
     {
-      label: 'Admin Actions',
-      value: 156,
-      change: -2.1,
-      trend: 'down',
+      label: 'Audit events (recent)',
+      value: auditLogs?.length ?? 0,
       icon: <Shield className="h-5 w-5" />,
       color: 'text-indigo-600 ',
     },
   ];
 
   const roleDistribution: ChartData[] = [
-    { name: 'Clients', value: 1089, color: '#3B82F6' },
-    { name: 'Loan Officers', value: 142, color: '#10B981' },
-    { name: 'Support', value: 34, color: '#F59E0B' },
-    { name: 'Admins', value: 19, color: '#EF4444' },
+    { name: 'Clients', value: roleCounts.client ?? 0, color: '#3B82F6' },
+    { name: 'Loan Officers', value: roleCounts.loan_officer ?? 0, color: '#10B981' },
+    {
+      name: 'Admins',
+      value: (roleCounts.admin ?? 0) + (roleCounts.tenant_admin ?? 0),
+      color: '#EF4444',
+    },
   ];
 
   const statusDistribution: ChartData[] = [
-    { name: 'Active', value: 892, color: '#10B981' },
-    { name: 'Inactive', value: 234, color: '#6B7280' },
-    { name: 'Pending', value: 135, color: '#F59E0B' },
-    { name: 'Suspended', value: 23, color: '#EF4444' },
+    { name: 'KYC verified', value: clientMetrics?.kycApproved ?? 0, color: '#10B981' },
+    { name: 'KYC pending', value: clientMetrics?.kycPending ?? 0, color: '#F59E0B' },
   ];
 
-  const registrationTrend = [
-    { month: 'Jan', users: 45 },
-    { month: 'Feb', users: 52 },
-    { month: 'Mar', users: 48 },
-    { month: 'Apr', users: 61 },
-    { month: 'May', users: 55 },
-    { month: 'Jun', users: 67 },
-    { month: 'Jul', users: 73 },
-    { month: 'Aug', users: 69 },
-    { month: 'Sep', users: 78 },
-    { month: 'Oct', users: 82 },
-    { month: 'Nov', users: 76 },
-    { month: 'Dec', users: 84 },
-  ];
+  const topActivities = Object.entries(
+    (auditLogs ?? []).reduce(
+      (acc, log) => {
+        acc[log.action] = (acc[log.action] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    )
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
 
-  const getTrendIcon = (trend: string) => {
-    if (trend === 'up') {
-      return <TrendingUp className="h-4 w-4 text-green-500" />;
-    } else if (trend === 'down') {
-      return <TrendingDown className="h-4 w-4 text-red-500" />;
-    }
-    return <Activity className="h-4 w-4 text-gray-500" />;
-  };
-
-  const formatChange = (change: number) => {
-    const sign = change >= 0 ? '+' : '';
-    return `${sign}${change.toFixed(1)}%`;
-  };
+  const topActivityMax = topActivities[0]?.[1] ?? 0;
+  const uniqueAuditActors = new Set(
+    (auditLogs ?? []).map((log) => (log.userId ? String(log.userId) : 'system'))
+  ).size;
 
   const exportAnalytics = () => {
     const data = {
-      metrics: userMetrics,
+      metrics: userMetrics.map(({ label, value }) => ({ label, value })),
       roleDistribution,
       statusDistribution,
-      registrationTrend,
+      topActivities: Object.fromEntries(topActivities),
       generatedAt: new Date().toISOString(),
     };
 
@@ -153,40 +132,6 @@ const UserAnalytics: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  // Simple bar chart component
-  interface BarChartDataItem {
-    month: string;
-    users: number;
-  }
-
-  const BarChart: React.FC<{ data: BarChartDataItem[]; dataKey: 'users'; height?: number }> = ({
-    data,
-    dataKey,
-    height = 200,
-  }) => {
-    const maxValue = Math.max(...data.map((item) => item[dataKey] as number));
-
-    return (
-      <div className="flex items-end justify-between h-48 px-4 py-2">
-        {data.map((item, index) => (
-          <div key={index} className="flex flex-col items-center">
-            <div
-              className="bg-primary rounded-t min-w-[20px] flex items-end justify-center text-xs text-primary-foreground font-medium"
-              style={{
-                height: `${(item[dataKey] / maxValue) * (height - 40)}px`,
-                minHeight: '20px',
-              }}
-            >
-              {item[dataKey]}
-            </div>
-            <span className="text-xs text-muted-foreground mt-2 text-center">{item.month}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Simple pie chart component
   const PieChart: React.FC<{ data: ChartData[] }> = ({ data }) => {
     const total = data.reduce((sum, item) => sum + item.value, 0);
 
@@ -196,11 +141,11 @@ const UserAnalytics: React.FC = () => {
           <div className="relative w-48 h-48">
             <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
               {data.map((item, index) => {
-                const percentage = (item.value / total) * 100;
+                const percentage = total === 0 ? 0 : (item.value / total) * 100;
                 const strokeDasharray = `${percentage} ${100 - percentage}`;
                 const strokeDashoffset = data
                   .slice(0, index)
-                  .reduce((sum, prev) => sum + (prev.value / total) * 100, 0);
+                  .reduce((sum, prev) => sum + (total === 0 ? 0 : (prev.value / total) * 100), 0);
 
                 return (
                   <circle
@@ -244,54 +189,26 @@ const UserAnalytics: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">User Analytics</h2>
-          <p className="text-muted-foreground">Comprehensive user metrics and insights</p>
+          <p className="text-muted-foreground">
+            Live Convex snapshot — session analytics (DAU/WAU, bounce, retention) are not stored
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-32 bg-background border-input text-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={exportAnalytics}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={exportAnalytics}>
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
       </div>
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {userMetrics.map((metric, index) => (
-          <Card key={index} className="bg-card border-border">
+        {userMetrics.map((metric) => (
+          <Card key={metric.label} className="bg-card border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{metric.label}</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {metric.label.includes('Duration')
-                      ? `${metric.value}m`
-                      : metric.value.toLocaleString()}
+                    {metric.value.toLocaleString()}
                   </p>
-                  <div className="flex items-center space-x-1 mt-1">
-                    {getTrendIcon(metric.trend)}
-                    <span
-                      className={`text-sm ${
-                        metric.trend === 'up'
-                          ? 'text-green-600 '
-                          : metric.trend === 'down'
-                            ? 'text-red-600 '
-                            : 'text-muted-foreground'
-                      }`}
-                    >
-                      {formatChange(metric.change)}
-                    </span>
-                  </div>
                 </div>
                 <div className={metric.color}>{metric.icon}</div>
               </div>
@@ -301,7 +218,6 @@ const UserAnalytics: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Registration Trend */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center text-foreground">
@@ -310,11 +226,13 @@ const UserAnalytics: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <BarChart data={registrationTrend} dataKey="users" />
+            <p className="text-sm text-muted-foreground">
+              Historical monthly registration series is not stored. Use the 30-day new-user count
+              above.
+            </p>
           </CardContent>
         </Card>
 
-        {/* Role Distribution */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center text-foreground">
@@ -329,7 +247,6 @@ const UserAnalytics: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground">User Status Distribution</CardTitle>
@@ -339,49 +256,47 @@ const UserAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Top User Activities */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">Top User Activities</CardTitle>
+            <CardTitle className="text-foreground">Top audit actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: 'Login', count: 2847, percentage: 45 },
-                { action: 'View Dashboard', count: 1923, percentage: 30 },
-                { action: 'Update Profile', count: 856, percentage: 13 },
-                { action: 'Make Payment', count: 634, percentage: 10 },
-                { action: 'Upload Document', count: 127, percentage: 2 },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
-                    <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="font-medium truncate text-foreground" title={activity.action}>
-                      {activity.action}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 shrink-0">
-                    <div className="w-20 bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full"
-                        style={{ width: `${activity.percentage}%` }}
-                      />
+            {topActivities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No audit events in the recent window.</p>
+            ) : (
+              <div className="space-y-4">
+                {topActivities.map(([action, count]) => (
+                  <div key={action} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1 mr-2">
+                      <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-medium truncate text-foreground" title={action}>
+                        {action}
+                      </span>
                     </div>
-                    <span className="text-sm text-muted-foreground w-12 text-right tabular-nums">
-                      {activity.count}
-                    </span>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <div className="w-20 bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full"
+                          style={{
+                            width: `${topActivityMax === 0 ? 0 : (count / topActivityMax) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-12 text-right tabular-nums">
+                        {count}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Analytics Table */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">User Engagement Metrics</CardTitle>
+          <CardTitle className="text-foreground">Current snapshot</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -389,41 +304,42 @@ const UserAnalytics: React.FC = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left p-2">Metric</th>
-                  <th className="text-left p-2">Current Period</th>
-                  <th className="text-left p-2">Previous Period</th>
-                  <th className="text-left p-2">Change</th>
-                  <th className="text-left p-2">Trend</th>
+                  <th className="text-left p-2">Value</th>
+                  <th className="text-left p-2">Source</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { metric: 'Daily Active Users', current: 234, previous: 218, change: 7.3 },
-                  { metric: 'Weekly Active Users', current: 567, previous: 543, change: 4.4 },
-                  { metric: 'Monthly Active Users', current: 892, previous: 823, change: 8.4 },
                   {
-                    metric: 'Average Session Length',
-                    current: '24m',
-                    previous: '22m',
-                    change: 9.1,
+                    metric: 'Registered users (query window)',
+                    value: users?.length ?? 0,
+                    source: 'api.users.listUsers',
                   },
-                  { metric: 'Bounce Rate', current: '23%', previous: '28%', change: -17.9 },
-                  { metric: 'User Retention (7d)', current: '68%', previous: '64%', change: 6.3 },
-                ].map((row, index) => (
+                  {
+                    metric: 'KYC verified clients',
+                    value: clientMetrics?.kycApproved ?? 0,
+                    source: 'api.analytics.getClientMetrics',
+                  },
+                  {
+                    metric: 'Recent audit events',
+                    value: auditLogs?.length ?? 0,
+                    source: 'api.audit.getAuditLogs',
+                  },
+                  {
+                    metric: 'Distinct actors in recent audit',
+                    value: uniqueAuditActors,
+                    source: 'auditLogs.userId',
+                  },
+                ].map((row) => (
                   <tr
-                    key={index}
+                    key={row.metric}
                     className="border-b border-border hover:bg-muted/50 transition-colors"
                   >
-                    <td className="p-2 font-medium truncate max-w-[200px]" title={row.metric}>
+                    <td className="p-2 font-medium truncate max-w-[280px]" title={row.metric}>
                       {row.metric}
                     </td>
-                    <td className="p-2 tabular-nums">{row.current}</td>
-                    <td className="p-2 tabular-nums">{row.previous}</td>
-                    <td className="p-2 tabular-nums">
-                      <span className={`${row.change > 0 ? 'text-green-600 ' : 'text-red-600 '}`}>
-                        {formatChange(row.change)}
-                      </span>
-                    </td>
-                    <td className="p-2">{getTrendIcon(row.change > 0 ? 'up' : 'down')}</td>
+                    <td className="p-2 tabular-nums">{row.value}</td>
+                    <td className="p-2 text-sm text-muted-foreground">{row.source}</td>
                   </tr>
                 ))}
               </tbody>

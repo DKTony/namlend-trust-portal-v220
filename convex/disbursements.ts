@@ -15,7 +15,7 @@ import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { mutation, query } from './_generated/server';
 import { scheduleAuditLog } from './lib/audit';
-import { assertOwnerOrStaff, assertStaff } from './lib/auth';
+import { assertOwnerOrTenantStaff, assertStaff } from './lib/auth';
 import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { assertKycVerifiedForUser } from './lib/kyc';
@@ -41,7 +41,7 @@ export const getDisbursementsByLoan = query({
   handler: async (ctx, { loanId }) => {
     const loan = await ctx.db.get(loanId);
     if (!loan) return [];
-    await assertOwnerOrStaff(ctx, loan.userId);
+    await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
     return ctx.db
       .query('disbursements')
       .withIndex('by_loanId', (q) => q.eq('loanId', loanId))

@@ -58,6 +58,7 @@ interface BatchJob {
 export function BatchOperations() {
   const { toast } = useToast();
   const batchUpdateMutation = useMutation(api.loans.batchUpdateLoanStatus);
+  const sendCommunication = useMutation(api.communications.sendCommunication);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,7 +97,7 @@ export function BatchOperations() {
 
   const loans: Loan[] = useMemo(() => {
     if (!rawLoans) return [];
-    const userMap = new Map((rawUsers ?? []).map((u) => [String(u._id), u]));
+    const userMap = new Map((rawUsers ?? []).map((u) => [String(u.userId), u]));
     return rawLoans.map((l) => {
       const user = userMap.get(String(l.userId));
       return {
@@ -162,14 +163,31 @@ export function BatchOperations() {
     setActiveJob(job);
 
     try {
+      if (notificationChannel !== 'in_app') {
+        toast({
+          title: 'Channel not configured',
+          description:
+            'Bulk SMS and email are not sent from this screen. Use in-app notifications, or the Communications center for logged outbound messages.',
+          variant: 'destructive',
+        });
+        setActiveJob(null);
+        return;
+      }
+
       const selectedLoans = loans.filter((l) => selectedIds.has(l.id));
       let processed = 0;
       let failed = 0;
 
-      for (const _loan of selectedLoans) {
-        void _loan;
+      for (const loan of selectedLoans) {
         try {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          if (!loan.user_id) throw new Error('missing borrower');
+          await sendCommunication({
+            userId: loan.user_id as Id<'users'>,
+            type: 'in_app',
+            subject: 'Loan update',
+            message: notificationMessage,
+            priority: 'medium',
+          });
           processed++;
         } catch {
           failed++;

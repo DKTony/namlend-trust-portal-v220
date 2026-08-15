@@ -1,8 +1,7 @@
 import { ThemedCard } from '@/components/ui/ThemedCard';
 import { cn } from '@/lib/utils';
+import { formatNAD } from '@/utils/currency';
 import React from 'react';
-// Temporarily disabled recharts due to d3-array build issue
-// import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface RevenueData {
   month: string;
@@ -17,61 +16,56 @@ interface RevenueChartProps {
   chartType?: 'line' | 'bar';
 }
 
-const RevenueChart: React.FC<RevenueChartProps> = ({
-  data,
-  loading = false,
-  chartType = 'line',
-}) => {
-  void chartType;
-
+const RevenueChart: React.FC<RevenueChartProps> = ({ data, loading = false }) => {
   if (loading) {
     return (
       <ThemedCard className="bg-card border-border">
         <div className="pb-4 border-b border-border mb-4">
           <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
-            Revenue Analytics
+            Disbursements and repayments
           </h3>
         </div>
         <div className="h-80 flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading chart...</div>
+          <div className="animate-pulse text-muted-foreground">Loading series…</div>
         </div>
       </ThemedCard>
     );
   }
 
-  // Temporary placeholder while recharts is disabled
   return (
     <ThemedCard>
       <div className="pb-4 border-b border-border mb-4">
         <h3 className={cn('text-lg font-semibold', 'font-sans text-[#274F35]')}>
-          Revenue Analytics
+          Disbursements and repayments
         </h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Monthly points from Convex portfolio activity (not a live Bank of Namibia feed)
+        </p>
       </div>
-      <div>
-        <div className="h-80 flex items-center justify-center border-2 border-dashed border-border rounded-lg">
-          <div className="text-center">
-            <div className="text-lg font-medium text-muted-foreground mb-2">
-              Chart Temporarily Disabled
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Recharts disabled due to d3-array build issue
-            </div>
-            <div className="mt-4 text-xs text-muted-foreground">
-              Data points: {data.length} months
-            </div>
-            <div className="flex items-center justify-center space-x-4 mt-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500  rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Disbursed</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500  rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Repayments</span>
-              </div>
-            </div>
-          </div>
+      {data.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8">No monthly activity to display yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-muted-foreground border-b border-border">
+                <th className="py-2 pr-4">Month</th>
+                <th className="py-2 pr-4 text-right">Disbursed (NAD)</th>
+                <th className="py-2 text-right">Repayments (NAD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row) => (
+                <tr key={row.month} className="border-b border-border/60">
+                  <td className="py-2 pr-4 font-medium">{row.month}</td>
+                  <td className="py-2 pr-4 text-right tabular-nums">{formatNAD(row.disbursed)}</td>
+                  <td className="py-2 text-right tabular-nums">{formatNAD(row.repayments)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
     </ThemedCard>
   );
 };

@@ -15,6 +15,9 @@ dist-ssr
 .env.e2e
 .env.e2e.local
 *.local
+jwt-private.pem
+jwks.json
+*.pem
 
 # Editor directories and files
 .vscode/*

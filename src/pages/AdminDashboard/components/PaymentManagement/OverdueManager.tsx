@@ -9,6 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { formatNAD } from '@/utils/currency';
+import { useMutation, useQuery } from 'convex/react';
 import {
   AlertTriangle,
   Calendar,
@@ -16,97 +20,36 @@ import {
   DollarSign,
   Filter,
   Mail,
-  MessageSquare,
-  Phone,
   Search,
   User,
 } from 'lucide-react';
-import React, { useState } from 'react';
-
-interface OverduePayment {
-  id: string;
-  clientName: string;
-  loanId: string;
-  amount: number;
-  daysOverdue: number;
-  originalDueDate: string;
-  lastContactDate?: string;
-  contactMethod?: 'phone' | 'email' | 'sms';
-  paymentPlan?: boolean;
-  riskLevel: 'low' | 'medium' | 'high';
-  totalOwed: number;
-}
+import React, { useMemo, useState } from 'react';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
 const OverdueManager: React.FC = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [riskFilter, setRiskFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [selectedPayments, setSelectedPayments] = useState<string[]>([]);
+  const [asOf] = useState(() => Date.now());
+  const sendCommunication = useMutation(api.communications.sendCommunication);
+  const rows = useQuery(api.payments.getOverduePayments, { asOf, limit: 200 });
 
-  // Mock overdue payments data
-  const overduePayments: OverduePayment[] = [
-    {
-      id: '1',
-      clientName: 'John Nangolo',
-      loanId: 'LOAN-001',
-      amount: 2500,
-      daysOverdue: 15,
-      originalDueDate: '2024-12-20',
-      lastContactDate: '2025-01-02',
-      contactMethod: 'phone',
-      paymentPlan: false,
-      riskLevel: 'medium',
-      totalOwed: 2750,
-    },
-    {
-      id: '2',
-      clientName: 'Maria Shikongo',
-      loanId: 'LOAN-045',
-      amount: 1800,
-      daysOverdue: 32,
-      originalDueDate: '2024-12-03',
-      lastContactDate: '2024-12-28',
-      contactMethod: 'email',
-      paymentPlan: true,
-      riskLevel: 'high',
-      totalOwed: 2100,
-    },
-    {
-      id: '3',
-      clientName: 'David Katanga',
-      loanId: 'LOAN-023',
-      amount: 3200,
-      daysOverdue: 8,
-      originalDueDate: '2024-12-27',
-      riskLevel: 'low',
-      totalOwed: 3200,
-    },
-    {
-      id: '4',
-      clientName: 'Sarah Amukoto',
-      loanId: 'LOAN-067',
-      amount: 4500,
-      daysOverdue: 45,
-      originalDueDate: '2024-11-20',
-      lastContactDate: '2024-12-15',
-      contactMethod: 'sms',
-      paymentPlan: true,
-      riskLevel: 'high',
-      totalOwed: 5200,
-    },
-    {
-      id: '5',
-      clientName: 'Peter Nghipondoka',
-      loanId: 'LOAN-089',
-      amount: 1200,
-      daysOverdue: 22,
-      originalDueDate: '2024-12-13',
-      lastContactDate: '2025-01-01',
-      contactMethod: 'phone',
-      paymentPlan: false,
-      riskLevel: 'medium',
-      totalOwed: 1350,
-    },
-  ];
+  const overduePayments = useMemo(
+    () =>
+      (rows ?? []).map((row) => ({
+        id: String(row._id),
+        clientName: row.clientName,
+        clientUserId: row.clientUserId,
+        loanId: String(row.loanId),
+        amount: row.remainingAmount,
+        daysOverdue: row.daysOverdue,
+        originalDueDate: new Date(row.dueDate).toISOString(),
+        riskLevel: row.riskLevel,
+        totalOwed: row.outstandingBalance,
+      })),
+    [rows]
+  );
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -141,34 +84,76 @@ const OverdueManager: React.FC = () => {
     );
   };
 
-  const handleBulkAction = (action: string) => {
-    console.log(`Performing ${action} on payments:`, selectedPayments);
-    alert(`${action} action would be performed on ${selectedPayments.length} selected payments.`);
+  const sendReminders = async (paymentIds: string[]) => {
+    const targets = overduePayments.filter((p) => paymentIds.includes(p.id) && p.clientUserId);
+    if (targets.length === 0) {
+      toast({
+        title: 'No recipients',
+        description: 'Selected installments have no linked borrower.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    let sent = 0;
+    let failed = 0;
+    for (const payment of targets) {
+      try {
+        await sendCommunication({
+          userId: payment.clientUserId as Id<'users'>,
+          type: 'in_app',
+          subject: 'Overdue payment reminder',
+          message: `Your loan installment of ${formatNAD(payment.amount)} is ${payment.daysOverdue} day(s) overdue.`,
+          priority: payment.riskLevel === 'high' ? 'high' : 'medium',
+        });
+        sent += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    toast({
+      title: failed === 0 ? 'Reminders sent' : 'Reminders partially sent',
+      description: `${sent} in-app reminder${sent === 1 ? '' : 's'} delivered${failed > 0 ? `, ${failed} failed` : ''}.`,
+      variant: failed === 0 ? 'default' : 'destructive',
+    });
   };
 
-  const handleContactClient = (paymentId: string, method: 'phone' | 'email' | 'sms') => {
-    console.log(`Contacting client for payment ${paymentId} via ${method}`);
-    alert(`Initiating ${method} contact for overdue payment.`);
+  const handleBulkAction = async (action: string) => {
+    if (action === 'Send Reminder') {
+      await sendReminders(selectedPayments);
+      setSelectedPayments([]);
+      return;
+    }
+    toast({
+      title: 'Use Collections',
+      description:
+        'Payment plans and escalation are recorded on the Collections workqueue, not as a bulk overdue shortcut.',
+    });
   };
 
-  const handleCreatePaymentPlan = (paymentId: string) => {
-    console.log(`Creating payment plan for payment ${paymentId}`);
-    alert('Payment plan creation dialog would open here.');
-  };
+  const totalOverdue = overduePayments.reduce((sum, p) => sum + p.totalOwed, 0);
+  const avgDays =
+    overduePayments.length === 0
+      ? 0
+      : Math.round(
+          overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length
+        );
+
+  if (rows === undefined) {
+    return <div className="text-sm text-muted-foreground">Loading overdue installments…</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">Overdue Payments</h2>
-          <p className="text-muted-foreground">Manage and track overdue loan payments</p>
+          <p className="text-muted-foreground">Past-due installments from payment schedules</p>
         </div>
         <Badge variant="destructive" className="text-sm">
           {filteredPayments.length} overdue
         </Badge>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -178,14 +163,11 @@ const OverdueManager: React.FC = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div
-              className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums"
-              title={`NAD ${overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}`}
-            >
-              NAD {overduePayments.reduce((sum, p) => sum + p.totalOwed, 0).toLocaleString()}
+            <div className="text-xl sm:text-2xl font-bold text-red-600 truncate tabular-nums">
+              {formatNAD(totalOverdue)}
             </div>
             <p className="text-xs text-muted-foreground truncate">
-              Across {overduePayments.length} payments
+              Across {overduePayments.length} installments
             </p>
           </CardContent>
         </Card>
@@ -196,25 +178,22 @@ const OverdueManager: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-red-600  truncate tabular-nums">
+            <div className="text-xl sm:text-2xl font-bold text-red-600 truncate tabular-nums">
               {overduePayments.filter((p) => p.riskLevel === 'high').length}
             </div>
-            <p className="text-xs text-muted-foreground truncate">Require immediate attention</p>
+            <p className="text-xs text-muted-foreground truncate">More than 30 days past due</p>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Payment Plans
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Collections</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
-              {overduePayments.filter((p) => p.paymentPlan).length}
+            <div className="text-sm text-muted-foreground">
+              Record PTPs and collector activity on the Collections tab.
             </div>
-            <p className="text-xs text-muted-foreground truncate">Active payment plans</p>
           </CardContent>
         </Card>
 
@@ -226,17 +205,14 @@ const OverdueManager: React.FC = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl sm:text-2xl font-bold text-orange-600  truncate tabular-nums">
-              {Math.round(
-                overduePayments.reduce((sum, p) => sum + p.daysOverdue, 0) / overduePayments.length
-              )}
+            <div className="text-xl sm:text-2xl font-bold text-orange-600 truncate tabular-nums">
+              {avgDays}
             </div>
             <p className="text-xs text-muted-foreground truncate">Days past due</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
       <div className="flex items-center space-x-4">
         <div className="flex-1">
           <div className="relative">
@@ -266,32 +242,18 @@ const OverdueManager: React.FC = () => {
         </Select>
       </div>
 
-      {/* Bulk Actions */}
       {selectedPayments.length > 0 && (
         <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
           <span className="text-sm font-medium text-foreground">
-            {selectedPayments.length} payment(s) selected
+            {selectedPayments.length} installment(s) selected
           </span>
           <Button variant="outline" size="sm" onClick={() => handleBulkAction('Send Reminder')}>
             <Mail className="mr-2 h-4 w-4" />
             Send Reminders
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleBulkAction('Create Payment Plans')}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Create Payment Plans
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleBulkAction('Escalate')}>
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            Escalate
-          </Button>
         </div>
       )}
 
-      {/* Overdue Payments List */}
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="text-foreground">Overdue Payments</CardTitle>
@@ -301,6 +263,9 @@ const OverdueManager: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {filteredPayments.length === 0 && (
+              <p className="text-sm text-muted-foreground">No overdue installments.</p>
+            )}
             {filteredPayments.map((payment) => (
               <div
                 key={payment.id}
@@ -326,67 +291,22 @@ const OverdueManager: React.FC = () => {
                       <Badge variant="secondary" className={getRiskColor(payment.riskLevel)}>
                         {payment.riskLevel} risk
                       </Badge>
-                      {payment.paymentPlan && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-blue-50  text-blue-700  border-blue-200 "
-                        >
-                          Payment Plan
-                        </Badge>
-                      )}
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>Amount: NAD {payment.amount.toLocaleString()}</span>
-                      <span>Total Owed: NAD {payment.totalOwed.toLocaleString()}</span>
+                      <span>Amount: {formatNAD(payment.amount)}</span>
+                      <span>Outstanding: {formatNAD(payment.totalOwed)}</span>
                       <span className={getDaysOverdueColor(payment.daysOverdue)}>
                         {payment.daysOverdue} days overdue
                       </span>
                       <span>Due: {new Date(payment.originalDueDate).toLocaleDateString()}</span>
-                      {payment.lastContactDate && (
-                        <span>
-                          Last contact: {new Date(payment.lastContactDate).toLocaleDateString()}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleContactClient(payment.id, 'phone')}
-                  >
-                    <Phone className="h-4 w-4 mr-1" />
-                    Call
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleContactClient(payment.id, 'email')}
-                  >
-                    <Mail className="h-4 w-4 mr-1" />
-                    Email
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleContactClient(payment.id, 'sms')}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    SMS
-                  </Button>
-                  {!payment.paymentPlan && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCreatePaymentPlan(payment.id)}
-                    >
-                      <Calendar className="h-4 w-4 mr-1" />
-                      Payment Plan
-                    </Button>
-                  )}
-                </div>
+                <Button variant="outline" size="sm" onClick={() => sendReminders([payment.id])}>
+                  <Mail className="h-4 w-4 mr-1" />
+                  Remind
+                </Button>
               </div>
             ))}
           </div>

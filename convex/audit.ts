@@ -9,7 +9,7 @@
  * 7-year retention: no hard deletes permitted (Namibian law).
  */
 
-import { v } from 'convex/values';
+import { ConvexError, v } from 'convex/values';
 import { internalMutation, mutation, query } from './_generated/server';
 import { assertAuthenticated, assertStaff } from './lib/auth';
 import { resolveWriteInstitution } from './lib/tenancy';
@@ -214,6 +214,69 @@ export const generateComplianceReport = mutation({
   handler: async (ctx, args) => {
     const userId = await assertStaff(ctx);
 
+    const from = Date.parse(args.periodStart);
+    const to = Date.parse(args.periodEnd);
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) {
+      throw new ConvexError({
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid report period.',
+      });
+    }
+    const toInclusive = to + 86_400_000 - 1;
+
+    let reportData: Record<string, unknown> = {};
+    if (args.reportType === 'monthly_approvals') {
+      const rows = await ctx.db.query('loanApprovals').take(5000);
+      const inPeriod = rows.filter((r) => r.createdAt >= from && r.createdAt <= toInclusive);
+      reportData = {
+        total: inPeriod.length,
+        approved: inPeriod.filter((r) => r.decision === 'approved').length,
+        rejected: inPeriod.filter((r) => r.decision === 'rejected').length,
+        pending: inPeriod.filter((r) => r.decision === 'pending').length,
+      };
+    } else if (args.reportType === 'user_activity') {
+      const rows = await ctx.db
+        .query('auditLogs')
+        .withIndex('by_timestamp')
+        .order('desc')
+        .take(5000);
+      const inPeriod = rows.filter((r) => r.timestamp >= from && r.timestamp <= toInclusive);
+      reportData = {
+        total: inPeriod.length,
+        byAction: inPeriod.reduce<Record<string, number>>((acc, row) => {
+          acc[row.action] = (acc[row.action] ?? 0) + 1;
+          return acc;
+        }, {}),
+      };
+    } else if (args.reportType === 'state_changes') {
+      const rows = await ctx.db.query('stateTransitions').order('desc').take(5000);
+      const inPeriod = rows.filter((r) => r.timestamp >= from && r.timestamp <= toInclusive);
+      reportData = {
+        total: inPeriod.length,
+        byEntityType: inPeriod.reduce<Record<string, number>>((acc, row) => {
+          acc[row.entityType] = (acc[row.entityType] ?? 0) + 1;
+          return acc;
+        }, {}),
+      };
+    } else if (args.reportType === 'view_access') {
+      const rows = await ctx.db.query('viewLogs').order('desc').take(5000);
+      const inPeriod = rows.filter((r) => r.timestamp >= from && r.timestamp <= toInclusive);
+      reportData = { total: inPeriod.length };
+    } else {
+      const rows = await ctx.db
+        .query('auditLogs')
+        .withIndex('by_timestamp')
+        .order('desc')
+        .take(5000);
+      const inPeriod = rows.filter((r) => r.timestamp >= from && r.timestamp <= toInclusive);
+      reportData = {
+        total: inPeriod.length,
+        sensitiveActions: inPeriod.filter((r) =>
+          /AUTH|LOGIN|ROLE|SECURITY|REJECT|DELETE/i.test(r.action)
+        ).length,
+      };
+    }
+
     const reportId = await ctx.db.insert('complianceReports', {
       reportType: args.reportType,
       periodStart: args.periodStart,
@@ -221,8 +284,8 @@ export const generateComplianceReport = mutation({
       institutionId: await resolveWriteInstitution(ctx),
       generatedAt: Date.now(),
       generatedBy: userId,
-      reportData: { status: 'pending', message: 'Report generation queued' },
-      status: 'pending',
+      reportData,
+      status: 'completed',
     });
 
     return reportId;

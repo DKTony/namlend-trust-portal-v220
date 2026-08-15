@@ -70,11 +70,21 @@ const PaymentManagementDashboard: React.FC<PaymentManagementDashboardProps> = ({
                 New Payments Available
               </Button>
             )}
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              title="Advanced payment filters are not implemented"
+            >
               <Filter className="mr-2 h-4 w-4" />
               Advanced Filters
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              title="Payment CSV export is not implemented"
+            >
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>

@@ -135,18 +135,12 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
 
     setAddingUser(true);
     try {
-      // Create auth user via admin API (this would typically be done server-side)
-      // For now, we'll just create a profile entry as a placeholder
       toast({
-        title: 'Note',
-        description: 'User invitation sent. They will receive an email to set up their account.',
+        title: 'Accounts are created at sign-up',
+        description:
+          'There is no invite-mailer in this environment. Ask the person to register at /auth, then assign their role here.',
+        variant: 'destructive',
       });
-
-      setShowAddUserModal(false);
-      setNewUserData({ email: '', firstName: '', lastName: '', role: 'client' });
-    } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : 'Failed to add user';
-      toast({ title: 'Error', description: errMsg, variant: 'destructive' });
     } finally {
       setAddingUser(false);
     }
@@ -363,7 +357,10 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
           <UserImportWizard
             onClose={() => setActiveTab('users')}
             onComplete={(users) => {
-              console.log('Imported users:', users);
+              toast({
+                title: 'CSV preview only',
+                description: `${users.length} row(s) validated. Convex Auth users must register through sign-up; this wizard cannot create accounts.`,
+              });
               setActiveTab('users');
             }}
           />

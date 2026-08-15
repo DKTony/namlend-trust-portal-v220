@@ -41,7 +41,7 @@ export const useFinancialMetrics = () => {
 
   const revenueData: RevenueData[] = (trends ?? []).map((t) => ({
     month: t.month,
-    revenue: t.collectionsAmount * 0.1, // simplified estimate
+    revenue: t.collectionsAmount,
     disbursed: t.disbursedAmount,
     repayments: t.collectionsAmount,
   }));

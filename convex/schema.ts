@@ -2449,4 +2449,35 @@ export default defineSchema({
     .index('by_ruleCode', ['ruleCode'])
     .index('by_category', ['category'])
     .index('by_ruleCode_effective', ['ruleCode', 'effectiveTo']),
+
+  budgetEntries: defineTable({
+    userId: v.id('users'),
+    date: v.string(),
+    description: v.string(),
+    category: v.string(),
+    type: v.union(v.literal('in'), v.literal('out')),
+    amount: v.number(),
+    source: v.string(),
+    createdAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  savingsGoals: defineTable({
+    userId: v.id('users'),
+    name: v.string(),
+    targetAmount: v.number(),
+    currentAmount: v.number(),
+    deadline: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
+
+  budgetLimits: defineTable({
+    userId: v.id('users'),
+    category: v.string(),
+    limit: v.number(),
+    color: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('by_userId', ['userId']),
 });

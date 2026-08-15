@@ -71,6 +71,7 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ workflow, onClose }) =>
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const createWorkflowDef = useMutation(api.approvalWorkflow.createWorkflowDefinition);
+  const updateWorkflowDef = useMutation(api.approvalWorkflow.updateWorkflowDefinition);
 
   const addStage = () => {
     const newStage: WorkflowStage = {
@@ -151,8 +152,23 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ workflow, onClose }) =>
       setSaving(true);
 
       if (workflow) {
-        // TODO: Implement updateWorkflowDefinition mutation in Convex
-        console.warn('Workflow update not yet implemented for Convex', workflow.id);
+        await updateWorkflowDef({
+          workflowId: workflow.id as Parameters<typeof updateWorkflowDef>[0]['workflowId'],
+          name,
+          entityType,
+          stages: stages.map((s) => ({
+            name: s.name,
+            order: s.stage,
+            requiredRole: s.required_role,
+            actions: ['review'],
+            conditions: {
+              ...s.conditions,
+              autoAssign: s.auto_assign,
+              requiredApprovals: s.required_approvals,
+              timeoutHours: s.timeout_hours,
+            },
+          })),
+        });
         toast({
           title: 'Workflow Updated',
           description: 'Workflow has been updated successfully',

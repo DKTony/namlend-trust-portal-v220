@@ -19,7 +19,12 @@
 import { ConvexError, v } from 'convex/values';
 import { internalMutation, mutation, query } from '../_generated/server';
 import { scheduleAuditLog } from '../lib/audit';
-import { assertAdmin, assertOwnerOrStaff, assertStaff } from '../lib/auth';
+import {
+  assertAdmin,
+  assertOwnerOrTenantStaff,
+  assertOwnerOrTenantStaffForUser,
+  assertStaff,
+} from '../lib/auth';
 import { emitEvent, generateCorrelationId } from '../lib/eventEmitter';
 import { emitRelationship } from '../lib/relationshipEmitter';
 import { accountStatus, accountType } from '../schema';
@@ -270,7 +275,7 @@ export const getAccount = query({
     const account = await ctx.db.get(accountId);
     if (!account) return null;
     if (account.ownerId) {
-      await assertOwnerOrStaff(ctx, account.ownerId);
+      await assertOwnerOrTenantStaff(ctx, account.ownerId, account.institutionId);
     } else {
       await assertStaff(ctx);
     }
@@ -298,7 +303,7 @@ export const getAccountByNumber = query({
 export const getAccountsByOwner = query({
   args: { ownerId: v.id('users') },
   handler: async (ctx, { ownerId }) => {
-    await assertOwnerOrStaff(ctx, ownerId);
+    await assertOwnerOrTenantStaffForUser(ctx, ownerId);
     return ctx.db
       .query('accounts')
       .withIndex('by_owner', (q) => q.eq('ownerId', ownerId))

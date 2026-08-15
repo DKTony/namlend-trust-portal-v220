@@ -35,13 +35,14 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
 import type { IPPOnboardingState, IPPPendingOnboardingUser } from '@/types/ips';
 import {
   IPP_ONBOARDING_STATE_COLORS,
   IPP_ONBOARDING_STATE_LABELS,
   getIPPOnboardingProgress,
 } from '@/types/ips';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -56,63 +57,43 @@ import {
   Smartphone,
   Users,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import type { Id } from '../../../../../convex/_generated/dataModel';
 
-interface IPPOnboardingSummary {
-  success: boolean;
-  stats: {
-    by_state: Partial<Record<IPPOnboardingState, number>>;
-    in_progress: number;
-    ipp_ready: number;
-    not_started: number;
-    suspended: number;
-    total_users: number;
-    with_errors: number;
+const PIN_SET_STATES = new Set<string>([
+  'IPS_PIN_SET',
+  'ALIAS_REGISTRATION_PENDING',
+  'ALIAS_REGISTERED',
+  'READY_FOR_IPP_PAYMENTS',
+]);
+
+function mapOnboardingUser(app: {
+  userId: Id<'users'>;
+  status: string;
+  email?: string;
+  fullName?: string;
+  phone?: string;
+  aliasAddr?: string;
+  rejectionReason?: string;
+  createdAt: number;
+  updatedAt: number;
+}): IPPPendingOnboardingUser {
+  const parts = (app.fullName ?? '').split(' ').filter(Boolean);
+  return {
+    user_id: String(app.userId),
+    state: app.status as IPPOnboardingState,
+    first_name: parts[0],
+    last_name: parts.slice(1).join(' '),
+    phone: app.phone,
+    email: app.email,
+    long_alias: app.aliasAddr,
+    ips_pin_set: PIN_SET_STATES.has(app.status),
+    last_step_completed: app.status,
+    last_error_code: app.rejectionReason,
+    started_at: new Date(app.createdAt).toISOString(),
+    updated_at: new Date(app.updatedAt).toISOString(),
   };
 }
-
-interface IPPActionResult {
-  error?: string;
-  errorMessage?: string;
-  message?: string;
-  providers?: unknown[];
-  success: boolean;
-}
-
-interface IPPUsersResult {
-  success: boolean;
-  users: IPPPendingOnboardingUser[];
-}
-
-// TODO: Wire to Convex IPS onboarding queries/mutations when available
-const getOnboardingSummary = async (): Promise<IPPOnboardingSummary> => ({
-  success: true,
-  stats: {
-    total_users: 0,
-    ipp_ready: 0,
-    in_progress: 0,
-    not_started: 0,
-    suspended: 0,
-    with_errors: 0,
-    by_state: {},
-  },
-});
-const getUsersPendingOnboarding = async (
-  _limit: number,
-  _offset: number,
-  _state?: string
-): Promise<IPPUsersResult> => ({ success: true, users: [] });
-const adminInitiateOnboarding = async (
-  _userId: string,
-  _mobile?: string
-): Promise<IPPActionResult> => ({
-  success: true,
-  message: 'Onboarding initiated (placeholder)',
-});
-const refreshSoVProviders = async (): Promise<IPPActionResult> => ({
-  success: true,
-  providers: [],
-});
 
 // =============================================================================
 // STAT CARD COMPONENT
@@ -157,113 +138,72 @@ function StatCard({ title, value, icon, description, color = 'blue' }: StatCardP
 
 export function IPPOnboardingDashboard() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // State
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState<IPPOnboardingState | 'all'>('all');
   const [selectedUser, setSelectedUser] = useState<IPPPendingOnboardingUser | null>(null);
   const [showInitiateDialog, setShowInitiateDialog] = useState(false);
   const [initiateUserId, setInitiateUserId] = useState('');
   const [initiateMobile, setInitiateMobile] = useState('');
+  const [initiating, setInitiating] = useState(false);
 
-  // Queries
-  const { data: summary, refetch: refetchSummary } = useQuery({
-    queryKey: ['ipp-onboarding-summary'],
-    queryFn: getOnboardingSummary,
-    staleTime: 30000,
+  const applications = useConvexQuery(api.ips.ipsOnboarding.adminListOnboarding, {
+    status: stateFilter === 'all' ? undefined : stateFilter,
+    limit: 100,
   });
+  const adminStartOnboarding = useConvexMutation(api.ips.ipsOnboarding.adminStartOnboarding);
 
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    refetch: refetchUsers,
-  } = useQuery({
-    queryKey: ['ipp-onboarding-users', stateFilter],
-    queryFn: () =>
-      getUsersPendingOnboarding(100, 0, stateFilter === 'all' ? undefined : stateFilter),
-    staleTime: 30000,
+  const users: IPPPendingOnboardingUser[] = useMemo(
+    () => (applications ?? []).map(mapOnboardingUser),
+    [applications]
+  );
+  const usersLoading = applications === undefined;
+
+  const stats = useMemo(() => {
+    const by_state: Partial<Record<IPPOnboardingState, number>> = {};
+    for (const user of users) {
+      by_state[user.state] = (by_state[user.state] ?? 0) + 1;
+    }
+    return {
+      total_users: users.length,
+      ipp_ready: users.filter((u) => u.state === 'READY_FOR_IPP_PAYMENTS').length,
+      in_progress: users.filter(
+        (u) =>
+          u.state !== 'READY_FOR_IPP_PAYMENTS' &&
+          u.state !== 'NOT_STARTED' &&
+          u.state !== 'SUSPENDED' &&
+          u.state !== 'DEREGISTERED'
+      ).length,
+      not_started: users.filter(
+        (u) => u.state === 'NOT_STARTED' || u.state === 'DEVICE_BINDING_REQUIRED'
+      ).length,
+      suspended: users.filter((u) => u.state === 'SUSPENDED').length,
+      with_errors: users.filter((u) => Boolean(u.last_error_code) || u.state === 'DEREGISTERED')
+        .length,
+      by_state,
+    };
+  }, [users]);
+
+  const filteredUsers = users.filter((user: IPPPendingOnboardingUser) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      user.first_name?.toLowerCase().includes(search) ||
+      user.last_name?.toLowerCase().includes(search) ||
+      user.email?.toLowerCase().includes(search) ||
+      user.phone?.includes(search) ||
+      user.long_alias?.toLowerCase().includes(search)
+    );
   });
-
-  // Mutations
-  const initiateOnboardingMutation = useMutation({
-    mutationFn: ({ userId, mobile }: { userId: string; mobile?: string }) =>
-      adminInitiateOnboarding(userId, mobile),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast({
-          title: 'Onboarding Initiated',
-          description: result.message || 'User onboarding has been initiated successfully.',
-        });
-        queryClient.invalidateQueries({ queryKey: ['ipp-onboarding'] });
-        setShowInitiateDialog(false);
-        setInitiateUserId('');
-        setInitiateMobile('');
-      } else {
-        toast({
-          title: 'Initiation Failed',
-          description: result.error || 'Failed to initiate onboarding.',
-          variant: 'destructive',
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An error occurred.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const refreshProvidersMutation = useMutation({
-    mutationFn: refreshSoVProviders,
-    onSuccess: (result) => {
-      if (result.success) {
-        toast({
-          title: 'Providers Refreshed',
-          description: `Updated ${result.providers?.length || 0} SoV providers from IPS.`,
-        });
-      } else {
-        toast({
-          title: 'Refresh Failed',
-          description: result.errorMessage || 'Failed to refresh providers.',
-          variant: 'destructive',
-        });
-      }
-    },
-  });
-
-  // Filtered users
-  const filteredUsers =
-    usersData?.users?.filter((user: IPPPendingOnboardingUser) => {
-      if (!searchTerm) return true;
-      const search = searchTerm.toLowerCase();
-      return (
-        user.first_name?.toLowerCase().includes(search) ||
-        user.last_name?.toLowerCase().includes(search) ||
-        user.email?.toLowerCase().includes(search) ||
-        user.phone?.includes(search) ||
-        user.long_alias?.toLowerCase().includes(search)
-      );
-    }) || [];
-
-  // Stats from summary
-  const stats = summary?.stats || {
-    total_users: 0,
-    ipp_ready: 0,
-    in_progress: 0,
-    not_started: 0,
-    suspended: 0,
-    with_errors: 0,
-  };
 
   const handleRefreshAll = () => {
-    refetchSummary();
-    refetchUsers();
+    toast({
+      title: 'Live data',
+      description: 'This list updates automatically from Convex.',
+    });
   };
 
-  const handleInitiateOnboarding = () => {
+  const handleInitiateOnboarding = async () => {
     if (!initiateUserId) {
       toast({
         title: 'User ID Required',
@@ -272,10 +212,28 @@ export function IPPOnboardingDashboard() {
       });
       return;
     }
-    initiateOnboardingMutation.mutate({
-      userId: initiateUserId,
-      mobile: initiateMobile || undefined,
-    });
+    setInitiating(true);
+    try {
+      await adminStartOnboarding({
+        userId: initiateUserId as Id<'users'>,
+        mobileNumber: initiateMobile || undefined,
+      });
+      toast({
+        title: 'Onboarding Initiated',
+        description: 'User onboarding has been initiated successfully.',
+      });
+      setShowInitiateDialog(false);
+      setInitiateUserId('');
+      setInitiateMobile('');
+    } catch (error) {
+      toast({
+        title: 'Initiation Failed',
+        description: error instanceof Error ? error.message : 'Failed to initiate onboarding.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInitiating(false);
+    }
   };
 
   return (
@@ -292,15 +250,16 @@ export function IPPOnboardingDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refreshProvidersMutation.mutate()}
-            disabled={refreshProvidersMutation.isPending}
+            onClick={() =>
+              toast({
+                title: 'SoV providers are per-application',
+                description:
+                  'Bank/wallet provider lists are fetched when a client reaches bank selection. There is no global provider refresh.',
+              })
+            }
           >
-            {refreshProvidersMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Refresh Providers
+            <RefreshCw className="h-4 w-4 mr-2" />
+            About Providers
           </Button>
           <Button variant="outline" size="sm" onClick={handleRefreshAll}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -492,20 +451,19 @@ export function IPPOnboardingDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {summary?.stats?.by_state &&
-                  Object.entries(summary.stats.by_state).map(([state, count]) => (
-                    <div
-                      key={state}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge className={IPP_ONBOARDING_STATE_COLORS[state as IPPOnboardingState]}>
-                          {IPP_ONBOARDING_STATE_LABELS[state as IPPOnboardingState]}
-                        </Badge>
-                      </div>
-                      <span className="text-lg font-semibold text-foreground">{count}</span>
+                {Object.entries(stats.by_state).map(([state, count]) => (
+                  <div
+                    key={state}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Badge className={IPP_ONBOARDING_STATE_COLORS[state as IPPOnboardingState]}>
+                        {IPP_ONBOARDING_STATE_LABELS[state as IPPOnboardingState]}
+                      </Badge>
                     </div>
-                  ))}
+                    <span className="text-lg font-semibold text-foreground">{Number(count)}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -604,11 +562,8 @@ export function IPPOnboardingDashboard() {
             <Button variant="outline" onClick={() => setShowInitiateDialog(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleInitiateOnboarding}
-              disabled={initiateOnboardingMutation.isPending}
-            >
-              {initiateOnboardingMutation.isPending ? (
+            <Button onClick={handleInitiateOnboarding} disabled={initiating}>
+              {initiating ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <PlayCircle className="h-4 w-4 mr-2" />

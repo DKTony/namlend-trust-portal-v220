@@ -97,15 +97,13 @@ export const sendCommunication = mutation({
     });
 
     if (isInApp) {
-      ctx.scheduler
-        .runAfter(0, internal.notifications.createNotification, {
-          userId: args.userId,
-          title: args.subject.trim(),
-          message: args.message.trim(),
-          category: 'general' as const,
-          priority: args.priority === 'urgent' || args.priority === 'high' ? 'high' : 'normal',
-        })
-        .catch((err: unknown) => console.error('[communications] notify failed:', err));
+      await ctx.scheduler.runAfter(0, internal.notifications.createNotification, {
+        userId: args.userId,
+        title: args.subject.trim(),
+        message: args.message.trim(),
+        category: 'general' as const,
+        priority: args.priority === 'urgent' || args.priority === 'high' ? 'high' : 'normal',
+      });
     }
 
     // Mark the original as replied when this is a reply thread.

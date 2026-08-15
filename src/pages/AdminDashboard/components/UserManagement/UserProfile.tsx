@@ -66,29 +66,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
   const [editedUser, setEditedUser] = useState<UserData | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Mock user data for demonstration
-  const mockUser: UserData = {
-    id: userId,
-    fullName: 'John Doe',
-    email: 'john.doe@namlend.com',
-    phone: '+264 81 123 4567',
-    role: 'loan_officer',
-    status: 'active',
-    isVerified: true,
-    lastLogin: '2024-01-15T10:30:00Z',
-    createdAt: '2023-06-01T09:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z',
-    permissions: ['loan_processing', 'client_management', 'payment_processing', 'basic_reports'],
-    loginCount: 245,
-    department: 'Loan Operations',
-    address: '123 Independence Ave, Windhoek, Namibia',
-    dateOfBirth: '1985-03-15',
-    emergencyContact: '+264 81 987 6543',
-    notes: 'Senior loan officer with excellent performance record.',
-  };
-
-  const userData = user || mockUser;
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NA', {
       year: 'numeric',
@@ -275,6 +252,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
     );
   }
 
+  if (!user) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-background rounded-lg p-8 max-w-md w-full mx-4 border border-border">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-foreground">User not found</h3>
+            <p className="text-muted-foreground mb-4">No profile exists for this account.</p>
+            <Button onClick={onClose}>Close</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const userData = user;
   const currentUser = isEditing ? editedUser! : userData;
 
   return (
@@ -642,17 +635,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                           Add an extra layer of security
                         </p>
                       </div>
-                      <Switch />
+                      <Switch disabled title="Two-factor authentication is not configured" />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
                       <div>
                         <span className="font-medium text-foreground">Login Notifications</span>
                         <p className="text-sm text-muted-foreground">Get notified of new logins</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch disabled title="Login notifications are not stored" />
                     </div>
                     <div className="pt-4">
-                      <Button variant="outline" className="w-full">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                        title="Forced password reset requires a mail provider"
+                      >
                         Force Password Reset
                       </Button>
                     </div>

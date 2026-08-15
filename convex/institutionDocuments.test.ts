@@ -56,6 +56,23 @@ async function seedPlatformUser(
   });
 }
 
+/** Tenant admin who is also an active platform_owner — the aromatic dual-hat shape. */
+async function seedDualHatAdmin(
+  t: TestCtx,
+  institutionId: Id<'institutions'>
+): Promise<Id<'users'>> {
+  const userId = await seedTenantUser(t, 'admin', institutionId);
+  await t.run(async (ctx) => {
+    await ctx.db.insert('platformAdmins', {
+      userId,
+      platformRole: 'platform_owner',
+      status: 'active',
+      createdAt: Date.now(),
+    });
+  });
+  return userId;
+}
+
 async function storePdf(t: TestCtx, contents: string): Promise<Id<'_storage'>> {
   return t.run(async (ctx) => {
     const storageId = await ctx.storage.store(new Blob([contents], { type: 'application/pdf' }));
@@ -130,6 +147,9 @@ describe('institution document security and retention', () => {
         institutionId: institution,
       })
     ).toMatchObject({ _id: institution, canManageDocuments: true });
+    await expect(
+      asUser(t, owner).query(api.institutionDocuments.getTenantInfo, {})
+    ).rejects.toMatchObject({ data: { code: 'VALIDATION_ERROR' } });
 
     const secondFile = await storePdf(t, 'namfisa version two');
     const secondDocument = await adminApi.mutation(api.institutionDocuments.recordDocument, {
@@ -257,6 +277,25 @@ describe('institution document security and retention', () => {
     ).rejects.toMatchObject({ data: { code: 'FILE_TOO_LARGE' } });
 
     expect(await t.run((ctx) => ctx.db.query('institutionDocuments').collect())).toHaveLength(0);
+  });
+
+  test('dual-hat platform owner uses bound tenant when no institutionId is selected', async () => {
+    const t = convexTest(schema, modules);
+    const institution = await seedInstitution(t, 'OGFS');
+    const otherInstitution = await seedInstitution(t, 'OTHER');
+    const dualHat = await seedDualHatAdmin(t, institution);
+    const dualHatApi = asUser(t, dualHat);
+
+    expect(await dualHatApi.query(api.institutionDocuments.getTenantInfo, {})).toMatchObject({
+      _id: institution,
+      canManageDocuments: true,
+    });
+    expect(await dualHatApi.query(api.institutionDocuments.listDocuments, {})).toEqual([]);
+    expect(
+      await dualHatApi.query(api.institutionDocuments.getTenantInfo, {
+        institutionId: otherInstitution,
+      })
+    ).toMatchObject({ _id: otherInstitution, canManageDocuments: true });
   });
 });
 

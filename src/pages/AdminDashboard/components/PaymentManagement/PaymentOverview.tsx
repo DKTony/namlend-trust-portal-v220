@@ -27,7 +27,6 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
       description: 'Payments processed today',
-      trend: '+12% vs yesterday',
     },
     {
       title: 'Pending Disbursements',
@@ -58,7 +57,6 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
       description: 'Successfully collected',
-      trend: '+8% vs last month',
     },
     {
       title: 'Payment Success Rate',
@@ -68,7 +66,6 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-emerald-50',
       borderColor: 'border-emerald-200',
       description: 'Successful payments',
-      trend: '+2% this week',
     },
     {
       title: 'Active Payment Plans',
@@ -78,7 +75,6 @@ const PaymentOverview: React.FC = () => {
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
       description: 'Clients on payment plans',
-      trend: '+5 this month',
     },
     {
       title: 'Settled Loans',
@@ -165,7 +161,6 @@ const PaymentOverview: React.FC = () => {
                   <span className="ml-1 font-medium">({card.count} items)</span>
                 )}
               </p>
-              {card.trend && <p className="text-xs text-green-600 font-medium">{card.trend}</p>}
             </CardContent>
           </Card>
         );

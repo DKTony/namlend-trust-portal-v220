@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import type { Id } from '@/types/convex';
+import { useMutation } from 'convex/react';
 import {
   AlertTriangle,
   CheckCircle,
@@ -56,6 +60,9 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
   selectedUsers: externalSelectedUsers,
   onSelectionChange,
 }) => {
+  const { toast } = useToast();
+  const assignRole = useMutation(api.users.assignRole);
+  const sendCommunication = useMutation(api.communications.sendCommunication);
   const [activeTab, setActiveTab] = useState('operations');
   const [internalSelectedUsers, setInternalSelectedUsers] = useState<string[]>([]);
 
@@ -81,39 +88,7 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
   const [bulkValue, setBulkValue] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [operations, setOperations] = useState<BulkOperation[]>([
-    {
-      id: '1',
-      type: 'role_change',
-      status: 'completed',
-      totalUsers: 25,
-      processedUsers: 25,
-      createdAt: '2024-01-15T10:30:00Z',
-      completedAt: '2024-01-15T10:35:00Z',
-      details: 'Changed role to loan_officer for 25 users',
-      errors: [],
-    },
-    {
-      id: '2',
-      type: 'notification',
-      status: 'in_progress',
-      totalUsers: 150,
-      processedUsers: 89,
-      createdAt: '2024-01-15T11:00:00Z',
-      details: 'Sending password reset notification',
-      errors: [],
-    },
-    {
-      id: '3',
-      type: 'export',
-      status: 'failed',
-      totalUsers: 500,
-      processedUsers: 0,
-      createdAt: '2024-01-15T09:15:00Z',
-      details: 'Export user data to CSV',
-      errors: ['Database connection timeout', 'Insufficient permissions'],
-    },
-  ]);
+  const [operations, setOperations] = useState<BulkOperation[]>([]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-NA', {
@@ -175,77 +150,144 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
     );
   };
 
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedUsers.length === 0) {
-      alert('Please select users and an action');
+      toast({
+        title: 'Selection required',
+        description: 'Select users and an action first.',
+        variant: 'destructive',
+      });
       return;
     }
 
     const newOperation: BulkOperation = {
-      id: Date.now().toString(),
-      type: bulkAction as BulkOperation['type'],
-      status: 'pending',
+      id: crypto.randomUUID(),
+      type: bulkAction,
+      status: 'in_progress',
       totalUsers: selectedUsers.length,
       processedUsers: 0,
       createdAt: new Date().toISOString(),
       details: `${getOperationLabel(bulkAction)} for ${selectedUsers.length} users`,
       errors: [],
     };
-
     setOperations((prev) => [newOperation, ...prev]);
 
-    // Simulate processing
-    setTimeout(() => {
+    if (bulkAction !== 'role_change') {
       setOperations((prev) =>
         prev.map((op) =>
-          op.id === newOperation.id ? { ...op, status: 'in_progress' as const } : op
+          op.id === newOperation.id
+            ? {
+                ...op,
+                status: 'failed',
+                errors: [
+                  bulkAction === 'notification'
+                    ? 'Use the Notifications tab to send in-app messages.'
+                    : 'This bulk action is not available. Role assignment is the supported bulk write.',
+                ],
+                completedAt: new Date().toISOString(),
+              }
+            : op
         )
       );
+      toast({
+        title: 'Action not available',
+        description:
+          bulkAction === 'export'
+            ? 'Use Export Users in the header to download the current user list.'
+            : 'Only bulk role assignment is wired. Status, permissions, and CSV import cannot create Convex Auth users.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-      // Simulate completion
-      setTimeout(() => {
-        setOperations((prev) =>
-          prev.map((op) =>
-            op.id === newOperation.id
-              ? {
-                  ...op,
-                  status: 'completed' as const,
-                  processedUsers: op.totalUsers,
-                  completedAt: new Date().toISOString(),
-                }
-              : op
-          )
-        );
-      }, 3000);
-    }, 1000);
+    const role = bulkValue as 'client' | 'loan_officer' | 'admin' | 'tenant_admin';
+    if (!['client', 'loan_officer', 'admin', 'tenant_admin'].includes(role)) {
+      toast({
+        title: 'Role required',
+        description: 'Choose client, loan_officer, admin, or tenant_admin.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    alert(
-      `Bulk ${getOperationLabel(bulkAction)} operation started for ${selectedUsers.length} users`
+    let processed = 0;
+    const errors: string[] = [];
+    for (const userId of selectedUsers) {
+      try {
+        await assignRole({ targetUserId: userId as Id<'users'>, role });
+        processed += 1;
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(userId));
+      }
+    }
+    setOperations((prev) =>
+      prev.map((op) =>
+        op.id === newOperation.id
+          ? {
+              ...op,
+              status: errors.length === 0 ? 'completed' : 'failed',
+              processedUsers: processed,
+              errors,
+              completedAt: new Date().toISOString(),
+            }
+          : op
+      )
     );
+    toast({
+      title: errors.length === 0 ? 'Roles updated' : 'Role update partially failed',
+      description: `${processed} of ${selectedUsers.length} users updated.`,
+      variant: errors.length === 0 ? 'default' : 'destructive',
+    });
     setSelectedUsers([]);
     setBulkAction('');
     setBulkValue('');
   };
 
-  const handleSendNotification = () => {
+  const handleSendNotification = async () => {
     if (!notificationMessage.trim() || selectedUsers.length === 0) {
-      alert('Please select users and enter a message');
+      toast({
+        title: 'Selection required',
+        description: 'Select users and enter a message.',
+        variant: 'destructive',
+      });
       return;
     }
 
-    const newOperation: BulkOperation = {
-      id: Date.now().toString(),
-      type: 'notification',
-      status: 'pending',
-      totalUsers: selectedUsers.length,
-      processedUsers: 0,
-      createdAt: new Date().toISOString(),
-      details: `Notification: "${notificationMessage.substring(0, 50)}${notificationMessage.length > 50 ? '...' : ''}"`,
-      errors: [],
-    };
-
-    setOperations((prev) => [newOperation, ...prev]);
-    alert(`Notification sent to ${selectedUsers.length} users`);
+    let processed = 0;
+    const errors: string[] = [];
+    for (const userId of selectedUsers) {
+      try {
+        await sendCommunication({
+          userId: userId as Id<'users'>,
+          type: 'in_app',
+          subject: 'Staff message',
+          message: notificationMessage.trim(),
+          priority: 'medium',
+        });
+        processed += 1;
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(userId));
+      }
+    }
+    setOperations((prev) => [
+      {
+        id: crypto.randomUUID(),
+        type: 'notification',
+        status: errors.length === 0 ? 'completed' : 'failed',
+        totalUsers: selectedUsers.length,
+        processedUsers: processed,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        details: `Notification: "${notificationMessage.substring(0, 50)}${notificationMessage.length > 50 ? '...' : ''}"`,
+        errors,
+      },
+      ...prev,
+    ]);
+    toast({
+      title: errors.length === 0 ? 'Notifications sent' : 'Notifications partially sent',
+      description: `${processed} in-app message${processed === 1 ? '' : 's'} delivered.`,
+      variant: errors.length === 0 ? 'default' : 'destructive',
+    });
     setNotificationMessage('');
     setSelectedUsers([]);
   };

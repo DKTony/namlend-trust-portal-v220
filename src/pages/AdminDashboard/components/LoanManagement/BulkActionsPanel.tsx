@@ -20,7 +20,7 @@ import React, { useState } from 'react';
 
 interface BulkActionsPanelProps {
   selectedCount: number;
-  onBulkAction: (action: 'approve' | 'reject' | 'review') => void;
+  onBulkAction: (action: 'approve' | 'reject' | 'review') => Promise<boolean>;
   onClearSelection: () => void;
 }
 
@@ -35,10 +35,10 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
     setIsProcessing(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      onBulkAction(action);
+      const ok = await onBulkAction(action);
+      if (!ok) {
+        return;
+      }
 
       toast({
         title: 'Bulk Action Completed',
@@ -154,11 +154,21 @@ const BulkActionsPanel: React.FC<BulkActionsPanelProps> = ({
 
           {/* Secondary Actions */}
           <div className="flex items-center space-x-1 ml-4 pl-4 border-l border-border">
-            <ThemedButton variant="ghost" className="h-9 px-3 text-xs">
+            <ThemedButton
+              variant="ghost"
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Bulk CSV export is not implemented"
+            >
               <Download className="h-3.5 w-3.5 mr-2" />
               Export
             </ThemedButton>
-            <ThemedButton variant="ghost" className="h-9 px-3 text-xs">
+            <ThemedButton
+              variant="ghost"
+              className="h-9 px-3 text-xs"
+              disabled
+              title="Use Batch Operations for in-app notifications"
+            >
               <Mail className="h-3.5 w-3.5 mr-2" />
               Notify
             </ThemedButton>

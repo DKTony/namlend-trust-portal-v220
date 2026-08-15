@@ -182,26 +182,11 @@ export default function useTigerBeetleConfig() {
   const testConnection = async () => {
     setTestingConnection(true);
     try {
-      // In production, this would call an edge function to test the connection
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulate connection test result
-      const isConnected =
-        config.connection.enabled && config.connection.replica_addresses.length > 0;
-      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-
-      toast({
-        title: isConnected ? 'Connection Successful' : 'Connection Failed',
-        description: isConnected
-          ? `Connected to TigerBeetle cluster ${config.connection.cluster_id}`
-          : 'Unable to connect to TigerBeetle cluster',
-        variant: isConnected ? 'default' : 'destructive',
-      });
-    } catch (error) {
       setConnectionStatus('disconnected');
       toast({
-        title: 'Connection Test Failed',
-        description: 'Error testing TigerBeetle connection',
+        title: 'Live cluster not probed',
+        description:
+          'This console does not open a TigerBeetle TCP session. Outbox rows persist in Convex; the worker posts only when TIGERBEETLE_MODE=live and TIGERBEETLE_HTTP_URL is set.',
         variant: 'destructive',
       });
     } finally {

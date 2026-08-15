@@ -13,7 +13,10 @@ import {
   Shield,
   TrendingUp,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { api } from '@/integrations/convex/api';
+import { useMutation, useQuery } from 'convex/react';
+import React, { useMemo, useState } from 'react';
 
 interface ComplianceMetric {
   title: string;
@@ -35,106 +38,88 @@ interface ComplianceReport {
 }
 
 const ComplianceReports: React.FC = () => {
+  const { toast } = useToast();
   const [, setSelectedReport] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const generate = useMutation(api.audit.generateComplianceReport);
+  const storedReports = useQuery(api.audit.getComplianceReports, { limit: 20 });
+  const portfolio = useQuery(api.analytics.getPortfolioSummary, {});
+  const clients = useQuery(api.analytics.getClientMetrics);
 
-  // Mock compliance metrics data
+  const avgApr = useMemo(() => {
+    void portfolio;
+    return null;
+  }, [portfolio]);
+  void avgApr;
+
+  const kycRate =
+    clients && clients.totalClients > 0 ? (clients.kycApproved / clients.totalClients) * 100 : 0;
+
   const complianceMetrics: ComplianceMetric[] = [
     {
-      title: 'APR Compliance',
-      value: '28.5%',
+      title: 'KYC Completion Rate',
+      value: `${kycRate.toFixed(1)}%`,
+      status: kycRate >= 90 ? 'compliant' : kycRate >= 70 ? 'warning' : 'violation',
+      target: '≥90%',
+      description: 'Percentage of clients with verified KYC',
+      lastChecked: 'Live',
+    },
+    {
+      title: 'APR cap',
+      value: '32% legal max',
       status: 'compliant',
       target: '≤32%',
-      description: 'Average APR across all active loans',
-      lastChecked: '2 hours ago',
+      description: 'createLoan and approval reject rates above 32%',
+      lastChecked: 'Server enforced',
     },
     {
-      title: 'KYC Completion Rate',
-      value: '94.2%',
+      title: 'Generated reports',
+      value: String(storedReports?.length ?? 0),
       status: 'compliant',
-      target: '≥90%',
-      description: 'Percentage of clients with complete KYC',
-      lastChecked: '1 hour ago',
-    },
-    {
-      title: 'Loan Documentation',
-      value: '87.8%',
-      status: 'warning',
-      target: '≥95%',
-      description: 'Complete loan documentation compliance',
-      lastChecked: '3 hours ago',
-    },
-    {
-      title: 'Data Retention',
-      value: '99.1%',
-      status: 'compliant',
-      target: '≥99%',
-      description: 'Compliance with data retention policies',
-      lastChecked: '6 hours ago',
-    },
-    {
-      title: 'Risk Assessment',
-      value: '91.5%',
-      status: 'compliant',
-      target: '≥85%',
-      description: 'Loans with proper risk assessment',
-      lastChecked: '4 hours ago',
-    },
-    {
-      title: 'Audit Trail',
-      value: '96.7%',
-      status: 'compliant',
-      target: '≥95%',
-      description: 'Complete audit trail maintenance',
-      lastChecked: '1 hour ago',
+      target: '≥0',
+      description: 'Completed Convex compliance snapshots',
+      lastChecked: 'Live',
     },
   ];
 
-  // Mock compliance reports data
-  const complianceReports: ComplianceReport[] = [
-    {
-      id: '1',
-      title: 'Bank of Namibia Monthly Report',
-      type: 'regulatory',
-      status: 'current',
-      dueDate: '2025-01-31',
-      lastGenerated: '2025-01-01',
-      frequency: 'monthly',
-    },
-    {
-      id: '2',
-      title: 'Anti-Money Laundering Report',
-      type: 'regulatory',
-      status: 'due',
-      dueDate: '2025-01-15',
-      frequency: 'quarterly',
-    },
-    {
-      id: '3',
-      title: 'Internal Audit Report',
-      type: 'internal',
-      status: 'current',
-      dueDate: '2025-02-28',
-      lastGenerated: '2024-12-15',
-      frequency: 'quarterly',
-    },
-    {
-      id: '4',
-      title: 'Consumer Protection Report',
-      type: 'regulatory',
-      status: 'overdue',
-      dueDate: '2025-01-05',
-      frequency: 'monthly',
-    },
-    {
-      id: '5',
-      title: 'Annual Compliance Review',
-      type: 'audit',
-      status: 'current',
-      dueDate: '2025-03-31',
-      lastGenerated: '2024-03-31',
-      frequency: 'annually',
-    },
-  ];
+  const complianceReports: ComplianceReport[] = (storedReports ?? []).map((row) => ({
+    id: String(row._id),
+    title: row.reportType.replace(/_/g, ' '),
+    type: row.reportType === 'security_audit' ? 'audit' : 'internal',
+    status: row.status === 'completed' ? 'current' : row.status === 'failed' ? 'overdue' : 'due',
+    dueDate: row.periodEnd,
+    lastGenerated: new Date(row.generatedAt).toISOString(),
+    frequency: 'monthly',
+  }));
+
+  const generateReport = async (reportId: string) => {
+    setGenerating(true);
+    try {
+      const now = new Date();
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+      const periodEnd = now.toISOString().slice(0, 10);
+      const typeMap: Record<string, 'monthly_approvals' | 'user_activity' | 'security_audit'> = {
+        '1': 'monthly_approvals',
+        '2': 'user_activity',
+        '3': 'security_audit',
+      };
+      await generate({
+        reportType: typeMap[reportId] ?? 'monthly_approvals',
+        periodStart,
+        periodEnd,
+      });
+      toast({ title: 'Report generated', description: 'Snapshot stored in Convex.' });
+    } catch (error) {
+      toast({
+        title: 'Generation failed',
+        description: error instanceof Error ? error.message : 'Could not generate report',
+        variant: 'destructive',
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+  void generating;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,14 +164,6 @@ const ComplianceReports: React.FC = () => {
     }
   };
 
-  const generateReport = (reportId: string) => {
-    console.log(`Generating report: ${reportId}`);
-    // Mock report generation
-    alert(
-      `Generating compliance report... This would trigger the actual report generation process.`
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -194,9 +171,19 @@ const ComplianceReports: React.FC = () => {
           <h2 className="text-2xl font-bold tracking-tight">Compliance Reports</h2>
           <p className="text-muted-foreground">Regulatory compliance monitoring and reporting</p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          Last updated 1 hour ago
-        </Badge>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => generateReport('1')}
+            disabled={generating}
+          >
+            Generate approvals report
+          </Button>
+          <Badge variant="outline" className="text-sm">
+            Live Convex data
+          </Badge>
+        </div>
       </div>
 
       {/* Compliance Overview */}
@@ -407,7 +394,7 @@ const ComplianceReports: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl font-bold text-blue-600  truncate tabular-nums">
-              8
+              {storedReports?.length ?? 0}
             </div>
             <p className="text-xs text-muted-foreground truncate">Reports this quarter</p>
           </CardContent>

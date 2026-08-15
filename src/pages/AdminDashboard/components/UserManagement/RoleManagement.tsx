@@ -335,15 +335,6 @@ const RoleManagement: React.FC = () => {
     }
   };
 
-  const handleToggleRoleStatus = (roleId: string) => {
-    const updatedRoles = roles.map((role) =>
-      role.id === roleId
-        ? { ...role, isActive: !role.isActive, updatedAt: new Date().toISOString() }
-        : role
-    );
-    setRoles(updatedRoles);
-  };
-
   const handlePermissionChange = (permissionId: string, checked: boolean) => {
     if (checked) {
       setNewRole((prev) => ({
@@ -547,7 +538,12 @@ const RoleManagement: React.FC = () => {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleToggleRoleStatus(role.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    title="Role active/inactive is not persisted; roles are code-defined"
+                  >
                     {role.isActive ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                   </Button>
                   <Button

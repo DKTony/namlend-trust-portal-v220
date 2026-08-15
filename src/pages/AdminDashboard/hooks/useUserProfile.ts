@@ -92,9 +92,7 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
         role,
         status: 'active',
         isVerified: true,
-        lastLogin: rawProfile.updatedAt
-          ? new Date(rawProfile.updatedAt).toISOString()
-          : new Date().toISOString(),
+        lastLogin: rawProfile.updatedAt ? new Date(rawProfile.updatedAt).toISOString() : '',
         createdAt: rawProfile.createdAt
           ? new Date(rawProfile.createdAt).toISOString()
           : new Date().toISOString(),

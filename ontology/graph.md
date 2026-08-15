@@ -1,17 +1,17 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `03a3cf6a5178fa84fc96234469cdce584706ff79`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `d38bc135737783f3fb04f44da6232d1e6b66c682`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |
-| Effective Convex tables |    92 |
-| Convex indexes          |   198 |
-| Convex functions        |   503 |
+| Effective Convex tables |    95 |
+| Convex indexes          |   201 |
+| Convex functions        |   513 |
 | Web routes              |    40 |
-| React components        |   260 |
+| React components        |   259 |
 | Features                |    32 |
 | Seeded plans            |     4 |
-| Named tests             |   856 |
+| Named tests             |   868 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 
@@ -99,6 +99,7 @@ flowchart LR
   n_function_convex_tenantConfig_setMyCreditPolicy["setMyCreditPolicy"]
   n_feature_creditPolicy["Credit Policy"]
   n_function_convex_ips_ipsOnboarding_submitOtp["submitOtp"]
+  n_function_convex_ips_ipsOnboarding_adminStartOnboarding["adminStartOnboarding"]
   n_function_convex_approvalWorkflow_listWorkflowDefinitions["listWorkflowDefinitions"]
   n_feature_workflows["Workflow Builder"]
   n_function_convex_analytics_getRevenueMetrics["getRevenueMetrics"]
@@ -129,10 +130,10 @@ flowchart LR
   n_function_convex_reconciliation_listReconciliationRuns["listReconciliationRuns"]
   n_function_convex_ontology_mandates_suspendMandate["suspendMandate"]
   n_function_convex_ips_ipsVpa_upsertVpa["upsertVpa"]
-  n_function_convex_ips_ipsAliasDirectory_registerLocalAlias["registerLocalAlias"]
   n_function_convex_ips_ipsOnboarding_adminListOnboarding -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_tenantConfig_setMyCreditPolicy -- "DEPENDS_ON" --> n_feature_creditPolicy
   n_function_convex_ips_ipsOnboarding_submitOtp -- "DEPENDS_ON" --> n_feature_ippOnboarding
+  n_function_convex_ips_ipsOnboarding_adminStartOnboarding -- "DEPENDS_ON" --> n_feature_ippOnboarding
   n_function_convex_approvalWorkflow_listWorkflowDefinitions -- "DEPENDS_ON" --> n_feature_workflows
   n_function_convex_analytics_getRevenueMetrics -- "DEPENDS_ON" --> n_feature_advancedAnalytics
   n_function_convex_collections_getCollectionsStats -- "DEPENDS_ON" --> n_feature_collections
@@ -159,7 +160,6 @@ flowchart LR
   n_function_convex_reconciliation_listReconciliationRuns -- "DEPENDS_ON" --> n_feature_tenantReconciliation
   n_function_convex_ontology_mandates_suspendMandate -- "DEPENDS_ON" --> n_feature_mandates
   n_function_convex_ips_ipsVpa_upsertVpa -- "DEPENDS_ON" --> n_feature_ippOnboarding
-  n_function_convex_ips_ipsAliasDirectory_registerLocalAlias -- "DEPENDS_ON" --> n_feature_ippOnboarding
 ```
 
 ### Lending lifecycle

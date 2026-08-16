@@ -364,6 +364,40 @@ export default defineSchema({
     .index('by_userId', ['userId'])
     .index('by_institutionId', ['institutionId']),
 
+  /**
+   * Tenant-admin email invites. Raw tokens are never stored — only SHA-256 hex hashes.
+   * 7-year retention: expire/revoke in place; do not hard-delete.
+   */
+  tenantInvites: defineTable({
+    institutionId: v.id('institutions'),
+    email: v.string(),
+    intendedRole: v.union(
+      v.literal('client'),
+      v.literal('loan_officer'),
+      v.literal('tenant_admin')
+    ),
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+    sentAt: v.optional(v.number()),
+    redeemedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('redeemed'),
+      v.literal('revoked'),
+      v.literal('expired')
+    ),
+    invitedBy: v.id('users'),
+    redeemedUserId: v.optional(v.id('users')),
+    /** Non-PII machine code only (e.g. EMAIL_SIMULATED, EMAIL_FAILED). */
+    lastError: v.optional(v.string()),
+  })
+    .index('by_tokenHash', ['tokenHash'])
+    .index('by_institutionId_and_status', ['institutionId', 'status'])
+    .index('by_email', ['email'])
+    .index('by_expiresAt', ['expiresAt']),
+
   /** KYC document uploads — linked to Convex File Storage */
   kycDocuments: defineTable({
     userId: v.id('users'),

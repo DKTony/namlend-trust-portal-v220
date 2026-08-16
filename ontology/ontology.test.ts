@@ -157,6 +157,7 @@ const ALWAYS_ON_FEATURE_KEYS = [
 ] as const;
 const ALL_TENANT_FEATURE_KEYS = [
   ...ALWAYS_ON_FEATURE_KEYS,
+  'tenantInvites',
   'collections',
   'mandates',
   'ippOnboarding',
@@ -178,18 +179,18 @@ const planDefaults = (planCode: string): string[] => {
 
 describe('T1 inventory', () => {
   test('effective schema, feature, plan, role, function, and route inventories match the code manifests', () => {
-    expect(byType('Table')).toHaveLength(95);
+    expect(byType('Table')).toHaveLength(96);
     // Convex Auth 0.0.95 adds Auth-owned indexes to the application index baseline.
     // baseline. The dependency-derived inventory is the current E0 fact.
     expect(byType('Index')).toHaveLength(metrics.effectiveIndexCount as number);
-    expect(metrics.applicationIndexCount).toBe(190);
+    expect(metrics.applicationIndexCount).toBe(194);
     expect(metrics.authIndexCount).toBe(11);
-    expect(byType('Feature')).toHaveLength(32);
+    expect(byType('Feature')).toHaveLength(33);
     expect(byType('Plan')).toHaveLength(4);
     expect(byType('Role')).toHaveLength(6);
     expect(byType('Function')).toHaveLength(metrics.functionCount as number);
     expect(byType('Route')).toHaveLength(metrics.routeCount as number);
-    expect(metrics.applicationTableCount).toBe(88);
+    expect(metrics.applicationTableCount).toBe(89);
     expect(metrics.authTableCount).toBe(7);
   });
 
@@ -248,7 +249,7 @@ describe('T1 inventory', () => {
         (conflict) =>
           conflict.predicate === 'HAS_EFFECTIVE_TABLE_COUNT' &&
           JSON.stringify(conflict.loser).includes('86') &&
-          JSON.stringify(conflict.winner).includes('95')
+          JSON.stringify(conflict.winner).includes('96')
       )
     ).toBe(true);
   });
@@ -419,6 +420,7 @@ describe('T4 behaviour', () => {
       'flag:TENANCY_ENFORCEMENT',
       'flag:ENTITLEMENT_ENFORCEMENT',
       'flag:MANDATE_AUTODEBIT_ENABLED',
+      'flag:TENANT_INVITES',
     ]) {
       expect(nodes.get(id)?.attributes.defaultValue, id).toBe(false);
     }

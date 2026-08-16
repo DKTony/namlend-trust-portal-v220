@@ -1,6 +1,11 @@
 import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
+import { InviteUserDialog } from '@/components/invites/InviteUserDialog';
+import { PendingInvitesPanel } from '@/components/invites/PendingInvitesPanel';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
 import {
   AlertCircle,
   Download,
@@ -10,6 +15,7 @@ import {
   Search,
   UserCheck,
   Users,
+  Mail,
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -31,6 +37,11 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const { isAdmin } = useAuth();
+  const inviteStatus = useQuery(api.invites.isEnabled, {});
+  const invitesEnabled = inviteStatus?.enabled === true;
+  const canInviteClients = invitesEnabled && isAdmin;
 
   const handleClientSelection = (clientId: string) => {
     setSelectedClient(clientId);
@@ -73,8 +84,16 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
             </ThemedButton>
             <ThemedButton
               className="h-9 px-3 text-xs"
-              disabled
-              title="Clients register at /auth; there is no invite mailer"
+              data-testid="add-client-button"
+              disabled={!canInviteClients}
+              title={
+                canInviteClients
+                  ? 'Invite a client by email'
+                  : invitesEnabled
+                    ? 'Only tenant admins can send client invites'
+                    : 'Clients register at /auth; there is no invite mailer'
+              }
+              onClick={() => canInviteClients && setShowInviteDialog(true)}
             >
               <Plus className="mr-2 h-3.5 w-3.5" />
               Add Client
@@ -89,7 +108,7 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <AdaptiveTabs
-          desktopColumns={4}
+          desktopColumns={canInviteClients ? 5 : 4}
           items={[
             { value: 'overview', label: 'All Clients', shortLabel: 'All', icon: Users },
             { value: 'active', label: 'Active Clients', shortLabel: 'Active', icon: UserCheck },
@@ -105,6 +124,9 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
               shortLabel: 'Support',
               icon: AlertCircle,
             },
+            ...(canInviteClients
+              ? [{ value: 'invites', label: 'Invites', shortLabel: 'Invites', icon: Mail }]
+              : []),
           ]}
         />
 
@@ -157,6 +179,12 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
         <TabsContent value="support" className="space-y-4">
           <SupportTickets />
         </TabsContent>
+
+        {canInviteClients && (
+          <TabsContent value="invites" className="space-y-4">
+            <PendingInvitesPanel roleFilter="client" />
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Client Profile Modal */}
@@ -165,6 +193,7 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
         onClose={handleCloseProfile}
         userId={selectedClient}
       />
+      <InviteUserDialog open={showInviteDialog} onOpenChange={setShowInviteDialog} track="client" />
     </div>
   );
 };

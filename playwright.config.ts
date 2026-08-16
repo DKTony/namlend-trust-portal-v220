@@ -1,12 +1,13 @@
+import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 8080;
 const baseURL = process.env.BASE_URL || `http://localhost:${PORT}`;
-const convexUrl = process.env.VITE_CONVEX_URL ?? '';
+const convexUrl = process.env.VITE_CONVEX_URL?.trim() ?? '';
 
-if (process.env.CI && !convexUrl) {
+if (!convexUrl) {
   throw new Error(
-    'VITE_CONVEX_URL must be pinned for CI Playwright so Vite talks to the disposable preview.'
+    'VITE_CONVEX_URL must be pinned for Playwright so Vite is not started with an empty override (load .env or export it).'
   );
 }
 

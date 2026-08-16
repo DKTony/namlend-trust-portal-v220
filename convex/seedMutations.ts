@@ -744,6 +744,37 @@ export const enableDisposableE2EEnforcement = internalMutation({
   },
 });
 
+/**
+ * Enable tenant email invites only for the local/disposable E2E seed.
+ * Never call this against production (kookabura).
+ */
+export const enableE2ETenantInvites = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const now = Date.now();
+    const rules = await ctx.db
+      .query('businessRules')
+      .withIndex('by_ruleCode', (q) => q.eq('ruleCode', 'TENANT_INVITES'))
+      .collect();
+    const current = rules.find((rule) => rule.effectiveTo === undefined);
+    if (current?.valueType === 'boolean' && current.value === 'true') return null;
+    if (current) await ctx.db.patch(current._id, { effectiveTo: now });
+    await ctx.db.insert('businessRules', {
+      ruleCode: 'TENANT_INVITES',
+      category: 'platform',
+      displayName: 'Tenant Email Invites (E2E)',
+      description: 'E2E seed only; never a production activation path.',
+      valueType: 'boolean',
+      value: 'true',
+      effectiveFrom: now,
+      version: (current?.version ?? 0) + 1,
+      createdAt: now,
+    });
+    return null;
+  },
+});
+
 /** Seed settlement participants required for IPP inter-participant clearing E2E flows. */
 export const seedSettlementParticipants = internalMutation({
   args: {},

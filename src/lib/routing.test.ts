@@ -78,6 +78,12 @@ describe('sanitizeNextPath', () => {
     expect(sanitizeNextPath('/auth')).toBeNull();
     expect(sanitizeNextPath('/auth?next=%2Fadmin')).toBeNull();
   });
+
+  it('rejects invite tokens smuggled into next (they are not paths)', () => {
+    const token = 'a'.repeat(64);
+    expect(sanitizeNextPath(token)).toBeNull();
+    expect(sanitizeNextPath(`/auth?invite=${token}`)).toBeNull();
+  });
 });
 
 describe('canAccessPath', () => {

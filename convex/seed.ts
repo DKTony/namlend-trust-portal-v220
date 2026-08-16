@@ -113,6 +113,10 @@ export const seedTestUsers = internalAction({
     });
     console.log('[seed] Reviewable loan seeded successfully');
 
+    console.log('[seed] Enabling TENANT_INVITES for E2E (never production)...');
+    await ctx.runMutation(internal.seedMutations.enableE2ETenantInvites, {});
+    console.log('[seed] TENANT_INVITES enabled for this deployment');
+
     console.log('[seed] All test users seeded successfully');
     const census = await ctx.runQuery(internal.seedMutations.countE2EAuthAccounts, {});
     console.log(

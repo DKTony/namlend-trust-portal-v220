@@ -15,7 +15,11 @@ import {
   assertStaffOrPlatformSupport,
 } from '../lib/platformAuth';
 
-const PLATFORM_PROTECTED_RULES = new Set(['TENANCY_ENFORCEMENT', 'ENTITLEMENT_ENFORCEMENT']);
+const PLATFORM_PROTECTED_RULES = new Set([
+  'TENANCY_ENFORCEMENT',
+  'ENTITLEMENT_ENFORCEMENT',
+  'TENANT_INVITES',
+]);
 
 async function assertRuleMutationAuthority(ctx: any, ruleCode: string) {
   const userId = PLATFORM_PROTECTED_RULES.has(ruleCode)

@@ -54,6 +54,13 @@ export const DOMAIN_EVENTS = {
   // User lifecycle
   USER_ROLE_ASSIGNED: 'user.role_assigned',
   USER_PROFILE_UPDATED: 'user.profile_updated',
+
+  // Tenant invite lifecycle
+  INVITE_CREATED: 'invite.created',
+  INVITE_RESENT: 'invite.resent',
+  INVITE_REVOKED: 'invite.revoked',
+  INVITE_REDEEMED: 'invite.redeemed',
+  INVITE_EXPIRED: 'invite.expired',
 } as const;
 
 /** Infer domain source from entity type. */
@@ -68,7 +75,12 @@ function inferDomainSource(entityType: string): string {
     entityType === 'promiseToPay'
   )
     return 'collections';
-  if (entityType.startsWith('user') || entityType === 'users' || entityType === 'profiles')
+  if (
+    entityType.startsWith('user') ||
+    entityType === 'users' ||
+    entityType === 'profiles' ||
+    entityType === 'tenantInvites'
+  )
     return 'identity';
   return 'system';
 }

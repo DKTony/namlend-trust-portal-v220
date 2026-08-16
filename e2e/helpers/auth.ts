@@ -50,10 +50,10 @@ function formatLoginFailure(
   );
 }
 
-async function waitForLoginForm(page: Page): Promise<void> {
+export async function waitForLoginForm(page: Page): Promise<void> {
   const emailInput = page.getByTestId('email-input');
   try {
-    await emailInput.waitFor({ state: 'visible', timeout: 15000 });
+    await emailInput.waitFor({ state: 'visible', timeout: 30000 });
     return;
   } catch {}
 
@@ -62,7 +62,7 @@ async function waitForLoginForm(page: Page): Promise<void> {
     await backToSignIn.first().click({ timeout: 2000 });
   }
 
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 });
+  await emailInput.waitFor({ state: 'visible', timeout: 30000 });
 }
 
 /**

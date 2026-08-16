@@ -91,6 +91,16 @@ export const FEATURES: readonly FeatureDef[] = [
     alwaysOn: true,
   },
   {
+    key: 'tenantInvites',
+    name: 'Tenant Email Invites',
+    category: 'lending',
+    console: 'backoffice',
+    navItems: ['users', 'clients'],
+    dependsOn: ['tenantUsers'],
+    killSwitchable: true,
+    defaultAvailability: ['enterprise', 'all_features'],
+  },
+  {
     key: 'batchOps',
     name: 'Batch Operations',
     category: 'lending',

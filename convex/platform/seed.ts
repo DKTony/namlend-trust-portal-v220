@@ -103,6 +103,27 @@ const PLAN_DEFS: Array<{ planCode: string; name: string; features: string[] }> =
   { planCode: 'enterprise', name: 'Enterprise', features: ALL_TENANT_FEATURES },
 ];
 
+/** Insert TENANT_INVITES=false only when no active row exists. Never overwrite true. */
+async function ensureTenantInvitesRuleFalse(ctx: { db: any }, now: number): Promise<void> {
+  const existing = await ctx.db
+    .query('businessRules')
+    .withIndex('by_ruleCode', (q: any) => q.eq('ruleCode', 'TENANT_INVITES'))
+    .collect();
+  if (existing.some((r: { effectiveTo?: number }) => r.effectiveTo === undefined)) return;
+  await ctx.db.insert('businessRules', {
+    ruleCode: 'TENANT_INVITES',
+    category: 'platform',
+    displayName: 'Tenant Email Invites',
+    description:
+      'Kill-switch for tenant-admin email invites. Default false so production stays inert.',
+    valueType: 'boolean',
+    value: 'false',
+    effectiveFrom: now,
+    version: 1,
+    createdAt: now,
+  });
+}
+
 export const seedControlPlane = internalMutation({
   args: { ownerEmail: v.optional(v.string()), backofficeEmail: v.optional(v.string()) },
   handler: async (ctx, { ownerEmail, backofficeEmail }) => {
@@ -290,6 +311,10 @@ export const seedControlPlane = internalMutation({
         report.backofficeAssigned = `no_profile_for_${backofficeEmail}`;
       }
     }
+
+    // Inert invite kill-switch. Insert only if missing so an E2E seed that
+    // already flipped TENANT_INVITES=true is not overwritten.
+    await ensureTenantInvitesRuleFalse(ctx, now);
 
     return report;
   },

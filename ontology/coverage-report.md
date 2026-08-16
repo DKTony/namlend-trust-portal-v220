@@ -1,17 +1,17 @@
 # Ontology coverage report
 
-Commit: `15c085f909c508b33611269c9c5ffdbe7c13f746`
+Commit: `3deab5dc6b6b415564363a1a567f4f426f555261`
 
 ## Assurance summary
 
 | Measure                                                              | Result |
 | -------------------------------------------------------------------- | -----: |
 | Required behavior/invariant mappings with named E0 test declarations |  18/18 |
-| Effective Convex tables                                              |     95 |
-| Application tables                                                   |     88 |
+| Effective Convex tables                                              |     96 |
+| Application tables                                                   |     89 |
 | Convex Auth tables                                                   |      7 |
-| Indexes                                                              |    201 |
-| Features / seeded plans                                              | 32 / 4 |
+| Indexes                                                              |    205 |
+| Features / seeded plans                                              | 33 / 4 |
 | Registered gaps                                                      |    144 |
 | Resolved conflicts                                                   |     11 |
 
@@ -21,31 +21,32 @@ These mappings are E0 evidence that an executable test is declared. Named passin
 
 | Proof target             | Matching named E0 test declarations | Status  | Evidence                                                                              |
 | ------------------------ | ----------------------------------: | ------- | ------------------------------------------------------------------------------------- |
-| `approve`                |                                   2 | CURRENT | `evidence:9a2b0616271965ef`, `evidence:ffbc46e9da8f563a`                              |
-| `APR_MAX_32`             |                                   2 | CURRENT | `evidence:727364cbbc47c78e`, `evidence:f112934445515bbc`                              |
-| `collect`                |                                   2 | CURRENT | `evidence:3c38258e6750ae65`, `evidence:873746c3695ed332`                              |
-| `disburse`               |                                   2 | CURRENT | `evidence:3b6f790cc18d6447`, `evidence:9ea73e76930025a3`                              |
-| `FLAGS_DEFAULT_OFF`      |                                   1 | CURRENT | `evidence:75f81304b94fe94b`                                                           |
-| `KYC`                    |                                   2 | CURRENT | `evidence:b9999e47df9b6c6b`, `evidence:ce8da81171bbd945`                              |
-| `KYC_REQUIRED`           |                                   2 | CURRENT | `evidence:0a4414b6892b5da9`, `evidence:b9999e47df9b6c6b`                              |
-| `LEDGER_COMPLETION_ONLY` |                                   1 | CURRENT | `evidence:16c0c5a8246f7279`                                                           |
-| `LEDGER_IDEMPOTENT`      |                                   1 | CURRENT | `evidence:4d09fbfcf2ea49f6`                                                           |
-| `LEDGER_REVERSAL`        |                                   1 | CURRENT | `evidence:5a9c2f88001c2918`                                                           |
-| `notify`                 |                                   2 | CURRENT | `evidence:400ded99884e78da`, `evidence:e601591e684f1bb7`                              |
-| `onboard`                |                                   2 | CURRENT | `evidence:538d2249cd2a01f1`, `evidence:7e2ca91684bc21cf`                              |
-| `originate`              |                                   1 | CURRENT | `evidence:c4d8dcb0be5a1548`                                                           |
-| `reconcile`              |                                   2 | CURRENT | `evidence:1cb9d1976d1c8de7`, `evidence:eca579bca18f12f4`                              |
-| `repay`                  |                                   2 | CURRENT | `evidence:16c0c5a8246f7279`, `evidence:5fe5178cf7f58b95`                              |
-| `ROLE_LANDING`           |                                   2 | CURRENT | `evidence:37447c6188758134`, `evidence:4eacedc654ceeb13`                              |
-| `settle`                 |                                   2 | CURRENT | `evidence:1cb9d1976d1c8de7`, `evidence:bdb221650acadff2`                              |
-| `TENANT_ISOLATION`       |                                   3 | CURRENT | `evidence:873746c3695ed332`, `evidence:97dade9405ecebd2`, `evidence:c1de81d657642ad6` |
+| `approve`                |                                   2 | CURRENT | `evidence:4e6dc146fec2b20e`, `evidence:5777ed894d875720`                              |
+| `APR_MAX_32`             |                                   2 | CURRENT | `evidence:69df9c033a1b8ca0`, `evidence:9a324eb6377d2aa0`                              |
+| `collect`                |                                   2 | CURRENT | `evidence:561ea5087e3e8b92`, `evidence:84e24bcb50ef63fc`                              |
+| `disburse`               |                                   2 | CURRENT | `evidence:3e6e4be9b1e34080`, `evidence:cacfb85d8522a714`                              |
+| `FLAGS_DEFAULT_OFF`      |                                   1 | CURRENT | `evidence:1e4f85004981f667`                                                           |
+| `KYC`                    |                                   2 | CURRENT | `evidence:b2f325ad9916b6ad`, `evidence:c8bbca43c7d5048e`                              |
+| `KYC_REQUIRED`           |                                   2 | CURRENT | `evidence:6dee71a09540c07b`, `evidence:b2f325ad9916b6ad`                              |
+| `LEDGER_COMPLETION_ONLY` |                                   1 | CURRENT | `evidence:8eb12cf85dd656d6`                                                           |
+| `LEDGER_IDEMPOTENT`      |                                   1 | CURRENT | `evidence:aa35682e6782c5b8`                                                           |
+| `LEDGER_REVERSAL`        |                                   1 | CURRENT | `evidence:6c24f1a978f68075`                                                           |
+| `notify`                 |                                   2 | CURRENT | `evidence:99ba23fd67931d6f`, `evidence:9f421d7038e77e0c`                              |
+| `onboard`                |                                   2 | CURRENT | `evidence:8b748c316ea643de`, `evidence:8c064786fd1d9252`                              |
+| `originate`              |                                   1 | CURRENT | `evidence:eaf84a925feb1f4e`                                                           |
+| `reconcile`              |                                   2 | CURRENT | `evidence:a36acc19ed3c8796`, `evidence:df35c5a8cb2b95d7`                              |
+| `repay`                  |                                   2 | CURRENT | `evidence:48fba3d2471c0f9f`, `evidence:8eb12cf85dd656d6`                              |
+| `ROLE_LANDING`           |                                   2 | CURRENT | `evidence:6b981a91ca08d50c`, `evidence:e1255ea510ebe363`                              |
+| `settle`                 |                                   2 | CURRENT | `evidence:d754aa48a61b10f6`, `evidence:df35c5a8cb2b95d7`                              |
+| `TENANT_ISOLATION`       |                                   3 | CURRENT | `evidence:657e9c1ac11e5736`, `evidence:84e24bcb50ef63fc`, `evidence:cb20b5b2d63f0458` |
 
 ## Table connectivity
 
 | Table                                 | Readers | Writers | Status / exception                                                |
 | ------------------------------------- | ------: | ------: | ----------------------------------------------------------------- |
-| `table:profiles`                      |       2 |       4 | connected                                                         |
-| `table:userRoles`                     |       3 |       7 | connected                                                         |
+| `table:profiles`                      |       2 |       5 | connected                                                         |
+| `table:userRoles`                     |       4 |       9 | connected                                                         |
+| `table:tenantInvites`                 |       3 |       3 | connected                                                         |
 | `table:kycDocuments`                  |       2 |       3 | connected                                                         |
 | `table:documentAccessGrants`          |       0 |       3 | GAP-9AE2A0BB6042                                                  |
 | `table:loans`                         |      35 |       9 | connected                                                         |
@@ -96,7 +97,7 @@ These mappings are E0 evidence that an executable test is declared. Named passin
 | `table:tigerBeetleTransfers`          |       0 |       1 | GAP-D249B07F105A                                                  |
 | `table:tigerBeetleReconciliation`     |       0 |       1 | GAP-0153FC69A0F7                                                  |
 | `table:loanProcessingFailures`        |       0 |       1 | GAP-A17289C7879F                                                  |
-| `table:auditLogs`                     |       0 |     141 | GAP-21E384E37E8B                                                  |
+| `table:auditLogs`                     |       0 |     147 | GAP-660B12DA2050                                                  |
 | `table:viewLogs`                      |       1 |       1 | connected                                                         |
 | `table:stateTransitions`              |       1 |       1 | connected                                                         |
 | `table:complianceReports`             |       0 |       1 | GAP-0EEB6CAF8B87                                                  |
@@ -106,29 +107,29 @@ These mappings are E0 evidence that an executable test is declared. Named passin
 | `table:collectionsInteractions`       |       1 |       1 | connected                                                         |
 | `table:overdueReminders`              |       1 |       1 | connected                                                         |
 | `table:promiseToPay`                  |       4 |       2 | connected                                                         |
-| `table:systemConfiguration`           |       2 |       3 | connected                                                         |
-| `table:eventJournal`                  |       1 |     148 | connected                                                         |
+| `table:systemConfiguration`           |       2 |       4 | connected                                                         |
+| `table:eventJournal`                  |       1 |     154 | connected                                                         |
 | `table:snapshots`                     |       0 |       1 | GAP-039C753A8E3B                                                  |
-| `table:relationships`                 |       1 |      24 | connected                                                         |
+| `table:relationships`                 |       1 |      25 | connected                                                         |
 | `table:mandates`                      |      11 |       8 | connected                                                         |
 | `table:mandateExecutions`             |       2 |       3 | connected                                                         |
 | `table:consentRecords`                |       1 |       2 | connected                                                         |
-| `table:institutions`                  |      40 |       6 | connected                                                         |
+| `table:institutions`                  |      44 |       7 | connected                                                         |
 | `table:institutionDocuments`          |       1 |       1 | connected                                                         |
 | `table:institutionConfig`             |       0 |       4 | GAP-D1CF003240B8                                                  |
-| `table:platformAdmins`                |       3 |       3 | connected                                                         |
-| `table:plans`                         |       4 |       2 | connected                                                         |
-| `table:tenantSubscriptions`           |       0 |       3 | GAP-E4BAF2AD052C                                                  |
+| `table:platformAdmins`                |       3 |       4 | connected                                                         |
+| `table:plans`                         |       4 |       3 | connected                                                         |
+| `table:tenantSubscriptions`           |       0 |       4 | GAP-14816A6A994B                                                  |
 | `table:tenantEntitlements`            |       3 |       1 | connected                                                         |
-| `table:featuresCatalog`               |       2 |       2 | connected                                                         |
-| `table:platformGuardrails`            |       0 |       1 | GAP-F87A7F4D9DAF                                                  |
+| `table:featuresCatalog`               |       2 |       3 | connected                                                         |
+| `table:platformGuardrails`            |       0 |       2 | GAP-512A25AE758C                                                  |
 | `table:supportAccessAudit`            |       3 |       3 | connected                                                         |
-| `table:paymentRails`                  |       4 |       4 | connected                                                         |
-| `table:productDefinitions`            |       6 |       4 | connected                                                         |
-| `table:productVersions`               |       2 |       2 | connected                                                         |
+| `table:paymentRails`                  |       4 |       5 | connected                                                         |
+| `table:productDefinitions`            |       6 |       5 | connected                                                         |
+| `table:productVersions`               |       2 |       3 | connected                                                         |
 | `table:accounts`                      |       5 |       5 | connected                                                         |
 | `table:portfolioMetrics`              |       0 |      11 | GAP-7320B29C86FA                                                  |
-| `table:businessRules`                 |       1 |       5 | connected                                                         |
+| `table:businessRules`                 |       1 |       8 | connected                                                         |
 | `table:budgetEntries`                 |       0 |       2 | GAP-ED6C6DBA601B                                                  |
 | `table:savingsGoals`                  |       1 |       2 | connected                                                         |
 | `table:budgetLimits`                  |       0 |       1 | GAP-FA5356EE9894                                                  |

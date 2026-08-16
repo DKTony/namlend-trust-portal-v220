@@ -575,7 +575,13 @@ export function extractFeaturesPlansFlagsRoles(graph, root, files) {
         name: code,
         path: primary.file,
         purpose: `Controls ${humanize(code).toLowerCase()} through a boolean business-rule fallback.`,
-        domain: code.includes('TENANCY') ? 'tenancy' : code.includes('ENTITLEMENT') ? 'entitlements' : 'mandates',
+        domain: code.includes('TENANCY')
+          ? 'tenancy'
+          : code.includes('ENTITLEMENT')
+            ? 'entitlements'
+            : code.includes('INVITE')
+              ? 'identity'
+              : 'mandates',
         attributes: {
           defaultValue: primary.defaultValue ?? false,
           runtimeValue: 'UNKNOWN',

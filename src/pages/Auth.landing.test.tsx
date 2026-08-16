@@ -19,6 +19,9 @@ vi.mock('@/hooks/use-toast', () => ({ toast: vi.fn() }));
 vi.mock('@/components/auth/GoogleSignInButton', () => ({
   GoogleSignInButton: () => <button type="button">Continue with Google</button>,
 }));
+vi.mock('convex/react', () => ({
+  useMutation: () => vi.fn(),
+}));
 
 import Auth from './Auth';
 
@@ -56,6 +59,7 @@ function renderAuth(auth: AuthState, search = '') {
 }
 
 beforeEach(() => {
+  sessionStorage.clear();
   mockUseAuth.mockReset();
 });
 

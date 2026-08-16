@@ -3,11 +3,14 @@ import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedInput } from '@/components/ui/ThemedInput';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { consumePendingInvite, peekPendingInvite, persistPendingInvite } from '@/lib/pendingInvite';
 import { resolvePostLoginRoute } from '@/lib/routing';
+import { api } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import { ArrowRight, FileText, Loader2, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useMutation } from 'convex/react';
 import { z } from 'zod';
 
 // Email validation schema
@@ -33,6 +36,11 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextParam = searchParams.get('next');
+  const redeemInvite = useMutation(api.invites.redeemInvite);
+  const redeemingRef = useRef(false);
+  const [inviteLanding, setInviteLanding] = useState<'/admin' | '/dashboard' | 'failed' | null>(
+    null
+  );
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isPasswordReset, setIsPasswordReset] = useState(false);
@@ -66,13 +74,59 @@ export default function Auth() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const invite = searchParams.get('invite');
+    if (invite) persistPendingInvite(invite);
+  }, [searchParams]);
+
   // Wait for both tenant and platform role queries before choosing a console.
+  // Staff invites must not navigate to /admin until the role query has caught up,
+  // or AdminLayout would flash Access Denied.
   useEffect(() => {
     if (!user || isPasswordReset || !authReady) return;
-    navigate(resolvePostLoginRoute(nextParam, { isPlatformStaff, isLoanOfficer }), {
-      replace: true,
-    });
-  }, [user, authReady, isPasswordReset, nextParam, navigate, isPlatformStaff, isLoanOfficer]);
+
+    const pendingInvite = peekPendingInvite();
+    if (pendingInvite && inviteLanding === null && !redeemingRef.current) {
+      redeemingRef.current = true;
+      void (async () => {
+        try {
+          const result = await redeemInvite({ token: pendingInvite });
+          consumePendingInvite();
+          setInviteLanding(result.landingRoute);
+        } catch {
+          consumePendingInvite();
+          toast({
+            title: 'Invite could not be used',
+            description: 'Sign-in succeeded, but this invite is no longer valid.',
+            variant: 'destructive',
+          });
+          setInviteLanding('failed');
+        }
+      })();
+      return;
+    }
+
+    if (pendingInvite && inviteLanding === null) return;
+
+    if (inviteLanding === '/admin' && !isLoanOfficer) return;
+    if (inviteLanding === '/dashboard' && isLoanOfficer) return;
+
+    const dest =
+      inviteLanding === '/admin' || inviteLanding === '/dashboard'
+        ? inviteLanding
+        : resolvePostLoginRoute(nextParam, { isPlatformStaff, isLoanOfficer });
+    navigate(dest, { replace: true });
+  }, [
+    user,
+    authReady,
+    isPasswordReset,
+    nextParam,
+    navigate,
+    isPlatformStaff,
+    isLoanOfficer,
+    redeemInvite,
+    inviteLanding,
+  ]);
 
   // A failed OAuth callback (blocked account link, cancelled consent, any server-side
   // error) redirects back here with `oauth=return` but WITHOUT the `?code=` a success

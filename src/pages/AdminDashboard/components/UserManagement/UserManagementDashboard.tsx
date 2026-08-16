@@ -1,4 +1,6 @@
 import { AdaptiveTabs, ResponsiveActionBar } from '@/components/adaptive';
+import { InviteUserDialog } from '@/components/invites/InviteUserDialog';
+import { PendingInvitesPanel } from '@/components/invites/PendingInvitesPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -29,6 +31,7 @@ import {
   Download,
   Filter,
   Loader2,
+  Mail,
   Plus,
   Search,
   Settings,
@@ -72,6 +75,9 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
   // Convex reactive queries for stats (N2 — no as any)
   const rawUsers = useQuery(api.users.listUsers, {});
   const rawApprovals = useQuery(api.approvalWorkflow.adminListApprovals, { status: 'pending' });
+  const inviteStatus = useQuery(api.invites.isEnabled, {});
+  const invitesStatusKnown = inviteStatus !== undefined;
+  const invitesEnabled = inviteStatus?.enabled === true;
 
   const statsLoading = rawUsers === undefined;
   const stats: UserStats = useMemo(() => {
@@ -86,6 +92,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
 
   // Add User Modal
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: '',
     firstName: '',
@@ -179,7 +186,14 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
               <Download className="mr-2 h-4 w-4" />
               Export Users
             </Button>
-            <Button size="sm" onClick={() => setShowAddUserModal(true)}>
+            <Button
+              size="sm"
+              data-testid="add-user-button"
+              disabled={!invitesStatusKnown}
+              onClick={() =>
+                invitesEnabled ? setShowInviteDialog(true) : setShowAddUserModal(true)
+              }
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add User
             </Button>
@@ -262,7 +276,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <AdaptiveTabs
-          desktopColumns={8}
+          desktopColumns={invitesEnabled ? 9 : 8}
           compactIconOnly
           items={[
             { value: 'users', label: 'All Users', shortLabel: 'Users', icon: Users },
@@ -278,6 +292,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
               icon: Activity,
             },
             { value: 'import', label: 'Import Users', shortLabel: 'Import', icon: Download },
+            ...(invitesEnabled ? [{ value: 'invites', label: 'Invites', icon: Mail }] : []),
           ]}
         />
 
@@ -365,7 +380,15 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
             }}
           />
         </TabsContent>
+
+        {invitesEnabled && (
+          <TabsContent value="invites" className="space-y-4">
+            <PendingInvitesPanel roleFilter="staff" />
+          </TabsContent>
+        )}
       </Tabs>
+
+      <InviteUserDialog open={showInviteDialog} onOpenChange={setShowInviteDialog} track="staff" />
 
       {/* User Profile Modal */}
       {selectedUser && <UserProfile userId={selectedUser} onClose={handleCloseProfile} />}

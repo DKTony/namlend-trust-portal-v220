@@ -2,7 +2,7 @@ import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { useMutation, useQuery } from 'convex/react';
 import { useState } from 'react';
-import type { UserRole } from '@/types/admin';
+import { toAssignableRole, type UserRole } from '@/types/admin';
 
 interface UserData {
   id: string;
@@ -123,11 +123,10 @@ export const useUserProfile = (userId: string): UseUserProfileReturn => {
       }
 
       if (updates.role && updates.role !== user?.role) {
-        const validRoles = ['client', 'loan_officer', 'admin'] as const;
-        const newRole = validRoles.includes(updates.role as (typeof validRoles)[number])
-          ? (updates.role as (typeof validRoles)[number])
-          : 'client';
-        await assignRoleMutation({ targetUserId, role: newRole });
+        await assignRoleMutation({
+          targetUserId,
+          role: toAssignableRole(updates.role),
+        });
       }
 
       return true;

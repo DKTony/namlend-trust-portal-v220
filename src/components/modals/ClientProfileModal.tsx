@@ -13,6 +13,7 @@ import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
 import { formatNAD } from '@/utils/currency';
+import { useAuth } from '@/hooks/useAuth';
 import { useMutation, useQuery as useConvexQuery } from 'convex/react';
 import {
   AlertCircle,
@@ -30,8 +31,10 @@ import {
   ShieldCheck,
   TrendingUp,
   User,
+  UserCog,
 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import ChangeRoleDialog from '@/pages/AdminDashboard/components/UserManagement/ChangeRoleDialog';
 
 interface ClientProfileModalProps {
   open: boolean;
@@ -45,6 +48,8 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
   userId,
 }) => {
   const [previewDocument, setPreviewDocument] = useState<DocumentViewItem | null>(null);
+  const [showChangeRole, setShowChangeRole] = useState(false);
+  const { isAdmin } = useAuth();
   const requestDocumentAccess = useMutation(api.kycDocuments.requestDocumentAccess);
   // Convex reactive queries — skip when dialog is closed (N2 — no as any)
   const rawProfile = useConvexQuery(
@@ -63,6 +68,10 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
   );
   const kycOverview = useConvexQuery(
     api.kycDocuments.getUserKycOverview,
+    open && userId ? { userId: userId as Id<'users'> } : 'skip'
+  );
+  const rawRole = useConvexQuery(
+    api.users.getUserRole,
     open && userId ? { userId: userId as Id<'users'> } : 'skip'
   );
 
@@ -178,350 +187,377 @@ export const ClientProfileModal: React.FC<ClientProfileModalProps> = ({
 
   if (!userId) return null;
 
+  const clientName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : undefined;
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[min(90vh,calc(100dvh-2rem))] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
-        {/* Header Section */}
-        <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl shrink-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <User className="h-5 w-5 text-muted-foreground" />
-              Client Profile
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              View client profile details, loan history, and KYC information
-            </DialogDescription>
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-5xl max-h-[min(90vh,calc(100dvh-2rem))] overflow-hidden p-0 gap-0 bg-background border-border flex flex-col">
+          {/* Header Section */}
+          <DialogHeader className="p-6 border-b border-border bg-background/95 backdrop-blur-xl shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                Client Profile
+              </DialogTitle>
+              {isAdmin && userId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid="change-role-button"
+                  onClick={() => setShowChangeRole(true)}
+                >
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Change role
+                </Button>
+              )}
+              <DialogDescription className="sr-only">
+                View client profile details, loan history, and KYC information
+              </DialogDescription>
+            </div>
+          </DialogHeader>
 
-        {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
-            <p className="text-sm">Loading client data...</p>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto">
-            {profile && (
-              <div className="p-6 pb-2">
-                <div className="bg-gradient-to-br from-card to-card/50 rounded-2xl border border-border p-6 shadow-soft">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                    <div className="flex items-start gap-5">
-                      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center border border-border shadow-inner">
-                        <User className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-2xl font-bold text-foreground tracking-tight">
-                            {profile.first_name} {profile.last_name}
-                          </h3>
-                          <Badge
-                            variant={profile.verified ? 'default' : 'outline'}
-                            className={cn(
-                              'rounded-md px-2 py-0.5 text-xs font-medium border-0',
-                              profile.verified
-                                ? 'bg-blue-500/20 text-blue-400'
-                                : 'bg-muted text-muted-foreground'
-                            )}
-                          >
-                            {profile.verified ? 'Verified ID' : 'Unverified'}
-                          </Badge>
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-muted-foreground">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-4"></div>
+              <p className="text-sm">Loading client data...</p>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {profile && (
+                <div className="p-6 pb-2">
+                  <div className="bg-gradient-to-br from-card to-card/50 rounded-2xl border border-border p-6 shadow-soft">
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                      <div className="flex items-start gap-5">
+                        <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center border border-border shadow-inner">
+                          <User className="h-8 w-8 text-muted-foreground" />
                         </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-2xl font-bold text-foreground tracking-tight">
+                              {profile.first_name} {profile.last_name}
+                            </h3>
+                            <Badge
+                              variant={profile.verified ? 'default' : 'outline'}
+                              className={cn(
+                                'rounded-md px-2 py-0.5 text-xs font-medium border-0',
+                                profile.verified
+                                  ? 'bg-blue-500/20 text-blue-400'
+                                  : 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {profile.verified ? 'Verified ID' : 'Unverified'}
+                            </Badge>
+                          </div>
 
-                        <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="h-3.5 w-3.5" />
-                            <span>{profile.phone_number}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5" />
-                            <span className="font-mono">{profile.id_number}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Briefcase className="h-3.5 w-3.5" />
-                            <span className="capitalize">{profile.employment_status || 'N/A'}</span>
+                          <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="h-3.5 w-3.5" />
+                              <span>{profile.phone_number}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="h-3.5 w-3.5" />
+                              <span className="font-mono">{profile.id_number}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Briefcase className="h-3.5 w-3.5" />
+                              <span className="capitalize">
+                                {profile.employment_status || 'N/A'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex gap-4">
-                      <div className="bg-background/50 rounded-xl p-3 px-4 border border-border">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                          Monthly Income
-                        </p>
-                        <p className="text-lg font-bold text-foreground">
-                          {formatNAD(profile.monthly_income || 0)}
-                        </p>
-                      </div>
-                      <div className="bg-background/50 rounded-xl p-3 px-4 border border-border">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                          Credit Score
-                        </p>
-                        <p className="text-lg font-bold text-blue-500 ">
-                          {profile.credit_score || 'N/A'}
-                        </p>
+                      <div className="flex gap-4">
+                        <div className="bg-background/50 rounded-xl p-3 px-4 border border-border">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                            Monthly Income
+                          </p>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatNAD(profile.monthly_income || 0)}
+                          </p>
+                        </div>
+                        <div className="bg-background/50 rounded-xl p-3 px-4 border border-border">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                            Credit Score
+                          </p>
+                          <p className="text-lg font-bold text-blue-500 ">
+                            {profile.credit_score || 'N/A'}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="p-6 pt-2">
-              <Tabs defaultValue="loans" className="w-full">
-                <TabsList className="w-full justify-start bg-transparent border-b border-border p-0 h-auto gap-6 rounded-none mb-6">
-                  {['loans', 'payments', 'documents', 'activity'].map((tab) => (
-                    <TabsTrigger
-                      key={tab}
-                      value={tab}
-                      className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors capitalize font-medium"
-                    >
-                      {tab}
-                      <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
-                        {tab === 'loans'
-                          ? loans.length
-                          : tab === 'payments'
-                            ? payments.length
-                            : tab === 'documents'
-                              ? documents.length
-                              : activities.length}
-                      </span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+              <div className="p-6 pt-2">
+                <Tabs defaultValue="loans" className="w-full">
+                  <TabsList className="w-full justify-start bg-transparent border-b border-border p-0 h-auto gap-6 rounded-none mb-6">
+                    {['loans', 'payments', 'documents', 'activity'].map((tab) => (
+                      <TabsTrigger
+                        key={tab}
+                        value={tab}
+                        className="rounded-none border-b-2 border-transparent px-0 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors capitalize font-medium"
+                      >
+                        {tab}
+                        <span className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
+                          {tab === 'loans'
+                            ? loans.length
+                            : tab === 'payments'
+                              ? payments.length
+                              : tab === 'documents'
+                                ? documents.length
+                                : activities.length}
+                        </span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
 
-                {/* Loans Tab */}
-                <TabsContent value="loans" className="m-0 space-y-3">
-                  {loans.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                      <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                      <p>No active loans</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {loans.map((loan) => (
-                        <div
-                          key={loan.id}
-                          className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-border hover:border-accent transition-all cursor-pointer"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                              <DollarSign className="h-5 w-5" />
+                  {/* Loans Tab */}
+                  <TabsContent value="loans" className="m-0 space-y-3">
+                    {loans.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                        <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p>No active loans</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {loans.map((loan) => (
+                          <div
+                            key={loan.id}
+                            className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-border hover:border-accent transition-all cursor-pointer"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                                <DollarSign className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  <span className="font-bold text-foreground">
+                                    {formatNAD(loan.amount)}
+                                  </span>
+                                  {getStatusBadge(loan.status)}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" /> {loan.term_months}mo
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <TrendingUp className="h-3 w-3" /> {loan.interest_rate}%
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <FileText className="h-3 w-3" /> {loan.purpose}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <span className="font-bold text-foreground">
-                                  {formatNAD(loan.amount)}
-                                </span>
-                                {getStatusBadge(loan.status)}
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground mb-0.5">
+                                  Applied {formatDate(loan.created_at)}
+                                </p>
+                                <p className="text-[10px] font-mono text-muted-foreground">
+                                  ID: {loan.id.slice(0, 8)}
+                                </p>
                               </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" /> {loan.term_months}mo
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <TrendingUp className="h-3 w-3" /> {loan.interest_rate}%
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <FileText className="h-3 w-3" /> {loan.purpose}
-                                </span>
-                              </div>
+                              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Payments Tab */}
+                  <TabsContent value="payments" className="m-0 space-y-3">
+                    {payments.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                        <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p>No payment history</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {payments.map((payment) => (
+                          <div
+                            key={payment.id}
+                            className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-border hover:border-accent transition-all"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-green-500 transition-colors">
+                                <CheckCircle className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  <span className="font-bold text-foreground">
+                                    {formatNAD(payment.amount)}
+                                  </span>
+                                  {getStatusBadge(payment.status)}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span className="flex items-center gap-1 capitalize">
+                                    <CreditCard className="h-3 w-3" /> {payment.payment_method}
+                                  </span>
+                                  {payment.reference_number && (
+                                    <span className="flex items-center gap-1 font-mono">
+                                      <FileText className="h-3 w-3" /> {payment.reference_number}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                             <div className="text-right">
                               <p className="text-xs text-muted-foreground mb-0.5">
-                                Applied {formatDate(loan.created_at)}
+                                {formatDate(payment.created_at)}
                               </p>
                               <p className="text-[10px] font-mono text-muted-foreground">
-                                ID: {loan.id.slice(0, 8)}
+                                ID: {payment.id.slice(0, 8)}
                               </p>
                             </div>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Payments Tab */}
-                <TabsContent value="payments" className="m-0 space-y-3">
-                  {payments.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                      <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                      <p>No payment history</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {payments.map((payment) => (
-                        <div
-                          key={payment.id}
-                          className="group flex items-center justify-between p-4 bg-card hover:bg-accent/50 rounded-xl border border-border hover:border-accent transition-all"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground group-hover:text-green-500 transition-colors">
-                              <CheckCircle className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <span className="font-bold text-foreground">
-                                  {formatNAD(payment.amount)}
-                                </span>
-                                {getStatusBadge(payment.status)}
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1 capitalize">
-                                  <CreditCard className="h-3 w-3" /> {payment.payment_method}
-                                </span>
-                                {payment.reference_number && (
-                                  <span className="flex items-center gap-1 font-mono">
-                                    <FileText className="h-3 w-3" /> {payment.reference_number}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground mb-0.5">
-                              {formatDate(payment.created_at)}
-                            </p>
-                            <p className="text-[10px] font-mono text-muted-foreground">
-                              ID: {payment.id.slice(0, 8)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Documents Tab */}
-                <TabsContent value="documents" className="m-0 space-y-3">
-                  {kycOverview === undefined ? (
-                    <div className="space-y-3">
-                      {[0, 1].map((item) => (
-                        <div key={item} className="h-20 animate-pulse rounded-xl bg-muted" />
-                      ))}
-                    </div>
-                  ) : documents.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                      <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                      <p>No KYC documents uploaded</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4">
-                        <div>
-                          <p className="font-medium text-foreground">KYC package</p>
-                          <p className="text-xs text-muted-foreground">
-                            Current status: <span className="capitalize">{kycOverview.status}</span>
-                          </p>
-                        </div>
-                        {getStatusBadge(kycOverview.status)}
+                        ))}
                       </div>
-                      {documents.map((document) => (
-                        <div
-                          key={document.id}
-                          className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="flex min-w-0 items-center gap-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate font-medium text-foreground">
-                                {document.fileName}
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                <span className="capitalize">
-                                  {document.documentType.replace(/_/g, ' ')}
-                                </span>
-                                <span>Version {document.version ?? 1}</span>
-                                {document.fileSize && (
-                                  <span>{(document.fileSize / 1024).toFixed(1)} KB</span>
-                                )}
-                                <span>{formatDate(document.createdAt)}</span>
-                                {!document.fileAvailable && (
-                                  <span className="text-destructive">Legacy file unavailable</span>
-                                )}
-                              </div>
-                              {document.reviewNotes && (
-                                <p className="mt-1 text-xs text-destructive">
-                                  Review note: {document.reviewNotes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(document.status)}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPreviewDocument(document)}
-                            >
-                              <Eye className="mr-2 h-4 w-4" /> View
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </TabsContent>
+                    )}
+                  </TabsContent>
 
-                {/* Activity Tab */}
-                <TabsContent value="activity" className="m-0 space-y-3">
-                  {activities.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                      <History className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                      <p>No recent activity</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {activities.map((activity) => (
-                        <div
-                          key={activity.id}
-                          className="flex items-center justify-between p-4 bg-card rounded-xl border border-border"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                              <History className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">
-                                  {activity.request_type}
-                                </span>
-                                {getStatusBadge(activity.status)}
+                  {/* Documents Tab */}
+                  <TabsContent value="documents" className="m-0 space-y-3">
+                    {kycOverview === undefined ? (
+                      <div className="space-y-3">
+                        {[0, 1].map((item) => (
+                          <div key={item} className="h-20 animate-pulse rounded-xl bg-muted" />
+                        ))}
+                      </div>
+                    ) : documents.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                        <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p>No KYC documents uploaded</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4">
+                          <div>
+                            <p className="font-medium text-foreground">KYC package</p>
+                            <p className="text-xs text-muted-foreground">
+                              Current status:{' '}
+                              <span className="capitalize">{kycOverview.status}</span>
+                            </p>
+                          </div>
+                          {getStatusBadge(kycOverview.status)}
+                        </div>
+                        {documents.map((document) => (
+                          <div
+                            key={document.id}
+                            className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="flex min-w-0 items-center gap-4">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <FileText className="h-5 w-5" />
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                Priority:{' '}
-                                <span className="capitalize text-foreground">
-                                  {activity.priority}
-                                </span>
-                              </p>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-foreground">
+                                  {document.fileName}
+                                </p>
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="capitalize">
+                                    {document.documentType.replace(/_/g, ' ')}
+                                  </span>
+                                  <span>Version {document.version ?? 1}</span>
+                                  {document.fileSize && (
+                                    <span>{(document.fileSize / 1024).toFixed(1)} KB</span>
+                                  )}
+                                  <span>{formatDate(document.createdAt)}</span>
+                                  {!document.fileAvailable && (
+                                    <span className="text-destructive">
+                                      Legacy file unavailable
+                                    </span>
+                                  )}
+                                </div>
+                                {document.reviewNotes && (
+                                  <p className="mt-1 text-xs text-destructive">
+                                    Review note: {document.reviewNotes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(document.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPreviewDocument(document)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" /> View
+                              </Button>
                             </div>
                           </div>
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {formatDate(activity.created_at)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+                        ))}
+                      </>
+                    )}
+                  </TabsContent>
+
+                  {/* Activity Tab */}
+                  <TabsContent value="activity" className="m-0 space-y-3">
+                    {activities.length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground border border-dashed border-border rounded-xl">
+                        <History className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                        <p>No recent activity</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {activities.map((activity) => (
+                          <div
+                            key={activity.id}
+                            className="flex items-center justify-between p-4 bg-card rounded-xl border border-border"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+                                <History className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-foreground">
+                                    {activity.request_type}
+                                  </span>
+                                  {getStatusBadge(activity.status)}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  Priority:{' '}
+                                  <span className="capitalize text-foreground">
+                                    {activity.priority}
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground font-mono">
+                              {formatDate(activity.created_at)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-      <DocumentPreviewDialog
-        document={previewDocument}
-        open={Boolean(previewDocument)}
-        onOpenChange={(previewOpen) => !previewOpen && setPreviewDocument(null)}
-        requestAccess={requestAccess}
+          )}
+        </DialogContent>
+        <DocumentPreviewDialog
+          document={previewDocument}
+          open={Boolean(previewDocument)}
+          onOpenChange={(previewOpen) => !previewOpen && setPreviewDocument(null)}
+          requestAccess={requestAccess}
+        />
+      </Dialog>
+      <ChangeRoleDialog
+        open={showChangeRole}
+        userId={userId}
+        userName={clientName}
+        currentRole={typeof rawRole === 'string' ? rawRole : 'client'}
+        onClose={() => setShowChangeRole(false)}
       />
-    </Dialog>
+    </>
   );
 };
 

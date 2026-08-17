@@ -74,6 +74,27 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   tenant_admin: 'Tenant Admin',
 };
 
+/**
+ * Roles a tenant admin may assign in the backoffice pickers.
+ * Legacy `admin` remains valid on the mutation for existing rows; the UI writes `tenant_admin`.
+ */
+export const TENANT_ASSIGNABLE_ROLES = ['client', 'loan_officer', 'tenant_admin'] as const;
+
+export type TenantAssignableRole = (typeof TENANT_ASSIGNABLE_ROLES)[number];
+
+export function isTenantAssignableRole(value: unknown): value is TenantAssignableRole {
+  return (
+    typeof value === 'string' && (TENANT_ASSIGNABLE_ROLES as readonly string[]).includes(value)
+  );
+}
+
+/** Map a stored tenant role onto a picker value. Legacy `admin` becomes `tenant_admin`. */
+export function toAssignableRole(role: string | undefined): TenantAssignableRole {
+  if (isTenantAssignableRole(role)) return role;
+  if (role === 'admin') return 'tenant_admin';
+  return 'client';
+}
+
 export interface ProfileUpdatePayload {
   first_name?: string;
   last_name?: string;

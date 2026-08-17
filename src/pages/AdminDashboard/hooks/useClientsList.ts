@@ -2,7 +2,11 @@ import { api } from '@/integrations/convex/api';
 import { useQuery } from 'convex/react';
 import { useMemo } from 'react';
 
-interface Client {
+export const RECENT_ENROLLMENT_MS = 14 * 24 * 60 * 60 * 1000;
+
+export type ClientListStatus = 'all' | 'active' | 'inactive' | 'suspended' | 'pending' | 'recent';
+
+export interface ClientListItem {
   id: string;
   fullName: string;
   email: string;
@@ -16,9 +20,11 @@ interface Client {
   riskLevel: 'low' | 'medium' | 'high';
   isPremium: boolean;
   kycStatus: 'verified' | 'pending' | 'rejected';
+  signupSource?: string;
+  isNew: boolean;
 }
 
-export const useClientsList = (status: string, searchTerm: string) => {
+export const useClientsList = (status: ClientListStatus | string, searchTerm: string) => {
   const allUsers = useQuery(api.users.adminListClientsWithPortfolio, {});
 
   const loading = allUsers === undefined;
@@ -26,15 +32,19 @@ export const useClientsList = (status: string, searchTerm: string) => {
 
   const clients = useMemo(() => {
     if (!allUsers) return [];
-    const transformed: Client[] = allUsers.map((user) => {
+    const now = Date.now();
+    const transformed: ClientListItem[] = allUsers.map((user) => {
       const totalValue = user.totalPrincipal;
+      const joinedAt = user.joinedAt
+        ? new Date(user.joinedAt).toISOString()
+        : new Date().toISOString();
 
-      let clientStatus: Client['status'] = 'inactive';
+      let clientStatus: ClientListItem['status'] = 'inactive';
       if (user.activeLoanCount > 0) clientStatus = 'active';
       else if (user.pendingLoanCount > 0) clientStatus = 'pending';
       else if (user.profileStatus === 'suspended') clientStatus = 'suspended';
 
-      let riskLevel: Client['riskLevel'] = 'low';
+      let riskLevel: ClientListItem['riskLevel'] = 'low';
       if (totalValue > 100000) riskLevel = 'high';
       else if (totalValue > 50000) riskLevel = 'medium';
 
@@ -45,7 +55,7 @@ export const useClientsList = (status: string, searchTerm: string) => {
         phone: user.phone,
         address: user.address,
         status: clientStatus,
-        joinedAt: user.joinedAt ? new Date(user.joinedAt).toISOString() : new Date().toISOString(),
+        joinedAt,
         totalLoans: user.loanCount,
         totalValue,
         lastActivity: user.latestActivity
@@ -53,12 +63,18 @@ export const useClientsList = (status: string, searchTerm: string) => {
           : new Date().toISOString(),
         riskLevel,
         isPremium: totalValue > 50000,
-        kycStatus: (user.kycStatus as Client['kycStatus']) ?? 'pending',
+        kycStatus: (user.kycStatus as ClientListItem['kycStatus']) ?? 'pending',
+        signupSource: user.signupSource,
+        isNew: now - new Date(joinedAt).getTime() <= RECENT_ENROLLMENT_MS,
       };
     });
 
     let filtered = transformed;
-    if (status !== 'all') filtered = filtered.filter((c) => c.status === status);
+    if (status === 'recent') {
+      filtered = filtered.filter((c) => c.isNew);
+    } else if (status !== 'all') {
+      filtered = filtered.filter((c) => c.status === status);
+    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -68,9 +84,7 @@ export const useClientsList = (status: string, searchTerm: string) => {
           c.id.toLowerCase().includes(q)
       );
     }
-    filtered.sort(
-      (a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
-    );
+    filtered.sort((a, b) => new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime());
     return filtered;
   }, [allUsers, status, searchTerm]);
 

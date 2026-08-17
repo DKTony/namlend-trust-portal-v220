@@ -2,7 +2,7 @@ import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { useMutation, useQuery } from 'convex/react';
 import { useMemo, useState } from 'react';
-import type { UserRole } from '@/types/admin';
+import { toAssignableRole, type UserRole } from '@/types/admin';
 
 interface User {
   id: string;
@@ -186,7 +186,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
 
   // Build role summaries from user data
   const roles: Role[] = useMemo(() => {
-    const counts = { admin: 0, loan_officer: 0, client: 0 };
+    const counts = { admin: 0, tenant_admin: 0, loan_officer: 0, client: 0 };
     for (const u of users) {
       if (u.role in counts) counts[u.role as keyof typeof counts]++;
     }
@@ -199,6 +199,18 @@ export const useUserManagement = (): UseUserManagementReturn => {
         isSystem: true,
         isActive: true,
         userCount: counts.admin,
+        permissions: ['user_management', 'system_settings', 'audit_logs', 'loan_processing'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'role-tenant_admin',
+        name: 'tenant_admin',
+        displayName: 'Tenant Admin',
+        description: 'Tenant administration, user roles, and staff access',
+        isSystem: true,
+        isActive: true,
+        userCount: counts.tenant_admin,
         permissions: ['user_management', 'system_settings', 'audit_logs', 'loan_processing'],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -270,11 +282,7 @@ export const useUserManagement = (): UseUserManagementReturn => {
   const assignRole = async (userId: string, roleId: string) => {
     try {
       const role = roles.find((r) => r.id === roleId) || roles.find((r) => r.name === roleId);
-      const targetRole = (role?.name ?? roleId) as 'admin' | 'loan_officer' | 'client';
-
-      if (!['admin', 'loan_officer', 'client'].includes(targetRole)) {
-        throw new Error('Unsupported role for assignment');
-      }
+      const targetRole = toAssignableRole(role?.name ?? roleId);
 
       await assignRoleMutation({
         targetUserId: userId as Id<'users'>,

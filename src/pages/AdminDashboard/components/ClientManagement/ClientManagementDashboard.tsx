@@ -9,6 +9,7 @@ import {
   Plus,
   Search,
   UserCheck,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -89,9 +90,15 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <AdaptiveTabs
-          desktopColumns={4}
+          desktopColumns={5}
           items={[
             { value: 'overview', label: 'All Clients', shortLabel: 'All', icon: Users },
+            {
+              value: 'recent',
+              label: 'Recently enrolled',
+              shortLabel: 'New',
+              icon: UserPlus,
+            },
             { value: 'active', label: 'Active Clients', shortLabel: 'Active', icon: UserCheck },
             {
               value: 'communications',
@@ -137,6 +144,14 @@ const ClientManagementDashboard: React.FC<ClientManagementDashboardProps> = ({
         <TabsContent value="overview" className="space-y-4">
           <ClientsList
             status="all"
+            searchTerm={searchTerm}
+            onClientSelect={handleClientSelection}
+          />
+        </TabsContent>
+
+        <TabsContent value="recent" className="space-y-4">
+          <ClientsList
+            status="recent"
             searchTerm={searchTerm}
             onClientSelect={handleClientSelection}
           />

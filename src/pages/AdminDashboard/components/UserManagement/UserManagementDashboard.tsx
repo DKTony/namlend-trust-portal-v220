@@ -21,6 +21,7 @@ import {
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import { TENANT_ASSIGNABLE_ROLES, USER_ROLE_LABELS } from '@/types/admin';
 import { useQuery } from 'convex/react';
 import {
   Activity,
@@ -79,7 +80,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
     return {
       totalUsers: rawUsers.length,
       activeUsers: rawUsers.length,
-      adminUsers: rawUsers.filter((u) => u.role === 'admin').length,
+      adminUsers: rawUsers.filter((u) => u.role === 'admin' || u.role === 'tenant_admin').length,
       pendingActions: rawApprovals?.length ?? 0,
     };
   }, [rawUsers, rawApprovals]);
@@ -427,9 +428,11 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="client">Client</SelectItem>
-                  <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {TENANT_ASSIGNABLE_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {USER_ROLE_LABELS[role]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -467,6 +470,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
                   <SelectItem value="loan_officer">Loan Officer</SelectItem>
                   <SelectItem value="client">Client</SelectItem>
                 </SelectContent>

@@ -10,14 +10,14 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import type { TenantAssignableRole } from '@/types/admin';
 import type { Id } from '@/types/convex';
 import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
 import React, { useEffect, useMemo, useState } from 'react';
-type AppRole = 'admin' | 'loan_officer' | 'client';
 
 interface AssignRoleModalProps {
   open: boolean;
-  role: AppRole | null;
+  role: TenantAssignableRole | null;
   onClose: () => void;
   onAssigned?: () => void;
 }

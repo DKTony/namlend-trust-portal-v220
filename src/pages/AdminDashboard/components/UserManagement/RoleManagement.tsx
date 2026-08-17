@@ -15,6 +15,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import {
+  isTenantAssignableRole,
+  type TenantAssignableRole,
+  type UserRole as AppRole,
+} from '@/types/admin';
 import { useQuery as useConvexQuery } from 'convex/react';
 import {
   AlertTriangle,
@@ -30,7 +35,6 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import AssignRoleModal from './AssignRoleModal';
-type AppRole = 'admin' | 'loan_officer' | 'client';
 
 interface Role {
   id: string;
@@ -58,6 +62,23 @@ const RoleManagement: React.FC = () => {
       id: 'admin',
       name: 'Admin',
       description: 'Full system access with all administrative privileges',
+      permissions: [
+        'user_management',
+        'system_settings',
+        'analytics_access',
+        'audit_logs',
+        'financial_reports',
+      ],
+      userCount: 0,
+      isSystemRole: true,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 'tenant_admin',
+      name: 'Tenant Admin',
+      description: 'Tenant administration, user roles, and staff access',
       permissions: [
         'user_management',
         'system_settings',
@@ -205,7 +226,7 @@ const RoleManagement: React.FC = () => {
   });
   const { toast } = useToast();
   const [assignOpen, setAssignOpen] = useState(false);
-  const [selectedAppRole, setSelectedAppRole] = useState<AppRole | null>(null);
+  const [selectedAppRole, setSelectedAppRole] = useState<TenantAssignableRole | null>(null);
   const [viewUsersOpen, setViewUsersOpen] = useState(false);
   const [viewUsersRole, setViewUsersRole] = useState<string | null>(null);
   interface UserWithRole {
@@ -220,35 +241,44 @@ const RoleManagement: React.FC = () => {
   const [viewUsersData, setViewUsersData] = useState<UserWithRole[]>([]);
   const [viewUsersLoading, setViewUsersLoading] = useState(false);
 
-  const nameToAppRole = (roleName: string): 'admin' | 'loan_officer' | 'client' => {
+  const nameToAppRole = (roleName: string): AppRole => {
     const n = roleName.toLowerCase();
+    if (n === 'tenant admin' || n === 'tenant_admin') return 'tenant_admin';
     if (n === 'admin') return 'admin';
-    if (n === 'loan officer') return 'loan_officer';
+    if (n === 'loan officer' || n === 'loan_officer') return 'loan_officer';
     return 'client';
   };
 
   // Convex reactive queries for each role
   const adminUsers = useConvexQuery(api.users.listUsers, { role: 'admin' });
+  const tenantAdminUsers = useConvexQuery(api.users.listUsers, { role: 'tenant_admin' });
   const officerUsers = useConvexQuery(api.users.listUsers, { role: 'loan_officer' });
   const clientUsers = useConvexQuery(api.users.listUsers, { role: 'client' });
 
   // Update role counts reactively
   useEffect(() => {
-    if (adminUsers !== undefined && officerUsers !== undefined && clientUsers !== undefined) {
+    if (
+      adminUsers !== undefined &&
+      tenantAdminUsers !== undefined &&
+      officerUsers !== undefined &&
+      clientUsers !== undefined
+    ) {
       setRoles((prev) =>
         prev.map((r) => {
           const roleKey = nameToAppRole(r.name);
           const count =
             roleKey === 'admin'
               ? adminUsers?.length || 0
-              : roleKey === 'loan_officer'
-                ? officerUsers?.length || 0
-                : clientUsers?.length || 0;
+              : roleKey === 'tenant_admin'
+                ? tenantAdminUsers?.length || 0
+                : roleKey === 'loan_officer'
+                  ? officerUsers?.length || 0
+                  : clientUsers?.length || 0;
           return { ...r, userCount: count, updatedAt: new Date().toISOString() };
         })
       );
     }
-  }, [adminUsers, officerUsers, clientUsers]);
+  }, [adminUsers, tenantAdminUsers, officerUsers, clientUsers]);
 
   const refreshRoleCounts = () => {}; // Convex is reactive
 
@@ -309,7 +339,13 @@ const RoleManagement: React.FC = () => {
 
       const appRole = nameToAppRole(roleName);
       const users =
-        appRole === 'admin' ? adminUsers : appRole === 'loan_officer' ? officerUsers : clientUsers;
+        appRole === 'admin'
+          ? adminUsers
+          : appRole === 'tenant_admin'
+            ? tenantAdminUsers
+            : appRole === 'loan_officer'
+              ? officerUsers
+              : clientUsers;
 
       setViewUsersData(
         (users ?? []).map((user) => {
@@ -523,10 +559,16 @@ const RoleManagement: React.FC = () => {
                     size="sm"
                     onClick={() => {
                       const appRole = nameToAppRole(role.name);
+                      if (!isTenantAssignableRole(appRole)) return;
                       setSelectedAppRole(appRole);
                       setAssignOpen(true);
                     }}
-                    title="Assign this role to a user"
+                    disabled={!isTenantAssignableRole(nameToAppRole(role.name))}
+                    title={
+                      isTenantAssignableRole(nameToAppRole(role.name))
+                        ? 'Assign this role to a user'
+                        : 'Legacy admin is read-only; assign Tenant Admin instead'
+                    }
                   >
                     <Users className="h-4 w-4" />
                   </Button>

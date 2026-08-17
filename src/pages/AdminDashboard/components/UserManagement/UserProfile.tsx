@@ -30,7 +30,12 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import type { UserRole } from '@/types/admin';
+import {
+  TENANT_ASSIGNABLE_ROLES,
+  USER_ROLE_LABELS,
+  toAssignableRole,
+  type UserRole,
+} from '@/types/admin';
 
 interface UserProfileProps {
   userId: string;
@@ -497,15 +502,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose, onUserUpdate
                     <div>
                       <Label htmlFor="role">Role</Label>
                       {isEditing ? (
-                        <Select value={currentUser.role} onValueChange={handleRoleChange}>
+                        <Select
+                          value={toAssignableRole(currentUser.role)}
+                          onValueChange={handleRoleChange}
+                        >
                           <SelectTrigger className="bg-background border-input text-foreground">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                            <SelectItem value="client">Client</SelectItem>
-                            <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
+                            {TENANT_ASSIGNABLE_ROLES.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {USER_ROLE_LABELS[option]}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       ) : (

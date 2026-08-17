@@ -21,7 +21,7 @@ import { kycDocumentTypeValidator } from './lib/documentPolicy';
 import { emitDomainEvent } from './lib/domainEvents';
 import { enrollUser } from './lib/enrollment';
 import { deactivateRelationship, emitRelationship } from './lib/relationshipEmitter';
-import { applyTenantScope, tenantReadScope } from './lib/tenancy';
+import { applyTenantScope, getCallerInstitution, tenantReadScope } from './lib/tenancy';
 
 // ---------------------------------------------------------------------------
 // Profile queries
@@ -84,7 +84,7 @@ export const listUsers = query({
     const profiles = await ctx.db
       .query('profiles')
       .order('desc')
-      .take(limit ?? 100);
+      .take(limit ?? 250);
 
     const result = await Promise.all(
       profiles.map(async (profile) => {
@@ -95,13 +95,14 @@ export const listUsers = query({
         return {
           ...profile,
           role: roleDoc?.role ?? 'client',
-          institutionId: roleDoc?.institutionId,
+          signupSource: profile.signupSource,
+          institutionId: roleDoc?.institutionId ?? profile.institutionId,
         };
       })
     );
 
-    // Tenant scope (profiles have no own institutionId — derive from the role row).
-    // No-op while enforcement is off; null-institution rows treated as the caller's tenant.
+    // Tenant scope from the role row, falling back to the profile stamp.
+    // No-op while enforcement is off; unstamped rows are treated as the caller's tenant.
     const scoped = applyTenantScope(result, scope);
 
     if (role) {
@@ -177,6 +178,7 @@ export const adminListClientsWithPortfolio = query({
           kycStatus: profile.kycStatus,
           profileStatus: profile.status,
           joinedAt: profile.createdAt,
+          signupSource: profile.signupSource,
           latestActivity: Math.max(profile.updatedAt, latestLoanActivity),
           loanCount: loans.length,
           activeLoanCount: activeLoans.length,
@@ -314,26 +316,49 @@ export const assignRole = mutation({
       v.literal('tenant_admin')
     ),
   },
+  returns: v.null(),
   handler: async (ctx, { targetUserId, role }) => {
     const adminId = await assertAdmin(ctx);
+    if (targetUserId === adminId) {
+      throw new ConvexError({
+        code: 'FORBIDDEN',
+        message: 'You cannot change your own role.',
+      });
+    }
+    await assertOwnerOrTenantStaffForUser(ctx, targetUserId);
 
+    const callerTenant = await getCallerInstitution(ctx);
     const existing = await ctx.db
       .query('userRoles')
       .withIndex('by_userId', (q) => q.eq('userId', targetUserId))
       .first();
 
+    const institutionId = existing?.institutionId ?? callerTenant.institutionId ?? undefined;
     const previousRole = existing?.role ?? 'none';
     let roleDocId: Id<'userRoles'>;
     if (existing) {
-      await ctx.db.patch(existing._id, { role, assignedBy: adminId });
+      await ctx.db.patch(existing._id, {
+        role,
+        assignedBy: adminId,
+        ...(existing.institutionId ? {} : institutionId ? { institutionId } : {}),
+      });
       roleDocId = existing._id;
     } else {
       roleDocId = await ctx.db.insert('userRoles', {
         userId: targetUserId,
         role,
         assignedBy: adminId,
+        ...(institutionId ? { institutionId } : {}),
         createdAt: Date.now(),
       });
+    }
+
+    const profile = await ctx.db
+      .query('profiles')
+      .withIndex('by_userId', (q) => q.eq('userId', targetUserId))
+      .first();
+    if (profile && !profile.institutionId && institutionId) {
+      await ctx.db.patch(profile._id, { institutionId, updatedAt: Date.now() });
     }
 
     // Privilege changes are compliance-relevant: write the auditLogs trail
@@ -358,6 +383,7 @@ export const assignRole = mutation({
       },
       { actorId: adminId, actorType: 'user' }
     );
+    return null;
   },
 });
 

@@ -1,6 +1,7 @@
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
 import { ThemedButton } from '@/components/ui/ThemedButton';
 import { ThemedCard } from '@/components/ui/ThemedCard';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { formatNAD } from '@/utils/currency';
 import {
@@ -15,18 +16,28 @@ import {
   Phone,
   Star,
   User,
+  UserCog,
 } from 'lucide-react';
-import React from 'react';
-import { useClientsList } from '../../hooks/useClientsList';
+import React, { useState } from 'react';
+import { useClientsList, type ClientListStatus } from '../../hooks/useClientsList';
+import ChangeRoleDialog from '../UserManagement/ChangeRoleDialog';
 
 interface ClientsListProps {
-  status: 'all' | 'active' | 'inactive' | 'suspended' | 'pending';
+  status: ClientListStatus;
   searchTerm: string;
   onClientSelect: (clientId: string) => void;
 }
 
+const signupSourceLabel = (source?: string) => {
+  if (source === 'google') return 'Google';
+  if (source === 'password') return 'Password';
+  return null;
+};
+
 const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientSelect }) => {
   const { clients, loading, error, refetch } = useClientsList(status, searchTerm);
+  const { isAdmin } = useAuth();
+  const [roleTarget, setRoleTarget] = useState<{ id: string; name: string } | null>(null);
 
   const formatCurrency = formatNAD;
 
@@ -138,7 +149,9 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
           <p className="text-muted-foreground">
             {searchTerm
               ? `No clients match "${searchTerm}"`
-              : `No ${status === 'all' ? '' : status} clients at this time`}
+              : status === 'recent'
+                ? 'No clients enrolled in the last 14 days'
+                : `No ${status === 'all' ? '' : status} clients at this time`}
           </p>
         </div>
       </ThemedCard>
@@ -177,6 +190,16 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
                   {getStatusBadge(client.status)}
                   {getRiskBadge(client.riskLevel)}
                   {getKycBadge(client.kycStatus)}
+                  {client.isNew && (
+                    <ThemedBadge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                      New
+                    </ThemedBadge>
+                  )}
+                  {signupSourceLabel(client.signupSource) && (
+                    <ThemedBadge className="bg-sky-100 text-sky-800 border-sky-200">
+                      {signupSourceLabel(client.signupSource)}
+                    </ThemedBadge>
+                  )}
                 </div>
                 <div className="shrink-0 text-left lg:text-right">
                   <div
@@ -248,12 +271,25 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
                 <Eye className="h-4 w-4 mr-2" />
                 View Profile
               </ThemedButton>
+              {isAdmin && (
+                <ThemedButton
+                  variant="ghost"
+                  className="h-9 w-full px-3 text-xs"
+                  data-testid="change-role-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRoleTarget({ id: client.id, name: client.fullName });
+                  }}
+                >
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Change role
+                </ThemedButton>
+              )}
               <ThemedButton
                 variant="ghost"
                 className="h-9 w-full px-3 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Handle contact action
                 }}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -263,6 +299,13 @@ const ClientsList: React.FC<ClientsListProps> = ({ status, searchTerm, onClientS
           </div>
         </ThemedCard>
       ))}
+      <ChangeRoleDialog
+        open={roleTarget !== null}
+        userId={roleTarget?.id ?? null}
+        userName={roleTarget?.name}
+        currentRole="client"
+        onClose={() => setRoleTarget(null)}
+      />
     </div>
   );
 };

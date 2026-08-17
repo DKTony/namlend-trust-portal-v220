@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import { TENANT_ASSIGNABLE_ROLES, USER_ROLE_LABELS, isTenantAssignableRole } from '@/types/admin';
 import type { Id } from '@/types/convex';
 import { useMutation } from 'convex/react';
 import {
@@ -200,15 +201,15 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
       return;
     }
 
-    const role = bulkValue as 'client' | 'loan_officer' | 'admin' | 'tenant_admin';
-    if (!['client', 'loan_officer', 'admin', 'tenant_admin'].includes(role)) {
+    if (!isTenantAssignableRole(bulkValue)) {
       toast({
         title: 'Role required',
-        description: 'Choose client, loan_officer, admin, or tenant_admin.',
+        description: 'Choose client, loan officer, or tenant admin.',
         variant: 'destructive',
       });
       return;
     }
+    const role = bulkValue;
 
     let processed = 0;
     const errors: string[] = [];
@@ -422,10 +423,11 @@ const BulkUserOperations: React.FC<BulkUserOperationsProps> = ({
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="loan_officer">Loan Officer</SelectItem>
-                        <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
+                        {TENANT_ASSIGNABLE_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {USER_ROLE_LABELS[role]}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}

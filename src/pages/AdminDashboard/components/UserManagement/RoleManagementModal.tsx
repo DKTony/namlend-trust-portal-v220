@@ -10,12 +10,12 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/integrations/convex/api';
+import type { TenantAssignableRole, UserRole as AppRole } from '@/types/admin';
 import { useQuery as useConvexQuery, useMutation } from 'convex/react';
 import { CheckCircle, Info, Minus, Plus, Settings, Shield, User } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
-type AppRole = 'admin' | 'loan_officer' | 'client';
 interface UserRole {
   role: AppRole;
   assigned_at?: string;
@@ -24,7 +24,7 @@ interface UserRole {
 
 // Pure utility functions (previously from roleManagementService)
 function getAllowedRoles(currentRoles: string[], _email?: string) {
-  const allRoles: AppRole[] = ['admin', 'loan_officer', 'client'];
+  const allRoles: TenantAssignableRole[] = ['tenant_admin', 'loan_officer', 'client'];
   const canAdd = allRoles.filter((r) => !currentRoles.includes(r));
   const canRemove = currentRoles.filter((r) => r !== 'client') as AppRole[];
   return { canAdd, canRemove, description: `User has ${currentRoles.length} role(s)` };
@@ -54,6 +54,12 @@ interface RoleManagementModalProps {
 }
 
 const roleConfig = {
+  tenant_admin: {
+    label: 'Tenant Admin',
+    icon: Shield,
+    color: 'bg-purple-100  text-purple-800  border-purple-200 ',
+    description: 'Tenant administration and user role management',
+  },
   admin: {
     label: 'Admin',
     icon: Shield,
@@ -87,7 +93,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [currentRoles, setCurrentRoles] = useState<UserRole[]>([]);
   const [allowedOperations, setAllowedOperations] = useState<{
-    canAdd: AppRole[];
+    canAdd: TenantAssignableRole[];
     canRemove: AppRole[];
     description: string;
   }>({ canAdd: [], canRemove: [], description: '' });
@@ -137,7 +143,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
 
   const loadUserRoles = () => {}; // Convex is reactive
 
-  const handleAddRole = async (role: AppRole) => {
+  const handleAddRole = async (role: TenantAssignableRole) => {
     if (!userId) return;
 
     const currentRoleNames = currentRoles.map((r) => r.role);
@@ -190,7 +196,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
     try {
       await removeRoleMutation({
         targetUserId: userId as Id<'users'>,
-        role: role as 'client' | 'loan_officer' | 'admin',
+        role: role as 'client' | 'loan_officer' | 'admin' | 'tenant_admin',
       });
       toast({
         title: 'Role removed',

@@ -13,7 +13,7 @@ import { api } from '@/integrations/convex/api';
 import type { Id } from '@/types/convex';
 import { useMutation as useConvexMutation, useQuery as useConvexQuery } from 'convex/react';
 import React, { useEffect, useMemo, useState } from 'react';
-type AppRole = 'admin' | 'loan_officer' | 'client';
+type AppRole = 'admin' | 'loan_officer' | 'client' | 'tenant_admin';
 
 interface AssignRoleModalProps {
   open: boolean;

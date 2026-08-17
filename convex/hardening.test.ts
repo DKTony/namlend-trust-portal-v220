@@ -18,16 +18,32 @@ import schema from './schema';
 // Load all Convex modules for the harness.
 const modules = import.meta.glob('./**/*.*s');
 
-type Role = 'client' | 'loan_officer' | 'admin';
+type Role = 'client' | 'loan_officer' | 'admin' | 'tenant_admin';
 type Kyc = 'pending' | 'submitted' | 'verified' | 'rejected';
 
 function asUser(t: ReturnType<typeof convexTest>, userId: Id<'users'>) {
   return t.withIdentity({ subject: `${userId}|testsession` });
 }
 
+async function seedInstitution(
+  t: ReturnType<typeof convexTest>,
+  code = 'TEST'
+): Promise<Id<'institutions'>> {
+  return t.run(async (ctx) =>
+    ctx.db.insert('institutions', {
+      name: code,
+      shortCode: code,
+      type: 'lender',
+      status: 'active',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+  );
+}
+
 async function seedUser(
   t: ReturnType<typeof convexTest>,
-  opts: { role?: Role; kyc?: Kyc } = {}
+  opts: { role?: Role; kyc?: Kyc; institutionId?: Id<'institutions'> } = {}
 ): Promise<Id<'users'>> {
   return await t.run(async (ctx) => {
     const userId = await ctx.db.insert('users', {});
@@ -35,11 +51,17 @@ async function seedUser(
       userId,
       email: `${userId}@example.test`,
       kycStatus: opts.kyc ?? 'pending',
+      ...(opts.institutionId ? { institutionId: opts.institutionId } : {}),
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
     if (opts.role) {
-      await ctx.db.insert('userRoles', { userId, role: opts.role, createdAt: Date.now() });
+      await ctx.db.insert('userRoles', {
+        userId,
+        role: opts.role,
+        ...(opts.institutionId ? { institutionId: opts.institutionId } : {}),
+        createdAt: Date.now(),
+      });
     }
     return userId;
   });
@@ -482,5 +504,88 @@ describe('role assignment authorization', () => {
         )?.role
     );
     expect(role).toBe('loan_officer');
+  });
+
+  test('tenant_admin can promote a client to loan_officer', async () => {
+    const t = convexTest(schema, modules);
+    const admin = await seedUser(t, { role: 'tenant_admin' });
+    const target = await seedUser(t, { role: 'client' });
+
+    await asUser(t, admin).mutation(api.users.assignRole, {
+      targetUserId: target,
+      role: 'loan_officer',
+    });
+    const role = await t.run(
+      async (ctx) =>
+        (
+          await ctx.db
+            .query('userRoles')
+            .withIndex('by_userId', (q) => q.eq('userId', target))
+            .first()
+        )?.role
+    );
+    expect(role).toBe('loan_officer');
+  });
+
+  test('tenant_admin can promote a client to tenant_admin', async () => {
+    const t = convexTest(schema, modules);
+    const admin = await seedUser(t, { role: 'tenant_admin' });
+    const target = await seedUser(t, { role: 'client' });
+
+    await asUser(t, admin).mutation(api.users.assignRole, {
+      targetUserId: target,
+      role: 'tenant_admin',
+    });
+    const role = await t.run(
+      async (ctx) =>
+        (
+          await ctx.db
+            .query('userRoles')
+            .withIndex('by_userId', (q) => q.eq('userId', target))
+            .first()
+        )?.role
+    );
+    expect(role).toBe('tenant_admin');
+  });
+
+  test('assignRole stamps the admin tenant onto an unbound user', async () => {
+    const t = convexTest(schema, modules);
+    const institutionId = await seedInstitution(t);
+    const admin = await seedUser(t, { role: 'tenant_admin', institutionId });
+    const target = await seedUser(t, { role: 'client' });
+
+    await asUser(t, admin).mutation(api.users.assignRole, {
+      targetUserId: target,
+      role: 'loan_officer',
+    });
+
+    const bound = await t.run(async (ctx) => {
+      const role = await ctx.db
+        .query('userRoles')
+        .withIndex('by_userId', (q) => q.eq('userId', target))
+        .first();
+      const profile = await ctx.db
+        .query('profiles')
+        .withIndex('by_userId', (q) => q.eq('userId', target))
+        .first();
+      return {
+        roleInstitutionId: role?.institutionId,
+        profileInstitutionId: profile?.institutionId,
+      };
+    });
+    expect(bound.roleInstitutionId).toBe(institutionId);
+    expect(bound.profileInstitutionId).toBe(institutionId);
+  });
+
+  test('admin cannot change their own role', async () => {
+    const t = convexTest(schema, modules);
+    const admin = await seedUser(t, { role: 'tenant_admin' });
+
+    await expect(
+      asUser(t, admin).mutation(api.users.assignRole, {
+        targetUserId: admin,
+        role: 'client',
+      })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
   });
 });

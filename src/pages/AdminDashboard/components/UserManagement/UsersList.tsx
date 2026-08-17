@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useUsersList } from '../../hooks/useUsersList';
-import RoleManagementModal from './RoleManagementModal';
+import ChangeRoleDialog from './ChangeRoleDialog';
 import type { UserRole } from '@/types/admin';
 
 interface User {
@@ -79,6 +79,7 @@ const UsersList: React.FC<UsersListProps> = ({
     id: string;
     name: string;
     email: string;
+    role: UserRole;
   } | null>(null);
 
   // Sync external filters into the hook's internal state
@@ -194,7 +195,8 @@ const UsersList: React.FC<UsersListProps> = ({
     action: string,
     userId: string,
     userName?: string,
-    userEmail?: string
+    userEmail?: string,
+    userRole?: UserRole
   ) => {
     switch (action) {
       case 'view':
@@ -205,6 +207,7 @@ const UsersList: React.FC<UsersListProps> = ({
           id: userId,
           name: userName || 'Unknown User',
           email: userEmail || '',
+          role: userRole || 'client',
         });
         setRoleModalOpen(true);
         break;
@@ -440,7 +443,13 @@ const UsersList: React.FC<UsersListProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={() =>
-                        handleUserAction('manage_roles', user.id, user.fullName, user.email)
+                        handleUserAction(
+                          'manage_roles',
+                          user.id,
+                          user.fullName,
+                          user.email,
+                          user.role
+                        )
                       }
                     >
                       <UserCog className="h-4 w-4 mr-2" />
@@ -478,11 +487,11 @@ const UsersList: React.FC<UsersListProps> = ({
       ))}
 
       {/* Role Management Modal */}
-      <RoleManagementModal
+      <ChangeRoleDialog
         open={roleModalOpen}
         userId={selectedUserForRoles?.id || null}
         userName={selectedUserForRoles?.name || null}
-        userEmail={selectedUserForRoles?.email || null}
+        currentRole={selectedUserForRoles?.role}
         onClose={handleRoleModalClose}
         onRoleChanged={handleRoleChanged}
       />

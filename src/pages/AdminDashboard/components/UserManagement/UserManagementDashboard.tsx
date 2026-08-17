@@ -79,7 +79,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
     return {
       totalUsers: rawUsers.length,
       activeUsers: rawUsers.length,
-      adminUsers: rawUsers.filter((u) => u.role === 'admin').length,
+      adminUsers: rawUsers.filter((u) => u.role === 'admin' || u.role === 'tenant_admin').length,
       pendingActions: rawApprovals?.length ?? 0,
     };
   }, [rawUsers, rawApprovals]);
@@ -467,6 +467,7 @@ const UserManagementDashboard: React.FC<UserManagementDashboardProps> = ({ onUse
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
                   <SelectItem value="loan_officer">Loan Officer</SelectItem>
                   <SelectItem value="client">Client</SelectItem>
                 </SelectContent>

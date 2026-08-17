@@ -15,7 +15,7 @@ import { CheckCircle, Info, Minus, Plus, Settings, Shield, User } from 'lucide-r
 import React, { useEffect, useState } from 'react';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
-type AppRole = 'admin' | 'loan_officer' | 'client';
+type AppRole = 'admin' | 'loan_officer' | 'client' | 'tenant_admin';
 interface UserRole {
   role: AppRole;
   assigned_at?: string;
@@ -24,7 +24,7 @@ interface UserRole {
 
 // Pure utility functions (previously from roleManagementService)
 function getAllowedRoles(currentRoles: string[], _email?: string) {
-  const allRoles: AppRole[] = ['admin', 'loan_officer', 'client'];
+  const allRoles: AppRole[] = ['tenant_admin', 'loan_officer', 'client'];
   const canAdd = allRoles.filter((r) => !currentRoles.includes(r));
   const canRemove = currentRoles.filter((r) => r !== 'client') as AppRole[];
   return { canAdd, canRemove, description: `User has ${currentRoles.length} role(s)` };
@@ -54,6 +54,12 @@ interface RoleManagementModalProps {
 }
 
 const roleConfig = {
+  tenant_admin: {
+    label: 'Tenant Admin',
+    icon: Shield,
+    color: 'bg-purple-100  text-purple-800  border-purple-200 ',
+    description: 'Tenant administration and user role management',
+  },
   admin: {
     label: 'Admin',
     icon: Shield,
@@ -190,7 +196,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
     try {
       await removeRoleMutation({
         targetUserId: userId as Id<'users'>,
-        role: role as 'client' | 'loan_officer' | 'admin',
+        role: role as 'client' | 'loan_officer' | 'admin' | 'tenant_admin',
       });
       toast({
         title: 'Role removed',

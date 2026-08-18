@@ -1,17 +1,17 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `839cad9a06821e38cd462afb4d6ecff0365cdd6a`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `c19c7539ed043dae05e5152902ab5940574fde7d`.
 
 | Inventory               | Count |
 | ----------------------- | ----: |
 | Effective Convex tables |    95 |
 | Convex indexes          |   201 |
-| Convex functions        |   513 |
-| Web routes              |    40 |
-| React components        |   260 |
+| Convex functions        |   514 |
+| Web routes              |    41 |
+| React components        |   262 |
 | Features                |    32 |
 | Seeded plans            |     4 |
-| Named tests             |   877 |
+| Named tests             |   887 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 

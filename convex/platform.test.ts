@@ -691,3 +691,326 @@ describe('tenant provisioning (Phase 4)', () => {
     ).rejects.toMatchObject({ data: { code: 'VALIDATION_ERROR' } });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Platform-owner tenant overview
+// ---------------------------------------------------------------------------
+
+type OverviewLoanStatus =
+  | 'draft'
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
+  | 'rejected'
+  | 'funded'
+  | 'active'
+  | 'paid_off'
+  | 'defaulted'
+  | 'written_off';
+
+async function seedOverviewLoan(
+  t: ReturnType<typeof convexTest>,
+  opts: {
+    userId: Id<'users'>;
+    institutionId?: Id<'institutions'>;
+    status: OverviewLoanStatus;
+    principal: number;
+    outstandingBalance?: number;
+  }
+): Promise<Id<'loans'>> {
+  return t.run(async (ctx) => {
+    const now = Date.now();
+    return ctx.db.insert('loans', {
+      userId: opts.userId,
+      institutionId: opts.institutionId,
+      principal: opts.principal,
+      interestRate: 20,
+      termMonths: 6,
+      status: opts.status,
+      outstandingBalance: opts.outstandingBalance,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+}
+
+async function seedOverviewDisbursement(
+  t: ReturnType<typeof convexTest>,
+  opts: {
+    loanId: Id<'loans'>;
+    userId: Id<'users'>;
+    institutionId?: Id<'institutions'>;
+    amount: number;
+    status: 'pending' | 'completed' | 'failed';
+  }
+) {
+  await t.run(async (ctx) => {
+    const now = Date.now();
+    await ctx.db.insert('disbursements', {
+      loanId: opts.loanId,
+      userId: opts.userId,
+      institutionId: opts.institutionId,
+      amount: opts.amount,
+      method: 'bank_transfer',
+      status: opts.status,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+}
+
+async function seedOverviewPayment(
+  t: ReturnType<typeof convexTest>,
+  opts: {
+    loanId: Id<'loans'>;
+    userId: Id<'users'>;
+    institutionId?: Id<'institutions'>;
+    amount: number;
+    status: 'pending' | 'completed' | 'failed' | 'reversed' | 'refunded';
+  }
+) {
+  await t.run(async (ctx) => {
+    const now = Date.now();
+    await ctx.db.insert('paymentTransactions', {
+      loanId: opts.loanId,
+      userId: opts.userId,
+      institutionId: opts.institutionId,
+      amount: opts.amount,
+      method: 'manual',
+      status: opts.status,
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+}
+
+describe('getTenantOverview', () => {
+  test('unauthenticated caller is forbidden', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    await expect(
+      t.query(api.platform.tenants.getTenantOverview, { institutionId: inst })
+    ).rejects.toMatchObject({ data: { code: 'UNAUTHENTICATED' } });
+  });
+
+  test('tenant admin and platform support cannot read overview', async () => {
+    const t = convexTest(schema, modules);
+    const inst = await seedInstitution(t);
+    const tenantAdmin = await seedTenantUser(t, { role: 'tenant_admin', institutionId: inst });
+    const support = await seedTenantUser(t, { role: 'client' });
+    await makePlatformSupport(t, support);
+
+    await expect(
+      asUser(t, tenantAdmin).query(api.platform.tenants.getTenantOverview, { institutionId: inst })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+    await expect(
+      asUser(t, support).query(api.platform.tenants.getTenantOverview, { institutionId: inst })
+    ).rejects.toMatchObject({ data: { code: 'FORBIDDEN' } });
+  });
+
+  test('owner gets null for a missing institution and zeros for an empty tenant', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    const gone = await seedInstitution(t);
+    await t.run(async (ctx) => {
+      await ctx.db.delete(gone);
+    });
+    expect(
+      await asUser(t, owner).query(api.platform.tenants.getTenantOverview, { institutionId: gone })
+    ).toBeNull();
+
+    const empty = await seedInstitution(t);
+    const overview = await asUser(t, owner).query(api.platform.tenants.getTenantOverview, {
+      institutionId: empty,
+    });
+    expect(overview).toMatchObject({
+      institutionId: empty,
+      clientCount: 0,
+      staffCount: 0,
+      adminCount: 0,
+      loanOfficerCount: 0,
+      loansIssued: 0,
+      amountLoanedOut: 0,
+      amountRepaid: 0,
+      bookValue: 0,
+    });
+  });
+
+  test('owner sees isolated fixture math; unstamped and other-tenant rows are excluded', async () => {
+    const t = convexTest(schema, modules);
+    const owner = await seedTenantUser(t, { role: 'client' });
+    await makePlatformOwner(t, owner);
+    const instA = await seedInstitution(t);
+    const instB = await seedInstitution(t);
+
+    await seedTenantUser(t, { role: 'client', institutionId: instA });
+    await seedTenantUser(t, { role: 'client', institutionId: instA });
+    await seedTenantUser(t, { role: 'loan_officer', institutionId: instA });
+    await seedTenantUser(t, { role: 'admin', institutionId: instA });
+    await seedTenantUser(t, { role: 'tenant_admin', institutionId: instA });
+    await seedTenantUser(t, { role: 'client' });
+    await seedTenantUser(t, { role: 'client', institutionId: instB });
+
+    const borrowerA = await seedTenantUser(t, { role: 'client', institutionId: instA });
+    const borrowerB = await seedTenantUser(t, { role: 'client', institutionId: instB });
+
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'draft',
+      principal: 100,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'rejected',
+      principal: 200,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'submitted',
+      principal: 300,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'approved',
+      principal: 400,
+    });
+    const fundedLoan = await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'funded',
+      principal: 1000,
+      outstandingBalance: 800,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'active',
+      principal: 500,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'active',
+      principal: 250,
+      outstandingBalance: 0,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'paid_off',
+      principal: 700,
+      outstandingBalance: 0,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'defaulted',
+      principal: 900,
+      outstandingBalance: 900,
+    });
+    await seedOverviewLoan(t, {
+      userId: borrowerA,
+      institutionId: instA,
+      status: 'written_off',
+      principal: 50,
+      outstandingBalance: 0,
+    });
+    const unstampedLoan = await seedOverviewLoan(t, {
+      userId: borrowerA,
+      status: 'active',
+      principal: 9999,
+      outstandingBalance: 9999,
+    });
+    const tenantBLoan = await seedOverviewLoan(t, {
+      userId: borrowerB,
+      institutionId: instB,
+      status: 'active',
+      principal: 88_000,
+      outstandingBalance: 88_000,
+    });
+
+    await seedOverviewDisbursement(t, {
+      loanId: fundedLoan,
+      userId: borrowerA,
+      institutionId: instA,
+      amount: 1000,
+      status: 'completed',
+    });
+    await seedOverviewDisbursement(t, {
+      loanId: fundedLoan,
+      userId: borrowerA,
+      institutionId: instA,
+      amount: 500,
+      status: 'pending',
+    });
+    await seedOverviewDisbursement(t, {
+      loanId: unstampedLoan,
+      userId: borrowerA,
+      amount: 9999,
+      status: 'completed',
+    });
+    await seedOverviewDisbursement(t, {
+      loanId: tenantBLoan,
+      userId: borrowerB,
+      institutionId: instB,
+      amount: 88_000,
+      status: 'completed',
+    });
+
+    await seedOverviewPayment(t, {
+      loanId: fundedLoan,
+      userId: borrowerA,
+      institutionId: instA,
+      amount: 200,
+      status: 'completed',
+    });
+    await seedOverviewPayment(t, {
+      loanId: fundedLoan,
+      userId: borrowerA,
+      institutionId: instA,
+      amount: 50,
+      status: 'failed',
+    });
+    await seedOverviewPayment(t, {
+      loanId: fundedLoan,
+      userId: borrowerA,
+      institutionId: instA,
+      amount: 25,
+      status: 'reversed',
+    });
+    await seedOverviewPayment(t, {
+      loanId: unstampedLoan,
+      userId: borrowerA,
+      amount: 111,
+      status: 'completed',
+    });
+    await seedOverviewPayment(t, {
+      loanId: tenantBLoan,
+      userId: borrowerB,
+      institutionId: instB,
+      amount: 444,
+      status: 'completed',
+    });
+
+    const overview = await asUser(t, owner).query(api.platform.tenants.getTenantOverview, {
+      institutionId: instA,
+    });
+
+    expect(overview).toMatchObject({
+      institutionId: instA,
+      clientCount: 3,
+      staffCount: 3,
+      adminCount: 2,
+      loanOfficerCount: 1,
+      loansIssued: 6,
+      amountLoanedOut: 1000,
+      amountRepaid: 200,
+      bookValue: 1300,
+    });
+  });
+});

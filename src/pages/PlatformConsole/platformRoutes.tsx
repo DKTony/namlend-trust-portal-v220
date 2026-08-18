@@ -15,6 +15,7 @@ import { Navigate, Route } from 'react-router-dom';
 // Platform-only pages
 const PlatformOverview = React.lazy(() => import('./pages/PlatformOverview'));
 const TenantsView = React.lazy(() => import('./pages/TenantsView'));
+const TenantOverviewPage = React.lazy(() => import('./pages/TenantOverviewPage'));
 const TenantInfoPage = React.lazy(() => import('../TenantInfo/TenantInfoPage'));
 const PlansView = React.lazy(() => import('./pages/PlansView'));
 const EntitlementsView = React.lazy(() => import('./pages/EntitlementsView'));
@@ -75,6 +76,16 @@ export function platformRoutes() {
           <PageSuspense>
             <TenantsView />
           </PageSuspense>
+        }
+      />
+      <Route
+        path="tenants/:institutionId"
+        element={
+          <ProtectedRoute requirePlatformOwner>
+            <PageSuspense>
+              <TenantOverviewPage />
+            </PageSuspense>
+          </ProtectedRoute>
         }
       />
       <Route

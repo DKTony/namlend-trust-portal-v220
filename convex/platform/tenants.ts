@@ -10,10 +10,11 @@
 import { ConvexError, v } from 'convex/values';
 import { Id } from '../_generated/dataModel';
 import { mutation, query } from '../_generated/server';
+import { fromCents, toCents } from '../lib/amortization';
 import { resolveEntitlements } from '../lib/entitlements';
 import { assertPlatformOwner, assertPlatformSupport } from '../lib/platformAuth';
 import { assertTenantSupportReadAccess } from '../lib/supportAudit';
-import { institutionType } from '../schema';
+import { institutionStatus, institutionType } from '../schema';
 
 const DAY_MS = 86_400_000;
 
@@ -168,5 +169,125 @@ export const getTenantSubscription = query({
   handler: async (ctx, { institutionId }) => {
     await assertTenantSupportReadAccess(ctx, institutionId, 'subscription_status');
     return (await currentSubscription(ctx, institutionId)) ?? null;
+  },
+});
+
+const ISSUED_LOAN_STATUSES = new Set(['funded', 'active', 'paid_off', 'defaulted', 'written_off']);
+
+const OPEN_BOOK_STATUSES = new Set(['funded', 'active']);
+
+const tenantOverviewValidator = v.object({
+  institutionId: v.id('institutions'),
+  name: v.string(),
+  shortCode: v.string(),
+  type: institutionType,
+  status: institutionStatus,
+  clientCount: v.number(),
+  staffCount: v.number(),
+  adminCount: v.number(),
+  loanOfficerCount: v.number(),
+  loansIssued: v.number(),
+  amountLoanedOut: v.number(),
+  amountRepaid: v.number(),
+  bookValue: v.number(),
+});
+
+function aggregateTenantOverview(input: {
+  roles: Array<{ role: string }>;
+  loans: Array<{ status: string; principal: number; outstandingBalance?: number }>;
+  disbursements: Array<{ status: string; amount: number }>;
+  payments: Array<{ status: string; amount: number }>;
+}) {
+  let clientCount = 0;
+  let adminCount = 0;
+  let loanOfficerCount = 0;
+  for (const row of input.roles) {
+    if (row.role === 'client') {
+      clientCount += 1;
+    } else if (row.role === 'loan_officer') {
+      loanOfficerCount += 1;
+    } else if (row.role === 'admin' || row.role === 'tenant_admin') {
+      adminCount += 1;
+    }
+  }
+
+  let loansIssued = 0;
+  let bookValueCents = 0;
+  for (const loan of input.loans) {
+    if (ISSUED_LOAN_STATUSES.has(loan.status)) {
+      loansIssued += 1;
+    }
+    if (OPEN_BOOK_STATUSES.has(loan.status)) {
+      bookValueCents += toCents(loan.outstandingBalance ?? loan.principal);
+    }
+  }
+
+  let loanedOutCents = 0;
+  for (const disbursement of input.disbursements) {
+    if (disbursement.status === 'completed') {
+      loanedOutCents += toCents(disbursement.amount);
+    }
+  }
+
+  let repaidCents = 0;
+  for (const payment of input.payments) {
+    if (payment.status === 'completed') {
+      repaidCents += toCents(payment.amount);
+    }
+  }
+
+  return {
+    clientCount,
+    staffCount: adminCount + loanOfficerCount,
+    adminCount,
+    loanOfficerCount,
+    loansIssued,
+    amountLoanedOut: fromCents(loanedOutCents),
+    amountRepaid: fromCents(repaidCents),
+    bookValue: fromCents(bookValueCents),
+  };
+}
+
+/**
+ * Owner-only operational snapshot for one tenant. Indexed scans only — unstamped rows
+ * are excluded (do not use applyTenantScope; that would attribute legacy nulls here).
+ */
+export const getTenantOverview = query({
+  args: { institutionId: v.id('institutions') },
+  returns: v.union(tenantOverviewValidator, v.null()),
+  handler: async (ctx, { institutionId }) => {
+    await assertPlatformOwner(ctx);
+    const institution = await ctx.db.get(institutionId);
+    if (!institution) {
+      return null;
+    }
+
+    const [roles, loans, disbursements, payments] = await Promise.all([
+      ctx.db
+        .query('userRoles')
+        .withIndex('by_institutionId', (q) => q.eq('institutionId', institutionId))
+        .collect(),
+      ctx.db
+        .query('loans')
+        .withIndex('by_institutionId', (q) => q.eq('institutionId', institutionId))
+        .collect(),
+      ctx.db
+        .query('disbursements')
+        .withIndex('by_institutionId', (q) => q.eq('institutionId', institutionId))
+        .collect(),
+      ctx.db
+        .query('paymentTransactions')
+        .withIndex('by_institutionId', (q) => q.eq('institutionId', institutionId))
+        .collect(),
+    ]);
+
+    return {
+      institutionId: institution._id,
+      name: institution.name,
+      shortCode: institution.shortCode,
+      type: institution.type,
+      status: institution.status,
+      ...aggregateTenantOverview({ roles, loans, disbursements, payments }),
+    };
   },
 });

@@ -25,9 +25,9 @@ import { api } from '@/integrations/convex/api';
 import { handleMutationError } from '@/lib/mutationError';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery } from 'convex/react';
-import { FileText, Plus, SlidersHorizontal } from 'lucide-react';
+import { FileText, LayoutDashboard, Plus, SlidersHorizontal } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Id } from '../../../../convex/_generated/dataModel';
 
 interface TenantRow {
@@ -299,6 +299,7 @@ const AssignPlanDialog: React.FC<{ tenant: TenantRow; plans: PlanRow[]; onDone: 
 
 const TenantsView: React.FC = () => {
   const { isPlatformOwner } = useAuth();
+  const navigate = useNavigate();
   const tenants = useQuery(api.platform.tenants.listTenants, {}) as TenantRow[] | undefined;
   const plans = (useQuery(api.platform.plans.listPlans, {}) ?? []) as PlanRow[];
   // Re-render trigger after a mutation (Convex queries are reactive, so this is just for focus reset).
@@ -345,10 +346,30 @@ const TenantsView: React.FC = () => {
                 <tr
                   key={t._id}
                   data-testid={`platform-tenant-row-${t.shortCode}`}
-                  className="border-t"
+                  className={cn('border-t', isPlatformOwner && 'cursor-pointer hover:bg-muted/40')}
+                  role={isPlatformOwner ? 'link' : undefined}
+                  tabIndex={isPlatformOwner ? 0 : undefined}
+                  aria-label={isPlatformOwner ? `Open overview for ${t.name}` : undefined}
+                  onClick={() => {
+                    if (isPlatformOwner) {
+                      navigate(`/platform/tenants/${t._id}`);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (!isPlatformOwner) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigate(`/platform/tenants/${t._id}`);
+                    }
+                  }}
                 >
                   <td className="py-2 pr-4">
-                    <div className="font-medium">{t.name}</div>
+                    <div
+                      className="font-medium"
+                      data-testid={`platform-tenant-name-${t.shortCode}`}
+                    >
+                      {t.name}
+                    </div>
                     <div className="font-mono text-xs text-muted-foreground">{t.shortCode}</div>
                   </td>
                   <td className="py-2 pr-4">{t.type}</td>
@@ -372,16 +393,28 @@ const TenantsView: React.FC = () => {
                     )}
                   </td>
                   <td className="py-2 pr-4">{t.featureCount}</td>
-                  <td className="py-2 pr-4">
+                  <td
+                    className="py-2 pr-4"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         to={`/platform/entitlements?tenant=${t._id}`}
                         className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted/50"
+                        data-testid={`platform-tenant-entitlements-${t.shortCode}`}
                       >
                         <SlidersHorizontal className="h-3.5 w-3.5" /> Entitlements
                       </Link>
                       {isPlatformOwner && (
                         <>
+                          <Link
+                            to={`/platform/tenants/${t._id}`}
+                            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted/50"
+                            data-testid={`platform-tenant-overview-${t.shortCode}`}
+                          >
+                            <LayoutDashboard className="h-3.5 w-3.5" /> Overview
+                          </Link>
                           <Link
                             to={`/platform/tenants/${t._id}/info`}
                             className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-muted/50"

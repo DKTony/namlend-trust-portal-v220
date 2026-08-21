@@ -47,16 +47,16 @@ async function signUp(
 ) {
   await page.goto(`${baseURL}/auth?next=${encodeURIComponent(next)}`);
   await page.getByTestId('email-input').waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: /create one/i }).click();
+  await page.getByTestId('auth-switch-to-signup').click();
 
-  await page.getByPlaceholder('John').fill(data.first);
-  await page.getByPlaceholder('Doe').fill(data.last);
-  await page.getByPlaceholder('name@example.com').fill(data.email);
-  await page.getByPlaceholder('+264 81...').fill(data.phone);
-  await page.getByPlaceholder('ID Number').fill(data.idNumber);
-  await page.getByPlaceholder('Create password').fill(PASSWORD);
-  await page.getByPlaceholder('Confirm password').fill(PASSWORD);
-  await page.getByRole('button', { name: /create account/i }).click();
+  await page.getByTestId('signup-first-name-input').fill(data.first);
+  await page.getByTestId('signup-last-name-input').fill(data.last);
+  await page.getByTestId('signup-email-input').fill(data.email);
+  await page.getByTestId('signup-phone-input').fill(data.phone);
+  await page.getByTestId('signup-id-number-input').fill(data.idNumber);
+  await page.getByTestId('signup-password-input').fill(PASSWORD);
+  await page.getByTestId('signup-confirm-password-input').fill(PASSWORD);
+  await page.getByTestId('signup-submit-button').click();
 }
 
 test.describe('Sign-up enrollment', () => {

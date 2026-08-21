@@ -26,7 +26,7 @@ const LoanCalculator = () => {
   const apply = () => navigate(user ? '/loan-application' : '/auth');
 
   return (
-    <section id="loans" className="relative py-20 md:py-28">
+    <section id="loans" className="relative scroll-mt-24 py-20 md:py-28">
       <div className="container mx-auto px-4 md:px-8">
         <div className="mb-16 text-center">
           <h2 className="mb-4 text-3xl font-bold text-[#274F35] md:text-4xl lg:text-5xl">

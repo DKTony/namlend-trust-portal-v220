@@ -5,7 +5,12 @@ import { Facebook, Instagram, Mail, MapPin, Phone, Shield, Twitter } from 'lucid
 const Footer = () => {
   return (
     <footer
-      className={cn('border-t transition-colors duration-300', 'bg-[#F7FAF6]', 'border-[#DCE8D8]')}
+      id="contact"
+      className={cn(
+        'scroll-mt-24 border-t transition-colors duration-300',
+        'bg-[#F7FAF6]',
+        'border-[#DCE8D8]'
+      )}
     >
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

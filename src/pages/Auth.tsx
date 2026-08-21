@@ -31,10 +31,12 @@ export default function Auth() {
     isPlatformStaff,
   } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const nextParam = searchParams.get('next');
 
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [authMode, setAuthMode] = useState<AuthMode>(() =>
+    searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  );
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,13 +60,37 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
-  // Check if this is a password reset flow
+  // Password reset wins over mode=signup/login from the landing CTAs.
   useEffect(() => {
     const resetParam = searchParams.get('reset');
     if (resetParam === 'true') {
       setIsPasswordReset(true);
+      return;
+    }
+    const modeParam = searchParams.get('mode');
+    if (modeParam === 'signup') {
+      setAuthMode('signup');
+    } else if (modeParam === 'login') {
+      setAuthMode('login');
     }
   }, [searchParams]);
+
+  const switchAuthMode = (mode: AuthMode) => {
+    setAuthMode(mode);
+    if (mode === 'forgot_password') return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (mode === 'signup') {
+          next.set('mode', 'signup');
+        } else {
+          next.delete('mode');
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   // Wait for both tenant and platform role queries before choosing a console.
   useEffect(() => {
@@ -230,7 +256,7 @@ export default function Auth() {
         toast({ title: 'Reset Failed', description: error.message, variant: 'destructive' });
       } else {
         toast({ title: 'Email Sent', description: 'Check your email for reset instructions.' });
-        setAuthMode('login');
+        switchAuthMode('login');
       }
     } catch (error) {
       toast({
@@ -253,10 +279,10 @@ export default function Auth() {
       });
       return;
     }
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: 'Password Too Short',
-        description: 'Minimum 6 characters required.',
+        description: 'Please use at least 8 characters.',
         variant: 'destructive',
       });
       return;
@@ -270,7 +296,7 @@ export default function Auth() {
       } else {
         toast({ title: 'Success', description: 'Password updated. Please sign in.' });
         setIsPasswordReset(false);
-        setAuthMode('login');
+        switchAuthMode('login');
         // Clearing reset mode releases the role-aware redirect effect above.
       }
     } catch (error) {
@@ -313,7 +339,12 @@ export default function Auth() {
           <div className="pointer-events-none absolute -mb-10 -ml-10 h-80 w-80 rounded-full bg-[#3F713E] opacity-35 blur-[100px] bottom-0 left-0" />
 
           <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-3 mb-2 text-left"
+              data-testid="auth-brand-home"
+            >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F7FAF6] p-1 shadow-glow">
                 <img
                   src="/og-financial-mark-v2.svg"
@@ -324,7 +355,7 @@ export default function Auth() {
               <span className="text-xl font-bold tracking-tight text-white">
                 OG Financial Services
               </span>
-            </div>
+            </button>
           </div>
 
           <div className="relative z-10 max-w-md">
@@ -350,6 +381,14 @@ export default function Auth() {
           )}
         >
           <div className="max-w-md mx-auto w-full">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="mb-6 text-sm font-medium text-[#274F35] hover:underline"
+              data-testid="auth-back-home"
+            >
+              Back to home
+            </button>
             {/* Header Section */}
             <div className="mb-8">
               {isPasswordReset ? (
@@ -526,6 +565,7 @@ export default function Auth() {
                           className="pl-10"
                           placeholder="John"
                           required
+                          data-testid="signup-first-name-input"
                         />
                       </div>
                     </div>
@@ -546,6 +586,7 @@ export default function Auth() {
                           className="pl-10"
                           placeholder="Doe"
                           required
+                          data-testid="signup-last-name-input"
                         />
                       </div>
                     </div>
@@ -567,6 +608,7 @@ export default function Auth() {
                         className="pl-10"
                         placeholder="name@example.com"
                         required
+                        data-testid="signup-email-input"
                       />
                     </div>
                   </div>
@@ -587,6 +629,7 @@ export default function Auth() {
                           className="pl-10"
                           placeholder="+264 81..."
                           required
+                          data-testid="signup-phone-input"
                         />
                       </div>
                     </div>
@@ -607,6 +650,7 @@ export default function Auth() {
                           className="pl-10"
                           placeholder="ID Number"
                           required
+                          data-testid="signup-id-number-input"
                         />
                       </div>
                     </div>
@@ -628,6 +672,7 @@ export default function Auth() {
                         className="pl-10"
                         placeholder="Create password"
                         required
+                        data-testid="signup-password-input"
                       />
                     </div>
                   </div>
@@ -650,11 +695,17 @@ export default function Auth() {
                         className="pl-10"
                         placeholder="Confirm password"
                         required
+                        data-testid="signup-confirm-password-input"
                       />
                     </div>
                   </div>
 
-                  <ThemedButton type="submit" disabled={isLoading} className="w-full mt-4">
+                  <ThemedButton
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full mt-4"
+                    data-testid="signup-submit-button"
+                  >
                     {isLoading ? (
                       <Loader2 className="animate-spin" />
                     ) : (
@@ -692,7 +743,7 @@ export default function Auth() {
                 <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => setAuthMode('login')}
+                    onClick={() => switchAuthMode('login')}
                     className="text-sm text-primary hover:text-primary/80 font-medium"
                   >
                     Back to Sign In
@@ -708,8 +759,10 @@ export default function Auth() {
                   <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <button
-                      onClick={() => setAuthMode('signup')}
+                      type="button"
+                      onClick={() => switchAuthMode('signup')}
                       className="text-foreground font-semibold hover:underline"
+                      data-testid="auth-switch-to-signup"
                     >
                       Create one
                     </button>
@@ -718,8 +771,10 @@ export default function Auth() {
                   <p className="text-sm text-muted-foreground">
                     Already have an account?{' '}
                     <button
-                      onClick={() => setAuthMode('login')}
+                      type="button"
+                      onClick={() => switchAuthMode('login')}
                       className="text-foreground font-semibold hover:underline"
+                      data-testid="auth-switch-to-login"
                     >
                       Sign in
                     </button>

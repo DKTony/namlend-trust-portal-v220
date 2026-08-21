@@ -6,7 +6,7 @@
  * flag reads `false`, so staff and platform owners were routed to `/dashboard` as if they were
  * clients. `authReady` is what makes the decision wait.
  */
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -45,6 +45,7 @@ function renderAuth(auth: AuthState, search = '') {
   return render(
     <MemoryRouter initialEntries={[`/auth${search}`]}>
       <Routes>
+        <Route path="/" element={<div>LANDING HOME</div>} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<div>CLIENT DASHBOARD</div>} />
         <Route path="/admin" element={<div>BACKOFFICE</div>} />
@@ -114,6 +115,40 @@ describe('landing waits for the identity queries', () => {
 
     expect(screen.queryByText('CLIENT DASHBOARD')).not.toBeInTheDocument();
     expect(screen.getByTestId('email-input')).toBeInTheDocument();
+  });
+});
+
+describe('landing honours ?mode=', () => {
+  it('opens the signup form when mode=signup', () => {
+    renderAuth({ user: null }, '?mode=signup');
+
+    expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument();
+    expect(screen.queryByTestId('email-input')).not.toBeInTheDocument();
+  });
+
+  it('keeps the sign-in form when mode is absent', () => {
+    renderAuth({ user: null });
+
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(screen.getByTestId('login-button')).toBeInTheDocument();
+  });
+
+  it('switching to Sign in from ?mode=signup leaves the login form', () => {
+    renderAuth({ user: null }, '?mode=signup');
+
+    fireEvent.click(screen.getByTestId('auth-switch-to-login'));
+
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    expect(screen.getByTestId('login-button')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Create Account' })).not.toBeInTheDocument();
+  });
+
+  it('returns to the landing page from Back to home', () => {
+    renderAuth({ user: null });
+
+    fireEvent.click(screen.getByTestId('auth-back-home'));
+
+    expect(screen.getByText('LANDING HOME')).toBeInTheDocument();
   });
 });
 

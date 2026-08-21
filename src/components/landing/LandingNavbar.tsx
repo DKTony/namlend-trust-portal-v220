@@ -1,4 +1,6 @@
+import SignOutButton from '@/components/shared/SignOutButton';
 import { useAuth } from '@/hooks/useAuth';
+import { getLandingLabel, getLandingRoute } from '@/lib/routing';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
@@ -7,8 +9,12 @@ import LandingButton from './LandingButton';
 
 const LandingNavbar: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoanOfficer, isPlatformStaff } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+
+  const roleFlags = { isPlatformStaff, isLoanOfficer };
+  const homeRoute = getLandingRoute(roleFlags);
+  const homeLabel = getLandingLabel(roleFlags);
 
   const navLinks = [
     { name: 'Loans', href: '#loans' },
@@ -17,16 +23,21 @@ const LandingNavbar: React.FC = () => {
     { name: 'Contact', href: '#contact' },
   ];
 
+  const closeAndNavigate = (path: string) => {
+    setIsOpen(false);
+    navigate(path);
+  };
+
   const handleApplyClick = () => {
-    if (user) {
-      navigate('/loan-application');
-    } else {
-      navigate('/auth');
-    }
+    closeAndNavigate(user ? '/loan-application' : '/auth');
   };
 
   const handleSignInClick = () => {
-    navigate('/auth');
+    closeAndNavigate('/auth');
+  };
+
+  const handleSignUpClick = () => {
+    closeAndNavigate('/auth?mode=signup');
   };
 
   const handleLinkClick = (href: string) => {
@@ -37,6 +48,79 @@ const LandingNavbar: React.FC = () => {
     setIsOpen(false);
   };
 
+  const guestActions = (layout: 'desktop' | 'mobile') => {
+    const fullWidth = layout === 'mobile';
+    const suffix = layout === 'mobile' ? '-mobile' : '';
+    return (
+      <>
+        <LandingButton
+          type="button"
+          variant="secondary"
+          fullWidth={fullWidth}
+          onClick={handleSignInClick}
+          data-testid={`landing-signin-button${suffix}`}
+        >
+          Sign In
+        </LandingButton>
+        <LandingButton
+          type="button"
+          variant="ghost"
+          fullWidth={fullWidth}
+          onClick={handleSignUpClick}
+          data-testid={`landing-signup-button${suffix}`}
+        >
+          Sign Up
+        </LandingButton>
+        <LandingButton
+          type="button"
+          variant="primary"
+          fullWidth={fullWidth}
+          onClick={handleApplyClick}
+          data-testid={`landing-apply-now-button${suffix}`}
+        >
+          Apply Now
+        </LandingButton>
+      </>
+    );
+  };
+
+  const signedInActions = (layout: 'desktop' | 'mobile') => {
+    const fullWidth = layout === 'mobile';
+    const suffix = layout === 'mobile' ? '-mobile' : '';
+    return (
+      <>
+        <LandingButton
+          type="button"
+          variant="secondary"
+          fullWidth={fullWidth}
+          onClick={() => closeAndNavigate(homeRoute)}
+          data-testid={`landing-dashboard-button${suffix}`}
+        >
+          {homeLabel}
+        </LandingButton>
+        <SignOutButton
+          variant="ghost"
+          withIcon={layout === 'desktop'}
+          className={cn(
+            'font-sans text-[#274F35] hover:bg-[#EEF5EB]',
+            fullWidth && 'h-11 w-full justify-center'
+          )}
+          data-testid={`landing-signout-button${suffix}`}
+          onClick={() => setIsOpen(false)}
+        />
+        <LandingButton
+          type="button"
+          variant="primary"
+          fullWidth={fullWidth}
+          onClick={handleApplyClick}
+          data-testid={`landing-apply-now-button${suffix}`}
+        >
+          Apply Now
+        </LandingButton>
+      </>
+    );
+  };
+
   return (
     <nav
       className={cn(
@@ -45,15 +129,21 @@ const LandingNavbar: React.FC = () => {
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => closeAndNavigate('/')}
+          className="flex items-center gap-2 rounded-lg text-left"
+          aria-label="OG Financial Services home"
+          data-testid="landing-logo-home"
+        >
           <img
             src="/og-financial-logo-v2.svg"
             alt="OG Financial Services"
             className="h-12 w-auto max-w-[190px] object-contain"
           />
-        </div>
+        </button>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
             <button
               key={link.name}
@@ -68,22 +158,14 @@ const LandingNavbar: React.FC = () => {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
-          <button
-            onClick={handleSignInClick}
-            className={cn('text-sm font-medium hover:opacity-70', 'font-sans text-[#274F35]')}
-          >
-            Sign In
-          </button>
-          <LandingButton variant="primary" onClick={handleApplyClick}>
-            Apply Now
-          </LandingButton>
+        <div className="hidden lg:flex items-center gap-3">
+          {user ? signedInActions('desktop') : guestActions('desktop')}
         </div>
 
         <button
           type="button"
           className={cn(
-            'md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors',
+            'lg:hidden flex min-h-11 min-w-11 items-center justify-center rounded-lg transition-colors',
             'hover:bg-[#DCE8D8]'
           )}
           onClick={() => setIsOpen(!isOpen)}
@@ -106,7 +188,7 @@ const LandingNavbar: React.FC = () => {
           role="navigation"
           aria-label="Mobile navigation"
           className={cn(
-            'md:hidden absolute top-full left-0 w-full p-4 border-b',
+            'lg:hidden absolute top-full left-0 w-full p-4 border-b',
             'bg-[#F7FAF6]',
             'border-[#DCE8D8]'
           )}
@@ -125,9 +207,7 @@ const LandingNavbar: React.FC = () => {
               </button>
             ))}
             <hr className={'border-[#DCE8D8]'} />
-            <LandingButton fullWidth onClick={handleApplyClick}>
-              Apply Now
-            </LandingButton>
+            {user ? signedInActions('mobile') : guestActions('mobile')}
           </div>
         </div>
       )}

@@ -47,11 +47,13 @@ test.describe('Adaptive layout regression', () => {
         await page.goto(`${baseURL}${route}`);
         await expectNoHorizontalOverflow(page);
 
-        if (route === '/' && viewport.width < 768) {
+        if (route === '/' && viewport.width < 1024) {
           const trigger = page.getByTestId('landing-mobile-menu-trigger');
           await expect(trigger).toBeVisible();
           await trigger.click();
           await expect(page.getByRole('navigation', { name: 'Mobile navigation' })).toBeVisible();
+          await expect(page.getByTestId('landing-signin-button-mobile')).toBeVisible();
+          await expect(page.getByTestId('landing-signup-button-mobile')).toBeVisible();
           await expectNoHorizontalOverflow(page);
         }
       }

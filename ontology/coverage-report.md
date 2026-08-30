@@ -1,6 +1,6 @@
 # Ontology coverage report
 
-Commit: `ca5a4c231474a971107fa58b1e61caaa3c330a6c`
+Commit: `29b53e127dac4325f0a1bcaab72f17d1438b8205`
 
 ## Assurance summary
 
@@ -21,24 +21,24 @@ These mappings are E0 evidence that an executable test is declared. Named passin
 
 | Proof target             | Matching named E0 test declarations | Status  | Evidence                                                                              |
 | ------------------------ | ----------------------------------: | ------- | ------------------------------------------------------------------------------------- |
-| `approve`                |                                   2 | CURRENT | `evidence:5dedf471426b9e11`, `evidence:9d5cb4a68c3f611e`                              |
-| `APR_MAX_32`             |                                   2 | CURRENT | `evidence:ce83bc0f9202dc09`, `evidence:de106fb3a448ac7c`                              |
-| `collect`                |                                   2 | CURRENT | `evidence:158910bfdb6e0cf2`, `evidence:6967c8af71189d19`                              |
-| `disburse`               |                                   2 | CURRENT | `evidence:48e7ca6eb75582de`, `evidence:ec8d72527a3cf24d`                              |
-| `FLAGS_DEFAULT_OFF`      |                                   1 | CURRENT | `evidence:8a1416f01bd4dec2`                                                           |
-| `KYC`                    |                                   2 | CURRENT | `evidence:4bc621c3318b716f`, `evidence:b8f2363647e6b40e`                              |
-| `KYC_REQUIRED`           |                                   2 | CURRENT | `evidence:b8f2363647e6b40e`, `evidence:dc4f1b967f31a320`                              |
-| `LEDGER_COMPLETION_ONLY` |                                   1 | CURRENT | `evidence:96357fc31820c6a5`                                                           |
-| `LEDGER_IDEMPOTENT`      |                                   1 | CURRENT | `evidence:6f8ab4d1d4368883`                                                           |
-| `LEDGER_REVERSAL`        |                                   1 | CURRENT | `evidence:22eeb514aa12b984`                                                           |
-| `notify`                 |                                   2 | CURRENT | `evidence:0d78e98c83a41f91`, `evidence:391ae7185b9a23a1`                              |
-| `onboard`                |                                   2 | CURRENT | `evidence:2f7675d8bfb3a9b9`, `evidence:40b2fa6135b5504e`                              |
-| `originate`              |                                   1 | CURRENT | `evidence:a145ffe7be1d4371`                                                           |
-| `reconcile`              |                                   2 | CURRENT | `evidence:7b92f9f265d12a75`, `evidence:b8cd3cdd30148612`                              |
-| `repay`                  |                                   2 | CURRENT | `evidence:96357fc31820c6a5`, `evidence:c638323d95331404`                              |
-| `ROLE_LANDING`           |                                   2 | CURRENT | `evidence:0dcbb969514a83d6`, `evidence:5746769ff004db6e`                              |
-| `settle`                 |                                   2 | CURRENT | `evidence:7b92f9f265d12a75`, `evidence:a43a6eb4aa98d661`                              |
-| `TENANT_ISOLATION`       |                                   3 | CURRENT | `evidence:1549f8d1cf4911b9`, `evidence:6635d97fc5956e98`, `evidence:6967c8af71189d19` |
+| `approve`                |                                   2 | CURRENT | `evidence:753eb5e4bfcbfdbf`, `evidence:a24be2ea9703eeea`                              |
+| `APR_MAX_32`             |                                   2 | CURRENT | `evidence:071cc68979e55ca5`, `evidence:13ebd68832ffe101`                              |
+| `collect`                |                                   2 | CURRENT | `evidence:90d8713dec4df637`, `evidence:b8906268d2caa716`                              |
+| `disburse`               |                                   2 | CURRENT | `evidence:b9085a063206c95c`, `evidence:df7469bb8314b5e1`                              |
+| `FLAGS_DEFAULT_OFF`      |                                   1 | CURRENT | `evidence:cbaafd543408917b`                                                           |
+| `KYC`                    |                                   2 | CURRENT | `evidence:6e1159dc3de42889`, `evidence:89e857b1eaf65225`                              |
+| `KYC_REQUIRED`           |                                   2 | CURRENT | `evidence:86988b800a40cf39`, `evidence:89e857b1eaf65225`                              |
+| `LEDGER_COMPLETION_ONLY` |                                   1 | CURRENT | `evidence:9be998b1108f101b`                                                           |
+| `LEDGER_IDEMPOTENT`      |                                   1 | CURRENT | `evidence:a232b98da5652ac1`                                                           |
+| `LEDGER_REVERSAL`        |                                   1 | CURRENT | `evidence:3519c4dfac4347c1`                                                           |
+| `notify`                 |                                   2 | CURRENT | `evidence:1754960d7e855674`, `evidence:26681f87afcee84b`                              |
+| `onboard`                |                                   2 | CURRENT | `evidence:619a3ae4069037ed`, `evidence:a7e937b749b21d39`                              |
+| `originate`              |                                   1 | CURRENT | `evidence:edca76c7218beff6`                                                           |
+| `reconcile`              |                                   2 | CURRENT | `evidence:49a2fea2a5f4cc89`, `evidence:a98285c79823941f`                              |
+| `repay`                  |                                   2 | CURRENT | `evidence:16d9bc0db4f5ed87`, `evidence:9be998b1108f101b`                              |
+| `ROLE_LANDING`           |                                   2 | CURRENT | `evidence:2fd9b27efbe08554`, `evidence:b83384aa9bc3be9b`                              |
+| `settle`                 |                                   2 | CURRENT | `evidence:a98285c79823941f`, `evidence:bb12da4644984390`                              |
+| `TENANT_ISOLATION`       |                                   3 | CURRENT | `evidence:90d8713dec4df637`, `evidence:9e641d0297436734`, `evidence:d05a518f236661b8` |
 
 ## Table connectivity
 

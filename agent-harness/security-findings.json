@@ -18,7 +18,7 @@
       "resolution": "The exposed legacy service_role API key was revoked by disabling the project's JWT-based API keys. GitHub recorded the alert resolution as revoked.",
       "owner": "NamLend Engineering",
       "nextAction": "Keep legacy JWT-based API keys disabled and migrate any intentionally retained legacy consumer to scoped publishable or secret API keys.",
-      "reviewDate": "2026-08-26"
+      "reviewDate": "2026-09-13"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LEGACY_PRODUCTION_CONVEX_URL,
   LEGACY_SHARED_E2E_CONVEX_URL,
   PRODUCTION_CONVEX_URL,
   requireSafeConvexUrl,
@@ -11,8 +12,14 @@ describe('E2E setup safety', () => {
     expect(() => requireSafeConvexUrl({})).toThrow(/VITE_CONVEX_URL is required/);
   });
 
-  it('rejects the production Convex URL', () => {
+  it('rejects the live production Convex URL', () => {
     expect(() => requireSafeConvexUrl({ VITE_CONVEX_URL: `${PRODUCTION_CONVEX_URL}/` })).toThrow(
+      /Refusing to run mutating E2E setup against production Convex/
+    );
+  });
+
+  it('rejects the legacy production Convex URL', () => {
+    expect(() => requireSafeConvexUrl({ VITE_CONVEX_URL: LEGACY_PRODUCTION_CONVEX_URL })).toThrow(
       /Refusing to run mutating E2E setup against production Convex/
     );
   });

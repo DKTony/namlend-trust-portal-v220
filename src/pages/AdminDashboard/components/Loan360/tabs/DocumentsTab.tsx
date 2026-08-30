@@ -12,7 +12,7 @@ export function DocumentsTab({ loanId }: DocumentsTabProps) {
         <CardTitle>Loan documents</CardTitle>
       </CardHeader>
       <CardContent>
-        <LoanDocumentsPanel loanId={loanId} allowReview />
+        <LoanDocumentsPanel loanId={loanId} allowReview allowUpload />
       </CardContent>
     </Card>
   );

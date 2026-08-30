@@ -416,10 +416,7 @@ export default function LoanDetails() {
               {documentsEnabled && (
                 <TabsContent value="documents">
                   <ThemedCard className="mt-4">
-                    <LoanDocumentsPanel
-                      loanId={loan.id}
-                      allowUpload={['draft', 'submitted', 'under_review'].includes(loan.status)}
-                    />
+                    <LoanDocumentsPanel loanId={loan.id} allowUpload loanStatus={loan.status} />
                   </ThemedCard>
                 </TabsContent>
               )}

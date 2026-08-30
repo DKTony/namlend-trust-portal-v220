@@ -391,16 +391,6 @@
       "testId": "describe:e2e:e2e/document-workflow.e2e.ts#968fe2068529100c5e04"
     },
     {
-      "anchorLine": 176,
-      "file": "e2e/document-workflow.e2e.ts",
-      "id": "skip:e2e/document-workflow.e2e.ts#9f975be529861a41",
-      "issue": "./gap-register.md#gap-test-skip-b17fa18cdc90",
-      "owner": "NamLend Engineering",
-      "reason": "The seeded client has no loan in draft/submitted/under_review.",
-      "reviewDate": "2026-09-30",
-      "testId": "test:e2e:e2e/document-workflow.e2e.ts#047fafa39802f4656364"
-    },
-    {
       "anchorLine": 63,
       "file": "e2e/ipp-lifecycle.e2e.ts",
       "id": "skip:e2e/ipp-lifecycle.e2e.ts#cfae2755b091658e",

@@ -1,5 +1,14 @@
-export const PRODUCTION_CONVEX_URL = 'https://aromatic-okapi-265.convex.cloud';
+/** Live Netlify production backend (`namlend-trust-portal-v220.netlify.app`). */
+export const PRODUCTION_CONVEX_URL = 'https://tangible-kookabura-81.convex.cloud';
+/** Previously documented as production; still a shared persistent deployment. */
+export const LEGACY_PRODUCTION_CONVEX_URL = 'https://aromatic-okapi-265.convex.cloud';
 export const LEGACY_SHARED_E2E_CONVEX_URL = 'https://brave-mole-108.convex.cloud';
+
+const BLOCKED_CONVEX_ORIGINS = new Set([
+  PRODUCTION_CONVEX_URL,
+  LEGACY_PRODUCTION_CONVEX_URL,
+  LEGACY_SHARED_E2E_CONVEX_URL,
+]);
 
 type E2EEnv = {
   CI?: string;
@@ -23,14 +32,14 @@ export function requireSafeConvexUrl(env: E2EEnv): string {
   } catch {
     throw new Error(`VITE_CONVEX_URL is not a valid URL: ${convexUrl}`);
   }
-  if (convexOrigin === PRODUCTION_CONVEX_URL) {
-    throw new Error(
-      `Refusing to run mutating E2E setup against production Convex: ${convexOrigin}`
-    );
-  }
   if (convexOrigin === LEGACY_SHARED_E2E_CONVEX_URL) {
     throw new Error(
       `Refusing to run E2E against the retired shared Convex deployment: ${convexOrigin}`
+    );
+  }
+  if (BLOCKED_CONVEX_ORIGINS.has(convexOrigin)) {
+    throw new Error(
+      `Refusing to run mutating E2E setup against production Convex: ${convexOrigin}`
     );
   }
   if (env.E2E_ALLOW_MUTATING_SEED === 'true') {

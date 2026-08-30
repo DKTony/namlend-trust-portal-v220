@@ -11,9 +11,8 @@ import {
   validateOriginalFileName,
   validateStoredDocument,
 } from './lib/documentPolicy';
+import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import { tenantReadScope } from './lib/tenancy';
-
-const CLIENT_UPLOAD_STATES = ['draft', 'submitted', 'under_review'];
 
 function selectCurrentDocuments(documents: Doc<'loanDocuments'>[]) {
   const types = new Set(documents.map((document) => document.documentType));
@@ -52,6 +51,7 @@ export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
     await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     return ctx.storage.generateUploadUrl();
   },
 });
@@ -65,15 +65,10 @@ export const recordDocument = mutation({
   },
   handler: async (ctx, args) => {
     const actorId = await assertAuthenticated(ctx);
+    await assertCallerClientFeatureEnabled(ctx, 'clientDocuments');
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertOwnerOrTenantStaff(ctx, loan.userId, loan.institutionId);
-    if (actorId === loan.userId && !CLIENT_UPLOAD_STATES.includes(loan.status)) {
-      throw new ConvexError({
-        code: 'DOCUMENTS_READ_ONLY',
-        message: 'Supporting documents are read-only at this stage of the loan.',
-      });
-    }
 
     const duplicate = await ctx.db
       .query('loanDocuments')

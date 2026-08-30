@@ -4,6 +4,8 @@ import { api, internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import {
   MAX_DOCUMENT_BYTES,
+  isKycUploadLocked,
+  shouldReopenKycOnUpload,
   validateOriginalFileName,
   validateStoredDocument,
 } from './lib/documentPolicy';
@@ -106,6 +108,28 @@ describe('authoritative document validation', () => {
     expect(validateOriginalFileName('  payslip.pdf  ')).toBe('payslip.pdf');
     expect(() => validateOriginalFileName('../identity.pdf')).toThrow();
     expect(() => validateOriginalFileName('')).toThrow();
+  });
+
+  test('locks identity files during submitted review and only reopens KYC for required replacements', () => {
+    expect(isKycUploadLocked({ kycStatus: 'submitted', documentType: 'id_card' })).toBe(true);
+    expect(
+      isKycUploadLocked({
+        kycStatus: 'submitted',
+        documentType: 'bank_statement',
+        currentSubmittedAt: Date.now(),
+      })
+    ).toBe(true);
+    expect(isKycUploadLocked({ kycStatus: 'submitted', documentType: 'employment_letter' })).toBe(
+      false
+    );
+    expect(isKycUploadLocked({ kycStatus: 'verified', documentType: 'id_card' })).toBe(false);
+    expect(shouldReopenKycOnUpload({ kycStatus: 'verified', documentType: 'proof_income' })).toBe(
+      true
+    );
+    expect(shouldReopenKycOnUpload({ kycStatus: 'verified', documentType: 'bank_statement' })).toBe(
+      false
+    );
+    expect(shouldReopenKycOnUpload({ kycStatus: 'rejected', documentType: 'id_card' })).toBe(true);
   });
 });
 
@@ -288,6 +312,86 @@ describe('KYC package lifecycle', () => {
   });
 });
 
+describe('KYC any-stage extras', () => {
+  test('allows optional extras during review and after verify without reopening KYC', async () => {
+    const t = convexTest(schema, modules);
+    const institution = await seedInstitution(t, 'KYC-EXTRAS');
+    const client = await seedUser(t, 'client', institution);
+    const reviewer = await seedUser(t, 'loan_officer', institution);
+    const clientApi = asUser(t, client);
+    const reviewerApi = asUser(t, reviewer);
+
+    await clientApi.mutation(api.kycDocuments.recordDocument, {
+      documentType: 'id_card',
+      fileStorageId: await storeFile(t, 'image/jpeg', 'identity'),
+      fileName: 'national-id.jpg',
+    });
+    await clientApi.mutation(api.kycDocuments.recordDocument, {
+      documentType: 'proof_income',
+      fileStorageId: await storeFile(t, 'application/pdf', 'income'),
+      fileName: 'payslip.pdf',
+    });
+    const requestId = await clientApi.mutation(api.kycDocuments.submitMyKyc, {});
+
+    await expect(
+      clientApi.mutation(api.kycDocuments.recordDocument, {
+        documentType: 'id_card',
+        fileStorageId: await storeFile(t, 'image/jpeg', 'replacement id'),
+        fileName: 'replacement-id.jpg',
+      })
+    ).rejects.toMatchObject({ data: { code: 'KYC_LOCKED' } });
+
+    await clientApi.mutation(api.kycDocuments.recordDocument, {
+      documentType: 'employment_letter',
+      fileStorageId: await storeFile(t, 'application/pdf', 'employer letter'),
+      fileName: 'employer.pdf',
+    });
+    const duringReview = await clientApi.query(api.kycDocuments.getMyKycOverview, {});
+    expect(duringReview.status).toBe('submitted');
+    const extraDuringReview = duringReview.documents.find(
+      (document) => document.documentType === 'employment_letter'
+    );
+    expect(extraDuringReview).toMatchObject({ fileName: 'employer.pdf', status: 'pending' });
+    expect(extraDuringReview?.submittedAt).toBeUndefined();
+
+    const byType = new Map(
+      duringReview.documents.map((document) => [document.documentType, document])
+    );
+    await reviewerApi.mutation(api.kycDocuments.reviewDocument, {
+      documentId: byType.get('id_card')!.id,
+      decision: 'approved',
+    });
+    await reviewerApi.mutation(api.kycDocuments.reviewDocument, {
+      documentId: byType.get('proof_income')!.id,
+      decision: 'approved',
+    });
+    expect(await reviewerApi.mutation(api.kycDocuments.completeReview, { requestId })).toEqual({
+      status: 'verified',
+    });
+
+    await clientApi.mutation(api.kycDocuments.recordDocument, {
+      documentType: 'bank_statement',
+      fileStorageId: await storeFile(t, 'application/pdf', 'extra statement'),
+      fileName: 'extra-statement.pdf',
+    });
+    const afterExtra = await clientApi.query(api.kycDocuments.getMyKycOverview, {});
+    expect(afterExtra.status).toBe('verified');
+    expect(afterExtra.eligible).toBe(true);
+    expect(
+      afterExtra.documents.find((document) => document.documentType === 'bank_statement')
+    ).toMatchObject({ fileName: 'extra-statement.pdf', status: 'pending' });
+
+    await clientApi.mutation(api.kycDocuments.recordDocument, {
+      documentType: 'proof_income',
+      fileStorageId: await storeFile(t, 'application/pdf', 'new payslip'),
+      fileName: 'new-payslip.pdf',
+    });
+    const reopened = await clientApi.query(api.kycDocuments.getMyKycOverview, {});
+    expect(reopened.status).toBe('pending');
+    expect(reopened.eligible).toBe(false);
+  });
+});
+
 describe('loan document workflow', () => {
   test('enforces loan state and tenant access while retaining replacement history', async () => {
     const t = convexTest(schema, modules);
@@ -384,15 +488,22 @@ describe('loan document workflow', () => {
     });
 
     await t.run((ctx) => ctx.db.patch(loanId, { status: 'approved', updatedAt: Date.now() }));
-    const lateFile = await storeFile(t, 'application/pdf', 'too late');
-    await expect(
-      clientApi.mutation(api.loanDocuments.recordDocument, {
-        loanId,
-        documentType: 'proof_income',
-        fileName: 'late.pdf',
-        fileStorageId: lateFile,
-      })
-    ).rejects.toMatchObject({ data: { code: 'DOCUMENTS_READ_ONLY' } });
+    const lateFile = await storeFile(t, 'application/pdf', 'post approval extra');
+    const extraDocument = await clientApi.mutation(api.loanDocuments.recordDocument, {
+      loanId,
+      documentType: 'proof_income',
+      fileName: 'late.pdf',
+      fileStorageId: lateFile,
+    });
+    expect(
+      (await clientApi.query(api.loanDocuments.getLoanDocuments, { loanId })).find(
+        (document) => document.id === extraDocument
+      )
+    ).toMatchObject({
+      fileName: 'late.pdf',
+      status: 'pending',
+      isCurrent: true,
+    });
   });
 });
 

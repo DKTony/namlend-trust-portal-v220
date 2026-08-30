@@ -32,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { api, type Id } from '@/integrations/convex/api';
 import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
+import { isLoanUnderwritingStatus } from '../../../convex/lib/documentPolicy';
 import { useMutation, useQuery } from 'convex/react';
 import { AlertCircle, CheckCircle2, Eye, FileText, Loader2, Upload, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -50,6 +51,7 @@ interface LoanDocumentsPanelProps {
   loanId: string;
   allowUpload?: boolean;
   allowReview?: boolean;
+  loanStatus?: string;
 }
 
 function formatBytes(value?: number) {
@@ -71,6 +73,7 @@ export function LoanDocumentsPanel({
   loanId,
   allowUpload = false,
   allowReview = false,
+  loanStatus,
 }: LoanDocumentsPanelProps) {
   const { toast } = useToast();
   const documents = useQuery(api.loanDocuments.getLoanDocuments, {
@@ -242,6 +245,9 @@ export function LoanDocumentsPanel({
           )}
           <p className="mt-3 text-xs text-muted-foreground">
             PDF, JPG, or PNG · maximum 5 MB. Replacements retain the previous version.
+            {loanStatus && !isLoanUnderwritingStatus(loanStatus)
+              ? ' New files are extra supporting documents for your officer; they do not reopen underwriting.'
+              : ''}
           </p>
         </div>
       ) : (

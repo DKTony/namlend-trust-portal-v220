@@ -99,7 +99,7 @@ describe('KYC persisted workflow screen', () => {
     expect(screen.getByRole('button', { name: /confirm and submit/i })).toBeInTheDocument();
   });
 
-  test('locks file controls after submission and shows an explicit completion action', () => {
+  test('locks required file controls after submission and keeps optional extras uploadable', () => {
     mockEligibility.mockReturnValue({
       overview: overview({ status: 'submitted', canSubmit: false }),
       loading: false,
@@ -112,9 +112,10 @@ describe('KYC persisted workflow screen', () => {
 
     expect(screen.getByText(/submitted for review/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /done \/ back to dashboard/i })).toBeInTheDocument();
-    screen
-      .getAllByRole('button', { name: /replace/i })
-      .forEach((button) => expect(button).toBeDisabled());
+    expect(screen.getByTestId('upload-button-id_card')).toBeDisabled();
+    expect(screen.getByTestId('upload-button-proof_income')).toBeDisabled();
+    expect(screen.getByTestId('upload-button-bank_statement')).toBeEnabled();
+    expect(screen.getByTestId('upload-button-employment_letter')).toBeEnabled();
   });
 
   test('surfaces rejection notes and a resubmit action', () => {

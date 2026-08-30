@@ -143,38 +143,13 @@ test.describe.serial('KYC document lifecycle mutation journey', () => {
     await page.getByTestId('sidebar-nav-loans').click();
 
     const detailButtons = page.locator('[data-testid^="view-loan-"]');
-    // `count()` does not retry — size the list only once it has actually rendered,
-    // otherwise a slow first paint yields 0 and the whole search is skipped.
     await expect(detailButtons.first()).toBeVisible({ timeout: 20_000 });
-    // Bounded: `seedReviewableLoanForE2E` puts a `submitted` loan at the head of the list,
-    // and only draft/submitted/under_review loans accept uploads. Walking all 70+ loans the
-    // test client accumulates cannot finish inside the test timeout, so search the first
-    // few and skip loudly if the seed did not run.
-    const searchLimit = Math.min(await detailButtons.count(), 5);
-    let editableLoanId: string | null = null;
-    for (let index = 0; index < searchLimit; index += 1) {
-      // Return via an explicit navigation, not goBack(): history here includes the auth
-      // page and post-login redirects, so going back did not reliably restore the loans
-      // list — the sidebar was simply absent on the next pass.
-      if (index > 0) {
-        await gotoAuthenticated(page, '/dashboard');
-        await page.getByTestId('sidebar-nav-loans').click();
-      }
-      await expect(detailButtons.first()).toBeVisible({ timeout: 20_000 });
-      const testId = await detailButtons.nth(index).getAttribute('data-testid');
-      await detailButtons.nth(index).click();
-      await page.getByTestId('loan-documents-tab').click();
-      if (
-        await page
-          .getByTestId('loan-document-upload')
-          .isVisible({ timeout: 5_000 })
-          .catch(() => false)
-      ) {
-        editableLoanId = testId?.replace('view-loan-', '') ?? null;
-        break;
-      }
-    }
-    test.skip(!editableLoanId, 'The seeded client has no loan in draft/submitted/under_review.');
+    const testId = await detailButtons.first().getAttribute('data-testid');
+    await detailButtons.first().click();
+    await page.getByTestId('loan-documents-tab').click();
+    await expect(page.getByTestId('loan-document-upload')).toBeVisible({ timeout: 10_000 });
+    const editableLoanId = testId?.replace('view-loan-', '') ?? '';
+    expect(editableLoanId).not.toBe('');
 
     await page
       .getByTestId('loan-document-input')

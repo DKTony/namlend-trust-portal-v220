@@ -17,6 +17,39 @@ export const OPTIONAL_KYC_DOCUMENT_TYPES: readonly KycDocumentType[] = [
   'employment_letter',
 ];
 
+const LOAN_UNDERWRITING_STATUSES = ['draft', 'submitted', 'under_review'] as const;
+
+export function isRequiredKycDocumentType(documentType: string): boolean {
+  return (REQUIRED_KYC_DOCUMENT_TYPES as readonly string[]).includes(documentType);
+}
+
+/**
+ * Identity / in-package files stay locked while staff review a submitted KYC
+ * package. Optional extras that were not part of that package remain uploadable.
+ */
+export function isKycUploadLocked(args: {
+  kycStatus: string | undefined;
+  documentType: string;
+  currentSubmittedAt?: number;
+}): boolean {
+  if (args.kycStatus !== 'submitted') return false;
+  if (isRequiredKycDocumentType(args.documentType)) return true;
+  return args.currentSubmittedAt !== undefined;
+}
+
+/** Replacing a required identity document after verify/reject reopens KYC. Extras do not. */
+export function shouldReopenKycOnUpload(args: {
+  kycStatus: string | undefined;
+  documentType: string;
+}): boolean {
+  if (args.kycStatus !== 'verified' && args.kycStatus !== 'rejected') return false;
+  return isRequiredKycDocumentType(args.documentType);
+}
+
+export function isLoanUnderwritingStatus(status: string): boolean {
+  return (LOAN_UNDERWRITING_STATUSES as readonly string[]).includes(status);
+}
+
 export const LOAN_DOCUMENT_TYPES = [
   'bank_statement',
   'proof_income',

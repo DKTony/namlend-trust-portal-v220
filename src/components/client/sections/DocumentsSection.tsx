@@ -1,4 +1,5 @@
 import { DocumentPreviewDialog } from '@/components/documents/DocumentPreviewDialog';
+import { isKycUploadLocked } from '../../../../convex/lib/documentPolicy';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useEntitlements } from '@/hooks/useEntitlements';
@@ -94,6 +95,11 @@ export function DocumentsSection() {
               const required = overview.requiredDocumentTypes.includes(
                 documentType as (typeof overview.requiredDocumentTypes)[number]
               );
+              const typeLocked = isKycUploadLocked({
+                kycStatus: overview.status,
+                documentType,
+                currentSubmittedAt: document?.submittedAt,
+              });
               return (
                 <div
                   key={documentType}
@@ -144,7 +150,11 @@ export function DocumentsSection() {
                         <Eye className="mr-2 h-4 w-4" /> View
                       </Button>
                     )}
-                    <Button variant="outline" onClick={() => navigate('/kyc')}>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/kyc')}
+                      disabled={typeLocked}
+                    >
                       {document ? 'Replace' : 'Upload'}
                     </Button>
                   </div>

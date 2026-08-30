@@ -24,6 +24,7 @@ import { api, type Id } from '@/integrations/convex/api';
 import { cn } from '@/lib/utils';
 import type { DocumentAccessResult, DocumentViewItem } from '@/types/documents';
 import { uploadFileWithProgress } from '@/utils/uploadWithProgress';
+import { isKycUploadLocked, isRequiredKycDocumentType } from '../../convex/lib/documentPolicy';
 import { useMutation } from 'convex/react';
 import {
   AlertCircle,
@@ -136,7 +137,12 @@ export default function KYC() {
     [overview?.documents]
   );
   const requiredTypes = new Set(overview?.requiredDocumentTypes ?? []);
-  const locked = overview?.status === 'submitted';
+  const isTypeLocked = (documentType: KycDocumentType) =>
+    isKycUploadLocked({
+      kycStatus: overview?.status,
+      documentType,
+      currentSubmittedAt: documentByType.get(documentType)?.submittedAt,
+    });
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -176,7 +182,12 @@ export default function KYC() {
       });
       toast({
         title: documentByType.has(documentType) ? 'Replacement uploaded' : 'Document uploaded',
-        description: 'The file is saved. Submit the completed package when you are ready.',
+        description:
+          overview?.status === 'verified' && !isRequiredKycDocumentType(documentType)
+            ? 'The extra supporting file is saved. Your verification is unchanged.'
+            : overview?.status === 'submitted'
+              ? 'The extra supporting file is saved for your officer. Identity documents stay locked until review finishes.'
+              : 'The file is saved. Submit the completed package when you are ready.',
       });
     } catch {
       toast({
@@ -291,8 +302,9 @@ export default function KYC() {
             <div>
               <p className="font-medium text-foreground">Submitted for review</p>
               <p className="text-sm text-muted-foreground">
-                Documents are locked while staff review them. You will receive a notification when
-                the review is complete.
+                Identity documents in this package are locked while staff review them. You can still
+                add extra supporting files. You will receive a notification when the review is
+                complete.
               </p>
             </div>
           </div>
@@ -303,7 +315,9 @@ export default function KYC() {
             <div>
               <p className="font-medium text-foreground">Verification complete</p>
               <p className="text-sm text-muted-foreground">
-                Your account is eligible to submit a loan application.
+                Your account is eligible to submit a loan application. Extra supporting files can
+                still be added without pausing verification. Replacing a required identity document
+                reopens KYC.
               </p>
             </div>
           </div>
@@ -332,6 +346,7 @@ export default function KYC() {
               const status = document ? statusPresentation(document.status) : null;
               const StatusIcon = status?.icon;
               const required = requiredTypes.has(documentType);
+              const locked = isTypeLocked(documentType);
               return (
                 <ThemedCard
                   key={documentType}
@@ -398,6 +413,7 @@ export default function KYC() {
                           variant={document ? 'secondary' : 'default'}
                           disabled={locked || Boolean(uploadingDoc)}
                           onClick={() => inputRefs.current[documentType]?.click()}
+                          data-testid={`upload-button-${documentType}`}
                         >
                           {document ? (
                             <RefreshCw className="mr-2 h-4 w-4" />
@@ -438,8 +454,9 @@ export default function KYC() {
                 : 'Submit documents for review?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Confirm that the uploaded documents are correct. They will be locked until staff
-              complete the review.
+              Confirm that the uploaded documents are correct. Identity documents in this package
+              will be locked until staff complete the review. Extra supporting files can still be
+              added.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -477,6 +494,7 @@ export default function KYC() {
               The existing version will remain in the compliance history. The replacement becomes
               the current version and must be reviewed again.
               {replacement?.previousStatus === 'approved' &&
+                isRequiredKycDocumentType(replacement.documentType) &&
                 ' This reopens KYC verification and loan eligibility is paused until staff approve the replacement.'}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -17,7 +17,9 @@ import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import {
   OPTIONAL_KYC_DOCUMENT_TYPES,
   REQUIRED_KYC_DOCUMENT_TYPES,
+  isKycUploadLocked,
   kycDocumentTypeValidator,
+  shouldReopenKycOnUpload,
   validateOriginalFileName,
   validateStoredDocument,
 } from './lib/documentPolicy';
@@ -200,7 +202,20 @@ export const recordDocument = mutation({
     if (!profile) {
       throw new ConvexError({ code: 'PROFILE_REQUIRED', message: 'Complete your profile first.' });
     }
-    if (profile.kycStatus === 'submitted') {
+    const sameType = await ctx.db
+      .query('kycDocuments')
+      .withIndex('by_userId_documentType', (q) =>
+        q.eq('userId', userId).eq('documentType', args.documentType)
+      )
+      .collect();
+    const previousCurrent = selectCurrentKycDocuments(sameType)[0];
+    if (
+      isKycUploadLocked({
+        kycStatus: profile.kycStatus,
+        documentType: args.documentType,
+        currentSubmittedAt: previousCurrent?.submittedAt,
+      })
+    ) {
       throw new ConvexError({
         code: 'KYC_LOCKED',
         message: 'Your documents are under review and cannot be replaced yet.',
@@ -224,13 +239,6 @@ export const recordDocument = mutation({
     const metadata = await ctx.db.system.get('_storage', args.fileStorageId);
     const stored = validateStoredDocument(metadata);
     const fileName = validateOriginalFileName(args.fileName);
-    const sameType = await ctx.db
-      .query('kycDocuments')
-      .withIndex('by_userId_documentType', (q) =>
-        q.eq('userId', userId).eq('documentType', args.documentType)
-      )
-      .collect();
-    const previousCurrent = selectCurrentKycDocuments(sameType)[0];
     const version =
       sameType.length === 0
         ? 1
@@ -260,7 +268,12 @@ export const recordDocument = mutation({
         updatedAt: now,
       });
     }
-    if (profile.kycStatus !== 'pending') {
+    if (
+      shouldReopenKycOnUpload({
+        kycStatus: profile.kycStatus,
+        documentType: args.documentType,
+      })
+    ) {
       await ctx.db.patch(profile._id, { kycStatus: 'pending', updatedAt: now });
       scheduleAuditLog(ctx, 'profile', profile._id, 'KYC_REOPENED', profile.kycStatus, 'pending');
     }

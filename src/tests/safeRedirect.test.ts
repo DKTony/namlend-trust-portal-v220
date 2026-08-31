@@ -53,15 +53,18 @@ describe('buildOAuthRedirect', () => {
     );
   });
 
-  test('sanitises a hostile next before embedding it', () => {
+  test('omits next when the value is hostile rather than substituting /dashboard', () => {
     expect(buildOAuthRedirect('https://app.example.com', '//evil.com')).toBe(
-      'https://app.example.com/auth?oauth=return&next=%2Fdashboard'
+      'https://app.example.com/auth?oauth=return'
     );
   });
 
-  test('defaults when next is absent', () => {
+  test('omits next when it is absent so Auth.tsx can pick the role landing', () => {
     expect(buildOAuthRedirect('http://localhost:8080')).toBe(
-      'http://localhost:8080/auth?oauth=return&next=%2Fdashboard'
+      'http://localhost:8080/auth?oauth=return'
+    );
+    expect(buildOAuthRedirect('http://localhost:8080', null)).toBe(
+      'http://localhost:8080/auth?oauth=return'
     );
   });
 });

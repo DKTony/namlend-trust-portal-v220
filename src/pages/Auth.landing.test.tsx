@@ -168,4 +168,10 @@ describe('landing honours ?next=', () => {
     renderAuth({}, '?next=https%3A%2F%2Fevil.com');
     expect(screen.getByText('CLIENT DASHBOARD')).toBeInTheDocument();
   });
+
+  it('lands a platform owner on /platform even when next is the client dashboard', () => {
+    renderAuth({ isPlatformStaff: true }, '?next=%2Fdashboard');
+    expect(screen.getByText('PLATFORM CONSOLE')).toBeInTheDocument();
+    expect(screen.queryByText('CLIENT DASHBOARD')).not.toBeInTheDocument();
+  });
 });

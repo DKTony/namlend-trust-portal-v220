@@ -40,14 +40,17 @@ export function sanitizeNextPath(
  * the Netlify site and localhost — the backend allowlist then vets it.
  */
 export function buildOAuthRedirect(origin: string, next?: string | null): string {
-  const path = sanitizeNextPath(next, DEFAULT_REDIRECT);
-  // Land back on /auth so its existing role-aware routing runs (staff → /admin),
-  // rather than duplicating that decision here.
+  // Land back on /auth so its existing role-aware routing runs (staff → /admin,
+  // platform → /platform). Do not default `next` to `/dashboard`: that path is
+  // `requireClient`, so a tenant_admin / platform_owner would hit Access Denied.
   //
   // `oauth=return` is a sentinel, not state: Convex Auth's callback handler catches
   // ANY server-side failure (including a blocked account link) by redirecting here
   // with no session and no `?code=` — indistinguishable from a plain visit without
   // this marker. Auth.tsx uses it to tell "the handshake came back empty-handed"
   // apart from "the user just opened /auth".
-  return `${origin}/auth?oauth=return&next=${encodeURIComponent(path)}`;
+  const dest = `${origin}/auth?oauth=return`;
+  if (!next) return dest;
+  const path = sanitizeNextPath(next, '');
+  return path ? `${dest}&next=${encodeURIComponent(path)}` : dest;
 }

@@ -1,11 +1,15 @@
 /**
- * Phase 1a tenancy backfill — stamp the sole-tenant institutionId onto legacy financial-core
- * rows that predate stamp-on-write. Idempotent and batched (re-run until `remaining` is 0).
+ * Phase 1a tenancy backfill — stamp `institutionId` onto legacy financial-core rows that
+ * predate stamp-on-write. Idempotent and batched (re-run until `needsRerun` is false).
  *
  * Run BEFORE flipping `TENANCY_ENFORCEMENT` on. Owner action (data migration):
- *   npx convex run platform/backfill:backfillTenancyFinancialCore
+ *   npx convex run platform/backfill:backfillTenancyFinancialCore '{"batchSize": 500}'
+ *   npx convex run platform/backfill:backfillTenancyFinancialCore '{"batchSize": 500, "institutionId": "<lenderId>"}'
  *
- * Safe while enforcement is off — it only fills nulls; it never moves a row between tenants.
+ * When `institutionId` is omitted, the job requires exactly one lender institution. Pass the
+ * historical tenant explicitly when a second lender already exists (e.g. a seeded demo tenant
+ * with no financial rows). Safe while enforcement is off — it only fills nulls; it never moves
+ * a row between tenants.
  */
 
 import { v } from 'convex/values';
@@ -53,14 +57,28 @@ async function soleLenderInstitution(ctx: any): Promise<Id<'institutions'> | nul
 }
 
 export const backfillTenancyFinancialCore = internalMutation({
-  args: { batchSize: v.optional(v.number()) },
-  handler: async (ctx, { batchSize }) => {
-    const institutionId = await soleLenderInstitution(ctx);
+  args: {
+    batchSize: v.optional(v.number()),
+    institutionId: v.optional(v.id('institutions')),
+  },
+  handler: async (ctx, { batchSize, institutionId: requestedInstitutionId }) => {
+    const institutionId = requestedInstitutionId ?? (await soleLenderInstitution(ctx));
     if (!institutionId) {
       return {
         ok: false,
         reason:
-          'Cannot determine a sole tenant — backfill requires exactly one lender institution.',
+          'Cannot determine a sole tenant — pass institutionId when more than one lender exists.',
+      };
+    }
+
+    const institution = await ctx.db.get(institutionId);
+    if (!institution) {
+      return { ok: false, reason: 'Institution not found.' };
+    }
+    if (institution.type !== 'lender') {
+      return {
+        ok: false,
+        reason: 'Tenancy backfill target must be a lender institution.',
       };
     }
 

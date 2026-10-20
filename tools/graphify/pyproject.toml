@@ -2,7 +2,7 @@
 name = "namlend-graphify-sidecar"
 version = "0.0.0"
 requires-python = ">=3.12,<3.13"
-dependencies = ["graphifyy==0.9.40"]
+dependencies = ["graphifyy==0.9.70"]
 
 [tool.namlend-graphify]
 mode = "code-only"

@@ -107,7 +107,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tigerbeetle-node": "^0.16.67",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",

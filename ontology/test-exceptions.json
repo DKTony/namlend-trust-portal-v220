@@ -7,7 +7,7 @@
       "issue": "./gap-register.md#gap-test-skip-644b6b9cba2c",
       "owner": "NamLend Engineering",
       "reason": "Client credentials not available",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/adaptive-layout.e2e.ts#0f6764b73e90ca9652fe"
     },
     {
@@ -17,7 +17,7 @@
       "issue": "./gap-register.md#gap-test-skip-1a3353d88cf3",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/adaptive-layout.e2e.ts#872d235407d97a25480b"
     },
     {
@@ -27,7 +27,7 @@
       "issue": "./gap-register.md#gap-test-skip-957ea5b9b8d6",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping approvals actions test",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-approvals-actions.e2e.ts#3c6ffc36cd0fc35a3001"
     },
     {
@@ -37,7 +37,7 @@
       "issue": "./gap-register.md#gap-test-skip-e213a3f64664",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping approvals test",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-approvals.e2e.ts#dc51d02ac15407fabefa"
     },
     {
@@ -47,7 +47,7 @@
       "issue": "./gap-register.md#gap-test-skip-135335d56aaa",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping admin currency test",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-currency.e2e.ts#03d95cbed9fb5e7a7509"
     },
     {
@@ -57,7 +57,7 @@
       "issue": "./gap-register.md#gap-test-skip-fab9efd5a386",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#4a77d68bf3bb6dc6e7c8"
     },
     {
@@ -67,7 +67,7 @@
       "issue": "./gap-register.md#gap-test-skip-260208bcb066",
       "owner": "NamLend Engineering",
       "reason": "TigerBeetle Ledger is platform/control-plane UI, not tenant /admin UI",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#86d555b1a158a621afd9"
     },
     {
@@ -77,7 +77,7 @@
       "issue": "./gap-register.md#gap-test-skip-329cb62dab03",
       "owner": "NamLend Engineering",
       "reason": "Institutions moved to the Platform Console",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#19393e830229620862b2"
     },
     {
@@ -87,7 +87,7 @@
       "issue": "./gap-register.md#gap-test-skip-809a16f9f73b",
       "owner": "NamLend Engineering",
       "reason": "Payment Rails moved to the Platform Console",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#9c7085e8b08a7445e127"
     },
     {
@@ -97,7 +97,7 @@
       "issue": "./gap-register.md#gap-test-skip-1f91982dd5a5",
       "owner": "NamLend Engineering",
       "reason": "Business Rules guardrails moved to the Platform Console",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#c2ecce98af3648547fa8"
     },
     {
@@ -107,7 +107,7 @@
       "issue": "./gap-register.md#gap-test-skip-7cdbc3ba8c34",
       "owner": "NamLend Engineering",
       "reason": "TigerBeetle Config moved to the Platform Console",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#1d31e80d559c039c926f"
     },
     {
@@ -117,7 +117,7 @@
       "issue": "./gap-register.md#gap-test-skip-1da3ed8aced2",
       "owner": "NamLend Engineering",
       "reason": "Settlement Config moved to the Platform Console",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#40d3c8af81b6566a8ef8"
     },
     {
@@ -127,7 +127,7 @@
       "issue": "./gap-register.md#gap-test-skip-592207b673a6",
       "owner": "NamLend Engineering",
       "reason": "Client credentials not available",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/admin-portal.e2e.ts#99cb35e1a9460d36d012"
     },
     {
@@ -137,7 +137,7 @@
       "issue": "./gap-register.md#gap-test-skip-14e0bc715785",
       "owner": "NamLend Engineering",
       "reason": "QUARANTINE [legacy-supabase]: SUPABASE_URL and SUPABASE_ANON_KEY must be provided. Migrate to Convex api.analytics in N2 batch.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/admin-rpc.e2e.ts#8ca9b3af5bf1b22f86ef"
     },
     {
@@ -147,7 +147,7 @@
       "issue": "./gap-register.md#gap-test-skip-11b2b5a24edd",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-analytics.e2e.ts#82165cdb0de5be4ebd85"
     },
     {
@@ -157,7 +157,7 @@
       "issue": "./gap-register.md#gap-test-skip-1030e0b6067f",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-audit.e2e.ts#6387b7fca9b86bfd8784"
     },
     {
@@ -167,7 +167,7 @@
       "issue": "./gap-register.md#gap-test-skip-4ac271411657",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-collections.e2e.ts#4770f40acd0d8debf3d3"
     },
     {
@@ -177,7 +177,7 @@
       "issue": "./gap-register.md#gap-test-skip-3e4492cf1400",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-disbursements-orchestration.e2e.ts#730cdfdaf873a87dad00"
     },
     {
@@ -187,7 +187,7 @@
       "issue": "./gap-register.md#gap-test-skip-18153f20c1fa",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-notifications.e2e.ts#de604e82d1b99c1fe846"
     },
     {
@@ -197,7 +197,7 @@
       "issue": "./gap-register.md#gap-test-skip-273c5a8df1a8",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/api-reconciliation.e2e.ts#7c55af30daa9b64352bb"
     },
     {
@@ -207,7 +207,7 @@
       "issue": "./gap-register.md#gap-test-skip-c4d9734cf8c7",
       "owner": "NamLend Engineering",
       "reason": "QUARANTINE [legacy-supabase]: SUPABASE_SERVICE_ROLE_KEY not set. Migrate to Convex api.approvalWorkflow in N2 batch.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/approval-rpc-race-condition.e2e.ts#b12071a331baa63d4989"
     },
     {
@@ -217,7 +217,7 @@
       "issue": "./gap-register.md#gap-test-skip-b9e0e6189678",
       "owner": "NamLend Engineering",
       "reason": "Legacy Supabase disbursement tests require Supabase credentials; skipped in Convex-only E2E.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/disbursement.e2e.ts#b39622d30517b1540f88"
     },
     {
@@ -227,7 +227,7 @@
       "issue": "./gap-register.md#gap-test-skip-afd5de5cf407",
       "owner": "NamLend Engineering",
       "reason": "QUARANTINE [legacy-supabase]: SUPABASE_URL and SUPABASE_ANON_KEY must be provided. Migrate to Convex api.disbursements in N2 batch.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/disbursements-ledger-crud.e2e.ts#b101be44cf9942fc3cac"
     },
     {
@@ -237,7 +237,7 @@
       "issue": "./gap-register.md#gap-test-skip-5da5aa0cb931",
       "owner": "NamLend Engineering",
       "reason": "QUARANTINE [legacy-supabase]: SUPABASE_URL and SUPABASE_ANON_KEY must be provided. Migrate to Convex api.disbursements in N2 batch.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/disbursements-ledger.e2e.ts#22d7665b835b531e48a1"
     },
     {
@@ -247,7 +247,7 @@
       "issue": "./gap-register.md#gap-test-skip-a44c9f48242a",
       "owner": "NamLend Engineering",
       "reason": "Legacy Supabase disbursement RLS tests require Supabase credentials; skipped in Convex-only E2E.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/disbursements-rls.e2e.ts#b016b8741485ee8c61d8"
     },
     {
@@ -257,7 +257,7 @@
       "issue": "./gap-register.md#gap-test-skip-b9868b950879",
       "owner": "NamLend Engineering",
       "reason": "Legacy Supabase document RLS tests require Supabase credentials; skipped in Convex-only E2E.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/documents-rls.e2e.ts#b1892c0107041bec17b0"
     },
     {
@@ -267,7 +267,7 @@
       "issue": "./gap-register.md#gap-test-skip-28e0579b749b",
       "owner": "NamLend Engineering",
       "reason": "VITE_SUPABASE_URL must be set — skipping Edge Function tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/ips-adapter.e2e.ts#f245a070a4142ba72b60"
     },
     {
@@ -277,7 +277,7 @@
       "issue": "./gap-register.md#gap-test-skip-44c1dc77e008",
       "owner": "NamLend Engineering",
       "reason": "Legacy Supabase IPS RPC tests require Supabase credentials; skipped in Convex-only E2E.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/ips-rpc.e2e.ts#ff22377349a63f662609"
     },
     {
@@ -287,7 +287,7 @@
       "issue": "./gap-register.md#gap-test-skip-36e46058896b",
       "owner": "NamLend Engineering",
       "reason": "Conditional runtime skip; reason is not a string literal.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/api/ips-rpc.e2e.ts#49ce78d30135fd96c262"
     },
     {
@@ -297,7 +297,7 @@
       "issue": "./gap-register.md#gap-test-skip-0e05d081d7b9",
       "owner": "NamLend Engineering",
       "reason": "QUARANTINE [legacy-supabase]: VITE_SUPABASE_ANON_KEY must be set. Migrate to Convex api.loans in N2 batch.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/api/tigerbeetle-balance.e2e.ts#d70711600bbabb0e6180"
     },
     {
@@ -307,7 +307,7 @@
       "issue": "./gap-register.md#gap-test-skip-8bbaea62c90d",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping role modal test",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/assign-role-modal.spec.ts#a29cedb2c027ae804d07"
     },
     {
@@ -317,7 +317,7 @@
       "issue": "./gap-register.md#gap-test-skip-0c4650d6e88d",
       "owner": "NamLend Engineering",
       "reason": "No approved loans with manual disbursement actions are available in E2E seed data.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#e8c9af42903e85bdce83"
     },
     {
@@ -327,7 +327,7 @@
       "issue": "./gap-register.md#gap-test-skip-0ab13266e74b",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping disbursement UI tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/backoffice-disbursement.e2e.ts#f4da2989e4481759c95e"
     },
     {
@@ -337,7 +337,7 @@
       "issue": "./gap-register.md#gap-test-skip-61bf2cc58555",
       "owner": "NamLend Engineering",
       "reason": "No loan cards available to test.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#9b757968664948a9e11e"
     },
     {
@@ -347,7 +347,7 @@
       "issue": "./gap-register.md#gap-test-skip-65745748479e",
       "owner": "NamLend Engineering",
       "reason": "No disbursed loans available to verify disbursement button state.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#9b757968664948a9e11e"
     },
     {
@@ -357,7 +357,7 @@
       "issue": "./gap-register.md#gap-test-skip-c3c27e369dad",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping disbursement error tests",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/backoffice-disbursement.e2e.ts#fc5ec7e8ab67236ef6bd"
     },
     {
@@ -367,7 +367,7 @@
       "issue": "./gap-register.md#gap-test-skip-1b985c7bf34b",
       "owner": "NamLend Engineering",
       "reason": "Client credentials not available; skipping budget tracker tests.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/budget-tracker.e2e.ts#9339b8a5801c2c8f3065"
     },
     {
@@ -377,7 +377,7 @@
       "issue": "./gap-register.md#gap-test-skip-4fe350a1f082",
       "owner": "NamLend Engineering",
       "reason": "The public header no longer renders a dashboard button; role-routing covers protected dashboard access.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/dashboard-nav.e2e.ts#2851500509522039980c"
     },
     {
@@ -387,7 +387,7 @@
       "issue": "./gap-register.md#gap-test-skip-e598ac46fafc",
       "owner": "NamLend Engineering",
       "reason": "Set E2E_ENABLE_DOCUMENT_MUTATIONS=true against an isolated Convex test deployment.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/document-workflow.e2e.ts#968fe2068529100c5e04"
     },
     {
@@ -397,7 +397,7 @@
       "issue": "./gap-register.md#gap-test-skip-a441a42acae4",
       "owner": "NamLend Engineering",
       "reason": "Test user has not completed KYC. Form blocked by eligibility gate.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/ipp-lifecycle.e2e.ts#f4c5b6169984c00a80cc"
     },
     {
@@ -407,7 +407,7 @@
       "issue": "./gap-register.md#gap-test-skip-50906e245bcc",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/ipp-lifecycle.e2e.ts#b6965058d40ca0366f99"
     },
     {
@@ -417,7 +417,7 @@
       "issue": "./gap-register.md#gap-test-skip-016584717742",
       "owner": "NamLend Engineering",
       "reason": "Legacy Supabase IPS payment-flow tests require Supabase credentials; skipped in Convex-only E2E.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/ips-payment-flow.e2e.ts#9339b8a5801c2c8f3065"
     },
     {
@@ -427,7 +427,7 @@
       "issue": "./gap-register.md#gap-test-skip-30bcaf6b1cbc",
       "owner": "NamLend Engineering",
       "reason": "Test user has not completed KYC verification. Form is blocked by eligibility gate.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/loan-application.e2e.ts#b1078c2e878e76910dff"
     },
     {
@@ -437,7 +437,7 @@
       "issue": "./gap-register.md#gap-test-skip-66ece02e5b35",
       "owner": "NamLend Engineering",
       "reason": "No active loans are available in E2E seed data for generic payment modal tests.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "describe:e2e:e2e/payment-ips-modal.e2e.ts#9339b8a5801c2c8f3065"
     },
     {
@@ -447,7 +447,7 @@
       "issue": "./gap-register.md#gap-test-skip-d6f38f31475e",
       "owner": "NamLend Engineering",
       "reason": "Client credentials not available in this environment",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/platform-console.e2e.ts#d8484b5015636061531d"
     },
     {
@@ -457,7 +457,7 @@
       "issue": "./gap-register.md#gap-test-skip-9c5cba1d2839",
       "owner": "NamLend Engineering",
       "reason": "Client credentials not available in this environment",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/role-routing.e2e.ts#06e58fec5c00ac6250a7"
     },
     {
@@ -467,7 +467,7 @@
       "issue": "./gap-register.md#gap-test-skip-bcdd1600a486",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available in this environment",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/role-routing.e2e.ts#193131c83ffefa4d5b9a"
     },
     {
@@ -477,7 +477,7 @@
       "issue": "./gap-register.md#gap-test-skip-17b4fb8e1043",
       "owner": "NamLend Engineering",
       "reason": "Admin credentials not available; skipping admin sign-out",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:e2e:e2e/signout.e2e.ts#d6fd4e834a9cfe69cdd2"
     },
     {
@@ -487,7 +487,7 @@
       "issue": "./gap-register.md#gap-test-skip-331493cb0b90",
       "owner": "NamLend Engineering",
       "reason": "Declared with it.skip.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:unit:src/tests/security.test.ts#ec6a49b75098fbf2a44d"
     },
     {
@@ -497,7 +497,7 @@
       "issue": "./gap-register.md#gap-test-skip-de991873782b",
       "owner": "NamLend Engineering",
       "reason": "Declared with it.skip.",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "testId": "test:unit:src/tests/security.test.ts#ded6e5cd6c49319b436f"
     }
   ],

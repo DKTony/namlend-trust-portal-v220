@@ -1,17 +1,17 @@
 {
-  "commitSha": "29b53e127dac4325f0a1bcaab72f17d1438b8205",
-  "extractedAt": "2026-08-30T04:36:30.881Z",
+  "commitSha": "08364b15f7b621e8ba5492ef6026a389d608e1e1",
+  "extractedAt": "2026-11-05T12:18:37.603Z",
   "gaps": [
     {
       "evidenceRefs": [
-        "evidence:6efe10feb5c873a2"
+        "evidence:1de41aa6363e4c99"
       ],
       "id": "GAP-0153FC69A0F7",
       "issue": "./gap-register.md#gap-0153fc69a0f7",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:tigerBeetleReconciliation",
@@ -19,14 +19,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1825cc6792f7c011"
+        "evidence:228f7e59bc1de8e0"
       ],
       "id": "GAP-039C753A8E3B",
       "issue": "./gap-register.md#gap-039c753a8e3b",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:snapshots",
@@ -34,14 +34,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:422338e49501d36d"
+        "evidence:091ca37c94b49196"
       ],
       "id": "GAP-062E3A42BE71",
       "issue": "./gap-register.md#gap-062e3a42be71",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/resizable.tsx#ResizablePanelGroup",
@@ -49,14 +49,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:282f9e61ef48dcd1"
+        "evidence:607d2caebe3125b9"
       ],
       "id": "GAP-08A6D72E84E7",
       "issue": "./gap-register.md#gap-08a6d72e84e7",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/breadcrumb.tsx#BreadcrumbSeparator",
@@ -64,14 +64,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:882600dd2dd50dba"
+        "evidence:9b96e3a31c0ea4ae"
       ],
       "id": "GAP-0EEB6CAF8B87",
       "issue": "./gap-register.md#gap-0eeb6caf8b87",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:complianceReports",
@@ -79,14 +79,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:18d32c8da77f13d8"
+        "evidence:2093a3bb5efd9dc5"
       ],
       "id": "GAP-11D918D3E45C",
       "issue": "./gap-register.md#gap-11d918d3e45c",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/system/ErrorBoundary.tsx#ErrorBoundary",
@@ -94,14 +94,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:264cd8c1acd6ac3a"
+        "evidence:67842c3ee88fbb30"
       ],
       "id": "GAP-14F4AE331785",
       "issue": "./gap-register.md#gap-14f4ae331785",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/sheet.tsx#SheetFooter",
@@ -109,14 +109,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f561b09a19d51d26"
+        "evidence:04c6828cb80bf379"
       ],
       "id": "GAP-1592DE439864",
       "issue": "./gap-register.md#gap-1592de439864",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:tigerBeetleAccounts",
@@ -124,14 +124,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c1c3a0233ab1264e"
+        "evidence:f7199bec3bb24bfe"
       ],
       "id": "GAP-16D7E87B04AB",
       "issue": "./gap-register.md#gap-16d7e87b04ab",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/sections/BankingSection.tsx#BankingSectionProfile",
@@ -139,14 +139,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f78919b044d41a42"
+        "evidence:44129eea9738e24f"
       ],
       "id": "GAP-17FC56BB9F3D",
       "issue": "./gap-register.md#gap-17fc56bb9f3d",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/sheet.tsx#SheetHeader",
@@ -154,14 +154,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:81db9f89e223198d"
+        "evidence:bf9be96e107f153d"
       ],
       "id": "GAP-1964130F3CFA",
       "issue": "./gap-register.md#gap-1964130f3cfa",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:settlementHolidays",
@@ -169,14 +169,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d495c0ce51184f02"
+        "evidence:4f4c0114a0669af7"
       ],
       "id": "GAP-1AC306484B08",
       "issue": "./gap-register.md#gap-1ac306484b08",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ips/VPAInput.tsx#VPAInput",
@@ -184,14 +184,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:28cea6ef11df9e11"
+        "evidence:d80eda176e70c358"
       ],
       "id": "GAP-1B00EC98F59D",
       "issue": "./gap-register.md#gap-1b00ec98f59d",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:settlementExposures",
@@ -199,14 +199,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0af3cd4512248d8b"
+        "evidence:8eb753f6ba47ebb1"
       ],
       "id": "GAP-1D4E2E185541",
       "issue": "./gap-register.md#gap-1d4e2e185541",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ontology/mandates.hasActiveMandate",
@@ -214,14 +214,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c913ff186cd2315d"
+        "evidence:167bc68a2ed99dc3"
       ],
       "id": "GAP-1E2A92D5A921",
       "issue": "./gap-register.md#gap-1e2a92d5a921",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/drawer.tsx#Drawer",
@@ -229,14 +229,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ac9f56a5edc61506"
+        "evidence:6b6c1562b30b499a"
       ],
       "id": "GAP-21E384E37E8B",
       "issue": "./gap-register.md#gap-21e384e37e8b",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:auditLogs",
@@ -244,14 +244,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e670baf45d9314e9"
+        "evidence:359824cbe64a67f7"
       ],
       "id": "GAP-22965BD4367B",
       "issue": "./gap-register.md#gap-22965bd4367b",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ontology/consentRecords.checkConsent",
@@ -259,14 +259,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:589bce54fd868503"
+        "evidence:cdf3cf47cf535854"
       ],
       "id": "GAP-238E10756E27",
       "issue": "./gap-register.md#gap-238e10756e27",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:seedMutations.markProfileAsGoogleSignup",
@@ -274,14 +274,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:23ceb34684d9677d"
+        "evidence:bfcf1864aa26ab1d"
       ],
       "id": "GAP-24582697D5BF",
       "issue": "./gap-register.md#gap-24582697d5bf",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:approvalHistory",
@@ -289,14 +289,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:927019b3b12f3bf7"
+        "evidence:fd4fbb3c1158cb92"
       ],
       "id": "GAP-2D9C34AE5B16",
       "issue": "./gap-register.md#gap-2d9c34ae5b16",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ips/IPSHistoryList.tsx#TransactionRow",
@@ -304,14 +304,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ee2a0210594a7f1c"
+        "evidence:9ec09541dd5995fc"
       ],
       "id": "GAP-2E899E24A27D",
       "issue": "./gap-register.md#gap-2e899e24a27d",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:ipsApiLogs",
@@ -319,14 +319,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1814940a2b9e5658"
+        "evidence:f638ad18ed9be6cc"
       ],
       "id": "GAP-3171A1D9F062",
       "issue": "./gap-register.md#gap-3171a1d9f062",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/banking/LinkedAccountsTab.tsx#LinkedAccountsTab",
@@ -334,14 +334,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8de3482d249dbcf9"
+        "evidence:5ee05be68f80269a"
       ],
       "id": "GAP-32A6290D3D61",
       "issue": "./gap-register.md#gap-32a6290d3d61",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/context-menu.tsx#ContextMenuShortcut",
@@ -349,14 +349,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:12521426a2205e1e"
+        "evidence:04ece0290c46df19"
       ],
       "id": "GAP-39449359F3B3",
       "issue": "./gap-register.md#gap-39449359f3b3",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/shared/CreditScoreSummary.tsx#CreditScoreSummary",
@@ -364,14 +364,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2680a0abc36c3c9d"
+        "evidence:739be4f0ca9eb5b3"
       ],
       "id": "GAP-3BE0309E5F41",
       "issue": "./gap-register.md#gap-3be0309e5f41",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/shared/NotificationCenter.tsx#NotificationItem",
@@ -379,14 +379,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:48244ad8185a6d77"
+        "evidence:b1257bc5a153981f"
       ],
       "id": "GAP-4185E989BBBD",
       "issue": "./gap-register.md#gap-4185e989bbbd",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/ClientProfileHeader.tsx#ClientProfileHeader",
@@ -394,14 +394,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e6b37a242e3effa5"
+        "evidence:c6c1f23ab39228c1"
       ],
       "id": "GAP-4333C84CCF3F",
       "issue": "./gap-register.md#gap-4333c84ccf3f",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/drawer.tsx#DrawerFooter",
@@ -409,14 +409,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:334a758a43a8ddc4"
+        "evidence:e40fd08bf976e2b0"
       ],
       "id": "GAP-4A458E370CCD",
       "issue": "./gap-register.md#gap-4a458e370ccd",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ips/IPSTransactionStatus.tsx#IPSTransactionStatus",
@@ -424,14 +424,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:344705cbed7d5032"
+        "evidence:d298fa34badc9aa4"
       ],
       "id": "GAP-4BBE145E73CF",
       "issue": "./gap-register.md#gap-4bbe145e73cf",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/adaptive/AdaptiveShell.tsx#AdaptiveShell",
@@ -439,14 +439,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7faaaf9f3475c70b"
+        "evidence:b751d0bf97a62fd6"
       ],
       "id": "GAP-4DE4D174E8E0",
       "issue": "./gap-register.md#gap-4de4d174e8e0",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:communicationLogs",
@@ -454,14 +454,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:38ebabb62efa22fe"
+        "evidence:eb4384b84e784172"
       ],
       "id": "GAP-509E5E4A37C1",
       "issue": "./gap-register.md#gap-509e5e4a37c1",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:settlementWindows",
@@ -469,14 +469,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5a01ec1c11bdc1d7"
+        "evidence:7b4492cc8cbf8a2d"
       ],
       "id": "GAP-512E383B3BA8",
       "issue": "./gap-register.md#gap-512e383b3ba8",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:notificationPreferences",
@@ -484,14 +484,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5a393efea621246d"
+        "evidence:bff7466878db8e05"
       ],
       "id": "GAP-5513CC12071A",
       "issue": "./gap-register.md#gap-5513cc12071a",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:vpaRegistry",
@@ -499,14 +499,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b3d416c44fc8dfb8"
+        "evidence:e102429083342c05"
       ],
       "id": "GAP-575539C89D81",
       "issue": "./gap-register.md#gap-575539c89d81",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/pagination.tsx#Pagination",
@@ -514,14 +514,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:265a78040d7ad585"
+        "evidence:678b6f5d56660ece"
       ],
       "id": "GAP-5A82777A6897",
       "issue": "./gap-register.md#gap-5a82777a6897",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/chart.tsx#ChartStyle",
@@ -529,14 +529,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2ed1dbb5328d5195"
+        "evidence:0b1e96a7081e271b"
       ],
       "id": "GAP-5D05082EAEB4",
       "issue": "./gap-register.md#gap-5d05082eaeb4",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/pagination.tsx#PaginationEllipsis",
@@ -544,14 +544,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e2885e7305c79ee1"
+        "evidence:90bf3fc7c8a6db33"
       ],
       "id": "GAP-5ED42AFE4B1E",
       "issue": "./gap-register.md#gap-5ed42afe4b1e",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ippOperations.isAliasListedInternal",
@@ -559,14 +559,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:630efe928acd3f7b"
+        "evidence:47779e2037474e50"
       ],
       "id": "GAP-5FF34CA28295",
       "issue": "./gap-register.md#gap-5ff34ca28295",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/shared/CreditScoreDisplay.tsx#CreditScoreDisplay",
@@ -574,14 +574,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:df1b430177828c60"
+        "evidence:9a14343d8549719e"
       ],
       "id": "GAP-60A903DE4A5C",
       "issue": "./gap-register.md#gap-60a903de4a5c",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/sections/PersonalSection.tsx#PersonalSection",
@@ -589,14 +589,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2a61153206c4c862"
+        "evidence:429abac3cd220eb4"
       ],
       "id": "GAP-63620DA82BF7",
       "issue": "./gap-register.md#gap-63620da82bf7",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:notificationTemplates",
@@ -604,14 +604,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:de1db712b2522e44"
+        "evidence:7c864ab871315f65"
       ],
       "id": "GAP-643F0A4913E7",
       "issue": "./gap-register.md#gap-643f0a4913e7",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/ClientProfileSidebar.tsx#ClientProfileSidebar",
@@ -619,14 +619,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:fe8d03468aa76fd3"
+        "evidence:122fdd0a43c51240"
       ],
       "id": "GAP-654E339096D9",
       "issue": "./gap-register.md#gap-654e339096d9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ips/ipsAliasDirectory.getAliasByIdValueInternal",
@@ -634,14 +634,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d2cfbefff15ba18e"
+        "evidence:106dfd344b327bef"
       ],
       "id": "GAP-663906D9E906",
       "issue": "./gap-register.md#gap-663906d9e906",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ips/IPSHistoryList.tsx#IPSHistoryList",
@@ -649,14 +649,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b8df056009f167c5"
+        "evidence:8d3cc2bd0b1d80a3"
       ],
       "id": "GAP-672C2C92B901",
       "issue": "./gap-register.md#gap-672c2c92b901",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/sonner.tsx#Toaster",
@@ -664,14 +664,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a46199abeac70044"
+        "evidence:1f69f15410885145"
       ],
       "id": "GAP-6E9968E73AA1",
       "issue": "./gap-register.md#gap-6e9968e73aa1",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/command.tsx#CommandDialog",
@@ -679,14 +679,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a7868fcd1bd428c4"
+        "evidence:011aee7965321bf7"
       ],
       "id": "GAP-7320B29C86FA",
       "issue": "./gap-register.md#gap-7320b29c86fa",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:portfolioMetrics",
@@ -694,14 +694,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a7d39540e23f89ce"
+        "evidence:2f3d9a7eacc54419"
       ],
       "id": "GAP-73D98AC3584D",
       "issue": "./gap-register.md#gap-73d98ac3584d",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:ipsDeviceBindings",
@@ -709,14 +709,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c738446134ff99f0"
+        "evidence:00879506c3d9d26c"
       ],
       "id": "GAP-78B9506A12EE",
       "issue": "./gap-register.md#gap-78b9506a12ee",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/PageHeader.tsx#PageHeader",
@@ -724,14 +724,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8b68e2fd55dc62ee"
+        "evidence:78fb78daa4109a8c"
       ],
       "id": "GAP-796045585AE7",
       "issue": "./gap-register.md#gap-796045585ae7",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/LoanApplication/steps/ReviewSubmitStep.tsx#ReviewSubmitStep",
@@ -739,14 +739,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:86f6fbcbef51069a"
+        "evidence:9fe422e111a4da0c"
       ],
       "id": "GAP-7B575E2B614F",
       "issue": "./gap-register.md#gap-7b575e2b614f",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/sections/OverviewSection.tsx#OverviewSection",
@@ -754,14 +754,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:12d3179bac15bee9"
+        "evidence:62f0f03b8e54a314"
       ],
       "id": "GAP-7C9FA28037F9",
       "issue": "./gap-register.md#gap-7c9fa28037f9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/dropdown-menu.tsx#DropdownMenuShortcut",
@@ -769,14 +769,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3cde1cc0151f9bbe"
+        "evidence:dd78ad49ae128f81"
       ],
       "id": "GAP-7D0721F9D61D",
       "issue": "./gap-register.md#gap-7d0721f9d61d",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:paymentAllocations",
@@ -784,14 +784,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c631ea4af2e6fcbe"
+        "evidence:2803f0b08a98e869"
       ],
       "id": "GAP-84CA492122F7",
       "issue": "./gap-register.md#gap-84ca492122f7",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/drawer.tsx#DrawerHeader",
@@ -799,14 +799,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4b1f628d3fb871d1"
+        "evidence:7620da4c9ab57dce"
       ],
       "id": "GAP-8709371ECE82",
       "issue": "./gap-register.md#gap-8709371ece82",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/shared/SignOutButton.tsx#SignOutButton",
@@ -814,14 +814,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1ae868e8e61d6980"
+        "evidence:9d8f49791ff0da65"
       ],
       "id": "GAP-8A22DEBFF04F",
       "issue": "./gap-register.md#gap-8a22debff04f",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/adaptive/AdaptiveDialog.tsx#AdaptiveDialog",
@@ -829,14 +829,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:99260fe94a6ba671"
+        "evidence:0872052ac7270b81"
       ],
       "id": "GAP-8BFDBA24F880",
       "issue": "./gap-register.md#gap-8bfdba24f880",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ips/ipsApiLogs.getLatestApiLogByRequestMsgId",
@@ -844,14 +844,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0b474412675e7fcd"
+        "evidence:8a052f1eca35f43b"
       ],
       "id": "GAP-939E37284B06",
       "issue": "./gap-register.md#gap-939e37284b06",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/AdminDashboard.tsx#AdminDashboard",
@@ -859,14 +859,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:94aeebe24c3ea882"
+        "evidence:3e1f100f2428c861"
       ],
       "id": "GAP-947A14594ECA",
       "issue": "./gap-register.md#gap-947a14594eca",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/Header.tsx#Header",
@@ -874,14 +874,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d1557a93df4eb475"
+        "evidence:16d0c952cfa51b8e"
       ],
       "id": "GAP-9AE2A0BB6042",
       "issue": "./gap-register.md#gap-9ae2a0bb6042",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:documentAccessGrants",
@@ -889,14 +889,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d171e3dfee4c9007"
+        "evidence:b8fbac88ab513ae0"
       ],
       "id": "GAP-9CE9EC58D0D4",
       "issue": "./gap-register.md#gap-9ce9ec58d0d4",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/toaster.tsx#Toaster",
@@ -904,14 +904,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2ec08f7c489553e1"
+        "evidence:fb4eb191051167a8"
       ],
       "id": "GAP-A17289C7879F",
       "issue": "./gap-register.md#gap-a17289c7879f",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:loanProcessingFailures",
@@ -919,14 +919,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:69296660f6d843b5"
+        "evidence:b7de432b12c5abdc"
       ],
       "id": "GAP-A8CCFF7D4090",
       "issue": "./gap-register.md#gap-a8ccff7d4090",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/calendar.tsx#Calendar",
@@ -934,14 +934,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d2b263f865efdd7a"
+        "evidence:de440596a3123580"
       ],
       "id": "GAP-AA1015CAC102",
       "issue": "./gap-register.md#gap-aa1015cac102",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:workflowInstances",
@@ -949,14 +949,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b830125a57ed4648"
+        "evidence:686ffbaa247e18a8"
       ],
       "id": "GAP-AA7E673FDCB1",
       "issue": "./gap-register.md#gap-aa7e673fdcb1",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/skeleton.tsx#Skeleton",
@@ -964,14 +964,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:01b889e8f25498e0"
+        "evidence:276d90950ce74994"
       ],
       "id": "GAP-AD668C77830E",
       "issue": "./gap-register.md#gap-ad668c77830e",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/client/sections/EmploymentSection.tsx#EmploymentSection",
@@ -979,14 +979,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:01d6557b018599fb"
+        "evidence:5ae5ac145cb0abca"
       ],
       "id": "GAP-AF4636D503EA",
       "issue": "./gap-register.md#gap-af4636d503ea",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/command.tsx#CommandShortcut",
@@ -994,14 +994,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:575b4466e3f56794"
+        "evidence:611cde22617dc50f"
       ],
       "id": "GAP-B122BFAD3CBD",
       "issue": "./gap-register.md#gap-b122bfad3cbd",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/finance/TigerBeetleBalance.tsx#TigerBeetleBalanceInline",
@@ -1009,14 +1009,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6640d309e8fa11fa"
+        "evidence:05f5877b5200cb04"
       ],
       "id": "GAP-B43C9B7D2C4C",
       "issue": "./gap-register.md#gap-b43c9b7d2c4c",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/resizable.tsx#ResizableHandle",
@@ -1024,14 +1024,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6c9ba6341180e845"
+        "evidence:2f42f361c3cfa10b"
       ],
       "id": "GAP-B4DF123AACE9",
       "issue": "./gap-register.md#gap-b4df123aace9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/breadcrumb.tsx#BreadcrumbEllipsis",
@@ -1039,14 +1039,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6543e1647aa5600b"
+        "evidence:74e4624dcb551d21"
       ],
       "id": "GAP-B84ECDA9DE68",
       "issue": "./gap-register.md#gap-b84ecda9de68",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/LoanApplication/steps/LoanDetailsStep.tsx#LoanDetailsStep",
@@ -1054,14 +1054,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:90f61b90d98f5a57"
+        "evidence:165e5e139c81b965"
       ],
       "id": "GAP-B9D9B6372F9B",
       "issue": "./gap-register.md#gap-b9d9b6372f9b",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/adaptive/ResponsiveActionBar.tsx#ResponsiveActionBar",
@@ -1069,14 +1069,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d3c9cf50ab2b28c5"
+        "evidence:1b2269dfc997edd1"
       ],
       "id": "GAP-BE3C89DD7FE9",
       "issue": "./gap-register.md#gap-be3c89dd7fe9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/LoanApplication/steps/FinancialInfoStep.tsx#FinancialInfoStep",
@@ -1084,14 +1084,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c94eaee965f0384f"
+        "evidence:36c09581131d7dbe"
       ],
       "id": "GAP-BE718391872B",
       "issue": "./gap-register.md#gap-be718391872b",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/banking/IPPOnboardingCard.tsx#IPPOnboardingCard",
@@ -1099,14 +1099,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1bb78c5920cca86a"
+        "evidence:854ad080253df74a"
       ],
       "id": "GAP-BF201BD7AD8E",
       "issue": "./gap-register.md#gap-bf201bd7ad8e",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/AdminDashboard/components/PaymentManagement/PaymentOverview.tsx#PaymentOverview",
@@ -1114,14 +1114,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9490fa43cf47507e"
+        "evidence:15face4f66440bd5"
       ],
       "id": "GAP-C3841134CDA6",
       "issue": "./gap-register.md#gap-c3841134cda6",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/menubar.tsx#MenubarShortcut",
@@ -1129,14 +1129,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:06122ad190b70c48"
+        "evidence:190d597e57f16433"
       ],
       "id": "GAP-CCBAC3FD1BBD",
       "issue": "./gap-register.md#gap-ccbac3fd1bbd",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ui/form.tsx#FormField",
@@ -1151,7 +1151,7 @@
       "kind": "E1_NOT_YET_AVAILABLE",
       "nextAction": "Run the enhanced CI on main and consume its current-SHA evidence artifact; do not rewrite this source snapshot from a local run.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "system:namlend-tests",
@@ -1159,14 +1159,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:067127021204e22a"
+        "evidence:ded75530722cfcba"
       ],
       "id": "GAP-D1CF003240B8",
       "issue": "./gap-register.md#gap-d1cf003240b8",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:institutionConfig",
@@ -1174,14 +1174,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:de966fd8efe625cc"
+        "evidence:e73e60577a7dea43"
       ],
       "id": "GAP-D249B07F105A",
       "issue": "./gap-register.md#gap-d249b07f105a",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:tigerBeetleTransfers",
@@ -1189,14 +1189,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7f7295ac08f8d0e1"
+        "evidence:4c43c47b43d0dd17"
       ],
       "id": "GAP-D4F6639562B9",
       "issue": "./gap-register.md#gap-d4f6639562b9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/ips/IPSDisbursementForm.tsx#IPSDisbursementForm",
@@ -1204,14 +1204,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:82aacdd3a58f3aa4"
+        "evidence:8a3fe36631f23a17"
       ],
       "id": "GAP-DB7A52A6FEE9",
       "issue": "./gap-register.md#gap-db7a52a6fee9",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/system/FeatureGate.tsx#FeatureGate",
@@ -1219,14 +1219,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4a77ccbb5992a10b"
+        "evidence:740070e4a558d66c"
       ],
       "id": "GAP-E4BAF2AD052C",
       "issue": "./gap-register.md#gap-e4baf2ad052c",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:tenantSubscriptions",
@@ -1234,14 +1234,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:66625f983a4aa193"
+        "evidence:4581dfa1843b9184"
       ],
       "id": "GAP-E5094CAFD862",
       "issue": "./gap-register.md#gap-e5094cafd862",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/pages/AdminDashboard/components/WorkflowManagement/WorkflowStats.tsx#WorkflowStats",
@@ -1249,14 +1249,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f88fda8a4812728b"
+        "evidence:1a9998d7277d4fc6"
       ],
       "id": "GAP-E6407C27B0A0",
       "issue": "./gap-register.md#gap-e6407c27b0a0",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "function:convex:ontology/relationships.hasRelationship",
@@ -1264,14 +1264,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e5227fa6906c9403"
+        "evidence:1fb18e70d8bc942b"
       ],
       "id": "GAP-E78676534A3D",
       "issue": "./gap-register.md#gap-e78676534a3d",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:settlementFeeRules",
@@ -1279,14 +1279,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8e6597b28d858a37"
+        "evidence:5535d404998ecbef"
       ],
       "id": "GAP-E8EA4EBF9E5B",
       "issue": "./gap-register.md#gap-e8ea4ebf9e5b",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:ipsAlerts",
@@ -1294,14 +1294,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b4a5fe10a5a1f350"
+        "evidence:28a537db6198cbd4"
       ],
       "id": "GAP-ECCA22B9BF5C",
       "issue": "./gap-register.md#gap-ecca22b9bf5c",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/banking/PaymentMethodsTab.tsx#PaymentMethodsTab",
@@ -1309,14 +1309,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ef8efd67e8dc930e"
+        "evidence:43524162110079f1"
       ],
       "id": "GAP-ED6C6DBA601B",
       "issue": "./gap-register.md#gap-ed6c6dba601b",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:budgetEntries",
@@ -1324,14 +1324,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5a64eee15a6e202d"
+        "evidence:03f19a60e448ea31"
       ],
       "id": "GAP-F233CCF8F300",
       "issue": "./gap-register.md#gap-f233ccf8f300",
       "kind": "FUNCTIONAL_ORPHAN",
       "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "component:src/components/banking/IPPEnrollmentSteps.tsx#IPPEnrollmentSteps",
@@ -1339,14 +1339,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:11d345c6b31a5475"
+        "evidence:730e4991057d28c9"
       ],
       "id": "GAP-F565DE673FC4",
       "issue": "./gap-register.md#gap-f565de673fc4",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:ippComplianceEvidence",
@@ -1354,14 +1354,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ad4e637fc23a5ead"
+        "evidence:0e242af73196c8e2"
       ],
       "id": "GAP-F87A7F4D9DAF",
       "issue": "./gap-register.md#gap-f87a7f4d9daf",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:platformGuardrails",
@@ -1369,14 +1369,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:96da48d1c2819412"
+        "evidence:cec68c5e84d7e3bf"
       ],
       "id": "GAP-FA5356EE9894",
       "issue": "./gap-register.md#gap-fa5356ee9894",
       "kind": "TABLE_CONNECTIVITY",
       "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "table:budgetLimits",
@@ -1391,7 +1391,7 @@
       "kind": "SENSITIVE_DOCUMENTATION",
       "nextAction": "Rotate or remove shared credentials from collaborative documentation and use a secret manager.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "high",
       "status": "open",
       "subjectId": "document:notion:38083bbf-4057-81fe-9528-c66d6cf00285",
@@ -1399,14 +1399,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6982cb37b4658180"
+        "evidence:e604c84ab449532f"
       ],
       "id": "GAP-TEST-SKIP-016584717742",
       "issue": "./gap-register.md#gap-test-skip-016584717742",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/ips-payment-flow.e2e.ts#9339b8a5801c2c8f3065",
@@ -1414,14 +1414,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ab597612522ae440"
+        "evidence:80a3732aeb0931f1"
       ],
       "id": "GAP-TEST-SKIP-0AB13266E74B",
       "issue": "./gap-register.md#gap-test-skip-0ab13266e74b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/backoffice-disbursement.e2e.ts#f4da2989e4481759c95e",
@@ -1429,14 +1429,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a0af3817091a63b0"
+        "evidence:e9eaecf703f1f664"
       ],
       "id": "GAP-TEST-SKIP-0C4650D6E88D",
       "issue": "./gap-register.md#gap-test-skip-0c4650d6e88d",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#e8c9af42903e85bdce83",
@@ -1444,14 +1444,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7c46ff7d6f32f388"
+        "evidence:71834718aa49b669"
       ],
       "id": "GAP-TEST-SKIP-0E05D081D7B9",
       "issue": "./gap-register.md#gap-test-skip-0e05d081d7b9",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/tigerbeetle-balance.e2e.ts#d70711600bbabb0e6180",
@@ -1459,14 +1459,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7f360bb96aa3c148"
+        "evidence:ecac280ea68e78e0"
       ],
       "id": "GAP-TEST-SKIP-1030E0B6067F",
       "issue": "./gap-register.md#gap-test-skip-1030e0b6067f",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-audit.e2e.ts#6387b7fca9b86bfd8784",
@@ -1474,14 +1474,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:71f092381a9231dc"
+        "evidence:7f109ce35f81c398"
       ],
       "id": "GAP-TEST-SKIP-11B2B5A24EDD",
       "issue": "./gap-register.md#gap-test-skip-11b2b5a24edd",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-analytics.e2e.ts#82165cdb0de5be4ebd85",
@@ -1489,14 +1489,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8de0bff4225c8479"
+        "evidence:fd6dfd59088225de"
       ],
       "id": "GAP-TEST-SKIP-135335D56AAA",
       "issue": "./gap-register.md#gap-test-skip-135335d56aaa",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-currency.e2e.ts#03d95cbed9fb5e7a7509",
@@ -1504,14 +1504,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:81b28536692ee0cb"
+        "evidence:8db1c0c8c33563e9"
       ],
       "id": "GAP-TEST-SKIP-14E0BC715785",
       "issue": "./gap-register.md#gap-test-skip-14e0bc715785",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/admin-rpc.e2e.ts#8ca9b3af5bf1b22f86ef",
@@ -1519,14 +1519,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0408c9a32e515273"
+        "evidence:0f8463e327e3cb85"
       ],
       "id": "GAP-TEST-SKIP-17B4FB8E1043",
       "issue": "./gap-register.md#gap-test-skip-17b4fb8e1043",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/signout.e2e.ts#d6fd4e834a9cfe69cdd2",
@@ -1534,14 +1534,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2693a976345ea2c1"
+        "evidence:f97edb21d6c648df"
       ],
       "id": "GAP-TEST-SKIP-18153F20C1FA",
       "issue": "./gap-register.md#gap-test-skip-18153f20c1fa",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-notifications.e2e.ts#de604e82d1b99c1fe846",
@@ -1549,14 +1549,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a6c435fdaf77ae60"
+        "evidence:954239ed3b3c2acc"
       ],
       "id": "GAP-TEST-SKIP-1A3353D88CF3",
       "issue": "./gap-register.md#gap-test-skip-1a3353d88cf3",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/adaptive-layout.e2e.ts#872d235407d97a25480b",
@@ -1564,14 +1564,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dea6f0a1f26e2dd5"
+        "evidence:51b45a2d92ce3b5d"
       ],
       "id": "GAP-TEST-SKIP-1B985C7BF34B",
       "issue": "./gap-register.md#gap-test-skip-1b985c7bf34b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/budget-tracker.e2e.ts#9339b8a5801c2c8f3065",
@@ -1579,14 +1579,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c39843a58c78c50d"
+        "evidence:709ec8097a0b871c"
       ],
       "id": "GAP-TEST-SKIP-1DA3ED8ACED2",
       "issue": "./gap-register.md#gap-test-skip-1da3ed8aced2",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#40d3c8af81b6566a8ef8",
@@ -1594,14 +1594,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2e89eb47944a4206"
+        "evidence:38bcea43d3474d95"
       ],
       "id": "GAP-TEST-SKIP-1F91982DD5A5",
       "issue": "./gap-register.md#gap-test-skip-1f91982dd5a5",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#c2ecce98af3648547fa8",
@@ -1609,14 +1609,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e9a2556e18de26a9"
+        "evidence:33e6f06264896b0c"
       ],
       "id": "GAP-TEST-SKIP-260208BCB066",
       "issue": "./gap-register.md#gap-test-skip-260208bcb066",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#86d555b1a158a621afd9",
@@ -1624,14 +1624,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:28468743f10f0472"
+        "evidence:98844a49530873fb"
       ],
       "id": "GAP-TEST-SKIP-273C5A8DF1A8",
       "issue": "./gap-register.md#gap-test-skip-273c5a8df1a8",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-reconciliation.e2e.ts#7c55af30daa9b64352bb",
@@ -1639,14 +1639,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5af2323074334761"
+        "evidence:f7e052be833191aa"
       ],
       "id": "GAP-TEST-SKIP-28E0579B749B",
       "issue": "./gap-register.md#gap-test-skip-28e0579b749b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/ips-adapter.e2e.ts#f245a070a4142ba72b60",
@@ -1654,14 +1654,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2082f2b55868f63f"
+        "evidence:93eb1c8a779730dd"
       ],
       "id": "GAP-TEST-SKIP-30BCAF6B1CBC",
       "issue": "./gap-register.md#gap-test-skip-30bcaf6b1cbc",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/loan-application.e2e.ts#b1078c2e878e76910dff",
@@ -1669,14 +1669,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8aacfbc83e498201"
+        "evidence:817b2e9c202545fb"
       ],
       "id": "GAP-TEST-SKIP-329CB62DAB03",
       "issue": "./gap-register.md#gap-test-skip-329cb62dab03",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#19393e830229620862b2",
@@ -1684,14 +1684,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4a851876ad5e6f8a"
+        "evidence:f091bfc9d3a48b68"
       ],
       "id": "GAP-TEST-SKIP-331493CB0B90",
       "issue": "./gap-register.md#gap-test-skip-331493cb0b90",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:unit:src/tests/security.test.ts#ec6a49b75098fbf2a44d",
@@ -1699,14 +1699,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6b3a0c4f79f43284"
+        "evidence:71b96c2a2f410be5"
       ],
       "id": "GAP-TEST-SKIP-36E46058896B",
       "issue": "./gap-register.md#gap-test-skip-36e46058896b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/api/ips-rpc.e2e.ts#49ce78d30135fd96c262",
@@ -1714,14 +1714,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5744bef3c47d3cc3"
+        "evidence:6ce5ae438ebf088e"
       ],
       "id": "GAP-TEST-SKIP-3E4492CF1400",
       "issue": "./gap-register.md#gap-test-skip-3e4492cf1400",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-disbursements-orchestration.e2e.ts#730cdfdaf873a87dad00",
@@ -1729,14 +1729,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2e50b1b8a4beb3b4"
+        "evidence:2a84c6b646fb2b25"
       ],
       "id": "GAP-TEST-SKIP-44C1DC77E008",
       "issue": "./gap-register.md#gap-test-skip-44c1dc77e008",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/ips-rpc.e2e.ts#ff22377349a63f662609",
@@ -1744,14 +1744,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:bb9a234dd8f8226d"
+        "evidence:5554a4147b41e279"
       ],
       "id": "GAP-TEST-SKIP-4AC271411657",
       "issue": "./gap-register.md#gap-test-skip-4ac271411657",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/api-collections.e2e.ts#4770f40acd0d8debf3d3",
@@ -1759,14 +1759,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:80bb9e42fc10c63f"
+        "evidence:3909e42dc5f8b7c8"
       ],
       "id": "GAP-TEST-SKIP-4FE350A1F082",
       "issue": "./gap-register.md#gap-test-skip-4fe350a1f082",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/dashboard-nav.e2e.ts#2851500509522039980c",
@@ -1774,14 +1774,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6d7001e25110c5bf"
+        "evidence:692a0484a243e9c8"
       ],
       "id": "GAP-TEST-SKIP-50906E245BCC",
       "issue": "./gap-register.md#gap-test-skip-50906e245bcc",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/ipp-lifecycle.e2e.ts#b6965058d40ca0366f99",
@@ -1789,14 +1789,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b1594edcd46439ae"
+        "evidence:29babc009e8aea02"
       ],
       "id": "GAP-TEST-SKIP-592207B673A6",
       "issue": "./gap-register.md#gap-test-skip-592207b673a6",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#99cb35e1a9460d36d012",
@@ -1804,14 +1804,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:28a1d34c35790e87"
+        "evidence:541d2692a4ec7421"
       ],
       "id": "GAP-TEST-SKIP-5DA5AA0CB931",
       "issue": "./gap-register.md#gap-test-skip-5da5aa0cb931",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/disbursements-ledger.e2e.ts#22d7665b835b531e48a1",
@@ -1819,14 +1819,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:21d1d2720c635745"
+        "evidence:828b41994abe1df2"
       ],
       "id": "GAP-TEST-SKIP-61BF2CC58555",
       "issue": "./gap-register.md#gap-test-skip-61bf2cc58555",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#9b757968664948a9e11e",
@@ -1834,14 +1834,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d8960915de763921"
+        "evidence:cf55167ad31ea1b4"
       ],
       "id": "GAP-TEST-SKIP-644B6B9CBA2C",
       "issue": "./gap-register.md#gap-test-skip-644b6b9cba2c",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/adaptive-layout.e2e.ts#0f6764b73e90ca9652fe",
@@ -1849,14 +1849,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e444ca09ca226b5c"
+        "evidence:f16c0958e3bddd9c"
       ],
       "id": "GAP-TEST-SKIP-65745748479E",
       "issue": "./gap-register.md#gap-test-skip-65745748479e",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/backoffice-disbursement.e2e.ts#9b757968664948a9e11e",
@@ -1864,14 +1864,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b1bd8d6393761008"
+        "evidence:dbefd8e482586758"
       ],
       "id": "GAP-TEST-SKIP-66ECE02E5B35",
       "issue": "./gap-register.md#gap-test-skip-66ece02e5b35",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/payment-ips-modal.e2e.ts#9339b8a5801c2c8f3065",
@@ -1879,14 +1879,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6c29acb3a3f88fc6"
+        "evidence:6c975bf5dc0217c8"
       ],
       "id": "GAP-TEST-SKIP-7CDBC3BA8C34",
       "issue": "./gap-register.md#gap-test-skip-7cdbc3ba8c34",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#1d31e80d559c039c926f",
@@ -1894,14 +1894,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ebd0f93604f9616c"
+        "evidence:9a80d7256337f42f"
       ],
       "id": "GAP-TEST-SKIP-809A16F9F73B",
       "issue": "./gap-register.md#gap-test-skip-809a16f9f73b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#9c7085e8b08a7445e127",
@@ -1909,14 +1909,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:51b2c5b1868ba012"
+        "evidence:c16e7420f3a90c38"
       ],
       "id": "GAP-TEST-SKIP-8BBAEA62C90D",
       "issue": "./gap-register.md#gap-test-skip-8bbaea62c90d",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/assign-role-modal.spec.ts#a29cedb2c027ae804d07",
@@ -1924,14 +1924,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6ad8bffbee9a2b1d"
+        "evidence:e6285a47c56da922"
       ],
       "id": "GAP-TEST-SKIP-957EA5B9B8D6",
       "issue": "./gap-register.md#gap-test-skip-957ea5b9b8d6",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-approvals-actions.e2e.ts#3c6ffc36cd0fc35a3001",
@@ -1939,14 +1939,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:48462d4b4b3ee298"
+        "evidence:d14224d4ee63e403"
       ],
       "id": "GAP-TEST-SKIP-9C5CBA1D2839",
       "issue": "./gap-register.md#gap-test-skip-9c5cba1d2839",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/role-routing.e2e.ts#06e58fec5c00ac6250a7",
@@ -1954,14 +1954,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6202986e868f6724"
+        "evidence:586141f3ec49999c"
       ],
       "id": "GAP-TEST-SKIP-A441A42ACAE4",
       "issue": "./gap-register.md#gap-test-skip-a441a42acae4",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/ipp-lifecycle.e2e.ts#f4c5b6169984c00a80cc",
@@ -1969,14 +1969,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:40d8c01b5e174aae"
+        "evidence:e88d21a027ef0890"
       ],
       "id": "GAP-TEST-SKIP-A44C9F48242A",
       "issue": "./gap-register.md#gap-test-skip-a44c9f48242a",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/disbursements-rls.e2e.ts#b016b8741485ee8c61d8",
@@ -1984,14 +1984,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4efbf9fcc31793b5"
+        "evidence:8ed32e34cc9ae5fd"
       ],
       "id": "GAP-TEST-SKIP-AFD5DE5CF407",
       "issue": "./gap-register.md#gap-test-skip-afd5de5cf407",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/disbursements-ledger-crud.e2e.ts#b101be44cf9942fc3cac",
@@ -1999,14 +1999,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0f7ab9cc7d157780"
+        "evidence:0e8c998fc3a77c91"
       ],
       "id": "GAP-TEST-SKIP-B9868B950879",
       "issue": "./gap-register.md#gap-test-skip-b9868b950879",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/documents-rls.e2e.ts#b1892c0107041bec17b0",
@@ -2014,14 +2014,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f5b3ec13b891cb01"
+        "evidence:746abe963efd25b0"
       ],
       "id": "GAP-TEST-SKIP-B9E0E6189678",
       "issue": "./gap-register.md#gap-test-skip-b9e0e6189678",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/disbursement.e2e.ts#b39622d30517b1540f88",
@@ -2029,14 +2029,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1b7202b22b0b3be4"
+        "evidence:d25ba5e987a65409"
       ],
       "id": "GAP-TEST-SKIP-BCDD1600A486",
       "issue": "./gap-register.md#gap-test-skip-bcdd1600a486",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/role-routing.e2e.ts#193131c83ffefa4d5b9a",
@@ -2044,14 +2044,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:059ed3a4c43ee471"
+        "evidence:9dc539f3834f99a8"
       ],
       "id": "GAP-TEST-SKIP-C3C27E369DAD",
       "issue": "./gap-register.md#gap-test-skip-c3c27e369dad",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/backoffice-disbursement.e2e.ts#fc5ec7e8ab67236ef6bd",
@@ -2059,14 +2059,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9641a2ed5c4acd17"
+        "evidence:27eca05579731eb0"
       ],
       "id": "GAP-TEST-SKIP-C4D9734CF8C7",
       "issue": "./gap-register.md#gap-test-skip-c4d9734cf8c7",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/api/approval-rpc-race-condition.e2e.ts#b12071a331baa63d4989",
@@ -2074,14 +2074,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:970251eed12565d7"
+        "evidence:7cc361028befd603"
       ],
       "id": "GAP-TEST-SKIP-D6F38F31475E",
       "issue": "./gap-register.md#gap-test-skip-d6f38f31475e",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/platform-console.e2e.ts#d8484b5015636061531d",
@@ -2089,14 +2089,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b5ae4522dcb23985"
+        "evidence:77b6fe996e100535"
       ],
       "id": "GAP-TEST-SKIP-DE991873782B",
       "issue": "./gap-register.md#gap-test-skip-de991873782b",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:unit:src/tests/security.test.ts#ded6e5cd6c49319b436f",
@@ -2104,14 +2104,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5dfe1788c503f60e"
+        "evidence:ac94038c519f0edf"
       ],
       "id": "GAP-TEST-SKIP-E213A3F64664",
       "issue": "./gap-register.md#gap-test-skip-e213a3f64664",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-approvals.e2e.ts#dc51d02ac15407fabefa",
@@ -2119,14 +2119,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:20cb80e5cd6d4758"
+        "evidence:64bbb07b3dda605c"
       ],
       "id": "GAP-TEST-SKIP-E598AC46FAFC",
       "issue": "./gap-register.md#gap-test-skip-e598ac46fafc",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "describe:e2e:e2e/document-workflow.e2e.ts#968fe2068529100c5e04",
@@ -2134,14 +2134,14 @@
     },
     {
       "evidenceRefs": [
-        "evidence:39bdcefde7bee7ea"
+        "evidence:5504bea30199d4ae"
       ],
       "id": "GAP-TEST-SKIP-FAB9EFD5A386",
       "issue": "./gap-register.md#gap-test-skip-fab9efd5a386",
       "kind": "TEST_SKIP",
       "nextAction": "Remove the skip by migrating or stabilizing the scenario; otherwise renew its reviewed exception.",
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
       "subjectId": "test:e2e:e2e/admin-portal.e2e.ts#4a77d68bf3bb6dc6e7c8",

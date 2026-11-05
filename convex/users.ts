@@ -216,13 +216,39 @@ export const adminListClientsWithPortfolio = query({
 export const updateMyProfile = mutation({
   args: {
     fullName: v.optional(v.string()),
+    /**
+     * Surname / first names are accepted separately because Schedule A of the loan
+     * agreement prints them in separate cells. `fullName` stays the display name.
+     */
+    surname: v.optional(v.string()),
+    firstNames: v.optional(v.string()),
     phone: v.optional(v.string()),
     address: v.optional(v.string()),
+    addressLine1: v.optional(v.string()),
+    addressLine2: v.optional(v.string()),
     city: v.optional(v.string()),
     country: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
     dateOfBirth: v.optional(v.string()),
     employmentStatus: v.optional(v.string()),
     monthlyIncome: v.optional(v.number()),
+    // Employment + banking detail. Previously these were rendered as editable inputs
+    // by the profile UI but were never in this arg list, so "Save Changes" discarded
+    // them silently. The loan agreement needs every one of them.
+    employerName: v.optional(v.string()),
+    employerPhone: v.optional(v.string()),
+    employerContactPerson: v.optional(v.string()),
+    employeeNumber: v.optional(v.string()),
+    workAddress: v.optional(v.string()),
+    bankName: v.optional(v.string()),
+    accountNumber: v.optional(v.string()),
+    accountHolderName: v.optional(v.string()),
+    accountType: v.optional(v.string()),
+    branchCode: v.optional(v.string()),
+    branchName: v.optional(v.string()),
+    // NOTE: `idNumber` is deliberately NOT accepted here. It is identity evidence tied
+    // to a verified KYC package, so it is fill-not-clobber via `completeEnrollment`
+    // and otherwise only changeable by staff.
   },
   handler: async (ctx, args) => {
     const userId = await assertAuthenticated(ctx);
@@ -242,6 +268,14 @@ export const updateMyProfile = mutation({
     await ctx.db.patch(profile._id, {
       ...args,
       updatedAt: Date.now(),
+    });
+
+    // Clause 11 of the standard terms obliges the borrower to notify changes to
+    // employment, banking and contact details, so a self-service edit is a reportable
+    // event rather than a silent write.
+    emitDomainEvent(ctx, 'user.profile_updated', 'profiles', profile._id, {
+      userId,
+      fields: Object.keys(args),
     });
   },
 });

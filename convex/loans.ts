@@ -24,6 +24,7 @@ import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import { assertKycVerifiedForUser } from './lib/kyc';
+import { allocateLoanNumber } from './lib/referenceNumbers';
 import { APR_LIMIT, isValidAPR } from './lib/regulatory';
 import { emitRelationship } from './lib/relationshipEmitter';
 import {
@@ -318,9 +319,15 @@ export const createLoan = mutation({
     }
 
     const now = Date.now();
+    // Allocated after the idempotency guard above, so a double-click does not burn a
+    // reference. Issued at draft creation rather than at approval because staff and
+    // borrowers need something to quote from the first conversation onward, and the
+    // loan agreement prints it as "Loan reference".
+    const loanNumber = await allocateLoanNumber(ctx, institutionId);
     const loanId = await ctx.db.insert('loans', {
       userId,
       institutionId,
+      loanNumber,
       principal: args.principal,
       interestRate: args.interestRate,
       termMonths: args.termMonths,

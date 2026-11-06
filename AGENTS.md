@@ -120,3 +120,80 @@ The NamLend ontology is authoritative for system inventory, evidence, and impact
 Graphify is an optional local discovery sidecar and cannot establish E0/E1 facts.
 Autonomous work is limited to policy-validated R0/R1 tasks; humans retain merge,
 deployment, production, schema, financial, auth, security, and agent-policy authority.
+
+## Cursor Cloud specific instructions
+
+Scope: these notes cover the **web portal** (repo root: React/Vite frontend + Convex
+backend), which is the primary product. `namlend-mobile/` is a separate Expo /
+Supabase-backed app and is NOT set up by the startup update script; run `npm ci`
+inside `namlend-mobile/` only when doing mobile work.
+
+### Node toolchain (important gotcha)
+
+- The repo pins Node `22.23.2` / npm `10.9.8` (`.nvmrc`, `package.json` `engines`)
+  and `.npmrc` sets `engine-strict=true`, so npm **fails** unless the running Node is
+  exactly `22.23.2`. The VM's default `/exec-daemon/node` is a different version and is
+  force-prepended to `PATH` ahead of nvm, so `nvm use` alone is not enough.
+- The startup update script installs `22.23.2` via nvm and runs `npm ci` through
+  `nvm exec 22.23.2`, which pins Node regardless of `PATH`.
+- Interactive shells: `~/.bashrc` has been configured to prepend the nvm `22.23.2`
+  bin dir, so a normal login shell resolves the correct `node`/`npm`. If you spawn a
+  non-login shell and hit an engine error, run commands via `nvm exec 22.23.2 <cmd>`
+  or `export PATH="$HOME/.nvm/versions/node/v22.23.2/bin:$PATH"` first.
+
+### Running the app (two services)
+
+- Frontend: `npm run dev` → Vite on `http://localhost:8080`.
+- Backend: the frontend needs a reachable `VITE_CONVEX_URL`. For isolated local dev,
+  run a local Convex deployment in agent mode:
+  `CONVEX_AGENT_MODE=anonymous npx convex dev --typecheck=disable`. This writes
+  `VITE_CONVEX_URL=http://127.0.0.1:3210` to `.env.local`. Do NOT point local dev at
+  the production deployment in `convex.json`.
+- `--typecheck=disable` is required for `npx convex dev`: the Convex CLI typechecks
+  `convex/**/*.test.ts` via `convex/tsconfig.json`, and those test files use Vite's
+  `import.meta.glob`, which fails the CLI's `tsc`. The real TS gate is `npm run
+typecheck` (`tsc -b`), and backend tests run via `npm run test:convex`.
+
+### Convex Auth env vars (required for login to work)
+
+- The Password auth provider needs `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` set on the
+  Convex deployment. A fresh local anonymous deployment starts WITHOUT them, so sign-in
+  appears to succeed but the session fails to validate and protected routes bounce back
+  to `/auth`. These are per-deployment (not repo) and must be reset on each new local
+  deployment. Generate an RS256 keypair (via `jose`, matching `@convex-dev/auth`) and:
+  `npx convex env set JWT_PRIVATE_KEY -- "<pkcs8, newlines->spaces>"`,
+  `npx convex env set JWKS -- '<{"keys":[{"use":"sig",...}]}>'`,
+  `npx convex env set SITE_URL http://localhost:8080`.
+
+### Ports
+
+- `8080` Vite dev server, `3210` Convex backend, `3211` Convex HTTP actions.
+
+### Seeded test accounts (local demos / E2E)
+
+- `npx convex run seed:seedTestUsers` (internalAction, run with `CONVEX_AGENT_MODE=anonymous`)
+  is idempotent and creates the standard fixtures on the local deployment, all with password
+  `Test1234!`: `client1@test.namlend.com` (client, and auto KYC-`verified` so the loan
+  application form is not gated behind `/kyc`), `client2@...`, `admin@...`,
+  `loan_officer@...` (staff, the "operator" role for approvals), and
+  `platformowner@...`. It also seeds an OG tenant plus an active and a `submitted`
+  ("reviewable") loan for `client1`, so the approvals/loans queues are not empty on a fresh DB.
+- Loan lifecycle for demos: client submits at `/loan-application` -> staff get a "New Loan
+  Application" notification and work the queue at `/admin/approvals` -> approving there
+  (`approvalWorkflow.processApprovalRequest`) notifies the client "Loan Approved". Approving
+  from `/admin/loans` directly does NOT notify the client, so use `/admin/approvals`.
+
+### Vite dev "Failed to fetch dynamically imported module" (lazy admin routes)
+
+- After a long-running dev session (or once Vite re-optimizes deps mid-session), lazily
+  imported route chunks (e.g. `/admin/*` pages) can fail with "Failed to fetch dynamically
+  imported module" even though the module transforms fine server-side. This is stale dep-
+  optimization state, not a code bug. Fix: restart the Vite dev server (optionally
+  `rm -rf node_modules/.vite` first) and hard-reload the page.
+
+### Screen recordings
+
+- Keep screen recordings short (roughly a few minutes each); very long captures can exceed
+  the save/render pipeline limits. For multi-part flows, record short per-part clips and
+  concatenate them with `ffmpeg -f concat` (clips share codec/resolution/fps, so `-c copy`
+  works). `videoReview` rejects videos over 15 MB, so review the individual clips.

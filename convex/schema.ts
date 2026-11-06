@@ -5,6 +5,12 @@
  */
 
 import { authTables } from '@convex-dev/auth/server';
+import {
+  agreementSnapshot,
+  agreementStatus,
+  agreementTemplateContent,
+  lenderDetails,
+} from './lib/agreement/types';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
@@ -214,7 +220,8 @@ export const consentType = v.union(
   v.literal('debit_mandate'),
   v.literal('credit_check'),
   v.literal('communication'),
-  v.literal('data_sharing')
+  v.literal('data_sharing'),
+  v.literal('loan_agreement')
 );
 
 /** Consent status */
@@ -299,6 +306,20 @@ export default defineSchema({
     idNumber: v.optional(v.string()),
     idType: v.optional(v.string()),
     /**
+     * Human client reference printed on the loan agreement ("Client No.").
+     * Allocated once per institution by `allocateClientNumber`, then never changed —
+     * it appears on executed contracts, so reissuing it would break the paper trail.
+     */
+    clientNumber: v.optional(v.string()),
+    /**
+     * Schedule A of the loan agreement prints surname and first names in separate
+     * cells, so the split is stored rather than derived from `fullName` at render
+     * time: a last-token split mangles "van der Merwe" and "Da Silva Santos" alike.
+     * Both stay optional — `fullName` remains the display name everywhere else.
+     */
+    surname: v.optional(v.string()),
+    firstNames: v.optional(v.string()),
+    /**
      * Which sign-in path created this profile ('password' | 'google' | 'self_heal').
      * Drives the post-signup completion gate: OAuth gives us no phone or ID number,
      * so Google sign-ups must be asked for them. Deliberately an explicit marker
@@ -320,11 +341,22 @@ export default defineSchema({
     employerName: v.optional(v.string()),
     employerPhone: v.optional(v.string()),
     employerContactPerson: v.optional(v.string()),
+    /** Payroll/staff number at the employer — Schedule A "Employer no.". */
+    employeeNumber: v.optional(v.string()),
+    /** Schedule A "Work address" — distinct from the residential address above. */
+    workAddress: v.optional(v.string()),
     monthlyIncome: v.optional(v.number()),
     bankName: v.optional(v.string()),
     accountNumber: v.optional(v.string()),
     branchCode: v.optional(v.string()),
     branchName: v.optional(v.string()),
+    /**
+     * Schedule A section B. `accountHolderName` is deliberately separate from
+     * `fullName`: a borrower may legitimately repay from an account held in another
+     * name, and the agreement must disclose whose account it is.
+     */
+    accountHolderName: v.optional(v.string()),
+    accountType: v.optional(v.string()),
     creditScore: v.optional(v.number()),
     profileCompletionPercentage: v.optional(v.number()),
     loanApplicationEligible: v.optional(v.boolean()),
@@ -340,7 +372,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index('by_userId', ['userId'])
-    .index('by_institutionId', ['institutionId']),
+    .index('by_institutionId', ['institutionId'])
+    .index('by_clientNumber', ['clientNumber']),
 
   /**
    * Role assignments — one row per user.
@@ -410,7 +443,8 @@ export default defineSchema({
     sourceTable: v.union(
       v.literal('kycDocuments'),
       v.literal('loanDocuments'),
-      v.literal('institutionDocuments')
+      v.literal('institutionDocuments'),
+      v.literal('loanAgreements')
     ),
     documentId: v.string(),
     /** Who was authorized — the guard already passed when the grant was minted. */
@@ -460,6 +494,21 @@ export default defineSchema({
     monthlyIncome: v.optional(v.number()),
     monthlyExpenses: v.optional(v.number()),
     existingDebt: v.optional(v.number()),
+    /**
+     * Cost-of-credit breakdown — Schedule A section C of the loan agreement.
+     * NAD, not cents (consistent with `principal`); the outbox converts at the
+     * boundary. All optional: loans created before the fee model existed have none,
+     * and `computeCostOfCredit` is the only thing that should populate them.
+     *
+     * `totalCostOfCredit` is stored rather than derived so the figure disclosed on a
+     * signed agreement can never drift from a later change to the fee rule.
+     */
+    initiationFee: v.optional(v.number()),
+    administrationFee: v.optional(v.number()),
+    otherCharges: v.optional(v.number()),
+    totalCostOfCredit: v.optional(v.number()),
+    /** How the borrower repays — Schedule A "Repayment Method" (e.g. 'eft', 'cash'). */
+    repaymentMethod: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
     // Ontology forward-compatible fields (Phases 4-6)
@@ -498,6 +547,114 @@ export default defineSchema({
     .index('by_loanId', ['loanId'])
     .index('by_loanId_documentType', ['loanId', 'documentType'])
     .index('by_fileStorageId', ['fileStorageId']),
+
+  // ==========================================================================
+  // LOAN AGREEMENTS — see docs/LOAN_AGREEMENT.md
+  // ==========================================================================
+
+  /**
+   * Versioned contractual wording (the Standard Terms) per institution. Version 1 is
+   * the verbatim source document; later versions are authorised revisions. Rows are
+   * never edited after approval and never deleted — every issued agreement points at
+   * the exact version it was generated from.
+   */
+  agreementTemplates: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    version: v.number(),
+    status: v.union(v.literal('draft'), v.literal('approved'), v.literal('retired')),
+    content: agreementTemplateContent,
+    contentSha256: v.string(),
+    source: v.union(v.literal('source_document'), v.literal('revision')),
+    basedOnVersion: v.optional(v.number()),
+    changeSummary: v.optional(v.string()),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+    approvedBy: v.optional(v.id('users')),
+    approvedAt: v.optional(v.number()),
+    retiredAt: v.optional(v.number()),
+  })
+    .index('by_institution_version', ['institutionId', 'version'])
+    .index('by_institution_status', ['institutionId', 'status']),
+
+  /**
+   * Company information and representative printed on every agreement. Pricing is NOT
+   * here: it comes from the institution's Credit Policy, the one fee configuration.
+   * One row per institution. Any edit clears `approvedAt`, so a changed value cannot
+   * reach a customer contract until an admin re-approves it.
+   */
+  agreementSettings: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    lender: lenderDetails,
+    representativeName: v.optional(v.string()),
+    representativeDesignation: v.optional(v.string()),
+    defaultRepaymentMethod: v.optional(v.string()),
+    /** When true, a loan cannot be disbursed until its agreement is accepted. */
+    requireAcceptedAgreementForDisbursement: v.boolean(),
+    approvedBy: v.optional(v.id('users')),
+    approvedAt: v.optional(v.number()),
+    updatedBy: v.id('users'),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  }).index('by_institution', ['institutionId']),
+
+  /**
+   * One row per agreement version per loan. Drafts read borrower data live from the
+   * source records, so a correction made at source shows immediately; finalizing
+   * freezes `snapshot` and renders a hashed PDF, after which the content never
+   * changes. A legally relevant change produces a new version that supersedes this one.
+   */
+  loanAgreements: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    loanId: v.id('loans'),
+    userId: v.id('users'),
+    version: v.number(),
+    isCurrent: v.boolean(),
+    status: agreementStatus,
+    agreementNumber: v.string(),
+    templateId: v.optional(v.id('agreementTemplates')),
+    templateVersion: v.optional(v.number()),
+    /** Contract-specific fields captured during preparation. */
+    firstRepaymentDate: v.optional(v.string()),
+    placeOfSigning: v.optional(v.string()),
+    snapshot: v.optional(agreementSnapshot),
+    pdfStatus: v.optional(v.union(v.literal('pending'), v.literal('ready'), v.literal('failed'))),
+    pdfStorageId: v.optional(v.id('_storage')),
+    pdfSha256: v.optional(v.string()),
+    pdfError: v.optional(v.string()),
+    executedPdfStorageId: v.optional(v.id('_storage')),
+    executedPdfSha256: v.optional(v.string()),
+    generatedBy: v.optional(v.id('users')),
+    finalizedBy: v.optional(v.id('users')),
+    finalizedAt: v.optional(v.number()),
+    sentBy: v.optional(v.id('users')),
+    sentAt: v.optional(v.number()),
+    viewedAt: v.optional(v.number()),
+    acceptance: v.optional(
+      v.object({
+        userId: v.id('users'),
+        acceptedAt: v.number(),
+        typedName: v.string(),
+        idNumberLast4: v.string(),
+        placeOfSigning: v.string(),
+        statement: v.string(),
+        /** SHA-256 of the exact PDF the borrower accepted. */
+        documentSha256: v.string(),
+        consentRecordId: v.id('consentRecords'),
+      })
+    ),
+    archivedAt: v.optional(v.number()),
+    cancelledBy: v.optional(v.id('users')),
+    cancelledAt: v.optional(v.number()),
+    cancelReason: v.optional(v.string()),
+    supersededBy: v.optional(v.id('loanAgreements')),
+    supersededAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_loanId', ['loanId'])
+    .index('by_loanId_current', ['loanId', 'isCurrent'])
+    .index('by_userId', ['userId'])
+    .index('by_institution_status', ['institutionId', 'status']),
 
   /** Approval decisions on each loan — immutable after write */
   loanApprovals: defineTable({
@@ -1640,6 +1797,7 @@ export default defineSchema({
       v.literal('scoring'),
       v.literal('recordScore'),
       v.literal('approvalRequest'),
+      v.literal('agreementGeneration'),
       v.literal('notification'),
       v.literal('unknown')
     ),
@@ -1876,6 +2034,27 @@ export default defineSchema({
   // ==========================================================================
   // SYSTEM CONFIGURATION
   // ==========================================================================
+
+  /**
+   * Monotonic counters for human-facing reference numbers (client numbers, loan
+   * numbers). One row per (institution, name).
+   *
+   * A table rather than a derived value because the loan agreement prints these
+   * numbers on an executed contract: they must be unique, stable and gap-free-ish,
+   * which `db.query(...).collect().length` cannot promise under concurrency.
+   * Convex's optimistic concurrency retries the whole mutation on a write conflict,
+   * so two simultaneous allocations serialise rather than collide — acceptable at
+   * lending volumes, and the reason this is NOT used for per-transaction references
+   * (see `makeReceiptNumber`, which derives from msgId precisely to avoid contention).
+   */
+  sequenceCounters: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    /** 'clientNumber' | 'loanNumber' */
+    name: v.string(),
+    /** The value the NEXT allocation returns. Starts at 1. */
+    nextValue: v.number(),
+    updatedAt: v.number(),
+  }).index('by_institution_name', ['institutionId', 'name']),
 
   systemConfiguration: defineTable({
     key: v.string(),

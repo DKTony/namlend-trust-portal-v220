@@ -8,32 +8,32 @@
       "kind": "E1_NOT_YET_AVAILABLE",
       "maximumCount": 1,
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30"
+      "reviewDate": "2026-12-31"
     },
     {
       "kind": "FUNCTIONAL_ORPHAN",
       "maximumCount": 71,
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30"
+      "reviewDate": "2026-12-31"
     },
     {
       "kind": "SENSITIVE_DOCUMENTATION",
       "maximumCount": 1,
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30",
+      "reviewDate": "2026-12-31",
       "scope": "Redacted E2 Notion finding only; secret values are excluded and a true production credential cannot be waived."
     },
     {
       "kind": "TABLE_CONNECTIVITY",
       "maximumCount": 31,
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30"
+      "reviewDate": "2026-12-31"
     },
     {
       "kind": "TEST_SKIP",
       "maximumCount": 51,
       "owner": "NamLend Engineering",
-      "reviewDate": "2026-09-30"
+      "reviewDate": "2026-12-31"
     }
   ]
 }

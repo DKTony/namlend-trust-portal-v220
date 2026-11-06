@@ -139,7 +139,7 @@ export default function Auth() {
       if (!emailValidation.success) {
         toast({
           title: 'Invalid Email',
-          description: emailValidation.error.errors[0].message,
+          description: emailValidation.error.issues[0].message,
           variant: 'destructive',
         });
         setIsLoading(false);
@@ -191,7 +191,7 @@ export default function Auth() {
       if (!emailCheck.success) {
         toast({
           title: 'Invalid Email',
-          description: emailCheck.error.errors[0].message,
+          description: emailCheck.error.issues[0].message,
           variant: 'destructive',
         });
         setIsLoading(false);
@@ -244,7 +244,7 @@ export default function Auth() {
       if (!emailValidation.success) {
         toast({
           title: 'Invalid Email',
-          description: emailValidation.error.errors[0].message,
+          description: emailValidation.error.issues[0].message,
           variant: 'destructive',
         });
         setIsLoading(false);

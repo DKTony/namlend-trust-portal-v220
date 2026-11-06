@@ -9,6 +9,8 @@ interface EmploymentSectionProps {
     employer_name: string;
     employer_phone: string;
     employer_contact_person: string;
+    employee_number: string;
+    work_address: string;
   };
   isEditing: boolean;
   editForm: Record<string, any>;
@@ -123,6 +125,13 @@ export function EmploymentSection({
             field: 'employer_contact_person',
             value: profile.employer_contact_person,
           },
+          // Both appear on Schedule A of the loan agreement.
+          {
+            label: 'Employee / Staff No.',
+            field: 'employee_number',
+            value: profile.employee_number,
+          },
+          { label: 'Work Address', field: 'work_address', value: profile.work_address },
         ].map((item) => (
           <div key={item.field} className="space-y-2">
             <label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">

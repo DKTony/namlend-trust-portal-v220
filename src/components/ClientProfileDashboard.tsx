@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 interface ExtendedProfile {
   id: string;
   user_id: string;
+  client_number: string;
   first_name: string;
   last_name: string;
   phone_number: string;
@@ -34,10 +35,14 @@ interface ExtendedProfile {
   employer_name: string;
   employer_phone: string;
   employer_contact_person: string;
+  employee_number: string;
+  work_address: string;
   employment_status: string;
   monthly_income: number;
   bank_name: string;
   account_number: string;
+  account_holder_name: string;
+  account_type: string;
   branch_code: string;
   branch_name: string;
   profile_completion_percentage: number;
@@ -74,12 +79,15 @@ export default function ClientProfileDashboard() {
 
   const profile: ExtendedProfile | null = useMemo(() => {
     if (!rawProfile) return null;
+    // Prefer the stored split: a space split puts "van der Merwe" in three places.
+    // It stays as the fallback for profiles filled in before those fields existed.
     const names = (rawProfile.fullName ?? '').split(' ');
     return {
       id: String(rawProfile._id ?? ''),
       user_id: rawProfile.userId ?? '',
-      first_name: names[0] ?? '',
-      last_name: names.slice(1).join(' ') ?? '',
+      client_number: rawProfile.clientNumber ?? '',
+      first_name: rawProfile.firstNames ?? names[0] ?? '',
+      last_name: rawProfile.surname ?? names.slice(1).join(' ') ?? '',
       phone_number: rawProfile.phone ?? '',
       id_number: rawProfile.idNumber ?? '',
       address_line1: rawProfile.addressLine1 ?? '',
@@ -90,10 +98,14 @@ export default function ClientProfileDashboard() {
       employer_name: rawProfile.employerName ?? '',
       employer_phone: rawProfile.employerPhone ?? '',
       employer_contact_person: rawProfile.employerContactPerson ?? '',
+      employee_number: rawProfile.employeeNumber ?? '',
+      work_address: rawProfile.workAddress ?? '',
       employment_status: rawProfile.employmentStatus ?? '',
       monthly_income: rawProfile.monthlyIncome ?? 0,
       bank_name: rawProfile.bankName ?? '',
       account_number: rawProfile.accountNumber ?? '',
+      account_holder_name: rawProfile.accountHolderName ?? '',
+      account_type: rawProfile.accountType ?? '',
       branch_code: rawProfile.branchCode ?? '',
       branch_name: rawProfile.branchName ?? '',
       profile_completion_percentage: rawProfile.profileCompletionPercentage ?? 0,

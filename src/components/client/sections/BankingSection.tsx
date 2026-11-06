@@ -7,6 +7,8 @@ interface BankingSectionProps {
     last_name: string;
     bank_name: string;
     account_number: string;
+    account_holder_name: string;
+    account_type: string;
     branch_code: string;
     branch_name: string;
   };
@@ -30,6 +32,14 @@ export function BankingSectionProfile({
   const fields = [
     { label: 'Bank Name', field: 'bank_name', value: profile.bank_name },
     { label: 'Account Number', field: 'account_number', value: profile.account_number },
+    // Disclosed separately on the loan agreement: a borrower may repay from an
+    // account held in someone else's name, and the schedule must say whose.
+    {
+      label: 'Account Holder',
+      field: 'account_holder_name',
+      value: profile.account_holder_name,
+    },
+    { label: 'Account Type', field: 'account_type', value: profile.account_type },
     { label: 'Branch Code', field: 'branch_code', value: profile.branch_code },
     { label: 'Branch Name', field: 'branch_name', value: profile.branch_name },
   ] as const;
@@ -90,7 +100,7 @@ export function BankingSectionProfile({
                   : '**** **** **** ****'}
               </p>
               <p className="text-xs text-zinc-500 uppercase truncate">
-                {profile.first_name} {profile.last_name}
+                {profile.account_holder_name || `${profile.first_name} ${profile.last_name}`}
               </p>
             </div>
           </div>

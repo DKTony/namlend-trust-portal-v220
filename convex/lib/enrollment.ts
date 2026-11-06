@@ -22,6 +22,7 @@ import { GenericMutationCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { DataModel, Doc, Id } from '../_generated/dataModel';
 import { scheduleAuditLog } from './audit';
+import { allocateSequence, formatClientNumber } from './referenceNumbers';
 import { resolveWriteInstitution } from './tenancy';
 
 type MutCtx = GenericMutationCtx<DataModel>;
@@ -201,14 +202,25 @@ export async function enrollUser(ctx: MutCtx, input: EnrollUserInput): Promise<E
       const institutionId = await resolveWriteInstitution(ctx, { userId });
       if (institutionId) patch.institutionId = institutionId;
     }
+    // Client numbers arrived with the loan-agreement work, so every profile created
+    // before it has none. Backfilling on sign-in covers the active user base without a
+    // migration; `ensureClientNumber` is the safety net for anyone who never returns.
+    if (!existing.clientNumber) {
+      const institutionId = patch.institutionId ?? existing.institutionId;
+      patch.clientNumber = formatClientNumber(
+        await allocateSequence(ctx, 'clientNumber', institutionId)
+      );
+    }
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(existing._id, { ...patch, updatedAt: now });
     }
     profileId = existing._id;
   } else {
+    const institutionId = await resolveWriteInstitution(ctx, { userId });
     profileId = await ctx.db.insert('profiles', {
       userId,
-      institutionId: await resolveWriteInstitution(ctx, { userId }),
+      institutionId,
+      clientNumber: formatClientNumber(await allocateSequence(ctx, 'clientNumber', institutionId)),
       email: clean(input.email) ?? '',
       fullName: clean(input.fullName),
       phone: clean(input.phone),

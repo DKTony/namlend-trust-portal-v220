@@ -54,6 +54,10 @@ export const LOAN_DOCUMENT_TYPES = [
   'bank_statement',
   'proof_income',
   'employment_letter',
+  // A borrower's wet-signed agreement, scanned and returned. Staff verify it and
+  // record an `agreementSignatures` row; the file itself lives here so it inherits
+  // the existing grant-based access control and 7-year retention.
+  'signed_loan_agreement',
   'other',
 ] as const;
 export type LoanDocumentType = (typeof LOAN_DOCUMENT_TYPES)[number];
@@ -69,6 +73,7 @@ export const loanDocumentTypeValidator = v.union(
   v.literal('bank_statement'),
   v.literal('proof_income'),
   v.literal('employment_letter'),
+  v.literal('signed_loan_agreement'),
   v.literal('other')
 );
 

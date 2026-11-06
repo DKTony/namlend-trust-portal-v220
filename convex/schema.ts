@@ -5,6 +5,12 @@
  */
 
 import { authTables } from '@convex-dev/auth/server';
+import {
+  agreementSnapshot,
+  agreementStatus,
+  agreementTemplateContent,
+  lenderDetails,
+} from './lib/agreement/types';
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
@@ -437,7 +443,8 @@ export default defineSchema({
     sourceTable: v.union(
       v.literal('kycDocuments'),
       v.literal('loanDocuments'),
-      v.literal('institutionDocuments')
+      v.literal('institutionDocuments'),
+      v.literal('loanAgreements')
     ),
     documentId: v.string(),
     /** Who was authorized — the guard already passed when the grant was minted. */
@@ -540,6 +547,114 @@ export default defineSchema({
     .index('by_loanId', ['loanId'])
     .index('by_loanId_documentType', ['loanId', 'documentType'])
     .index('by_fileStorageId', ['fileStorageId']),
+
+  // ==========================================================================
+  // LOAN AGREEMENTS — see docs/LOAN_AGREEMENT.md
+  // ==========================================================================
+
+  /**
+   * Versioned contractual wording (the Standard Terms) per institution. Version 1 is
+   * the verbatim source document; later versions are authorised revisions. Rows are
+   * never edited after approval and never deleted — every issued agreement points at
+   * the exact version it was generated from.
+   */
+  agreementTemplates: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    version: v.number(),
+    status: v.union(v.literal('draft'), v.literal('approved'), v.literal('retired')),
+    content: agreementTemplateContent,
+    contentSha256: v.string(),
+    source: v.union(v.literal('source_document'), v.literal('revision')),
+    basedOnVersion: v.optional(v.number()),
+    changeSummary: v.optional(v.string()),
+    createdBy: v.id('users'),
+    createdAt: v.number(),
+    approvedBy: v.optional(v.id('users')),
+    approvedAt: v.optional(v.number()),
+    retiredAt: v.optional(v.number()),
+  })
+    .index('by_institution_version', ['institutionId', 'version'])
+    .index('by_institution_status', ['institutionId', 'status']),
+
+  /**
+   * Company information and representative printed on every agreement. Pricing is NOT
+   * here: it comes from the institution's Credit Policy, the one fee configuration.
+   * One row per institution. Any edit clears `approvedAt`, so a changed value cannot
+   * reach a customer contract until an admin re-approves it.
+   */
+  agreementSettings: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    lender: lenderDetails,
+    representativeName: v.optional(v.string()),
+    representativeDesignation: v.optional(v.string()),
+    defaultRepaymentMethod: v.optional(v.string()),
+    /** When true, a loan cannot be disbursed until its agreement is accepted. */
+    requireAcceptedAgreementForDisbursement: v.boolean(),
+    approvedBy: v.optional(v.id('users')),
+    approvedAt: v.optional(v.number()),
+    updatedBy: v.id('users'),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  }).index('by_institution', ['institutionId']),
+
+  /**
+   * One row per agreement version per loan. Drafts read borrower data live from the
+   * source records, so a correction made at source shows immediately; finalizing
+   * freezes `snapshot` and renders a hashed PDF, after which the content never
+   * changes. A legally relevant change produces a new version that supersedes this one.
+   */
+  loanAgreements: defineTable({
+    institutionId: v.optional(v.id('institutions')),
+    loanId: v.id('loans'),
+    userId: v.id('users'),
+    version: v.number(),
+    isCurrent: v.boolean(),
+    status: agreementStatus,
+    agreementNumber: v.string(),
+    templateId: v.optional(v.id('agreementTemplates')),
+    templateVersion: v.optional(v.number()),
+    /** Contract-specific fields captured during preparation. */
+    firstRepaymentDate: v.optional(v.string()),
+    placeOfSigning: v.optional(v.string()),
+    snapshot: v.optional(agreementSnapshot),
+    pdfStatus: v.optional(v.union(v.literal('pending'), v.literal('ready'), v.literal('failed'))),
+    pdfStorageId: v.optional(v.id('_storage')),
+    pdfSha256: v.optional(v.string()),
+    pdfError: v.optional(v.string()),
+    executedPdfStorageId: v.optional(v.id('_storage')),
+    executedPdfSha256: v.optional(v.string()),
+    generatedBy: v.optional(v.id('users')),
+    finalizedBy: v.optional(v.id('users')),
+    finalizedAt: v.optional(v.number()),
+    sentBy: v.optional(v.id('users')),
+    sentAt: v.optional(v.number()),
+    viewedAt: v.optional(v.number()),
+    acceptance: v.optional(
+      v.object({
+        userId: v.id('users'),
+        acceptedAt: v.number(),
+        typedName: v.string(),
+        idNumberLast4: v.string(),
+        placeOfSigning: v.string(),
+        statement: v.string(),
+        /** SHA-256 of the exact PDF the borrower accepted. */
+        documentSha256: v.string(),
+        consentRecordId: v.id('consentRecords'),
+      })
+    ),
+    archivedAt: v.optional(v.number()),
+    cancelledBy: v.optional(v.id('users')),
+    cancelledAt: v.optional(v.number()),
+    cancelReason: v.optional(v.string()),
+    supersededBy: v.optional(v.id('loanAgreements')),
+    supersededAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('by_loanId', ['loanId'])
+    .index('by_loanId_current', ['loanId', 'isCurrent'])
+    .index('by_userId', ['userId'])
+    .index('by_institution_status', ['institutionId', 'status']),
 
   /** Approval decisions on each loan — immutable after write */
   loanApprovals: defineTable({

@@ -235,6 +235,10 @@ test.describe('IPP Full Lifecycle', () => {
 
       await inlineApproveBtn.click();
       await page.waitForTimeout(3000);
+      // Approving now opens the loan agreement (contract preparation) immediately,
+      // so return to the loans list before looking for the Approved tab.
+      await openAdminTab(page, 'loans');
+      await page.waitForTimeout(2000);
     }
 
     // -----------------------------------------------------------------------

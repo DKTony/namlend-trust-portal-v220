@@ -14,6 +14,7 @@
 import { ConvexError, v } from 'convex/values';
 import { internal } from './_generated/api';
 import { mutation, query } from './_generated/server';
+import { assertAgreementAcceptedIfRequired } from './lib/agreement/service';
 import { scheduleAuditLog } from './lib/audit';
 import { assertOwnerOrTenantStaff, assertStaff } from './lib/auth';
 import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
@@ -133,6 +134,7 @@ export const initiateDisbursement = mutation({
     const loan = await ctx.db.get(args.loanId);
     if (!loan) throw new ConvexError({ code: 'NOT_FOUND', message: 'Loan not found.' });
     await assertKycVerifiedForUser(ctx, loan.userId, 'initiate disbursement');
+    await assertAgreementAcceptedIfRequired(ctx, loan);
 
     if (loan.status !== 'approved') {
       throw new ConvexError({

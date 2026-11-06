@@ -72,7 +72,9 @@ const DEFAULT_POLICY: CreditPolicy = {
   autoApproveThreshold: 80,
   autoRejectThreshold: 30,
   manualReviewRequired: true,
-  originationFeePercent: 2,
+  // Must match DEFAULT_CREDIT_POLICY in convex/lib/creditPolicy.ts (0% — no origination
+  // fee is collected by the repayment engine).
+  originationFeePercent: 0,
   latePaymentFeePercent: 5,
   gracePeriodDays: 5,
 };

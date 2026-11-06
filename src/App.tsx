@@ -24,6 +24,7 @@ const PlatformLayout = React.lazy(() => import('@/pages/PlatformConsole/Platform
 const LoanApplication = React.lazy(() => import('@/pages/LoanApplication'));
 const Payment = React.lazy(() => import('@/pages/Payment'));
 const LoanDetails = React.lazy(() => import('@/pages/LoanDetails'));
+const LoanAgreement = React.lazy(() => import('@/pages/LoanAgreement'));
 const KYC = React.lazy(() => import('@/pages/KYC'));
 const BudgetTracker = React.lazy(() => import('@/pages/BudgetTracker'));
 const NotFound = React.lazy(() => import('@/pages/NotFound'));
@@ -154,6 +155,16 @@ const App = () => (
                           <ProtectedRoute requireClient>
                             <EntitledRoute featureKey="clientLoans">
                               <LoanDetails />
+                            </EntitledRoute>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/loans/:id/agreement"
+                        element={
+                          <ProtectedRoute requireClient>
+                            <EntitledRoute featureKey="clientLoans">
+                              <LoanAgreement />
                             </EntitledRoute>
                           </ProtectedRoute>
                         }

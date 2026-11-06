@@ -178,21 +178,21 @@ const planDefaults = (planCode: string): string[] => {
 
 describe('T1 inventory', () => {
   test('effective schema, feature, plan, role, function, and route inventories match the code manifests', () => {
-    // 96 = 89 application tables + 7 Convex Auth tables. `sequenceCounters` is the
-    // most recent addition (loan-agreement Phase 0, 2026-11-05).
-    expect(byType('Table')).toHaveLength(96);
+    // 99 = 92 application tables + 7 Convex Auth tables. Most recent additions:
+    // agreementTemplates, agreementSettings, loanAgreements (loan agreement, 2026-11-05).
+    expect(byType('Table')).toHaveLength(99);
     // Convex Auth 0.0.95 adds Auth-owned indexes to the application index baseline.
     // baseline. The dependency-derived inventory is the current E0 fact.
     expect(byType('Index')).toHaveLength(metrics.effectiveIndexCount as number);
-    // 192 includes profiles.by_clientNumber and sequenceCounters.by_institution_name.
-    expect(metrics.applicationIndexCount).toBe(192);
+    // 199 includes the 7 loan-agreement indexes (2 templates, 1 settings, 4 agreements).
+    expect(metrics.applicationIndexCount).toBe(199);
     expect(metrics.authIndexCount).toBe(11);
     expect(byType('Feature')).toHaveLength(32);
     expect(byType('Plan')).toHaveLength(4);
     expect(byType('Role')).toHaveLength(6);
     expect(byType('Function')).toHaveLength(metrics.functionCount as number);
     expect(byType('Route')).toHaveLength(metrics.routeCount as number);
-    expect(metrics.applicationTableCount).toBe(89);
+    expect(metrics.applicationTableCount).toBe(92);
     expect(metrics.authTableCount).toBe(7);
   });
 
@@ -251,7 +251,7 @@ describe('T1 inventory', () => {
         (conflict) =>
           conflict.predicate === 'HAS_EFFECTIVE_TABLE_COUNT' &&
           JSON.stringify(conflict.loser).includes('86') &&
-          JSON.stringify(conflict.winner).includes('96')
+          JSON.stringify(conflict.winner).includes('99')
       )
     ).toBe(true);
   });

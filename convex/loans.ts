@@ -24,6 +24,7 @@ import { DOMAIN_EVENTS, emitDomainEvent } from './lib/domainEvents';
 import { emitEvent, generateCorrelationId } from './lib/eventEmitter';
 import { assertCallerClientFeatureEnabled } from './lib/entitlements';
 import { assertKycVerifiedForUser } from './lib/kyc';
+import { cancelOpenAgreements } from './lib/agreement/service';
 import { allocateLoanNumber } from './lib/referenceNumbers';
 import { APR_LIMIT, isValidAPR } from './lib/regulatory';
 import { emitRelationship } from './lib/relationshipEmitter';
@@ -516,6 +517,7 @@ export const rejectLoan = mutation({
       rejectedAt: Date.now(),
       updatedAt: Date.now(),
     });
+    await cancelOpenAgreements(ctx, loanId, staffId, `Loan rejected: ${reason}`);
 
     await ctx.db.insert('loanApprovals', {
       loanId,

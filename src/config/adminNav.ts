@@ -96,6 +96,12 @@ const allGroups: NavGroup[] = [
         icon: Settings,
       },
       {
+        id: 'loan-agreement',
+        label: 'Loan Agreement',
+        path: '/admin/settings/loan-agreement',
+        icon: FileSignature,
+      },
+      {
         id: 'branding',
         label: 'Branding',
         path: '/admin/settings/branding',

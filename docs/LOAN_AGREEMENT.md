@@ -1,359 +1,245 @@
-# Loan Agreement Generation & Signature — Design
+# Loan Agreement — Generation, Presentation and Acceptance
 
-**Status:** Phase 0 landed (2026-11-05) — data gaps closed. Phases 1–4 not started.
-**Source document:** `OG Financial Services CC — Standard Terms and Conditions in respect of Loan Agreement` (4 pages)
-**Goal:** on approval, the borrower receives a loan agreement already populated from the data they supplied, signs it, and returns it. No manual typing by staff, no blank fields.
+**Status:** implemented (2026-11-05). Issue to real customers is **blocked by design** until the
+legal and business configuration in [§9](#9-outstanding-dependencies) is completed and approved.
 
----
+**Source document:** `OG Financial Services CC -loan agreement .pdf` (4 pages,
+SHA-256 `7aa0b7241123dd63a0435398cbb4374015ddab3850badfbbf43240a8db0e1829`).
 
-## 1. What the source document actually is
-
-Four pages, two very different kinds of content:
-
-| Pages | Content                                                                              | Varies per loan?                                                                  |
-| ----- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| 1–3   | Standard Terms & Conditions, clauses 1–18, plus the wet-signature block in clause 18 | **No** — identical for every borrower. Changes only when legal revises the terms. |
-| 4     | `SCHEDULE A — LOAN QUOTATION AND REPAYMENT SCHEDULE`, sections A–E                   | **Yes** — every field is borrower/loan specific.                                  |
-
-This split is the whole design. Treat them as **a versioned template** (pages 1–3) plus **a generated instance** (page 4+), bound together into one PDF and one SHA-256.
-
-Technical facts confirmed from the supplied file:
-
-- No AcroForm. There are no fillable fields to populate — the blanks are drawn rectangles and underscores.
-- Pages 1–3 use subset CID fonts (`CIDFont+F1/F2/F3`) → **must be copied verbatim**, never re-typeset.
-- Page 4 uses `Helvetica` / `Helvetica-Bold` at 8–8.7pt → matches pdf-lib's `StandardFonts.Helvetica`, so a regenerated page 4 looks like the original.
-- Page 4's repayment table (§D) has exactly **one** instalment row. A 6- or 12-month loan needs 6 or 12. Overlay-on-template cannot do this; generation can.
+**Outcome:** approving a loan opens a contract already populated from the borrower's own
+records. Staff complete anything missing, finalize it and send it. The borrower reviews it
+page by page in their account and accepts it. The executed copy is archived and fingerprinted.
 
 ---
 
-## 2. Design principles
+## 1. Current-state assessment (before this work)
 
-These follow from `AGENTS.md` and the existing financial-mutation shape; none are negotiable.
+| Question (brief §2)                                    | Finding                                                                                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Agreement exists as a document, template or component? | No.                                                                                                                           |
+| Admins can view, generate, print, download or send it? | No.                                                                                                                           |
+| Clients can access it?                                 | No.                                                                                                                           |
+| Linked to loans or approvals?                          | No.                                                                                                                           |
+| Customer data flows into it?                           | Only after Phase 0 (PR #63) added the missing fields: client no., name split, banking and employment details.                 |
+| E-signature, acceptance, archiving?                    | Building blocks only: `consentRecords`, grant-based private file access (`documentGrants`), and the audit and event emitters. |
 
-1. **The agreement is a financial record.** Immutable once issued, versioned via `version` / `isCurrent` / `supersededBy`, 7-year retention, no hard deletes. Same shape as `loanDocuments` / `institutionDocuments`.
-2. **Freeze the merged values.** The borrower signs _specific numbers_. Never re-render the agreement from live `profiles` / `loans` data — a later profile edit would silently rewrite a signed contract. Persist a `snapshot` of every merged value at generation time and render only from it.
-3. **Pin the terms version.** A loan signed under terms v1 renders v1 forever, even after legal publishes v2.
-4. **Bind the signature to a hash.** The signature record stores the SHA-256 of the exact PDF bytes that were presented. If the hash doesn't match, the signature doesn't apply to that document.
-5. **Multi-tenant from day one.** "OG Financial Services CC" is one row in `institutions`, not a constant. Every lender-side value on page 4 §A resolves from `institutions` + `institutionConfig`. Hardcoding it would make the feature unusable for the second tenant.
-6. **Generation never blocks approval.** PDF rendering runs in a scheduled Node action, following the fire-and-forget precedent of `scheduleAuditLog`. A render failure must not roll back an approval — but an unsigned agreement _does_ block disbursement, so failures are visible and recoverable rather than silent.
+Other findings that shaped the build:
 
----
-
-## 3. Field map — template field → data source
-
-### Schedule A §A — Lender (all from `institutions`)
-
-| Template field                     | Source                                       | Status |
-| ---------------------------------- | -------------------------------------------- | ------ |
-| Lender / Registered name           | `institutions.legalName` ?? `.name`          | ✅     |
-| Registration no. (`CC/2025/12791`) | `institutions.registrationNumber`            | ✅     |
-| Regulatory no. (`25/11/2366`)      | `institutions.regulatoryLicense`             | ✅     |
-| Trading address                    | `institutions.licensedAddress` ?? `.address` | ✅     |
-| Contact no.                        | `institutions.contactPhone`                  | ✅     |
-| Email                              | `institutions.contactEmail`                  | ✅     |
-| Website                            | `institutions.website`                       | ✅     |
-
-### Schedule A §A — Borrower
-
-| Template field      | Source                                                     | Status                               |
-| ------------------- | ---------------------------------------------------------- | ------------------------------------ |
-| Client No.          | `profiles.clientNumber`                                    | ✅ allocated by `ensureClientNumber` |
-| Borrower surname    | `profiles.surname`                                         | ✅                                   |
-| Borrower full names | `profiles.fullName` (or `firstNames` + `surname`)          | ✅                                   |
-| ID / Passport no.   | `profiles.idNumber` (+ `idType`)                           | ✅                                   |
-| Residential address | `profiles.addressLine1/2`, `city`, `postalCode`, `country` | ✅                                   |
-| Mobile no.          | `profiles.phone`                                           | ✅                                   |
-| Employer no.        | `profiles.employeeNumber`                                  | ✅                                   |
-| Work address        | `profiles.workAddress`                                     | ✅                                   |
-
-### Schedule A §B — Banking
-
-| Template field            | Source                                | Status |
-| ------------------------- | ------------------------------------- | ------ |
-| Bank name                 | `profiles.bankName`                   | ✅     |
-| Account number            | `profiles.accountNumber`              | ✅     |
-| Branch name / Branch code | `profiles.branchName` / `.branchCode` | ✅     |
-| Account holder            | `profiles.accountHolderName`          | ✅     |
-| Account type              | `profiles.accountType`                | ✅     |
-
-### Schedule A §C — Transaction detail and cost elements
-
-| Template field                       | Source                                               | Status                                                              |
-| ------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| Loan / Product Reference             | `loans.loanNumber`                                   | ✅ allocated in `createLoan`                                        |
-| Credit Amount (N$)                   | `loans.principal`                                    | ✅                                                                  |
-| Loan Term                            | `loans.termMonths`                                   | ✅                                                                  |
-| Interest Rate                        | `loans.interestRate` (APR, ≤ 32%)                    | ✅                                                                  |
-| Interest Amount (N$)                 | `calculateTotalInterest()`                           | ✅                                                                  |
-| Initiation / Administration Fee (N$) | `loans.initiationFee` / `.administrationFee`         | ⚠️ fields exist; **unpopulated** until the pricing rule is supplied |
-| Other Lawful Charges (N$)            | `loans.otherCharges`                                 | ⚠️ as above                                                         |
-| Total Cost of Credit (N$)            | `loans.totalCostOfCredit`, via `computeCostOfCredit` | ⚠️ as above                                                         |
-| Total Amount Repayable (N$)          | `totalAmountRepayable(principal, cost)`              | ⚠️ equals principal + interest while fees are zero                  |
-| Number of Instalments                | `loans.termMonths`                                   | ✅                                                                  |
-| Instalment Amount (N$)               | `loans.monthlyPayment`                               | ✅                                                                  |
-| Repayment Method                     | `loans.repaymentMethod`                              | ⚠️ field exists; not yet collected in the UI                        |
-
-### Schedule A §D — Repayment schedule
-
-`paymentSchedules` rows are inserted by `ensurePaymentSchedule()` from `completeDisbursement` — i.e. **after** signing. See §6: the schedule must be _projected_ at approval and then honoured at disbursement.
-
-### Schedule A §E + clause 18 — Acceptance / signature
-
-Signed at (place), Date, Borrower full names, ID/Passport, Borrower signature, Client No., For OG Financial (name), Designation, Authorized signature, Date, Loan reference.
+- `Loan360View` and `LoanReviewPanel` are not mounted anywhere. The live loan-details screen is
+  `LoanDetailsModal`, opened from the loans list.
+- Credit Policy defined an `originationFeePercent` (default 2%), but **no code charges it**. Decided
+  2026-11-06: no origination fee, and the default is now 0%. See §5.
+- The source document's contact email uses an `mgholdingptyltd.com` domain, and its website is a
+  literal `[insert]`. Both are flagged in the settings screen rather than copied in silently.
 
 ---
 
-## 4. Schema additions
-
-```ts
-// Versioned terms template — pages 1-3, per institution.
-agreementTemplates: defineTable({
-  institutionId: v.id('institutions'),
-  templateKey: v.string(),            // 'standard_loan_terms'
-  version: v.number(),
-  isCurrent: v.boolean(),
-  fileStorageId: v.id('_storage'),    // the terms PDF, pages 1-3
-  sha256: v.string(),
-  pageCount: v.number(),
-  effectiveFrom: v.number(),
-  effectiveTo: v.optional(v.number()),
-  approvedBy: v.optional(v.id('users')),   // legal sign-off
-  changeReason: v.optional(v.string()),
-  createdAt: v.number(),
-})
-  .index('by_institution_key_current', ['institutionId', 'templateKey', 'isCurrent']),
-
-// One issued agreement instance per loan (per version).
-loanAgreements: defineTable({
-  institutionId: v.optional(v.id('institutions')),
-  loanId: v.id('loans'),
-  userId: v.id('users'),
-  templateId: v.id('agreementTemplates'),
-  templateVersion: v.number(),
-  agreementNumber: v.string(),        // human reference on the PDF
-  status: v.union(
-    v.literal('generating'),
-    v.literal('issued'),              // awaiting borrower
-    v.literal('signed'),              // borrower signed
-    v.literal('countersigned'),       // lender signed — fully executed
-    v.literal('declined'),
-    v.literal('expired'),
-    v.literal('superseded'),
-    v.literal('failed'),
-  ),
-  snapshot: v.any(),                  // every merged value, frozen (see §2.2)
-  fileStorageId: v.optional(v.id('_storage')),
-  sha256: v.optional(v.string()),     // hash of the unsigned PDF
-  signedFileStorageId: v.optional(v.id('_storage')),
-  signedSha256: v.optional(v.string()),
-  issuedAt: v.optional(v.number()),
-  expiresAt: v.optional(v.number()),  // quotation validity window
-  signedAt: v.optional(v.number()),
-  countersignedAt: v.optional(v.number()),
-  version: v.number(),
-  isCurrent: v.boolean(),
-  supersededBy: v.optional(v.id('loanAgreements')),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-})
-  .index('by_loanId', ['loanId'])
-  .index('by_loanId_current', ['loanId', 'isCurrent'])
-  .index('by_userId', ['userId'])
-  .index('by_status', ['status']),
-
-// Evidence of execution — append-only, never patched.
-agreementSignatures: defineTable({
-  agreementId: v.id('loanAgreements'),
-  institutionId: v.optional(v.id('institutions')),
-  signerUserId: v.id('users'),
-  signerRole: v.union(v.literal('borrower'), v.literal('lender')),
-  method: v.union(
-    v.literal('click_accept'),        // typed name + tick
-    v.literal('otp'),                 // + SMS one-time code
-    v.literal('drawn'),               // + canvas signature image
-    v.literal('wet_upload'),          // printed, signed, scanned
-  ),
-  documentSha256: v.string(),         // the EXACT bytes signed
-  typedFullName: v.optional(v.string()),
-  idNumberConfirmed: v.optional(v.string()),
-  signatureImageStorageId: v.optional(v.id('_storage')),
-  place: v.optional(v.string()),      // "Signed at:"
-  otpReference: v.optional(v.string()),
-  ipAddress: v.optional(v.string()),
-  userAgent: v.optional(v.string()),
-  consentRecordId: v.optional(v.id('consentRecords')),
-  signedAt: v.number(),
-})
-  .index('by_agreementId', ['agreementId']),
-```
-
-The three tables above are **not yet created** — they land with Phases 1–3.
-
-Field additions elsewhere — **all landed in Phase 0**:
-
-- `profiles`: `clientNumber`, `surname`, `firstNames`, `accountHolderName`, `accountType`, `employeeNumber`, `workAddress`, plus a `by_clientNumber` index.
-- `loans`: `initiationFee`, `administrationFee`, `otherCharges`, `totalCostOfCredit`, `repaymentMethod`, and a populated `loanNumber`.
-- `sequenceCounters` table — per-(institution, name) counters behind `convex/lib/referenceNumbers.ts`.
-- `consentType` union: `v.literal('loan_agreement')`.
-- `loanProcessingFailures.stage` union: `v.literal('agreementGeneration')`.
-- `documentPolicy.LOAN_DOCUMENT_TYPES`: `'signed_loan_agreement'`.
-
----
-
-## 5. Generation pipeline
+## 2. Workflow
 
 ```
-approveLoanCore()                                   convex/lib/approvalReadiness.ts
-  └─ ctx.scheduler.runAfter(0,
-       internal.actions.loanAgreement.generateAgreement, { loanId })
-
-generateAgreement  ('use node' action)              convex/actions/loanAgreement.ts
-  1. internal query  → loan + profile + institution + template + product pricing
-  2. buildSnapshot() → merge + validate every field          convex/lib/agreement/snapshot.ts
-  3. renderPdf()     → pdf-lib                               convex/lib/agreement/render.ts
-       • copyPages(templateDoc, [0,1,2])   ← terms, byte-identical
-       • draw clause-18 signature block values onto page 3
-       • addPage() Schedule A §A–§E, Helvetica 8pt
-       • paginate §D if the schedule overflows one page
-  4. ctx.storage.store(bytes) + sha256
-  5. internal mutation → insert loanAgreements (status 'issued')
-       + scheduleAuditLog + emitDomainEvent('loan.agreement.issued')
-       + emitRelationship(loan -has_agreement-> loanAgreement)
-       + notify borrower ("Your agreement is ready to sign")
-  on throw → loanProcessingFailures { stage: 'agreementGeneration' }
+Client applies ─► Back office approves ─► Draft agreement (same transaction)
+                                              │  staff complete missing fields (written to the profile)
+                                              │  staff set the first repayment date
+                                              ▼
+                                         Finalize ─► snapshot frozen, PDF rendered and hashed
+                                              ▼
+                                         Send ─► client notified in-app
+                                              ▼
+                              Client opens (Viewed) ─► Client accepts ─► executed PDF ─► Archived
 ```
 
-**Why a Node action and not a mutation:** Convex mutations are deterministic and cannot pull in a PDF library or do this much CPU work. `convex/actions/` already carries the `'use node'` precedent for IPS/SMS. Rendering client-side was rejected — the authoritative legal record must not be produced by the browser.
+- **Approval and acceptance are separate.** `approveLoanCore` creates the draft in the same
+  transaction, so every approved loan has an agreement. Approval never waits on the agreement,
+  and missing data becomes readiness issues rather than an approval failure.
+- **After approving**, from the Loans list or the Approvals queue, staff land on
+  `/admin/loans/:loanId/agreement`.
+- **View contract** is also available from the loan details screen (`LoanDetailsModal`) and from
+  the approved-loans register (the Loans → Approved tab).
 
-**Why pdf-lib:** pure JS, runs in a Node action, and uniquely supports `copyPages` (verbatim terms) plus `StandardFonts.Helvetica` (matching page 4). An HTML→PDF renderer would need a headless browser, which Convex cannot host.
+### Lifecycle
 
-**Regeneration:** if the loan terms change after issue (re-approval at a different amount), the old row is patched `isCurrent: false, status: 'superseded', supersededBy` and a new version is issued. Nothing is ever deleted or overwritten.
+| Status       | Meaning                                                            | Spec status (brief §8)              |
+| ------------ | ------------------------------------------------------------------ | ----------------------------------- |
+| _(none)_     | Approved loan without an agreement                                 | Pending Contract                    |
+| `draft`      | Generated; reads the source records live; contract fields editable | Contract Generated / Pending Review |
+| `ready`      | Finalized: snapshot frozen, PDF hashed, content locked             | Ready for Client                    |
+| `sent`       | Issued; borrower notified                                          | Sent to Client / Pending Acceptance |
+| `viewed`     | Borrower opened it                                                 | Viewed by Client                    |
+| `accepted`   | Borrower accepted; executed copy being produced                    | Accepted/Signed                     |
+| `archived`   | Executed copy stored                                               | Archived                            |
+| `superseded` | Replaced by a revised version (kept on record)                     | Superseded                          |
+| `cancelled`  | Withdrawn by staff, or by rejection of the loan                    | Cancelled                           |
 
----
-
-## 6. The schedule-drift problem
-
-`ensurePaymentSchedule(ctx, loan, disbursementDate)` anchors instalment 1 to **one month after disbursement**. At signing, the disbursement date is unknown. A signed Schedule A with dates that later turn out wrong is a contract defect.
-
-Three ways out, in order of preference:
-
-1. **Anchor at approval (recommended).** Capture `expectedDisbursementDate` on approval, project the schedule from it, print real dates. At disbursement, if the actual date moves beyond a tolerance (say 5 days), the agreement is superseded and re-issued for signature. Honest dates, with an explicit re-sign path.
-2. **Relative dates.** Print "one month after disbursement", "two months after…". Legally safe, but a borrower cannot see when money leaves their account — poor disclosure.
-3. **Re-derive and assert.** Generate the real schedule at disbursement and fail closed if it differs from the signed snapshot. Safe, but turns a routine delay into a blocked disbursement.
-
-Whichever is chosen, `ensurePaymentSchedule` should take the signed snapshot as its input rather than recomputing independently, so one function cannot disagree with the signed contract.
-
----
-
-## 7. Signature flow
-
-The brief — _"on approval, the customer just signs and returns"_ — describes download → print → sign → scan → upload. Support it, but make it the fallback. Recommended primary is in-app execution:
-
-**In-app (primary)**
-
-1. Borrower opens the agreement in the portal (short-lived grant via `createDocumentGrant`, as KYC documents already do — never `storage.getUrl()`).
-2. Must scroll/open the document before the accept control enables.
-3. Types full name + last 4 of ID, enters "Signed at" place, optionally draws a signature.
-4. OTP to the registered phone (reuses the existing SMS action path).
-5. `signAgreement` mutation: verifies OTP, re-reads the stored SHA-256 and checks it matches what was presented, inserts `agreementSignatures`, inserts a `consentRecords` row with the exact acceptance text, patches `loanAgreements.status = 'signed'`, emits audit + domain event + relationship.
-6. A Node action stamps the signature block onto the PDF and stores it as `signedFileStorageId`.
-7. Staff countersign → `status: 'countersigned'` — fully executed.
-
-**Print / upload (fallback)** — borrower uploads a scan as `loanDocuments.documentType = 'signed_loan_agreement'`; staff verifies and records `method: 'wet_upload'`. Same `agreementSignatures` row, same downstream gate.
-
-> **Legal check required.** Electronic signature validity in Namibia (Electronic Transactions Act) and any NAMFISA requirement for a wet signature on a credit agreement must be confirmed with counsel before the in-app path goes live. If a wet signature is mandatory, the fallback becomes the primary and nothing else in this design changes.
+Loan approval, agreement acceptance and disbursement remain **separate statuses**.
 
 ---
 
-## 8. Enforcement
+## 3. Data model
 
-Add a guard mirroring `assertKycVerifiedForUser`:
+| Table                | Purpose                                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agreementTemplates` | Versioned contractual wording per institution. v1 is the verbatim source; revisions are new versions. Approved versions are never edited.       |
+| `agreementSettings`  | Company information, authorised representative, default repayment method and the disbursement gate. Any edit clears approval.                   |
+| `loanAgreements`     | One row per version per loan: status, contract fields, the frozen `snapshot` (schema-validated, not `v.any`), PDF ids and SHA-256s, acceptance. |
 
-```ts
-// convex/lib/agreement/guard.ts
-export async function assertAgreementExecutedForLoan(
-  ctx: AnyCtx,
-  loanId: Id<'loans'>,
-  action: string
-): Promise<void>;
-```
+Acceptance is recorded on the agreement row (`acceptance`) **and** as a `consentRecords` row
+(`consentType: 'loan_agreement'`) holding the exact statement the borrower accepted.
 
-Called at the top of `initiateDisbursement` (`convex/disbursements.ts:114`), immediately after the existing KYC assert. Without this the feature is decorative — nothing stops money moving against an unsigned contract.
-
-Staff override, if allowed at all, must be a separate audited mutation with a mandatory reason, never a flag on the disbursement call.
+PDFs are served only through short-lived grants (`documentAccessGrants`, source table
+`loanAgreements`). A permanent storage URL is never issued, because the document carries ID and
+banking details.
 
 ---
 
-## 9. Audit & ontology
+## 4. Field mapping (source → contract)
 
-Every transition emits through the existing bridge:
+All fields are produced by one pure function, `buildAgreement` in `convex/lib/agreement/merge.ts`.
+The draft preview, finalization, the PDF and both user interfaces use its output, so they cannot
+disagree. A value that isn't in a source record is `null`. If the field is required, a `null`
+becomes a blocking readiness issue, and the fix is made in the source record.
 
-| Event         | `emitDomainEvent`                            | Relationship                                  |
-| ------------- | -------------------------------------------- | --------------------------------------------- |
-| Issued        | `loan.agreement.issued`                      | `loans -has_agreement-> loanAgreements`       |
-| Viewed        | — (grant fetch already audited in `http.ts`) | —                                             |
-| Signed        | `loan.agreement.signed`                      | `users -signed-> loanAgreements`              |
-| Countersigned | `loan.agreement.countersigned`               | `users -countersigned-> loanAgreements`       |
-| Superseded    | `loan.agreement.superseded`                  | `loanAgreements -supersedes-> loanAgreements` |
+| Contract field (Schedule A)                                     | Source                                                                     | Category    |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------- |
+| Client No.                                                      | `profiles.clientNumber` (allocated once, per institution)                  | application |
+| Borrower surname / full names                                   | `profiles.surname` / `profiles.firstNames`                                 | application |
+| ID / Passport no.                                               | `profiles.idNumber`                                                        | application |
+| Residential address                                             | `profiles.addressLine1/2, city, postalCode, country` (else `address`)      | application |
+| Mobile no.                                                      | `profiles.phone`                                                           | application |
+| Employer / Employer no. / Work address                          | `profiles.employerName / employeeNumber / workAddress`                     | application |
+| Bank, holder, account no./type, branch name/code                | `profiles.bankName … branchCode`                                           | application |
+| Loan reference                                                  | `loans.loanNumber` (allocated if missing)                                  | loan        |
+| Loan / Product reference                                        | product name via `productVersionId`, else "N months loan"                  | loan        |
+| Credit Amount                                                   | `loans.principal`                                                          | loan        |
+| Loan Term / No. of instalments                                  | `loans.termMonths`                                                         | loan        |
+| Interest Rate                                                   | `loans.interestRate` (% per annum, ≤ 32%)                                  | loan        |
+| Interest Amount                                                 | Σ `interestDue` from the amortization engine's schedule                    | loan        |
+| Initiation fee / Other charges                                  | Credit Policy, computed by `computeCostOfCredit`. See §5                   | loan        |
+| Total Cost of Credit / Repayable                                | interest + fees; principal + cost of credit                                | loan        |
+| Instalment Amount                                               | first scheduled instalment (final shown if different)                      | loan        |
+| Repayment Method                                                | `loans.repaymentMethod`, else the approved settings default                | loan        |
+| Repayment schedule (§D)                                         | `generatePaymentSchedule` amounts; due dates from the first repayment date | loan        |
+| Agreement date / First repayment                                | finalization date / set during preparation                                 | contract    |
+| Signed at                                                       | entered by the borrower on acceptance                                      | contract    |
+| Representative / Designation                                    | approved settings                                                          | company     |
+| Lender block (name, reg. nos, addresses, contact, jurisdiction) | approved settings                                                          | company     |
 
-`scheduleAuditLog` writes both the legacy audit log and the `eventJournal` entry, so the full execution history is reconstructible — which is exactly what a disputed contract requires.
+**Consistency checks:** the calculated instalment must match `loans.monthlyPayment` to the cent
+(`INSTALMENT_MISMATCH`). At disbursement, `ensurePaymentSchedule` inserts the **accepted
+schedule's exact rows**, so the loan's repayment schedule is the one the borrower signed.
 
----
-
-## 10. Delivery phases
-
-| Phase    | Scope                                                                                                                                                                             | Ships                                              |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| **0** ✅ | Close the data gaps: client number, surname split, account holder/type, employer no., work address, fee fields, `loanNumber` generator. Collect the new fields in the profile UI. | **Done 2026-11-05.** See "Phase 0 as built" below. |
-| **1**    | `agreementTemplates` + upload of the terms PDF (pages 1–3) via the admin console; seed OG Financial's institution row.                                                            | Admin can version terms                            |
-| **2**    | Snapshot builder + pdf-lib renderer + generation on approval. Borrower can **download** a fully populated agreement.                                                              | The core ask                                       |
-| **3**    | In-app signature + OTP + countersign; signed-copy stamping.                                                                                                                       | "Signs and returns"                                |
-| **4**    | Disbursement gate, wet-upload fallback, admin agreement register, supersede/re-issue flow.                                                                                        | Enforcement                                        |
-
-Phase 2 alone satisfies "prepopulated so the customer just signs and returns" if they sign on paper.
-
----
-
-## 11. Phase 0 as built
-
-| Area                                                      | File                                                                       |
-| --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Schema fields, `sequenceCounters` table, union extensions | `convex/schema.ts`                                                         |
-| Client / loan number allocation                           | `convex/lib/referenceNumbers.ts`                                           |
-| Cost-of-credit module (placeholder rule)                  | `convex/lib/agreementPricing.ts`                                           |
-| Client number on enrollment + backfill on sign-in         | `convex/lib/enrollment.ts`                                                 |
-| Loan number on draft creation                             | `convex/loans.ts` (`createLoan`)                                           |
-| Profile write path widened to every agreement field       | `convex/users.ts` (`updateMyProfile`)                                      |
-| Signed-agreement document type                            | `convex/lib/documentPolicy.ts`                                             |
-| Profile UI: new banking + employment fields               | `src/components/client/sections/{BankingSection,EmploymentSection}.tsx`    |
-| Profile field mapping                                     | `src/components/ClientProfileDashboard.tsx`, `src/hooks/useProfileEdit.ts` |
-| Tests (27 new)                                            | `convex/referenceNumbers.test.ts`, `convex/agreementPricing.test.ts`       |
-
-Two things worth knowing about what landed:
-
-**A latent bug was fixed on the way through.** The profile UI rendered editable inputs for bank
-name, account number, branch code, branch name and the three employer fields, but
-`updateMyProfile` never accepted them — "Save Changes" discarded every one of those edits with no
-error. The agreement needs all of them, so the mutation's arg list now covers the full set and
-`useProfileEdit` maps them through. `idNumber` is deliberately still excluded: it is identity
-evidence bound to a verified KYC package, so it stays fill-not-clobber via `completeEnrollment`
-and staff-only otherwise.
-
-**The fee fields are schema-only.** `computeCostOfCredit` returns interest-only under
-`DEFAULT_PRICING`, so nothing downstream changes behaviour and no loan is written with a fee
-figure. Populating them is the first thing Phase 2 needs, and it is blocked on decision 1 below —
-a wrong fee on a credit agreement is worse than an absent one.
-
-Client numbers backfill automatically: `enrollUser` runs on every sign-in and assigns one to any
-profile that lacks it, so no migration is needed for the active user base. `ensureClientNumber` is
-the safety net for anyone who never signs in again.
+**Money and dates** are formatted from integer cents and fixed Windhoek dates
+(`convex/lib/agreement/format.ts`), never with locale data. That keeps output identical across
+runtimes, which the SHA-256 depends on.
 
 ---
 
-## 12. Open decisions
+## 5. Readiness gates — what blocks issue
 
-1. **Pricing.** The template itself says _"approved product pricing must be inserted into the Loan Schedule before the agreement is used with customers."_ The initiation / administration fee formula is OG Financial's business rule and is not in the codebase. Needed before §C can be rendered.
-2. **Do fees count toward the 32% APR cap?** If the cap applies to total cost of credit rather than interest alone, `isValidAPR` and `createLoan` validation must change — this touches existing regulatory tests.
-3. **Schedule anchoring** — which of §6's three options.
-4. **Signature method** — in-app vs wet, pending the legal check in §7.
-5. **Quotation validity window** — how long an issued agreement stays signable before it expires and must be re-priced.
+Finalization is refused while any **blocking** issue remains:
+
+- **Borrower field missing** (`FIELD_MISSING`, category `application`): fixed in **Edit missing
+  fields**, which writes to the borrower's profile.
+- **Contract field missing**: the first repayment date.
+- **Standard Terms** missing, not approved, or still containing a drafting note (`DRAFTING_NOTE`).
+- **Settings** missing or unapproved.
+- **`FEES_NOT_SUPPORTED`**: Credit Policy sets an origination fee, but nothing in the repayment
+  engine (amortization, payment schedules, ledger) charges it. A contract that discloses the fee
+  wouldn't match what the loan collects. One that omits it would contradict the approved policy.
+  Either set the fee to 0% in Credit Policy, or add fee collection to the repayment engine.
+  **Decided 2026-11-06: no origination fee.** The default policy is now 0%. An institution that
+  saved its own policy above 0% must set it to 0% under Credit Policy → Fees, which now says the fee
+  isn't collected and warns when it's above 0%.
+- **`INSTALMENT_MISMATCH`**: the loan record disagrees with the engine.
+
+The source document's **four drafting notes** (clauses 5, 13, 14 and 15) are sentences addressed
+to OG Financial, not to the borrower. A template version that still contains any of them cannot be
+approved. Final wording is entered through **Settings → Loan Agreement → Replace drafting notes**,
+which creates a new version and keeps v1 verbatim. **Nothing in this codebase supplies that wording.**
+
+---
+
+## 6. Acceptance and evidence
+
+The borrower must be signed in. They must:
+
+- type their full name, matched against the agreement;
+- enter the last four characters of their ID, matched against the agreement;
+- give the place of signing;
+- tick an explicit agreement to Schedule A §E's statement.
+
+Recorded with the acceptance:
+
+- the statement, as a consent record;
+- the **SHA-256 of the exact PDF shown**;
+- the time;
+- the user.
+
+The executed PDF adds an _Electronic Acceptance Record_ page and fills the borrower's signature
+lines with "Accepted electronically by …". **The lender's authorised signature and date lines stay
+blank** for the authorised representative to complete.
+
+**Disbursement gate:** when `requireAcceptedAgreementForDisbursement` is on in the approved
+settings, `initiateDisbursement` refuses a loan whose agreement isn't accepted
+(`AGREEMENT_NOT_ACCEPTED`). It is off by default, so existing operations are unaffected until the
+business switches it on.
+
+---
+
+## 7. Audit trail
+
+Every event writes both stores:
+
+- **`auditLogs`**: action, **responsible user**, outcome and a detail line (loan reference,
+  purpose or hash — never PII).
+- **`stateTransitions`**: the lifecycle transition and its actor.
+
+`scheduleAuditLog` gained an optional `actorId` for this. Events recorded:
+
+- **Agreement:** `GENERATE`, `SAVE_DRAFT`, `FINALIZE`, `RENDER`, `SEND`, `VIEW`, `DOCUMENT_VIEW`,
+  `DOCUMENT_PRINT`, `DOCUMENT_DOWNLOAD`, `ACCEPT`, `ARCHIVE`, `SUPERSEDE`, `CANCEL`,
+  `RENDER_FAILED`.
+- **Borrower data:** `AGREEMENT_CORRECTION` on the profile, listing field names only.
+- **Templates and settings:** `IMPORT`, `REVISE`, `APPROVE`, `RETIRE`, `UPDATE`.
+
+Domain events (`loan.agreement.*`) feed the ontology event journal.
+
+---
+
+## 8. Verification
+
+| Area                      | Evidence                                                                                                                                                                                                                                |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Terms are verbatim        | `scripts/agreement/verify_standard_terms.py` rebuilds the template and compares it with the source PDF: **exact match, 7,689 characters**.                                                                                              |
+| Lifecycle (brief §11 A–G) | `convex/loanAgreements.test.ts`, 16 tests, covering approval → draft, missing data, PDF, delivery, acceptance, data consistency, security, revision, audit.                                                                             |
+| Pure logic and renderer   | `convex/agreementMerge.test.ts`, 15 tests: dates, money, schedule, readiness, drift, matching, reproducible PDF bytes.                                                                                                                  |
+| UI                        | `paginate`, `AgreementDocument`, `LifecycleStepper` and `LoanAgreement` tests, 24 in total.                                                                                                                                             |
+| PDF output                | Sample issued and executed copies (test data) checked with `pdfplumber`: **58/58** — A4, header/footer and page X of N on every page, all clauses verbatim, populated fields, schedule, unsplit signature blocks, no stranded headings. |
+| Screens                   | Rendered with fixture data at desktop and 375 px widths: no horizontal page scroll; the schedule table scrolls inside its own box.                                                                                                      |
+
+**Not verified:**
+
+- **Against a deployed backend.** The functions aren't pushed (see §9). The E2E flow
+  `e2e/ipp-lifecycle.e2e.ts` was updated for the post-approval navigation, but not run.
+- **Real delivery beyond the in-app notification.** No SMS or email is sent.
+- **The legal sufficiency of in-app acceptance.**
+
+---
+
+## 9. Outstanding dependencies
+
+1. **Legal wording** for clauses 5, 13, 14 and 15 (privacy/consent, cooling-off and early
+   settlement, complaints and regulator details). This is required before any version can be
+   approved.
+2. **Saved Credit Policy fee:** the default is now 0% (decided 2026-11-06). If OG Financial has
+   saved its own policy with a non-zero origination fee, set it to 0% under Credit Policy → Fees.
+   The agreement settings page shows the effective value.
+3. **Company information:** approve the settings. Confirm the contact email domain, the website
+   and the representative.
+4. **Legal confirmation** that authenticated in-app acceptance satisfies the Electronic
+   Transactions Act and NAMFISA requirements for this product. If a wet signature is required,
+   use the existing **Signed loan agreement** upload type (`signed_loan_agreement`) and keep the
+   disbursement gate on.
+5. **Deployment:** push the Convex functions and schema. `npx convex dev` in this repository
+   targets the deployment the live site uses.
+6. **Optional:** SMS/email delivery of the "agreement ready" notice, through the existing
+   notification queue.

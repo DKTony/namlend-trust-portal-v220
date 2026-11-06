@@ -5,6 +5,7 @@
  */
 
 import DashboardLayout from '@/components/Layout/DashboardLayout';
+import { LoanAgreementCard } from '@/components/agreement/LoanAgreementCard';
 import { LoanDocumentsPanel } from '@/components/documents/LoanDocumentsPanel';
 import { IPSHistoryList, IPSPaymentModal } from '@/components/ips';
 import { ThemedBadge } from '@/components/ui/ThemedBadge';
@@ -202,6 +203,11 @@ export default function LoanDetails() {
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={handleTabChange} title="Loan Details">
       <div className="max-w-4xl">
+        {id && (
+          <div className="mb-6">
+            <LoanAgreementCard loanId={id} />
+          </div>
+        )}
         <div className="mb-6">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>

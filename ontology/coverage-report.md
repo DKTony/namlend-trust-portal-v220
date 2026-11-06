@@ -1,141 +1,142 @@
 # Ontology coverage report
 
-Commit: `4a9179e14d537c2677e6ba8a75c158ce9a661385`
+Commit: `9c9be8bdb6497e6e5085b562b1d3fb008c04efc2`
 
 ## Assurance summary
 
-| Measure                                                              | Result |
-| -------------------------------------------------------------------- | -----: |
-| Required behavior/invariant mappings with named E0 test declarations |  18/18 |
-| Effective Convex tables                                              |     95 |
-| Application tables                                                   |     88 |
-| Convex Auth tables                                                   |      7 |
-| Indexes                                                              |    201 |
-| Features / seeded plans                                              | 32 / 4 |
-| Registered gaps                                                      |    143 |
-| Resolved conflicts                                                   |     11 |
+| Measure | Result |
+| --- | ---: |
+| Required behavior/invariant mappings with named E0 test declarations | 18/18 |
+| Effective Convex tables | 96 |
+| Application tables | 89 |
+| Convex Auth tables | 7 |
+| Indexes | 203 |
+| Features / seeded plans | 32 / 4 |
+| Registered gaps | 144 |
+| Resolved conflicts | 11 |
 
 ## Required behavior and invariants
 
 These mappings are E0 evidence that an executable test is declared. Named passing results become E1 only in the current-SHA CI evidence artifact.
 
-| Proof target             | Matching named E0 test declarations | Status  | Evidence                                                                              |
-| ------------------------ | ----------------------------------: | ------- | ------------------------------------------------------------------------------------- |
-| `approve`                |                                   2 | CURRENT | `evidence:27038c28c6057c77`, `evidence:ebfa7d7def15e1ec`                              |
-| `APR_MAX_32`             |                                   2 | CURRENT | `evidence:5b34174caedf4b3b`, `evidence:db95223c3d81edfd`                              |
-| `collect`                |                                   2 | CURRENT | `evidence:a773b02271b67f30`, `evidence:eb2eff5612c88cf8`                              |
-| `disburse`               |                                   2 | CURRENT | `evidence:1f467f204c8bd253`, `evidence:ba619f89b389c410`                              |
-| `FLAGS_DEFAULT_OFF`      |                                   1 | CURRENT | `evidence:a6eb13b7e4249caa`                                                           |
-| `KYC`                    |                                   2 | CURRENT | `evidence:021b7ec21752a41d`, `evidence:23e732b8430c0261`                              |
-| `KYC_REQUIRED`           |                                   2 | CURRENT | `evidence:23e732b8430c0261`, `evidence:388e314474b2f499`                              |
-| `LEDGER_COMPLETION_ONLY` |                                   1 | CURRENT | `evidence:20ce7c711e46de5b`                                                           |
-| `LEDGER_IDEMPOTENT`      |                                   1 | CURRENT | `evidence:5ba92e26cf1adb5d`                                                           |
-| `LEDGER_REVERSAL`        |                                   1 | CURRENT | `evidence:d3d83b19de44d489`                                                           |
-| `notify`                 |                                   2 | CURRENT | `evidence:5fe1ee6c97d866b3`, `evidence:9db940a865760d1a`                              |
-| `onboard`                |                                   2 | CURRENT | `evidence:5ba324142e419aa3`, `evidence:757bb87be3dfb039`                              |
-| `originate`              |                                   1 | CURRENT | `evidence:5a1b3be9ae10c58f`                                                           |
-| `reconcile`              |                                   2 | CURRENT | `evidence:c799000cacbb6aaa`, `evidence:d7046e2fc3385e1e`                              |
-| `repay`                  |                                   2 | CURRENT | `evidence:20ce7c711e46de5b`, `evidence:b9c1d93b660cfb3f`                              |
-| `ROLE_LANDING`           |                                   2 | CURRENT | `evidence:2d9975fe51f408af`, `evidence:8ff4f9b899e083c7`                              |
-| `settle`                 |                                   2 | CURRENT | `evidence:57d8f3d8656b30dc`, `evidence:d7046e2fc3385e1e`                              |
-| `TENANT_ISOLATION`       |                                   3 | CURRENT | `evidence:a773b02271b67f30`, `evidence:b294b56ecca0d91f`, `evidence:f2ac2fd0373861e1` |
+| Proof target | Matching named E0 test declarations | Status | Evidence |
+| --- | ---: | --- | --- |
+| `approve` | 2 | CURRENT | `evidence:5bd8b6cd43652490`, `evidence:bf39ff25eed455fd` |
+| `APR_MAX_32` | 2 | CURRENT | `evidence:2fe1e22c3022d086`, `evidence:ae4bf3bc621c733f` |
+| `collect` | 2 | CURRENT | `evidence:ab8e7e546783de10`, `evidence:d071ca8044842a82` |
+| `disburse` | 2 | CURRENT | `evidence:c70e0cb04fccd975`, `evidence:c7cc1c874f05b0a6` |
+| `FLAGS_DEFAULT_OFF` | 1 | CURRENT | `evidence:9673ed23a402f353` |
+| `KYC` | 2 | CURRENT | `evidence:9fc160437062a9e2`, `evidence:ba1149fb436384e4` |
+| `KYC_REQUIRED` | 2 | CURRENT | `evidence:3595e10c7ea4a029`, `evidence:9fc160437062a9e2` |
+| `LEDGER_COMPLETION_ONLY` | 1 | CURRENT | `evidence:21b04a8bd9e446d4` |
+| `LEDGER_IDEMPOTENT` | 1 | CURRENT | `evidence:194c95fceb9a3b90` |
+| `LEDGER_REVERSAL` | 1 | CURRENT | `evidence:bee2eb7133e46150` |
+| `notify` | 2 | CURRENT | `evidence:32d21e2c55c75a68`, `evidence:727939387f862cf1` |
+| `onboard` | 2 | CURRENT | `evidence:1bf789d6aac85c52`, `evidence:d0a2ecf18901e9e5` |
+| `originate` | 1 | CURRENT | `evidence:552ac6fbdd2636f5` |
+| `reconcile` | 2 | CURRENT | `evidence:40a6a4364e1a1861`, `evidence:92ff16adac10af91` |
+| `repay` | 2 | CURRENT | `evidence:21b04a8bd9e446d4`, `evidence:8a442d6850f60c62` |
+| `ROLE_LANDING` | 2 | CURRENT | `evidence:b9350ebc440fc6d1`, `evidence:c3f744341e5803eb` |
+| `settle` | 2 | CURRENT | `evidence:92ff16adac10af91`, `evidence:9c157a4ba37a03d0` |
+| `TENANT_ISOLATION` | 3 | CURRENT | `evidence:09ba201324a57a74`, `evidence:9b6c5e36da55dd36`, `evidence:d071ca8044842a82` |
 
 ## Table connectivity
 
-| Table                                 | Readers | Writers | Status / exception                                                |
-| ------------------------------------- | ------: | ------: | ----------------------------------------------------------------- |
-| `table:profiles`                      |       2 |       4 | connected                                                         |
-| `table:userRoles`                     |       3 |       7 | connected                                                         |
-| `table:kycDocuments`                  |       2 |       3 | connected                                                         |
-| `table:documentAccessGrants`          |       0 |       3 | GAP-9AE2A0BB6042                                                  |
-| `table:loans`                         |      35 |       9 | connected                                                         |
-| `table:loanDocuments`                 |       2 |       2 | connected                                                         |
-| `table:loanApprovals`                 |       1 |       3 | connected                                                         |
-| `table:disbursements`                 |      10 |       7 | connected                                                         |
-| `table:paymentTransactions`           |       9 |       6 | connected                                                         |
-| `table:paymentSchedules`              |       2 |       7 | connected                                                         |
-| `table:rescheduleRequests`            |       2 |       2 | connected                                                         |
-| `table:communications`                |       2 |       2 | connected                                                         |
-| `table:supportTickets`                |       3 |       4 | connected                                                         |
-| `table:paymentAllocations`            |       0 |       4 | GAP-7D0721F9D61D                                                  |
-| `table:approvalRequests`              |       5 |       5 | connected                                                         |
-| `table:approvalHistory`               |       0 |       4 | GAP-24582697D5BF                                                  |
-| `table:workflowDefinitions`           |       2 |       2 | connected                                                         |
-| `table:workflowInstances`             |       0 |       0 | GAP-AA1015CAC102                                                  |
-| `table:notifications`                 |       1 |       7 | connected                                                         |
-| `table:notificationTemplates`         |       1 |       0 | GAP-63620DA82BF7                                                  |
-| `table:notificationQueue`             |       1 |       2 | connected                                                         |
-| `table:notificationPreferences`       |       0 |       1 | GAP-512E383B3BA8                                                  |
-| `table:communicationLogs`             |       0 |       0 | GAP-4DE4D174E8E0                                                  |
-| `table:ipsTransactions`               |       8 |       6 | connected                                                         |
-| `table:vpaRegistry`                   |       0 |       1 | GAP-5513CC12071A                                                  |
-| `table:ipsApiLogs`                    |       0 |       1 | GAP-2E899E24A27D                                                  |
-| `table:ipsAlerts`                     |       0 |       6 | GAP-E8EA4EBF9E5B                                                  |
-| `table:ippRiskEvents`                 |       1 |       3 | connected                                                         |
-| `table:ippHandleListings`             |       1 |       4 | connected                                                         |
-| `table:ipsOnboardingApplications`     |      16 |      17 | connected                                                         |
-| `table:ipsDeviceBindings`             |       0 |       1 | GAP-73D98AC3584D                                                  |
-| `table:ipsAliasDirectory`             |       4 |       7 | connected                                                         |
-| `table:settlementParticipants`        |       2 |       2 | connected                                                         |
-| `table:settlementWindows`             |       1 |       0 | GAP-509E5E4A37C1                                                  |
-| `table:settlementHolidays`            |       1 |       0 | GAP-1964130F3CFA                                                  |
-| `table:settlementFeeRules`            |       1 |       0 | GAP-E78676534A3D                                                  |
-| `table:settlementRuns`                |       6 |       5 | connected                                                         |
-| `table:settlementObligations`         |       1 |       1 | connected                                                         |
-| `table:settlementExposures`           |       0 |       1 | GAP-1B00EC98F59D                                                  |
-| `table:settlementNetInstructions`     |       1 |       1 | connected                                                         |
-| `table:settlementPacs009Batches`      |       2 |       1 | connected                                                         |
-| `table:settlementReports`             |       1 |       2 | connected                                                         |
-| `table:settlementAdjustments`         |       4 |       4 | connected                                                         |
-| `table:settlementTimeoutTransactions` |       3 |       2 | connected                                                         |
-| `table:settlementAcknowledgements`    |       2 |       3 | connected                                                         |
-| `table:ippDisputeCases`               |       1 |       2 | connected                                                         |
-| `table:ippTransactionReceipts`        |       1 |       1 | connected                                                         |
-| `table:tigerBeetleOutbox`             |       2 |      14 | connected                                                         |
-| `table:tigerBeetleAccounts`           |       0 |       1 | GAP-1592DE439864                                                  |
-| `table:tigerBeetleTransfers`          |       0 |       1 | GAP-D249B07F105A                                                  |
-| `table:tigerBeetleReconciliation`     |       0 |       1 | GAP-0153FC69A0F7                                                  |
-| `table:loanProcessingFailures`        |       0 |       1 | GAP-A17289C7879F                                                  |
-| `table:auditLogs`                     |       0 |     141 | GAP-21E384E37E8B                                                  |
-| `table:viewLogs`                      |       1 |       1 | connected                                                         |
-| `table:stateTransitions`              |       1 |       1 | connected                                                         |
-| `table:complianceReports`             |       0 |       1 | GAP-0EEB6CAF8B87                                                  |
-| `table:ippComplianceEvidence`         |       0 |       7 | GAP-F565DE673FC4                                                  |
-| `table:reconciliationRuns`            |       1 |       1 | connected                                                         |
-| `table:bankTransactions`              |       3 |       4 | connected                                                         |
-| `table:collectionsInteractions`       |       1 |       1 | connected                                                         |
-| `table:overdueReminders`              |       1 |       1 | connected                                                         |
-| `table:promiseToPay`                  |       4 |       2 | connected                                                         |
-| `table:systemConfiguration`           |       2 |       3 | connected                                                         |
-| `table:eventJournal`                  |       1 |     148 | connected                                                         |
-| `table:snapshots`                     |       0 |       1 | GAP-039C753A8E3B                                                  |
-| `table:relationships`                 |       1 |      24 | connected                                                         |
-| `table:mandates`                      |      11 |       8 | connected                                                         |
-| `table:mandateExecutions`             |       2 |       3 | connected                                                         |
-| `table:consentRecords`                |       1 |       2 | connected                                                         |
-| `table:institutions`                  |      41 |       6 | connected                                                         |
-| `table:institutionDocuments`          |       1 |       1 | connected                                                         |
-| `table:institutionConfig`             |       0 |       4 | GAP-D1CF003240B8                                                  |
-| `table:platformAdmins`                |       3 |       3 | connected                                                         |
-| `table:plans`                         |       4 |       2 | connected                                                         |
-| `table:tenantSubscriptions`           |       0 |       3 | GAP-E4BAF2AD052C                                                  |
-| `table:tenantEntitlements`            |       3 |       1 | connected                                                         |
-| `table:featuresCatalog`               |       2 |       2 | connected                                                         |
-| `table:platformGuardrails`            |       0 |       1 | GAP-F87A7F4D9DAF                                                  |
-| `table:supportAccessAudit`            |       3 |       3 | connected                                                         |
-| `table:paymentRails`                  |       4 |       4 | connected                                                         |
-| `table:productDefinitions`            |       6 |       4 | connected                                                         |
-| `table:productVersions`               |       2 |       2 | connected                                                         |
-| `table:accounts`                      |       5 |       5 | connected                                                         |
-| `table:portfolioMetrics`              |       0 |      11 | GAP-7320B29C86FA                                                  |
-| `table:businessRules`                 |       1 |       5 | connected                                                         |
-| `table:budgetEntries`                 |       0 |       2 | GAP-ED6C6DBA601B                                                  |
-| `table:savingsGoals`                  |       1 |       2 | connected                                                         |
-| `table:budgetLimits`                  |       0 |       1 | GAP-FA5356EE9894                                                  |
-| `table:users`                         |       3 |       2 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authSessions`                  |       0 |       0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authAccounts`                  |       0 |       2 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authRefreshTokens`             |       0 |       0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authVerificationCodes`         |       0 |       0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authVerifiers`                 |       0 |       0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
-| `table:authRateLimits`                |       0 |       0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| Table | Readers | Writers | Status / exception |
+| --- | ---: | ---: | --- |
+| `table:profiles` | 2 | 4 | connected |
+| `table:userRoles` | 3 | 7 | connected |
+| `table:kycDocuments` | 2 | 3 | connected |
+| `table:documentAccessGrants` | 0 | 3 | GAP-9AE2A0BB6042 |
+| `table:loans` | 35 | 9 | connected |
+| `table:loanDocuments` | 2 | 2 | connected |
+| `table:loanApprovals` | 1 | 3 | connected |
+| `table:disbursements` | 10 | 7 | connected |
+| `table:paymentTransactions` | 9 | 6 | connected |
+| `table:paymentSchedules` | 2 | 7 | connected |
+| `table:rescheduleRequests` | 2 | 2 | connected |
+| `table:communications` | 2 | 2 | connected |
+| `table:supportTickets` | 3 | 4 | connected |
+| `table:paymentAllocations` | 0 | 4 | GAP-7D0721F9D61D |
+| `table:approvalRequests` | 5 | 5 | connected |
+| `table:approvalHistory` | 0 | 4 | GAP-24582697D5BF |
+| `table:workflowDefinitions` | 2 | 2 | connected |
+| `table:workflowInstances` | 0 | 0 | GAP-AA1015CAC102 |
+| `table:notifications` | 1 | 7 | connected |
+| `table:notificationTemplates` | 1 | 0 | GAP-63620DA82BF7 |
+| `table:notificationQueue` | 1 | 2 | connected |
+| `table:notificationPreferences` | 0 | 1 | GAP-512E383B3BA8 |
+| `table:communicationLogs` | 0 | 0 | GAP-4DE4D174E8E0 |
+| `table:ipsTransactions` | 8 | 6 | connected |
+| `table:vpaRegistry` | 0 | 1 | GAP-5513CC12071A |
+| `table:ipsApiLogs` | 0 | 1 | GAP-2E899E24A27D |
+| `table:ipsAlerts` | 0 | 6 | GAP-E8EA4EBF9E5B |
+| `table:ippRiskEvents` | 1 | 3 | connected |
+| `table:ippHandleListings` | 1 | 4 | connected |
+| `table:ipsOnboardingApplications` | 16 | 17 | connected |
+| `table:ipsDeviceBindings` | 0 | 1 | GAP-73D98AC3584D |
+| `table:ipsAliasDirectory` | 4 | 7 | connected |
+| `table:settlementParticipants` | 2 | 2 | connected |
+| `table:settlementWindows` | 1 | 0 | GAP-509E5E4A37C1 |
+| `table:settlementHolidays` | 1 | 0 | GAP-1964130F3CFA |
+| `table:settlementFeeRules` | 1 | 0 | GAP-E78676534A3D |
+| `table:settlementRuns` | 6 | 5 | connected |
+| `table:settlementObligations` | 1 | 1 | connected |
+| `table:settlementExposures` | 0 | 1 | GAP-1B00EC98F59D |
+| `table:settlementNetInstructions` | 1 | 1 | connected |
+| `table:settlementPacs009Batches` | 2 | 1 | connected |
+| `table:settlementReports` | 1 | 2 | connected |
+| `table:settlementAdjustments` | 4 | 4 | connected |
+| `table:settlementTimeoutTransactions` | 3 | 2 | connected |
+| `table:settlementAcknowledgements` | 2 | 3 | connected |
+| `table:ippDisputeCases` | 1 | 2 | connected |
+| `table:ippTransactionReceipts` | 1 | 1 | connected |
+| `table:tigerBeetleOutbox` | 2 | 14 | connected |
+| `table:tigerBeetleAccounts` | 0 | 1 | GAP-1592DE439864 |
+| `table:tigerBeetleTransfers` | 0 | 1 | GAP-D249B07F105A |
+| `table:tigerBeetleReconciliation` | 0 | 1 | GAP-0153FC69A0F7 |
+| `table:loanProcessingFailures` | 0 | 1 | GAP-A17289C7879F |
+| `table:auditLogs` | 0 | 141 | GAP-21E384E37E8B |
+| `table:viewLogs` | 1 | 1 | connected |
+| `table:stateTransitions` | 1 | 1 | connected |
+| `table:complianceReports` | 0 | 1 | GAP-0EEB6CAF8B87 |
+| `table:ippComplianceEvidence` | 0 | 7 | GAP-F565DE673FC4 |
+| `table:reconciliationRuns` | 1 | 1 | connected |
+| `table:bankTransactions` | 3 | 4 | connected |
+| `table:collectionsInteractions` | 1 | 1 | connected |
+| `table:overdueReminders` | 1 | 1 | connected |
+| `table:promiseToPay` | 4 | 2 | connected |
+| `table:sequenceCounters` | 0 | 3 | GAP-477B04A42BB6 |
+| `table:systemConfiguration` | 2 | 3 | connected |
+| `table:eventJournal` | 1 | 148 | connected |
+| `table:snapshots` | 0 | 1 | GAP-039C753A8E3B |
+| `table:relationships` | 1 | 24 | connected |
+| `table:mandates` | 11 | 8 | connected |
+| `table:mandateExecutions` | 2 | 3 | connected |
+| `table:consentRecords` | 1 | 2 | connected |
+| `table:institutions` | 41 | 6 | connected |
+| `table:institutionDocuments` | 1 | 1 | connected |
+| `table:institutionConfig` | 0 | 4 | GAP-D1CF003240B8 |
+| `table:platformAdmins` | 3 | 3 | connected |
+| `table:plans` | 4 | 2 | connected |
+| `table:tenantSubscriptions` | 0 | 3 | GAP-E4BAF2AD052C |
+| `table:tenantEntitlements` | 3 | 1 | connected |
+| `table:featuresCatalog` | 2 | 2 | connected |
+| `table:platformGuardrails` | 0 | 1 | GAP-F87A7F4D9DAF |
+| `table:supportAccessAudit` | 3 | 3 | connected |
+| `table:paymentRails` | 4 | 4 | connected |
+| `table:productDefinitions` | 6 | 4 | connected |
+| `table:productVersions` | 2 | 2 | connected |
+| `table:accounts` | 5 | 5 | connected |
+| `table:portfolioMetrics` | 0 | 11 | GAP-7320B29C86FA |
+| `table:businessRules` | 1 | 5 | connected |
+| `table:budgetEntries` | 0 | 2 | GAP-ED6C6DBA601B |
+| `table:savingsGoals` | 1 | 2 | connected |
+| `table:budgetLimits` | 0 | 1 | GAP-FA5356EE9894 |
+| `table:users` | 3 | 2 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authSessions` | 0 | 0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authAccounts` | 0 | 2 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authRefreshTokens` | 0 | 0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authVerificationCodes` | 0 | 0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authVerifiers` | 0 | 0 | Reads and writes are mediated by the @convex-dev/auth dependency. |
+| `table:authRateLimits` | 0 | 0 | Reads and writes are mediated by the @convex-dev/auth dependency. |

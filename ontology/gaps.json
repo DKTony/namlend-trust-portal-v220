@@ -1,10 +1,10 @@
 {
-  "commitSha": "9c9be8bdb6497e6e5085b562b1d3fb008c04efc2",
-  "extractedAt": "2026-11-06T11:26:00.407Z",
+  "commitSha": "f00c156c41a64496fc32474764cff3e34f573b8e",
+  "extractedAt": "2026-11-06T13:54:26.225Z",
   "gaps": [
     {
       "evidenceRefs": [
-        "evidence:5e8480f0a1b51719"
+        "evidence:5fb123a7252a9584"
       ],
       "id": "GAP-0153FC69A0F7",
       "issue": "./gap-register.md#gap-0153fc69a0f7",
@@ -19,7 +19,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:fdae699452ace551"
+        "evidence:5f8b6e997b5ffd85"
       ],
       "id": "GAP-039C753A8E3B",
       "issue": "./gap-register.md#gap-039c753a8e3b",
@@ -34,7 +34,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:78a456ed981e78f2"
+        "evidence:0246e39621d359eb"
       ],
       "id": "GAP-062E3A42BE71",
       "issue": "./gap-register.md#gap-062e3a42be71",
@@ -49,7 +49,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3c0ec662981ab227"
+        "evidence:5911f3312018cd7c"
       ],
       "id": "GAP-08A6D72E84E7",
       "issue": "./gap-register.md#gap-08a6d72e84e7",
@@ -64,7 +64,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:08b306bfdd5b68eb"
+        "evidence:5efbc26785bb95a0"
       ],
       "id": "GAP-0EEB6CAF8B87",
       "issue": "./gap-register.md#gap-0eeb6caf8b87",
@@ -79,7 +79,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:81160c270effe2a3"
+        "evidence:9fa3ee76ba23cbf1"
       ],
       "id": "GAP-11D918D3E45C",
       "issue": "./gap-register.md#gap-11d918d3e45c",
@@ -94,7 +94,37 @@
     },
     {
       "evidenceRefs": [
-        "evidence:774d18feb26da969"
+        "evidence:83d43b744569dc64"
+      ],
+      "id": "GAP-11FA22723A0F",
+      "issue": "./gap-register.md#gap-11fa22723a0f",
+      "kind": "TABLE_CONNECTIVITY",
+      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "table:loanProcessingFailures",
+      "summary": "table:loanProcessingFailures has 0 statically resolved readers and 2 writers."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:44335010f40a3029"
+      ],
+      "id": "GAP-14040B895A59",
+      "issue": "./gap-register.md#gap-14040b895a59",
+      "kind": "TABLE_CONNECTIVITY",
+      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "table:agreementSettings",
+      "summary": "table:agreementSettings has 0 statically resolved readers and 1 writers."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:1bf0480ab0f65a04"
       ],
       "id": "GAP-14F4AE331785",
       "issue": "./gap-register.md#gap-14f4ae331785",
@@ -109,7 +139,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e855a17d3bf2b843"
+        "evidence:3410befc0f948378"
       ],
       "id": "GAP-1592DE439864",
       "issue": "./gap-register.md#gap-1592de439864",
@@ -124,7 +154,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:44a0e2a91cd4d8a0"
+        "evidence:c5a8dce1e87bbbdb"
       ],
       "id": "GAP-16D7E87B04AB",
       "issue": "./gap-register.md#gap-16d7e87b04ab",
@@ -139,7 +169,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d31e3bb8b1fae614"
+        "evidence:e7d0b510f08338c8"
       ],
       "id": "GAP-17FC56BB9F3D",
       "issue": "./gap-register.md#gap-17fc56bb9f3d",
@@ -154,7 +184,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c7de398d65f0d7c5"
+        "evidence:e347fe5824c510b5"
       ],
       "id": "GAP-1964130F3CFA",
       "issue": "./gap-register.md#gap-1964130f3cfa",
@@ -169,7 +199,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4283f3e076112aa1"
+        "evidence:ce5cea57b79cd52a"
       ],
       "id": "GAP-1AC306484B08",
       "issue": "./gap-register.md#gap-1ac306484b08",
@@ -184,7 +214,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:604644d337069dca"
+        "evidence:af311a16785523ed"
       ],
       "id": "GAP-1B00EC98F59D",
       "issue": "./gap-register.md#gap-1b00ec98f59d",
@@ -199,7 +229,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4d6fc77af0f8fb11"
+        "evidence:f7ce5846c70835f6"
       ],
       "id": "GAP-1D4E2E185541",
       "issue": "./gap-register.md#gap-1d4e2e185541",
@@ -214,7 +244,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7b743399dedd81d5"
+        "evidence:60385425bff5f55c"
       ],
       "id": "GAP-1E2A92D5A921",
       "issue": "./gap-register.md#gap-1e2a92d5a921",
@@ -229,22 +259,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:113cd0e4882f55b0"
-      ],
-      "id": "GAP-21E384E37E8B",
-      "issue": "./gap-register.md#gap-21e384e37e8b",
-      "kind": "TABLE_CONNECTIVITY",
-      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
-      "owner": "NamLend Engineering",
-      "reviewDate": "2026-12-31",
-      "severity": "medium",
-      "status": "open",
-      "subjectId": "table:auditLogs",
-      "summary": "table:auditLogs has 0 statically resolved readers and 141 writers."
-    },
-    {
-      "evidenceRefs": [
-        "evidence:144aa828b24a75a0"
+        "evidence:ea58e2563b85a4c0"
       ],
       "id": "GAP-22965BD4367B",
       "issue": "./gap-register.md#gap-22965bd4367b",
@@ -259,7 +274,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ec41f58ebec18ed7"
+        "evidence:903ab07ee7ac767c"
       ],
       "id": "GAP-238E10756E27",
       "issue": "./gap-register.md#gap-238e10756e27",
@@ -274,7 +289,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f49365df5a5293c0"
+        "evidence:c5de812b913c93fb"
       ],
       "id": "GAP-24582697D5BF",
       "issue": "./gap-register.md#gap-24582697d5bf",
@@ -289,7 +304,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4096e09a3f3f1d75"
+        "evidence:2677eb38b94dbc7c"
       ],
       "id": "GAP-2D9C34AE5B16",
       "issue": "./gap-register.md#gap-2d9c34ae5b16",
@@ -304,7 +319,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:16a860015c1a1f83"
+        "evidence:1b9765d90a0f00ba"
       ],
       "id": "GAP-2E899E24A27D",
       "issue": "./gap-register.md#gap-2e899e24a27d",
@@ -319,7 +334,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:70eadb5cf891a79a"
+        "evidence:e555a3052e8bfeb3"
       ],
       "id": "GAP-3171A1D9F062",
       "issue": "./gap-register.md#gap-3171a1d9f062",
@@ -334,7 +349,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:abe2ab264aa43f7e"
+        "evidence:a0ca8b9938ced18e"
       ],
       "id": "GAP-32A6290D3D61",
       "issue": "./gap-register.md#gap-32a6290d3d61",
@@ -349,7 +364,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:56b86e5e8120755b"
+        "evidence:d34c040aa2ead5b5"
       ],
       "id": "GAP-39449359F3B3",
       "issue": "./gap-register.md#gap-39449359f3b3",
@@ -364,7 +379,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:65531a881d5223b6"
+        "evidence:e757107df2178d22"
       ],
       "id": "GAP-3BE0309E5F41",
       "issue": "./gap-register.md#gap-3be0309e5f41",
@@ -379,7 +394,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:fee0b8050a75f3dc"
+        "evidence:b1ab1eb6a37999fd"
       ],
       "id": "GAP-4185E989BBBD",
       "issue": "./gap-register.md#gap-4185e989bbbd",
@@ -394,7 +409,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8e8fa7b90e91a84d"
+        "evidence:bec7fdf4f7e92a1b"
       ],
       "id": "GAP-4333C84CCF3F",
       "issue": "./gap-register.md#gap-4333c84ccf3f",
@@ -409,22 +424,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:33801a095f7ef8bc"
-      ],
-      "id": "GAP-477B04A42BB6",
-      "issue": "./gap-register.md#gap-477b04a42bb6",
-      "kind": "TABLE_CONNECTIVITY",
-      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
-      "owner": "NamLend Engineering",
-      "reviewDate": "2026-12-31",
-      "severity": "medium",
-      "status": "open",
-      "subjectId": "table:sequenceCounters",
-      "summary": "table:sequenceCounters has 0 statically resolved readers and 3 writers."
-    },
-    {
-      "evidenceRefs": [
-        "evidence:5c32e3829ce91e2c"
+        "evidence:e465772b5abc1c98"
       ],
       "id": "GAP-4A458E370CCD",
       "issue": "./gap-register.md#gap-4a458e370ccd",
@@ -439,7 +439,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:060736364e92af78"
+        "evidence:e6a60b8a929ddb39"
       ],
       "id": "GAP-4BBE145E73CF",
       "issue": "./gap-register.md#gap-4bbe145e73cf",
@@ -454,7 +454,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ad69c8e7a8486b34"
+        "evidence:8d5c3174bdcb4529"
+      ],
+      "id": "GAP-4D9749FB3614",
+      "issue": "./gap-register.md#gap-4d9749fb3614",
+      "kind": "TABLE_CONNECTIVITY",
+      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "table:documentAccessGrants",
+      "summary": "table:documentAccessGrants has 0 statically resolved readers and 4 writers."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:a9ed9e85c41b8fa3"
       ],
       "id": "GAP-4DE4D174E8E0",
       "issue": "./gap-register.md#gap-4de4d174e8e0",
@@ -469,7 +484,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c408a4f7abdc39c0"
+        "evidence:f093cd7dc80fc709"
+      ],
+      "id": "GAP-4F23C8679F9A",
+      "issue": "./gap-register.md#gap-4f23c8679f9a",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "component:src/components/agreement/AgreementDocument.tsx#Block",
+      "summary": "component:src/components/agreement/AgreementDocument.tsx#Block has no statically resolved functional edge."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:b0edd7ffae23aec6"
       ],
       "id": "GAP-509E5E4A37C1",
       "issue": "./gap-register.md#gap-509e5e4a37c1",
@@ -484,7 +514,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9e57babcabc1482e"
+        "evidence:e214c3eeefe8fdc8"
       ],
       "id": "GAP-512E383B3BA8",
       "issue": "./gap-register.md#gap-512e383b3ba8",
@@ -499,7 +529,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1d4e317aec6e3a97"
+        "evidence:169fe0fe7d633b5b"
       ],
       "id": "GAP-5513CC12071A",
       "issue": "./gap-register.md#gap-5513cc12071a",
@@ -514,7 +544,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2e21d23bd6398953"
+        "evidence:68a5451f817a3e7c"
       ],
       "id": "GAP-575539C89D81",
       "issue": "./gap-register.md#gap-575539c89d81",
@@ -529,7 +559,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b6689f609d31f596"
+        "evidence:18e4541b3c44cfb6"
       ],
       "id": "GAP-5A82777A6897",
       "issue": "./gap-register.md#gap-5a82777a6897",
@@ -544,7 +574,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c6a0f73ae3b80277"
+        "evidence:10bd0da2b5e516aa"
       ],
       "id": "GAP-5D05082EAEB4",
       "issue": "./gap-register.md#gap-5d05082eaeb4",
@@ -559,7 +589,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8524a2401bc12873"
+        "evidence:0aecc488df4c5709"
       ],
       "id": "GAP-5ED42AFE4B1E",
       "issue": "./gap-register.md#gap-5ed42afe4b1e",
@@ -574,7 +604,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7170be74eef1aec6"
+        "evidence:12f2f8ef8e3cc889"
       ],
       "id": "GAP-5FF34CA28295",
       "issue": "./gap-register.md#gap-5ff34ca28295",
@@ -589,7 +619,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2f73cf2e264e3a9a"
+        "evidence:f765921e30a8796e"
       ],
       "id": "GAP-60A903DE4A5C",
       "issue": "./gap-register.md#gap-60a903de4a5c",
@@ -604,7 +634,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5c79fe3eef9660d4"
+        "evidence:e66634ea554064a8"
       ],
       "id": "GAP-63620DA82BF7",
       "issue": "./gap-register.md#gap-63620da82bf7",
@@ -619,7 +649,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b37bada3479549af"
+        "evidence:cd1e7decaae3190b"
       ],
       "id": "GAP-643F0A4913E7",
       "issue": "./gap-register.md#gap-643f0a4913e7",
@@ -634,7 +664,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dc368e860438762d"
+        "evidence:1949d65c3177110d"
       ],
       "id": "GAP-654E339096D9",
       "issue": "./gap-register.md#gap-654e339096d9",
@@ -649,7 +679,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a86b0f0a031b5822"
+        "evidence:28e0855f5dc53e9c"
       ],
       "id": "GAP-663906D9E906",
       "issue": "./gap-register.md#gap-663906d9e906",
@@ -664,7 +694,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9b59704d5bc4e9d7"
+        "evidence:0caced8a8b9fe18e"
       ],
       "id": "GAP-672C2C92B901",
       "issue": "./gap-register.md#gap-672c2c92b901",
@@ -679,7 +709,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:fd4ad9a408f1be20"
+        "evidence:e94242eef00a7474"
       ],
       "id": "GAP-6E9968E73AA1",
       "issue": "./gap-register.md#gap-6e9968e73aa1",
@@ -694,7 +724,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b8169bb7aaaac7f1"
+        "evidence:86abdd6eb83ff94b"
       ],
       "id": "GAP-7320B29C86FA",
       "issue": "./gap-register.md#gap-7320b29c86fa",
@@ -709,7 +739,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ea1f23514bafae91"
+        "evidence:735074e2e4ff785b"
       ],
       "id": "GAP-73D98AC3584D",
       "issue": "./gap-register.md#gap-73d98ac3584d",
@@ -724,22 +754,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a6bca481e945ccdc"
-      ],
-      "id": "GAP-78B9506A12EE",
-      "issue": "./gap-register.md#gap-78b9506a12ee",
-      "kind": "FUNCTIONAL_ORPHAN",
-      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
-      "owner": "NamLend Engineering",
-      "reviewDate": "2026-12-31",
-      "severity": "medium",
-      "status": "open",
-      "subjectId": "component:src/components/ui/PageHeader.tsx#PageHeader",
-      "summary": "component:src/components/ui/PageHeader.tsx#PageHeader has no statically resolved functional edge."
-    },
-    {
-      "evidenceRefs": [
-        "evidence:f20538316c09cb59"
+        "evidence:bad6f354f6adc562"
       ],
       "id": "GAP-796045585AE7",
       "issue": "./gap-register.md#gap-796045585ae7",
@@ -754,7 +769,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:baf9df5270e9eb09"
+        "evidence:889fdea509d4b451"
       ],
       "id": "GAP-7B575E2B614F",
       "issue": "./gap-register.md#gap-7b575e2b614f",
@@ -769,7 +784,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:47ad78d219053bde"
+        "evidence:294f7ff1da86b99c"
       ],
       "id": "GAP-7C9FA28037F9",
       "issue": "./gap-register.md#gap-7c9fa28037f9",
@@ -784,7 +799,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4c9fc98cbe28a2e2"
+        "evidence:0fa7de8bff40d946"
       ],
       "id": "GAP-7D0721F9D61D",
       "issue": "./gap-register.md#gap-7d0721f9d61d",
@@ -799,7 +814,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4fed7ad16ae95625"
+        "evidence:462af46752367605"
+      ],
+      "id": "GAP-833C360F8F12",
+      "issue": "./gap-register.md#gap-833c360f8f12",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "component:src/components/agreement/AgreementDocument.tsx#KeyValueGrid",
+      "summary": "component:src/components/agreement/AgreementDocument.tsx#KeyValueGrid has no statically resolved functional edge."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:4d552129b1af0137"
       ],
       "id": "GAP-84CA492122F7",
       "issue": "./gap-register.md#gap-84ca492122f7",
@@ -814,7 +844,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3241baf99ebacad6"
+        "evidence:121dd75c85e46508"
       ],
       "id": "GAP-8709371ECE82",
       "issue": "./gap-register.md#gap-8709371ece82",
@@ -829,7 +859,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ec759113d09b15f8"
+        "evidence:2680a4ba3e1cc93a"
       ],
       "id": "GAP-8A22DEBFF04F",
       "issue": "./gap-register.md#gap-8a22debff04f",
@@ -844,7 +874,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d6c20c3376a96f0f"
+        "evidence:a3952858577101a0"
       ],
       "id": "GAP-8BFDBA24F880",
       "issue": "./gap-register.md#gap-8bfdba24f880",
@@ -859,7 +889,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6323379e6a1b2aa2"
+        "evidence:b626217ab681da02"
       ],
       "id": "GAP-939E37284B06",
       "issue": "./gap-register.md#gap-939e37284b06",
@@ -874,7 +904,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2e0ad44e315093e3"
+        "evidence:e26c708649bdbc80"
       ],
       "id": "GAP-947A14594ECA",
       "issue": "./gap-register.md#gap-947a14594eca",
@@ -889,22 +919,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:138bb5cf966b2b1d"
-      ],
-      "id": "GAP-9AE2A0BB6042",
-      "issue": "./gap-register.md#gap-9ae2a0bb6042",
-      "kind": "TABLE_CONNECTIVITY",
-      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
-      "owner": "NamLend Engineering",
-      "reviewDate": "2026-12-31",
-      "severity": "medium",
-      "status": "open",
-      "subjectId": "table:documentAccessGrants",
-      "summary": "table:documentAccessGrants has 0 statically resolved readers and 3 writers."
-    },
-    {
-      "evidenceRefs": [
-        "evidence:b12d2de52d26284e"
+        "evidence:323e9d35ff38af05"
       ],
       "id": "GAP-9CE9EC58D0D4",
       "issue": "./gap-register.md#gap-9ce9ec58d0d4",
@@ -919,22 +934,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f829da243096413a"
+        "evidence:7d399921dcde43ae"
       ],
-      "id": "GAP-A17289C7879F",
-      "issue": "./gap-register.md#gap-a17289c7879f",
-      "kind": "TABLE_CONNECTIVITY",
-      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "id": "GAP-9DCE59A4B4C5",
+      "issue": "./gap-register.md#gap-9dce59a4b4c5",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
       "owner": "NamLend Engineering",
       "reviewDate": "2026-12-31",
       "severity": "medium",
       "status": "open",
-      "subjectId": "table:loanProcessingFailures",
-      "summary": "table:loanProcessingFailures has 0 statically resolved readers and 1 writers."
+      "subjectId": "component:src/components/agreement/AgreementDocument.tsx#SignatureGrid",
+      "summary": "component:src/components/agreement/AgreementDocument.tsx#SignatureGrid has no statically resolved functional edge."
     },
     {
       "evidenceRefs": [
-        "evidence:260f6791b7eefbca"
+        "evidence:c85b62f57862593b"
       ],
       "id": "GAP-A8CCFF7D4090",
       "issue": "./gap-register.md#gap-a8ccff7d4090",
@@ -949,7 +964,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:554c97f057c92673"
+        "evidence:450ac4f32ffac379"
       ],
       "id": "GAP-AA1015CAC102",
       "issue": "./gap-register.md#gap-aa1015cac102",
@@ -964,7 +979,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c18abcff5727d81a"
+        "evidence:e754ab267fbf3e33"
       ],
       "id": "GAP-AA7E673FDCB1",
       "issue": "./gap-register.md#gap-aa7e673fdcb1",
@@ -979,7 +994,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b6d888854780f44f"
+        "evidence:f7aa7361350d3f89"
       ],
       "id": "GAP-AD668C77830E",
       "issue": "./gap-register.md#gap-ad668c77830e",
@@ -994,7 +1009,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e72631f18b73fc8e"
+        "evidence:df72ef261933d5b0"
       ],
       "id": "GAP-AF4636D503EA",
       "issue": "./gap-register.md#gap-af4636d503ea",
@@ -1009,7 +1024,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:57d9ae1cfae3f8e9"
+        "evidence:b00b7d0172404980"
       ],
       "id": "GAP-B122BFAD3CBD",
       "issue": "./gap-register.md#gap-b122bfad3cbd",
@@ -1024,7 +1039,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:56462e3e8b412862"
+        "evidence:ee97ffe55a5f7843"
       ],
       "id": "GAP-B43C9B7D2C4C",
       "issue": "./gap-register.md#gap-b43c9b7d2c4c",
@@ -1039,7 +1054,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3de9816704ca93a1"
+        "evidence:3ccca1a290fd5649"
       ],
       "id": "GAP-B4DF123AACE9",
       "issue": "./gap-register.md#gap-b4df123aace9",
@@ -1054,7 +1069,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7b9954e2593b346a"
+        "evidence:a4071393209c1526"
       ],
       "id": "GAP-B84ECDA9DE68",
       "issue": "./gap-register.md#gap-b84ecda9de68",
@@ -1069,7 +1084,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0e9589f368ee69cd"
+        "evidence:c549929c5bf67f2c"
       ],
       "id": "GAP-B9D9B6372F9B",
       "issue": "./gap-register.md#gap-b9d9b6372f9b",
@@ -1084,7 +1099,37 @@
     },
     {
       "evidenceRefs": [
-        "evidence:75b17d68c3c42d92"
+        "evidence:86c61c1379a57353"
+      ],
+      "id": "GAP-BA07C015D2C3",
+      "issue": "./gap-register.md#gap-ba07c015d2c3",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "component:src/components/agreement/AgreementDocument.tsx#PageBody",
+      "summary": "component:src/components/agreement/AgreementDocument.tsx#PageBody has no statically resolved functional edge."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:6d363ef136b6e0d5"
+      ],
+      "id": "GAP-BA904942234A",
+      "issue": "./gap-register.md#gap-ba904942234a",
+      "kind": "TABLE_CONNECTIVITY",
+      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "table:sequenceCounters",
+      "summary": "table:sequenceCounters has 0 statically resolved readers and 7 writers."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:92d2d12c3f548c44"
       ],
       "id": "GAP-BE3C89DD7FE9",
       "issue": "./gap-register.md#gap-be3c89dd7fe9",
@@ -1099,7 +1144,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ebcef79ad132d7a3"
+        "evidence:63644646e4c91090"
       ],
       "id": "GAP-BE718391872B",
       "issue": "./gap-register.md#gap-be718391872b",
@@ -1114,7 +1159,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:325dd1a0290062e5"
+        "evidence:cb0eaa7e34abd7f8"
       ],
       "id": "GAP-BF201BD7AD8E",
       "issue": "./gap-register.md#gap-bf201bd7ad8e",
@@ -1129,7 +1174,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f472d56f4c76fb94"
+        "evidence:fc60f898c93a6975"
       ],
       "id": "GAP-C3841134CDA6",
       "issue": "./gap-register.md#gap-c3841134cda6",
@@ -1144,7 +1189,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6373889bc9b30c33"
+        "evidence:b31d058558a428fa"
       ],
       "id": "GAP-CCBAC3FD1BBD",
       "issue": "./gap-register.md#gap-ccbac3fd1bbd",
@@ -1174,7 +1219,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:eda4582cd58e4be5"
+        "evidence:8231ce7dd3dcd7be"
       ],
       "id": "GAP-D1CF003240B8",
       "issue": "./gap-register.md#gap-d1cf003240b8",
@@ -1189,7 +1234,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2bb0b7e15434b0e1"
+        "evidence:9855e611ad1b866c"
       ],
       "id": "GAP-D249B07F105A",
       "issue": "./gap-register.md#gap-d249b07f105a",
@@ -1204,7 +1249,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f6baeff88bd05672"
+        "evidence:ebc8731751031c69"
       ],
       "id": "GAP-D4F6639562B9",
       "issue": "./gap-register.md#gap-d4f6639562b9",
@@ -1219,7 +1264,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:85618041eaae9f57"
+        "evidence:edfadc0ea01c2f42"
+      ],
+      "id": "GAP-D71C1DE53B0C",
+      "issue": "./gap-register.md#gap-d71c1de53b0c",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "component:src/components/agreement/AgreementDocument.tsx#ScheduleTitle",
+      "summary": "component:src/components/agreement/AgreementDocument.tsx#ScheduleTitle has no statically resolved functional edge."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:523253e0c9aa7028"
       ],
       "id": "GAP-DB7A52A6FEE9",
       "issue": "./gap-register.md#gap-db7a52a6fee9",
@@ -1234,7 +1294,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a42b958f50597f6f"
+        "evidence:97efa28ec8dbc757"
       ],
       "id": "GAP-E4BAF2AD052C",
       "issue": "./gap-register.md#gap-e4baf2ad052c",
@@ -1249,7 +1309,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6c2265eb55a2a4ec"
+        "evidence:eb9ca5c76cf100df"
       ],
       "id": "GAP-E5094CAFD862",
       "issue": "./gap-register.md#gap-e5094cafd862",
@@ -1264,7 +1324,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8c15c46c2da7fbbe"
+        "evidence:41dfa04fcfa51222"
       ],
       "id": "GAP-E6407C27B0A0",
       "issue": "./gap-register.md#gap-e6407c27b0a0",
@@ -1279,7 +1339,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:167d0bbde03a88c5"
+        "evidence:5d46fa557fd40b47"
       ],
       "id": "GAP-E78676534A3D",
       "issue": "./gap-register.md#gap-e78676534a3d",
@@ -1294,7 +1354,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:084beafa33decf69"
+        "evidence:eaed8a1bdf58aaa8"
       ],
       "id": "GAP-E8EA4EBF9E5B",
       "issue": "./gap-register.md#gap-e8ea4ebf9e5b",
@@ -1309,7 +1369,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f860cbfeb4e64920"
+        "evidence:d423c56694fa0b15"
+      ],
+      "id": "GAP-E9ADA1E95283",
+      "issue": "./gap-register.md#gap-e9ada1e95283",
+      "kind": "TABLE_CONNECTIVITY",
+      "nextAction": "Improve static data-flow resolution or document why the table is intentionally read-only/write-only.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "table:auditLogs",
+      "summary": "table:auditLogs has 0 statically resolved readers and 158 writers."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:3b60011850185e24"
       ],
       "id": "GAP-ECCA22B9BF5C",
       "issue": "./gap-register.md#gap-ecca22b9bf5c",
@@ -1324,7 +1399,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3466758ba5f99701"
+        "evidence:dcd4b6c1aab775df"
       ],
       "id": "GAP-ED6C6DBA601B",
       "issue": "./gap-register.md#gap-ed6c6dba601b",
@@ -1339,7 +1414,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:eed15f057cdfefa2"
+        "evidence:084603f3b51fbdf9"
       ],
       "id": "GAP-F233CCF8F300",
       "issue": "./gap-register.md#gap-f233ccf8f300",
@@ -1354,7 +1429,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d5b3904f7e799d05"
+        "evidence:e11c7c77d1d03714"
       ],
       "id": "GAP-F565DE673FC4",
       "issue": "./gap-register.md#gap-f565de673fc4",
@@ -1369,7 +1444,22 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f60ebe30fde2ebc9"
+        "evidence:0ef24172e3f5800c"
+      ],
+      "id": "GAP-F7EC381624D4",
+      "issue": "./gap-register.md#gap-f7ec381624d4",
+      "kind": "FUNCTIONAL_ORPHAN",
+      "nextAction": "Add resolvable wiring, an explicit evidence-backed exception, or remove unreachable code.",
+      "owner": "NamLend Engineering",
+      "reviewDate": "2026-12-31",
+      "severity": "medium",
+      "status": "open",
+      "subjectId": "component:src/components/modals/LoanDetailsModal.tsx#ViewContractRow",
+      "summary": "component:src/components/modals/LoanDetailsModal.tsx#ViewContractRow has no statically resolved functional edge."
+    },
+    {
+      "evidenceRefs": [
+        "evidence:e75089a1b803ad14"
       ],
       "id": "GAP-F87A7F4D9DAF",
       "issue": "./gap-register.md#gap-f87a7f4d9daf",
@@ -1384,7 +1474,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7cf6846bc89fdc0d"
+        "evidence:3e89afba88074955"
       ],
       "id": "GAP-FA5356EE9894",
       "issue": "./gap-register.md#gap-fa5356ee9894",
@@ -1414,7 +1504,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8d7abe3e8a8a9f94"
+        "evidence:129a6c3f61763022"
       ],
       "id": "GAP-TEST-SKIP-016584717742",
       "issue": "./gap-register.md#gap-test-skip-016584717742",
@@ -1429,7 +1519,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:d8fc6f2d43cc8b39"
+        "evidence:8b03adb266f2e55d"
       ],
       "id": "GAP-TEST-SKIP-0AB13266E74B",
       "issue": "./gap-register.md#gap-test-skip-0ab13266e74b",
@@ -1444,7 +1534,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f183efa6995ebd1e"
+        "evidence:ea1762b14cdabbc1"
       ],
       "id": "GAP-TEST-SKIP-0C4650D6E88D",
       "issue": "./gap-register.md#gap-test-skip-0c4650d6e88d",
@@ -1459,7 +1549,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:83db30ad8f5646c6"
+        "evidence:b6fb4f7f6d92b83b"
       ],
       "id": "GAP-TEST-SKIP-0E05D081D7B9",
       "issue": "./gap-register.md#gap-test-skip-0e05d081d7b9",
@@ -1474,7 +1564,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:e68790684fa98302"
+        "evidence:9533ffcd880a8188"
       ],
       "id": "GAP-TEST-SKIP-1030E0B6067F",
       "issue": "./gap-register.md#gap-test-skip-1030e0b6067f",
@@ -1489,7 +1579,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:b53132bf97a7960c"
+        "evidence:a95b2314a0f5c4ea"
       ],
       "id": "GAP-TEST-SKIP-11B2B5A24EDD",
       "issue": "./gap-register.md#gap-test-skip-11b2b5a24edd",
@@ -1504,7 +1594,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:f2abc7d2a9795b9d"
+        "evidence:aee9bd4b95b4c6b1"
       ],
       "id": "GAP-TEST-SKIP-135335D56AAA",
       "issue": "./gap-register.md#gap-test-skip-135335d56aaa",
@@ -1519,7 +1609,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:44151b9d7273596f"
+        "evidence:44563b8750be68e2"
       ],
       "id": "GAP-TEST-SKIP-14E0BC715785",
       "issue": "./gap-register.md#gap-test-skip-14e0bc715785",
@@ -1534,7 +1624,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c174c3b39efec109"
+        "evidence:e2214aab110414c1"
       ],
       "id": "GAP-TEST-SKIP-17B4FB8E1043",
       "issue": "./gap-register.md#gap-test-skip-17b4fb8e1043",
@@ -1549,7 +1639,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6445606ed9b69774"
+        "evidence:4a41f26eccc766f9"
       ],
       "id": "GAP-TEST-SKIP-18153F20C1FA",
       "issue": "./gap-register.md#gap-test-skip-18153f20c1fa",
@@ -1564,7 +1654,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:7089d8b513640122"
+        "evidence:afac376e787e3b91"
       ],
       "id": "GAP-TEST-SKIP-1A3353D88CF3",
       "issue": "./gap-register.md#gap-test-skip-1a3353d88cf3",
@@ -1579,7 +1669,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3a3eab08bf0f7272"
+        "evidence:581bc3025098f883"
       ],
       "id": "GAP-TEST-SKIP-1B985C7BF34B",
       "issue": "./gap-register.md#gap-test-skip-1b985c7bf34b",
@@ -1594,7 +1684,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:46e93eec476c4c07"
+        "evidence:6f98624861a12b0e"
       ],
       "id": "GAP-TEST-SKIP-1DA3ED8ACED2",
       "issue": "./gap-register.md#gap-test-skip-1da3ed8aced2",
@@ -1609,7 +1699,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6a144dded3115c05"
+        "evidence:af4b2f1d99894d56"
       ],
       "id": "GAP-TEST-SKIP-1F91982DD5A5",
       "issue": "./gap-register.md#gap-test-skip-1f91982dd5a5",
@@ -1624,7 +1714,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:dedbcbf500224d4a"
+        "evidence:bdf6d160889050ac"
       ],
       "id": "GAP-TEST-SKIP-260208BCB066",
       "issue": "./gap-register.md#gap-test-skip-260208bcb066",
@@ -1639,7 +1729,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0c1414f3f224c51c"
+        "evidence:8d42f75e0d6d48f7"
       ],
       "id": "GAP-TEST-SKIP-273C5A8DF1A8",
       "issue": "./gap-register.md#gap-test-skip-273c5a8df1a8",
@@ -1654,7 +1744,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6d89aaa58cbfb073"
+        "evidence:bc3a072a2d1929aa"
       ],
       "id": "GAP-TEST-SKIP-28E0579B749B",
       "issue": "./gap-register.md#gap-test-skip-28e0579b749b",
@@ -1669,7 +1759,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:eb5aafc7376847bc"
+        "evidence:4dc50cab52dc2e3b"
       ],
       "id": "GAP-TEST-SKIP-30BCAF6B1CBC",
       "issue": "./gap-register.md#gap-test-skip-30bcaf6b1cbc",
@@ -1684,7 +1774,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0e05d9426937f940"
+        "evidence:8b233cae30beaf34"
       ],
       "id": "GAP-TEST-SKIP-329CB62DAB03",
       "issue": "./gap-register.md#gap-test-skip-329cb62dab03",
@@ -1699,7 +1789,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6c94371bf40b517d"
+        "evidence:605b37694f053a8b"
       ],
       "id": "GAP-TEST-SKIP-331493CB0B90",
       "issue": "./gap-register.md#gap-test-skip-331493cb0b90",
@@ -1714,7 +1804,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:62c9f461ba4e7986"
+        "evidence:1e0f561b5949f4ac"
       ],
       "id": "GAP-TEST-SKIP-36E46058896B",
       "issue": "./gap-register.md#gap-test-skip-36e46058896b",
@@ -1729,7 +1819,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:ab70c244bd43cc0a"
+        "evidence:97002322804168e8"
       ],
       "id": "GAP-TEST-SKIP-3E4492CF1400",
       "issue": "./gap-register.md#gap-test-skip-3e4492cf1400",
@@ -1744,7 +1834,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:80ddef921757f5ae"
+        "evidence:8c8fb61750deb5b2"
       ],
       "id": "GAP-TEST-SKIP-44C1DC77E008",
       "issue": "./gap-register.md#gap-test-skip-44c1dc77e008",
@@ -1759,7 +1849,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4ae11ed84132c7e4"
+        "evidence:813b86a229244eda"
       ],
       "id": "GAP-TEST-SKIP-4AC271411657",
       "issue": "./gap-register.md#gap-test-skip-4ac271411657",
@@ -1774,7 +1864,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:5633a0d988f02ce5"
+        "evidence:31852889ec694ec2"
       ],
       "id": "GAP-TEST-SKIP-4FE350A1F082",
       "issue": "./gap-register.md#gap-test-skip-4fe350a1f082",
@@ -1789,7 +1879,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:1465af5760b77729"
+        "evidence:f662e62cd2ca2dee"
       ],
       "id": "GAP-TEST-SKIP-50906E245BCC",
       "issue": "./gap-register.md#gap-test-skip-50906e245bcc",
@@ -1804,7 +1894,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0cbc59a5dc271b77"
+        "evidence:2f9c82820fcb6841"
       ],
       "id": "GAP-TEST-SKIP-592207B673A6",
       "issue": "./gap-register.md#gap-test-skip-592207b673a6",
@@ -1819,7 +1909,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:6940463cea2d19b5"
+        "evidence:ea3262e86130ad74"
       ],
       "id": "GAP-TEST-SKIP-5DA5AA0CB931",
       "issue": "./gap-register.md#gap-test-skip-5da5aa0cb931",
@@ -1834,7 +1924,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:220c00b15733bdcb"
+        "evidence:ec6a0252fe39c996"
       ],
       "id": "GAP-TEST-SKIP-61BF2CC58555",
       "issue": "./gap-register.md#gap-test-skip-61bf2cc58555",
@@ -1849,7 +1939,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:4c8ae96f0461f08b"
+        "evidence:a9b2f3e859d5d888"
       ],
       "id": "GAP-TEST-SKIP-644B6B9CBA2C",
       "issue": "./gap-register.md#gap-test-skip-644b6b9cba2c",
@@ -1864,7 +1954,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:30d964bef03c79aa"
+        "evidence:a9ff23c966ceec10"
       ],
       "id": "GAP-TEST-SKIP-65745748479E",
       "issue": "./gap-register.md#gap-test-skip-65745748479e",
@@ -1879,7 +1969,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3519469ec50a5b06"
+        "evidence:def7a972ddd2f300"
       ],
       "id": "GAP-TEST-SKIP-66ECE02E5B35",
       "issue": "./gap-register.md#gap-test-skip-66ece02e5b35",
@@ -1894,7 +1984,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:afd79eac2637aaf8"
+        "evidence:75825d6acd666c80"
       ],
       "id": "GAP-TEST-SKIP-7CDBC3BA8C34",
       "issue": "./gap-register.md#gap-test-skip-7cdbc3ba8c34",
@@ -1909,7 +1999,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:da4a2efdca407a8a"
+        "evidence:a7411231686e24eb"
       ],
       "id": "GAP-TEST-SKIP-809A16F9F73B",
       "issue": "./gap-register.md#gap-test-skip-809a16f9f73b",
@@ -1924,7 +2014,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:83972ac27e9f9e5a"
+        "evidence:dcdb33419d63327b"
       ],
       "id": "GAP-TEST-SKIP-8BBAEA62C90D",
       "issue": "./gap-register.md#gap-test-skip-8bbaea62c90d",
@@ -1939,7 +2029,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:3bd60ec7d0147574"
+        "evidence:96cc5bd509d76528"
       ],
       "id": "GAP-TEST-SKIP-957EA5B9B8D6",
       "issue": "./gap-register.md#gap-test-skip-957ea5b9b8d6",
@@ -1954,7 +2044,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a2d4f0936efb4e53"
+        "evidence:f2d458a382a6930f"
       ],
       "id": "GAP-TEST-SKIP-9C5CBA1D2839",
       "issue": "./gap-register.md#gap-test-skip-9c5cba1d2839",
@@ -1969,7 +2059,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9d1bc5c7ab6936cd"
+        "evidence:d114dc1c0bbc4bd4"
       ],
       "id": "GAP-TEST-SKIP-A441A42ACAE4",
       "issue": "./gap-register.md#gap-test-skip-a441a42acae4",
@@ -1984,7 +2074,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:106ab406b8d3fe59"
+        "evidence:fa81d97425ccf047"
       ],
       "id": "GAP-TEST-SKIP-A44C9F48242A",
       "issue": "./gap-register.md#gap-test-skip-a44c9f48242a",
@@ -1999,7 +2089,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2b42736de8f6769c"
+        "evidence:8cf379db676209ee"
       ],
       "id": "GAP-TEST-SKIP-AFD5DE5CF407",
       "issue": "./gap-register.md#gap-test-skip-afd5de5cf407",
@@ -2014,7 +2104,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:07adeacc1965c78a"
+        "evidence:2050337ced9ee26a"
       ],
       "id": "GAP-TEST-SKIP-B9868B950879",
       "issue": "./gap-register.md#gap-test-skip-b9868b950879",
@@ -2029,7 +2119,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c80e03bcccf2ea3d"
+        "evidence:a8399afd40ccc801"
       ],
       "id": "GAP-TEST-SKIP-B9E0E6189678",
       "issue": "./gap-register.md#gap-test-skip-b9e0e6189678",
@@ -2044,7 +2134,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:193f8b27890c937f"
+        "evidence:66871d81f2cc2549"
       ],
       "id": "GAP-TEST-SKIP-BCDD1600A486",
       "issue": "./gap-register.md#gap-test-skip-bcdd1600a486",
@@ -2059,7 +2149,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:9c27aa867f12ce3f"
+        "evidence:bf06dc36b010439e"
       ],
       "id": "GAP-TEST-SKIP-C3C27E369DAD",
       "issue": "./gap-register.md#gap-test-skip-c3c27e369dad",
@@ -2074,7 +2164,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:cd87259368c2241f"
+        "evidence:9f76957acbc72202"
       ],
       "id": "GAP-TEST-SKIP-C4D9734CF8C7",
       "issue": "./gap-register.md#gap-test-skip-c4d9734cf8c7",
@@ -2089,7 +2179,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:8838c4dd66b71c45"
+        "evidence:24d775d8ff20c63d"
       ],
       "id": "GAP-TEST-SKIP-D6F38F31475E",
       "issue": "./gap-register.md#gap-test-skip-d6f38f31475e",
@@ -2104,7 +2194,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:2c5c95f141b19694"
+        "evidence:ae1ef4848954ae70"
       ],
       "id": "GAP-TEST-SKIP-DE991873782B",
       "issue": "./gap-register.md#gap-test-skip-de991873782b",
@@ -2119,7 +2209,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:c355976661ccfe39"
+        "evidence:fff88f7188e3d31f"
       ],
       "id": "GAP-TEST-SKIP-E213A3F64664",
       "issue": "./gap-register.md#gap-test-skip-e213a3f64664",
@@ -2134,7 +2224,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:0a012bb9d38dd850"
+        "evidence:8e0e57c158710664"
       ],
       "id": "GAP-TEST-SKIP-E598AC46FAFC",
       "issue": "./gap-register.md#gap-test-skip-e598ac46fafc",
@@ -2149,7 +2239,7 @@
     },
     {
       "evidenceRefs": [
-        "evidence:a9b01d2d64c489cc"
+        "evidence:237ae5a66d8f5a29"
       ],
       "id": "GAP-TEST-SKIP-FAB9EFD5A386",
       "issue": "./gap-register.md#gap-test-skip-fab9efd5a386",

@@ -21,6 +21,7 @@ import {
 } from './lib/auth';
 import { emitDomainEvent } from './lib/domainEvents';
 import { assertCallerFeatureEnabled } from './lib/entitlements';
+import { cancelOpenAgreements } from './lib/agreement/service';
 import { emitRelationship } from './lib/relationshipEmitter';
 import {
   applyTenantScope,
@@ -451,6 +452,12 @@ export const processApprovalRequest = mutation({
             rejectedAt: Date.now(),
             updatedAt: Date.now(),
           });
+          await cancelOpenAgreements(
+            ctx,
+            loanId,
+            actorId,
+            `Loan rejected: ${notes ?? 'Application rejected'}`
+          );
           scheduleAuditLog(ctx, 'loan', loanId, 'REJECT', loan.status, 'rejected', notes);
         }
 

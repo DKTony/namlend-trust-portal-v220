@@ -11,11 +11,19 @@ import {
   Clock,
   DollarSign,
   Eye,
+  FileSignature,
   FileText,
   User,
   XCircle,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { api } from '@/integrations/convex/api';
+import { useQuery } from 'convex/react';
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AGREEMENT_STATUS_LABEL,
+  type AgreementStatusValue,
+} from '@/components/agreement/agreementStatus';
 import { useLoanActions } from '../../hooks/useLoanActions';
 import { LoanApplication, useLoanApplications } from '../../hooks/useLoanApplications';
 import { CompleteDisbursementModal } from '../PaymentManagement/CompleteDisbursementModal';
@@ -60,6 +68,19 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
     refreshKey,
   });
   const { approveLoan, rejectLoan, loading: actionLoading } = useLoanActions();
+  const navigate = useNavigate();
+  // Approved-loans register: one query for every loan's agreement status.
+  const register = useQuery(
+    api.loanAgreements.listRegister,
+    status === 'approved' || status === 'all' ? {} : 'skip'
+  );
+  const agreementStatusByLoan = useMemo(
+    () =>
+      new Map(
+        (register ?? []).map((r) => [String(r.loanId), r.agreementStatus as AgreementStatusValue])
+      ),
+    [register]
+  );
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [loanDetailsOpen, setLoanDetailsOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
@@ -381,7 +402,8 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                       onClick={async () => {
                         const success = await approveLoan(application.id);
                         if (success) {
-                          refetch();
+                          // Approval opens contract preparation immediately.
+                          navigate(`/admin/loans/${application.id}/agreement`);
                         }
                       }}
                     >
@@ -404,6 +426,29 @@ const LoanApplicationsList: React.FC<LoanApplicationsListProps> = ({
                       {actionLoading ? 'Rejecting...' : 'Reject'}
                     </Button>
                   </>
+                )}
+                {['approved', 'funded', 'active'].includes(application.status) &&
+                  application.source !== 'approval' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/admin/loans/${application.id}/agreement`)}
+                      data-testid={`view-contract-${application.id}`}
+                      title={
+                        agreementStatusByLoan.has(application.id)
+                          ? AGREEMENT_STATUS_LABEL[agreementStatusByLoan.get(application.id)!]
+                          : undefined
+                      }
+                    >
+                      <FileSignature className="h-4 w-4 mr-2" />
+                      View contract
+                    </Button>
+                  )}
+                {application.status === 'approved' && agreementStatusByLoan.has(application.id) && (
+                  <span className="text-center text-xs text-muted-foreground">
+                    {AGREEMENT_STATUS_LABEL[agreementStatusByLoan.get(application.id)!]}
+                  </span>
                 )}
                 {application.status === 'approved' && application.source !== 'approval' && (
                   <Button

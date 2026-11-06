@@ -40,7 +40,7 @@ export function scheduleAuditLog(
   fromState: string,
   toState: string,
   reason?: string,
-  options?: { correlationId?: string; causationId?: string }
+  options?: { correlationId?: string; causationId?: string; actorId?: Id<'users'> }
 ): void {
   // Original audit log write
   ctx.scheduler
@@ -51,6 +51,7 @@ export function scheduleAuditLog(
       fromState,
       toState,
       reason,
+      triggeredBy: options?.actorId,
     })
     .catch((err: unknown) => {
       console.error('[audit] scheduleAuditLog enqueue failed:', err);
@@ -64,7 +65,8 @@ export function scheduleAuditLog(
     domainSource: inferDomainSource(entityType),
     correlationId: options?.correlationId ?? generateCorrelationId(),
     causationId: options?.causationId,
-    actorType: 'system',
+    actorId: options?.actorId,
+    actorType: options?.actorId ? 'user' : 'system',
     payload: { fromState, toState, reason },
   });
 }

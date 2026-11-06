@@ -44,7 +44,15 @@ export function FeesTab({ policy, onUpdate }: FeesTabProps) {
                 {policy.originationFeePercent}%
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">Fee charged at loan disbursement</p>
+            <p className="text-xs text-muted-foreground">
+              Not collected: the repayment engine does not charge an origination fee. Keep at 0%.
+            </p>
+            {policy.originationFeePercent > 0 && (
+              <p role="alert" className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                Loan agreements cannot be issued while this is above 0% — the contract would quote a
+                fee that is never collected.
+              </p>
+            )}
           </div>
           <div className="space-y-4">
             <Label>Late Payment Fee (%)</Label>
@@ -61,7 +69,9 @@ export function FeesTab({ policy, onUpdate }: FeesTabProps) {
                 {policy.latePaymentFeePercent}%
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">Fee on overdue payments</p>
+            <p className="text-xs text-muted-foreground">
+              For reference only — not applied automatically to overdue payments.
+            </p>
           </div>
           <div className="space-y-4">
             <Label>Grace Period (Days)</Label>

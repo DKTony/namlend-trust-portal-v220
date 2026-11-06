@@ -29,6 +29,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ApprovalRequestDialog } from './ApprovalRequestDialog';
 import {
   type ApprovalRequest,
@@ -132,6 +133,7 @@ export default function ApprovalManagementDashboard() {
     setReviewNotes('');
   };
 
+  const navigate = useNavigate();
   const handleStatusUpdate = async (requestId: string, newStatus: ApprovalRequest['status']) => {
     if (processing) return;
     setProcessing(true);
@@ -148,7 +150,13 @@ export default function ApprovalManagementDashboard() {
             ? `Request approved and ${isLoanRequestType(selectedRequest?.request_type ?? '') ? 'loan marked approved' : 'processed'} successfully`
             : `Request has been ${newStatus}`,
       });
+      const approvedLoanId =
+        newStatus === 'approved' && isLoanRequestType(selectedRequest?.request_type ?? '')
+          ? selectedRequest?.entity_id
+          : undefined;
       closeReview();
+      // Approval opens contract preparation immediately.
+      if (approvedLoanId) navigate(`/admin/loans/${approvedLoanId}/agreement`);
     } catch {
       toast({
         title: 'Error',

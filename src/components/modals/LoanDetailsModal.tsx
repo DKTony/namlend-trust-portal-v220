@@ -26,6 +26,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoanRequestData {
   employment_status?: string;
@@ -325,6 +326,10 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
             </div>
           </div>
 
+          {['approved', 'funded', 'active', 'disbursed'].includes(loan.status) && (
+            <ViewContractRow loanId={loan.id} onNavigate={onClose} />
+          )}
+
           <div>
             <h3 className="mb-4 flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
               <FileText className="h-4 w-4" />
@@ -378,3 +383,28 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({ open, onClos
 };
 
 export default LoanDetailsModal;
+
+/** "View contract" from the loan details screen (spec §3). */
+function ViewContractRow({ loanId, onNavigate }: { loanId: string; onNavigate: () => void }) {
+  const navigate = useNavigate();
+  return (
+    <ThemedCard className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="font-medium">Loan agreement</p>
+        <p className="text-sm text-muted-foreground">
+          Prepare, review, issue or retrieve this loan’s contract.
+        </p>
+      </div>
+      <button
+        type="button"
+        className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+        onClick={() => {
+          onNavigate();
+          navigate(`/admin/loans/${loanId}/agreement`);
+        }}
+      >
+        View contract
+      </button>
+    </ThemedCard>
+  );
+}

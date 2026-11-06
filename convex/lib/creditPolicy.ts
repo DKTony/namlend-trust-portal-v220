@@ -78,7 +78,11 @@ export const DEFAULT_CREDIT_POLICY: CreditPolicy = {
   autoApproveThreshold: 80,
   autoRejectThreshold: 30,
   manualReviewRequired: true,
-  originationFeePercent: 2,
+  // 0%: no code in the repayment engine (amortization, payment schedules, ledger)
+  // collects an origination fee, so a non-zero default advertised a charge that was
+  // never made — and blocked every loan agreement (FEES_NOT_SUPPORTED). Decided
+  // 2026-11-06: no origination fee. Raise this only alongside real fee collection.
+  originationFeePercent: 0,
   latePaymentFeePercent: 5,
   gracePeriodDays: 5,
 };

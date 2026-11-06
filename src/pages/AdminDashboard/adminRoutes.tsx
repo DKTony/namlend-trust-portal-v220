@@ -56,6 +56,12 @@ const ConsentDashboard = React.lazy(() => import('./components/Consent/ConsentDa
 
 // Settings (admin only) — TB Config/Settlement moved to /platform
 const CreditPolicyConfig = React.lazy(() => import('./components/Settings/CreditPolicy'));
+const AgreementWorkspacePage = React.lazy(
+  () => import('./components/LoanAgreement/AgreementWorkspacePage')
+);
+const AgreementSettingsPage = React.lazy(
+  () => import('./components/LoanAgreement/AgreementSettingsPage')
+);
 
 function PageSuspense({ children }: { children: React.ReactNode }) {
   return (
@@ -118,6 +124,14 @@ export function adminRoutes() {
         element={
           <PageSuspense>
             <LoanManagementDashboard />
+          </PageSuspense>
+        }
+      />
+      <Route
+        path="loans/:loanId/agreement"
+        element={
+          <PageSuspense>
+            <AgreementWorkspacePage />
           </PageSuspense>
         }
       />
@@ -273,6 +287,16 @@ export function adminRoutes() {
                 <CreditPolicyConfig />
               </PageSuspense>
             </FeatureOnly>
+          </AdminOnly>
+        }
+      />
+      <Route
+        path="settings/loan-agreement"
+        element={
+          <AdminOnly>
+            <PageSuspense>
+              <AgreementSettingsPage />
+            </PageSuspense>
           </AdminOnly>
         }
       />

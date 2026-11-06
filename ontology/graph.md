@@ -1,17 +1,17 @@
 # NamLend proof graph
 
-Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `9c9be8bdb6497e6e5085b562b1d3fb008c04efc2`.
+Generated from active web, Convex, test, workflow, document, and redacted source-manifest inputs at commit `f00c156c41a64496fc32474764cff3e34f573b8e`.
 
 | Inventory | Count |
 | --- | ---: |
-| Effective Convex tables | 96 |
-| Convex indexes | 203 |
-| Convex functions | 514 |
-| Web routes | 41 |
-| React components | 262 |
+| Effective Convex tables | 99 |
+| Convex indexes | 210 |
+| Convex functions | 538 |
+| Web routes | 44 |
+| React components | 278 |
 | Features | 32 |
 | Seeded plans | 4 |
-| Named tests | 930 |
+| Named tests | 984 |
 
 Evidence precedence is `E0 > E1 > E2 > E3 > ∅`. The machine graph retains every supporting or contradicting reference; diagrams below are bounded audit views rather than the full graph.
 
@@ -26,6 +26,7 @@ flowchart LR
   n_function_convex_collections_markReminderSent["markReminderSent"]
   n_access_policy_authenticated["Authenticated access"]
   n_function_convex_users_adminUpdateProfile["adminUpdateProfile"]
+  n_function_convex_loanAgreements_send["send"]
   n_function_convex_users_updateMyProfile["updateMyProfile"]
   n_function_convex_settlement_settlementObligations_getObligation["getObligation"]
   n_function_convex_ontology_consentRecords_getMyConsents["getMyConsents"]
@@ -54,11 +55,11 @@ flowchart LR
   n_function_convex_notifications_listNotificationTemplates["listNotificationTemplates"]
   n_function_convex_settlement_settlementAdjustments_listPendingAdjustments["listPendingAdjustments"]
   n_function_convex_ontology_eventJournal_getEventsByCorrelation["getEventsByCorrelation"]
-  n_route__admin_products["/admin/products"]
   n_function_convex_ontology_relationships_listRelationshipsByType -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_loanApprovals_getLoanApprovals -- "GATED_BY" --> n_role_tenant_tenant_admin
   n_function_convex_collections_markReminderSent -- "GATED_BY" --> n_access_policy_authenticated
   n_function_convex_users_adminUpdateProfile -- "GATED_BY" --> n_access_policy_authenticated
+  n_function_convex_loanAgreements_send -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_users_updateMyProfile -- "GATED_BY" --> n_access_policy_authenticated
   n_function_convex_settlement_settlementObligations_getObligation -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_ontology_consentRecords_getMyConsents -- "GATED_BY" --> n_access_policy_authenticated
@@ -85,7 +86,6 @@ flowchart LR
   n_function_convex_notifications_listNotificationTemplates -- "GATED_BY" --> n_role_tenant_tenant_admin
   n_function_convex_settlement_settlementAdjustments_listPendingAdjustments -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_ontology_eventJournal_getEventsByCorrelation -- "GATED_BY" --> n_access_policy_authenticated
-  n_route__admin_products -- "GATED_BY" --> n_role_tenant_admin
   n_function_convex_ontology_accounts_getAccountsByOwner -- "GATED_BY" --> n_access_policy_authenticated
   n_function_convex_ontology_relationships_seedExistingRelationships -- "GATED_BY" --> n_role_tenant_tenant_admin
 ```
@@ -166,14 +166,22 @@ flowchart LR
 
 ```mermaid
 flowchart LR
+  n_function_convex_loanAgreements_accept["accept"]
+  n_function_convex_projections_portfolioProjection_onLoanFunded["onLoanFunded"]
+  n_function_convex_loanAgreements_saveSettings["saveSettings"]
+  n_function_convex_projections_portfolioProjection_onLoanSubmitted["onLoanSubmitted"]
   n_function_convex_loans_submitLoan["submitLoan"]
   n_function_convex_projections_portfolioProjection_onLoanCreated["onLoanCreated"]
   n_function_convex_collections_markPromiseFulfilled["markPromiseFulfilled"]
   n_function_convex_projections_portfolioProjection_onPaymentFailed["onPaymentFailed"]
   n_function_convex_loans_approveLoan["approveLoan"]
   n_function_convex_projections_portfolioProjection_onDisbursementCompleted["onDisbursementCompleted"]
+  n_function_convex_loanAgreements_importSourceTemplate["importSourceTemplate"]
+  n_function_convex_projections_portfolioProjection_onLoanApproved["onLoanApproved"]
+  n_function_convex_loanAgreements_approveSettings["approveSettings"]
+  n_function_convex_loanAgreements_updateBorrowerDetails["updateBorrowerDetails"]
+  n_function_convex_projections_portfolioProjection_onPaymentCompleted["onPaymentCompleted"]
   n_function_convex_users_updateMyProfile["updateMyProfile"]
-  n_function_convex_projections_portfolioProjection_onLoanFunded["onLoanFunded"]
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus["updateIpsTransactionStatus"]
   n_function_convex_collections_reviewRescheduleRequest["reviewRescheduleRequest"]
   n_function_convex_audit_writeStateTransition["writeStateTransition"]
@@ -182,29 +190,27 @@ flowchart LR
   n_function_convex_collections_markReminderSent["markReminderSent"]
   n_function_convex_ontology_eventJournal_writeEvent["writeEvent"]
   n_function_convex_payments_failPayment["failPayment"]
-  n_function_convex_projections_portfolioProjection_onLoanApproved["onLoanApproved"]
   n_function_convex_loans_createLoan["createLoan"]
   n_function_convex_projections_portfolioProjection_onLoanRejected["onLoanRejected"]
+  n_function_convex_loanAgreements_reviseTemplate["reviseTemplate"]
+  n_function_convex_loanAgreements_generateForLoan["generateForLoan"]
   n_function_convex_loans_markFunded["markFunded"]
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal["updateIpsTransactionStatusInternal"]
+  n_function_convex_loanAgreements_cancel["cancel"]
   n_function_convex_disbursements_reverseDisbursement["reverseDisbursement"]
   n_function_convex_kycDocuments_submitMyKyc["submitMyKyc"]
   n_function_convex_audit_writeAuditEntry["writeAuditEntry"]
   n_function_convex_disbursements_initiateDisbursement["initiateDisbursement"]
   n_function_convex_projections_portfolioProjection_onLoanPaidOff["onLoanPaidOff"]
-  n_function_convex_approvalWorkflow_submitForApproval["submitForApproval"]
-  n_function_convex_users_assignRole["assignRole"]
-  n_function_convex_payments_recordPayment["recordPayment"]
-  n_function_convex_loans_moveToReview["moveToReview"]
-  n_function_convex_loans_recordCreditScore["recordCreditScore"]
-  n_function_convex_loanProcessing_recordProcessingFailure["recordProcessingFailure"]
-  n_function_convex_notifications_createNotification["createNotification"]
-  n_function_convex_collections_createPromiseToPay["createPromiseToPay"]
-  n_function_convex_actions_processLoanApplication_processLoanApplication["processLoanApplication"]
-  n_function_convex_projections_portfolioProjection_onDisbursementFailed["onDisbursementFailed"]
+  n_function_convex_loanAgreements_accept -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
+  n_function_convex_loanAgreements_saveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanSubmitted
   n_function_convex_loans_submitLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
   n_function_convex_collections_markPromiseFulfilled -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
   n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementCompleted
+  n_function_convex_loanAgreements_importSourceTemplate -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
+  n_function_convex_loanAgreements_saveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
+  n_function_convex_loanAgreements_approveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
+  n_function_convex_loanAgreements_updateBorrowerDetails -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentCompleted
   n_function_convex_users_updateMyProfile -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
   n_function_convex_collections_reviewRescheduleRequest -- "CALLS" --> n_function_convex_audit_writeStateTransition
@@ -213,40 +219,27 @@ flowchart LR
   n_function_convex_payments_failPayment -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
   n_function_convex_loans_createLoan -- "CALLS" --> n_function_convex_audit_writeStateTransition
   n_function_convex_loans_submitLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
+  n_function_convex_loanAgreements_reviseTemplate -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
+  n_function_convex_loanAgreements_generateForLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
   n_function_convex_loans_markFunded -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
+  n_function_convex_loanAgreements_cancel -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
   n_function_convex_ips_ipsTransactions_startLoanDisbursement -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementCompleted
+  n_function_convex_loanAgreements_updateBorrowerDetails -- "CALLS" --> n_function_convex_audit_writeStateTransition
   n_function_convex_disbursements_reverseDisbursement -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
   n_function_convex_collections_reviewRescheduleRequest -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_kycDocuments_submitMyKyc -- "CALLS" --> n_function_convex_audit_writeAuditEntry
   n_function_convex_disbursements_initiateDisbursement -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
   n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
-  n_function_convex_users_assignRole -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_payments_recordPayment -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_loans_moveToReview -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
-  n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
-  n_function_convex_loans_recordCreditScore -- "CALLS" --> n_function_convex_audit_writeAuditEntry
-  n_function_convex_loanProcessing_recordProcessingFailure -- "CALLS" --> n_function_convex_notifications_createNotification
-  n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
-  n_function_convex_collections_createPromiseToPay -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_actions_processLoanApplication_processLoanApplication -- "CALLS" --> n_function_convex_loans_recordCreditScore
-  n_function_convex_loans_submitLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementFailed
+  n_function_convex_loanAgreements_importSourceTemplate -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
+  n_function_convex_loanAgreements_cancel -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
+  n_function_convex_loanAgreements_approveSettings -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_users_updateMyProfile -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
   n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
+  n_function_convex_loanAgreements_saveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
   n_function_convex_collections_markPromiseFulfilled -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
-  n_function_convex_loans_markFunded -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
-  n_function_convex_collections_markPromiseFulfilled -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
-  n_function_convex_loans_createLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
-  n_function_convex_loans_createLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
-  n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_loans_moveToReview -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
-  n_function_convex_actions_processLoanApplication_processLoanApplication -- "CALLS" --> n_function_convex_loanProcessing_recordProcessingFailure
-  n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanRejected
-  n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanFunded
-  n_function_convex_users_assignRole -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
-  n_function_convex_collections_createPromiseToPay -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
+  n_function_convex_loanAgreements_importSourceTemplate -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
 ```
 
 ### Money movement
@@ -259,6 +252,9 @@ flowchart LR
   n_function_convex_projections_portfolioProjection_onPaymentFailed["onPaymentFailed"]
   n_function_convex_loans_approveLoan["approveLoan"]
   n_function_convex_projections_portfolioProjection_onDisbursementCompleted["onDisbursementCompleted"]
+  n_function_convex_loanAgreements_importSourceTemplate["importSourceTemplate"]
+  n_function_convex_loanAgreements_updateBorrowerDetails["updateBorrowerDetails"]
+  n_function_convex_projections_portfolioProjection_onPaymentCompleted["onPaymentCompleted"]
   n_function_convex_scheduled_tigerBeetleOutboxWorker_processOutbox["processOutbox"]
   n_function_convex_tigerbeetle_outbox_claimPendingEntries["claimPendingEntries"]
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus["updateIpsTransactionStatus"]
@@ -279,19 +275,18 @@ flowchart LR
   n_function_convex_ontology_mandateExecutions_executeMandateDebit["executeMandateDebit"]
   n_function_convex_disbursements_initiateDisbursement["initiateDisbursement"]
   n_function_convex_projections_portfolioProjection_onLoanPaidOff["onLoanPaidOff"]
+  n_function_convex_loanAgreements_saveSettings["saveSettings"]
+  n_function_convex_projections_portfolioProjection_onDisbursementFailed["onDisbursementFailed"]
   n_function_convex_ontology_paymentRails_createRail["createRail"]
   n_function_convex_ontology_eventJournal_writeEvent["writeEvent"]
   n_function_convex_actions_ipsOnboardingAdapter_startVerification["startVerification"]
   n_function_convex_actions_ipsOnboardingAdapter_reqListAccount["reqListAccount"]
   n_function_convex_ips_ipsOnboarding_updateOnboardingStatus["updateOnboardingStatus"]
-  n_function_convex_payments_completePayment["completePayment"]
-  n_function_convex_projections_portfolioProjection_onPaymentCompleted["onPaymentCompleted"]
-  n_function_convex_actions_ipsAdapter_initiateReversal["initiateReversal"]
-  n_function_convex_approvalWorkflow_submitForApproval["submitForApproval"]
-  n_function_convex_settlement_settlementActions_createSettlementRun["createSettlementRun"]
   n_function_convex_actions_ipsAdapter_initiateOutboundTransfer -- "CALLS" --> n_function_convex_actions_ipsAdapter_resolveDeemedTransaction
   n_function_convex_collections_markPromiseFulfilled -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
   n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementCompleted
+  n_function_convex_loanAgreements_importSourceTemplate -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
+  n_function_convex_loanAgreements_updateBorrowerDetails -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentCompleted
   n_function_convex_scheduled_tigerBeetleOutboxWorker_processOutbox -- "CALLS" --> n_function_convex_tigerbeetle_outbox_claimPendingEntries
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanCreated
   n_function_convex_ips_ipsTransactions_startLoanDisbursement -- "CALLS" --> n_function_convex_ontology_relationships_createRelationship
@@ -304,21 +299,19 @@ flowchart LR
   n_function_convex_disbursements_reverseDisbursement -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanApproved
   n_function_convex_ontology_mandateExecutions_executeMandateDebit -- "CALLS" --> n_function_convex_ontology_relationships_createRelationship
   n_function_convex_disbursements_initiateDisbursement -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
+  n_function_convex_loanAgreements_saveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementFailed
   n_function_convex_ontology_paymentRails_createRail -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_actions_ipsOnboardingAdapter_startVerification -- "CALLS" --> n_function_convex_lib_ruleEvaluator_getStringRuleQuery
   n_function_convex_actions_ipsOnboardingAdapter_reqListAccount -- "CALLS" --> n_function_convex_ips_ipsOnboarding_updateOnboardingStatus
-  n_function_convex_payments_completePayment -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentCompleted
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatusInternal -- "CALLS" --> n_function_convex_projections_portfolioProjection_onLoanPaidOff
-  n_function_convex_actions_ipsAdapter_initiateReversal -- "CALLS" --> n_function_convex_lib_ruleEvaluator_getStringRuleQuery
-  n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
-  n_function_convex_payments_completePayment -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementCompleted
   n_function_convex_loans_approveLoan -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
+  n_function_convex_loanAgreements_updateBorrowerDetails -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementFailed
+  n_function_convex_loanAgreements_saveSettings -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentFailed
   n_function_convex_disbursements_reverseDisbursement -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_payments_failPayment -- "CALLS" --> n_function_convex_audit_writeStateTransition
-  n_function_convex_payments_completePayment -- "CALLS" --> n_function_convex_ontology_relationships_createRelationship
   n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_projections_portfolioProjection_onPaymentCompleted
-  n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_audit_writeStateTransition
+  n_function_convex_ips_ipsTransactions_updateIpsTransactionStatus -- "CALLS" --> n_function_convex_projections_portfolioProjection_onDisbursementFailed
 ```
 
 ### Notifications
@@ -360,7 +353,7 @@ flowchart LR
   n_function_convex_kycDocuments_completeReview["completeReview"]
   n_function_convex_notifications_markAllNotificationsRead["markAllNotificationsRead"]
   n_function_convex_notifications_getPreferencesForUser["getPreferencesForUser"]
-  n_function_convex_disbursements_completeDisbursement["completeDisbursement"]
+  n_function_convex_loanAgreements_send["send"]
   n_function_convex_platform_lendingWorkflowRepair_backfillPendingStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_communications_resendCommunication -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_loanProcessing_recordProcessingFailure -- "CALLS" --> n_function_convex_notifications_createNotification
@@ -399,13 +392,12 @@ flowchart LR
   n_function_convex_communications_sendCommunication -- "CALLS" --> n_function_convex_audit_writeStateTransition
   n_function_convex_actions_sendNotification_sendNotification -- "CALLS" --> n_function_convex_actions_sendSms_sendSms
   n_function_convex_kycDocuments_completeReview -- "CALLS" --> n_function_convex_notifications_createNotification
-  n_function_convex_disbursements_completeDisbursement -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
+  n_function_convex_loanAgreements_send -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_actions_sendSms_sendTemplateSms -- "CALLS" --> n_function_convex_actions_sendSms_sendSms
   n_function_convex_approvalWorkflow_submitForApproval -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
   n_function_convex_approvalWorkflow_createSystemApprovalRequest -- "CALLS" --> n_function_convex_notifications_createStaffNotifications
   n_function_convex_platform_lendingWorkflowRepair_backfillPendingIpsStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
   n_function_convex_platform_lendingWorkflowRepair_backfillBlockedDisbursementStaffNotifications -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent
-  n_function_convex_disbursements_completeDisbursement -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_communications_sendCommunication -- "CALLS" --> n_function_convex_notifications_createNotification
   n_function_convex_notifications_markAllNotificationsRead -- "CALLS" --> n_function_convex_audit_writeAuditEntry
   n_function_convex_notifications_markNotificationRead -- "CALLS" --> n_function_convex_ontology_eventJournal_writeEvent

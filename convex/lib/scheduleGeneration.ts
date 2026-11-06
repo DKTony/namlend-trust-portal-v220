@@ -10,6 +10,7 @@
 
 import { GenericMutationCtx } from 'convex/server';
 import { DataModel, Doc } from '../_generated/dataModel';
+import { acceptedSchedule } from './agreement/service';
 import { generatePaymentSchedule } from './amortization';
 
 type MutCtx = GenericMutationCtx<DataModel>;
@@ -30,6 +31,28 @@ export async function ensurePaymentSchedule(
     .withIndex('by_loanId', (q) => q.eq('loanId', loan._id))
     .first();
   if (existing) return 0;
+
+  // The borrower accepted a schedule with specific due dates. Insert exactly those
+  // rows so the loan's repayment schedule is the one in the signed agreement; the
+  // amounts come from the same amortization engine either way.
+  const accepted = await acceptedSchedule(ctx, loan._id);
+  if (accepted?.length) {
+    const now = Date.now();
+    for (const row of accepted) {
+      await ctx.db.insert('paymentSchedules', {
+        loanId: loan._id,
+        institutionId: loan.institutionId,
+        installmentNumber: row.installmentNumber,
+        dueDate: row.dueDateMs,
+        principalDue: row.principalDue,
+        interestDue: row.interestDue,
+        totalDue: row.totalDue,
+        status: 'scheduled',
+        createdAt: now,
+      });
+    }
+    return accepted.length;
+  }
 
   const entries = generatePaymentSchedule(
     loan.principal,

@@ -10,6 +10,7 @@
 import { GenericMutationCtx } from 'convex/server';
 import { ConvexError } from 'convex/values';
 import { DataModel, Doc, Id } from '../_generated/dataModel';
+import { createDraftAgreement } from './agreement/service';
 import { scheduleAuditLog } from './audit';
 import { assertLoanWithinCreditPolicy } from './creditPolicy';
 import { DOMAIN_EVENTS, emitDomainEvent } from './domainEvents';
@@ -112,6 +113,14 @@ export async function approveLoanCore(
   });
 
   scheduleAuditLog(ctx, 'loan', opts.loanId, 'APPROVE', loan.status, 'approved', opts.notes);
+
+  // Contract preparation starts in the same transaction as approval, so every approved
+  // loan has an agreement. It never fails the approval: missing configuration or
+  // borrower data surface as readiness issues on the draft instead.
+  await createDraftAgreement(ctx, {
+    loan: { ...loan, status: 'approved', updatedAt: now },
+    actorUserId: opts.actorUserId,
+  });
   emitDomainEvent(
     ctx,
     DOMAIN_EVENTS.LOAN_APPROVED,

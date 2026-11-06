@@ -33,7 +33,7 @@ export const GRANT_TTL_MS = 5 * 60 * 1000;
 
 export interface CreateGrantInput {
   storageId: Id<'_storage'>;
-  sourceTable: 'kycDocuments' | 'loanDocuments' | 'institutionDocuments';
+  sourceTable: 'kycDocuments' | 'loanDocuments' | 'institutionDocuments' | 'loanAgreements';
   documentId: string;
   actorId: Id<'users'>;
   intent: 'preview' | 'download';

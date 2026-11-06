@@ -36,6 +36,7 @@ import type * as ips_ipsOnboarding from '../ips/ipsOnboarding.js';
 import type * as ips_ipsTransactions from '../ips/ipsTransactions.js';
 import type * as ips_ipsVpa from '../ips/ipsVpa.js';
 import type * as kycDocuments from '../kycDocuments.js';
+import type * as lib_agreement_types from '../lib/agreement/types.js';
 import type * as lib_amortization from '../lib/amortization.js';
 import type * as lib_approvalReadiness from '../lib/approvalReadiness.js';
 import type * as lib_audit from '../lib/audit.js';
@@ -166,6 +167,7 @@ declare const fullApi: ApiFromModules<{
   'ips/ipsTransactions': typeof ips_ipsTransactions;
   'ips/ipsVpa': typeof ips_ipsVpa;
   kycDocuments: typeof kycDocuments;
+  'lib/agreement/types': typeof lib_agreement_types;
   'lib/amortization': typeof lib_amortization;
   'lib/approvalReadiness': typeof lib_approvalReadiness;
   'lib/audit': typeof lib_audit;
